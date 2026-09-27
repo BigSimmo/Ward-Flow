@@ -7,8 +7,9 @@ const sourceRoot = resolve(process.cwd(), "src");
 // The four PsychSift-only internal arrow controls (calculators/guided-flow.tsx,
 // calculators/search-detail.tsx, clinical-dashboard/settings-dialog.tsx,
 // formulation/formulation-builder-page.tsx) went with PsychSift on 25 September 2026.
-// Every surviving production back-arrow already routes through contextual browser history.
-const internalArrowControls = new Set<string>();
+// The standalone app's not-found page intentionally links to its known home route: the missing
+// address cannot serve as a contextual destination. Keep this exception pinned to that exact link.
+const internalArrowControls = new Set<string>(["app/not-found.tsx"]);
 
 function productionArrowFiles() {
   return globSync("{app,components}/**/*.tsx", { cwd: sourceRoot })
@@ -38,6 +39,8 @@ describe("page-level back-arrow contract", () => {
 
   it("keeps the internal-control exclusion list exact and reviewable", () => {
     const arrowFiles = new Set(productionArrowFiles());
+    expect([...internalArrowControls]).toEqual(["app/not-found.tsx"]);
+    expect(readFileSync(resolve(sourceRoot, "app/not-found.tsx"), "utf8")).toContain('href="/mockups/ward-flow"');
     expect([...internalArrowControls].filter((file) => !arrowFiles.has(file))).toEqual([]);
   });
 });

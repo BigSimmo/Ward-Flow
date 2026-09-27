@@ -853,7 +853,7 @@ export function DelaysScreen({
                     </svg>
                     Statutory &amp; Safety Sentinel
                   </h3>
-                  <span className={styles.pillarBadge}>MHA 2014</span>
+                  <span className={styles.pillarBadge}>Recorded dates</span>
                 </div>
 
                 <div className={styles.pillarBody}>

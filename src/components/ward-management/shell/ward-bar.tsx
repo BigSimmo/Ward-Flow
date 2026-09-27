@@ -1503,7 +1503,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
 
         <section className={styles.toolsSection}>
           <h3 className={styles.toolsHeading}>
-            MHA deadline calculator <span>WA MHA 2014</span>
+            Form expiry record <span>Clinician-entered dates</span>
           </h3>
           <WardMhaCalculator />
         </section>

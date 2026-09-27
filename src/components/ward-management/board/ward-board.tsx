@@ -802,7 +802,7 @@ function PersonEntry({
           </div>
           <div className={styles.catchmentItem}>
             <span className={styles.catchmentLabel}>Legal Status</span>
-            <span className={styles.catchmentValue}>{patient?.legalStatus ?? "Mental Health Act 2014"}</span>
+            <span className={styles.catchmentValue}>{patient?.legalStatus ?? "Not recorded"}</span>
           </div>
         </div>
         <p className={styles.catchmentFootnote}>

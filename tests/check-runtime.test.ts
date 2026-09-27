@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
@@ -50,8 +50,17 @@ describe("runtime release gate", () => {
   // The SessionStart hook provisions Node before npm exists, so it restates the
   // bounds in shell. Checking only the floor let a Node 25 container skip
   // provisioning and then fail npm ci against the "<25" half of the range.
-  describe("SessionStart hook runtime bounds", () => {
-    const hook = readFileSync(new URL("../.claude/hooks/session-start.sh", import.meta.url), "utf8");
+  const sessionStartHook = new URL("../.claude/hooks/session-start.sh", import.meta.url);
+  function describeRuntimeHook(name: string, body: () => void) {
+    if (existsSync(sessionStartHook)) describe(name, body);
+  }
+  if (!existsSync(sessionStartHook)) {
+    it("keeps the public checkout free of an incomplete Claude runtime hook", () => {
+      expect(existsSync(new URL("../.claude", import.meta.url))).toBe(false);
+    });
+  }
+  describeRuntimeHook("SessionStart hook runtime bounds", () => {
+    const hook = readFileSync(sessionStartHook, "utf8");
     const engineFloor = packageJson.engines.node.match(/>=\s*(\d+\.\d+\.\d+)/)?.[1];
     const engineCeiling = packageJson.engines.node.match(/<\s*(\d+)/)?.[1];
 

@@ -10,6 +10,8 @@ const root = mkdtempSync(path.join(tmpdir(), "ward-trial-repo-"));
 const git = (args: string[]) =>
   execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
 git(["init", "--quiet"]);
+git(["config", "user.name", "Ward Test"]);
+git(["config", "user.email", "ward@example.invalid"]);
 git([
   "-c",
   "user.name=Ward Test",

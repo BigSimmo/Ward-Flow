@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -29,8 +29,25 @@ import { describe, expect, it } from "vitest";
  */
 
 const repoRoot = process.cwd();
-const settings = JSON.parse(readFileSync(join(repoRoot, ".claude/settings.json"), "utf8"));
+const settingsPath = join(repoRoot, ".claude/settings.json");
+const hasClaudeSettings = existsSync(settingsPath);
+const settings = hasClaudeSettings ? JSON.parse(readFileSync(settingsPath, "utf8")) : { permissions: {}, hooks: {} };
 const packageScripts: Record<string, string> = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")).scripts;
+function describeConfiguredClaude(name: string, body: () => void) {
+  if (hasClaudeSettings) describe(name, body);
+}
+
+if (!hasClaudeSettings) {
+  describe("public Claude configuration boundary", () => {
+    it("does not ship a partial permission or hook configuration", () => {
+      expect(existsSync(join(repoRoot, ".claude"))).toBe(false);
+      const workflow = readFileSync(join(repoRoot, ".github/workflows/ward-flow.yml"), "utf8");
+      expect(workflow).toContain("contents: read");
+      expect(workflow).not.toContain("contents: write");
+      expect(workflow).not.toContain("secrets.");
+    });
+  });
+}
 
 /**
  * Claude Code's Bash permission rules: `Bash(cmd)` matches that command exactly, and a
@@ -56,7 +73,7 @@ const PROVIDER_BACKED =
 
 const providerScripts = Object.keys(packageScripts).filter((name) => PROVIDER_BACKED.test(name));
 
-describe("claude code permissions", () => {
+describeConfiguredClaude("claude code permissions", () => {
   it("recognises a meaningful set of provider-backed scripts", () => {
     // A regex that silently stops matching would make both tests below vacuously pass.
     // The floor was >20 while PsychSift's ingestion/enrich/classify/reindex/import/
@@ -179,7 +196,7 @@ describe("claude code permissions", () => {
  *
  * These tests pin the fixes using the same `bashRuleMatches` prefix-match model above.
  */
-describe("git push tightening", () => {
+describeConfiguredClaude("git push tightening", () => {
   const deny = settings.permissions.deny as string[];
   const allow = settings.permissions.allow as string[];
 
@@ -267,7 +284,7 @@ describe("git push tightening", () => {
   });
 });
 
-describe("git add forced-staging tightening", () => {
+describeConfiguredClaude("git add forced-staging tightening", () => {
   const forcedAddCommands = ["git add -f .env.local", "git add --force .env.local"];
 
   it.each(forcedAddCommands)("%s carries an explicit ask rule", (command) => {
@@ -288,7 +305,7 @@ describe("git add forced-staging tightening", () => {
   );
 });
 
-describe("gh pr create requires confirmation", () => {
+describeConfiguredClaude("gh pr create requires confirmation", () => {
   const command = "gh pr create --fill";
 
   it("is not reachable through an allow rule", () => {
@@ -302,7 +319,7 @@ describe("gh pr create requires confirmation", () => {
   });
 });
 
-describe("claude hook registrations", () => {
+describeConfiguredClaude("claude hook registrations", () => {
   const commands: { event: string; command: string }[] = [];
   for (const [event, matchers] of Object.entries(
     settings.hooks as Record<string, { hooks: { command: string }[] }[]>,
