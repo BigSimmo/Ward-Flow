@@ -81,7 +81,7 @@ import {
   type Rejection,
   type Unit,
 } from "@/components/ward-management/ward-model";
-import { edById, siteByCode } from "@/components/ward-management/ward-sites";
+import { edById, siteByCode, WARD_LOCKED_BED_SPLITS } from "@/components/ward-management/ward-sites";
 import {
   daysInBed as admissionStayDays,
   LEAVING_DESTINATIONS,
@@ -998,9 +998,10 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
   ];
 
   // Derive bed roster & telemetry for Bed Board matrix
-  const podA = `${unit.name} Pod A (Secure East)`;
-  const podB = `${unit.name} Pod B (Secure West)`;
-  const podHdu = `${unit.name} HDU Suite`;
+  // D-21 items 4A & 6A: HDU left off; show real recorded bed designations from WARD_LOCKED_BED_SPLITS.
+  const lockedBeds = unit.lockedBeds ?? WARD_LOCKED_BED_SPLITS[unit.id] ?? 0;
+  const openBedsCount = Math.max(0, unit.beds - lockedBeds);
+  const isMixed = lockedBeds > 0 && openBedsCount > 0;
 
   // Josh, 26 Sept 2026 ("go ahead with all your recommendations"): a bed reads "On Leave" only for
   // the admission this ward's OWN leave records actually name — never whichever occupied
@@ -1017,10 +1018,10 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
 
   const bedsList = Array.from({ length: unit.beds }, (_, i) => {
     const bedNumber = i + 1;
-    const isHdu = bedNumber > Math.ceil(unit.beds * 0.75);
-    const isPodA = bedNumber <= Math.ceil(unit.beds * 0.35);
-    const podId = isHdu ? "hdu" : isPodA ? "poda" : "podb";
-    const podLabel = isHdu ? podHdu : isPodA ? podA : podB;
+    const designation: "Locked" | "Open" | undefined = isMixed ? (i < lockedBeds ? "Locked" : "Open") : undefined;
+    const podId = isMixed ? (i < lockedBeds ? "locked" : "open") : "all";
+    const podLabel = isMixed ? `${unit.name} ${designation} Beds` : unit.name;
+    const isHdu = false;
 
     // Every leave record gets its own slot, right after the ready beds — never only the first one.
     const leaveSlotIndex = i - capacity.available;
@@ -1075,6 +1076,7 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
       bedLabel: `Bed ${String(bedNumber).padStart(2, "0")}`,
       podId,
       podLabel,
+      designation,
       isHdu,
       status,
       statusText,
@@ -1842,7 +1844,7 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
                 {capacity.occupied} <small>/ {unit.beds}</small>
               </div>
               <span className={styles.glanceSub}>
-                {capacity.occupied} Physical &middot; {accepted.length} Inbound
+                {capacity.occupied} physical in beds · {accepted.length} inbound accepted
               </span>
             </div>
 
@@ -2046,7 +2048,13 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
                 onClick={() => setActiveTab("return")}
               >
                 <span>Decisions</span>
-                <span className={styles.tabBadge} id="badgeReturn" style={{ color: "var(--good)" }}>
+                <span
+                  className={styles.tabBadge}
+                  id="badgeReturn"
+                  style={{ color: "var(--good)" }}
+                  title={`${confirmedToday.size}/${DAILY_RETURN_QUESTIONS.length} daily return census questions`}
+                  aria-label={`${confirmedToday.size} of ${DAILY_RETURN_QUESTIONS.length} daily return census questions confirmed`}
+                >
                   {confirmedToday.size}/{DAILY_RETURN_QUESTIONS.length}
                 </span>
               </button>
@@ -4631,7 +4639,7 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
           data-active={activeTab === "beds"}
         >
           <div className={styles.matrixControls}>
-            <div className={styles.podFilters} role="group" aria-label="Filter by Pod">
+            <div className={styles.podFilters} role="group" aria-label="Filter by designation">
               <button
                 type="button"
                 className={styles.podFilterBtn}
@@ -4640,30 +4648,26 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
               >
                 All Beds ({unit.beds})
               </button>
-              <button
-                type="button"
-                className={styles.podFilterBtn}
-                aria-pressed={selectedPod === "poda"}
-                onClick={() => setSelectedPod("poda")}
-              >
-                Pod A Secure East ({bedsList.filter((b) => b.podId === "poda").length})
-              </button>
-              <button
-                type="button"
-                className={styles.podFilterBtn}
-                aria-pressed={selectedPod === "podb"}
-                onClick={() => setSelectedPod("podb")}
-              >
-                Pod B Secure West ({bedsList.filter((b) => b.podId === "podb").length})
-              </button>
-              <button
-                type="button"
-                className={styles.podFilterBtn}
-                aria-pressed={selectedPod === "hdu"}
-                onClick={() => setSelectedPod("hdu")}
-              >
-                HDU High Dependency ({bedsList.filter((b) => b.podId === "hdu").length})
-              </button>
+              {isMixed ? (
+                <>
+                  <button
+                    type="button"
+                    className={styles.podFilterBtn}
+                    aria-pressed={selectedPod === "locked"}
+                    onClick={() => setSelectedPod("locked")}
+                  >
+                    Locked ({bedsList.filter((b) => b.podId === "locked").length})
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.podFilterBtn}
+                    aria-pressed={selectedPod === "open"}
+                    onClick={() => setSelectedPod("open")}
+                  >
+                    Open ({bedsList.filter((b) => b.podId === "open").length})
+                  </button>
+                </>
+              ) : null}
             </div>
             <div className={styles.podTitleBar}>
               <span className={styles.glanceSub}>
@@ -4729,7 +4733,9 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
                   {bed.isSpecialling ? (
                     <span className={`${styles.tagChip} ${styles.special}`}>1:1 Special</span>
                   ) : null}
-                  {bed.isHdu ? <span className={`${styles.tagChip} ${styles.legal}`}>HDU Suite</span> : null}
+                  {bed.designation ? (
+                    <span className={`${styles.tagChip} ${styles.legal}`}>{bed.designation}</span>
+                  ) : null}
                   {bed.legalStatusLabel ? (
                     <span className={`${styles.tagChip} ${styles.legal}`}>{bed.legalStatusLabel}</span>
                   ) : null}
@@ -4756,11 +4762,15 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
                 <span>1:1 Special:</span>
                 <strong>{bedsList.filter((b) => b.isSpecialling).length}</strong>
               </span>
-              <span className={styles.quickBarPill}>
-                <span className={`${styles.statusDot} ${styles.hduDot}`} />
-                <span>HDU / Acuity:</span>
-                <strong>{bedsList.filter((b) => b.isHdu).length}</strong>
-              </span>
+              {isMixed ? (
+                <span className={styles.quickBarPill}>
+                  <span className={`${styles.statusDot} ${styles.readyDot}`} />
+                  <span>Locked / Open:</span>
+                  <strong>
+                    {lockedBeds} / {openBedsCount}
+                  </strong>
+                </span>
+              ) : null}
             </div>
             <div className={styles.quickBarRoster}>Staffing: recorded specialling {staffedSpecialling}</div>
           </div>

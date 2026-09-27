@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Fragment,
+  useDeferredValue,
   useEffect,
   useId,
   useMemo,
@@ -232,10 +233,11 @@ export function WardGlobalSearch({
   const router = useRouter();
 
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
-  const trimmed = query.trim();
+  const trimmed = deferredQuery.trim();
 
   const smartResults = useMemo(
     () =>
@@ -388,7 +390,7 @@ export function WardGlobalSearch({
 
   const options = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
-  const showPopup = open && trimmed.length > 0;
+  const showPopup = open && query.trim().length > 0 && trimmed.length > 0;
 
   /*
    * THE ACTIVE ROW RESETS WHENEVER THE OPTION LIST CHANGES IDENTITY — same render-phase adjustment

@@ -828,10 +828,11 @@ export function useWardFlow(): WardFlowContextValue {
   return context;
 }
 
-export function useWardFlowClock(): Instant {
+export function useWardFlowClock(fallback?: Instant): Instant {
   const clock = useContext(WardFlowClockContext);
   const wardFlow = useContext(WardFlowContext);
   if (clock !== null) return clock;
   if (wardFlow) return wardFlow.now;
+  if (fallback !== undefined) return fallback;
   throw new Error("useWardFlowClock must be used within WardFlowProvider.");
 }

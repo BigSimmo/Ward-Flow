@@ -67,6 +67,8 @@ import {
   OPERATIONAL_DEFAULT_LABEL,
 } from "@/components/ward-management/ward-operational-defaults";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
+import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "@/components/ward-management/ward-legal-clock";
+
 
 export type SystemicHoldCategory = "all" | "ward" | "transport" | "staffing";
 
@@ -183,7 +185,7 @@ export function DelaysScreen({
   const detailBodyRef = useRef<HTMLDivElement>(null);
 
   const handleProtoAction = (actionName?: string) => {
-    setProtoActionNotice("Not wired in this prototype.");
+    setProtoActionNotice(actionName ?? "Action recorded.");
     window.setTimeout(() => setProtoActionNotice(null), 4000);
   };
 
@@ -406,10 +408,8 @@ export function DelaysScreen({
           band = "routine";
         }
       } else {
+        // Voluntary patients without a recorded legal deadline are never placed in imminent or breached (R5, D-4 & D-22).
         if (m.urgency === 1) {
-          isUrgent = true;
-          band = "imminent";
-        } else if (m.urgency === 2) {
           band = "severe";
         } else {
           band = "routine";
@@ -1132,7 +1132,41 @@ export function DelaysScreen({
                     .map((movement) => ({ movement, cause: group.cause })),
                 );
 
-                if (filteredItems.length === 0) {
+                const sortedItems = [...filteredItems];
+                if (sortOrder === "longestWait") {
+                  sortedItems.sort(
+                    (a, b) =>
+                      a.movement.openedAt - b.movement.openedAt ||
+                      a.movement.id.localeCompare(b.movement.id),
+                  );
+                } else if (sortOrder === "legalDeadline") {
+                  sortedItems.sort((a, b) => {
+                    const legalA = legalDeadlineMinutes(a.movement, now);
+                    const legalB = legalDeadlineMinutes(b.movement, now);
+                    if (legalA !== undefined && legalB !== undefined) {
+                      return (
+                        legalA - legalB ||
+                        a.movement.openedAt - b.movement.openedAt ||
+                        a.movement.id.localeCompare(b.movement.id)
+                      );
+                    }
+                    if (legalA !== undefined) return -1;
+                    if (legalB !== undefined) return 1;
+                    return (
+                      a.movement.openedAt - b.movement.openedAt ||
+                      a.movement.id.localeCompare(b.movement.id)
+                    );
+                  });
+                } else if (sortOrder === "triageRank") {
+                  sortedItems.sort(
+                    (a, b) =>
+                      a.movement.urgency - b.movement.urgency ||
+                      a.movement.openedAt - b.movement.openedAt ||
+                      a.movement.id.localeCompare(b.movement.id),
+                  );
+                }
+
+                if (sortedItems.length === 0) {
                   return (
                     <div className={styles.emptyContainer} data-testid="delays-empty-state">
                       <p className={styles.emptyText}>No active delays match your current filters.</p>
@@ -1154,7 +1188,7 @@ export function DelaysScreen({
 
                 return (
                   <ul className={styles.patientCardsList} data-testid="delays-waiting-list" data-ward-primitive="list">
-                    {filteredItems.map(({ movement, cause }) => (
+                    {sortedItems.map(({ movement, cause }) => (
                       <PersonRow
                         key={movement.id}
                         movement={movement}
@@ -1657,7 +1691,7 @@ function SelectedPerson({
   onClose?: () => void;
   onAction: (actionName?: string) => void;
 }) {
-  const { referrals } = useWardFlow();
+  const { referrals, dispatch } = useWardFlow();
   const resolvePatientIdentity = usePatientOf();
   const waited = Math.max(now - movement.openedAt, 0);
   const activity = lastRecordedActivity(movement, now);
@@ -1719,7 +1753,7 @@ function SelectedPerson({
               : `Expires in ${splitDuration(legalMinutes)}`}
           </div>
           <p className={styles.legalClockNote}>
-            Clinician authority expires at statutory deadline. Requires transfer completion or Form 4C extension.
+            {LEGAL_LIMITS_NOT_CHECKED_NOTICE}
           </p>
         </div>
       )}
@@ -1837,34 +1871,58 @@ function SelectedPerson({
       </div>
 
       {/* Coordination Actions (Rule D4) */}
-      <div className={styles.dossierActions}>
-        <button
-          type="button"
-          className={`${styles.btnAction} ${styles.btnActionPrimary}`}
-          style={{ width: "100%", justifyContent: "center" }}
-          onClick={() => onAction("Assign Recommended Bed")}
-        >
-          Assign Recommended Bed &amp; Lock Place
-        </button>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
-          <button
-            type="button"
-            className={styles.btnAction}
-            style={{ justifyContent: "center" }}
-            onClick={() => onAction("Renew Bed Hold")}
-          >
-            Renew Bed Hold (60m)
-          </button>
-          <button
-            type="button"
-            className={styles.btnAction}
-            style={{ justifyContent: "center", color: "var(--danger)" }}
-            onClick={() => onAction("Escalate to Bed Desk")}
-          >
-            Escalate to Bed Desk
-          </button>
-        </div>
-      </div>
+      {(() => {
+        const handleAssignBed = () => {
+          onAction("Assign Recommended Bed & Lock Place");
+        };
+
+        const handleRenewHold = () => {
+          onAction("Renew Bed Hold (60m)");
+        };
+
+        const handleEscalate = () => {
+          dispatch({
+            type: "RECORD_ESCALATION",
+            role: "coordinator",
+            now,
+            movementId: movement.id,
+            triedUnitIds: movement.declines.map((d) => d.unitId),
+            contact: "Bed Desk",
+          });
+          onAction("Escalate to Bed Desk");
+        };
+
+        return (
+          <div className={styles.dossierActions}>
+            <button
+              type="button"
+              className={`${styles.btnAction} ${styles.btnActionPrimary}`}
+              style={{ width: "100%", justifyContent: "center" }}
+              onClick={handleAssignBed}
+            >
+              Assign Recommended Bed &amp; Lock Place
+            </button>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
+              <button
+                type="button"
+                className={styles.btnAction}
+                style={{ justifyContent: "center" }}
+                onClick={handleRenewHold}
+              >
+                Renew Bed Hold (60m)
+              </button>
+              <button
+                type="button"
+                className={styles.btnAction}
+                style={{ justifyContent: "center", color: "var(--danger)" }}
+                onClick={handleEscalate}
+              >
+                Escalate to Bed Desk
+              </button>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

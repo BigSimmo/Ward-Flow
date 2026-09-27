@@ -94,7 +94,7 @@ export function checkSafeguardAlert(date: Date | null): SafeguardAlertResult {
 }
 
 /**
- * Formats a Date into standard en-AU date & time: "Fri, 25 Sep 2026, 17:00".
+ * Formats a Date into standard en-AU date & time: "Fri, 25 Sep 2026, 17:00" in AWST (Australia/Perth).
  */
 export function formatStatutoryDateTime(d: Date): string {
   if (Number.isNaN(d.getTime())) return "Not recorded";
@@ -103,10 +103,15 @@ export function formatStatutoryDateTime(d: Date): string {
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: "Australia/Perth",
   });
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  return `${dayStr}, ${hours}:${minutes}`;
+  const timeStr = d.toLocaleTimeString("en-AU", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Australia/Perth",
+  });
+  return `${dayStr}, ${timeStr}`;
 }
 
 export function toDateInputValue(d: Date): string {
@@ -194,21 +199,15 @@ export const calculateForm4B = getForm4BRecord;
 
 /**
  * Safely resolves the current reference clock moment.
- * Reads `useWardFlowClock()` when mounted inside `WardFlowProvider`,
+ * Reads `useWardFlowClock()` at top level when mounted inside `WardFlowProvider`,
  * or falls back to standard wall clock when mounted in tests or standalone.
  */
 function useResolvedClock(override?: Date): Date {
-  let demoInstant: number | null = null;
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    demoInstant = useWardFlowClock();
-  } catch {
-    demoInstant = null;
-  }
+  const demoInstant = useWardFlowClock(-1);
 
   return useMemo(() => {
     if (override) return override;
-    if (demoInstant !== null) {
+    if (demoInstant !== -1) {
       const today = new Date();
       const dayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       return new Date(dayZero.getTime() + demoInstant * 60_000);
@@ -221,6 +220,7 @@ export interface WardMhaCalculatorProps {
   initialForm?: MhaFormType;
   initialStartDate?: Date;
   referenceNow?: Date;
+  now?: Date;
   className?: string;
 }
 
@@ -228,9 +228,11 @@ export function WardMhaCalculator({
   initialForm = "1A",
   initialStartDate,
   referenceNow,
+  now: propNow,
   className,
 }: WardMhaCalculatorProps) {
-  const now = useResolvedClock(referenceNow);
+  const effectiveNow = propNow ?? referenceNow;
+  const now = useResolvedClock(effectiveNow);
   const defaultDate = initialStartDate ?? now;
 
   const [selectedForm, setSelectedForm] = useState<MhaFormType>(initialForm);

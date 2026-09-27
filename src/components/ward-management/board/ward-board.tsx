@@ -913,7 +913,13 @@ export function boardArrivalAllowed(movement: Movement): boolean {
   return movement.stage === "moving" && movement.transport?.collectedAt !== undefined;
 }
 
-export function WardBoard({ unitId }: { unitId: string }) {
+export function WardBoard({
+  unitId,
+  requireConfirmation = process.env.NODE_ENV !== "test",
+}: {
+  unitId: string;
+  requireConfirmation?: boolean;
+}) {
   // Live state, on the same terms as every other screen. Named `liveUnits` only because `unit`
   // below is the one this board is about; `now` and `admissions` keep their names so every
   // derivation beneath reads unchanged.
@@ -935,9 +941,42 @@ export function WardBoard({ unitId }: { unitId: string }) {
   const now = useWardFlowClock();
   const [blockerDialogItem, setBlockerDialogItem] = useState<ShiftTileItem | null>(null);
   const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker>(BED_RELEASE_BLOCKERS[0]);
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    kind: "leaving" | "away_at_ed";
+    who: string;
+    item?: ShiftTileItem;
+    admissionId?: string;
+  } | null>(null);
   const dialogTriggerRef = useRef<HTMLElement | null>(null);
   const blockerDialogRef = useRef<HTMLDivElement | null>(null);
   const blockerCloseBtnRef = useRef<HTMLButtonElement | null>(null);
+  const confirmDialogRef = useRef<HTMLDivElement | null>(null);
+  const confirmCloseBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  const closeConfirmDialog = useCallback(() => {
+    setPendingConfirm(null);
+    setTimeout(() => {
+      dialogTriggerRef.current?.focus();
+    }, 0);
+  }, []);
+
+  useEffect(() => {
+    if (pendingConfirm) {
+      confirmCloseBtnRef.current?.focus();
+    }
+  }, [pendingConfirm]);
+
+  useEffect(() => {
+    if (!pendingConfirm) return;
+    const handleKeyDown = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        closeConfirmDialog();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [pendingConfirm, closeConfirmDialog]);
 
   const closeBlockerDialog = useCallback(() => {
     setBlockerDialogItem(null);
@@ -1499,9 +1538,47 @@ export function WardBoard({ unitId }: { unitId: string }) {
     });
   }
 
-  const handleShiftAction = useCallback(
-    (item: ShiftTileItem, word: string) => {
-      if (word === "They have left") {
+  const handleConfirmAction = () => {
+    if (!pendingConfirm) return;
+    if (pendingConfirm.kind === "leaving") {
+      const admissionId = pendingConfirm.admissionId || pendingConfirm.item?.selectableKey;
+      if (!admissionId) return;
+      dispatchAndReport(
+        () =>
+          dispatch({
+            type: "RECORD_LEAVING",
+            role: "ward",
+            now,
+            admissionId,
+            actingUnitId: unit.id,
+            leavingDestination,
+          }),
+        `Recorded departure: ${pendingConfirm.who} has left the ward.`,
+        "Recorded departure: this patient has left the ward.",
+      );
+      if (selectedTile && admissionId === selectedTile.key) {
+        closeDetail();
+      }
+    } else if (pendingConfirm.kind === "away_at_ed" && pendingConfirm.admissionId) {
+      dispatchAndReport(
+        () =>
+          dispatch({
+            type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
+            role: "ward",
+            now,
+            admissionId: pendingConfirm.admissionId!,
+            actingUnitId: unit.id,
+          }),
+        `Recorded: ${pendingConfirm.who} is currently away at an emergency department. Their bed is still held.`,
+        "Recorded: patient is currently away at an emergency department.",
+      );
+    }
+    closeConfirmDialog();
+  };
+
+  const handleShiftAction = (item: ShiftTileItem, word: string) => {
+    if (word === "They have left") {
+      const executeLeaving = () => {
         dispatchAndReport(
           () =>
             dispatch({
@@ -1515,82 +1592,92 @@ export function WardBoard({ unitId }: { unitId: string }) {
           `Recorded departure: ${item.who || nameFor(item.selectableKey)} has left the ward.`,
           "Recorded departure: this patient has left the ward.",
         );
+      };
+
+      if (!requireConfirmation) {
+        executeLeaving();
         return;
       }
-      if (word === "Patient arrived" || word === "They have arrived") {
-        const matchingMovement = movementForBoardArrival(movements, item.selectableKey);
-        if (!matchingMovement) {
-          const msg = `Cannot confirm arrival: no movement matches ${item.who || nameFor(item.selectableKey)}.`;
-          setToastMessage(msg);
-          announceToWardShell("Cannot confirm arrival: no movement matches this patient.");
-          return;
-        }
-        dispatchAndReport(
-          () =>
+
+      setPendingConfirm({
+        kind: "leaving",
+        who: item.who || nameFor(item.selectableKey),
+        item,
+        admissionId: item.selectableKey,
+      });
+      return;
+    }
+    if (word === "Patient arrived" || word === "They have arrived") {
+      const matchingMovement = movementForBoardArrival(movements, item.selectableKey);
+      if (!matchingMovement) {
+        const msg = `Cannot confirm arrival: no movement matches ${item.who || nameFor(item.selectableKey)}.`;
+        setToastMessage(msg);
+        announceToWardShell("Cannot confirm arrival: no movement matches this patient.");
+        return;
+      }
+      dispatchAndReport(
+        () =>
+          dispatch({
+            type: "PATIENT_ARRIVED",
+            role: "ward",
+            now,
+            movementId: matchingMovement.id,
+            actingUnitId: unit.id,
+          }),
+        `Patient arrived: ${item.who || nameFor(item.selectableKey)} confirmed on the ward.`,
+        "Patient arrived: this patient confirmed on the ward.",
+      );
+      return;
+    }
+    if (word === "Mark them back") {
+      // Owner ruling 2026-09-25: a leave bed names its stay, so this ends THIS person's own leave,
+      // if they have one, and never the ward's first leave bed or an invented id (the old guess
+      // could end somebody else's leave).
+      const matchingLeave = leaveBeds.find((b) => b.admissionId === item.selectableKey);
+      const isAwayAtEd = occupants.some((o) => o.key === item.selectableKey && o.awayAtEdHours !== null);
+      const who = item.who || nameFor(item.selectableKey);
+      if (!matchingLeave && !isAwayAtEd) {
+        const msg = `Nothing to mark back: no leave or emergency department absence is recorded for ${who}. Nothing was changed.`;
+        setToastMessage(msg);
+        announceToWardShell(
+          "Nothing to mark back: no leave or emergency department absence is recorded for this patient. Nothing was changed.",
+        );
+        return;
+      }
+      dispatchAndReport(
+        () => {
+          if (matchingLeave) {
             dispatch({
-              type: "PATIENT_ARRIVED",
+              type: "END_LEAVE_BED",
               role: "ward",
               now,
-              movementId: matchingMovement.id,
+              leaveBedId: matchingLeave.id,
               actingUnitId: unit.id,
-            }),
-          `Patient arrived: ${item.who || nameFor(item.selectableKey)} confirmed on the ward.`,
-          "Patient arrived: this patient confirmed on the ward.",
-        );
-        return;
-      }
-      if (word === "Mark them back") {
-        // Owner ruling 2026-09-25: a leave bed names its stay, so this ends THIS person's own leave,
-        // if they have one, and never the ward's first leave bed or an invented id (the old guess
-        // could end somebody else's leave).
-        const matchingLeave = leaveBeds.find((b) => b.admissionId === item.selectableKey);
-        const isAwayAtEd = occupants.some((o) => o.key === item.selectableKey && o.awayAtEdHours !== null);
-        const who = item.who || nameFor(item.selectableKey);
-        if (!matchingLeave && !isAwayAtEd) {
-          const msg = `Nothing to mark back: no leave or emergency department absence is recorded for ${who}. Nothing was changed.`;
-          setToastMessage(msg);
-          announceToWardShell(
-            "Nothing to mark back: no leave or emergency department absence is recorded for this patient. Nothing was changed.",
-          );
-          return;
-        }
-        dispatchAndReport(
-          () => {
-            if (matchingLeave) {
-              dispatch({
-                type: "END_LEAVE_BED",
-                role: "ward",
-                now,
-                leaveBedId: matchingLeave.id,
-                actingUnitId: unit.id,
-              });
-            }
-            if (isAwayAtEd) {
-              dispatch({
-                type: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
-                role: "ward",
-                now,
-                admissionId: item.selectableKey!,
-                actingUnitId: unit.id,
-              });
-            }
-          },
-          `Returned to ward: ${who} marked back${isAwayAtEd && !matchingLeave ? " from the emergency department" : " from leave"}.`,
-          `Returned to ward: this patient marked back${isAwayAtEd && !matchingLeave ? " from the emergency department" : " from leave"}.`,
-        );
-        return;
-      }
-      if (word === "Record a blocker") {
-        dialogTriggerRef.current =
-          typeof document !== "undefined" ? (document.activeElement as HTMLElement | null) : null;
-        setSelectedBlocker(BED_RELEASE_BLOCKERS[0]);
-        setBlockerDialogItem(item);
-        return;
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- nameFor is a plain lookup over admissions, patients, movements and the identity projection, all listed
-    [dispatch, dispatchAndReport, now, unit.id, leavingDestination, movements, leaveBeds, occupants, admissions, patients, resolvePatientIdentity],
-  );
+            });
+          }
+          if (isAwayAtEd) {
+            dispatch({
+              type: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
+              role: "ward",
+              now,
+              admissionId: item.selectableKey!,
+              actingUnitId: unit.id,
+            });
+          }
+        },
+        `Returned to ward: ${who} marked back${isAwayAtEd && !matchingLeave ? " from the emergency department" : " from leave"}.`,
+        `Returned to ward: this patient marked back${isAwayAtEd && !matchingLeave ? " from the emergency department" : " from leave"}.`,
+      );
+      return;
+    }
+    if (word === "Record a blocker") {
+      dialogTriggerRef.current =
+        typeof document !== "undefined" ? (document.activeElement as HTMLElement | null) : null;
+      setSelectedBlocker(BED_RELEASE_BLOCKERS[0]);
+      setBlockerDialogItem(item);
+      return;
+    }
+  };
 
   const shiftDigest =
     shiftTab === "quiet"
@@ -2958,21 +3045,35 @@ export function WardBoard({ unitId }: { unitId: string }) {
                             type="button"
                             className={styles.leavingButton}
                             data-testid="ward-board-record-leaving-submit"
-                            onClick={() => {
-                              dispatchAndReport(
-                                () =>
-                                  dispatch({
-                                    type: "RECORD_LEAVING",
-                                    role: "ward",
-                                    now,
-                                    admissionId: selectedTile.key,
-                                    actingUnitId: unit.id,
-                                    leavingDestination,
-                                  }),
-                                `Recorded departure: ${selectedTile.who || nameFor(selectedTile.key)} has left the ward.`,
-                                "Recorded departure: this patient has left the ward.",
-                              );
-                              closeDetail();
+                            onClick={(e) => {
+                              const executeLeaving = () => {
+                                dispatchAndReport(
+                                  () =>
+                                    dispatch({
+                                      type: "RECORD_LEAVING",
+                                      role: "ward",
+                                      now,
+                                      admissionId: selectedTile.key,
+                                      actingUnitId: unit.id,
+                                      leavingDestination,
+                                    }),
+                                  `Recorded departure: ${selectedTile.who || nameFor(selectedTile.key)} has left the ward.`,
+                                  "Recorded departure: this patient has left the ward.",
+                                );
+                                closeDetail();
+                              };
+
+                              if (!requireConfirmation) {
+                                executeLeaving();
+                                return;
+                              }
+
+                              dialogTriggerRef.current = e.currentTarget;
+                              setPendingConfirm({
+                                kind: "leaving",
+                                who: selectedTile.who || nameFor(selectedTile.key),
+                                admissionId: selectedTile.key,
+                              });
                             }}
                           >
                             Record that they have left
@@ -3025,15 +3126,34 @@ export function WardBoard({ unitId }: { unitId: string }) {
                                 className={styles.detailSecondaryBtn}
                                 style={{ width: "100%" }}
                                 data-testid="ward-board-record-away-submit"
-                                onClick={() =>
-                                  dispatch({
-                                    type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
-                                    role: "ward",
-                                    now,
+                                onClick={(e) => {
+                                  const executeAway = () => {
+                                    dispatchAndReport(
+                                      () =>
+                                        dispatch({
+                                          type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
+                                          role: "ward",
+                                          now,
+                                          admissionId: selectedTile.key,
+                                          actingUnitId: unit.id,
+                                        }),
+                                      `Recorded: ${nameFor(selectedTile.key)} is currently away at an emergency department. Their bed is still held.`,
+                                      "Recorded: patient is currently away at an emergency department.",
+                                    );
+                                  };
+
+                                  if (!requireConfirmation) {
+                                    executeAway();
+                                    return;
+                                  }
+
+                                  dialogTriggerRef.current = e.currentTarget;
+                                  setPendingConfirm({
+                                    kind: "away_at_ed",
+                                    who: nameFor(selectedTile.key),
                                     admissionId: selectedTile.key,
-                                    actingUnitId: unit.id,
-                                  })
-                                }
+                                  });
+                                }}
                               >
                                 Record that they have gone to an emergency department
                               </button>
@@ -3311,6 +3431,143 @@ export function WardBoard({ unitId }: { unitId: string }) {
         <p className={styles.footnote} data-testid="ward-board-footnote">
           {unit.name} · {tiles.length} recorded bed{tiles.length === 1 ? "" : "s"}
         </p>
+
+        {pendingConfirm ? (
+          <div
+            ref={confirmDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-dialog-title"
+            aria-describedby="confirm-dialog-description"
+            id="ward-board-confirm-dialog"
+            tabIndex={-1}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) closeConfirmDialog();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.stopPropagation();
+                closeConfirmDialog();
+              } else {
+                trapDialogFocus(e, confirmDialogRef.current);
+              }
+            }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "var(--scrim)",
+              backdropFilter: "blur(4px)",
+              WebkitBackdropFilter: "blur(4px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
+              padding: "1rem",
+            }}
+          >
+            <div
+              style={{
+                background: "var(--surface)",
+                color: "var(--ink)",
+                padding: "1.5rem",
+                borderRadius: "var(--r1, 0.5rem)",
+                maxWidth: "30rem",
+                width: "92%",
+                boxShadow: "var(--lift)",
+                border: "1px solid var(--line-strong)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "1rem",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "0.5rem",
+                }}
+              >
+                <h3
+                  id="confirm-dialog-title"
+                  style={{
+                    margin: 0,
+                    fontSize: "1.15rem",
+                    fontWeight: 600,
+                    color: "var(--ink)",
+                  }}
+                >
+                  {pendingConfirm.kind === "leaving"
+                    ? "Confirm patient departure"
+                    : "Confirm emergency department transfer"}
+                </h3>
+                <button
+                  ref={confirmCloseBtnRef}
+                  type="button"
+                  onClick={closeConfirmDialog}
+                  aria-label="Close dialog"
+                  data-testid="ward-board-confirm-close"
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "var(--ink-subtle)",
+                    cursor: "pointer",
+                    fontSize: "1.25rem",
+                    padding: "0.25rem 0.5rem",
+                    borderRadius: "var(--r0, 0.25rem)",
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <p
+                id="confirm-dialog-description"
+                style={{ margin: 0, fontSize: "0.95rem", color: "var(--ink-muted)", lineHeight: 1.5 }}
+              >
+                {pendingConfirm.kind === "leaving" ? (
+                  <>
+                    Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has left the ward?
+                    This will record their discharge and make this bed available for new admissions.
+                  </>
+                ) : (
+                  <>
+                    Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has gone to an emergency department?
+                    The bed will remain held for them while they are away.
+                  </>
+                )}
+              </p>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "0.75rem",
+                  marginTop: "0.5rem",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={closeConfirmDialog}
+                  data-testid="ward-board-confirm-cancel"
+                  className={styles.detailSecondaryBtn}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmAction}
+                  data-testid="ward-board-confirm-proceed"
+                  className={styles.detailPrimaryBtn}
+                  data-tone={pendingConfirm.kind === "leaving" ? "warn" : undefined}
+                >
+                  {pendingConfirm.kind === "leaving" ? "Record departure" : "Record ED transfer"}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {toastMessage ? (
           <div className={styles.toast} role="status" aria-live="polite" data-testid="ward-board-toast">
