@@ -4,6 +4,14 @@ A ward and bed-coordination prototype for mental health services: referrals, pat
 
 **All patient data is synthetic. This is a development prototype, not an approved system for real patient care.**
 
+## Hosted prototype
+
+[Open Ward Flow](https://ward-flow-production.up.railway.app/).
+
+Railway hosts this repository in a separate **Ward Flow** project, connected to `main`. See [hosting and database decisions](docs/hosting.md) for configuration and limitations.
+
+**Ward Flow must not connect to Supabase. Azure is the intended future database platform.** No Azure database has been provisioned or connected; the current prototype uses browser-local synthetic state.
+
 ## About this repository
 
 This is the public source snapshot of the main local Ward Flow branch, published with the owner's permission on 27 September 2026. It includes the application's source, synthetic fixtures, tests, documentation and existing tooling. It starts with fresh Git history, separate from PsychSift.
@@ -29,7 +37,7 @@ Use the URL printed by the launcher and open `/mockups/ward-flow`. Ward Flow use
 
 This upload preserves the current project; it does not claim a fresh build or test pass. Existing scripts, historical documents and local workflow instructions may still refer to the original workstation, local-only development policy or retired PsychSift tooling. Those references do not connect this repository to the original deployment.
 
-GitHub Actions is disabled for the initial publication because the inherited workflow still includes unrelated provider and deployment checks. No hosting or live database connection has been configured by this publication. Do not enable inherited automation without adapting and reviewing it for this repository.
+GitHub Actions remains disabled because the inherited workflow still includes unrelated provider and deployment checks. Railway deployment is a separate GitHub integration. Do not enable inherited automation without adapting and reviewing it for this repository. No database connection has been configured.
 
 Git history, uncommitted work from other sessions, local environment files, installed dependencies, build output and machine-specific agent/editor configuration were not uploaded. All retained original files except this README are unchanged from the recorded source snapshot; the original README is preserved above.
 
