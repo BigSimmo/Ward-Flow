@@ -1,0 +1,232 @@
+/*
+ * The single header row: search, the figures toggle, and tasks.
+ *
+ * Owner's change 2026-09-07 — before this the chrome was four siblings stacked down the page, which
+ * read as four bars rather than one header and spent four rows saying so.
+ */
+.bar {
+  composes: wardTokens from "./ward-tokens.module.css";
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ward-space-10);
+  padding: var(--ward-space-10) var(--ward-space-16);
+  border-bottom: 0.0625rem solid var(--ward-border);
+  background: var(--ward-chrome);
+
+  /*
+   * 🔴 **STICKY ON THE BAR, NOT ON THE PANEL — AND THAT IS THE SAFETY DECISION, NOT A LAYOUT ONE.**
+   *
+   * The figures panel drops BELOW this row and scrolls away with the page, which is right for a
+   * drop-down. **What must never scroll away is the alarm**, and the alarm lives on the toggle,
+   * which is in this row. So a coordinator halfway down a 6043px capacity board still sees "1
+   * deadline passed" even with the panel shut and the figures long gone off screen.
+   *
+   * ⚠️ Sticky is safe HERE and is not safe one level down: this is mounted in the ward LAYOUT, a
+   * sibling of `{children}`, so its nearest scrollport is the window. **24 ward stylesheets declare
+   * `.main { overflow-y: auto }` inside a `min-height` grid — a scrollport that can never scroll**,
+   * and anything sticky inside one of those applies, computes correctly and never moves.
+   *
+   * ⚠️ **BELOW 40rem, STICKY IS SUSPENDED — SEE THE MEDIA QUERY AT THE FOOT OF THIS FILE.** This is
+   * the one width where the safety argument above no longer holds unmodified: ClinicalRail's own
+   * `.phoneBar` (`ward-sidebar.module.css`) is a SECOND top-anchored element at that width
+   * (`fixed; top: 0; z-index: 30`), and it paints over this row rather than beside it.
+   */
+  position: sticky;
+  top: 0;
+  z-index: var(--ward-z-sticky);
+  box-shadow:
+    0 4px 6px -1px color-mix(in srgb, var(--ink) 4%, transparent),
+    0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
+
+  /*
+   * ⚠️ **NO `overflow-x: auto` HERE — REMOVED 2026-09-07, AND THAT REMOVAL IS ITSELF THE FIX.** It
+   * used to sit here as a defensive floor, but `overflow-x` set to anything other than `visible`
+   * forces `overflow-y` to compute to `auto` too (CSS Overflow §3), which turned this row into a
+   * scroll container that CLIPPED the search popup living inside it — `ward-global-search.module.css`'s
+   * `.popup` is `position: absolute`, a descendant of this box, so it was cut off after 377px of a
+   * 384px-tall result list and unreachable by mouse at every measured width. `flex-wrap: wrap` above
+   * is the row's real answer to "not enough room": a control drops to a second line instead of being
+   * clipped or silently scrollable in a box nothing hints is scrollable.
+   */
+}
+
+/*
+ * ⚠️ 2026-09-07 AUDIT FIX (fault 3) — see the doc comment on `position: sticky` above. Dropping
+ * sticky here, rather than offsetting this row under `.phoneBar`, is the fix the audit measured and
+ * asked for: `.phoneBar` is the one top-anchored phone element `tests/ward-chrome-owner.test.ts`
+ * permits, and it is owned by a different file. This row simply stops competing for the top edge at
+ * the same width `.phoneBar` itself appears (`ward-sidebar.module.css`'s own `max-width: 40rem`).
+ *
+ * 🔴 **AND IT FIXED THE WRONG HALF — THE RESERVE BELOW IS THE OTHER HALF, ADDED 2026-09-08.**
+ * Dropping sticky removed the Z-ORDER competition and reserved NO SPACE, because `.phoneBar` is
+ * `position: fixed` and a fixed element occupies no flow space at all. So this row went on starting
+ * at y=0, underneath an opaque 56px bar, and its FIRST control — the whole global search — spanned
+ * y=10..79 with its top 56px painted over. A tap at the search input's own centre landed on the
+ * sidebar's brand link. Unreachable on every ward route at 375px, at every moment between the fix
+ * and this one.
+ *
+ * ⚠️ **THE CONTRACT WAS ALREADY WRITTEN DOWN AND THIS FILE WAS THE ONE PLACE NOT KEEPING IT.**
+ * `.phoneBar`'s own doc comment (`ward-sidebar.module.css`) says it plainly: "each shell reserves
+ * the `--spacing-ward-phone-bar` in its own phone media query". Ten shell stylesheets do exactly
+ * that. `WardChromeHeader` was added later, above all of them in the flow, and never joined in — so
+ * the reserve every screen makes now happens 56px too low, BELOW this row instead of above it.
+ *
+ * ⚠️ **PADDING, NOT MARGIN, DELIBERATELY.** This row paints a background. A margin would leave a
+ * transparent 56px strip between `.phoneBar` and this row showing the page through it; padding
+ * extends this row's own background up behind the opaque bar, where nobody ever sees it.
+ *
+ * ⚠️ **KNOWN, DELIBERATE REDUNDANCY, LEFT FOR THE OWNER RATHER THAN TAKEN HERE.** Every shell
+ * still reserves its own 56px directly below this row, which was correct when nothing sat above
+ * them and is now a second gap. Removing those ten reserves is the tidier end state, but it is ten
+ * files and it fights `tests/ward-sidebar-phone-contract.test.ts`, which pins that reserve per
+ * shell. Reachability is the defect; whitespace is a preference. Do not "tidy" the ten shells
+ * without re-reading that contract test first — a shell that reserves a different amount from its
+ * siblings is worse than one that reserves none, in that file's own words.
+ */
+@media (max-width: 40rem) {
+  .bar {
+    position: static;
+    padding-top: var(--spacing-ward-phone-bar);
+  }
+}
+
+/*
+ * ⚠️ **THE TASKS COUNT IS NOT A BADGE**, and the wording is the reason. A bare number beside a label
+ * reads as "new since you last looked". Every row behind this control is a standing clinical or
+ * legal fact that leaves when the fact resolves, never when somebody glances at it — so the control
+ * says what the number means.
+ */
+.tasks {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+  min-height: var(--spacing-tap);
+  padding: 0 var(--ward-space-12);
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-md);
+  background: var(--ward-chrome);
+  color: var(--ward-heading);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tasksCount {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.tasksNote {
+  color: var(--ward-muted);
+  font-size: var(--text-xs);
+  font-weight: 400;
+}
+
+/*
+ * A plain destination, not a control — no derived data and no count (a Print button already lives
+ * on the handover screen itself, per that route's own header). Sized to the same tap floor as
+ * every other control in this row even though it carries no border of its own, so its clickable
+ * area is never smaller than its bordered neighbours.
+ */
+.handover {
+  display: flex;
+  align-items: center;
+  min-height: var(--spacing-tap);
+  padding: 0 var(--ward-space-8);
+  color: var(--ward-heading);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.handover:hover {
+  text-decoration: underline;
+}
+
+/*
+ * ⚠️ **THE FRESHNESS LINE MUST NEVER SAY "TODAY".** `rollupFreshness` (`ward-morning-rollup.ts`)
+ * reports whether a unit's allocatable count has EVER been confirmed — there is no day-boundary
+ * comparison in that derivation — so the string built in `ward-chrome-header.tsx` reads "N of M
+ * wards have confirmed" and nothing that implies a timeframe. Enforced at the string's own call
+ * site, not here; this rule is recorded again in CSS because the class exists for no other reason.
+ */
+.freshness {
+  color: var(--ward-muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/*
+ * THE ONE ACTION THAT CHANGES WITH THE ROLE (`ward-chrome-header.tsx`'s `roleAction`). Styled as
+ * the row's one filled control — every other control here is an outline or a bare row — because
+ * this is the single thing the header is asking the reader to go and do next, and it must read as
+ * more than a fourth destination link.
+ */
+.action {
+  display: flex;
+  align-items: center;
+  min-height: var(--spacing-tap);
+  padding: 0 var(--ward-space-16);
+  border: 0.0625rem solid var(--ward-blue);
+  border-radius: var(--radius-md);
+  background: var(--ward-blue);
+  color: var(--surface);
+  font-size: var(--text-sm);
+  font-weight: 650;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.action:hover {
+  text-decoration: underline;
+}
+
+/*
+ * At phone width the row is already carrying search, the figures toggle and tasks. The explanatory
+ * words go and the count stays: a count with no explanation is still honest, and it is only the
+ * BADGE READING the words exist to prevent — a reading that needs room to be worth spending.
+ *
+ * `.freshness` goes further and disappears outright, rather than losing only a word: unlike the
+ * tasks count, it carries no alarm and no action of its own — it is a status sentence with no
+ * short form worth keeping over the Handover link and the role action beside it.
+ */
+@media (max-width: 30rem) {
+  .tasksNote {
+    display: none;
+  }
+
+  .freshness {
+    display: none;
+  }
+}
+
+@media (forced-colors: active) {
+  /* Colour is replaced here and geometry is not, so the control keeps a drawn edge rather than
+     relying on its background to separate it from the bar behind it. */
+  .tasks {
+    border-color: ButtonBorder;
+  }
+
+  /* Same reasoning as `.tasks` above, plus the filled control needs its own border colour once the
+     background it currently reads as an edge against is gone. */
+  .action {
+    border-color: ButtonBorder;
+  }
+}
+
+@media print {
+  /*
+   * Search and tasks are controls; a printed handover sheet has no use for either, and
+   * `globals.css` already removes every `button` on paper. Nothing is restored here deliberately —
+   * what a coordinator wants printed is the FIGURES, and `ward-standing-strip.module.css` restores
+   * those on its own, independently of which way this row's toggle was left.
+   */
+  .bar {
+    display: none;
+  }
+}

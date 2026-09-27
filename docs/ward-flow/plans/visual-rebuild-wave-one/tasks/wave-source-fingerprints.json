@@ -1,0 +1,229 @@
+{
+  "date": "2026-09-13",
+  "branch": "codex/task-ward-flow-live-state-20260831",
+  "head": "1ef9ed3975078b789e9b5d70b3f000c64edc3809",
+  "planSha256": "1a78cb67348ba660315b01ff7d85c0cf651efcfce64a1e1a1ffe164c041124ba",
+  "state": "Final uncommitted working source after focused corrections; NOT the historical full-suite source freeze. Integrated gates remain blocked; see final-gate-checkpoint-r1.md.",
+  "files": [
+    {
+      "path": "scripts/ward-flow/mutation-run.mjs",
+      "sha256": "599970246aa88b01eea7fbe2f7f8e0c782a981ea67631cfb23880a4c2355d8aa"
+    },
+    {
+      "path": "scripts/ward-flow/screen-map.mjs",
+      "sha256": "b53e1926636eb6294990ab86b509628da2b88fa356672c84f7a20b24c26910f9"
+    },
+    {
+      "path": "scripts/ward-flow/screen-pairs.mjs",
+      "sha256": "8a27f53c58339a3262b0b357047e62e9be30e737c5c500d5ec63f564a307c327"
+    },
+    {
+      "path": "src/components/ui/tooltip.tsx",
+      "sha256": "66b3e90c9c70434625b42e04409e3f8d3895edcc19ffe358df831330cbca6192"
+    },
+    {
+      "path": "src/components/ward-management/board/board.module.css",
+      "sha256": "4af927af7c50e908182a13f024141a48a3681ee25ad2b9ebad8f54c89182e0ad"
+    },
+    {
+      "path": "src/components/ward-management/board/ward-board.tsx",
+      "sha256": "0a62d35026cc25d1b7492958783353f91c2c213cb0b0682977d958ef1108f161"
+    },
+    {
+      "path": "src/components/ward-management/community/community-screen.tsx",
+      "sha256": "9268ac97766f3baa702df49f1b4f8ad68ecf9a0c537451d83f6dd48eb5892294"
+    },
+    {
+      "path": "src/components/ward-management/community/community.module.css",
+      "sha256": "78c79c354bc8d45e97fe27c13623cb50f22f777f3c38a25beff91bffe5987d83"
+    },
+    {
+      "path": "src/components/ward-management/coordinator/coordinator-screen.tsx",
+      "sha256": "3a3ed8dfca64042e8db4cd510167f3ce15e6118bd3817998f5b9987ee70384ef"
+    },
+    {
+      "path": "src/components/ward-management/coordinator/coordinator.module.css",
+      "sha256": "deab7f980401812c03d9e626bbc79a3a28fdc7a2cdc7319d96cc623fab693d79"
+    },
+    {
+      "path": "src/components/ward-management/coordinator/pressure-strip.tsx",
+      "sha256": "30c2414ed844450383ff33709706caad6a05bb3fd8d76c834a5a15c85755302a"
+    },
+    {
+      "path": "src/components/ward-management/delays/delays-screen.tsx",
+      "sha256": "410a17f6f103b9a87b6ea53271ab4b28dacaf61c242d66c2d6a606f9cb1e6fcd"
+    },
+    {
+      "path": "src/components/ward-management/delays/delays.module.css",
+      "sha256": "08fd53810eca4070663b3755504b50cd29935dded5bbeb107ff781a1c8be1440"
+    },
+    {
+      "path": "src/components/ward-management/hub/hub-screen.tsx",
+      "sha256": "a045bed6a0f7dd334ddf1732266231d776bac759ef39421aa2c8a95f56cdde02"
+    },
+    {
+      "path": "src/components/ward-management/hub/hub.module.css",
+      "sha256": "fd269dd56faf2f6c3ff5664239f3d47e7b527580f8fd426fc9db9c5d99e2fd54"
+    },
+    {
+      "path": "src/components/ward-management/shell/ward-bar.module.css",
+      "sha256": "8d662564d7a080c02263351cfddacf2648a979c487dbedd5802289871c5ce6d0"
+    },
+    {
+      "path": "src/components/ward-management/shell/ward-bar.tsx",
+      "sha256": "68777072a9b6dab1512fa99dca8d641ff20da4d9ae6bfc5377af03fcf1f9a270"
+    },
+    {
+      "path": "src/components/ward-management/shell/ward-facade.ts",
+      "sha256": "c0b39d4951c87484e38db186df6a8b565a066efb8d9638dfd762f41d6a9cedfb"
+    },
+    {
+      "path": "src/components/ward-management/shell/ward-live-region.tsx",
+      "sha256": "e77ef79783647d3f1f516d9135b6f605509bc493301b2c7ddbd7b8e4547c56e3"
+    },
+    {
+      "path": "src/components/ward-management/shell/ward-rail.module.css",
+      "sha256": "22d93762515159bbb4958bfc558e6ef46ddc2abcdad94bc120230b26347a8c40"
+    },
+    {
+      "path": "src/components/ward-management/shell/ward-rail.tsx",
+      "sha256": "5b4d6e3d31d43305419f333906022b43f14820016d6615119bf51031857ec32d"
+    },
+    {
+      "path": "src/components/ward-management/statistics/statistics-claims-register.ts",
+      "sha256": "bade3e280d15594ad1730756f4f527ac4853c4c22606b58a29457af0353bec11"
+    },
+    {
+      "path": "src/components/ward-management/statistics/statistics-compare-screen.tsx",
+      "sha256": "8489a91a4a6e5e1e5e057bba23cbc707ebdb90ed543358e2412b842c779d4f8a"
+    },
+    {
+      "path": "src/components/ward-management/statistics/statistics-overview-screen.tsx",
+      "sha256": "cfcab7eaf962cbdac3c75cb086fcc5f93659e1b29bedf11997b31fd10c646bda"
+    },
+    {
+      "path": "src/components/ward-management/statistics/statistics-section-frame-third-edition.module.css",
+      "sha256": "87cc5be898e15e66a3462748832aaf3635d304609afa6bfcaeeb134ebe229772"
+    },
+    {
+      "path": "src/components/ward-management/statistics/statistics-section-frame.tsx",
+      "sha256": "44ddcef4344798cc88cbf86c5bdc10873a657a06a4a8bfa8678c8738ebc0b0e8"
+    },
+    {
+      "path": "src/components/ward-management/statistics/statistics-third-edition.module.css",
+      "sha256": "21b07824fcd8a4978cf3ee8bd3a36622e46d2ef2b6bab63e2a12bb4b0d60a40b"
+    },
+    {
+      "path": "src/components/ward-management/statistics/statistics.module.css",
+      "sha256": "d35c73204a124fe957bb4f2245ed9aba990f69def387f4eec5eb179d5e502f6d"
+    },
+    {
+      "path": "src/components/ward-management/use-printable-disclosures.ts",
+      "sha256": "02bbd3ebc17a102ea57522c5de3a5322483b8032889572da37dddaa3a7c73db6"
+    },
+    {
+      "path": "src/components/ward-management/ward-figure.module.css",
+      "sha256": "fa4e0c379805be358a2b04d4df1e9b73d55409f50c377f843fa9136792e6521c"
+    },
+    {
+      "path": "src/components/ward-management/ward-panel.module.css",
+      "sha256": "5ac39969da2dc414971982962436557458ee2fd4c7ec62518c99de08e28d389b"
+    },
+    {
+      "path": "src/components/ward-management/ward-shell.module.css",
+      "sha256": "1e328ec0a947f2cb0d30f54420bd68da75373d4e807b81e2eef774ee2a515ed3"
+    },
+    {
+      "path": "src/components/ward-management/ward-table/ward-table.module.css",
+      "sha256": "d635f80a773282ee5f19bf849ae072f3669c7dcbcfc65d91a6a8f8c4108f22d9"
+    },
+    {
+      "path": "src/components/ward-management/ward-tokens.module.css",
+      "sha256": "f38eab54d363741fa20305a402e62aed600682cd07b41a27ae568d253c9b46c7"
+    },
+    {
+      "path": "tests/ui-v2-components.dom.test.tsx",
+      "sha256": "381ccb16f4fd6b1a780a82c8621628714e9894ce09d35efbf395abc0dfc7d8f8"
+    },
+    {
+      "path": "tests/ward-bar-zero-is-reachable.test.ts",
+      "sha256": "f1483dd8aa40dca850f3f3f110356820f58dfb1b1c2dab405b494cdc85fd6432"
+    },
+    {
+      "path": "tests/ward-board-page.dom.test.tsx",
+      "sha256": "c58d4adea031acef5456e35fb7829843de11730b03a6284a1488f850ce71f9e1"
+    },
+    {
+      "path": "tests/ward-board-people-panel.dom.test.tsx",
+      "sha256": "1a62687779b5900201414da17fd52dbf8cca8e93294f59e121bd5b76a70e2947"
+    },
+    {
+      "path": "tests/ward-board-third-edition-headings.dom.test.tsx",
+      "sha256": "845e9a34681191a6a95868f2bd8538b2f3c3c5ae00821544e6879a7a29321786"
+    },
+    {
+      "path": "tests/ward-chrome-owner.test.ts",
+      "sha256": "7cf6f12a58b5f5d1a469962906962093d9a954032d54754a91d98edb3ae98705"
+    },
+    {
+      "path": "tests/ward-css-token-references-resolve.test.ts",
+      "sha256": "6556ca728072dbf45fb6982458aa04ce218d50382367f835ac399c72f48c7850"
+    },
+    {
+      "path": "tests/ward-delays-nobody-waiting.dom.test.tsx",
+      "sha256": "0b45dc47c4644d29db8bd52d9f8356dda1041feeda612994342fb7c1c9bb45b1"
+    },
+    {
+      "path": "tests/ward-delays-screen.dom.test.tsx",
+      "sha256": "6eff14aebfb212b8036ce1fba983e7d4c396009db0c456745daeb5a78c82e7ee"
+    },
+    {
+      "path": "tests/ward-facade-agrees-with-screens.test.ts",
+      "sha256": "f6260fabd8d2bc8d3af407387a898dd15dfb90a816cf3cc5565735b1b58fdadf"
+    },
+    {
+      "path": "tests/ward-flow-seam.test.ts",
+      "sha256": "8fc08021147282bc71235a2f177d0dbd9e236856e19fb29c39a504bc712727b4"
+    },
+    {
+      "path": "tests/ward-hub-bar-colours.test.ts",
+      "sha256": "4ce24d292b6bd3cba6c3c1b7cd96e8e6007112558b181dfe557685138ad5838e"
+    },
+    {
+      "path": "tests/ward-hub-screen.dom.test.tsx",
+      "sha256": "a1540d1dae7814ad6c40e813d8e1f0add8f745a60ac41a714a622a504feade7e"
+    },
+    {
+      "path": "tests/ward-nav.test.ts",
+      "sha256": "500d80d89c850268f48576c901f9ba2edb4b115ae0f8a644f1fa941f4e3e6d87"
+    },
+    {
+      "path": "tests/ward-primitives-shared.test.ts",
+      "sha256": "1723283432e44511e3305620ace277004e6a9ac31bcdad0304ba037cf57ee6f7"
+    },
+    {
+      "path": "tests/ward-printable-disclosures.dom.test.tsx",
+      "sha256": "4d3d62b8d04d56e5feaad75caf7d3aa81193e8eb9933714ebdfc0f038d3c240d"
+    },
+    {
+      "path": "tests/ward-shell-print-ancestor.test.ts",
+      "sha256": "6fa073bee6014e8aeace610fa796ce1c7e72b69dbf4dda626f347c9a5675a515"
+    },
+    {
+      "path": "tests/ward-shell-third-edition.dom.test.tsx",
+      "sha256": "38d0ead21ad2c4805cdb478f5e68aec4b4c74600db99092b7030454ba0a124d0"
+    },
+    {
+      "path": "tests/ward-sidebar-phone-contract.test.ts",
+      "sha256": "a286d0c54237338df66346ba34d5614bbb4922c58b5b17fd0f8a806e0f827c0f"
+    },
+    {
+      "path": "tests/ward-statistics-compare-two-tables.dom.test.tsx",
+      "sha256": "8845eedf909b9feb01aa6456b2b22f06bd9340944d6bc1523a8b7a09a3528897"
+    },
+    {
+      "path": "tests/ward-table-min-width.test.ts",
+      "sha256": "fb250bab15989065df78a46db97ff35304823e593088698560a5e08d77813998"
+    }
+  ]
+}

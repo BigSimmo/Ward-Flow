@@ -1,0 +1,2180 @@
+/*
+ * Ward Flow's third-edition bar — `ward-bar.tsx`. Composes the third-edition token layer directly
+ * (see `../../../app/ward-flow-shell-tokens.module.css`'s own header comment).
+ *
+ * Tokens only. No hex, no `color-mix`. No coloured bar on any edge, no top highlight (owner
+ * ruling — see `ward-rail.module.css`'s own header). One primary action per panel: `.primary`
+ * below is the only filled control anywhere in this stylesheet: every drawer trigger, the Service
+ * selector and every Tools/appearance button are the secondary treatment (surface + a hairline).
+ */
+
+/*
+ * ⚠️ **`flex-wrap: wrap` IS LOAD-BEARING AT PHONE WIDTH, AND ITS ABSENCE WAS MEASURED, NOT
+ * GUESSED.** Every item beside `.searchWrap` is `flex-shrink: 0`, so on a 375px viewport the row
+ * needed 506px and had 375: `.searchWrap` collapsed to **0px wide** and the Tasks and Tools
+ * triggers sat at x=368 and x=449 — off the screen, with `document.documentElement.scrollWidth`
+ * still 375, so the page itself never scrolled and the overflow simply hid inside the bar's own
+ * box. That is the same shape as the fault `tests/ui-ward-chrome-header.spec.ts` fault 3 pinned on
+ * the header this bar replaces, and it is why that spec's properties were re-pointed here rather
+ * than retired with their old owner. Wrapping costs nothing at every width where the row already
+ * fits (1440, 1280, 1024 and 768 all measured unchanged: one line, no overflow), because a flex
+ * line only breaks when it must.
+ */
+/*
+ * 🔴 **`flex-shrink: 0` IS WHAT KEEPS THE BAR AS TALL AS ITS OWN CONTENTS, AND ITS ABSENCE WAS
+ * MEASURED ON THE RUNNING APP, NOT REASONED ABOUT.** This header is a flex ITEM of
+ * `.shellContent` (`src/app/mockups/ward-flow/ward-flow-layout.module.css`), a flex COLUMN whose
+ * other item is `WardGround` — and `ward-shell.module.css`'s `.shell` declares `min-height: 100%`
+ * against that same column. On any route whose content is taller than the viewport the two items'
+ * hypothetical heights therefore exceed the column's, so flexbox shrinks them. Normally an item's
+ * automatic minimum size (`min-height: auto`) stops a flex item shrinking below its content —
+ * **but `min-height: 3.5rem` below REPLACES that automatic minimum**, so the bar was free to
+ * shrink to exactly 56px and did. Measured on `/mockups/ward-flow/delays` at 1024x900: the bar's
+ * box was 56px tall while its own `scrollHeight` was 137px, so the whole second flex line —
+ * Activity, Tasks, Tools and the primary action — was painted OUTSIDE the header's box, and the
+ * delays screen's own `.governanceBanner`, an ordinary later sibling in the flow, was laid out
+ * across it. `document.elementFromPoint` at the centre of the Activity trigger returned the
+ * banner, which is exactly the "intercepts pointer events" refusal Playwright reported.
+ *
+ * ⚠️ **THIS IS NOT A STACKING RULE AND MUST NOT BE REPLACED BY ONE.** Nothing here is layered
+ * wrongly: the banner has no `position` and no `z-index`, and neither does this bar. Raising a
+ * `z-index` would leave the bar's controls hanging over a screen's first rows, still outside the
+ * header's own box, still covering whatever that screen draws there — a different screen's
+ * furniture would simply lose instead. The property the shell actually needs is the one stated
+ * here: **the bar occupies its own height on every screen, and no route's content can compress
+ * it.** That holds against every screen's furniture because it never negotiates with any of it.
+ */
+.tallyDepartments {
+  width: 100%;
+  margin-top: 1.25rem;
+  border-collapse: collapse;
+  font-size: var(--t-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.tallyDepartments caption {
+  padding-block: 0.75rem;
+  text-align: left;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.tallyDepartments th,
+.tallyDepartments td {
+  border-bottom: 1px solid var(--line);
+  padding: 0.625rem 0.375rem;
+  text-align: right;
+}
+
+.tallyDepartments th:first-child {
+  text-align: left;
+}
+
+.tallyDepartments thead {
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.tallyDepartments a {
+  display: inline-flex;
+  min-height: var(--ward-tap);
+  align-items: center;
+  color: var(--accent-ink);
+}
+
+.tallyDepartments [data-breached="true"] {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.bar {
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  display: flex;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 3.5rem;
+  padding: 0.25rem 1.25rem 0.25rem 1.5rem;
+  background: var(--surface);
+  border-bottom: 0.0625rem solid var(--line);
+  box-shadow:
+    0 4px 6px -1px color-mix(in srgb, var(--ink) 4%, transparent),
+    0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
+  font-family: var(--body);
+  color: var(--ink);
+}
+
+.bar::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: 0.1875rem;
+  background: var(--stripe);
+  z-index: 45;
+  pointer-events: none;
+}
+
+.triggerIcon {
+  width: 0.9375rem;
+  height: 0.9375rem;
+  flex: none;
+}
+
+.demoTime {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+@media (max-width: 1000px) {
+  .bar {
+    padding: 0.5rem 0.875rem;
+  }
+  .bar .placeLink {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--ward-tap);
+    min-width: var(--ward-tap);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .place {
+    font-size: var(--t-5);
+  }
+  .triggerLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+  flex-wrap: nowrap;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.cockpitCapsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5625rem; /* 9px gap */
+  background: var(--surface);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--pill, 9999px);
+  padding: 0 0.375rem 0 0.84375rem; /* 0 6px 0 13.5px */
+  height: 2.25rem; /* 36px fixed */
+  box-sizing: border-box;
+  box-shadow: var(--lift);
+  flex-shrink: 0;
+  max-width: 100%;
+  min-width: 0;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.cockpitCapsule:hover {
+  border-color: var(--line-strong);
+}
+
+.barClockPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  padding: 0.125rem 0.5rem;
+  background: var(--sunk);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--pill, 9999px);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--ink);
+  white-space: nowrap;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.barClockIcon {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.clockDate {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.clockDivider {
+  color: var(--muted);
+  user-select: none;
+}
+
+.clockTime {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.clockTz {
+  color: var(--muted);
+  font-weight: 500;
+  opacity: 0.85;
+  letter-spacing: 0.02em;
+}
+
+.titleGroup {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.subtitle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.titleContext {
+  font-family: var(--display);
+  font-size: var(--t-1);
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.titleDivider {
+  font-size: var(--t-1);
+  color: var(--line-strong);
+  user-select: none;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.placeLink {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.place,
+.cockpitTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: var(--t-3);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--ink);
+  display: inline-block;
+  vertical-align: middle;
+  max-width: min(32rem, 100%);
+}
+
+.scopeBadgeContainer {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  position: relative;
+}
+
+.scopeBadgeBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.scopeBadgeInner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3125rem; /* 5px */
+  height: 1.375rem; /* 22px Version 1 */
+  padding: 0 0.46875rem 0 0.4375rem; /* 0 7.5px 0 7px */
+  border-radius: var(--pill, 9999px);
+  font-family: var(--body);
+  font-size: var(--t-0);
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 0.0625rem solid transparent;
+  line-height: 1;
+  box-sizing: border-box;
+  transition:
+    filter 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.scopeBadgeBtn:hover .scopeBadgeInner {
+  filter: brightness(0.96);
+}
+
+.scopeBadgeBtn[data-locked="true"] {
+  cursor: default;
+}
+
+.scopeBadgeBtn[data-locked="true"] .scopeBadgeInner {
+  padding: 0 0.5rem 0 0.46875rem; /* 0 8px 0 7.5px */
+}
+
+.scopeBadgeBtn[data-locked="true"]:hover .scopeBadgeInner {
+  filter: none;
+}
+
+.scopeDot {
+  width: 0.34375rem; /* 5.5px */
+  height: 0.34375rem; /* 5.5px */
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin: 0;
+  transition: background-color 0.2s ease;
+}
+
+.scopeCaret {
+  width: 0.4375rem; /* 7px */
+  height: 0.4375rem; /* 7px */
+  opacity: 0.65;
+  margin-left: -0.0625rem;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Service color mappings using design tokens */
+.scopeBadgeBtn[data-service="east"] .scopeBadgeInner {
+  background-color: var(--svc-east-bg);
+  border-color: var(--svc-east-border);
+  color: var(--svc-east-ink);
+}
+.scopeBadgeBtn[data-service="east"] .scopeDot {
+  background-color: var(--svc-east);
+}
+
+.scopeBadgeBtn[data-service="north"] .scopeBadgeInner {
+  background-color: var(--svc-north-bg);
+  border-color: var(--svc-north-border);
+  color: var(--svc-north-ink);
+}
+.scopeBadgeBtn[data-service="north"] .scopeDot {
+  background-color: var(--svc-north);
+}
+
+.scopeBadgeBtn[data-service="south"] .scopeBadgeInner {
+  background-color: var(--svc-south-bg);
+  border-color: var(--svc-south-border);
+  color: var(--svc-south-ink);
+}
+.scopeBadgeBtn[data-service="south"] .scopeDot {
+  background-color: var(--svc-south);
+}
+
+.scopeBadgeBtn[data-service="wachs"] .scopeBadgeInner {
+  background-color: var(--svc-wachs-bg);
+  border-color: var(--svc-wachs-border);
+  color: var(--svc-wachs-ink);
+}
+.scopeBadgeBtn[data-service="wachs"] .scopeDot {
+  background-color: var(--svc-wachs);
+}
+
+.scopeBadgeBtn[data-service="cahs"] .scopeBadgeInner {
+  background-color: var(--svc-cahs-bg);
+  border-color: var(--svc-cahs-border);
+  color: var(--svc-cahs-ink);
+}
+.scopeBadgeBtn[data-service="cahs"] .scopeDot {
+  background-color: var(--svc-cahs);
+}
+
+.scopeBadgeBtn[data-service="private"] .scopeBadgeInner {
+  background-color: var(--surface-2);
+  border-color: var(--line);
+  color: var(--ink-soft);
+}
+.scopeBadgeBtn[data-service="private"] .scopeDot {
+  background-color: var(--muted);
+}
+
+.scopeBadgeBtn[data-service="statewide"] .scopeBadgeInner {
+  background-color: var(--svc-statewide-bg);
+  border-color: var(--svc-statewide-border);
+  color: var(--svc-statewide-ink);
+}
+.scopeBadgeBtn[data-service="statewide"] .scopeDot {
+  background-color: var(--svc-statewide);
+}
+
+@media (min-width: 1001px) {
+  .bar[data-long-title] .title {
+    max-width: min(58%, 38rem);
+  }
+  .bar[data-long-title] .placeLink {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--ward-tap);
+    min-width: var(--ward-tap);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .bar[data-long-title] .triggerLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* The disclaimer chip is visually hidden from headers per owner direction,
+ * while preserving DOM/AST metadata for static conformance tests. */
+.mark {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.markLong {
+  display: inline;
+}
+
+/*
+ * ⚠️ **`min-width: 10rem` IS THE DRAWING'S OWN FIGURE, AND DROPPING IT IS WHAT LET THE SEARCH BOX
+ * REACH ZERO WIDTH.** `command-third-edition.html`'s `.searchWrap` is `flex: 1 1 14rem; max-width:
+ * 30rem; min-width: 10rem`; this port kept the growth and replaced the floor with `min-width: 0`,
+ * which is the value that tells flexbox the item may be squeezed out of existence entirely. The
+ * floor is restored here, and so is the 14rem BASIS, which a first attempt at this fix left as
+ * `auto` — **measured consequence, not a preference**: with `.bar` wrapping, flexbox packs a line
+ * using each item's hypothetical main size *before* it shrinks anything, and `flex-basis: auto`
+ * makes that size the search control's full intrinsic width (the input plus its keyboard-shortcut
+ * guidance). The drawer triggers were pushed onto a second line at 1024px and 768px, where they
+ * had fitted on one line for the whole life of this component. A 14rem basis is the drawing's own
+ * figure and packs the line the way the drawing packs it.
+ *
+ * The 30rem cap now follows the reference too, so the field does not consume the space reserved
+ * for the Service selector and the three drawer controls on a wide header.
+ */
+.searchGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex: 1 1 16rem;
+  min-width: 12rem;
+  max-width: 32rem;
+}
+
+.centerGroup {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 1 30rem;
+  max-width: 32rem;
+  min-width: 14rem;
+  justify-content: center;
+}
+
+.searchWrap {
+  flex: 1 1 18rem;
+  max-width: 22rem;
+  min-width: 10rem;
+}
+
+/* Keep the existing search component and keyboard guidance, with the bar's
+   compact field treatment aligned in height with adjacent buttons. */
+.searchWrap :global([data-testid="ward-global-search"]) {
+  max-width: none;
+  font-size: var(--t-1);
+  width: 100%;
+}
+
+.searchWrap :global([data-testid="ward-global-search"]) > div:first-of-type {
+  position: relative;
+  isolation: isolate;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  min-height: var(--spacing-tap, 3rem);
+}
+
+.searchWrap :global([data-testid="ward-global-search"]) > div:first-of-type::before {
+  content: "";
+  position: absolute;
+  inset: 0.375rem 0;
+  z-index: -1;
+  pointer-events: none;
+  border: 0.0625rem solid var(--line);
+  background: var(--surface-2);
+  border-radius: var(--r1);
+  box-shadow: var(--shadow-well);
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.searchWrap :global([data-testid="ward-global-search"]):focus-within > div:first-of-type::before {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow:
+    0 0 0 0.1875rem var(--accent-soft),
+    var(--lift);
+  outline: none;
+}
+
+@media (pointer: coarse), (max-width: 40rem) {
+  .searchWrap :global([data-testid="ward-global-search"]) > div:first-of-type::before {
+    inset: 0.375rem 0;
+  }
+}
+
+.searchWrap :global([data-testid="ward-global-search"]) svg {
+  color: var(--muted);
+  margin-left: 0.625rem;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.searchWrap :global([data-testid="ward-global-search"]):focus-within svg {
+  color: var(--accent);
+}
+
+.searchWrap :global([data-testid="ward-global-search-input"]) {
+  font-family: var(--body);
+  font-size: var(--t-1);
+  color: var(--ink);
+  min-height: var(--spacing-tap, 3rem);
+  box-sizing: border-box;
+  background: transparent;
+  border: none;
+  padding: 0 0.5rem;
+  width: 100%;
+}
+
+.searchWrap :global([data-testid="ward-global-search-input"])::placeholder {
+  color: var(--muted);
+  font-size: var(--t-1);
+  opacity: 0.85;
+}
+
+.searchWrap :global([data-ward-search-shortcut]) {
+  display: grid;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  margin-right: 0.625rem;
+  box-shadow: var(--lift);
+  flex-shrink: 0;
+}
+
+.searchWrap :global([data-testid="ward-global-search"]) > span[id] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.servicePopover {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.serviceTrigger,
+.drawerTrigger {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 0.75rem;
+  border: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.serviceTrigger::before,
+.drawerTrigger::before,
+.primary::before {
+  content: "";
+  position: absolute;
+  inset: 0.375rem 0;
+  z-index: -1;
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+  pointer-events: none;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.serviceTrigger:hover,
+.drawerTrigger:hover,
+.serviceTrigger:active,
+.drawerTrigger:active {
+  background: transparent;
+}
+
+.serviceTrigger:hover::before,
+.drawerTrigger:hover::before,
+.serviceTrigger:active::before,
+.drawerTrigger:active::before {
+  background: var(--sunk);
+}
+
+.serviceTrigger:focus-visible,
+.drawerTrigger:focus-visible,
+.serviceOption:focus-visible,
+.toolsLink:focus-visible,
+.primaryMenuItem:focus-visible,
+.primary:focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: 0.125rem;
+}
+
+.serviceTrigger[aria-expanded="true"],
+.drawerTrigger[aria-expanded="true"] {
+  color: var(--accent-ink);
+}
+
+.serviceTrigger[aria-expanded="true"]::before,
+.drawerTrigger[aria-expanded="true"]::before {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 0.0625rem var(--accent);
+}
+
+.servicePanel {
+  position: absolute;
+  top: calc(100% + 0.375rem);
+  left: 0;
+  z-index: 20;
+  min-width: 19rem;
+  border-radius: 16px;
+  border: 0.0625rem solid var(--line);
+  background: var(--surface);
+  box-shadow:
+    0 16px 40px -6px var(--scrim),
+    0 0 0 1px var(--line);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 0.75rem 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.popoverHead {
+  margin: 0 0 0.375rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: var(--t-3);
+  color: var(--ink);
+}
+
+.popoverHint {
+  font-family: var(--body);
+  font-weight: 400;
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.serviceOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 0.75rem;
+  border-radius: var(--r2, 8px);
+  border: 0.0625rem solid transparent;
+  background: none;
+  text-align: left;
+  color: var(--ink-soft);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  box-sizing: border-box;
+}
+
+/* build plan §3 "Service panel": each option's own "{n} open"/"none open" count (task S2). A third
+ * flex child beside the label and `.serviceCheck` — `.serviceOption`'s existing `space-between`
+ * already spaces three items apart correctly, so no layout change beyond this one rule. */
+.serviceOptionCount {
+  flex: none;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 500;
+}
+
+.serviceCheck {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  color: var(--accent-ink);
+  opacity: 0;
+}
+
+.serviceCheck[data-visible="true"] {
+  opacity: 1;
+}
+
+.serviceOption:hover,
+.serviceOption:active {
+  background: var(--sunk);
+  border-color: var(--line);
+}
+
+.serviceOption[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 0.0625rem var(--line-strong);
+}
+
+.serviceOption[aria-pressed="true"] .serviceOptionCount {
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.popoverNote {
+  margin: 0.375rem 0 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.4;
+}
+
+/* ⚠️ **A GROUP THAT CAN NEITHER WRAP NOR SHRINK, SO ONLY THE THREE DRAWER TRIGGERS BELONG IN IT.**
+ * `flex-shrink: 0` with no `flex-wrap` is deliberate — the three triggers read as one cluster and
+ * must stay on one line together — but it also means any FOURTH item added here can only overflow.
+ * The primary action was added inside this group once and measured the bar 379px wide in a 343px
+ * content box at 375px, taking `document.body.scrollWidth` to 395 and scrolling the whole page
+ * sideways; it now renders as a sibling of this group, governed by `.bar`'s own `flex-wrap: wrap`
+ * (see `ward-bar.tsx` at that control for the full measurement). */
+.rightActions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+
+.drawerTriggers {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+
+.dot {
+  position: relative;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.dot[data-tone="good"] {
+  background: var(--good);
+}
+
+.dot[data-tone="good"]::after {
+  content: "";
+  position: absolute;
+  inset: -0.125rem;
+  border-radius: 50%;
+  pointer-events: none;
+  border: 1px solid var(--good);
+  box-shadow: 0 0 0.375rem var(--good);
+  opacity: 0;
+  animation: wardBarMetroPulse 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes wardBarMetroPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot[data-tone="good"]::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .dot[data-tone="good"]::after {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+}
+
+.dot[data-tone="danger"] {
+  background: var(--danger);
+}
+
+/* BRIEF-mount-wiring.md item 1: an empty (or absent) `checks` array is not a green all-clear —
+ * it is nothing having been reconciled. The dot for that state is muted, matching the tone the
+ * rest of this stylesheet already uses for "nothing to report" (`.badge`, `.activityFreshness`
+ * text both read `var(--muted)`), never `--good` and never `--danger`. */
+.dot[data-tone="neutral"] {
+  background: var(--muted);
+}
+
+.badge {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  background: var(--sunk);
+  border-radius: var(--radius-pill);
+  padding: 0.0625rem 0.4375rem;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+/* The one filled/primary control on the bar. Flat — no shadow (round-1 review, Important 8): the
+ * drawing's `.ctl.primary` (`command-third-edition.html:1509-1518`) sets only `background`,
+ * `border-color` and `color`; `--hl-on-accent` is a real token but this control never reads it,
+ * and adding an inset top highlight here is a new mark the drawing does not draw, in the family
+ * the owner's no-top-highlight ruling already covers. */
+.primary {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 1rem;
+  border: 0;
+  background: transparent;
+  color: var(--on-accent);
+  font-family: var(--body);
+  font-weight: 500;
+  font-size: var(--t-1);
+  text-decoration: none;
+}
+
+.primary::before {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.primary:hover,
+.primary:active {
+  background: transparent;
+}
+
+.primary:hover::before,
+.primary:active::before {
+  border-color: var(--accent-press);
+  background: var(--accent-press);
+}
+
+/* The "New referral" popover — same shape as `.servicePopover`/`.servicePanel` above (D-16: it is
+ * the mockup's identical "menu" control), anchored to the RIGHT rather than the left because the
+ * primary action sits at the far right of the bar; a left-anchored panel here would overflow the
+ * viewport on a narrow screen. */
+.primaryWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.primaryPanel {
+  position: absolute;
+  top: calc(100% + 0.375rem);
+  right: 0;
+  z-index: 20;
+  min-width: 16rem;
+  border-radius: var(--r1);
+  border: 0.0625rem solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--lift);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.primaryMenuItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 0.625rem;
+  border-radius: var(--r2);
+  border: 0.0625rem solid transparent;
+  background: none;
+  color: var(--ink-soft);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  text-decoration: none;
+}
+
+.primaryMenuItem:hover {
+  background: var(--sunk);
+  border-color: var(--line);
+}
+
+/* ── drawer contents ─────────────────────────────────────────────────────────────────────── */
+
+.drawerBackdrop {
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  background: var(--scrim) !important;
+  backdrop-filter: none !important;
+}
+
+.drawerSheet {
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  font-family: var(--body);
+  color: var(--ink);
+  background: var(--surface) !important;
+  max-width: min(94vw, 36rem) !important;
+  border-radius: 0 !important;
+  border-block: 0 !important;
+  border-right: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.drawerSheetWide {
+  max-width: min(94vw, 36rem) !important;
+  overflow-x: hidden !important;
+}
+
+.drawerSheetReferral {
+  max-width: min(96vw, 48rem) !important;
+  overflow-x: hidden !important;
+}
+
+@media (max-width: 640px) {
+  .drawerSheetReferral {
+    max-width: 100vw !important;
+    width: 100vw !important;
+    border-radius: 0 !important;
+  }
+}
+
+.drawerSheetTasks {
+  max-width: min(94vw, 28rem) !important;
+}
+
+.drawerHeader {
+  flex-shrink: 0;
+  padding: 0.25rem 0.875rem !important;
+  border-color: var(--line) !important;
+  background: var(--surface-2);
+}
+
+.drawerTitle {
+  font-family: var(--display);
+  font-size: var(--t-3) !important;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--accent-ink) !important;
+}
+
+.drawerClose {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  width: var(--spacing-tap, 3rem);
+  height: var(--spacing-tap, 3rem);
+  min-width: var(--spacing-tap, 3rem);
+  min-height: var(--spacing-tap, 3rem);
+  place-items: center;
+  box-sizing: border-box;
+  border: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+/*
+ * Wave-2 chrome (#23): the hit box was already `--spacing-tap` (48px), but `inset: 0.4375rem`
+ * painted a ~34×34 chrome square — the measured "36×36 Close". Keep the full 48×48 face so the
+ * drawn control matches the tap floor; do not restore the inset to "look like" the drawing's
+ * smaller ring.
+ */
+.drawerClose::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+}
+
+.drawerClose:hover::before,
+.drawerClose:active::before {
+  background: var(--sunk);
+}
+
+.drawerClose:focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: 0.125rem;
+}
+
+.drawerBody {
+  padding: 0 !important;
+}
+
+.tasksCarrierBody {
+  padding: 0 !important;
+  overflow-x: hidden !important;
+}
+
+.referralCarrierBody {
+  padding: 0 !important;
+  overflow: hidden !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.drawerFooter {
+  padding: 0.5rem 0.875rem 0.625rem !important;
+  border-color: var(--line) !important;
+  background: var(--surface-2);
+}
+
+.drawerFoot {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.45;
+}
+
+.activitySegments {
+  display: flex;
+  gap: 3px;
+  margin: 12px 16px 8px;
+  padding: 3px;
+  border-radius: var(--pill, 9999px);
+  background: var(--sunk);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.activitySegments button {
+  display: flex;
+  height: 36px;
+  min-height: 36px;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--pill, 9999px);
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: var(--t-1);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.activitySegments button:hover {
+  color: var(--ink);
+}
+
+.activitySegments button:focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: 0.125rem;
+}
+
+.activitySegments button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: var(--lift);
+}
+
+.activitySegments button span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 7px;
+  border-radius: var(--pill, 9999px);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  background: var(--sunk);
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+}
+
+.activitySegments button[aria-pressed="true"] span {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+/* ── ACTIVITY FILTER CHIPS & ENTITY CHIP ── */
+.filterChipsTrack {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 16px 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.filterChipsTrack::-webkit-scrollbar {
+  display: none;
+}
+
+.filterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 12px;
+  border-radius: var(--pill, 9999px);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  box-sizing: border-box;
+}
+
+.filterChip:hover {
+  background: var(--sunk);
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+.filterChip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.filterChipActive,
+.filterChip[aria-pressed="true"],
+.filterChip[data-active="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.filterChipActive:hover,
+.filterChip[aria-pressed="true"]:hover,
+.filterChip[data-active="true"]:hover {
+  background: var(--accent-press, var(--accent));
+  color: var(--on-accent);
+}
+
+.chipCount {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.filterChipActive .chipCount,
+.filterChip[aria-pressed="true"] .chipCount {
+  opacity: 1;
+}
+
+.entityChip {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  transition: all 0.12s ease;
+}
+
+.entityChip:hover {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.activitySection,
+.toolsSection {
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem 1rem;
+  font-family: var(--body);
+  color: var(--ink);
+}
+
+.activitySection[hidden] {
+  display: none;
+}
+
+.toolsSection + .toolsSection {
+  margin-top: 0;
+  padding-top: 1rem;
+  border-top: 0.0625rem solid var(--line);
+}
+
+.toolsSection {
+  gap: 0.375rem;
+}
+
+.activityFreshness {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+.activityTitle {
+  margin: 0;
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: var(--t-0);
+  color: var(--muted);
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+}
+
+.activityTiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.activityTile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  border: 0.0625rem solid var(--line);
+}
+
+.activityTile small {
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.activityTile b {
+  font-family: var(--mono);
+  font-size: var(--t-4);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.activityTile[data-tone="danger"] {
+  border-color: var(--danger);
+}
+
+.activityTile[data-tone="warning"] {
+  border-color: var(--warn);
+}
+
+.activityTile[data-tone="good"] {
+  border-color: var(--good);
+}
+
+.activityHead {
+  margin: 0;
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+}
+
+.activityHead span {
+  float: right;
+  font-family: var(--mono);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.activityEmpty {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+.activityFeed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.activityFeed li {
+  display: grid;
+  grid-template-columns: auto 0.5rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: var(--t-1);
+  border-bottom: 0.0625rem solid var(--line);
+  padding-bottom: 0.375rem;
+}
+
+.eventDot,
+.activityKey i {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+}
+
+.activityFeed li[data-tone="warning"] .eventDot,
+.activityKey i[data-tone="warning"] {
+  background: var(--warn);
+}
+
+.activityFeed li[data-tone="danger"] .eventDot,
+.activityKey i[data-tone="danger"] {
+  background: var(--danger);
+}
+
+.activityKey {
+  padding: 0.625rem 0.75rem;
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+.activityKey summary {
+  color: var(--ink-soft);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.activityKey > div {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.625rem;
+}
+
+.activityKey span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.activityKey i {
+  display: inline-block;
+  flex: none;
+}
+
+.activityFeed time {
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+/* Item 48, Q2 (owner answer 48, 2026-09-17): unread notices are visually distinct from read ones.
+   A read notice's dot and sentence fall back to the same muted treatment already given to
+   secondary text elsewhere in this file; an unread one keeps the full-strength ink and accent dot
+   the row already had before this feature existed, so no notice's look changes until it is read. */
+.activityFeed li[data-notice-read="true"] .eventDot {
+  background: var(--muted);
+}
+
+.activityFeed li[data-notice-read="true"] .noticeContent > span:first-child {
+  color: var(--muted);
+}
+
+.noticeContent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.noticeMarkRead {
+  display: inline-flex;
+  min-height: var(--spacing-tap, 3rem);
+  align-items: center;
+  padding: 0 0.75rem;
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: var(--t-0);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.noticeMarkRead:hover {
+  background: var(--surface-2);
+}
+
+.noticeMarkRead:focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: 0.125rem;
+}
+
+.noticeReadLabel {
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.toolsHeading {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: var(--t-0);
+  color: var(--muted);
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+}
+
+.toolsHeading span,
+.drawerScope {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.toolItem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  min-height: var(--spacing-tap, 3rem);
+  margin-inline: 0;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--lift);
+  color: var(--ink);
+  font-size: var(--t-1);
+  line-height: 1.4;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.toolItem:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+  box-shadow: var(--lift);
+  transform: translateY(-1px);
+}
+
+.toolItem:active {
+  background: var(--sunk);
+  transform: translateY(0);
+}
+
+.toolItem:focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: 0.125rem;
+}
+
+.toolItem > svg {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--accent);
+  transition: color 0.15s ease;
+}
+
+.toolItem:hover > svg {
+  color: var(--accent-ink);
+}
+
+.toolItem strong {
+  display: block;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.toolItem em {
+  display: block;
+  margin-top: 0.1875rem;
+  font-style: normal;
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.toolsNote {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.4;
+}
+
+.toolsRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.toolsLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 0.75rem;
+  border-radius: var(--r2);
+  border: 0.0625rem solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  text-decoration: none;
+  width: fit-content;
+}
+
+.toolsLink:hover {
+  background: var(--sunk);
+}
+
+@media (forced-colors: active) {
+  .bar {
+    border-bottom-color: CanvasText;
+  }
+
+  .serviceTrigger::before,
+  .drawerTrigger::before,
+  .primary::before,
+  .drawerClose::before {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+
+  .serviceTrigger[aria-expanded="true"],
+  .drawerTrigger[aria-expanded="true"],
+  .serviceOption[aria-pressed="true"] {
+    box-shadow: inset 0 0 0 0.125rem CanvasText;
+  }
+
+  .dot {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+}
+
+@media (pointer: coarse), (max-width: 40rem) {
+  /* `.drawerClose::before` already paints inset: 0 at every pointer (Wave-2 #23). */
+  .serviceTrigger::before,
+  .drawerTrigger::before,
+  .primary::before {
+    inset-block: 0;
+  }
+}
+
+@media (max-width: 1300px) {
+  .bar {
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem 0.25rem 0.875rem;
+  }
+
+  .bar .placeLink {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--ward-tap);
+    min-width: var(--ward-tap);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .place {
+    font-size: var(--t-5);
+  }
+
+  .triggerLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .searchWrap {
+    flex-basis: 10rem;
+  }
+}
+
+@media (max-width: 1000px) {
+  .title {
+    flex: 1 1 auto;
+    max-width: 100%;
+  }
+
+  .centerGroup {
+    flex: 1 0 100%;
+    min-width: 100%;
+    max-width: none;
+    order: 2;
+    margin-left: 0;
+    gap: 0.375rem;
+  }
+
+  .searchWrap {
+    flex: 1 1 auto;
+    min-width: 6rem;
+    max-width: none;
+    margin-left: 0;
+  }
+
+  .servicePopover {
+    margin-left: 0;
+    flex-shrink: 0;
+  }
+
+  .drawerTriggers {
+    margin-left: auto;
+  }
+
+  .drawerTriggers,
+  .primaryWrap,
+  .primary {
+    order: 3;
+  }
+}
+
+@media print {
+  .bar {
+    display: none;
+  }
+}
+
+@media (max-width: 40rem) {
+  .cockpitCapsule {
+    min-width: 0;
+    max-width: 100%;
+    height: auto;
+    min-height: 2.25rem;
+    flex-wrap: wrap;
+    flex-shrink: 1;
+    border-radius: var(--r2);
+    padding: 0.375rem 0.75rem;
+  }
+
+  .titleGroup {
+    max-width: 100%;
+  }
+
+  .place,
+  .cockpitTitle {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    max-width: 100%;
+  }
+
+  .demoTime {
+    display: none;
+  }
+
+  .barClockPill {
+    padding: 0.125rem 0.375rem;
+    gap: 0.25rem;
+  }
+}
+
+/*
+ * ⚠️ A SEPARATE RESET, FOR PORTALLED CONTENT — INDEPENDENT OF `.bar { display: none; }` ABOVE.
+ * The three drawers (Activity, Tasks, Tools) render through <Sheet> -> OverlayPortal, which moves
+ * their DOM outside `.bar` and outside the shell's subtree entirely, so hiding `.bar` for print
+ * does not hide them, and the central `.wardTokens *` reset in ward-tokens.module.css cannot
+ * reach them either — see tests/ward-shell-print-ancestor.test.ts's own file header for that
+ * chain. Without this block, a drawer left open at print time would print near-white text on a
+ * themed dark fill in dark mode, the same defect ward-sidebar.module.css's own
+ * `.drawerBody, .drawerBody *` block exists to prevent, here for the equivalent surface.
+ *
+ * ⚠️ THIS DOES NOT TOUCH THE PRE-EXISTING "print hides both bar and rail" GAP the round-3 review
+ * recorded (`.bar`/`.rail` both `display: none` in print, so the reconciliation sentence, the
+ * disclaimer and the invented-figures mark all read zero on paper — against the standard's §9
+ * "Print opens everything"). That gap is about the shell's own in-flow content and was logged out
+ * of scope there; it is unchanged by this block, which only makes the drawer content — already
+ * outside `.bar`'s subtree regardless of whether `.bar` itself prints — theme-safe on the rarer
+ * occasion someone prints while one is open.
+ */
+@media print {
+  .drawerBackdrop {
+    position: static !important;
+    display: block !important;
+    background: transparent !important;
+    inset: auto !important;
+  }
+
+  :global([data-overlay-host="modal"]):has(.drawerSheet) {
+    position: static !important;
+    inset: auto !important;
+  }
+
+  .drawerBody,
+  .tasksBody {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .drawerSheet {
+    position: static !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .drawerSheet,
+  .drawerSheet *,
+  .activitySection,
+  .activitySection *,
+  .toolsSection,
+  .toolsSection *,
+  .tasksBody,
+  .tasksBody * {
+    color: CanvasText !important;
+    background-color: Canvas !important;
+  }
+}
+
+.directoryNote {
+  margin: 0;
+  padding-inline: 0.875rem;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.5;
+}
+
+.directorySection {
+  gap: 0.5rem;
+  padding-inline: 0;
+}
+
+.directorySection .toolsHeading {
+  padding-inline: 0.875rem;
+}
+
+.directoryList {
+  display: flex;
+  flex-direction: column;
+  margin: 0.125rem 0 -1rem;
+  padding: 0;
+  border-top: 0.0625rem solid var(--line);
+  list-style: none;
+}
+
+.directoryList li + li {
+  border-top: 0.0625rem solid var(--line);
+}
+
+.directoryList a {
+  display: flex;
+  min-height: var(--spacing-tap, 3rem);
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.625rem 0.875rem;
+  color: var(--ink);
+  font-size: var(--t-1);
+  line-height: 1.35;
+  text-decoration: none;
+}
+
+.directoryList a:hover,
+.directoryList a:active {
+  background: var(--sunk);
+}
+
+.directoryList a:focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: -0.125rem;
+}
+
+.directoryList small {
+  flex: none;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+/* ══════════════════ SOVEREIGN CONSOLE ADDITIONS ══════════════════ */
+.serviceDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px var(--line);
+  background: var(--muted);
+  transition: transform 0.15s ease;
+}
+.serviceDot[data-service="north"] {
+  background: var(--svc-north);
+}
+.serviceDot[data-service="south"] {
+  background: var(--svc-south);
+}
+.serviceDot[data-service="east"] {
+  background: var(--svc-east);
+}
+.serviceDot[data-service="wachs"] {
+  background: var(--svc-wachs);
+}
+
+.segTrack {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  margin: 12px 16px 8px;
+  border-radius: var(--pill, 9999px);
+  background: var(--sunk);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.segBtn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--pill, 9999px);
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.segBtn:hover {
+  color: var(--ink);
+}
+
+.segBtn[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  border: 0.5px solid var(--line-strong);
+  box-shadow: var(--lift);
+}
+
+.segBtn span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 7px;
+  border-radius: var(--pill, 9999px);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  background: var(--sunk);
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+}
+
+.segBtn[aria-pressed="true"] span {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.feedList {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 0;
+  position: relative;
+}
+
+.feedRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 3.8rem 1rem minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--t-1);
+  transition: background 0.12s ease;
+}
+
+.feedRow:hover {
+  background: var(--surface-2);
+}
+
+.feedTime {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.feedToneDot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--line);
+  background: var(--muted);
+  flex-shrink: 0;
+  z-index: 1;
+  justify-self: center;
+  align-self: center;
+  margin: 0;
+}
+
+/* Delicate hairline vertical thread connecting events */
+.feedToneDot::before {
+  content: "";
+  position: absolute;
+  top: -24px;
+  bottom: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  background: var(--line);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.feedRow:first-child .feedToneDot::before {
+  top: 4px;
+}
+
+.feedRow:last-child .feedToneDot::before {
+  bottom: 4px;
+}
+
+.feedRow:only-child .feedToneDot::before {
+  display: none;
+}
+
+.feedToneDot[data-tone="good"],
+.feedToneDot[data-tone="info"] {
+  background: var(--good);
+  box-shadow: 0 0 0 1px var(--good-soft, var(--good));
+}
+.feedToneDot[data-tone="warn"],
+.feedToneDot[data-tone="warning"] {
+  background: var(--warn);
+  box-shadow: 0 0 0 1px var(--warn-soft, var(--warn));
+}
+.feedToneDot[data-tone="danger"] {
+  background: var(--danger);
+  box-shadow: 0 0 0 1px var(--danger-soft, var(--danger));
+}
+.feedToneDot[data-tone="neutral"] {
+  background: var(--muted);
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.feedText {
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+.feedText b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.consequenceCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r1);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cqHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--t-0);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.cqList {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.taskBtn {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: var(--r2);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.12s;
+}
+
+.taskBtn:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.primaryOption {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: var(--r2);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-family: inherit;
+  font-size: var(--t-1);
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  margin-bottom: 4px;
+  transition: all 0.12s;
+}
+
+.primaryOption:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.primaryOption small {
+  font-size: var(--t-0);
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+@media (forced-colors: active) {
+  .eventDot,
+  .activityKey i {
+    background: CanvasText !important;
+    outline: 0.0625rem solid CanvasText;
+  }
+}

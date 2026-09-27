@@ -1,0 +1,2282 @@
+<!doctype html>
+<html lang="en-AU" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ward Flow · Patient search (Perfected third edition)</title>
+    <script>
+      (function () {
+        document.documentElement.lang = "en-AU";
+        try {
+          var v = localStorage.getItem("ward-flow-theme");
+          if (v === "light" || v === "dark") document.documentElement.setAttribute("data-theme", v);
+          if (localStorage.getItem("ward-flow-rail") === "closed")
+            document.documentElement.setAttribute("data-rail", "closed");
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ═══════════════════════════════════════════════════════════════════════
+       WARD FLOW PATIENT SEARCH. Perfected Third Edition.
+       Standard: Sovereign Clinical Console (Platinum Raised Cool).
+       Tokens, elevation, and design rules match command-third-edition.html,
+       bed-board-third-edition.html, and delays-third-edition.html byte-for-byte.
+       ═══════════════════════════════════════════════════════════════════════ */
+      :root {
+        color-scheme: light;
+
+        --ground-hi: #ecf0f4;
+        --ground: #e6eaef;
+        --ground-2: #e1e6ec;
+
+        --surface: #fdfdfe;
+        --surface-2: #f4f7fa;
+        --sunk: #eef2f6;
+
+        --ink: #161a20;
+        --ink-soft: #414953;
+        --muted: #5f6873;
+
+        --line: rgba(22, 30, 40, 0.11);
+        --line-strong: rgba(22, 30, 40, 0.26);
+
+        --accent: #2f4c66;
+        --accent-ink: #27405a;
+        --accent-press: #27405a;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+
+        --gilt: #7d612a;
+        --gilt-soft: #f1ebdf;
+
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --warn: #825d10;
+        --warn-soft: #f6eeda;
+
+        --danger: #b03b2e;
+        --danger-soft: #f8e6e2;
+        --danger-ink: #973121;
+
+        --svc-east: #2f4c66;
+        --svc-north: #685a94;
+        --svc-south: #356a70;
+        --svc-wachs: #8c5a3c;
+
+        --ward: var(--svc-east);
+        --ward-soft: var(--accent-soft);
+        --ed: var(--danger);
+        --comm: var(--svc-south);
+        --coord: var(--svc-north);
+
+        --lift: 0 1px 1px rgba(30, 48, 66, 0.05), 0 14px 30px -22px rgba(30, 48, 66, 0.45);
+        --hl: rgba(255, 255, 255, 0.9);
+        --hl-on-accent: rgba(255, 255, 255, 0.14);
+        --edge-shade: rgba(30, 48, 66, 0.16);
+        --scrim: rgba(30, 48, 66, 0.32);
+
+        --r1: 10px;
+        --r1i: 9px;
+        --r2: 6px;
+        --gap: 14px;
+
+        --t-0: 12px;
+        --t-1: 13px;
+        --t-2: 13.5px;
+        --t-3: 14px;
+        --t-4: 16px;
+        --t-5: 20px;
+        --t-6: 26px;
+
+        --display: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+        --body: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+        --mono: "Geist Mono", ui-monospace, Menlo, Consolas, monospace;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          color-scheme: dark;
+          --ground-hi: #14181d;
+          --ground: #0f1216;
+          --ground-2: #0c0f12;
+
+          --surface: #171b21;
+          --surface-2: #1b2026;
+          --sunk: #13171c;
+
+          --ink: #e8ecf1;
+          --ink-soft: #b2bac5;
+          --muted: #8a929d;
+
+          --line: rgba(255, 255, 255, 0.09);
+          --line-strong: rgba(255, 255, 255, 0.21);
+
+          --accent: #a7bcd2;
+          --accent-ink: #bfd0e2;
+          --accent-press: #8ea6bf;
+          --accent-soft: #1f2a36;
+          --on-accent: #0f1216;
+          --stripe: #3a5a78;
+
+          --gilt: #d3b77e;
+          --gilt-soft: #2a251b;
+
+          --good: #6fd39b;
+          --good-soft: #15291f;
+          --warn: #e3bc5e;
+          --warn-soft: #2b2415;
+
+          --danger: #ff8b76;
+          --danger-soft: #33201b;
+          --danger-ink: #ffa08e;
+
+          --svc-east: #a7bcd2;
+          --svc-north: #b1a2d6;
+          --svc-south: #7fb2b8;
+          --svc-wachs: #d89a78;
+
+          --lift: 0 1px 1px rgba(0, 0, 0, 0.4), 0 16px 34px -22px rgba(0, 0, 0, 0.95);
+          --hl: rgba(255, 255, 255, 0.06);
+          --hl-on-accent: rgba(255, 255, 255, 0.28);
+          --edge-shade: rgba(0, 0, 0, 0.55);
+          --scrim: rgba(0, 0, 0, 0.6);
+        }
+      }
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --ground-hi: #14181d;
+        --ground: #0f1216;
+        --ground-2: #0c0f12;
+
+        --surface: #171b21;
+        --surface-2: #1b2026;
+        --sunk: #13171c;
+
+        --ink: #e8ecf1;
+        --ink-soft: #b2bac5;
+        --muted: #8a929d;
+
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.21);
+
+        --accent: #a7bcd2;
+        --accent-ink: #bfd0e2;
+        --accent-press: #8ea6bf;
+        --accent-soft: #1f2a36;
+        --on-accent: #0f1216;
+        --stripe: #3a5a78;
+
+        --gilt: #d3b77e;
+        --gilt-soft: #2a251b;
+
+        --good: #6fd39b;
+        --good-soft: #15291f;
+        --warn: #e3bc5e;
+        --warn-soft: #2b2415;
+
+        --danger: #ff8b76;
+        --danger-soft: #33201b;
+        --danger-ink: #ffa08e;
+
+        --svc-east: #a7bcd2;
+        --svc-north: #b1a2d6;
+        --svc-south: #7fb2b8;
+        --svc-wachs: #d89a78;
+
+        --lift: 0 1px 1px rgba(0, 0, 0, 0.4), 0 16px 34px -22px rgba(0, 0, 0, 0.95);
+        --hl: rgba(255, 255, 255, 0.06);
+        --hl-on-accent: rgba(255, 255, 255, 0.28);
+        --edge-shade: rgba(0, 0, 0, 0.55);
+        --scrim: rgba(0, 0, 0, 0.6);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        background: var(--ground);
+      }
+      body {
+        margin: 0;
+        background:
+          linear-gradient(180deg, var(--ground-hi) 0%, var(--ground) 55%, var(--ground-2) 100%) fixed,
+          var(--ground);
+        color: var(--ink);
+        font-family: var(--body);
+        font-size: var(--t-3);
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+        font-variant-numeric: tabular-nums;
+        overflow-x: hidden;
+      }
+
+      /* 3px Sovereign brand stripe */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 999;
+        pointer-events: none;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      p,
+      dl,
+      dd,
+      dt,
+      ul,
+      ol {
+        margin: 0;
+      }
+      ul,
+      ol {
+        padding: 0;
+        list-style: none;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-family: var(--display);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+
+      button {
+        font: inherit;
+        color: inherit;
+        background: none;
+        border: 0;
+        padding: 0;
+        cursor: pointer;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .mono {
+        font-family: var(--mono);
+      }
+      .srOnly {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
+      /* ─── Frame and Rail Layout ────────────────────────────────────────── */
+      .app {
+        display: grid;
+        grid-template-columns: 236px minmax(0, 1fr);
+        min-height: 100vh;
+        transition: grid-template-columns 0.18s ease;
+      }
+
+      :root[data-rail="closed"] .app {
+        grid-template-columns: 58px minmax(0, 1fr);
+      }
+
+      .rail {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        height: 100vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        padding: 22px 0 18px;
+        transition: width 0.18s ease;
+      }
+
+      .brand {
+        display: flex;
+        align-items: baseline;
+        gap: 9px;
+        padding: 0 20px 20px;
+      }
+
+      .brand b {
+        font-family: var(--display);
+        font-size: var(--t-5);
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        line-height: 1;
+        color: var(--accent-ink);
+      }
+
+      .brand span {
+        font-size: var(--t-0);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--gilt);
+        font-weight: 600;
+      }
+
+      :root[data-rail="closed"] .brand b {
+        display: none;
+      }
+      :root[data-rail="closed"] .brand {
+        padding: 0 18px 20px;
+      }
+
+      .railGroup {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        padding: 0 10px;
+      }
+      .railGroup + .railGroup {
+        margin-top: 14px;
+      }
+
+      .railEyebrow {
+        font-size: var(--t-0);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 600;
+        padding: 0 10px 6px;
+      }
+
+      :root[data-rail="closed"] .railEyebrow {
+        display: none;
+      }
+
+      .railLink {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: var(--r2);
+        font-size: var(--t-3);
+        color: var(--ink-soft);
+        position: relative;
+        text-decoration: none;
+        transition:
+          background 0.12s,
+          color 0.12s;
+      }
+
+      .railLink::before {
+        content: "";
+        position: absolute;
+        left: -10px;
+        top: 7px;
+        bottom: 7px;
+        width: 3px;
+        border-radius: 0 2px 2px 0;
+        background: transparent;
+      }
+
+      .railLink:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+
+      .railLink[aria-current="page"] {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
+
+      .railLink[aria-current="page"]::before {
+        background: var(--gilt);
+      }
+
+      .railLabel {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .railGlyph {
+        width: 15px;
+        height: 15px;
+        flex: 0 0 15px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        color: var(--muted);
+      }
+
+      .railLink[aria-current="page"] .railGlyph {
+        color: var(--accent);
+      }
+
+      :root[data-rail="closed"] .railText,
+      :root[data-rail="closed"] .tag {
+        display: none;
+      }
+
+      .tag {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 500;
+        color: var(--muted);
+        background: var(--sunk);
+        padding: 1px 7px;
+        border-radius: 999px;
+        box-shadow: inset 0 0 0 1px var(--line);
+      }
+
+      .railLink[aria-current="page"] .tag {
+        color: var(--accent-ink);
+        background: var(--accent-soft);
+        box-shadow: inset 0 0 0 1px var(--accent);
+      }
+
+      .railFoot {
+        margin-top: auto;
+        padding: 12px 20px 0;
+        border-top: 1px solid var(--line);
+        display: grid;
+        gap: 8px;
+      }
+
+      :root[data-rail="closed"] .railFoot {
+        padding: 12px 10px 0;
+      }
+
+      .railCheck {
+        display: flex;
+        align-items: flex-start;
+        gap: 7px;
+        font-size: var(--t-1);
+        line-height: 1.45;
+        color: var(--muted);
+      }
+      .railCheck::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        margin-top: 0.42em;
+        border-radius: 50%;
+        background: var(--good);
+        flex: none;
+      }
+
+      :root[data-rail="closed"] .railCheck span {
+        display: none;
+      }
+
+      /* Appearance Switcher */
+      .appearance {
+        display: inline-flex;
+        gap: 2px;
+        padding: 2px;
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+        background: var(--surface);
+        justify-self: start;
+      }
+
+      .apBtn {
+        padding: 3px 9px;
+        border-radius: 999px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        transition:
+          background 0.12s,
+          color 0.12s;
+      }
+
+      .apBtn:hover {
+        color: var(--ink);
+        background: var(--sunk);
+      }
+      .apBtn[aria-pressed="true"] {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+      }
+
+      :root[data-rail="closed"] .appearance {
+        display: none;
+      }
+
+      /* ─── Universal Top Chrome Bar ───────────────────────────────────────── */
+      .bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        height: 54px;
+        padding: 0 24px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .barLeft {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .railToggleBtn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        color: var(--muted);
+        transition:
+          background 0.12s,
+          color 0.12s;
+      }
+      .railToggleBtn:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+
+      .barRoleSelect {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: var(--t-2);
+        color: var(--ink-soft);
+        padding: 4px 10px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+      }
+      .barRoleSelect strong {
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
+
+      .barRight {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .clockBadge {
+        font-family: var(--mono);
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        background: var(--sunk);
+        border-radius: var(--r2);
+        border: 1px solid var(--line);
+      }
+
+      .protoChip {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 3px 8px;
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+      }
+
+      /* ─── Main Content Workspace ────────────────────────────────────────── */
+      .frame {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 20px 24px 36px;
+        gap: 18px;
+      }
+
+      .pageHeader {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        padding-bottom: 4px;
+      }
+
+      .pageTitleBlock h1 {
+        font-size: var(--t-5);
+        color: var(--ink);
+        letter-spacing: -0.02em;
+        margin-bottom: 4px;
+      }
+
+      .pageSubhead {
+        font-size: var(--t-2);
+        color: var(--muted);
+        line-height: 1.4;
+      }
+
+      .privacyBanner {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 14px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+      }
+      .privacyBanner strong {
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
+
+      /* ─── Search Hero Panel ──────────────────────────────────────────────── */
+      .searchCard {
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        padding: 16px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .searchFieldRow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        position: relative;
+      }
+
+      .searchIcon {
+        position: absolute;
+        left: 14px;
+        width: 17px;
+        height: 17px;
+        color: var(--muted);
+        pointer-events: none;
+      }
+
+      .searchInput {
+        width: 100%;
+        height: 42px;
+        padding: 0 90px 0 42px;
+        background: var(--sunk);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        font-family: var(--body);
+        font-size: var(--t-3);
+        color: var(--ink);
+        transition:
+          border-color 0.15s,
+          background 0.15s,
+          box-shadow 0.15s;
+      }
+
+      .searchInput:focus {
+        outline: none;
+        background: var(--surface);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+
+      .searchInput::placeholder {
+        color: var(--muted);
+        font-size: var(--t-2);
+      }
+
+      .searchActions {
+        position: absolute;
+        right: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .kbdBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: 4px;
+        padding: 2px 6px;
+        pointer-events: none;
+      }
+
+      .clearBtn {
+        font-size: var(--t-1);
+        color: var(--muted);
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition:
+          color 0.12s,
+          background 0.12s;
+      }
+      .clearBtn:hover {
+        color: var(--ink);
+        background: var(--sunk);
+      }
+
+      /* Quick Chips */
+      .quickChipsStrip {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        font-size: var(--t-1);
+      }
+
+      .quickChipLabel {
+        color: var(--muted);
+        font-size: var(--t-0);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 600;
+        margin-right: 4px;
+      }
+
+      .quickChip {
+        padding: 4px 10px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--ink-soft);
+        font-size: var(--t-1);
+        font-weight: 500;
+        transition:
+          background 0.12s,
+          border-color 0.12s,
+          color 0.12s;
+      }
+      .quickChip:hover {
+        background: var(--sunk);
+        color: var(--ink);
+        border-color: var(--line-strong);
+      }
+      .quickChip.active {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+
+      /* ─── THE REQUESTED DROPDOWN FILTERS TOOLBAR ─────────────────────────── */
+      .dropdownFiltersBar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+        padding: 12px 16px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r1i);
+      }
+
+      .filterControlsGroup {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .filterDropdownWrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .filterLabel {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+
+      .filterSelectContainer {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .filterSelect {
+        appearance: none;
+        -webkit-appearance: none;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        padding: 7px 32px 7px 12px;
+        font-family: var(--body);
+        font-size: var(--t-2);
+        color: var(--ink);
+        cursor: pointer;
+        min-width: 148px;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s,
+          background 0.15s;
+      }
+
+      .filterSelect:hover {
+        background: var(--sunk);
+        border-color: var(--ink-soft);
+      }
+
+      .filterSelect:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px var(--accent-soft);
+      }
+
+      .filterSelect.isFiltered {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
+
+      .dropdownArrow {
+        position: absolute;
+        right: 10px;
+        width: 13px;
+        height: 13px;
+        pointer-events: none;
+        color: var(--muted);
+      }
+
+      .filterResetBtn {
+        font-size: var(--t-2);
+        font-weight: 500;
+        color: var(--muted);
+        padding: 6px 12px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line);
+        background: var(--surface);
+        margin-top: auto;
+        height: 34px;
+        transition:
+          color 0.12s,
+          border-color 0.12s,
+          background 0.12s;
+      }
+      .filterResetBtn:hover {
+        color: var(--danger);
+        border-color: var(--danger-soft);
+        background: var(--danger-soft);
+      }
+
+      /* ─── Yield Summary Strip ────────────────────────────────────────────── */
+      .yieldStrip {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+      }
+
+      .yieldCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 12px 16px;
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .yieldTitle {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+
+      .yieldValue {
+        font-family: var(--mono);
+        font-size: var(--t-5);
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      .yieldValue.accent {
+        color: var(--accent-ink);
+      }
+      .yieldValue.warn {
+        color: var(--warn);
+      }
+      .yieldValue.good {
+        color: var(--good);
+      }
+      .yieldValue.danger {
+        color: var(--danger);
+      }
+
+      /* ─── Two-Column Workspace ───────────────────────────────────────────── */
+      .workspaceGrid {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 18px;
+        min-height: 520px;
+      }
+
+      @media (max-width: 1040px) {
+        .workspaceGrid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Results Column */
+      .resultsPanel {
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .panelHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 18px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .panelTitle {
+        font-size: var(--t-3);
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      .resultsCountBadge {
+        font-family: var(--mono);
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--accent-ink);
+        background: var(--accent-soft);
+        padding: 2px 8px;
+        border-radius: 999px;
+      }
+
+      .patientList {
+        overflow-y: auto;
+        max-height: 580px;
+      }
+
+      .patientCard {
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--line);
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        transition: background 0.12s;
+      }
+      .patientCard:hover {
+        background: var(--sunk);
+      }
+      .patientCard.selected {
+        background: var(--accent-soft);
+        box-shadow: inset 0 0 0 1.5px var(--accent);
+      }
+
+      .patientCardRow1 {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .patientId {
+        font-family: var(--mono);
+        font-size: var(--t-2);
+        font-weight: 600;
+        color: var(--accent-ink);
+      }
+
+      .patientName {
+        font-weight: 600;
+        color: var(--ink);
+        font-size: var(--t-3);
+      }
+
+      .patientDemographics {
+        font-size: var(--t-1);
+        color: var(--muted);
+        margin-left: 4px;
+      }
+
+      .waitBadge {
+        font-family: var(--mono);
+        font-size: var(--t-1);
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: var(--r2);
+        background: var(--sunk);
+        color: var(--ink-soft);
+      }
+      .waitBadge.warn {
+        background: var(--warn-soft);
+        color: var(--warn);
+      }
+      .waitBadge.danger {
+        background: var(--danger-soft);
+        color: var(--danger);
+      }
+
+      .patientCardRow2 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        font-size: var(--t-1);
+      }
+
+      .serviceTag {
+        font-size: var(--t-0);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        padding: 2px 7px;
+        border-radius: 4px;
+        color: var(--ink);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .serviceDot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+      }
+      .serviceDot.east {
+        background: var(--svc-east);
+      }
+      .serviceDot.north {
+        background: var(--svc-north);
+      }
+      .serviceDot.south {
+        background: var(--svc-south);
+      }
+      .serviceDot.wachs {
+        background: var(--svc-wachs);
+      }
+
+      .statusPill {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 2px 8px;
+        border-radius: 999px;
+      }
+
+      .statusPill.form1a {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border: 1px solid var(--danger);
+      }
+      .statusPill.form4a {
+        background: #f3e8ff;
+        color: #685a94;
+        border: 1px solid #c084fc;
+      }
+      .statusPill.form5a {
+        background: #ccfbf1;
+        color: #115e59;
+        border: 1px solid #2dd4bf;
+      }
+      .statusPill.voluntary {
+        background: var(--sunk);
+        color: var(--ink-soft);
+        border: 1px solid var(--line-strong);
+      }
+
+      .destinationText {
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        margin-left: auto;
+      }
+      .destinationText strong {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      /* Empty Results Notice */
+      .emptyState {
+        padding: 48px 24px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+      .emptyTitle {
+        font-size: var(--t-4);
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .emptySub {
+        font-size: var(--t-2);
+        color: var(--muted);
+        max-width: 360px;
+      }
+
+      /* Inspector Column */
+      .inspectorPanel {
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .inspectorContent {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        overflow-y: auto;
+        max-height: 580px;
+      }
+
+      .inspectorNameRow {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 12px;
+      }
+
+      .inspectorName {
+        font-size: var(--t-4);
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      .inspectorUrm {
+        font-family: var(--mono);
+        font-size: var(--t-2);
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
+
+      .factsGrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 12px 14px;
+      }
+
+      .factItem {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .factLabel {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+      .factValue {
+        font-size: var(--t-2);
+        color: var(--ink);
+        font-weight: 500;
+      }
+      .factValue.mono {
+        font-family: var(--mono);
+      }
+
+      .clinicalSection {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .sectionHeading {
+        font-size: var(--t-2);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+
+      .orderBox {
+        padding: 10px 14px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: var(--t-2);
+      }
+      .orderBox.breaching {
+        border-color: var(--danger);
+        background: var(--danger-soft);
+      }
+
+      .orderTitle {
+        font-weight: 600;
+        color: var(--ink);
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .timelineList {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        position: relative;
+        padding-left: 18px;
+      }
+      .timelineList::before {
+        content: "";
+        position: absolute;
+        left: 5px;
+        top: 4px;
+        bottom: 4px;
+        width: 2px;
+        background: var(--line-strong);
+      }
+      .timelineItem {
+        position: relative;
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+      }
+      .timelineItem::before {
+        content: "";
+        position: absolute;
+        left: -17px;
+        top: 5px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+      .timelineItem strong {
+        color: var(--ink);
+      }
+
+      .inspectorActions {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+      }
+
+      .btnPrimary {
+        padding: 8px 14px;
+        background: var(--accent);
+        color: var(--on-accent);
+        font-size: var(--t-2);
+        font-weight: 600;
+        border-radius: var(--r2);
+        transition: background 0.12s;
+      }
+      .btnPrimary:hover {
+        background: var(--accent-press);
+      }
+
+      .btnSecondary {
+        padding: 8px 14px;
+        background: var(--surface-2);
+        color: var(--ink);
+        border: 1px solid var(--line-strong);
+        font-size: var(--t-2);
+        font-weight: 500;
+        border-radius: var(--r2);
+        transition: background 0.12s;
+      }
+      .btnSecondary:hover {
+        background: var(--sunk);
+      }
+
+      .populationGroupHeading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px 4px 12px;
+        font-size: var(--t-1);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: +0.035em;
+        color: var(--ink-soft);
+        border-bottom: 1px solid var(--line-subtle);
+        margin-top: 10px;
+        margin-bottom: 6px;
+      }
+      .groupCount {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+        background: var(--surface-raised);
+        color: var(--ink);
+        padding: 1px 7px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+      }
+
+      .sovereignDisclosureFooter {
+        padding: 12px 24px;
+        background: var(--surface);
+        border-top: 1px solid var(--line);
+        font-size: var(--t-2);
+        color: var(--ink-soft);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+        margin-top: auto;
+      }
+      .regulatoryNote {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: +0.035em;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .prototypeBadge {
+        display: inline-block;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: +0.05em;
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        padding: 2px 6px;
+        border-radius: var(--r1);
+        margin-right: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- ═══ LEFT NAVIGATION RAIL ═══ -->
+      <nav class="rail" aria-label="Ward Flow navigation">
+        <div class="brand">
+          <b>Ward Flow</b>
+          <span>WF</span>
+        </div>
+
+        <div class="railGroup">
+          <span class="railEyebrow">Network Core</span>
+          <a href="command-third-edition.html" class="railLink">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="7" height="7" rx="1" />
+                <rect x="14" y="3" width="7" height="7" rx="1" />
+                <rect x="14" y="14" width="7" height="7" rx="1" />
+                <rect x="3" y="14" width="7" height="7" rx="1" />
+              </svg>
+              <span class="railText">Command</span>
+            </span>
+            <span class="tag">14</span>
+          </a>
+          <a href="capacity-third-edition.html" class="railLink">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24">
+                <path
+                  d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+                />
+              </svg>
+              <span class="railText">Capacity</span>
+            </span>
+            <span class="tag">88%</span>
+          </a>
+          <a href="movement-third-edition.html" class="railLink">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24">
+                <polyline points="13 17 18 12 13 7" />
+                <polyline points="6 17 11 12 6 7" />
+              </svg>
+              <span class="railText">Movements</span>
+            </span>
+            <span class="tag">6</span>
+          </a>
+          <a href="bed-board-third-edition.html" class="railLink">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24">
+                <path d="M2 4v16" />
+                <path d="M2 8h18a2 2 0 0 1 2 2v10" />
+                <path d="M2 17h20" />
+                <path d="M6 8v9" />
+              </svg>
+              <span class="railText">Bed board</span>
+            </span>
+            <span class="tag">24</span>
+          </a>
+          <a href="delays-third-edition.html" class="railLink">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span class="railText">Delays</span>
+            </span>
+            <span class="tag">5</span>
+          </a>
+        </div>
+
+        <div class="railGroup">
+          <span class="railEyebrow">Clinical Flow</span>
+          <a href="discharges-third-edition.html" class="railLink">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              <span class="railText">Discharges</span>
+            </span>
+            <span class="tag">8</span>
+          </a>
+          <a href="referrals-third-edition.html" class="railLink">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+              <span class="railText">Referrals</span>
+            </span>
+            <span class="tag">12</span>
+          </a>
+          <a href="patient-search-perfected-third-edition.html" class="railLink" aria-current="page">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <span class="railText">Patient search</span>
+            </span>
+            <span class="tag" id="railSearchCount">6</span>
+          </a>
+        </div>
+
+        <div class="railGroup">
+          <span class="railEyebrow">Assurance</span>
+          <a href="governance-third-edition.html" class="railLink">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+              <span class="railText">Governance</span>
+            </span>
+          </a>
+          <a href="settings-third-edition.html" class="railLink">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                />
+              </svg>
+              <span class="railText">Settings</span>
+            </span>
+          </a>
+        </div>
+
+        <div class="railFoot">
+          <div class="railCheck" id="railCheck">
+            <span>Every figure invented. Reconciled 10:42.</span>
+          </div>
+          <div class="appearance">
+            <button type="button" class="apBtn" id="themeLightBtn" onclick="setTheme('light')">Light</button>
+            <button type="button" class="apBtn" id="themeDarkBtn" onclick="setTheme('dark')">Dark</button>
+          </div>
+        </div>
+      </nav>
+
+      <!-- ═══ MAIN APPLICATION FRAME ═══ -->
+      <div class="frame">
+        <!-- Top Chrome Bar -->
+        <header class="bar">
+          <div class="barLeft">
+            <button
+              type="button"
+              class="railToggleBtn"
+              onclick="toggleRail()"
+              title="Toggle Navigation Rail"
+              aria-label="Toggle rail"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+            <div class="barRoleSelect">
+              <span>Viewing as:</span>
+              <strong>Bed coordinator</strong>
+              <span style="color: var(--muted); font-size: var(--t-0)">· East Metro Hub</span>
+            </div>
+          </div>
+
+          <div class="barRight">
+            <div class="clockBadge">
+              <span class="serviceDot east"></span>
+              <span>10:42 AWST</span>
+            </div>
+            <span class="protoChip" title="Synthetic clinical demonstration data">Synthetic prototype</span>
+          </div>
+        </header>
+
+        <!-- Page Header -->
+        <div class="pageHeader">
+          <div class="pageTitleBlock">
+            <h1>Patient search</h1>
+            <p class="pageSubhead">
+              Find open caseload movements across WA health services by URM, name, department or legal status
+            </p>
+          </div>
+          <div class="privacyBanner">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            <span
+              ><strong>D-14 Compliance:</strong> Service-scoped coordinator view. Ward-level cross-ward tracking
+              strictly blocked.</span
+            >
+          </div>
+        </div>
+
+        <!-- Search Hero Panel -->
+        <section class="searchCard" aria-label="Search and filter controls">
+          <!-- Search Field -->
+          <div class="searchFieldRow">
+            <svg
+              class="searchIcon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input
+              type="text"
+              id="searchInput"
+              class="searchInput"
+              placeholder="Type patient name, URM (e.g. UM-401292), ward, legal form, or destination..."
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <div class="searchActions">
+              <span class="kbdBadge" title="Press / to focus">/</span>
+              <button type="button" id="clearBtn" class="clearBtn" onclick="clearSearch()">Clear</button>
+            </div>
+          </div>
+
+          <!-- Quick Chips -->
+          <div class="quickChipsStrip">
+            <span class="quickChipLabel">Quick queries:</span>
+            <button type="button" class="quickChip" data-chip="Form 1A" onclick="applyQuickChip('Form 1A')">
+              Form 1A (ED 24h)
+            </button>
+            <button type="button" class="quickChip" data-chip="Form 4A" onclick="applyQuickChip('Form 4A')">
+              Form 4A (Transport)
+            </button>
+            <button type="button" class="quickChip" data-chip="Form 5A" onclick="applyQuickChip('Form 5A')">
+              Form 5A (Involuntary)
+            </button>
+            <button type="button" class="quickChip" data-chip="Peel ED" onclick="applyQuickChip('Peel ED')">
+              Peel ED
+            </button>
+            <button type="button" class="quickChip" data-chip="Adult Secure" onclick="applyQuickChip('Adult Secure')">
+              Adult Secure
+            </button>
+            <button type="button" class="quickChip" data-chip="Waiting > 24h" onclick="applyQuickChip('Waiting > 24h')">
+              Waiting &gt; 24h
+            </button>
+            <button type="button" class="quickChip" data-chip="Unplaced" onclick="applyQuickChip('Unplaced')">
+              Unplaced Referrals
+            </button>
+          </div>
+
+          <!-- ═══ REQUESTED 4 DROPDOWN FILTERS ═══ -->
+          <div class="dropdownFiltersBar" aria-label="Caseload faceted filter bar">
+            <div class="filterControlsGroup">
+              <!-- 1. Service Dropdown -->
+              <div class="filterDropdownWrapper">
+                <label class="filterLabel" for="serviceSelect">Service</label>
+                <div class="filterSelectContainer">
+                  <select id="serviceSelect" class="filterSelect" onchange="onFilterChange()">
+                    <option value="all">All Services (6)</option>
+                    <option value="East Metro">East Metro (3)</option>
+                    <option value="North Metro">North Metro (1)</option>
+                    <option value="South Metro">South Metro (2)</option>
+                    <option value="WACHS">WACHS (0)</option>
+                  </select>
+                  <svg class="dropdownArrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
+              </div>
+
+              <!-- 2. Setting Dropdown -->
+              <div class="filterDropdownWrapper">
+                <label class="filterLabel" for="settingSelect">Setting</label>
+                <div class="filterSelectContainer">
+                  <select id="settingSelect" class="filterSelect" onchange="onFilterChange()">
+                    <option value="all">All Settings (6)</option>
+                    <option value="ed">Emergency Dept (4)</option>
+                    <option value="inpatient">Inpatient Ward (1)</option>
+                    <option value="transit">In-Transit (1)</option>
+                  </select>
+                  <svg class="dropdownArrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
+              </div>
+
+              <!-- 3. Legal Status Dropdown -->
+              <div class="filterDropdownWrapper">
+                <label class="filterLabel" for="legalSelect">Legal Status</label>
+                <div class="filterSelectContainer">
+                  <select id="legalSelect" class="filterSelect" onchange="onFilterChange()">
+                    <option value="all">All Legal Statuses (6)</option>
+                    <option value="Form 1A">Form 1A (ED 24h) (2)</option>
+                    <option value="Form 4A">Form 4A (Transport) (1)</option>
+                    <option value="Form 5A">Form 5A (Involuntary) (2)</option>
+                    <option value="Voluntary">Voluntary (1)</option>
+                  </select>
+                  <svg class="dropdownArrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
+              </div>
+
+              <!-- 4. Wait Band Dropdown -->
+              <div class="filterDropdownWrapper">
+                <label class="filterLabel" for="waitSelect">Wait Band</label>
+                <div class="filterSelectContainer">
+                  <select id="waitSelect" class="filterSelect" onchange="onFilterChange()">
+                    <option value="all">All Wait Bands (6)</option>
+                    <option value="under6">&lt; 6 Hours (1)</option>
+                    <option value="6to24">6 to 24 Hours (2)</option>
+                    <option value="over24">&gt; 24 Hours (3)</option>
+                  </select>
+                  <svg class="dropdownArrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="filterResetBtn" id="resetFiltersBtn" onclick="resetAllFilters()">
+              Reset filters
+            </button>
+          </div>
+        </section>
+
+        <!-- Yield Summary Strip -->
+        <section class="yieldStrip" aria-label="Caseload yield statistics">
+          <div class="yieldCard">
+            <span class="yieldTitle">Patients Matching</span>
+            <span class="yieldValue accent" id="yieldTotal">6</span>
+          </div>
+          <div class="yieldCard">
+            <span class="yieldTitle">Unplaced Referrals</span>
+            <span class="yieldValue warn" id="yieldUnplaced">3</span>
+          </div>
+          <div class="yieldCard">
+            <span class="yieldTitle">Bed Holds / Pulled</span>
+            <span class="yieldValue good" id="yieldHolds">2</span>
+          </div>
+          <div class="yieldCard">
+            <span class="yieldTitle">Active In-Transit</span>
+            <span class="yieldValue" id="yieldTransit">1</span>
+          </div>
+          <div class="yieldCard">
+            <span class="yieldTitle">Breaching Wait (&gt;24h)</span>
+            <span class="yieldValue danger" id="yieldBreaches">3</span>
+          </div>
+        </section>
+
+        <!-- Two-Column Caseload Workspace -->
+        <div class="workspaceGrid">
+          <!-- Left: Results Panel -->
+          <section class="resultsPanel" aria-label="Caseload list">
+            <div class="panelHead">
+              <h2 class="panelTitle">Caseload Results</h2>
+              <span class="resultsCountBadge" id="resultsCountBadge">6 patients</span>
+            </div>
+
+            <div class="patientList" id="patientListContainer" role="list">
+              <!-- Patient Cards dynamically populated by JavaScript -->
+            </div>
+
+            <div id="emptyStateNotice" class="emptyState" style="display: none">
+              <div class="emptyTitle">No Patients Match Criteria</div>
+              <p class="emptySub">
+                No open records fit the typed search and active dropdown filters. Try resetting filters.
+              </p>
+              <button type="button" class="btnSecondary" style="margin-top: 8px" onclick="resetAllFilters()">
+                Reset All Filters
+              </button>
+            </div>
+          </section>
+
+          <!-- Right: Inspector Dossier Panel -->
+          <section class="inspectorPanel" aria-label="Patient details dossier">
+            <div class="panelHead">
+              <h2 class="panelTitle">Clinical Dossier</h2>
+              <span style="font-size: var(--t-1); color: var(--muted)">Select a patient to inspect</span>
+            </div>
+
+            <div class="inspectorContent" id="inspectorContent">
+              <!-- Dynamically populated by JavaScript -->
+            </div>
+          </section>
+        </div>
+
+        <footer class="sovereignDisclosureFooter" data-testid="ward-patient-search-governance">
+          <div>
+            <span class="prototypeBadge">Synthetic prototype</span>
+            <strong>Synthetic prototype. Not a medical device.</strong> Searches people, waiting referrals and open
+            movements; closed and arrived movements are excluded.
+          </div>
+          <div class="regulatoryNote">WA MHA 2014 STATUTORY FLOW · PERTH METROPOLITAN CASSETTE</div>
+        </footer>
+      </div>
+    </div>
+
+    <script>
+      /* ═══════════════════════════════════════════════════════════════════════
+       SOVEREIGN PATIENT SEARCH DATA ENGINE (RECONCILED DATASET)
+       ═══════════════════════════════════════════════════════════════════════ */
+      const PATIENTS = [
+        {
+          id: "WF-012",
+          urm: "UM-401292",
+          name: "Jarrah, Marcus",
+          age: 38,
+          sex: "Male",
+          indigenous: false,
+          origin: "Royal Perth ED",
+          setting: "ed",
+          service: "East Metro",
+          legalStatus: "Form 1A",
+          legalExpires: "18h remaining",
+          urgency: "Tier 1",
+          waitHours: 28.5,
+          openedAt: "10 Sep 06:12",
+          destination: "rph-adult-secure",
+          destinationName: "RPH Adult Secure Unit",
+          holdStatus: "Bed hold active",
+          stage: "Reserved",
+          transportNeeded: true,
+          transportStatus: "Booked (St John)",
+          nurseEscort: true,
+          clinicalNote:
+            "Severe acute psychotic presentation. Involuntary order Form 1A confirmed. Bed pulled to RPH Adult Secure.",
+        },
+        {
+          id: "WF-014",
+          urm: "UM-401305",
+          name: "Connors, Sarah",
+          age: 29,
+          sex: "Female",
+          indigenous: true,
+          origin: "Sir Charles Gairdner ED",
+          setting: "ed",
+          service: "North Metro",
+          legalStatus: "Form 4A",
+          legalExpires: "42h remaining",
+          urgency: "Tier 2",
+          waitHours: 14.2,
+          openedAt: "10 Sep 20:30",
+          destination: null,
+          destinationName: "No ward yet",
+          holdStatus: "Unplaced",
+          stage: "Referred",
+          transportNeeded: true,
+          transportStatus: "Pending allocation",
+          nurseEscort: false,
+          clinicalNote: "Form 4A transport order signed. Awaiting bed acceptance in North Metro or East Metro network.",
+        },
+        {
+          id: "WF-018",
+          urm: "UM-401344",
+          name: "De Silva, Priyantha",
+          age: 44,
+          sex: "Male",
+          indigenous: false,
+          origin: "Fiona Stanley ED",
+          setting: "ed",
+          service: "South Metro",
+          legalStatus: "Form 5A",
+          legalExpires: "5 days remaining",
+          urgency: "Tier 1",
+          waitHours: 32.0,
+          openedAt: "10 Sep 02:42",
+          destination: "fsh-mental-health",
+          destinationName: "FSH Adult Mental Health",
+          holdStatus: "Bed hold active",
+          stage: "Allocated",
+          transportNeeded: false,
+          transportStatus: "Internal transfer",
+          nurseEscort: true,
+          clinicalNote:
+            "Form 5A community treatment order breached. Involuntary admission approved. Internal transfer pending bed prep.",
+        },
+        {
+          id: "WF-021",
+          urm: "UM-401389",
+          name: "Taylor, Jordan",
+          age: 22,
+          sex: "Non-binary",
+          indigenous: false,
+          origin: "Peel Health Campus ED",
+          setting: "ed",
+          service: "South Metro",
+          legalStatus: "Voluntary",
+          legalExpires: "N/A",
+          urgency: "Tier 3",
+          waitHours: 4.5,
+          openedAt: "11 Sep 06:12",
+          destination: null,
+          destinationName: "No ward yet",
+          holdStatus: "Unplaced",
+          stage: "Triaged",
+          transportNeeded: false,
+          transportStatus: "Ambulatory",
+          nurseEscort: false,
+          clinicalNote:
+            "Voluntary depressive crisis. Single-room ensuite accommodation requested per PT-007 diversity policy.",
+        },
+        {
+          id: "WF-025",
+          urm: "UM-401410",
+          name: "Nannup, Daniel",
+          age: 51,
+          sex: "Male",
+          indigenous: true,
+          origin: "Armadale Health Service",
+          setting: "inpatient",
+          service: "East Metro",
+          legalStatus: "Form 5A",
+          legalExpires: "12 days remaining",
+          urgency: "Tier 2",
+          waitHours: 25.0,
+          openedAt: "10 Sep 09:42",
+          destination: null,
+          destinationName: "No ward yet",
+          holdStatus: "Unplaced",
+          stage: "Step-Down Referral",
+          transportNeeded: true,
+          transportStatus: "Not booked",
+          nurseEscort: false,
+          clinicalNote:
+            "Step-down referral to East Metro Community Mental Health Team following inpatient stabilization.",
+        },
+        {
+          id: "WF-029",
+          urm: "UM-401455",
+          name: "O'Reilly, Claire",
+          age: 34,
+          sex: "Female",
+          indigenous: false,
+          origin: "Midland ED",
+          setting: "transit",
+          service: "East Metro",
+          legalStatus: "Form 1A",
+          legalExpires: "30h remaining",
+          urgency: "Tier 1",
+          waitHours: 19.8,
+          openedAt: "10 Sep 14:55",
+          destination: "graylands-montrose",
+          destinationName: "Graylands Hospital (Montrose)",
+          holdStatus: "In-Transit",
+          stage: "En Route",
+          transportNeeded: true,
+          transportStatus: "Vehicle dispatched (ETA 25m)",
+          nurseEscort: true,
+          clinicalNote:
+            "Patient collected from Midland ED. Vehicle currently en route to Graylands Hospital with dual escort.",
+        },
+      ];
+
+      let selectedPatientId = "WF-012";
+
+      function setTheme(theme) {
+        document.documentElement.setAttribute("data-theme", theme);
+        try {
+          localStorage.setItem("ward-flow-theme", theme);
+        } catch (e) {}
+        updateThemeButtons();
+      }
+
+      function updateThemeButtons() {
+        const current = document.documentElement.getAttribute("data-theme") || "dark";
+        document.getElementById("themeLightBtn").setAttribute("aria-pressed", current === "light");
+        document.getElementById("themeDarkBtn").setAttribute("aria-pressed", current === "dark");
+      }
+
+      function toggleRail() {
+        const isClosed = document.documentElement.getAttribute("data-rail") === "closed";
+        const next = isClosed ? "open" : "closed";
+        document.documentElement.setAttribute("data-rail", next);
+        try {
+          localStorage.setItem("ward-flow-rail", next);
+        } catch (e) {}
+      }
+
+      function getFilteredPatients() {
+        const search = document.getElementById("searchInput").value.trim().toLowerCase();
+        const service = document.getElementById("serviceSelect").value;
+        const setting = document.getElementById("settingSelect").value;
+        const legal = document.getElementById("legalSelect").value;
+        const wait = document.getElementById("waitSelect").value;
+
+        return PATIENTS.filter((p) => {
+          // Search text matching
+          if (search) {
+            const hay = [p.name, p.urm, p.id, p.origin, p.destinationName || "", p.legalStatus, p.clinicalNote]
+              .join(" ")
+              .toLowerCase();
+            if (!hay.includes(search)) return false;
+          }
+
+          // Service filter
+          if (service !== "all" && p.service !== service) return false;
+
+          // Setting filter
+          if (setting !== "all" && p.setting !== setting) return false;
+
+          // Legal Status filter
+          if (legal !== "all" && p.legalStatus !== legal) return false;
+
+          // Wait Band filter
+          if (wait !== "all") {
+            if (wait === "under6" && p.waitHours >= 6) return false;
+            if (wait === "6to24" && (p.waitHours < 6 || p.waitHours >= 24)) return false;
+            if (wait === "over24" && p.waitHours < 24) return false;
+          }
+
+          return true;
+        });
+      }
+
+      function onFilterChange() {
+        // Highlight active dropdowns
+        ["serviceSelect", "settingSelect", "legalSelect", "waitSelect"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el.value !== "all") {
+            el.classList.add("isFiltered");
+          } else {
+            el.classList.remove("isFiltered");
+          }
+        });
+
+        render();
+      }
+
+      function applyQuickChip(query) {
+        document.getElementById("searchInput").value = query;
+        document.querySelectorAll(".quickChip").forEach((chip) => {
+          if (chip.getAttribute("data-chip") === query) {
+            chip.classList.toggle("active");
+            if (!chip.classList.contains("active")) {
+              document.getElementById("searchInput").value = "";
+            }
+          } else {
+            chip.classList.remove("active");
+          }
+        });
+        render();
+      }
+
+      function clearSearch() {
+        document.getElementById("searchInput").value = "";
+        document.querySelectorAll(".quickChip").forEach((c) => c.classList.remove("active"));
+        render();
+      }
+
+      function resetAllFilters() {
+        document.getElementById("searchInput").value = "";
+        document.getElementById("serviceSelect").value = "all";
+        document.getElementById("settingSelect").value = "all";
+        document.getElementById("legalSelect").value = "all";
+        document.getElementById("waitSelect").value = "all";
+        document.querySelectorAll(".quickChip").forEach((c) => c.classList.remove("active"));
+        onFilterChange();
+      }
+
+      function selectPatient(id) {
+        selectedPatientId = id;
+        renderInspector();
+        // update selected class
+        document.querySelectorAll(".patientCard").forEach((card) => {
+          if (card.getAttribute("data-id") === id) {
+            card.classList.add("selected");
+          } else {
+            card.classList.remove("selected");
+          }
+        });
+      }
+
+      function render() {
+        const filtered = getFilteredPatients();
+
+        // Update Counts
+        document.getElementById("yieldTotal").textContent = filtered.length;
+        document.getElementById("resultsCountBadge").textContent = filtered.length + " patients";
+        document.getElementById("railSearchCount").textContent = filtered.length;
+
+        const unplacedCount = filtered.filter((p) => !p.destination).length;
+        const holdsCount = filtered.filter((p) => p.destination && p.setting !== "transit").length;
+        const transitCount = filtered.filter((p) => p.setting === "transit").length;
+        const breachCount = filtered.filter((p) => p.waitHours >= 24).length;
+
+        document.getElementById("yieldUnplaced").textContent = unplacedCount;
+        document.getElementById("yieldHolds").textContent = holdsCount;
+        document.getElementById("yieldTransit").textContent = transitCount;
+        document.getElementById("yieldBreaches").textContent = breachCount;
+
+        const container = document.getElementById("patientListContainer");
+        const emptyState = document.getElementById("emptyStateNotice");
+
+        if (filtered.length === 0) {
+          container.innerHTML = "";
+          emptyState.style.display = "flex";
+          document.getElementById("inspectorContent").innerHTML =
+            `<div class="emptyState" style="padding:40px 10px;"><div class="emptyTitle">No Selection</div><p class="emptySub">Adjust filters to inspect patient clinical records.</p></div>`;
+          return;
+        }
+
+        emptyState.style.display = "none";
+
+        // If selected patient not in filtered list, select first match
+        if (!filtered.some((p) => p.id === selectedPatientId)) {
+          selectedPatientId = filtered[0].id;
+        }
+
+        const queued = filtered.filter((p) => !p.destination);
+        const accepted = filtered.filter((p) => p.destination && p.setting !== "transit");
+        const transit = filtered.filter((p) => p.setting === "transit");
+
+        function renderCard(p) {
+          const isSelected = p.id === selectedPatientId ? " selected" : "";
+          let waitClass = "";
+          if (p.waitHours >= 24) waitClass = " danger";
+          else if (p.waitHours >= 6) waitClass = " warn";
+
+          let serviceDotClass = "east";
+          if (p.service === "North Metro") serviceDotClass = "north";
+          else if (p.service === "South Metro") serviceDotClass = "south";
+          else if (p.service === "WACHS") serviceDotClass = "wachs";
+
+          let legalClass = "voluntary";
+          if (p.legalStatus === "Form 1A") legalClass = "form1a";
+          else if (p.legalStatus === "Form 4A") legalClass = "form4a";
+          else if (p.legalStatus === "Form 5A") legalClass = "form5a";
+
+          return `
+          <article class="patientCard${isSelected}" data-id="${p.id}" onclick="selectPatient('${p.id}')" tabindex="0" role="button" aria-label="Patient ${p.name}">
+            <div class="patientCardRow1">
+              <div>
+                <span class="patientId">${p.urm}</span>
+                <strong class="patientName" style="margin-left:8px;">${p.name}</strong>
+                <span class="patientDemographics">${p.age}y · ${p.sex}${p.indigenous ? " · ATSI" : ""}</span>
+              </div>
+              <span class="waitBadge${waitClass}">${p.waitHours.toFixed(1)}h</span>
+            </div>
+
+            <div class="patientCardRow2">
+              <span class="serviceTag">
+                <span class="serviceDot ${serviceDotClass}"></span>
+                ${p.origin}
+              </span>
+              <span class="statusPill ${legalClass}">${p.legalStatus}</span>
+              <span class="destinationText">
+                ${p.destination ? "→ <strong>" + p.destinationName + "</strong>" : '<span style="color:var(--muted);">No ward yet</span>'}
+              </span>
+            </div>
+          </article>
+        `;
+        }
+
+        let html = "";
+        if (queued.length > 0) {
+          html +=
+            `<div class="populationGroupHeading"><span class="groupTitle">Queued Crisis Referrals</span><span class="groupCount">${queued.length}</span></div>` +
+            queued.map(renderCard).join("");
+        }
+        if (accepted.length > 0) {
+          html +=
+            `<div class="populationGroupHeading"><span class="groupTitle">Accepted & Bed Pulled</span><span class="groupCount">${accepted.length}</span></div>` +
+            accepted.map(renderCard).join("");
+        }
+        if (transit.length > 0) {
+          html +=
+            `<div class="populationGroupHeading"><span class="groupTitle">Active In-Transit</span><span class="groupCount">${transit.length}</span></div>` +
+            transit.map(renderCard).join("");
+        }
+
+        container.innerHTML = html;
+
+        renderInspector();
+      }
+
+      function renderInspector() {
+        const p = PATIENTS.find((item) => item.id === selectedPatientId);
+        const container = document.getElementById("inspectorContent");
+        if (!p) return;
+
+        let legalClass = "voluntary";
+        if (p.legalStatus === "Form 1A") legalClass = "form1a";
+        else if (p.legalStatus === "Form 4A") legalClass = "form4a";
+        else if (p.legalStatus === "Form 5A") legalClass = "form5a";
+
+        const isBreaching = p.waitHours >= 24;
+
+        container.innerHTML = `
+        <div class="inspectorNameRow">
+          <div>
+            <h3 class="inspectorName">${p.name}</h3>
+            <span style="font-size:var(--t-1); color:var(--muted);">${p.age} years · ${p.sex}${p.indigenous ? " · Aboriginal / Torres Strait Islander" : ""}</span>
+          </div>
+          <span class="inspectorUrm">${p.urm}</span>
+        </div>
+
+        <div class="factsGrid">
+          <div class="factItem">
+            <span class="factLabel">Originating Setting</span>
+            <span class="factValue">${p.origin}</span>
+          </div>
+          <div class="factItem">
+            <span class="factLabel">Health Service</span>
+            <span class="factValue">${p.service}</span>
+          </div>
+          <div class="factItem">
+            <span class="factLabel">Elapsed Waiting Time</span>
+            <span class="factValue mono" style="font-weight:600; color:${isBreaching ? "var(--danger)" : "var(--ink)"};">${p.waitHours.toFixed(1)} hours (opened ${p.openedAt})</span>
+          </div>
+          <div class="factItem">
+            <span class="factLabel">Current Disposition</span>
+            <span class="factValue" style="color:var(--accent-ink); font-weight:600;">${p.holdStatus}</span>
+          </div>
+        </div>
+
+        <div class="clinicalSection">
+          <span class="sectionHeading">WA Mental Health Act 2014 Status</span>
+          <div class="orderBox ${isBreaching ? "breaching" : ""}">
+            <div class="orderTitle">
+              <span>${p.legalStatus} Order Active</span>
+              <span class="mono" style="font-size:var(--t-0); color:var(--muted);">${p.legalExpires}</span>
+            </div>
+            <p style="font-size:var(--t-1); color:var(--ink-soft); margin-top:2px;">
+              Statutory examination deadline monitored. Clinical authority verified under Mental Health Commission guidelines.
+            </p>
+          </div>
+        </div>
+
+        <div class="clinicalSection">
+          <span class="sectionHeading">Transport & Placement Trajectory</span>
+          <div class="orderBox">
+            <div class="orderTitle">
+              <span>Destination: ${p.destinationName}</span>
+              <span style="font-size:var(--t-0); color:var(--muted);">${p.stage}</span>
+            </div>
+            <p style="font-size:var(--t-1); color:var(--ink-soft); margin-top:2px;">
+              Transport: <strong>${p.transportStatus}</strong> ${p.nurseEscort ? "· Nurse escort allocated" : "· Routine conveyance"}
+            </p>
+          </div>
+        </div>
+
+        <div class="clinicalSection">
+          <span class="sectionHeading">Clinical Handover Note</span>
+          <p style="font-size:var(--t-2); color:var(--ink); line-height:1.45; background:var(--surface-2); padding:10px 12px; border-radius:var(--r2); border:1px solid var(--line);">
+            ${p.clinicalNote}
+          </p>
+        </div>
+
+        <div class="clinicalSection">
+          <span class="sectionHeading">Clinical Audit Timeline</span>
+          <div class="timelineList">
+            <div class="timelineItem"><strong>10:42</strong> Operational state verified by Bed Coordinator</div>
+            <div class="timelineItem"><strong>08:15</strong> Transport logistics update: ${p.transportStatus}</div>
+            <div class="timelineItem"><strong>${p.openedAt}</strong> Referral opened from ${p.origin}</div>
+          </div>
+        </div>
+
+        <div class="inspectorActions">
+          <button type="button" class="btnPrimary" onclick="alert('Viewing full movement trajectory for ' + '${p.urm}')">View Movement</button>
+          <button type="button" class="btnSecondary" onclick="alert('Actioning coordinator override for ' + '${p.urm}')">Coordinator Override</button>
+          <button type="button" class="btnSecondary" onclick="alert('Referral options opened for ' + '${p.urm}')">Refer to Units</button>
+        </div>
+      `;
+      }
+
+      // Keyboard Shortcuts
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "/" && document.activeElement !== document.getElementById("searchInput")) {
+          e.preventDefault();
+          document.getElementById("searchInput").focus();
+          document.getElementById("searchInput").select();
+        }
+        if (e.key === "Escape") {
+          clearSearch();
+        }
+      });
+
+      document.getElementById("searchInput").addEventListener("input", () => {
+        render();
+      });
+
+      // Initialize
+      updateThemeButtons();
+      render();
+    </script>
+  </body>
+</html>

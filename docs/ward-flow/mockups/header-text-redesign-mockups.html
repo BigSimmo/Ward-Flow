@@ -1,0 +1,1269 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ward Flow - Title + Dynamic Scope Capsule (10 Variations)</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background-color: #f8fafc;
+        color: #0f172a;
+        padding: 32px 20px;
+        line-height: 1.5;
+      }
+      .container {
+        max-width: 1080px;
+        margin: 0 auto;
+      }
+
+      /* CONTROL CONSOLE BANNER */
+      .banner {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 24px 28px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+      .banner-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .badge-primary {
+        display: inline-block;
+        padding: 3px 8px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 6px;
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.025em;
+      }
+      p.lead {
+        font-size: 13.5px;
+        color: #64748b;
+        margin-top: 4px;
+      }
+
+      /* INTERACTIVE PICKERS ROW */
+      .pickers-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        padding-top: 14px;
+        border-top: 1px solid #f1f5f9;
+      }
+      .picker-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: #f1f5f9;
+        padding: 5px 10px;
+        border-radius: 10px;
+      }
+      .picker-label {
+        font-size: 11.5px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-right: 4px;
+      }
+      .picker-btn {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s ease;
+      }
+      .picker-btn:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+      }
+      .picker-btn.active {
+        background: #0f2438;
+        color: #ffffff;
+        border-color: #0f2438;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+      }
+      .swatch-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      /* CARD PRESENTATION */
+      .card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 22px 24px;
+        margin-bottom: 26px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+      }
+      .card-featured {
+        border: 2px solid #2563eb;
+        box-shadow: 0 4px 14px -3px rgba(37, 99, 235, 0.1);
+      }
+      .card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 14px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f1f5f9;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .card-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        background: #f1f5f9;
+        color: #0f172a;
+        font-size: 13px;
+        font-weight: 800;
+        margin-right: 10px;
+      }
+      .card-featured .card-num {
+        background: #2563eb;
+        color: #ffffff;
+      }
+      .card-title-box {
+        display: flex;
+        align-items: center;
+      }
+      .card-title {
+        font-size: 16.5px;
+        font-weight: 700;
+        color: #0f172a;
+      }
+      .card-desc {
+        font-size: 12.5px;
+        color: #64748b;
+        margin-top: 2px;
+      }
+      .card-score {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        padding: 3px 9px;
+        border-radius: 9999px;
+        font-size: 11.5px;
+        font-weight: 700;
+        color: #047857;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+
+      /* TOP BAR SIMULATION */
+      .bar-preview {
+        background: #fdfdfe;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        overflow-x: auto;
+        margin-bottom: 12px;
+      }
+      .rail-btn {
+        width: 32px;
+        height: 32px;
+        background: #0f2438;
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        font-size: 18px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .search-input-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 12px;
+        color: #94a3b8;
+        width: 170px;
+      }
+      .search-kbd {
+        margin-left: auto;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-size: 10px;
+        font-family: monospace;
+        color: #64748b;
+      }
+      .service-mirror-btn {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+      .btn-secondary {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #334155;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+      .btn-primary {
+        background: #0f2438;
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        padding: 7px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        margin-left: auto;
+      }
+
+      /* RATIONALE & METRICS */
+      .explain-box {
+        background: #f8fafc;
+        border: 1px solid #f1f5f9;
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 12.5px;
+        color: #475569;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .explain-feature {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 600;
+        color: #1e293b;
+      }
+      .feature-tag {
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 1px 6px;
+        border-radius: 4px;
+        background: #e2e8f0;
+        color: #334155;
+      }
+
+      /* PULSE ANIMATION */
+      @keyframes pulse-ring {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.4;
+          transform: scale(0.85);
+        }
+      }
+      .pulse-dot {
+        animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      /* ========================================================
+       THE 10 TITLE-FIRST COCKPIT CAPSULE VARIATIONS
+       ======================================================== */
+
+      /* 1. Canonical Cockpit: Title First + Dark Scope Badge + Pulse Dot */
+      .capsule-1 {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 9999px;
+        padding: 4px 12px 4px 12px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+      }
+      .capsule-1 .title {
+        font-size: 15.5px;
+        font-weight: 700;
+        color: #0f172a;
+        letter-spacing: -0.02em;
+      }
+      .capsule-1 .scope-badge {
+        background: #0f2438;
+        color: #ffffff;
+        font-size: 9.5px;
+        font-weight: 700;
+        padding: 2.5px 7px;
+        border-radius: 9999px;
+        letter-spacing: 0.05em;
+        transition: background 0.2s;
+      }
+      .capsule-1 .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #10b981;
+      }
+
+      /* 2. Service Swatch Capsule (Color-coded to Health Service) */
+      .capsule-2 {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 9999px;
+        padding: 4px 12px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      }
+      .capsule-2 .title {
+        font-size: 15.5px;
+        font-weight: 700;
+        color: #0f172a;
+        letter-spacing: -0.02em;
+      }
+      .capsule-2 .swatch-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        letter-spacing: 0.04em;
+      }
+
+      /* 3. Interactive Dropdown Capsule (Badge is Clickable Trigger) */
+      .capsule-3 {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 9999px;
+        padding: 3px 6px 3px 12px;
+      }
+      .capsule-3 .title {
+        font-size: 15.5px;
+        font-weight: 700;
+        color: #0f172a;
+        letter-spacing: -0.02em;
+      }
+      .capsule-3 .trigger-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        color: #0f172a;
+        font-size: 10.5px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 9999px;
+        cursor: pointer;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+      }
+      .capsule-3 .caret {
+        font-size: 8px;
+        color: #64748b;
+      }
+
+      /* 4. Triage Early-Warning Dot Capsule */
+      .capsule-4 {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 9999px;
+        padding: 4px 12px;
+      }
+      .capsule-4 .title {
+        font-size: 15.5px;
+        font-weight: 700;
+        color: #0f172a;
+      }
+      .capsule-4 .scope {
+        background: #0f2438;
+        color: #ffffff;
+        font-size: 9.5px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 9999px;
+        letter-spacing: 0.04em;
+      }
+      .capsule-4 .alert-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: 9999px;
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+      }
+
+      /* 5. Telemetry Denominator Capsule (Live Bed Counts Inside) */
+      .capsule-5 {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 9999px;
+        padding: 4px 14px 4px 12px;
+      }
+      .capsule-5 .title {
+        font-size: 15.5px;
+        font-weight: 700;
+        color: #0f172a;
+      }
+      .capsule-5 .scope {
+        background: #0f2438;
+        color: #ffffff;
+        font-size: 9.5px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 9999px;
+      }
+      .capsule-5 .divider {
+        width: 1px;
+        height: 12px;
+        background: #cbd5e1;
+      }
+      .capsule-5 .metrics {
+        font-size: 11px;
+        font-family: ui-monospace, monospace;
+        color: #64748b;
+        font-weight: 600;
+      }
+
+      /* 6. Hardware Segmented Control */
+      .capsule-6 {
+        display: inline-flex;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 2px;
+      }
+      .capsule-6 .seg-title {
+        background: #ffffff;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 14.5px;
+        font-weight: 700;
+        color: #0f172a;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+      .capsule-6 .seg-scope {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        font-size: 10px;
+        font-weight: 700;
+        color: #475569;
+        letter-spacing: 0.05em;
+      }
+
+      /* 7. Frosted Glass Minimalist Capsule */
+      .capsule-7 {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid #cbd5e1;
+        border-radius: 9999px;
+        padding: 4px 12px;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+      }
+      .capsule-7 .title {
+        font-size: 15px;
+        font-weight: 750;
+        color: #0f172a;
+        letter-spacing: -0.02em;
+      }
+      .capsule-7 .badge {
+        background: #0f2438;
+        color: #ffffff;
+        font-size: 9px;
+        font-weight: 750;
+        padding: 2px 7px;
+        border-radius: 9999px;
+        letter-spacing: 0.06em;
+      }
+
+      /* 8. Dual Pill Horizon Capsule */
+      .capsule-8 {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 9999px;
+        padding: 4px 12px;
+      }
+      .capsule-8 .title {
+        font-size: 15.5px;
+        font-weight: 700;
+        color: #0f172a;
+      }
+      .capsule-8 .scope {
+        background: #0f2438;
+        color: #ffffff;
+        font-size: 9.5px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 9999px;
+      }
+      .capsule-8 .tally-chip {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1d4ed8;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: 9999px;
+      }
+
+      /* 9. Cockpit Stack Hybrid (Two-line inside capsule) */
+      .capsule-9 {
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 3px 12px;
+      }
+      .capsule-9 .top-line {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .capsule-9 .title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1.2;
+      }
+      .capsule-9 .scope {
+        background: #0f2438;
+        color: #ffffff;
+        font-size: 8.5px;
+        font-weight: 750;
+        padding: 1.5px 5px;
+        border-radius: 4px;
+        letter-spacing: 0.05em;
+      }
+      .capsule-9 .bottom-sub {
+        font-size: 10px;
+        font-weight: 500;
+        color: #64748b;
+        line-height: 1.1;
+        margin-top: 1px;
+      }
+
+      /* 10. Floating Ghost Capsule with Ambient Ring Dot */
+      .capsule-10 {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #ffffff;
+        border: 1px dashed #94a3b8;
+        border-radius: 9999px;
+        padding: 4px 12px;
+      }
+      .capsule-10 .title {
+        font-size: 15.5px;
+        font-weight: 700;
+        color: #0f172a;
+      }
+      .capsule-10 .scope {
+        background: #f1f5f9;
+        color: #0f2438;
+        border: 1px solid #cbd5e1;
+        font-size: 9.5px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 9999px;
+        letter-spacing: 0.04em;
+      }
+      .capsule-10 .radar-ring {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        border: 2px solid #10b981;
+        background: #ffffff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- INTERACTIVE CONTROL CONSOLE -->
+      <div class="banner">
+        <div class="banner-header">
+          <div>
+            <span class="badge-primary">Cockpit Evolution · 10 Directions</span>
+            <h1>Title First + Dynamic Scope Capsule</h1>
+            <p class="lead">
+              Exploring Direction 7 with <strong>Title First (e.g. Command)</strong> and the
+              <strong>Scope Badge automatically updating</strong> from the service selector.
+            </p>
+          </div>
+        </div>
+
+        <!-- LIVE INTERACTIVE CONTROLS -->
+        <div class="pickers-container">
+          <!-- Service Selector -->
+          <div class="picker-group">
+            <span class="picker-label">Service Scope:</span>
+            <button class="picker-btn active" onclick="setService('all')">
+              <span class="swatch-dot" style="background: #10b981"></span>
+              <span>All services (Statewide)</span>
+            </button>
+            <button class="picker-btn" onclick="setService('north')">
+              <span class="swatch-dot" style="background: #685a94"></span>
+              <span>North Metro</span>
+            </button>
+            <button class="picker-btn" onclick="setService('south')">
+              <span class="swatch-dot" style="background: #356a70"></span>
+              <span>South Metro</span>
+            </button>
+            <button class="picker-btn" onclick="setService('east')">
+              <span class="swatch-dot" style="background: #2f4c66"></span>
+              <span>East Metro</span>
+            </button>
+            <button class="picker-btn" onclick="setService('wachs')">
+              <span class="swatch-dot" style="background: #8c5a3c"></span>
+              <span>WACHS</span>
+            </button>
+          </div>
+
+          <!-- Page Selector -->
+          <div class="picker-group">
+            <span class="picker-label">Page:</span>
+            <button class="picker-btn active" onclick="setPage('command')">Command</button>
+            <button class="picker-btn" onclick="setPage('movements')">Movements</button>
+            <button class="picker-btn" onclick="setPage('capacity')">Capacity</button>
+            <button class="picker-btn" onclick="setPage('delays')">Delays</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== VARIATION 1 ==================== -->
+      <div class="card card-featured">
+        <div class="card-head">
+          <div class="card-title-box">
+            <span class="card-num">1</span>
+            <div>
+              <div class="card-title">The Canonical Cockpit Capsule (Recommended)</div>
+              <div class="card-desc">Title first (bold 15.5px) + dark scope pill + live stream green pulse dot</div>
+            </div>
+          </div>
+          <div class="card-score">★ 198 / 200 · Top Pick</div>
+        </div>
+
+        <div class="bar-preview">
+          <button class="rail-btn">+</button>
+
+          <!-- THE CAPSULE -->
+          <div class="capsule-1">
+            <span class="title val-title">Command</span>
+            <span class="scope-badge val-scope-capsule">STATEWIDE</span>
+            <span class="dot pulse-dot val-swatch-dot"></span>
+          </div>
+
+          <div class="search-input-box"><span>Search</span><span class="search-kbd">/</span></div>
+          <div class="service-mirror-btn val-service-dropdown">
+            <span class="swatch-dot val-swatch-dot"></span> <span class="val-service-name">All services</span> ▾
+          </div>
+          <div class="btn-secondary">Activity 12:05</div>
+          <div class="btn-secondary">Tasks 7</div>
+          <div class="btn-primary">New referral ▾</div>
+        </div>
+
+        <div class="explain-box">
+          <div class="explain-feature">
+            <span class="feature-tag">Functionality</span> The scope badge updates automatically whenever the service
+            dropdown changes. The dot pulses continuously to indicate live network sync.
+          </div>
+          <div>
+            Swapping title first gives immediate page identity, followed by geographical scope. Perfectly proportioned
+            within the 56px bar.
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== VARIATION 2 ==================== -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title-box">
+            <span class="card-num">2</span>
+            <div>
+              <div class="card-title">The Service Swatch Capsule</div>
+              <div class="card-desc">Scope badge dynamically inherits the exact health service tint & swatch dot</div>
+            </div>
+          </div>
+          <div class="card-score">★ 196 / 200</div>
+        </div>
+
+        <div class="bar-preview">
+          <button class="rail-btn">+</button>
+
+          <!-- THE CAPSULE -->
+          <div class="capsule-2">
+            <span class="title val-title">Command</span>
+            <span class="swatch-badge val-swatch-badge">
+              <span class="swatch-dot val-swatch-dot"></span>
+              <span class="val-scope-capsule">STATEWIDE</span>
+            </span>
+          </div>
+
+          <div class="search-input-box"><span>Search</span><span class="search-kbd">/</span></div>
+          <div class="service-mirror-btn val-service-dropdown">
+            <span class="swatch-dot val-swatch-dot"></span> <span class="val-service-name">All services</span> ▾
+          </div>
+          <div class="btn-secondary">Activity 12:05</div>
+          <div class="btn-secondary">Tasks 7</div>
+          <div class="btn-primary">New referral ▾</div>
+        </div>
+
+        <div class="explain-box">
+          <div class="explain-feature">
+            <span class="feature-tag">Functionality</span> Adopts North Metro violet (#685a94), South Metro teal
+            (#356a70), East Metro blue (#2f4c66), or WACHS amber (#8c5a3c) to reinforce boundary awareness.
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== VARIATION 3 ==================== -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title-box">
+            <span class="card-num">3</span>
+            <div>
+              <div class="card-title">The Interactive Scope Trigger (Direct Filter)</div>
+              <div class="card-desc">
+                The scope badge itself is an interactive button that opens the service selector
+              </div>
+            </div>
+          </div>
+          <div class="card-score">★ 195 / 200</div>
+        </div>
+
+        <div class="bar-preview">
+          <button class="rail-btn">+</button>
+
+          <!-- THE CAPSULE -->
+          <div class="capsule-3">
+            <span class="title val-title">Command</span>
+            <button class="trigger-btn">
+              <span class="swatch-dot val-swatch-dot"></span>
+              <span class="val-scope-mixed">Statewide</span>
+              <span class="caret">▾</span>
+            </button>
+          </div>
+
+          <div class="search-input-box"><span>Search</span><span class="search-kbd">/</span></div>
+          <div class="btn-secondary">Activity 12:05</div>
+          <div class="btn-secondary">Tasks 7</div>
+          <div class="btn-primary">New referral ▾</div>
+        </div>
+
+        <div class="explain-box">
+          <div class="explain-feature">
+            <span class="feature-tag">Functionality</span> Merges the service selector directly into the page heading!
+            Eliminates the separate "All services" dropdown, freeing up substantial header horizontal room.
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== VARIATION 4 ==================== -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title-box">
+            <span class="card-num">4</span>
+            <div>
+              <div class="card-title">The Triage Early-Warning Dot Capsule</div>
+              <div class="card-desc">
+                Active dot transforms into a triage breach count badge if delays exist in scope
+              </div>
+            </div>
+          </div>
+          <div class="card-score">★ 195 / 200</div>
+        </div>
+
+        <div class="bar-preview">
+          <button class="rail-btn">+</button>
+
+          <!-- THE CAPSULE -->
+          <div class="capsule-4">
+            <span class="title val-title">Command</span>
+            <span class="scope val-scope-capsule">STATEWIDE</span>
+            <span class="alert-pill val-breach-pill">▲ 3 Breaches</span>
+          </div>
+
+          <div class="search-input-box"><span>Search</span><span class="search-kbd">/</span></div>
+          <div class="service-mirror-btn val-service-dropdown">
+            <span class="swatch-dot val-swatch-dot"></span> <span class="val-service-name">All services</span> ▾
+          </div>
+          <div class="btn-secondary">Activity 12:05</div>
+          <div class="btn-secondary">Tasks 7</div>
+          <div class="btn-primary">New referral ▾</div>
+        </div>
+
+        <div class="explain-box">
+          <div class="explain-feature">
+            <span class="feature-tag">Functionality</span> Dot is functionally reactive: green when healthy, turning
+            amber with breach count ("▲ 3 Breaches" for Statewide, "▲ 1 Breach" for North Metro) when escalations exist.
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== VARIATION 5 ==================== -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title-box">
+            <span class="card-num">5</span>
+            <div>
+              <div class="card-title">The Telemetry Denominator Capsule</div>
+              <div class="card-desc">Displays scoped active bed counts directly beside the title</div>
+            </div>
+          </div>
+          <div class="card-score">★ 194 / 200</div>
+        </div>
+
+        <div class="bar-preview">
+          <button class="rail-btn">+</button>
+
+          <!-- THE CAPSULE -->
+          <div class="capsule-5">
+            <span class="title val-title">Command</span>
+            <span class="scope val-scope-capsule">STATEWIDE</span>
+            <span class="divider"></span>
+            <span class="metrics val-metrics">303 beds · 18 transit</span>
+          </div>
+
+          <div class="search-input-box"><span>Search</span><span class="search-kbd">/</span></div>
+          <div class="service-mirror-btn val-service-dropdown">
+            <span class="swatch-dot val-swatch-dot"></span> <span class="val-service-name">All services</span> ▾
+          </div>
+          <div class="btn-secondary">Activity 12:05</div>
+          <div class="btn-secondary">Tasks 7</div>
+          <div class="btn-primary">New referral ▾</div>
+        </div>
+
+        <div class="explain-box">
+          <div class="explain-feature">
+            <span class="feature-tag">Functionality</span> Automatically calculates active beds & movements in scope
+            (e.g. "84 beds · 6 transit" when scoped to North Metro).
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== VARIATION 6 ==================== -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title-box">
+            <span class="card-num">6</span>
+            <div>
+              <div class="card-title">The Hardware Segmented Control</div>
+              <div class="card-desc">Two-piece precision control with tactile relief between title and scope</div>
+            </div>
+          </div>
+          <div class="card-score">★ 192 / 200</div>
+        </div>
+
+        <div class="bar-preview">
+          <button class="rail-btn">+</button>
+
+          <!-- THE CAPSULE -->
+          <div class="capsule-6">
+            <span class="seg-title val-title">Command</span>
+            <span class="seg-scope"
+              ><span class="swatch-dot val-swatch-dot"></span> <span class="val-scope-capsule">STATEWIDE</span></span
+            >
+          </div>
+
+          <div class="search-input-box"><span>Search</span><span class="search-kbd">/</span></div>
+          <div class="service-mirror-btn val-service-dropdown">
+            <span class="swatch-dot val-swatch-dot"></span> <span class="val-service-name">All services</span> ▾
+          </div>
+          <div class="btn-secondary">Activity 12:05</div>
+          <div class="btn-secondary">Tasks 7</div>
+          <div class="btn-primary">New referral ▾</div>
+        </div>
+
+        <div class="explain-box">
+          <div class="explain-feature">
+            <span class="feature-tag">Functionality</span> Tactile segmented appearance. Title sits on elevated white
+            pad, scope sits on recessed bed with active swatch dot.
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== VARIATION 7 ==================== -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title-box">
+            <span class="card-num">7</span>
+            <div>
+              <div class="card-title">The Frosted Glass Minimalist Capsule</div>
+              <div class="card-desc">Subtle translucent background with tight optical tracking</div>
+            </div>
+          </div>
+          <div class="card-score">★ 193 / 200</div>
+        </div>
+
+        <div class="bar-preview">
+          <button class="rail-btn">+</button>
+
+          <!-- THE CAPSULE -->
+          <div class="capsule-7">
+            <span class="title val-title">Command</span>
+            <span class="badge val-scope-capsule">STATEWIDE</span>
+            <span class="swatch-dot pulse-dot val-swatch-dot"></span>
+          </div>
+
+          <div class="search-input-box"><span>Search</span><span class="search-kbd">/</span></div>
+          <div class="service-mirror-btn val-service-dropdown">
+            <span class="swatch-dot val-swatch-dot"></span> <span class="val-service-name">All services</span> ▾
+          </div>
+          <div class="btn-secondary">Activity 12:05</div>
+          <div class="btn-secondary">Tasks 7</div>
+          <div class="btn-primary">New referral ▾</div>
+        </div>
+
+        <div class="explain-box">
+          <div class="explain-feature">
+            <span class="feature-tag">Functionality</span> Cleanest modern aesthetic. Retains crisp border definition
+            while allowing subtle background tone bleed through.
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== VARIATION 8 ==================== -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title-box">
+            <span class="card-num">8</span>
+            <div>
+              <div class="card-title">The Dual Pill Horizon Capsule</div>
+              <div class="card-desc">Title + Scope Pill + Scoped Occupancy Percentage Pill</div>
+            </div>
+          </div>
+          <div class="card-score">★ 194 / 200</div>
+        </div>
+
+        <div class="bar-preview">
+          <button class="rail-btn">+</button>
+
+          <!-- THE CAPSULE -->
+          <div class="capsule-8">
+            <span class="title val-title">Command</span>
+            <span class="scope val-scope-capsule">STATEWIDE</span>
+            <span class="tally-chip val-occ-pill">91% Occ</span>
+          </div>
+
+          <div class="search-input-box"><span>Search</span><span class="search-kbd">/</span></div>
+          <div class="service-mirror-btn val-service-dropdown">
+            <span class="swatch-dot val-swatch-dot"></span> <span class="val-service-name">All services</span> ▾
+          </div>
+          <div class="btn-secondary">Activity 12:05</div>
+          <div class="btn-secondary">Tasks 7</div>
+          <div class="btn-primary">New referral ▾</div>
+        </div>
+
+        <div class="explain-box">
+          <div class="explain-feature">
+            <span class="feature-tag">Functionality</span> Shows both geographic scope AND live utilization rate for
+            that scope right inside the heading cluster.
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== VARIATION 9 ==================== -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title-box">
+            <span class="card-num">9</span>
+            <div>
+              <div class="card-title">The Cockpit Stack Hybrid</div>
+              <div class="card-desc">Capsule enclosing the Title + Scope row with micro-subtitle underneath</div>
+            </div>
+          </div>
+          <div class="card-score">★ 193 / 200</div>
+        </div>
+
+        <div class="bar-preview">
+          <button class="rail-btn">+</button>
+
+          <!-- THE CAPSULE -->
+          <div class="capsule-9">
+            <div class="top-line">
+              <span class="title val-title">Command</span>
+              <span class="scope val-scope-capsule">STATEWIDE</span>
+              <span class="swatch-dot pulse-dot val-swatch-dot"></span>
+            </div>
+            <span class="bottom-sub val-sub">Statewide Bed Coordination</span>
+          </div>
+
+          <div class="search-input-box"><span>Search</span><span class="search-kbd">/</span></div>
+          <div class="service-mirror-btn val-service-dropdown">
+            <span class="swatch-dot val-swatch-dot"></span> <span class="val-service-name">All services</span> ▾
+          </div>
+          <div class="btn-secondary">Activity 12:05</div>
+          <div class="btn-secondary">Tasks 7</div>
+          <div class="btn-primary">New referral ▾</div>
+        </div>
+
+        <div class="explain-box">
+          <div class="explain-feature">
+            <span class="feature-tag">Functionality</span> Combines the descriptive scope sentence of Direction 1 with
+            the contained hardware feel of Direction 7.
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== VARIATION 10 ==================== -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title-box">
+            <span class="card-num">10</span>
+            <div>
+              <div class="card-title">The Radar Halo Capsule (Live Telemetry Indicator)</div>
+              <div class="card-desc">Title + Scope with an animated concentric radar halo indicating active stream</div>
+            </div>
+          </div>
+          <div class="card-score">★ 192 / 200</div>
+        </div>
+
+        <div class="bar-preview">
+          <button class="rail-btn">+</button>
+
+          <!-- THE CAPSULE -->
+          <div class="capsule-10">
+            <span class="title val-title">Command</span>
+            <span class="scope val-scope-capsule">STATEWIDE</span>
+            <span class="radar-ring pulse-dot val-swatch-border"></span>
+          </div>
+
+          <div class="search-input-box"><span>Search</span><span class="search-kbd">/</span></div>
+          <div class="service-mirror-btn val-service-dropdown">
+            <span class="swatch-dot val-swatch-dot"></span> <span class="val-service-name">All services</span> ▾
+          </div>
+          <div class="btn-secondary">Activity 12:05</div>
+          <div class="btn-secondary">Tasks 7</div>
+          <div class="btn-primary">New referral ▾</div>
+        </div>
+
+        <div class="explain-box">
+          <div class="explain-feature">
+            <span class="feature-tag">Functionality</span> Concentric radar ring provides unambiguous indication that
+            real-time websocket/server-sent event listeners are connected.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const SERVICES = {
+        all: {
+          capsule: "STATEWIDE",
+          mixed: "Statewide",
+          dropdown: "All services",
+          dotColor: "#10b981",
+          badgeBg: "#f1f5f9",
+          badgeColor: "#0f2438",
+          badgeBorder: "#cbd5e1",
+          metrics: "303 beds · 18 transit",
+          breach: "▲ 3 Breaches",
+          occ: "91% Occ",
+        },
+        north: {
+          capsule: "NORTH METRO",
+          mixed: "North Metro",
+          dropdown: "North Metro",
+          dotColor: "#685a94",
+          badgeBg: "#f5f3ff",
+          badgeColor: "#4c1d95",
+          badgeBorder: "#ddd6fe",
+          metrics: "84 beds · 5 transit",
+          breach: "▲ 1 Breach",
+          occ: "94% Occ",
+        },
+        south: {
+          capsule: "SOUTH METRO",
+          mixed: "South Metro",
+          dropdown: "South Metro",
+          dotColor: "#356a70",
+          badgeBg: "#f0fdfa",
+          badgeColor: "#134e4a",
+          badgeBorder: "#99f6e4",
+          metrics: "96 beds · 6 transit",
+          breach: "● 0 Breaches",
+          occ: "89% Occ",
+        },
+        east: {
+          capsule: "EAST METRO",
+          mixed: "East Metro",
+          dropdown: "East Metro",
+          dotColor: "#2f4c66",
+          badgeBg: "#eff6ff",
+          badgeColor: "#1e3a8a",
+          badgeBorder: "#bfdbfe",
+          metrics: "72 beds · 4 transit",
+          breach: "▲ 1 Breach",
+          occ: "92% Occ",
+        },
+        wachs: {
+          capsule: "WACHS",
+          mixed: "WACHS Country",
+          dropdown: "WACHS",
+          dotColor: "#8c5a3c",
+          badgeBg: "#fffbeb",
+          badgeColor: "#78350f",
+          badgeBorder: "#fde68a",
+          metrics: "51 beds · 3 transit",
+          breach: "▲ 1 Breach",
+          occ: "86% Occ",
+        },
+      };
+
+      const PAGES = {
+        command: { title: "Command", sub: "Statewide Bed Coordination" },
+        movements: { title: "Movements", sub: "Transfers, Discharges & Arrivals" },
+        capacity: { title: "Capacity", sub: "Bed Availability & Occupancy" },
+        delays: { title: "Delays", sub: "Transfer & Placement Breaches" },
+      };
+
+      let currentService = "all";
+      let currentPage = "command";
+
+      function setService(serviceKey) {
+        currentService = serviceKey;
+        document.querySelectorAll(".picker-group:first-child .picker-btn").forEach((b) => b.classList.remove("active"));
+        event.target.closest(".picker-btn").classList.add("active");
+        render();
+      }
+
+      function setPage(pageKey) {
+        currentPage = pageKey;
+        document.querySelectorAll(".picker-group:last-child .picker-btn").forEach((b) => b.classList.remove("active"));
+        event.target.closest(".picker-btn").classList.add("active");
+        render();
+      }
+
+      function render() {
+        const s = SERVICES[currentService];
+        const p = PAGES[currentPage];
+
+        // Titles & Subtitles
+        document.querySelectorAll(".val-title").forEach((el) => (el.textContent = p.title));
+        document.querySelectorAll(".val-sub").forEach((el) => (el.textContent = p.sub));
+
+        // Scope Texts
+        document.querySelectorAll(".val-scope-capsule").forEach((el) => (el.textContent = s.capsule));
+        document.querySelectorAll(".val-scope-mixed").forEach((el) => (el.textContent = s.mixed));
+        document.querySelectorAll(".val-service-name").forEach((el) => (el.textContent = s.dropdown));
+
+        // Swatch Dots & Colors
+        document.querySelectorAll(".val-swatch-dot").forEach((el) => {
+          el.style.backgroundColor = s.dotColor;
+        });
+        document.querySelectorAll(".val-swatch-border").forEach((el) => {
+          el.style.borderColor = s.dotColor;
+        });
+
+        // Swatch Badges
+        document.querySelectorAll(".val-swatch-badge").forEach((el) => {
+          el.style.backgroundColor = s.badgeBg;
+          el.style.color = s.badgeColor;
+          el.style.border = `1px solid ${s.badgeBorder}`;
+        });
+
+        // Telemetry
+        document.querySelectorAll(".val-metrics").forEach((el) => (el.textContent = s.metrics));
+        document.querySelectorAll(".val-occ-pill").forEach((el) => (el.textContent = s.occ));
+
+        // Breach Alert Pill
+        document.querySelectorAll(".val-breach-pill").forEach((el) => {
+          el.textContent = s.breach;
+          if (s.breach.includes("0")) {
+            el.style.backgroundColor = "#ecfdf5";
+            el.style.color = "#047857";
+            el.style.borderColor = "#a7f3d0";
+          } else {
+            el.style.backgroundColor = "#fef3c7";
+            el.style.color = "#92400e";
+            el.style.borderColor = "#fde68a";
+          }
+        });
+      }
+
+      // Initial render
+      render();
+    </script>
+  </body>
+</html>

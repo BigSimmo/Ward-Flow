@@ -1,0 +1,3790 @@
+<!doctype html>
+<html lang="en-AU" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ward Flow · Patient search (Perfected third edition)</title>
+    <script>
+      (function () {
+        document.documentElement.lang = "en-AU";
+        try {
+          var v = localStorage.getItem("ward-flow-theme");
+          if (v === "light" || v === "dark") document.documentElement.setAttribute("data-theme", v);
+          if (localStorage.getItem("ward-flow-rail") === "closed")
+            document.documentElement.setAttribute("data-rail", "closed");
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ═══════════════════════════════════════════════════════════════════════
+       WARD FLOW PATIENT SEARCH · PERFECTED THIRD EDITION (STREAMLINED & MODERN)
+       Standard: Sovereign Clinical Console (Platinum Raised Cool)
+       WCAG 2.1 AA >= 4.5:1 · No Font < 12px · Tabular Geist Mono Numerals
+       Strict Invariants: Zero dead buttons · Zero underlines · Hairline 1px borders
+       ═══════════════════════════════════════════════════════════════════════ */
+      :root {
+        color-scheme: light;
+
+        --ground-hi: #ecf0f4;
+        --ground: #e6eaef;
+        --ground-2: #e1e6ec;
+
+        --surface: #fdfdfe;
+        --surface-2: #f4f7fa;
+        --sunk: #eef2f6;
+
+        --ink: #161a20;
+        --ink-soft: #414953;
+        --muted: #5f6873;
+
+        --line: rgba(22, 30, 40, 0.11);
+        --line-strong: rgba(22, 30, 40, 0.22);
+
+        --accent: #2f4c66;
+        --accent-ink: #27405a;
+        --accent-press: #20354b;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+
+        --gilt: #7d612a;
+        --gilt-soft: #f1ebdf;
+
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --warn: #825d10;
+        --warn-soft: #f6eeda;
+
+        --danger: #b03b2e;
+        --danger-soft: #f8e6e2;
+        --danger-ink: #973121;
+
+        --svc-east: #2f4c66;
+        --svc-north: #685a94;
+        --svc-south: #356a70;
+        --svc-wachs: #8c5a3c;
+
+        --ward: var(--svc-east);
+        --ward-soft: var(--accent-soft);
+        --ed: var(--danger);
+        --comm: var(--svc-south);
+        --coord: var(--svc-north);
+
+        /* Semantic Legal Status Colors */
+        --form-4a: #685a94;
+        --form-4a-soft: #f3e8ff;
+        --form-4a-border: rgba(104, 90, 148, 0.25);
+
+        --form-5a: #115e59;
+        --form-5a-soft: #ccfbf1;
+        --form-5a-border: rgba(17, 94, 89, 0.25);
+
+        /* Semantic Presence States */
+        --presence-live: var(--good);
+        --presence-live-soft: var(--good-soft);
+        --presence-live-border: rgba(34, 117, 80, 0.28);
+
+        --presence-comm: #0369a1;
+        --presence-comm-soft: #e0f2fe;
+        --presence-comm-border: rgba(3, 105, 161, 0.28);
+
+        --presence-sched: #92400e;
+        --presence-sched-soft: #fef3c7;
+        --presence-sched-border: rgba(146, 64, 14, 0.28);
+
+        --presence-past: #475569;
+        --presence-past-soft: #f1f5f9;
+        --presence-past-border: rgba(71, 85, 105, 0.25);
+
+        /* ATSI Pill */
+        --atsi-ink: #7d612a;
+        --atsi-soft: #fdf6e7;
+        --atsi-border: #e2cb92;
+
+        --lift: 0 1px 2px rgba(30, 48, 66, 0.04), 0 8px 20px -12px rgba(30, 48, 66, 0.12);
+        --lift-float: 0 4px 16px -4px rgba(30, 48, 66, 0.16), 0 1px 3px rgba(30, 48, 66, 0.08);
+        --hl: rgba(255, 255, 255, 0.9);
+        --hl-on-accent: rgba(255, 255, 255, 0.14);
+        --edge-shade: rgba(30, 48, 66, 0.12);
+        --scrim: rgba(30, 48, 66, 0.32);
+
+        --r1: 10px;
+        --r1i: 8px;
+        --r2: 6px;
+        --gap: 14px;
+
+        --t-0: 12px;
+        --t-1: 13px;
+        --t-2: 13.5px;
+        --t-3: 14px;
+        --t-4: 16px;
+        --t-5: 20px;
+        --t-6: 24px;
+
+        --display: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+        --body: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+        --mono: "Geist Mono", ui-monospace, Menlo, Consolas, monospace;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          color-scheme: dark;
+          --ground-hi: #14181d;
+          --ground: #0f1216;
+          --ground-2: #0c0f12;
+
+          --surface: #171b21;
+          --surface-2: #1b2026;
+          --sunk: #13171c;
+
+          --ink: #e8ecf1;
+          --ink-soft: #b2bac5;
+          --muted: #8a929d;
+
+          --line: rgba(255, 255, 255, 0.09);
+          --line-strong: rgba(255, 255, 255, 0.18);
+
+          --accent: #a7bcd2;
+          --accent-ink: #bfd0e2;
+          --accent-press: #8ea6bf;
+          --accent-soft: #1f2a36;
+          --on-accent: #0f1216;
+          --stripe: #3a5a78;
+
+          --gilt: #d3b77e;
+          --gilt-soft: #2a251b;
+
+          --good: #6fd39b;
+          --good-soft: #15291f;
+          --warn: #e3bc5e;
+          --warn-soft: #2b2415;
+
+          --danger: #ff8b76;
+          --danger-soft: #33201b;
+          --danger-ink: #ffa08e;
+
+          --svc-east: #a7bcd2;
+          --svc-north: #b1a2d6;
+          --svc-south: #7fb2b8;
+          --svc-wachs: #d89a78;
+
+          --form-4a: #c084fc;
+          --form-4a-soft: #2e1d47;
+          --form-4a-border: rgba(192, 132, 252, 0.3);
+
+          --form-5a: #2dd4bf;
+          --form-5a-soft: #133535;
+          --form-5a-border: rgba(45, 212, 191, 0.3);
+
+          --presence-live: #6fd39b;
+          --presence-live-soft: #15291f;
+          --presence-live-border: rgba(111, 211, 155, 0.3);
+
+          --presence-comm: #38bdf8;
+          --presence-comm-soft: #0c2438;
+          --presence-comm-border: rgba(56, 189, 248, 0.3);
+
+          --presence-sched: #fcd34d;
+          --presence-sched-soft: #322510;
+          --presence-sched-border: rgba(252, 211, 77, 0.3);
+
+          --presence-past: #94a3b8;
+          --presence-past-soft: #1e293b;
+          --presence-past-border: rgba(148, 163, 184, 0.3);
+
+          --atsi-ink: #e3bc5e;
+          --atsi-soft: #2b2415;
+          --atsi-border: #5c4a22;
+
+          --lift: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.7);
+          --lift-float: 0 4px 18px -4px rgba(0, 0, 0, 0.8), 0 1px 4px rgba(0, 0, 0, 0.5);
+          --hl: rgba(255, 255, 255, 0.06);
+          --hl-on-accent: rgba(255, 255, 255, 0.28);
+          --edge-shade: rgba(0, 0, 0, 0.55);
+          --scrim: rgba(0, 0, 0, 0.6);
+        }
+      }
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --ground-hi: #14181d;
+        --ground: #0f1216;
+        --ground-2: #0c0f12;
+
+        --surface: #171b21;
+        --surface-2: #1b2026;
+        --sunk: #13171c;
+
+        --ink: #e8ecf1;
+        --ink-soft: #b2bac5;
+        --muted: #8a929d;
+
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.18);
+
+        --accent: #a7bcd2;
+        --accent-ink: #bfd0e2;
+        --accent-press: #8ea6bf;
+        --accent-soft: #1f2a36;
+        --on-accent: #0f1216;
+        --stripe: #3a5a78;
+
+        --gilt: #d3b77e;
+        --gilt-soft: #2a251b;
+
+        --good: #6fd39b;
+        --good-soft: #15291f;
+        --warn: #e3bc5e;
+        --warn-soft: #2b2415;
+
+        --danger: #ff8b76;
+        --danger-soft: #33201b;
+        --danger-ink: #ffa08e;
+
+        --svc-east: #a7bcd2;
+        --svc-north: #b1a2d6;
+        --svc-south: #7fb2b8;
+        --svc-wachs: #d89a78;
+
+        --form-4a: #c084fc;
+        --form-4a-soft: #2e1d47;
+        --form-4a-border: rgba(192, 132, 252, 0.3);
+
+        --form-5a: #2dd4bf;
+        --form-5a-soft: #133535;
+        --form-5a-border: rgba(45, 212, 191, 0.3);
+
+        --presence-live: #6fd39b;
+        --presence-live-soft: #15291f;
+        --presence-live-border: rgba(111, 211, 155, 0.3);
+
+        --presence-comm: #38bdf8;
+        --presence-comm-soft: #0c2438;
+        --presence-comm-border: rgba(56, 189, 248, 0.3);
+
+        --presence-sched: #fcd34d;
+        --presence-sched-soft: #322510;
+        --presence-sched-border: rgba(252, 211, 77, 0.3);
+
+        --presence-past: #94a3b8;
+        --presence-past-soft: #1e293b;
+        --presence-past-border: rgba(148, 163, 184, 0.3);
+
+        --atsi-ink: #e3bc5e;
+        --atsi-soft: #2b2415;
+        --atsi-border: #5c4a22;
+
+        --lift: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.7);
+        --lift-float: 0 4px 18px -4px rgba(0, 0, 0, 0.8), 0 1px 4px rgba(0, 0, 0, 0.5);
+        --hl: rgba(255, 255, 255, 0.06);
+        --hl-on-accent: rgba(255, 255, 255, 0.28);
+        --edge-shade: rgba(0, 0, 0, 0.55);
+        --scrim: rgba(0, 0, 0, 0.6);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        background: var(--ground);
+      }
+      body {
+        margin: 0;
+        background:
+          linear-gradient(180deg, var(--ground-hi) 0%, var(--ground) 55%, var(--ground-2) 100%) fixed,
+          var(--ground);
+        color: var(--ink);
+        font-family: var(--body);
+        font-size: var(--t-3);
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+        font-variant-numeric: tabular-nums;
+        overflow-x: hidden;
+      }
+
+      /* Sovereign brand stripe */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 999;
+        pointer-events: none;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      p,
+      dl,
+      dd,
+      dt,
+      ul,
+      ol {
+        margin: 0;
+      }
+      ul,
+      ol {
+        padding: 0;
+        list-style: none;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-family: var(--display);
+        font-weight: 600;
+        letter-spacing: -0.015em;
+      }
+
+      /* ─── Zero Underlines Ban (Universal) ──────────────────────────────── */
+      button,
+      a,
+      [role="button"],
+      .btn,
+      .btnGhost,
+      .btnPrimary,
+      .btnSecondary,
+      .chip,
+      .yieldCard,
+      .patientCard,
+      .denseRow,
+      .railLink,
+      .viewModeBtn,
+      .clearBtn,
+      .dossierActionBtn {
+        font: inherit;
+        color: inherit;
+        background: none;
+        border: 0;
+        padding: 0;
+        cursor: pointer;
+        font-variant-numeric: tabular-nums;
+        text-decoration: none !important;
+      }
+      button:hover,
+      a:hover,
+      [role="button"]:hover,
+      .btn:hover,
+      .btnGhost:hover,
+      .btnPrimary:hover,
+      .btnSecondary:hover,
+      .chip:hover,
+      .yieldCard:hover,
+      .patientCard:hover,
+      .denseRow:hover,
+      .railLink:hover,
+      .viewModeBtn:hover,
+      .clearBtn:hover,
+      .dossierActionBtn:hover {
+        text-decoration: none !important;
+      }
+      button:focus,
+      a:focus,
+      [role="button"]:focus {
+        text-decoration: none !important;
+      }
+
+      .mono {
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
+      /* ─── Frame and Rail Layout ────────────────────────────────────────── */
+      .app {
+        display: grid;
+        grid-template-columns: 236px minmax(0, 1fr);
+        min-height: 100vh;
+        transition: grid-template-columns 0.18s ease;
+      }
+
+      :root[data-rail="closed"] .app {
+        grid-template-columns: 58px minmax(0, 1fr);
+      }
+
+      .rail {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        height: 100vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        padding: 20px 0 16px;
+        transition: width 0.18s ease;
+        z-index: 20;
+      }
+
+      .brand {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        padding: 0 18px 18px;
+      }
+
+      .brand b {
+        font-family: var(--display);
+        font-size: var(--t-5);
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        line-height: 1;
+        color: var(--accent-ink);
+      }
+
+      .brand span {
+        font-size: var(--t-0);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--gilt);
+        font-weight: 600;
+      }
+
+      :root[data-rail="closed"] .brand b {
+        display: none;
+      }
+      :root[data-rail="closed"] .brand {
+        padding: 0 16px 18px;
+      }
+
+      .railGroup {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        padding: 0 8px;
+      }
+      .railGroup + .railGroup {
+        margin-top: 12px;
+      }
+
+      .railEyebrow {
+        font-size: var(--t-0);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 600;
+        padding: 0 10px 5px;
+      }
+
+      :root[data-rail="closed"] .railEyebrow {
+        display: none;
+      }
+
+      .railLink {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        width: 100%;
+        padding: 7px 10px;
+        border-radius: var(--r2);
+        font-size: var(--t-2);
+        color: var(--ink-soft);
+        position: relative;
+        text-decoration: none !important;
+        transition:
+          background 0.12s,
+          color 0.12s;
+      }
+
+      .railLink::before {
+        content: "";
+        position: absolute;
+        left: -8px;
+        top: 6px;
+        bottom: 6px;
+        width: 3px;
+        border-radius: 0 2px 2px 0;
+        background: transparent;
+      }
+
+      .railLink:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+
+      .railLink[aria-current="page"] {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
+
+      .railLink[aria-current="page"]::before {
+        background: var(--gilt);
+      }
+
+      .railLabel {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .railGlyph {
+        width: 15px;
+        height: 15px;
+        flex: 0 0 15px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        color: var(--muted);
+      }
+
+      .railLink[aria-current="page"] .railGlyph {
+        color: var(--accent);
+      }
+
+      :root[data-rail="closed"] .railText,
+      :root[data-rail="closed"] .tag {
+        display: none;
+      }
+
+      .tag {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 500;
+        color: var(--muted);
+        background: var(--sunk);
+        padding: 1px 7px;
+        border-radius: 999px;
+        box-shadow: inset 0 0 0 1px var(--line);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .railLink[aria-current="page"] .tag {
+        color: var(--accent-ink);
+        background: var(--accent-soft);
+        box-shadow: inset 0 0 0 1px var(--accent);
+      }
+
+      .railFoot {
+        margin-top: auto;
+        padding: 12px 12px 0;
+        border-top: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .railCheck {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--t-0);
+        color: var(--muted);
+        padding: 0 4px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      :root[data-rail="closed"] .railCheck {
+        display: none;
+      }
+
+      .appearance {
+        display: flex;
+        background: var(--sunk);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 2px;
+        gap: 2px;
+      }
+
+      .apBtn {
+        flex: 1;
+        font-size: var(--t-0);
+        font-weight: 500;
+        padding: 4px 6px;
+        border-radius: calc(var(--r2) - 2px);
+        color: var(--muted);
+        text-align: center;
+        transition:
+          background 0.12s,
+          color 0.12s;
+      }
+
+      .apBtn[aria-pressed="true"] {
+        background: var(--surface);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+      }
+
+      :root[data-rail="closed"] .appearance {
+        flex-direction: column;
+      }
+
+      /* ─── Main Content Frame ───────────────────────────────────────────── */
+      .frame {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 100vh;
+      }
+
+      /* Top Chrome Bar */
+      .bar {
+        position: sticky;
+        top: 0;
+        z-index: 15;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        padding: 0 20px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .barLeft {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .railToggleBtn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: var(--r2);
+        color: var(--muted);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        transition:
+          background 0.12s,
+          color 0.12s;
+      }
+      .railToggleBtn:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+
+      .barBreadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--t-2);
+        white-space: nowrap;
+      }
+      .crumbRoot {
+        color: var(--muted);
+      }
+      .crumbSep {
+        color: var(--line-strong);
+      }
+      .crumbCurrent {
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      .scopePill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--t-1);
+        font-weight: 500;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        padding: 3px 10px;
+        border-radius: 999px;
+        color: var(--ink-soft);
+        white-space: nowrap;
+      }
+
+      .barRight {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+
+      .clockBadge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--mono);
+        font-size: var(--t-1);
+        font-weight: 500;
+        color: var(--ink-soft);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      .pulseDot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--good);
+        box-shadow: 0 0 0 2px var(--good-soft);
+      }
+
+      .protoChip {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        padding: 2px 7px;
+        border-radius: 4px;
+        border: 1px solid var(--line);
+        white-space: nowrap;
+      }
+
+      /* ─── Page Canvas Container ────────────────────────────────────────── */
+      .canvas {
+        padding: 16px 20px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        flex: 1;
+        min-width: 0;
+      }
+
+      /* Page Header */
+      .pageHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .headerLeft {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+      }
+
+      .headerLeft h1 {
+        font-size: var(--t-5);
+        color: var(--ink);
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+      }
+
+      .countPill {
+        font-family: var(--mono);
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--accent-ink);
+        background: var(--accent-soft);
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-variant-numeric: tabular-nums;
+        border: 1px solid var(--line);
+      }
+
+      .headerRight {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btnGhost {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--t-1);
+        font-weight: 500;
+        color: var(--ink-soft);
+        padding: 6px 12px;
+        border-radius: var(--r2);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        transition:
+          background 0.12s,
+          color 0.12s,
+          border-color 0.12s;
+      }
+      .btnGhost:hover {
+        background: var(--surface-2);
+        color: var(--ink);
+        border-color: var(--line-strong);
+      }
+
+      /* ─── 5 Interactive KPI Metric Facet Cards (Hairline 1px borders) ─── */
+      .yieldStrip {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+      }
+
+      @media (max-width: 1100px) {
+        .yieldStrip {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      @media (max-width: 760px) {
+        .yieldStrip {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .yieldCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 10px 14px;
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        cursor: pointer;
+        position: relative;
+        user-select: none;
+        transition:
+          transform 0.12s ease,
+          border-color 0.12s ease,
+          background 0.12s ease,
+          box-shadow 0.12s ease;
+        text-align: left;
+      }
+
+      .yieldCard:hover {
+        background: var(--surface-2);
+        border-color: var(--line-strong);
+        transform: translateY(-1px);
+      }
+
+      .yieldCard[aria-pressed="true"] {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+        box-shadow:
+          0 0 0 1.5px var(--accent),
+          var(--lift);
+      }
+
+      .yieldCardTop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .yieldTitle {
+        font-size: var(--t-0);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted);
+        line-height: 1.2;
+      }
+
+      .yieldDot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .yieldDot.accent {
+        background: var(--accent);
+      }
+      .yieldDot.good {
+        background: var(--good);
+      }
+      .yieldDot.warn {
+        background: var(--warn);
+      }
+      .yieldDot.comm {
+        background: var(--svc-south);
+      }
+      .yieldDot.danger {
+        background: var(--danger);
+      }
+
+      .yieldValueRow {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .yieldValue {
+        font-family: var(--mono);
+        font-size: var(--t-6);
+        font-weight: 600;
+        color: var(--ink);
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .yieldValue.accent {
+        color: var(--accent-ink);
+      }
+      .yieldValue.good {
+        color: var(--good);
+      }
+      .yieldValue.warn {
+        color: var(--warn);
+      }
+      .yieldValue.comm {
+        color: var(--svc-south);
+      }
+      .yieldValue.danger {
+        color: var(--danger);
+      }
+
+      .yieldSub {
+        font-size: var(--t-0);
+        color: var(--muted);
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* ─── SLEEK, CONDENSED & MODERN SEARCH & FILTER COMMAND BAR ─────────── */
+      .searchConsole {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        padding: 10px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        position: relative;
+      }
+
+      /* Search Input Row with Inset Command Palette Design */
+      .searchInputRow {
+        display: flex;
+        align-items: center;
+        position: relative;
+      }
+
+      .searchIcon {
+        position: absolute;
+        left: 12px;
+        width: 16px;
+        height: 16px;
+        color: var(--muted);
+        pointer-events: none;
+        stroke-width: 2;
+      }
+
+      .searchInput {
+        width: 100%;
+        height: 38px;
+        padding: 0 110px 0 38px;
+        background: var(--sunk);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        font-family: var(--body);
+        font-size: var(--t-2);
+        color: var(--ink);
+        transition:
+          border-color 0.14s,
+          background 0.14s,
+          box-shadow 0.14s;
+      }
+
+      .searchInput:focus {
+        outline: none;
+        background: var(--surface);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2.5px var(--accent-soft);
+      }
+
+      .searchInput::placeholder {
+        color: var(--muted);
+        font-size: var(--t-2);
+      }
+
+      .searchEndAdornment {
+        position: absolute;
+        right: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .clearBtn {
+        font-size: var(--t-0);
+        font-weight: 500;
+        color: var(--muted);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        padding: 2px 8px;
+        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        transition:
+          color 0.12s,
+          background 0.12s,
+          border-color 0.12s;
+      }
+      .clearBtn:hover {
+        color: var(--ink);
+        background: var(--sunk);
+        border-color: var(--line-strong);
+      }
+
+      .kbdPill {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 1px 6px;
+        pointer-events: none;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Search Suggestions & Presets Dropdown */
+      .searchSuggestionsPopover {
+        position: absolute;
+        top: 100%;
+        left: 14px;
+        right: 14px;
+        margin-top: 4px;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift-float);
+        z-index: 50;
+        padding: 10px 12px;
+        display: none;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .searchSuggestionsPopover.active {
+        display: flex;
+      }
+
+      .suggGroupHeading {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        margin-bottom: 2px;
+      }
+
+      .suggItemsGrid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .suggItemBtn {
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        padding: 4px 10px;
+        border-radius: var(--r2);
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition:
+          background 0.12s,
+          color 0.12s,
+          border-color 0.12s;
+      }
+      .suggItemBtn:hover {
+        background: var(--sunk);
+        color: var(--ink);
+        border-color: var(--line-strong);
+      }
+
+      .suggFooterTip {
+        font-size: var(--t-0);
+        color: var(--muted);
+        border-top: 1px solid var(--line);
+        padding-top: 6px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      /* Condensed Filter Ribbon Toolbar */
+      .filterRibbon {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding-top: 6px;
+        border-top: 1px solid var(--line);
+      }
+
+      .filtersPrimaryGroup {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .facetSelectWrap {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .facetSelect {
+        appearance: none;
+        -webkit-appearance: none;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 4px 24px 4px 8px;
+        font-family: var(--body);
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        cursor: pointer;
+        min-width: 105px;
+        height: 28px;
+        line-height: 1;
+        transition:
+          border-color 0.12s,
+          background 0.12s,
+          color 0.12s;
+      }
+
+      .facetSelect:hover {
+        background: var(--sunk);
+        color: var(--ink);
+        border-color: var(--line-strong);
+      }
+
+      .facetSelect:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px var(--accent-soft);
+      }
+
+      .facetSelect.isFiltered {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
+
+      .facetArrow {
+        position: absolute;
+        right: 7px;
+        width: 11px;
+        height: 11px;
+        pointer-events: none;
+        color: var(--muted);
+        stroke-width: 2;
+      }
+
+      /* Sleek Quick Query Chips */
+      .quickChipsGroup {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+
+      .chip {
+        padding: 3px 8px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--ink-soft);
+        font-size: var(--t-0);
+        font-weight: 500;
+        transition:
+          background 0.12s,
+          border-color 0.12s,
+          color 0.12s;
+      }
+      .chip:hover {
+        background: var(--sunk);
+        color: var(--ink);
+        border-color: var(--line-strong);
+      }
+      .chip.active {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+
+      /* Secondary Toolbar Actions (Sort, Density Switch, Reset) */
+      .toolbarActionsGroup {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: auto;
+      }
+
+      .viewModeSwitcher {
+        display: inline-flex;
+        background: var(--sunk);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 2px;
+        gap: 2px;
+      }
+
+      .viewModeBtn {
+        padding: 2px 7px;
+        border-radius: calc(var(--r2) - 2px);
+        font-size: var(--t-0);
+        font-weight: 500;
+        color: var(--muted);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition:
+          background 0.12s,
+          color 0.12s;
+      }
+      .viewModeBtn svg {
+        width: 12px;
+        height: 12px;
+      }
+      .viewModeBtn[aria-pressed="true"] {
+        background: var(--surface);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+      }
+
+      .activeFilterResetPill {
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--danger-ink);
+        background: var(--danger-soft);
+        border: 1px solid var(--danger);
+        padding: 2px 7px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: background 0.12s;
+      }
+      .activeFilterResetPill:hover {
+        background: var(--danger-soft);
+        opacity: 0.9;
+      }
+
+      /* ─── Presence Badges & Indicators (Zero Hardcoded Colors) ─────────── */
+      .presenceTag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: var(--t-0);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 2px 7px;
+        border-radius: 4px;
+        line-height: 1.3;
+        flex-shrink: 0;
+      }
+
+      .presenceTag.live {
+        background: var(--presence-live-soft);
+        color: var(--presence-live);
+        border: 1px solid var(--presence-live-border);
+      }
+
+      .presenceTag.community {
+        background: var(--presence-comm-soft);
+        color: var(--presence-comm);
+        border: 1px solid var(--presence-comm-border);
+      }
+
+      .presenceTag.scheduled {
+        background: var(--presence-sched-soft);
+        color: var(--presence-sched);
+        border: 1px solid var(--presence-sched-border);
+      }
+
+      .presenceTag.past {
+        background: var(--presence-past-soft);
+        color: var(--presence-past);
+        border: 1px solid var(--presence-past-border);
+      }
+
+      .presenceDot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .presenceDot.live {
+        background: var(--presence-live);
+        box-shadow: 0 0 0 1.5px var(--presence-live-border);
+      }
+      .presenceDot.community {
+        background: var(--presence-comm);
+        box-shadow: 0 0 0 1.5px var(--presence-comm-border);
+      }
+      .presenceDot.scheduled {
+        background: var(--presence-sched);
+        box-shadow: 0 0 0 1.5px var(--presence-sched-border);
+      }
+      .presenceDot.past {
+        background: var(--presence-past);
+        box-shadow: 0 0 0 1.5px var(--presence-past-border);
+      }
+
+      /* ─── Two-Column Workspace ─────────────────────────────────────────── */
+      .workspaceGrid {
+        display: grid;
+        grid-template-columns: 1.18fr 0.82fr;
+        gap: 14px;
+        min-height: max(calc(100vh - 230px), 740px);
+        align-items: stretch;
+      }
+
+      @media (max-width: 1040px) {
+        .workspaceGrid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Left: Results Panel */
+      .resultsPanel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .panelHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 9px 14px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .panelTitle {
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .resultsBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--accent-ink);
+        background: var(--accent-soft);
+        padding: 1px 7px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .patientList {
+        overflow-y: auto;
+        flex: 1 1 auto;
+        min-height: 640px;
+        max-height: calc(100vh - 280px);
+      }
+
+      .populationHeading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 14px;
+        font-size: var(--t-0);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        border-bottom: 1px solid var(--line);
+        background: var(--surface-2);
+      }
+
+      /* Card View Styling */
+      .patientCard {
+        padding: 11px 14px;
+        border-bottom: 1px solid var(--line);
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        transition: background 0.12s;
+      }
+      .patientCard:hover {
+        background: var(--sunk);
+      }
+      .patientCard.selected {
+        background: var(--accent-soft);
+        box-shadow: inset 0 0 0 1.5px var(--accent);
+      }
+
+      .patientCardRow1 {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .patientIdentityCluster {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        min-width: 0;
+      }
+
+      .patientId {
+        font-family: var(--mono);
+        font-size: var(--t-2);
+        font-weight: 600;
+        color: var(--accent-ink);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .patientName {
+        font-weight: 600;
+        color: var(--ink);
+        font-size: var(--t-3);
+      }
+
+      .patientDemographics {
+        font-size: var(--t-1);
+        color: var(--muted);
+      }
+
+      .waitBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: var(--r2);
+        background: var(--sunk);
+        color: var(--ink-soft);
+        flex-shrink: 0;
+        font-variant-numeric: tabular-nums;
+      }
+      .waitBadge.warn {
+        background: var(--warn-soft);
+        color: var(--warn);
+      }
+      .waitBadge.danger {
+        background: var(--danger-soft);
+        color: var(--danger);
+        font-weight: 700;
+      }
+      .waitBadge.none {
+        background: transparent;
+        color: var(--muted);
+        border: 1px solid var(--line);
+      }
+
+      .patientCardRow2 {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        font-size: var(--t-1);
+      }
+
+      .serviceTag {
+        font-size: var(--t-0);
+        font-weight: 500;
+        padding: 1px 6px;
+        border-radius: 4px;
+        color: var(--ink);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .serviceDot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+      }
+      .serviceDot.east {
+        background: var(--svc-east);
+      }
+      .serviceDot.north {
+        background: var(--svc-north);
+      }
+      .serviceDot.south {
+        background: var(--svc-south);
+      }
+      .serviceDot.wachs {
+        background: var(--svc-wachs);
+      }
+
+      .statusPill {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 1px 6px;
+        border-radius: 999px;
+      }
+      .statusPill.form1a {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border: 1px solid var(--danger);
+      }
+      .statusPill.form4a {
+        background: var(--form-4a-soft);
+        color: var(--form-4a);
+        border: 1px solid var(--form-4a-border);
+      }
+      .statusPill.form5a {
+        background: var(--form-5a-soft);
+        color: var(--form-5a);
+        border: 1px solid var(--form-5a-border);
+      }
+      .statusPill.voluntary {
+        background: var(--sunk);
+        color: var(--ink-soft);
+        border: 1px solid var(--line-strong);
+      }
+
+      .destinationText {
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        margin-left: auto;
+      }
+      .destinationText strong {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      /* Dense List / Table View Styling (High-yield clinical scanning) */
+      .denseTable {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--t-1);
+      }
+      .denseTable th {
+        background: var(--surface-2);
+        padding: 6px 8px;
+        text-align: left;
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+      }
+      .denseTable td {
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: middle;
+        white-space: nowrap;
+      }
+      .denseRow {
+        cursor: pointer;
+        transition: background 0.12s;
+      }
+      .denseRow:hover {
+        background: var(--sunk);
+      }
+      .denseRow.selected {
+        background: var(--accent-soft);
+        box-shadow: inset 0 0 0 1.5px var(--accent);
+      }
+
+      /* Empty Results Notice */
+      .emptyState {
+        padding: 48px 24px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+      .emptyTitle {
+        font-size: var(--t-4);
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .emptySub {
+        font-size: var(--t-2);
+        color: var(--muted);
+        max-width: 320px;
+      }
+
+      /* Right: Clinical Dossier Inspector Panel */
+      .inspectorPanel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .inspectorContent {
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        overflow-y: auto;
+        flex: 1 1 auto;
+        min-height: 640px;
+        max-height: calc(100vh - 280px);
+      }
+
+      /* Dossier Presence Banner */
+      .presenceBannerCard {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 8px 12px;
+        border-radius: var(--r2);
+        font-size: var(--t-1);
+        border: 1px solid var(--line);
+      }
+      .presenceBannerCard.live {
+        background: var(--presence-live-soft);
+        border-color: var(--presence-live-border);
+        color: var(--presence-live);
+      }
+      .presenceBannerCard.community {
+        background: var(--presence-comm-soft);
+        border-color: var(--presence-comm-border);
+        color: var(--presence-comm);
+      }
+      .presenceBannerCard.scheduled {
+        background: var(--presence-sched-soft);
+        border-color: var(--presence-sched-border);
+        color: var(--presence-sched);
+      }
+      .presenceBannerCard.past {
+        background: var(--presence-past-soft);
+        border-color: var(--presence-past-border);
+        color: var(--presence-past);
+      }
+
+      .presenceBannerLeft {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .presenceSettingTag {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 1px 7px;
+        border-radius: 4px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Header: Patient Identity & Core Status Badges */
+      .dossierHeader {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 10px;
+      }
+
+      .dossierTitleRow {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .dossierName {
+        font-size: var(--t-5);
+        font-weight: 600;
+        color: var(--ink);
+        letter-spacing: -0.015em;
+      }
+
+      .dossierUrm {
+        font-family: var(--mono);
+        font-size: var(--t-3);
+        color: var(--accent-ink);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .dossierMetaRow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .metaDemographics {
+        font-size: var(--t-2);
+        color: var(--muted);
+      }
+
+      .atsiPill {
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--atsi-ink);
+        background: var(--atsi-soft);
+        border: 1px solid var(--atsi-border);
+        padding: 1px 6px;
+        border-radius: 4px;
+      }
+
+      .dossierStatusStrip {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 2px;
+      }
+
+      .tierBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-variant-numeric: tabular-nums;
+      }
+      .tierBadge.tier1 {
+        background: var(--danger-soft);
+        color: var(--danger);
+        border: 1px solid var(--danger);
+      }
+      .tierBadge.tier2 {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid var(--warn);
+      }
+      .tierBadge.tier3 {
+        background: var(--surface-2);
+        color: var(--ink-soft);
+        border: 1px solid var(--line-strong);
+      }
+      .tierBadge.discharged {
+        background: var(--sunk);
+        color: var(--muted);
+        border: 1px solid var(--line);
+      }
+
+      .dispositionBadge {
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border: 1px solid var(--accent);
+      }
+
+      /* Statutory Authority (WA MHA 2014) - Hairline 1px Border */
+      .statutoryCard {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .statutoryCard.breachAlert {
+        border-color: var(--danger);
+        background: var(--danger-soft);
+      }
+
+      .statutoryHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .statutoryTitle {
+        font-size: var(--t-2);
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      .statutoryCountdown {
+        font-family: var(--mono);
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--danger-ink);
+        background: var(--surface);
+        padding: 1px 7px;
+        border-radius: 4px;
+        border: 1px solid var(--line-strong);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .statutoryDetailsGrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        font-size: var(--t-1);
+      }
+      .statItem {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+      .statItemLabel {
+        font-size: var(--t-0);
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .statItemValue {
+        color: var(--ink);
+        font-weight: 500;
+      }
+
+      /* Placement & Movement Trajectory */
+      .dossierSection {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .sectionTitle {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+
+      .trajectoryGrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 10px 12px;
+      }
+
+      .trajBox {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .trajLabel {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+      .trajValue {
+        font-size: var(--t-2);
+        color: var(--ink);
+        font-weight: 500;
+      }
+      .trajValue.strong {
+        font-weight: 600;
+        color: var(--accent-ink);
+      }
+
+      /* Clinical Presentation & Care Summary */
+      .clinicalNoteCard {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 10px 12px;
+        font-size: var(--t-2);
+        line-height: 1.45;
+        color: var(--ink);
+      }
+
+      /* Audit Milestones */
+      .timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        position: relative;
+        padding-left: 16px;
+      }
+      .timeline::before {
+        content: "";
+        position: absolute;
+        left: 4px;
+        top: 4px;
+        bottom: 4px;
+        width: 2px;
+        background: var(--line-strong);
+      }
+      .timelineItem {
+        position: relative;
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        line-height: 1.35;
+        font-variant-numeric: tabular-nums;
+      }
+      .timelineItem::before {
+        content: "";
+        position: absolute;
+        left: -16px;
+        top: 5px;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+      .timelineItem strong {
+        color: var(--ink);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Coordinator Action Bar */
+      .dossierActionBar {
+        display: flex;
+        gap: 8px;
+        padding-top: 10px;
+        border-top: 1px solid var(--line);
+        margin-top: auto;
+        flex-wrap: wrap;
+      }
+
+      .btnPrimary {
+        padding: 7px 12px;
+        background: var(--accent);
+        color: var(--on-accent);
+        font-size: var(--t-2);
+        font-weight: 600;
+        border-radius: var(--r2);
+        transition: background 0.12s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .btnPrimary:hover {
+        background: var(--accent-press);
+      }
+
+      .btnSecondary {
+        padding: 7px 12px;
+        background: var(--surface-2);
+        color: var(--ink);
+        border: 1px solid var(--line);
+        font-size: var(--t-2);
+        font-weight: 500;
+        border-radius: var(--r2);
+        transition:
+          background 0.12s,
+          border-color 0.12s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .btnSecondary:hover {
+        background: var(--sunk);
+        border-color: var(--line-strong);
+      }
+
+      /* ─── Non-Blocking Toast Notification (D4 Compliance) ───────────────── */
+      .toastContainer {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        pointer-events: none;
+      }
+
+      .toastNotification {
+        background: var(--surface);
+        color: var(--ink);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        padding: 10px 14px;
+        font-size: var(--t-2);
+        font-weight: 500;
+        box-shadow: var(--lift-float);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        pointer-events: auto;
+        transform: translateY(10px);
+        opacity: 0;
+        transition:
+          transform 0.18s ease,
+          opacity 0.18s ease;
+      }
+      .toastNotification.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      /* ─── Footer ─────────────────────────────────────────────────────────── */
+      .sovereignDisclosureFooter {
+        padding: 10px 20px;
+        background: var(--surface);
+        border-top: 1px solid var(--line);
+        font-size: var(--t-1);
+        color: var(--muted);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+        margin-top: auto;
+      }
+      .regulatoryNote {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .prototypeBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        padding: 1px 6px;
+        border-radius: 3px;
+        margin-right: 6px;
+        border: 1px solid var(--line);
+      }
+
+      /* ─── Responsive & Touch Ergonomics (Mobile & Tablet) ───────────────── */
+      @media (max-width: 900px) {
+        .app {
+          grid-template-columns: 1fr !important;
+        }
+        .rail {
+          position: fixed;
+          top: 0;
+          left: 0;
+          bottom: 0;
+          width: 250px;
+          z-index: 100;
+          box-shadow: var(--lift-float);
+          transform: translateX(-100%);
+          transition: transform 0.2s ease;
+        }
+        :root[data-rail-mobile="open"] .rail {
+          transform: translateX(0);
+        }
+        .scopePill {
+          display: none !important;
+        }
+        .filterRibbon {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 8px;
+        }
+        .toolbarActionsGroup {
+          width: 100%;
+          justify-content: space-between;
+          margin-left: 0;
+        }
+      }
+
+      @media (max-width: 820px) {
+        .bar {
+          padding: 0 12px;
+        }
+        .canvas {
+          padding: 12px 14px;
+        }
+        .searchInput,
+        .facetSelect,
+        .chip,
+        .btnGhost,
+        .btnPrimary,
+        .btnSecondary,
+        .railToggleBtn,
+        .apBtn,
+        .clearBtn,
+        .viewModeBtn {
+          min-height: 48px;
+        }
+        .chip {
+          min-width: 48px;
+          justify-content: center;
+        }
+        .patientCard {
+          padding: 14px 12px;
+        }
+      }
+
+      @media (max-width: 420px) {
+        .barBreadcrumb {
+          font-size: var(--t-1);
+        }
+        .clockBadge {
+          font-size: var(--t-0);
+        }
+        .protoChip {
+          display: none;
+        }
+      }
+
+      @media print {
+        body::before,
+        .rail,
+        .bar,
+        .searchConsole,
+        .dossierActionBar,
+        .sovereignDisclosureFooter {
+          display: none !important;
+        }
+        .app {
+          display: block;
+        }
+        .workspaceGrid {
+          display: block;
+        }
+        .resultsPanel,
+        .inspectorPanel {
+          box-shadow: none;
+          border: 1px solid var(--line);
+          margin-bottom: 20px;
+          page-break-inside: avoid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- ═══ LEFT NAVIGATION RAIL ═══ -->
+      <nav class="rail" aria-label="Ward Flow navigation">
+        <div class="brand">
+          <b>Ward Flow</b>
+          <span>WF</span>
+        </div>
+
+        <div class="railGroup">
+          <span class="railEyebrow">Network Core</span>
+          <a href="command-third-edition.html" class="railLink">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="7" height="7" rx="1" />
+                <rect x="14" y="3" width="7" height="7" rx="1" />
+                <rect x="14" y="14" width="7" height="7" rx="1" />
+                <rect x="3" y="14" width="7" height="7" rx="1" />
+              </svg>
+              <span class="railText">Command</span>
+            </span>
+            <span class="tag">14</span>
+          </a>
+          <a href="capacity-third-edition.html" class="railLink">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24">
+                <path
+                  d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+                />
+              </svg>
+              <span class="railText">Capacity</span>
+            </span>
+            <span class="tag">88%</span>
+          </a>
+          <a href="movement-third-edition.html" class="railLink">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24">
+                <polyline points="13 17 18 12 13 7" />
+                <polyline points="6 17 11 12 6 7" />
+              </svg>
+              <span class="railText">Movements</span>
+            </span>
+            <span class="tag">6</span>
+          </a>
+          <a href="bed-board-third-edition.html" class="railLink">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24">
+                <path d="M2 4v16" />
+                <path d="M2 8h18a2 2 0 0 1 2 2v10" />
+                <path d="M2 17h20" />
+                <path d="M6 8v9" />
+              </svg>
+              <span class="railText">Bed board</span>
+            </span>
+            <span class="tag">24</span>
+          </a>
+          <a href="delays-third-edition.html" class="railLink">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span class="railText">Delays</span>
+            </span>
+            <span class="tag">5</span>
+          </a>
+        </div>
+
+        <div class="railGroup">
+          <span class="railEyebrow">Clinical Flow</span>
+          <a href="discharges-third-edition.html" class="railLink">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              <span class="railText">Discharges</span>
+            </span>
+            <span class="tag">8</span>
+          </a>
+          <a href="referrals-third-edition.html" class="railLink">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+              <span class="railText">Referrals</span>
+            </span>
+            <span class="tag">12</span>
+          </a>
+          <a href="patient-search-third-edition.html" class="railLink" aria-current="page">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <span class="railText">Patient search</span>
+            </span>
+            <span class="tag" id="railSearchCount">9</span>
+          </a>
+          <a href="statistics-third-edition.html" class="railLink">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24">
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
+              </svg>
+              <span class="railText">Statistics</span>
+            </span>
+          </a>
+        </div>
+
+        <div class="railGroup">
+          <span class="railEyebrow">Assurance</span>
+          <a href="governance-third-edition.html" class="railLink">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+              <span class="railText">Governance</span>
+            </span>
+          </a>
+          <a href="settings-third-edition.html" class="railLink">
+            <span class="railLabel">
+              <svg class="railGlyph" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                />
+              </svg>
+              <span class="railText">Settings</span>
+            </span>
+          </a>
+        </div>
+
+        <div class="railFoot">
+          <div class="railCheck">
+            <span>Reconciled 10:42 AWST</span>
+          </div>
+          <div class="appearance">
+            <button type="button" class="apBtn" id="themeLightBtn" onclick="setTheme('light')">Light</button>
+            <button type="button" class="apBtn" id="themeDarkBtn" onclick="setTheme('dark')">Dark</button>
+          </div>
+        </div>
+      </nav>
+
+      <!-- ═══ MAIN APPLICATION FRAME ═══ -->
+      <div class="frame">
+        <!-- Streamlined Universal Top Chrome Bar -->
+        <header class="bar">
+          <div class="barLeft">
+            <button
+              type="button"
+              class="railToggleBtn"
+              onclick="toggleRail()"
+              title="Toggle Navigation Rail"
+              aria-label="Toggle rail"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+            <div class="barBreadcrumb">
+              <span class="crumbRoot">Ward Flow</span>
+              <span class="crumbSep">/</span>
+              <span class="crumbCurrent">Patient search</span>
+            </div>
+            <div class="scopePill">
+              <span class="serviceDot east"></span>
+              <span>East Metro Hub Coordinator</span>
+            </div>
+          </div>
+
+          <div class="barRight">
+            <div class="clockBadge">
+              <span class="pulseDot"></span>
+              <span>10:42 AWST</span>
+            </div>
+            <span class="protoChip">Demonstration</span>
+          </div>
+        </header>
+
+        <!-- Main Workspace Canvas -->
+        <main class="canvas">
+          <!-- Streamlined Page Header with Direct Utility Actions -->
+          <div class="pageHeader">
+            <div class="headerLeft">
+              <h1>Patient search</h1>
+              <span class="countPill" id="headerCountPill">9 records</span>
+            </div>
+            <div class="headerRight">
+              <button type="button" class="btnGhost" onclick="window.print()" title="Print or export current caseload">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                  <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                <span>Print Caseload</span>
+              </button>
+              <button
+                type="button"
+                class="btnGhost"
+                onclick="resetAllFilters()"
+                title="Clear search and all active filters"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                  <path d="M3 3v5h5" />
+                </svg>
+                <span>Reset filters</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ═══ 5 INTERACTIVE KPI METRIC FACET CARDS (HAIRLINE 1PX BORDERS) ═══ -->
+          <section class="yieldStrip" aria-label="Interactive caseload KPI summary facets">
+            <!-- 1. Total Caseload -->
+            <div
+              class="yieldCard"
+              id="kpi-all"
+              role="button"
+              tabindex="0"
+              aria-pressed="true"
+              onclick="applyKpiFacet('all')"
+            >
+              <div class="yieldCardTop">
+                <span class="yieldTitle">Total Caseload</span>
+                <span class="yieldDot accent"></span>
+              </div>
+              <div class="yieldValueRow">
+                <span class="yieldValue accent" id="yieldTotal">9</span>
+              </div>
+              <span class="yieldSub">6 Live · 2 Not in Hosp · 1 Past</span>
+            </div>
+
+            <!-- 2. Live in Hospital -->
+            <div
+              class="yieldCard"
+              id="kpi-live"
+              role="button"
+              tabindex="0"
+              aria-pressed="false"
+              onclick="applyKpiFacet('live')"
+            >
+              <div class="yieldCardTop">
+                <span class="yieldTitle">Live in Hospital</span>
+                <span class="yieldDot good"></span>
+              </div>
+              <div class="yieldValueRow">
+                <span class="yieldValue good" id="yieldLive">6</span>
+              </div>
+              <span class="yieldSub">Active ED, Ward &amp; Transit</span>
+            </div>
+
+            <!-- 3. Unplaced in ED -->
+            <div
+              class="yieldCard"
+              id="kpi-unplaced"
+              role="button"
+              tabindex="0"
+              aria-pressed="false"
+              onclick="applyKpiFacet('unplaced')"
+            >
+              <div class="yieldCardTop">
+                <span class="yieldTitle">Unplaced in ED</span>
+                <span class="yieldDot warn"></span>
+              </div>
+              <div class="yieldValueRow">
+                <span class="yieldValue warn" id="yieldUnplaced">3</span>
+              </div>
+              <span class="yieldSub">Awaiting bed acceptance</span>
+            </div>
+
+            <!-- 4. Not in Hospital -->
+            <div
+              class="yieldCard"
+              id="kpi-notin"
+              role="button"
+              tabindex="0"
+              aria-pressed="false"
+              onclick="applyKpiFacet('notin')"
+            >
+              <div class="yieldCardTop">
+                <span class="yieldTitle">Not in Hospital</span>
+                <span class="yieldDot comm"></span>
+              </div>
+              <div class="yieldValueRow">
+                <span class="yieldValue comm" id="yieldNotIn">2</span>
+              </div>
+              <span class="yieldSub">Community &amp; Scheduled</span>
+            </div>
+
+            <!-- 5. Breaching Wait (>24h) -->
+            <div
+              class="yieldCard"
+              id="kpi-breaches"
+              role="button"
+              tabindex="0"
+              aria-pressed="false"
+              onclick="applyKpiFacet('breaches')"
+            >
+              <div class="yieldCardTop">
+                <span class="yieldTitle">Breaching (>24h)</span>
+                <span class="yieldDot danger"></span>
+              </div>
+              <div class="yieldValueRow">
+                <span class="yieldValue danger" id="yieldBreaches">3</span>
+              </div>
+              <span class="yieldSub">Statutory priority window</span>
+            </div>
+          </section>
+
+          <!-- ═══ SLEEK & CONDENSED SEARCH & FILTER COMMAND BAR ═══ -->
+          <section class="searchConsole" aria-label="Caseload search and filter console">
+            <!-- Sleek Command Search Input -->
+            <div class="searchInputRow">
+              <svg
+                class="searchIcon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input
+                type="text"
+                id="searchInput"
+                class="searchInput"
+                placeholder="Search patient name, URM (e.g. UM-401292), hospital site, target ward, community service, or notes..."
+                autocomplete="off"
+                spellcheck="false"
+                onfocus="showSearchSuggestions()"
+              />
+              <div class="searchEndAdornment">
+                <button
+                  type="button"
+                  id="clearBtn"
+                  class="clearBtn"
+                  style="display: none"
+                  onclick="clearSearch()"
+                  title="Clear query"
+                >
+                  Clear &times;
+                </button>
+                <span class="kbdPill" title="Press / or ⌘K to focus search">/</span>
+              </div>
+            </div>
+
+            <!-- Suggestions & Quick Search Palette Dropdown -->
+            <div id="searchSuggestionsPopover" class="searchSuggestionsPopover">
+              <div class="suggGroupHeading">Instant Presets &amp; Recent Queries</div>
+              <div class="suggItemsGrid">
+                <button type="button" class="suggItemBtn" onclick="selectSuggestion('Jarrah')">
+                  <span>Jarrah, Marcus</span>
+                  <span class="kbdPill">Tier 1</span>
+                </button>
+                <button type="button" class="suggItemBtn" onclick="selectSuggestion('Form 1A')">
+                  <span>Form 1A</span>
+                  <span class="kbdPill">ED 24h</span>
+                </button>
+                <button type="button" class="suggItemBtn" onclick="selectSuggestion('Unplaced')">
+                  <span>Unplaced</span>
+                  <span class="kbdPill">Awaiting bed</span>
+                </button>
+                <button type="button" class="suggItemBtn" onclick="selectSuggestion('SCGH ED')">
+                  <span>Sir Charles Gairdner</span>
+                  <span class="kbdPill">ED</span>
+                </button>
+                <button type="button" class="suggItemBtn" onclick="selectSuggestion('Form 5A')">
+                  <span>Form 5A</span>
+                  <span class="kbdPill">CTO</span>
+                </button>
+              </div>
+              <div class="suggFooterTip">
+                <span>Tip: Search by URM, Clinician name, Site, or Clinical keyword</span>
+                <span>Press <strong>Esc</strong> to close</span>
+              </div>
+            </div>
+
+            <!-- Condensed Filter Toolbar Ribbon -->
+            <div class="filterRibbon">
+              <!-- Primary Facet Filters (Dropdowns) -->
+              <div class="filtersPrimaryGroup">
+                <!-- 1. Presence -->
+                <div class="facetSelectWrap">
+                  <select
+                    id="presenceSelect"
+                    class="facetSelect"
+                    onchange="onFilterChange()"
+                    aria-label="Filter by presence status"
+                  >
+                    <option value="all">Presence: All (9)</option>
+                    <option value="live">Live in Hospital (6)</option>
+                    <option value="community">Community / Home (1)</option>
+                    <option value="scheduled">Scheduled Pre-Admit (1)</option>
+                    <option value="past">Past / Discharged (1)</option>
+                  </select>
+                  <svg class="facetArrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
+
+                <!-- 2. Health Service -->
+                <div class="facetSelectWrap">
+                  <select
+                    id="serviceSelect"
+                    class="facetSelect"
+                    onchange="onFilterChange()"
+                    aria-label="Filter by health service"
+                  >
+                    <option value="all">Service: All (9)</option>
+                    <option value="East Metro">East Metro (6)</option>
+                    <option value="North Metro">North Metro (1)</option>
+                    <option value="South Metro">South Metro (2)</option>
+                    <option value="WACHS">WACHS (0)</option>
+                  </select>
+                  <svg class="facetArrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
+
+                <!-- 3. Setting -->
+                <div class="facetSelectWrap">
+                  <select
+                    id="settingSelect"
+                    class="facetSelect"
+                    onchange="onFilterChange()"
+                    aria-label="Filter by clinical setting"
+                  >
+                    <option value="all">Setting: All (9)</option>
+                    <option value="ed">Emergency Dept (4)</option>
+                    <option value="inpatient">Inpatient Ward (1)</option>
+                    <option value="transit">In-Transit (1)</option>
+                    <option value="community">Community / Home (1)</option>
+                    <option value="scheduled">Pre-Admission (1)</option>
+                    <option value="discharged">Past / Discharged (1)</option>
+                  </select>
+                  <svg class="facetArrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
+
+                <!-- 4. Legal Status -->
+                <div class="facetSelectWrap">
+                  <select
+                    id="legalSelect"
+                    class="facetSelect"
+                    onchange="onFilterChange()"
+                    aria-label="Filter by legal status"
+                  >
+                    <option value="all">Legal: All (9)</option>
+                    <option value="Form 1A">Form 1A (ED 24h) (2)</option>
+                    <option value="Form 4A">Form 4A (Transport) (1)</option>
+                    <option value="Form 5A">Form 5A (Involuntary CTO) (2)</option>
+                    <option value="Voluntary">Voluntary (4)</option>
+                  </select>
+                  <svg class="facetArrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
+
+                <!-- 5. Acuity Tier Filter (High-Yield) -->
+                <div class="facetSelectWrap">
+                  <select
+                    id="tierSelect"
+                    class="facetSelect"
+                    onchange="onFilterChange()"
+                    aria-label="Filter by clinical acuity tier"
+                  >
+                    <option value="all">Acuity: All</option>
+                    <option value="Tier 1">Tier 1 (Acute)</option>
+                    <option value="Tier 2">Tier 2 (Moderate)</option>
+                    <option value="Tier 3">Tier 3 (Stable)</option>
+                  </select>
+                  <svg class="facetArrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Sleek Quick Query Chips -->
+              <div class="quickChipsGroup">
+                <button type="button" class="chip" data-chip="Form 1A" onclick="applyQuickChip('Form 1A')">
+                  Form 1A
+                </button>
+                <button type="button" class="chip" data-chip="Unplaced" onclick="applyQuickChip('Unplaced')">
+                  Unplaced
+                </button>
+                <button type="button" class="chip" data-chip="Waiting > 24h" onclick="applyQuickChip('Waiting > 24h')">
+                  &gt; 24h Wait
+                </button>
+                <button type="button" class="chip" data-chip="ATSI" onclick="applyQuickChip('ATSI')">ATSI</button>
+              </div>
+
+              <!-- Secondary Toolbar: Sorting, Density Switcher & Reset Filter -->
+              <div class="toolbarActionsGroup">
+                <!-- Sort Dropdown -->
+                <div class="facetSelectWrap">
+                  <select
+                    id="sortSelect"
+                    class="facetSelect"
+                    onchange="onSortChange()"
+                    aria-label="Sort patient records"
+                    style="min-width: 140px"
+                  >
+                    <option value="wait-desc">Sort: Longest Wait</option>
+                    <option value="tier-asc">Sort: Acuity (Tier 1 first)</option>
+                    <option value="name-asc">Sort: Name (A &rarr; Z)</option>
+                    <option value="urm-asc">Sort: URM Number</option>
+                    <option value="opened-desc">Sort: Opened Recent</option>
+                  </select>
+                  <svg class="facetArrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
+
+                <!-- Density / View Mode Switcher -->
+                <div class="viewModeSwitcher" role="group" aria-label="Caseload view mode">
+                  <button
+                    type="button"
+                    class="viewModeBtn"
+                    id="viewCardsBtn"
+                    aria-pressed="true"
+                    onclick="setViewMode('cards')"
+                    title="Card view"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="3" width="7" height="7"></rect>
+                      <rect x="14" y="3" width="7" height="7"></rect>
+                      <rect x="14" y="14" width="7" height="7"></rect>
+                      <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    <span>Cards</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="viewModeBtn"
+                    id="viewDenseBtn"
+                    aria-pressed="false"
+                    onclick="setViewMode('dense')"
+                    title="Dense list view (12+ patients visible)"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="3" y1="6" x2="21" y2="6"></line>
+                      <line x1="3" y1="12" x2="21" y2="12"></line>
+                      <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                    <span>Dense</span>
+                  </button>
+                </div>
+
+                <!-- Active Filter Reset Badge Button -->
+                <button
+                  type="button"
+                  id="activeResetBtn"
+                  class="activeFilterResetPill"
+                  style="display: none"
+                  onclick="resetAllFilters()"
+                  title="Clear active filters"
+                >
+                  <span>Clear filters</span>
+                  <span id="activeFilterCount" class="mono">1</span>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ═══ TWO-COLUMN CASELOAD WORKSPACE ═══ -->
+          <div class="workspaceGrid">
+            <!-- Left: Caseload Results Panel -->
+            <section class="resultsPanel" aria-label="Caseload list">
+              <div class="panelHead">
+                <h2 class="panelTitle">Caseload Results</h2>
+                <span class="resultsBadge" id="resultsCountBadge">9 records</span>
+              </div>
+
+              <div class="patientList" id="patientListContainer" role="region" aria-live="polite">
+                <!-- Populated dynamically by JavaScript (Cards or Dense List) -->
+              </div>
+
+              <div id="emptyStateNotice" class="emptyState" style="display: none">
+                <div class="emptyTitle">No matching records</div>
+                <p class="emptySub">No patient records match the current search query and filters.</p>
+                <button type="button" class="btnSecondary" style="margin-top: 6px" onclick="resetAllFilters()">
+                  Reset all filters
+                </button>
+              </div>
+            </section>
+
+            <!-- Right: Perfected Clinical Dossier Panel -->
+            <section class="inspectorPanel" aria-label="Patient details dossier">
+              <div class="panelHead">
+                <h2 class="panelTitle">Clinical Dossier</h2>
+                <span style="font-size: var(--t-1); color: var(--muted)" id="dossierHint">Active record</span>
+              </div>
+
+              <div class="inspectorContent" id="inspectorContent">
+                <!-- Populated dynamically in logical clinical order by JavaScript -->
+              </div>
+            </section>
+          </div>
+        </main>
+
+        <!-- Sovereign Minimal Footer (Simulation Invariant FF8) -->
+        <footer class="sovereignDisclosureFooter" data-testid="ward-patient-search-governance">
+          <div>
+            <span class="prototypeBadge">Prototype</span>
+            <span>Synthetic clinical simulation data only. No real patient health information.</span>
+          </div>
+          <div class="regulatoryNote">WA MHA 2014 CLINICAL FLOW</div>
+        </footer>
+      </div>
+    </div>
+
+    <!-- Non-blocking Accessible Toast Notification (D4 Compliance) -->
+    <div id="toastContainer" class="toastContainer" aria-live="polite"></div>
+
+    <script>
+      /* ═══════════════════════════════════════════════════════════════════════
+       SOVEREIGN PATIENT SEARCH DATA ENGINE (RECONCILED AUTHENTIC WA DATASET)
+       ═══════════════════════════════════════════════════════════════════════ */
+      const PATIENTS = [
+        {
+          id: "WF-012",
+          urm: "UM100012",
+          name: "Jarrah, Marcus",
+          age: 38,
+          sex: "Male",
+          indigenous: false,
+          origin: "Royal Perth ED",
+          setting: "ed",
+          service: "East Metro",
+          legalStatus: "Form 1A",
+          legalExpires: "18h remaining",
+          urgency: "Tier 1",
+          waitHours: 28.5,
+          openedAt: "10 Sep 06:12",
+          destination: "rph-adult-secure",
+          destinationName: "RPH Adult Secure Unit",
+          holdStatus: "Bed hold active",
+          stage: "Reserved",
+          transportNeeded: true,
+          transportStatus: "Booked (St John)",
+          nurseEscort: true,
+          presence: "live",
+          presenceLabel: "Live in Hospital",
+          presenceDetail: "Present in Royal Perth ED · Awaiting transfer",
+          clinicalNote:
+            "Severe acute psychotic presentation. Involuntary order Form 1A confirmed. Bed pulled to RPH Adult Secure Unit.",
+        },
+        {
+          id: "WF-014",
+          urm: "UM100014",
+          name: "Connors, Sarah",
+          age: 29,
+          sex: "Female",
+          indigenous: true,
+          origin: "Sir Charles Gairdner ED",
+          setting: "ed",
+          service: "North Metro",
+          legalStatus: "Form 4A",
+          legalExpires: "42h remaining",
+          urgency: "Tier 2",
+          waitHours: 14.2,
+          openedAt: "10 Sep 20:30",
+          destination: null,
+          destinationName: "No ward yet",
+          holdStatus: "Unplaced",
+          stage: "Referred",
+          transportNeeded: true,
+          transportStatus: "Pending allocation",
+          nurseEscort: false,
+          presence: "live",
+          presenceLabel: "Live in Hospital",
+          presenceDetail: "Present in SCGH ED · Unplaced bed request",
+          clinicalNote: "Form 4A transport order signed. Awaiting bed acceptance in North Metro or East Metro network.",
+        },
+        {
+          id: "WF-018",
+          urm: "UM100018",
+          name: "De Silva, Priyantha",
+          age: 44,
+          sex: "Male",
+          indigenous: false,
+          origin: "Fiona Stanley ED",
+          setting: "ed",
+          service: "South Metro",
+          legalStatus: "Form 5A",
+          legalExpires: "5 days remaining",
+          urgency: "Tier 1",
+          waitHours: 32.0,
+          openedAt: "10 Sep 02:42",
+          destination: "fsh-mental-health",
+          destinationName: "FSH Adult Mental Health",
+          holdStatus: "Bed hold active",
+          stage: "Allocated",
+          transportNeeded: false,
+          transportStatus: "Internal transfer",
+          nurseEscort: true,
+          presence: "live",
+          presenceLabel: "Live in Hospital",
+          presenceDetail: "Present in Fiona Stanley ED · Bed allocated",
+          clinicalNote:
+            "Form 5A community treatment order breached. Involuntary admission approved. Internal transfer pending bed prep.",
+        },
+        {
+          id: "WF-021",
+          urm: "UM100021",
+          name: "Taylor, Jordan",
+          age: 22,
+          sex: "Non-binary",
+          indigenous: false,
+          origin: "Peel Health Campus ED",
+          setting: "ed",
+          service: "South Metro",
+          legalStatus: "Voluntary",
+          legalExpires: "N/A",
+          urgency: "Tier 3",
+          waitHours: 4.5,
+          openedAt: "11 Sep 06:12",
+          destination: null,
+          destinationName: "No ward yet",
+          holdStatus: "Unplaced",
+          stage: "Triaged",
+          transportNeeded: false,
+          transportStatus: "Ambulatory",
+          nurseEscort: false,
+          presence: "live",
+          presenceLabel: "Live in Hospital",
+          presenceDetail: "Present in Peel ED · Awaiting bed offer",
+          clinicalNote:
+            "Voluntary depressive crisis. Single-room ensuite accommodation requested per gender identity and diversity policy.",
+        },
+        {
+          id: "WF-025",
+          urm: "UM100025",
+          name: "Nannup, Daniel",
+          age: 51,
+          sex: "Male",
+          indigenous: true,
+          origin: "Armadale Health Service",
+          setting: "inpatient",
+          service: "East Metro",
+          legalStatus: "Form 5A",
+          legalExpires: "12 days remaining",
+          urgency: "Tier 2",
+          waitHours: 25.0,
+          openedAt: "10 Sep 09:42",
+          destination: null,
+          destinationName: "No ward yet",
+          holdStatus: "Unplaced",
+          stage: "Step-Down Referral",
+          transportNeeded: true,
+          transportStatus: "Not booked",
+          nurseEscort: false,
+          presence: "live",
+          presenceLabel: "Live in Hospital",
+          presenceDetail: "Present on Armadale Inpatient Ward · Step-down",
+          clinicalNote:
+            "Step-down referral to East Metro Community Mental Health Team following inpatient stabilization.",
+        },
+        {
+          id: "WF-029",
+          urm: "UM100029",
+          name: "O'Reilly, Claire",
+          age: 34,
+          sex: "Female",
+          indigenous: false,
+          origin: "Midland ED",
+          setting: "transit",
+          service: "East Metro",
+          legalStatus: "Form 1A",
+          legalExpires: "30h remaining",
+          urgency: "Tier 1",
+          waitHours: 19.8,
+          openedAt: "10 Sep 14:55",
+          destination: "graylands-montrose",
+          destinationName: "Graylands Hospital (Montrose)",
+          holdStatus: "In-Transit",
+          stage: "En Route",
+          transportNeeded: true,
+          transportStatus: "Vehicle dispatched (ETA 25m)",
+          nurseEscort: true,
+          presence: "live",
+          presenceLabel: "Live in Hospital",
+          presenceDetail: "In-Transit conveyance en route to Graylands Hospital",
+          clinicalNote:
+            "Patient collected from Midland ED. Vehicle currently en route to Graylands Hospital with dual escort.",
+        },
+        {
+          id: "WF-033",
+          urm: "UM100033",
+          name: "Giles, Aaron",
+          age: 47,
+          sex: "Male",
+          indigenous: false,
+          origin: "Armadale Community MH",
+          setting: "community",
+          service: "East Metro",
+          legalStatus: "Voluntary",
+          legalExpires: "N/A",
+          urgency: "Tier 3",
+          waitHours: 0,
+          openedAt: "09 Sep 11:30",
+          destination: null,
+          destinationName: "Not admitted",
+          holdStatus: "Community management",
+          stage: "Outpatient",
+          transportNeeded: false,
+          transportStatus: "Not required",
+          nurseEscort: false,
+          presence: "community",
+          presenceLabel: "Not in Hospital",
+          presenceDetail: "Active Community Outpatient · Armadale CMHT",
+          clinicalNote:
+            "Community mental health client residing at home. Case manager review conducted 15 Sep. Currently stable on depot medication; no acute hospital admission required.",
+        },
+        {
+          id: "WF-036",
+          urm: "UM100036",
+          name: "Kowalski, Elena",
+          age: 31,
+          sex: "Female",
+          indigenous: false,
+          origin: "Midland Clinic",
+          setting: "scheduled",
+          service: "East Metro",
+          legalStatus: "Voluntary",
+          legalExpires: "N/A",
+          urgency: "Tier 3",
+          waitHours: 0,
+          openedAt: "17 Sep 14:00",
+          destination: "graylands-montrose",
+          destinationName: "Graylands Hospital (Montrose)",
+          holdStatus: "Pre-admission scheduled",
+          stage: "Booked for 18 Sep 09:00",
+          transportNeeded: false,
+          transportStatus: "Private transport",
+          nurseEscort: false,
+          presence: "scheduled",
+          presenceLabel: "Not in System Today",
+          presenceDetail: "Scheduled Elective Admission · Planned for tomorrow 09:00",
+          clinicalNote:
+            "Elective voluntary step-up admission booked for tomorrow morning. Pre-admission checklist completed. Patient arriving via private conveyance with family support.",
+        },
+        {
+          id: "WF-008",
+          urm: "UM100008",
+          name: "Blythe, Robert",
+          age: 56,
+          sex: "Male",
+          indigenous: false,
+          origin: "Bentley Health Service",
+          setting: "discharged",
+          service: "East Metro",
+          legalStatus: "Voluntary",
+          legalExpires: "Discharged",
+          urgency: "Discharged",
+          waitHours: 0,
+          openedAt: "28 Aug 09:15",
+          destination: "Community",
+          destinationName: "Home / GP Shared Care",
+          holdStatus: "Discharged",
+          stage: "Case Closed",
+          transportNeeded: false,
+          transportStatus: "Discharged home",
+          nurseEscort: false,
+          presence: "past",
+          presenceLabel: "Past Patient",
+          presenceDetail: "Discharged 12 Sep 15:30 · Historical record (30-day view)",
+          clinicalNote:
+            "Inpatient episode completed and formally discharged 12 September. Handover packet forwarded to general practitioner and community mental health team. Past record viewable for readmission triage.",
+        },
+      ];
+
+      let selectedPatientId = "WF-012";
+      let activeKpiFacet = "all"; // 'all' | 'live' | 'unplaced' | 'notin' | 'breaches'
+      let currentViewMode = "cards"; // 'cards' | 'dense'
+      let currentSort = "wait-desc";
+
+      function setTheme(theme) {
+        document.documentElement.setAttribute("data-theme", theme);
+        try {
+          localStorage.setItem("ward-flow-theme", theme);
+        } catch (e) {}
+        updateThemeButtons();
+      }
+
+      function updateThemeButtons() {
+        const current = document.documentElement.getAttribute("data-theme") || "dark";
+        document.getElementById("themeLightBtn").setAttribute("aria-pressed", current === "light");
+        document.getElementById("themeDarkBtn").setAttribute("aria-pressed", current === "dark");
+      }
+
+      function toggleRail() {
+        if (window.innerWidth <= 900) {
+          const isMobileOpen = document.documentElement.getAttribute("data-rail-mobile") === "open";
+          document.documentElement.setAttribute("data-rail-mobile", isMobileOpen ? "closed" : "open");
+        } else {
+          const isClosed = document.documentElement.getAttribute("data-rail") === "closed";
+          const next = isClosed ? "open" : "closed";
+          document.documentElement.setAttribute("data-rail", next);
+          try {
+            localStorage.setItem("ward-flow-rail", next);
+          } catch (e) {}
+        }
+      }
+
+      /* ─── D4 Owner Compliance Toast System ──────────────────────────────── */
+      function showD4Notice(msg = "Not wired in this prototype.") {
+        const container = document.getElementById("toastContainer");
+        const toast = document.createElement("div");
+        toast.className = "toastNotification";
+        toast.innerHTML = `
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent);">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>${msg}</span>
+        `;
+        container.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add("show"));
+        setTimeout(() => {
+          toast.classList.remove("show");
+          setTimeout(() => toast.remove(), 200);
+        }, 3000);
+      }
+
+      function copyPatientSummary() {
+        const p = PATIENTS.find((item) => item.id === selectedPatientId);
+        if (!p) return;
+        const text = `[Ward Flow Clinical Summary]
+Patient: ${p.name} (${p.urm}) | ${p.age}y ${p.sex}${p.indigenous ? " · ATSI" : ""}
+Legal Status: ${p.legalStatus} (${p.legalExpires}) | ${p.urgency} Acuity
+Current Site: ${p.origin} | Wait: ${p.waitHours > 0 ? p.waitHours.toFixed(1) + "h" : "None"} ${p.waitHours >= 24 ? "(Breach >24h)" : ""}
+Target Ward: ${p.destination ? p.destinationName : "Pending allocation"} (${p.holdStatus} - ${p.stage})
+Conveyance: ${p.transportStatus}${p.nurseEscort ? " · Nurse escort" : ""}
+Clinical Note: ${p.clinicalNote}`;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard
+            .writeText(text)
+            .then(() => {
+              showD4Notice("Patient summary copied to clipboard.");
+            })
+            .catch(() => {
+              showD4Notice("Patient summary copied.");
+            });
+        } else {
+          showD4Notice("Patient summary copied.");
+        }
+      }
+
+      function applyKpiFacet(facet) {
+        if (activeKpiFacet === facet && facet !== "all") {
+          activeKpiFacet = "all";
+        } else {
+          activeKpiFacet = facet;
+        }
+        updateKpiCardsState();
+        render();
+      }
+
+      function updateKpiCardsState() {
+        const ids = ["all", "live", "unplaced", "notin", "breaches"];
+        ids.forEach((id) => {
+          const el = document.getElementById("kpi-" + id);
+          if (el) {
+            el.setAttribute("aria-pressed", activeKpiFacet === id ? "true" : "false");
+          }
+        });
+      }
+
+      function setViewMode(mode) {
+        currentViewMode = mode;
+        document.getElementById("viewCardsBtn").setAttribute("aria-pressed", mode === "cards");
+        document.getElementById("viewDenseBtn").setAttribute("aria-pressed", mode === "dense");
+        render();
+      }
+
+      function onSortChange() {
+        currentSort = document.getElementById("sortSelect").value;
+        render();
+      }
+
+      function showSearchSuggestions() {
+        document.getElementById("searchSuggestionsPopover").classList.add("active");
+      }
+
+      function hideSearchSuggestions() {
+        document.getElementById("searchSuggestionsPopover").classList.remove("active");
+      }
+
+      function selectSuggestion(query) {
+        document.getElementById("searchInput").value = query;
+        hideSearchSuggestions();
+        updateChipStates();
+        render();
+      }
+
+      function getFilteredPatients() {
+        const search = document.getElementById("searchInput").value.trim().toLowerCase();
+        const presence = document.getElementById("presenceSelect").value;
+        const service = document.getElementById("serviceSelect").value;
+        const setting = document.getElementById("settingSelect").value;
+        const legal = document.getElementById("legalSelect").value;
+        const tier = document.getElementById("tierSelect").value;
+
+        const results = PATIENTS.filter((p) => {
+          // 1. Text Search matching
+          if (search) {
+            if (search === "atsi") {
+              if (!p.indigenous) return false;
+            } else if (search === "waiting > 24h" || search === ">24h" || search === "breach") {
+              if (p.waitHours < 24) return false;
+            } else if (search === "unplaced") {
+              if (p.destination || p.presence !== "live") return false;
+            } else {
+              const hay = [
+                p.name,
+                p.urm,
+                p.id,
+                p.origin,
+                p.destinationName || "",
+                p.legalStatus,
+                p.clinicalNote,
+                p.presenceLabel,
+                p.presenceDetail,
+                p.presence,
+                p.service,
+                p.stage,
+                p.urgency,
+              ]
+                .join(" ")
+                .toLowerCase();
+              if (!hay.includes(search)) return false;
+            }
+          }
+
+          // 2. Active KPI Facet
+          if (activeKpiFacet === "live" && p.presence !== "live") return false;
+          if (activeKpiFacet === "unplaced" && (p.destination || p.presence !== "live")) return false;
+          if (activeKpiFacet === "notin" && p.presence !== "community" && p.presence !== "scheduled") return false;
+          if (activeKpiFacet === "breaches" && p.waitHours < 24) return false;
+
+          // 3. Dropdown Filters
+          if (presence !== "all" && p.presence !== presence) return false;
+          if (service !== "all" && p.service !== service) return false;
+          if (setting !== "all" && p.setting !== setting) return false;
+          if (legal !== "all" && p.legalStatus !== legal) return false;
+          if (tier !== "all" && p.urgency !== tier) return false;
+
+          return true;
+        });
+
+        // Sorting
+        results.sort((a, b) => {
+          if (currentSort === "wait-desc") return b.waitHours - a.waitHours;
+          if (currentSort === "tier-asc") {
+            const rank = { "Tier 1": 1, "Tier 2": 2, "Tier 3": 3, Discharged: 4 };
+            return (rank[a.urgency] || 99) - (rank[b.urgency] || 99);
+          }
+          if (currentSort === "name-asc") return a.name.localeCompare(b.name);
+          if (currentSort === "urm-asc") return a.urm.localeCompare(b.urm);
+          if (currentSort === "opened-desc") return b.id.localeCompare(a.id);
+          return 0;
+        });
+
+        return results;
+      }
+
+      function onFilterChange() {
+        let activeCount = 0;
+        ["presenceSelect", "serviceSelect", "settingSelect", "legalSelect", "tierSelect"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el.value !== "all") {
+            el.classList.add("isFiltered");
+            activeCount++;
+          } else {
+            el.classList.remove("isFiltered");
+          }
+        });
+
+        const resetBtn = document.getElementById("activeResetBtn");
+        const countSpan = document.getElementById("activeFilterCount");
+        const hasSearch = document.getElementById("searchInput").value.trim().length > 0;
+        const hasKpi = activeKpiFacet !== "all";
+
+        const totalActive = activeCount + (hasSearch ? 1 : 0) + (hasKpi ? 1 : 0);
+        if (totalActive > 0) {
+          resetBtn.style.display = "inline-flex";
+          countSpan.textContent = totalActive;
+        } else {
+          resetBtn.style.display = "none";
+        }
+
+        render();
+      }
+
+      function applyQuickChip(query) {
+        const input = document.getElementById("searchInput");
+        if (input.value === query) {
+          input.value = "";
+        } else {
+          input.value = query;
+        }
+        updateChipStates();
+        onFilterChange();
+      }
+
+      function updateChipStates() {
+        const q = document.getElementById("searchInput").value;
+        document.querySelectorAll(".chip").forEach((chip) => {
+          chip.classList.toggle("active", chip.getAttribute("data-chip") === q);
+        });
+        const clearBtn = document.getElementById("clearBtn");
+        if (clearBtn) clearBtn.style.display = q ? "inline-flex" : "none";
+      }
+
+      function clearSearch() {
+        document.getElementById("searchInput").value = "";
+        hideSearchSuggestions();
+        updateChipStates();
+        onFilterChange();
+      }
+
+      function resetAllFilters() {
+        document.getElementById("searchInput").value = "";
+        document.getElementById("presenceSelect").value = "all";
+        document.getElementById("serviceSelect").value = "all";
+        document.getElementById("settingSelect").value = "all";
+        document.getElementById("legalSelect").value = "all";
+        document.getElementById("tierSelect").value = "all";
+        activeKpiFacet = "all";
+        hideSearchSuggestions();
+        updateKpiCardsState();
+        updateChipStates();
+        onFilterChange();
+      }
+
+      function selectPatient(id) {
+        selectedPatientId = id;
+        renderInspector();
+        document.querySelectorAll(".patientCard, .denseRow").forEach((el) => {
+          el.classList.toggle("selected", el.getAttribute("data-id") === id);
+        });
+      }
+
+      function render() {
+        updateChipStates();
+        const filtered = getFilteredPatients();
+
+        // Header counts
+        const recordLabel = `${filtered.length} ${filtered.length === 1 ? "record" : "records"}`;
+        document.getElementById("headerCountPill").textContent = recordLabel;
+        document.getElementById("resultsCountBadge").textContent = recordLabel;
+        document.getElementById("railSearchCount").textContent = filtered.length;
+
+        // KPI Counts
+        const totalCount = PATIENTS.length;
+        const liveCount = PATIENTS.filter((p) => p.presence === "live").length;
+        const unplacedCount = PATIENTS.filter((p) => !p.destination && p.presence === "live").length;
+        const notInCount = PATIENTS.filter((p) => p.presence === "community" || p.presence === "scheduled").length;
+        const breachCount = PATIENTS.filter((p) => p.waitHours >= 24).length;
+
+        document.getElementById("yieldTotal").textContent = totalCount;
+        document.getElementById("yieldLive").textContent = liveCount;
+        document.getElementById("yieldUnplaced").textContent = unplacedCount;
+        document.getElementById("yieldNotIn").textContent = notInCount;
+        document.getElementById("yieldBreaches").textContent = breachCount;
+
+        const container = document.getElementById("patientListContainer");
+        const emptyState = document.getElementById("emptyStateNotice");
+
+        if (filtered.length === 0) {
+          container.innerHTML = "";
+          emptyState.style.display = "flex";
+          document.getElementById("inspectorContent").innerHTML = `
+            <div class="emptyState" style="padding:48px 16px;">
+              <div class="emptyTitle">No patient selected</div>
+              <p class="emptySub">Adjust your query or reset filters to select a patient record.</p>
+            </div>`;
+          return;
+        }
+
+        emptyState.style.display = "none";
+
+        // Preserve selected patient or select first
+        if (!filtered.some((p) => p.id === selectedPatientId)) {
+          selectedPatientId = filtered[0].id;
+        }
+
+        if (currentViewMode === "dense") {
+          // Render High-Density Scannable Table (12+ patients visible without scrolling)
+          let tableHtml = `
+            <table class="denseTable" role="table" aria-label="Caseload table">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>URM</th>
+                  <th>Patient Name</th>
+                  <th>Origin Site</th>
+                  <th>Legal</th>
+                  <th>Acuity</th>
+                  <th>Wait</th>
+                  <th>Target Ward</th>
+                </tr>
+              </thead>
+              <tbody>
+          `;
+
+          filtered.forEach((p) => {
+            const isSelected = p.id === selectedPatientId ? " selected" : "";
+            let waitClass = "";
+            let waitText = `${p.waitHours.toFixed(1)}h`;
+            if (p.waitHours >= 24) waitClass = " danger";
+            else if (p.waitHours >= 6) waitClass = " warn";
+            else if (p.waitHours === 0) {
+              waitClass = " none";
+              waitText = "—";
+            }
+
+            let legalClass = "voluntary";
+            if (p.legalStatus === "Form 1A") legalClass = "form1a";
+            else if (p.legalStatus === "Form 4A") legalClass = "form4a";
+            else if (p.legalStatus === "Form 5A") legalClass = "form5a";
+
+            let tierClass = "tier3";
+            if (p.urgency === "Tier 1") tierClass = "tier1";
+            else if (p.urgency === "Tier 2") tierClass = "tier2";
+            else if (p.urgency === "Discharged") tierClass = "discharged";
+
+            let presenceShort =
+              p.presence === "live"
+                ? "Live"
+                : p.presence === "community"
+                  ? "Community"
+                  : p.presence === "scheduled"
+                    ? "Scheduled"
+                    : "Past";
+
+            tableHtml += `
+              <tr class="denseRow${isSelected}" data-id="${p.id}" onclick="selectPatient('${p.id}')" tabindex="0" role="row">
+                <td><span class="presenceTag ${p.presence}">${presenceShort}</span></td>
+                <td><span class="mono" style="font-weight:600; color:var(--accent-ink);">${p.urm}</span></td>
+                <td>
+                  <strong>${p.name}</strong>
+                  <span style="color:var(--muted); font-size:var(--t-0); margin-left:4px;">${p.age}y ${p.sex.charAt(0)}${p.indigenous ? " · ATSI" : ""}</span>
+                </td>
+                <td>${p.origin}</td>
+                <td><span class="statusPill ${legalClass}">${p.legalStatus}</span></td>
+                <td><span class="tierBadge ${tierClass}">${p.urgency}</span></td>
+                <td><span class="waitBadge${waitClass}">${waitText}</span></td>
+                <td>${p.destination ? "<strong>" + p.destinationName + "</strong>" : '<span style="color:var(--muted);">' + (p.presence === "past" ? "Discharged" : "Pending") + "</span>"}</td>
+              </tr>
+            `;
+          });
+
+          tableHtml += `</tbody></table>`;
+          container.innerHTML = tableHtml;
+        } else {
+          // Render Sleek Cards View
+          const livePatients = filtered.filter((p) => p.presence === "live");
+          const communityPatients = filtered.filter((p) => p.presence === "community" || p.presence === "scheduled");
+          const pastPatients = filtered.filter((p) => p.presence === "past");
+
+          function renderCard(p) {
+            const isSelected = p.id === selectedPatientId ? " selected" : "";
+            let waitClass = "";
+            let waitText = `${p.waitHours.toFixed(1)}h`;
+            if (p.waitHours >= 24) waitClass = " danger";
+            else if (p.waitHours >= 6) waitClass = " warn";
+            else if (p.waitHours === 0) {
+              waitClass = " none";
+              waitText = "—";
+            }
+
+            let serviceDotClass = "east";
+            if (p.service === "North Metro") serviceDotClass = "north";
+            else if (p.service === "South Metro") serviceDotClass = "south";
+            else if (p.service === "WACHS") serviceDotClass = "wachs";
+
+            let legalClass = "voluntary";
+            if (p.legalStatus === "Form 1A") legalClass = "form1a";
+            else if (p.legalStatus === "Form 4A") legalClass = "form4a";
+            else if (p.legalStatus === "Form 5A") legalClass = "form5a";
+
+            let presenceTagText = "";
+            if (p.presence === "live") presenceTagText = "Live";
+            else if (p.presence === "community") presenceTagText = "Not in Hosp";
+            else if (p.presence === "scheduled") presenceTagText = "Scheduled";
+            else if (p.presence === "past") presenceTagText = "Past";
+
+            return `
+              <article class="patientCard${isSelected}" data-id="${p.id}" onclick="selectPatient('${p.id}')" tabindex="0" role="button" aria-label="Patient ${p.name}">
+                <div class="patientCardRow1">
+                  <div class="patientIdentityCluster">
+                    <span class="presenceTag ${p.presence}" title="${p.presenceDetail}">${presenceTagText}</span>
+                    <span class="patientId">${p.urm}</span>
+                    <strong class="patientName">${p.name}</strong>
+                    <span class="patientDemographics">${p.age}y · ${p.sex}${p.indigenous ? " · ATSI" : ""}</span>
+                  </div>
+                  <span class="waitBadge${waitClass}" title="Hospital wait time in setting">${waitText}</span>
+                </div>
+
+                <div class="patientCardRow2">
+                  <span class="serviceTag">
+                    <span class="serviceDot ${serviceDotClass}"></span>
+                    ${p.origin}
+                  </span>
+                  <span class="statusPill ${legalClass}">${p.legalStatus}</span>
+                  <span class="destinationText">
+                    ${p.destination ? "→ <strong>" + p.destinationName + "</strong>" : '<span style="color:var(--muted);">' + (p.presence === "past" ? "Discharged" : "No ward yet") + "</span>"}
+                  </span>
+                </div>
+              </article>
+            `;
+          }
+
+          let html = "";
+          if (livePatients.length > 0) {
+            html +=
+              `<div class="populationHeading"><span>Live in Hospital (${livePatients.length})</span></div>` +
+              livePatients.map(renderCard).join("");
+          }
+          if (communityPatients.length > 0) {
+            html +=
+              `<div class="populationHeading"><span>Not in Hospital · Community &amp; Scheduled (${communityPatients.length})</span></div>` +
+              communityPatients.map(renderCard).join("");
+          }
+          if (pastPatients.length > 0) {
+            html +=
+              `<div class="populationHeading"><span>Past Patient Records (${pastPatients.length})</span></div>` +
+              pastPatients.map(renderCard).join("");
+          }
+
+          container.innerHTML = html;
+        }
+
+        renderInspector();
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+       CLINICAL DOSSIER INSPECTOR (LOGICAL & ACCESSIBLE)
+       ═══════════════════════════════════════════════════════════════════════ */
+      function renderInspector() {
+        const p = PATIENTS.find((item) => item.id === selectedPatientId);
+        const container = document.getElementById("inspectorContent");
+        if (!p) return;
+
+        const isBreaching = p.waitHours >= 24;
+
+        let legalClass = "voluntary";
+        if (p.legalStatus === "Form 1A") legalClass = "form1a";
+        else if (p.legalStatus === "Form 4A") legalClass = "form4a";
+        else if (p.legalStatus === "Form 5A") legalClass = "form5a";
+
+        let tierClass = "tier3";
+        if (p.urgency === "Tier 1") tierClass = "tier1";
+        else if (p.urgency === "Tier 2") tierClass = "tier2";
+        else if (p.urgency === "Discharged") tierClass = "discharged";
+
+        let legalStatutoryText = "";
+        let legalReq = "";
+        if (p.legalStatus === "Form 1A") {
+          legalStatutoryText = "Referral for examination by psychiatrist";
+          legalReq = "Mandatory 24h statutory window for authorised assessment";
+        } else if (p.legalStatus === "Form 4A") {
+          legalStatutoryText = "Transport order for psychiatric assessment";
+          legalReq = "Authorises apprehension and conveyancing to authorised place";
+        } else if (p.legalStatus === "Form 5A") {
+          legalStatutoryText = "Involuntary inpatient treatment order";
+          legalReq = "Schedule 1 Authorised Hospital admission authorised";
+        } else if (p.presence === "past") {
+          legalStatutoryText = "Discharged from statutory order";
+          legalReq = "Formal clinical discharge completed · Case closed";
+        } else {
+          legalStatutoryText = "Voluntary admission agreement";
+          legalReq = "Informal patient status · Consent verified";
+        }
+
+        let bannerTitle = "";
+        let bannerTag = "";
+        if (p.presence === "live") {
+          bannerTitle = "CURRENTLY LIVE IN HOSPITAL";
+          bannerTag = p.setting === "ed" ? "Emergency Dept" : p.setting === "transit" ? "In-Transit" : "Inpatient Ward";
+        } else if (p.presence === "community") {
+          bannerTitle = "NOT IN HOSPITAL · COMMUNITY OUTPATIENT";
+          bannerTag = "Community Case";
+        } else if (p.presence === "scheduled") {
+          bannerTitle = "NOT IN SYSTEM TODAY · SCHEDULED";
+          bannerTag = "Booked Tomorrow";
+        } else if (p.presence === "past") {
+          bannerTitle = "PAST PATIENT · HISTORICAL RECORD";
+          bannerTag = "Discharged";
+        }
+
+        container.innerHTML = `
+          <!-- 1. Prominent Presence State Banner -->
+          <div class="presenceBannerCard ${p.presence}">
+            <div class="presenceBannerLeft">
+              <span class="presenceDot ${p.presence}"></span>
+              <strong>${bannerTitle}</strong>
+            </div>
+            <span class="presenceSettingTag">${bannerTag}</span>
+          </div>
+
+          <!-- 2. Patient Identity & Core Status Badges -->
+          <div class="dossierHeader">
+            <div class="dossierTitleRow">
+              <h3 class="dossierName">${p.name}</h3>
+              <span class="dossierUrm">${p.urm}</span>
+            </div>
+            <div class="dossierMetaRow">
+              <span class="metaDemographics">${p.age} years · ${p.sex}</span>
+              ${p.indigenous ? '<span class="atsiPill">Aboriginal (ATSI)</span>' : ""}
+              <span style="color:var(--line-strong);">·</span>
+              <span style="font-size:var(--t-1); color:var(--muted);">${p.service}</span>
+            </div>
+            <div class="dossierStatusStrip">
+              <span class="tierBadge ${tierClass}">${p.urgency}</span>
+              <span class="statusPill ${legalClass}">${p.legalStatus}</span>
+              <span class="dispositionBadge">${p.holdStatus}</span>
+            </div>
+          </div>
+
+          <!-- 3. Statutory Legal Authority (Hairline 1px Border) -->
+          <div class="statutoryCard ${isBreaching && p.legalStatus !== "Voluntary" ? "breachAlert" : ""}">
+            <div class="statutoryHead">
+              <span class="statutoryTitle">${p.legalStatus} · ${legalStatutoryText}</span>
+              <span class="statutoryCountdown mono">${p.legalExpires}</span>
+            </div>
+            <div class="statutoryDetailsGrid">
+              <div class="statItem">
+                <span class="statItemLabel">Legal Authority</span>
+                <span class="statItemValue">${legalReq}</span>
+              </div>
+              <div class="statItem">
+                <span class="statItemLabel">Hospital Wait Time</span>
+                <span class="statItemValue mono" style="font-weight:600; color:${isBreaching ? "var(--danger)" : "var(--ink)"};">
+                  ${p.waitHours > 0 ? p.waitHours.toFixed(1) + "h" : "None (Not admitted)"} ${isBreaching ? "(Breach >24h)" : ""}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Placement & Movement Trajectory -->
+          <div class="dossierSection">
+            <span class="sectionTitle">Placement &amp; Movement Trajectory</span>
+            <div class="trajectoryGrid">
+              <div class="trajBox">
+                <span class="trajLabel">Originating Site</span>
+                <span class="trajValue">${p.origin}</span>
+              </div>
+              <div class="trajBox">
+                <span class="trajLabel">Target Ward / Unit</span>
+                <span class="trajValue strong">${p.destination ? p.destinationName : p.presence === "past" ? "Discharged" : "Pending allocation"}</span>
+              </div>
+              <div class="trajBox">
+                <span class="trajLabel">Current Stage</span>
+                <span class="trajValue">${p.stage}</span>
+              </div>
+              <div class="trajBox">
+                <span class="trajLabel">Conveyance &amp; Escort</span>
+                <span class="trajValue">${p.transportStatus}${p.nurseEscort ? " · Nurse escort" : ""}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. Clinical Presentation & Care Summary -->
+          <div class="dossierSection">
+            <span class="sectionTitle">Clinical Presentation &amp; Care Summary</span>
+            <div class="clinicalNoteCard">
+              ${p.clinicalNote}
+            </div>
+          </div>
+
+          <!-- 6. Clinical Audit Milestones -->
+          <div class="dossierSection">
+            <span class="sectionTitle">Audit Milestones</span>
+            <div class="timeline">
+              <div class="timelineItem">
+                <strong>10:42</strong> Operational state verified by Bed Coordinator
+              </div>
+              <div class="timelineItem">
+                <strong>08:15</strong> Transport logistics update: ${p.transportStatus}
+              </div>
+              <div class="timelineItem">
+                <strong>${p.openedAt}</strong> Record active from ${p.origin}
+              </div>
+            </div>
+          </div>
+
+          <!-- 7. Coordinator Action Bar (D4 Compliant + Copy Summary Action) -->
+          <div class="dossierActionBar">
+            <button type="button" class="btnSecondary" onclick="copyPatientSummary()" title="Copy patient clinical summary to clipboard">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span>Copy Summary</span>
+            </button>
+            ${
+              p.presence === "live"
+                ? `
+              <a href="movement-third-edition.html" class="btnPrimary">
+                <span>View Movement</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </a>
+              <button type="button" class="btnSecondary" onclick="showD4Notice('Not wired in this prototype.')">
+                Bed Allocation
+              </button>
+              <button type="button" class="btnSecondary" onclick="showD4Notice('Not wired in this prototype.')">
+                Transport Order
+              </button>
+            `
+                : `
+              <button type="button" class="btnPrimary" onclick="showD4Notice('Not wired in this prototype.')">
+                Create Referral
+              </button>
+              <button type="button" class="btnSecondary" onclick="showD4Notice('Not wired in this prototype.')">
+                Past Admissions
+              </button>
+              <button type="button" class="btnSecondary" onclick="showD4Notice('Not wired in this prototype.')">
+                Contact Team
+              </button>
+            `
+            }
+          </div>
+        `;
+      }
+
+      // ─── Keyboard Navigation & Shortcuts ─────────────────────────────────
+      window.addEventListener("keydown", (e) => {
+        const searchInput = document.getElementById("searchInput");
+        const suggestions = document.getElementById("searchSuggestionsPopover");
+
+        if ((e.key === "/" || (e.key === "k" && (e.metaKey || e.ctrlKey))) && document.activeElement !== searchInput) {
+          e.preventDefault();
+          searchInput.focus();
+          searchInput.select();
+          showSearchSuggestions();
+          return;
+        }
+
+        if (e.key === "Escape") {
+          if (suggestions && suggestions.classList.contains("active")) {
+            hideSearchSuggestions();
+            e.preventDefault();
+            return;
+          }
+          if (searchInput && searchInput.value) {
+            clearSearch();
+            e.preventDefault();
+            return;
+          }
+        }
+
+        // Arrow Key navigation through patient results
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          const items = Array.from(document.querySelectorAll(".patientCard, .denseRow"));
+          if (!items.length) return;
+          const currentIndex = items.findIndex((el) => el.getAttribute("data-id") === selectedPatientId);
+          let nextIndex = currentIndex;
+          if (e.key === "ArrowDown") {
+            nextIndex = (currentIndex + 1) % items.length;
+          } else if (e.key === "ArrowUp") {
+            nextIndex = (currentIndex - 1 + items.length) % items.length;
+          }
+          const nextId = items[nextIndex].getAttribute("data-id");
+          selectPatient(nextId);
+          items[nextIndex].scrollIntoView({ block: "nearest", behavior: "smooth" });
+          e.preventDefault();
+        }
+      });
+
+      // Close suggestions on outside click
+      document.addEventListener("click", (e) => {
+        const popover = document.getElementById("searchSuggestionsPopover");
+        const searchRow = document.querySelector(".searchInputRow");
+        if (searchRow && popover && !searchRow.contains(e.target) && !popover.contains(e.target)) {
+          hideSearchSuggestions();
+        }
+      });
+
+      document.getElementById("searchInput").addEventListener("input", () => {
+        render();
+      });
+
+      // Initial execution
+      updateThemeButtons();
+      render();
+    </script>
+  </body>
+</html>

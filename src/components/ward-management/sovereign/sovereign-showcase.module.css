@@ -1,0 +1,185 @@
+.workspace {
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  padding: 1.5rem;
+  max-width: 86.25rem;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.heroBanner {
+  background: var(--surface);
+  border: 0.0625rem solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.heroText {
+  flex: 1;
+  min-width: 17.5rem;
+}
+
+.heroText h1,
+.heroText h2 {
+  margin: 0 0 0.375rem;
+  font-family: var(--display);
+  font-size: var(--t-5);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.heroText p {
+  margin: 0;
+  font-size: var(--t-2);
+  color: var(--muted);
+  max-width: 65ch;
+  line-height: 1.45;
+}
+
+.heroActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.iconBtn {
+  height: 2.125rem;
+  padding: 0 0.625rem;
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+
+.iconBtn:hover {
+  background: var(--sunk);
+  border-color: var(--ink-soft);
+}
+
+.iconBtn:focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: 0.125rem;
+}
+
+.btnPrimary {
+  height: 2.125rem;
+  padding: 0 0.875rem;
+  border-radius: var(--r2);
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 0.0625rem solid var(--accent);
+  font-size: var(--t-1);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    transform 0.1s;
+  white-space: nowrap;
+}
+
+.btnPrimary:hover {
+  background: var(--accent-press);
+}
+
+.btnPrimary:focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: 0.125rem;
+}
+
+.demoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 56.25rem) {
+  .demoGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.demoCard {
+  background: var(--surface);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.demoCardHead {
+  padding: 0.75rem 1rem;
+  background: var(--surface-2);
+  border-bottom: 0.0625rem solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.demoCardHead h3 {
+  margin: 0;
+  font-size: var(--t-2);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.badgePill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--pill);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  border: 0.0625rem solid var(--line);
+}
+
+.demoCardBody {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+  line-height: 1.45;
+  flex: 1;
+  justify-content: space-between;
+}
+
+.demoCardBody p {
+  margin: 0;
+}
+
+.demoCardBody code {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  padding: 0.0625rem 0.25rem;
+  border-radius: var(--r2);
+  background: var(--sunk);
+  border: 0.0625rem solid var(--line);
+}

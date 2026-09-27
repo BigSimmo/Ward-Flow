@@ -1,0 +1,54 @@
+# Q004 Task 3 — independent domain design review
+
+Reviewed 2026-09-13 against `task-3-design-brief.md`, `task-3-design.md`, the Q004 plan and the named current source contracts. Source inspection only. No source implementation, tests, server, Git or provider operations were performed.
+
+**Spec verdict: revisions required before implementation.** The proposal covers the commissioned local discharge/access/audit work and respects the main clinical boundaries, but its exact interfaces and reset/audit semantics leave consequential gaps.
+
+**Design-quality verdict: sound direction, not yet implementation-ready.** Admission projection plus guarded reducer actions and session-only append histories is the smallest appropriate architecture. Keep it. Resolve the five bounded findings below; do not add authentication, storage, legal decisions or a second discharge engine.
+
+## Required revisions
+
+### R1 — Return the revision required by the departure command
+
+The proposed `DischargeRecord` has no revision field, while `RECORD_PATIENT_DISCHARGE` requires `expectedRevision` and the consumer contract says boards receive a revision (`task-3-design.md:35–52`, `:64–70`, `:151`). The revisions map is reducer-only. A conforming consumer therefore cannot construct the command without inventing zero or reaching around the guarded API.
+
+**Revise:** add `revision: number` to the guarded DTO, sourced from the existing admission's revision entry with the documented zero default. Name the current mutation sites that invalidate it: arrival changes the projection through `replaceAdmission` (`ward-flow-reducer.ts:2284`), departure changes it at `:2357–2363`, and `RELEASE_PULL` removes the admission (`:3997`). New admission creation is at `:1975–1978`. Increment only for the projection changes the design actually includes; away/return changes currently do not alter this DTO. Refuse non-integer/negative revision payloads. Add a focused test that reads a DTO, acts through an existing path, then attempts the new command using that original DTO's revision.
+
+### R2 — Model mixed referral outcomes and distinguish an override fact from a bypass
+
+`REFER_TO_UNITS` can reject some destinations and still refer to others in the same dispatch. It builds both `heldBack` and `permitted`, appends refusals, and returns a transitioned movement retaining those refusals (`ward-flow-reducer.ts:1492–1545`). The design has only accepted/denied/stale and a single `unitIds` array. That cannot disclose which requested destinations were refused when the operation partly succeeds. Checking rejection growth would classify this accepted transition incorrectly; checking clinical mutation alone would conceal the refusals.
+
+Also, a valid supplied reason causes `REFER_TO_UNITS` to append an override fact for the permitted units (`:1514–1527`) even without proof a gate was bypassed. Conversely, `ACCEPT_IN_PRINCIPLE` consults the override-aware eligibility helper (`:1583–1584`) but its accepted transition adds no override fact (`:1600–1622`). A boolean named `applied`, described as an existing fact being added, must not be rendered as “override applied” in either case.
+
+**Revise:** retain one audit event per dispatch, but include a defined partial outcome or typed requested/accepted/refused destination results. Capture those outcomes where the existing decision is made; do not parse rejection prose or rerun eligibility. Rename the fact-presence boolean to `overrideFactRecorded` and state separately that whether a gate was bypassed is unknown unless explicitly captured. Do not infer false from missing historical attribution. Include all-permitted, all-refused and mixed-result tests, plus acceptance with a supplied override reason but no persisted override fact.
+
+### R3 — Include the clock integration files in the owned scope
+
+The design says `auditCaptureStartedAt` is seeded at the anchor and shifted using the existing convention (`task-3-design.md:110`), but its exact owned files omit `ward-reanchor.ts`. That walker shifts only field names in `INSTANT_FIELDS`; `auditCaptureStartedAt` is absent (`ward-reanchor.ts:57–123`, `:143–157`). The existing guard reads only `ward-model.ts` and `ward-admissions.ts` (`tests/ward-reanchor.test.ts:18–21`) and asserts the discovered names equal the allowlist (`:88`). Following the proposed owned scope literally leaves capture start at the wrong time; simply adding the name without adjusting the guard also creates a mismatch.
+
+**Revise:** add the necessary reanchor source/test ownership and define how the new state timestamp declaration participates in the existing guard, or explicitly initialize capture start from the already-resolved seed time after the existing shift. Prefer the existing clock convention. Test a nonzero anchor offset and an advanced-clock reset, rather than only the standard fixture's zero offset. Audit events themselves use the already-shifted command time and must not be shifted again.
+
+### R4 — Bind stale handles and commands to a reset generation
+
+Reset and scenario replacement reseed reducer state (`ward-flow-reducer.ts:1086–1090`); they do not remount `WardFlowWorld` or its children (`ward-flow-provider.tsx:245–271`). The design resets admission revisions, audit IDs and open-request allocation while using IDs that can recur in the reseeded world (`task-3-design.md:70`, `:110`, `:137`, `:145`). Clearing audit arrays invalidates a receipt immediately, but not after a new open recreates the same request/actor/admission tuple. A stale pre-reset departure command can likewise match a newly seeded admission's ID, patient ID and revision zero. “Reset clears receipts” alone is insufficient for the promised stale/reset behavior.
+
+**Revise:** define a small provider/reducer world-generation contract and bind exposed detail handles and linked departure commands to it. Advance generation on reset/scenario replacement; stale-generation commands and receipts refuse. Ensure selection clears when generation changes. Alternatively provide another concrete mechanism that prevents ID reuse from validating old handles, including old departure commands, without relying only on screen-local cleanup. Validate request IDs/review counts as finite nonnegative integers. Test open → reset → new open with the same actor/subject, followed by reuse of the old handle and old departure command. No durable/global identifier service is needed.
+
+### R5 — Make discharge audit facts sufficient to review the recorded operation
+
+The proposed discharge details retain only before/after lifecycle state (`task-3-design.md:123`). Several audited bed actions preserve that state while changing the fact under review: blocking, clearing a blocker and setting preparation (`ward-flow-reducer.ts:2779–2888`). For a departure, the same `occupied → departed` values cover every leaving destination (`:2357–2361`). Later live state cannot reconstruct the original blocker, preparation assertion or departure destination, and review must not imply it can.
+
+**Revise:** use small action-specific, closed audit details for the existing operations: the recorded leaving destination for departures, blocker change for block/clear, preparation flag/note enum for preparation, and relevant selected date/waiting-on values for release planning/confirmation. Copy only validated typed operational facts and resolved references; no free prose or full payload. If the deliberate scope is only an operation-attempt register, state that limitation and do not present it as reviewing the omitted change. Add one same-state mutation followed by another mutation and prove the first captured facts remain unchanged.
+
+## Boundaries accepted, with implementation cautions
+
+- **Roles:** coordinator-only audit reading/review and coordinator-wide/own-ward discharge reads are a reasonable narrow policy for Q004's expressly authorized new surfaces. Ward-only departure preserves `EVENT_ROLE` and the existing own-unit/occupied checks (`ward-flow-events.ts:1326`; `ward-flow-reducer.ts:2323–2350`). This is an application contract over declared prototype roles, not authentication or a browser security boundary. Existing raw patient/admission arrays remain exposed (`ward-flow-provider.tsx:323–324`), as the design acknowledges.
+- **Identity:** exact unique patient-ID joining, explicit anonymous/unresolved states, no inferred matching and no relink action are appropriate. Preserve the named-reader guard rather than admitting all screens. Duplicate admission/subject IDs should also fail closed in new selectors/actions, rather than selecting the first or mutating several: current `replaceAdmission` maps every matching ID (`ward-flow-reducer.ts:862–865`).
+- **Arithmetic:** share the existing departure transition; never also dispatch `RELEASE_BED`. Departure increases empty and decreases sex mix without increasing allocatable (`ward-flow-reducer.ts:2352–2363`). Preserve derived-release rules for absent/nonfinite dates, confirmation, missing waiting-on and inter-ward transfers (`ward-discharge-dates.ts:84–123`, `:140–170`). The separate stable admission-derived record ID is correct.
+- **Audit safety:** fixed general denials must include the first role-refusal path, not just new switch cases. Today that path interpolates the submitted role (`ward-flow-reducer.ts:1037–1044`), while general rejection IDs/subjects incorporate payload identifiers (`:591–598`). Route new protected rejections through a payload-free general result before either mechanism can expose them. Sanitize all captured enum values, including legacy accepted legal-status/destination values; TypeScript alone does not validate runtime input.
+- **Receipt scope:** keep a deliberate-open receipt if it is required to record detail-open decisions, but document that list DTOs already contain the same identity and discharge fields. This is not capture before every patient-information disclosure. Make the exposed receipt-required detail API's exact signature explicit; the earlier three-argument guard-only selector must remain internal. Do not add another audit-result store.
+- **History/reviews:** empty seed capture, separate unavailable historical facts, coordinator-declared attribution, immutable original events, appended review entries, no review-of-review and no clinical authority from review are appropriate. Ensure guarded DTOs cannot mutate stored nested arrays/objects by reference; readonly TypeScript fields alone are not runtime isolation.
+
+## Resubmission boundary
+
+Revise the design document and owned-file list for R1–R5, then return for a bounded review of those revisions. No further owner decision is necessary for these local contract corrections. UI implementation, hosted retention/security, broader access capture and legal-form editing remain outside this milestone. The review is source-backed design evidence only; no execution or security verification is claimed.

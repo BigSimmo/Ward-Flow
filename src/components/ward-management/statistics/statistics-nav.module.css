@@ -1,0 +1,92 @@
+.navBar {
+  display: block;
+  width: 100%;
+  margin: 0 0 16px 0;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04);
+}
+
+.scrollTrack {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 2px;
+}
+
+.scrollTrack::-webkit-scrollbar {
+  display: none;
+}
+
+.navItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 14px;
+  color: var(--muted);
+  text-decoration: none;
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 7px;
+  white-space: nowrap;
+  position: relative;
+  transition: all 0.15s ease-in-out;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+}
+
+.navItem:hover {
+  color: var(--ink);
+  background: var(--surface-hover, var(--ward-subtle));
+}
+
+.navItem:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.navItemActive {
+  color: var(--accent);
+  background: var(--ward-blue-soft, var(--accent-soft));
+  font-weight: 600;
+  border-color: var(--ward-blue-border, var(--line-strong));
+}
+
+.navIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: currentColor;
+  flex-shrink: 0;
+}
+
+.navLabel {
+  line-height: 1.2;
+}
+
+.activePillIndicator {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .navBar {
+    margin-bottom: 12px;
+    padding: 3px;
+    border-radius: 8px;
+  }
+
+  .navItem {
+    padding: 8px 11px;
+    font-size: 12px;
+    gap: 6px;
+  }
+}

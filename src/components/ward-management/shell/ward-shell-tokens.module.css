@@ -1,0 +1,20 @@
+/*
+ * SUPERSEDED — this file's content moved to `src/app/ward-flow-shell-tokens.module.css`.
+ *
+ * `tests/ward-raw-colour.test.ts` walks every `.css` file under `src/components/ward-management/`
+ * recursively and fails on any literal hex/`rgb()`/`hsl()` in a declaration. The third-edition
+ * token layer is a genuinely new, closed colour palette (not an alias of this app's existing v2
+ * tokens the way `../ward-tokens.module.css` is), so its raw values had to be written down
+ * somewhere for the first time — and that somewhere is beside `src/app/ckb-v2-tokens.css`, this
+ * app's OTHER foundational token layer, which itself carries the same kind of raw declarations
+ * and sits outside this guard's scanned directory for exactly the same reason. See
+ * `ward-flow-shell-tokens.module.css`'s own header comment for the full reasoning.
+ *
+ * This stub is left in place — rather than deleted — because a path under
+ * `src/components/ward-management/` is protected by `~/.claude/hooks/protect-ward-flow.sh` and by
+ * this repository's own CLAUDE.md ("Before deleting or moving anything matching... `ward-
+ * management`... ask the user"). Deleting it is a small, safe, one-file cleanup a future commit
+ * with the owner's go-ahead can do; nothing in this codebase composes or imports this file any
+ * more (`ward-rail.module.css`, `ward-bar.module.css` and `ward-reconciliation-line.module.css`
+ * all compose `wardShellTokens` from the new location instead).
+ */

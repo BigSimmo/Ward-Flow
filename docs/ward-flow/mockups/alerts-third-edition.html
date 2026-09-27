@@ -1,0 +1,1203 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow — Clinical &amp; Operational Action Alerts Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --display: "Geist", system-ui, -apple-system, sans-serif;
+        --body: "Geist", system-ui, -apple-system, sans-serif;
+        --mono: "Geist Mono", ui-monospace, monospace;
+
+        --t-0: 12px;
+        --t-1: 13px;
+        --t-2: 13.5px;
+        --t-3: 14px;
+        --t-4: 16px;
+        --t-5: 20px;
+        --t-6: 26px;
+
+        --r1: 10px;
+        --r1i: 9px;
+        --r2: 6px;
+        --pill: 9999px;
+
+        --railw: 240px;
+      }
+
+      :root,
+      :root[data-theme="light"] {
+        --ground-hi: #ecf0f4;
+        --ground: #e6eaef;
+        --ground-2: #e1e6ec;
+        --surface: #fdfdfe;
+        --surface-2: #f2f5f8;
+        --surface-3: #e8ecf2;
+        --sunk: #e9edf2;
+        --ink: #14161a;
+        --ink-soft: #384250;
+        --muted: #5b6470;
+        --accent: #2f4c66;
+        --accent-ink: #1e354a;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+        --gilt: #7d612a;
+        --gilt-soft: #f1ebdf;
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --warn: #825d10;
+        --warn-soft: #f6eeda;
+        --danger: #b03b2e;
+        --danger-soft: #f8e6e2;
+        --danger-ink: #973121;
+        --line: rgba(22, 30, 40, 0.11);
+        --line-strong: rgba(22, 30, 40, 0.22);
+        --lift: 0 4px 20px -2px rgba(32, 44, 58, 0.08), 0 1px 3px rgba(32, 44, 58, 0.04);
+        --scrim: rgba(15, 20, 26, 0.45);
+      }
+
+      :root[data-theme="dark"] {
+        --ground-hi: #14181d;
+        --ground: #0f1216;
+        --ground-2: #0c0f12;
+        --surface: #171b21;
+        --surface-2: #1f242c;
+        --surface-3: #262c36;
+        --sunk: #13161b;
+        --ink: #e8ebef;
+        --ink-soft: #b0b8c4;
+        --muted: #7e8998;
+        --accent: #a7bcd2;
+        --accent-ink: #c8d8e8;
+        --accent-soft: #232c37;
+        --on-accent: #0f1216;
+        --stripe: #a7bcd2;
+        --gilt: #d3b77e;
+        --gilt-soft: #2a2418;
+        --good: #6fd39b;
+        --good-soft: #172820;
+        --warn: #d4a34b;
+        --warn-soft: #2b2314;
+        --danger: #ff8b76;
+        --danger-soft: #321915;
+        --danger-ink: #ffb4a6;
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.18);
+        --lift: 0 6px 24px -4px rgba(0, 0, 0, 0.45);
+        --scrim: rgba(0, 0, 0, 0.7);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: var(--body);
+        font-size: var(--t-2);
+        color: var(--ink);
+        background:
+          linear-gradient(180deg, var(--ground-hi) 0%, var(--ground) 55%, var(--ground-2) 100%) fixed,
+          var(--ground);
+        -webkit-font-smoothing: antialiased;
+        font-variant-numeric: tabular-nums;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 50;
+        pointer-events: none;
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: var(--railw) minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      /* Sovereign 13-Screen Rail */
+      .rail {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        height: 100vh;
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        z-index: 30;
+        overflow-y: auto;
+      }
+      .brand {
+        padding: 14px 16px 12px;
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        border-bottom: 1px solid var(--line);
+        flex-shrink: 0;
+      }
+      .brand b {
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .brand span {
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--gilt);
+        letter-spacing: 0.1em;
+      }
+      .railScroll {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 12px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .railGroup {
+        display: grid;
+        gap: 2px;
+      }
+      .railEyebrow {
+        margin: 0 0 4px 8px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+      .railLink {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 10px;
+        border-radius: var(--r2);
+        border: 0;
+        background: transparent;
+        color: var(--ink-soft);
+        font-size: var(--t-1);
+        font-weight: 500;
+        cursor: pointer;
+        text-align: left;
+        width: 100%;
+        text-decoration: none;
+      }
+      .railLink:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .railLink[aria-current="page"] {
+        background: var(--surface-2);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: inset 3px 0 0 var(--gilt);
+      }
+      .railFoot {
+        padding: 10px 14px;
+        border-top: 1px solid var(--line);
+        background: var(--surface-2);
+        font-size: var(--t-0);
+        color: var(--muted);
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        flex-shrink: 0;
+      }
+
+      /* Container */
+      .frame {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .hdr {
+        height: 48px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        gap: 16px;
+        position: sticky;
+        top: 0;
+        z-index: 25;
+        justify-content: space-between;
+      }
+      .hdrTitle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: var(--t-3);
+        font-weight: 600;
+      }
+      .chip {
+        font-size: var(--t-0);
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        background: var(--sunk);
+        color: var(--muted);
+        border: 1px solid var(--line);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .chip.danger {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border-color: var(--danger);
+      }
+      .hdrEnd {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* Buttons */
+      .btn {
+        height: 32px;
+        padding: 0 12px;
+        border-radius: var(--r2);
+        font-size: var(--t-1);
+        font-weight: 600;
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--ink);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
+      }
+      .btn:hover {
+        background: var(--sunk);
+      }
+      .btn.primary {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+      }
+      .btn.danger {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border-color: var(--danger);
+      }
+      .btn.danger:hover {
+        background: var(--danger);
+        color: #fff;
+      }
+      .btn.sm {
+        height: 26px;
+        padding: 0 8px;
+        font-size: var(--t-0);
+      }
+
+      /* Workspace */
+      .workspace {
+        padding: 16px 20px 48px;
+        display: grid;
+        gap: 16px;
+        max-width: 1440px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      /* KPI Summary Strip */
+      .kpiStrip {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+      .kpiCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-bottom-color: var(--line-strong);
+        border-radius: var(--r2);
+        box-shadow: none;
+        padding: 12px 14px;
+        display: grid;
+        gap: 3px;
+      }
+      .kpiCard[data-tone="danger"] .kpiVal {
+        color: var(--danger);
+      }
+      .kpiCard[data-tone="warn"] .kpiVal {
+        color: var(--warn);
+      }
+      .kpiCard[data-tone="good"] .kpiVal {
+        color: var(--good);
+      }
+      .kpiLabel {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+      .kpiVal {
+        font-family: var(--mono);
+        font-size: var(--t-5);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .kpiSub {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+
+      /* Filter Toolbar */
+      .filterBar {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 8px 12px;
+        align-items: center;
+      }
+      .filterLabel {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-right: 4px;
+      }
+      .filterBtn {
+        padding: 4px 10px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line-strong);
+        background: var(--surface-2);
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--ink-soft);
+        cursor: pointer;
+      }
+      .filterBtn.active {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+      }
+
+      /* Panels & Alert Items */
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-bottom-color: var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .ph {
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--line);
+        border-top-left-radius: var(--r1i);
+        border-top-right-radius: var(--r1i);
+        background: var(--surface-2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .ph h2 {
+        margin: 0;
+        font-size: var(--t-2);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ink-soft);
+      }
+
+      .alertList {
+        display: flex;
+        flex-direction: column;
+      }
+      .alertItem {
+        display: grid;
+        grid-template-columns: 36px minmax(0, 1fr) auto;
+        gap: 14px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+        align-items: center;
+        transition: background 0.15s;
+      }
+      .alertItem:last-child {
+        border-bottom: none;
+      }
+      .alertItem:hover {
+        background: var(--surface-2);
+      }
+      .alertItem[data-priority="critical"] {
+        background: var(--danger-soft);
+      }
+      .alertItem[data-priority="warning"] {
+        background: var(--surface);
+      }
+      .alertItem[data-priority="info"] {
+        background: var(--surface);
+      }
+
+      .alertIcon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: var(--t-2);
+      }
+      .alertItem[data-priority="critical"] .alertIcon {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+      }
+      .alertItem[data-priority="warning"] .alertIcon {
+        background: var(--warn-soft);
+        color: var(--warn);
+      }
+      .alertItem[data-priority="info"] .alertIcon {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+
+      .alertContent {
+        display: grid;
+        gap: 4px;
+      }
+      .alertHead {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .alertTitle {
+        font-weight: 600;
+        font-size: var(--t-2);
+        color: var(--ink);
+      }
+      .alertMeta {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+      .alertDesc {
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        line-height: 1.4;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+      .badge[data-tone="danger"] {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border: 1px solid var(--danger);
+      }
+      .badge[data-tone="warn"] {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid var(--warn);
+      }
+      .badge[data-tone="good"] {
+        background: var(--good-soft);
+        color: var(--good);
+        border: 1px solid var(--good);
+      }
+      .badge[data-tone="accent"] {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border: 1px solid var(--accent);
+      }
+
+      /* Modals */
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: var(--scrim);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        padding: 16px;
+      }
+      .modal.open {
+        display: flex;
+      }
+      .modalDialog {
+        width: min(94vw, 540px);
+        max-height: 90vh;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .modalHead {
+        padding: 12px 18px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        border-top-left-radius: var(--r1i);
+        border-top-right-radius: var(--r1i);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .modalHead h3 {
+        margin: 0;
+        font-size: var(--t-3);
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .modalBody {
+        padding: 16px 18px;
+        overflow-y: auto;
+        display: grid;
+        gap: 14px;
+      }
+      .modalFoot {
+        padding: 12px 18px;
+        background: var(--surface-2);
+        border-top: 1px solid var(--line);
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      .formGroup {
+        display: grid;
+        gap: 4px;
+      }
+      .formLabel {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+      }
+      .formInput,
+      .formSelect,
+      .formTextarea {
+        height: 34px;
+        padding: 0 10px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--ink);
+        font-family: inherit;
+        font-size: var(--t-2);
+        width: 100%;
+      }
+      .formTextarea {
+        height: 72px;
+        padding: 8px 10px;
+        resize: vertical;
+      }
+
+      /* Toast */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: var(--surface);
+        border: 1px solid var(--good);
+        color: var(--good);
+        box-shadow: var(--lift);
+        padding: 10px 18px;
+        border-radius: var(--pill);
+        font-weight: 600;
+        font-size: var(--t-1);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 1000;
+        transition:
+          transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+          opacity 0.25s ease;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .toast.show {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+
+      @media (max-width: 1000px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+        .rail {
+          position: sticky;
+          top: 0;
+          z-index: 40;
+          height: auto;
+          flex-direction: row;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 14px;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+          background: var(--surface);
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        .brand {
+          padding: 0 10px 0 0;
+          margin-right: 4px;
+          flex: 0 0 auto;
+        }
+        .railScroll {
+          flex-direction: row;
+          gap: 6px;
+          padding: 0;
+          overflow-x: auto;
+        }
+        .railGroup {
+          display: flex;
+          flex-direction: row;
+          gap: 4px;
+          padding: 0;
+        }
+        .railEyebrow,
+        .railFoot {
+          display: none;
+        }
+        .railLink {
+          width: auto;
+          flex: 0 0 auto;
+          padding: 6px 10px;
+          font-size: var(--t-1);
+          white-space: nowrap;
+          box-shadow: none;
+        }
+        .railLink[aria-current="page"] {
+          box-shadow: inset 0 -2px 0 var(--gilt);
+          background: var(--surface-2);
+          color: var(--ink);
+        }
+        .kpiStrip {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .workspace {
+          padding: 16px;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .kpiStrip {
+          grid-template-columns: 1fr;
+        }
+        .alertItem {
+          grid-template-columns: 1fr;
+        }
+        .workspace {
+          padding: 12px;
+          gap: 14px;
+        }
+        .hdr {
+          padding: 0 12px;
+        }
+        .hdrTitle {
+          font-size: var(--t-2);
+        }
+        .btn {
+          height: 36px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- Sovereign 13-Screen Navigation Rail -->
+      <nav class="rail" aria-label="Primary Navigation">
+        <div class="brand"><b>Ward Flow</b><span>WA</span></div>
+        <div class="railScroll">
+          <div class="railGroup">
+            <p class="railEyebrow">Clinical Operations</p>
+            <a class="railLink" href="command-third-edition.html">Command Center</a>
+            <a class="railLink" href="movement-third-edition.html">Movement Board</a>
+            <a class="railLink" href="patient-now-third-edition.html">Patient Trajectory</a>
+            <a class="railLink" href="capacity-third-edition.html">Capacity &amp; Demand</a>
+            <a class="railLink" href="wards-third-edition.html">23-Ward Directory</a>
+          </div>
+          <div class="railGroup">
+            <p class="railEyebrow">Coordination &amp; Logistics</p>
+            <a class="railLink" href="add-a-patient-third-edition.html">Add a Patient</a>
+            <a class="railLink" href="ward-answer-third-edition.html">Ward Bed Answer</a>
+            <a class="railLink" href="discharges-third-edition.html">Discharges &amp; Egress</a>
+            <a class="railLink" href="out-of-area-third-edition.html">Out-of-Area Ledger</a>
+            <a class="railLink" href="transport-officer-third-edition.html">Transport Officer MDT</a>
+            <a class="railLink" href="on-call-third-edition.html">On-Call Directory</a>
+          </div>
+          <div class="railGroup">
+            <p class="railEyebrow">Legal &amp; Governance</p>
+            <a class="railLink" href="legal-forms-third-edition.html">Legal Forms (MHA)</a>
+            <a class="railLink" href="governance-third-edition.html">Governance Overrides</a>
+            <a class="railLink" href="alerts-third-edition.html" aria-current="page">Alerts Center</a>
+            <a class="railLink" href="settings-third-edition.html">System Settings</a>
+          </div>
+        </div>
+        <div class="railFoot">
+          <div>Active Alerts: <b>4 Critical / Warn</b></div>
+          <div>Engine Status: <b>Synchronized</b></div>
+        </div>
+      </nav>
+
+      <!-- Main Container Frame -->
+      <div class="frame">
+        <header class="hdr">
+          <div class="hdrTitle">
+            <span>Clinical &amp; Operational Action Alerts Center</span>
+            <span class="chip danger">4 Active Incidents</span>
+          </div>
+          <div class="hdrEnd">
+            <button class="btn" id="themeToggle" type="button">Dark Theme</button>
+            <button class="btn primary" type="button" onclick="openBroadcastModal()">+ Broadcast Network Alert</button>
+          </div>
+        </header>
+
+        <main class="workspace">
+          <!-- KPI Strip -->
+          <div class="kpiStrip">
+            <div class="kpiCard" data-tone="danger">
+              <span class="kpiLabel">Statutory Breaches</span>
+              <span class="kpiVal">1</span>
+              <span class="kpiSub">Form 4A Transport Expired</span>
+            </div>
+            <div class="kpiCard" data-tone="danger">
+              <span class="kpiLabel">Placement Gridlock</span>
+              <span class="kpiVal">3</span>
+              <span class="kpiSub">&ge;3 Parallel Declines</span>
+            </div>
+            <div class="kpiCard" data-tone="warn">
+              <span class="kpiLabel">Prolonged ED Wait (&gt;24h)</span>
+              <span class="kpiVal">2</span>
+              <span class="kpiSub">FSH &amp; Joondalup EDs</span>
+            </div>
+            <div class="kpiCard" data-tone="good">
+              <span class="kpiLabel">Resolved Today</span>
+              <span class="kpiVal">14</span>
+              <span class="kpiSub">All Handlers Cleared</span>
+            </div>
+          </div>
+
+          <!-- Filter Bar -->
+          <div class="filterBar">
+            <span class="filterLabel">Category Filter:</span>
+            <button class="filterBtn active" type="button" onclick="filterCategory('all', this)">All Active (4)</button>
+            <button class="filterBtn" type="button" onclick="filterCategory('statutory', this)">
+              Statutory &amp; Legal (1)
+            </button>
+            <button class="filterBtn" type="button" onclick="filterCategory('gridlock', this)">Bed Gridlock (1)</button>
+            <button class="filterBtn" type="button" onclick="filterCategory('ed-wait', this)">
+              ED Wait &gt;24h (1)
+            </button>
+            <button class="filterBtn" type="button" onclick="filterCategory('hold', this)">
+              Reservation Holds (1)
+            </button>
+          </div>
+
+          <!-- Active Critical & Operational Alerts -->
+          <section class="panel">
+            <div class="ph">
+              <h2>Active High-Priority Alert Queue</h2>
+              <span class="badge" data-tone="danger">Immediate Intervention Required</span>
+            </div>
+            <div class="alertList" id="alertItemsList">
+              <!-- Alert 1: Form 4A Expiry -->
+              <div class="alertItem" data-cat="statutory" data-priority="critical" id="alert-wf-028">
+                <div class="alertIcon">!</div>
+                <div class="alertContent">
+                  <div class="alertHead">
+                    <span class="badge" data-tone="danger">Statutory Breach</span>
+                    <span class="alertTitle">Form 4A Transport Order Past the Expiry Written on the Form</span>
+                    <span class="alertMeta">&bull; Patient: Elena Rostova (WF-028) &bull; Joondalup ED</span>
+                  </div>
+                  <div class="alertDesc">
+                    Form 4A Transport Authorisation executed on 12 Sep 14:15 is past the expiry written on the form.
+                    Custodial transport handover needs re-authorisation by an authorised medical practitioner.
+                  </div>
+                </div>
+                <div style="display: flex; gap: 6px">
+                  <button
+                    type="button"
+                    class="btn sm danger"
+                    onclick="
+                      openActionModal(
+                        'WF-028 (Elena Rostova)',
+                        'Re-Authorise Statutory Transport Order',
+                        'alert-wf-028',
+                      )
+                    "
+                  >
+                    Re-Authorise
+                  </button>
+                  <a class="btn sm" href="legal-forms-third-edition.html">View Order</a>
+                </div>
+              </div>
+
+              <!-- Alert 2: Placement Gridlock -->
+              <div class="alertItem" data-cat="gridlock" data-priority="critical" id="alert-wf-009">
+                <div class="alertIcon">&times;</div>
+                <div class="alertContent">
+                  <div class="alertHead">
+                    <span class="badge" data-tone="danger">Placement Gridlock</span>
+                    <span class="alertTitle">All 3 Parallel Inpatient Referrals Declined (Acuity Ceiling)</span>
+                    <span class="alertMeta">&bull; Patient: Tobias Wren (WF-009) &bull; SCGH ED</span>
+                  </div>
+                  <div class="alertDesc">
+                    Referrals to Graylands (Dorrington), Midland (Ward 1), and Joondalup have all returned clinical
+                    declines. Patient remains in SCGH ED acute assessment pod (waiting 14h 45m). Executive escalation or
+                    catchment override required.
+                  </div>
+                </div>
+                <div style="display: flex; gap: 6px">
+                  <button
+                    type="button"
+                    class="btn sm danger"
+                    onclick="openActionModal('WF-009 (Tobias Wren)', 'Declare Catchment Override', 'alert-wf-009')"
+                  >
+                    Intervene
+                  </button>
+                  <a class="btn sm primary" href="patient-now-third-edition.html">Trajectory</a>
+                </div>
+              </div>
+
+              <!-- Alert 3: ED Stay >24h -->
+              <div class="alertItem" data-cat="ed-wait" data-priority="warning" id="alert-wf-033">
+                <div class="alertIcon">&Delta;</div>
+                <div class="alertContent">
+                  <div class="alertHead">
+                    <span class="badge" data-tone="warn">Prolonged ED Stay</span>
+                    <span class="alertTitle">Emergency Department Length of Stay &gt;24 Hours (26h 40m)</span>
+                    <span class="alertMeta">&bull; Patient: Marcus Vance (WF-033) &bull; Fiona Stanley ED</span>
+                  </div>
+                  <div class="alertDesc">
+                    Involuntary patient on Form 1A waiting for open adult bed for 26h 40m. 1:1 Specialling nurse
+                    coverage approaching consecutive shift maximum. Prioritise allocation against morning discharge
+                    register.
+                  </div>
+                </div>
+                <div style="display: flex; gap: 6px">
+                  <button
+                    type="button"
+                    class="btn sm"
+                    onclick="openActionModal('WF-033 (Marcus Vance)', 'Prioritise Bed Allocation', 'alert-wf-033')"
+                  >
+                    Prioritise Allocation
+                  </button>
+                </div>
+              </div>
+
+              <!-- Alert 4: Bed Hold Expiring -->
+              <div class="alertItem" data-cat="hold" data-priority="warning" id="alert-wf-017">
+                <div class="alertIcon">&#9200;</div>
+                <div class="alertContent">
+                  <div class="alertHead">
+                    <span class="badge" data-tone="warn">Reservation Window</span>
+                    <span class="alertTitle">Pulled Bed Hold Expiring in 18 Minutes</span>
+                    <span class="alertMeta">&bull; Graylands Hospital &bull; Dorrington Bed 04</span>
+                  </div>
+                  <div class="alertDesc">
+                    Bed reservation for Sarah Jenkins (WF-017) expires at 18:30 unless custodial transport departure is
+                    confirmed. Nothing releases the bed automatically; a person must decide to release it.
+                  </div>
+                </div>
+                <div style="display: flex; gap: 6px">
+                  <button
+                    type="button"
+                    class="btn sm"
+                    onclick="
+                      openActionModal('WF-017 (Sarah Jenkins)', 'Extend Bed Hold / Dispatch Transport', 'alert-wf-017')
+                    "
+                  >
+                    Extend Hold
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Operational Notices & Communication Feed -->
+          <section class="panel">
+            <div class="ph">
+              <h2>Role Notices &amp; Shift Communication Feed</h2>
+              <span class="mono" style="font-size: var(--t-0); color: var(--muted)">All Services Stream</span>
+            </div>
+            <div class="alertList">
+              <div class="alertItem" data-priority="info">
+                <div class="alertIcon">i</div>
+                <div class="alertContent">
+                  <div class="alertHead">
+                    <span class="badge" data-tone="accent">Governance Audit</span>
+                    <span class="alertTitle">Catchment Override Logged for Older Adult Placement</span>
+                    <span class="alertMeta">&bull; Recorded by: State Bed Desk &bull; Target: Selby Lodge</span>
+                  </div>
+                  <div class="alertDesc">
+                    Out-of-catchment placement authorized for WF-014 due to lack of local EMHS psychogeriatric capacity.
+                    Flagged for review at next clinical governance audit.
+                  </div>
+                </div>
+                <div>
+                  <a class="btn sm" href="governance-third-edition.html">View Audit</a>
+                </div>
+              </div>
+
+              <div class="alertItem" data-priority="info">
+                <div class="alertIcon">&#10003;</div>
+                <div class="alertContent">
+                  <div class="alertHead">
+                    <span class="badge" data-tone="good">Logistics Confirmed</span>
+                    <span class="alertTitle">Custodial Transfer Completed &bull; Fremantle W Ward</span>
+                    <span class="alertMeta">&bull; Patient: Luke Davies (WF-021) &bull; Transport: St John Secure</span>
+                  </div>
+                  <div class="alertDesc">
+                    Patient successfully transferred into Fremantle W Ward inpatient care. Form 4A verified and custody
+                    signed over.
+                  </div>
+                </div>
+                <div>
+                  <span class="badge" data-tone="good">Archived</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- Action Modal -->
+    <div class="modal" id="actionModal">
+      <div class="modalDialog">
+        <div class="modalHead">
+          <h3 id="modalTitle">Record Alert Action</h3>
+          <button type="button" class="btn sm" onclick="closeModal('actionModal')">✕</button>
+        </div>
+        <div class="modalBody">
+          <div class="formGroup">
+            <label class="formLabel">Subject / Clinical Reference</label>
+            <input type="text" id="modalSubject" class="formInput mono" value="" readonly />
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Action Taken / Clinical Intervention</label>
+            <select class="formSelect" id="actionIntervention">
+              <option>Authorised Statutory Form Re-Issue (Extension)</option>
+              <option>Escalated to Executive Director on Call (Tier 3)</option>
+              <option>Extended Bed Hold (30-Minute Grace Window)</option>
+              <option>Dispatched Urgent Mental Health Secure Transport</option>
+              <option>Acknowledged &amp; Cleared from Active Queue</option>
+            </select>
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Clinician Sign-off Notes</label>
+            <textarea class="formTextarea" id="actionNotes">
+Action verified by State Duty Bed Coordinator. Relevant clinical teams and ED liaison desks notified.</textarea>
+          </div>
+        </div>
+        <div class="modalFoot">
+          <button type="button" class="btn" onclick="closeModal('actionModal')">Cancel</button>
+          <button type="button" class="btn primary" onclick="submitAction()">Confirm Intervention</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Broadcast Modal -->
+    <div class="modal" id="broadcastModal">
+      <div class="modalDialog">
+        <div class="modalHead">
+          <h3>Broadcast Statewide Network Alert</h3>
+          <button type="button" class="btn sm" onclick="closeModal('broadcastModal')">✕</button>
+        </div>
+        <div class="modalBody">
+          <div class="formGroup">
+            <label class="formLabel">Broadcast Target Group</label>
+            <select class="formSelect">
+              <option>All 23 Mental Health Inpatient Units &amp; 8 ED Liaison Desks</option>
+              <option>North Metro Wards Only (NMHS)</option>
+              <option>South Metro Wards Only (SMHS)</option>
+              <option>East Metro Wards Only (EMHS)</option>
+              <option>WACHS Regional Facilities</option>
+            </select>
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Severity Level</label>
+            <select class="formSelect">
+              <option>Operational Advisory (Yellow)</option>
+              <option selected>High Acuity Network Surge / Critical Capacity (Red)</option>
+              <option>Statutory Compliance Reminder (Blue)</option>
+            </select>
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Broadcast Message Content</label>
+            <textarea class="formTextarea">
+URGENT: Metropolitan secure HDU occupancy at 100%. All units requested to expedite morning discharge verifications and report candidate surge beds immediately.</textarea>
+          </div>
+        </div>
+        <div class="modalFoot">
+          <button type="button" class="btn" onclick="closeModal('broadcastModal')">Cancel</button>
+          <button type="button" class="btn danger" onclick="submitBroadcast()">Broadcast to Network</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="actionToast">
+      <span>✓</span>
+      <span id="toastMsg">Action executed successfully.</span>
+    </div>
+
+    <script>
+      // Theme toggle
+      const themeBtn = document.getElementById("themeToggle");
+      themeBtn.addEventListener("click", () => {
+        const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+        document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
+        themeBtn.textContent = isDark ? "Dark Theme" : "Light Theme";
+      });
+
+      // Toast
+      function showToast(msg) {
+        const toast = document.getElementById("actionToast");
+        document.getElementById("toastMsg").textContent = msg;
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 3200);
+      }
+
+      // Modal controls
+      function openModal(id) {
+        document.getElementById(id).classList.add("open");
+      }
+      function closeModal(id) {
+        document.getElementById(id).classList.remove("open");
+      }
+
+      let currentAlertId = null;
+
+      function openActionModal(subj, title, alertId) {
+        document.getElementById("modalSubject").value = subj;
+        document.getElementById("modalTitle").textContent = title || "Record Alert Action";
+        currentAlertId = alertId;
+        openModal("actionModal");
+      }
+
+      function submitAction() {
+        const intervention = document.getElementById("actionIntervention").value;
+        closeModal("actionModal");
+        showToast(`Action recorded: ${intervention}`);
+        if (currentAlertId) {
+          const item = document.getElementById(currentAlertId);
+          if (item) {
+            item.style.opacity = "0.7";
+            item.style.background = "var(--surface-2)";
+            const badge = item.querySelector(".badge");
+            if (badge) {
+              badge.setAttribute("data-tone", "good");
+              badge.textContent = "Resolved";
+            }
+            const actionBtn = item.querySelector(".btn.primary");
+            if (actionBtn) {
+              actionBtn.outerHTML =
+                '<span style="font-size:var(--t-0); color:var(--muted); font-weight:600;">Intervention Logged</span>';
+            }
+          }
+        }
+      }
+
+      function openBroadcastModal() {
+        openModal("broadcastModal");
+      }
+
+      function submitBroadcast() {
+        closeModal("broadcastModal");
+        showToast("Statewide network alert successfully broadcast to all clinical consoles.");
+      }
+
+      // Category Filter
+      function filterCategory(cat, btn) {
+        document.querySelectorAll(".filterBtn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        const items = document.querySelectorAll("#alertItemsList .alertItem");
+        items.forEach((item) => {
+          if (cat === "all" || item.getAttribute("data-cat") === cat) {
+            item.style.display = "";
+          } else {
+            item.style.display = "none";
+          }
+        });
+        showToast(cat === "all" ? "Showing all active alerts" : `Filtered to ${cat} alerts`);
+      }
+    </script>
+
+    <!-- Visual QA Sentinel -->
+    <script id="qa-sentinel">
+      (function () {
+        function runQA() {
+          const issues = [];
+          if (document.documentElement.scrollWidth > window.innerWidth + 1) {
+            issues.push(
+              `Horizontal overflow detected (${document.documentElement.scrollWidth}px > ${window.innerWidth}px)`,
+            );
+          }
+          if (!document.querySelector("meta[charset]")) issues.push("Missing <meta charset='utf-8'>");
+          if (!document.querySelector('meta[name="viewport"]')) issues.push("Missing responsive viewport meta");
+          const allEls = document.querySelectorAll("*");
+          for (let el of allEls) {
+            const style = el.getAttribute("style") || "";
+            if (/#[0-9a-fA-F]{3,8}/.test(style)) {
+              issues.push(`Raw hex in style on <${el.tagName.toLowerCase()}>`);
+              break;
+            }
+          }
+          const badge = document.createElement("div");
+          badge.id = "qa-badge";
+          badge.style.cssText =
+            "position:fixed;bottom:12px;right:12px;padding:6px 10px;font:11px/1.2 var(--mono);background:var(--surface);border:1px solid var(--line-strong);border-radius:4px;box-shadow:var(--lift);z-index:99999;pointer-events:none;display:flex;align-items:center;gap:6px;";
+          if (issues.length === 0) {
+            badge.innerHTML =
+              '<span style="width:7px;height:7px;border-radius:50%;background:var(--good)"></span><span style="color:var(--good);font-weight:600">QA 100/100: PERFECTED</span>';
+          } else {
+            badge.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:var(--danger)"></span><span style="color:var(--danger);font-weight:600">QA ISSUES: ${issues.length}</span>`;
+          }
+          document.body.appendChild(badge);
+        }
+        if (document.readyState === "loading") {
+          window.addEventListener("DOMContentLoaded", runQA);
+        } else {
+          runQA();
+        }
+      })();
+    </script>
+  </body>
+</html>

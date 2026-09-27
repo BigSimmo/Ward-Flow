@@ -1,0 +1,74 @@
+{
+  "built_on": "2026-09-17",
+  "tip_sha_context": "f10ca39fbd",
+  "files": {
+    "PACK_README.md": {
+      "bytes": 970,
+      "sha256": "9bda703e56368d197511bf16dd48f10f7b56447a8da38e01ef6e876a4af69fe8"
+    },
+    "distances.json": {
+      "bytes": 280564,
+      "sha256": "7e06eea1bfcd5685491dead4d85d4e7bad74526e7cf33ef4586247eda71c9c1b"
+    },
+    "geocode_cache.json": {
+      "bytes": 11868,
+      "sha256": "583fc18f6a7827de070446ead63fd262db710ba12a4ea3dd23d47b2d39983633"
+    },
+    "open_questions.json": {
+      "bytes": 38644,
+      "sha256": "efb2aa59ac24ea7b4b89e566ed31a7343b8050e04d7b828cb75c7406176b9009"
+    },
+    "capacity_assertions.json": {
+      "bytes": 66798,
+      "sha256": "f99a60f7c33875a34ef0a96e04a40198b2985d056158b1696c545bc101266ed6"
+    },
+    "decisions.json": {
+      "bytes": 2976,
+      "sha256": "8f7a35ca9a210dc74de924fdbc2862dc3a7076c54b948f98758e30a51b75f875"
+    },
+    "pack_manifest.json": {
+      "bytes": 2571,
+      "sha256": "6831832f6ccf891405266708d8fcaf6934e4d516a00cf01151b27814cf06268e"
+    },
+    "entities.json": {
+      "bytes": 257889,
+      "sha256": "7c688435ff7aa7da62640401fd18ff06684a42cfca3c5befa747429457ea9efd"
+    },
+    "WARD-FLOW-MASTER-COMPLETE-2026-09-17.md": {
+      "bytes": 37770,
+      "sha256": "4550ab72fb3f2ccce77c135301917995898822ab06cfd92696ba42285ed145dc"
+    },
+    "DECISIONS-APPLIED-2026-09-17.md": {
+      "bytes": 1294,
+      "sha256": "1cd042d544c64afc53ac361af15efcc6b9eacd585d030206b53c5dfe426dbeae"
+    },
+    "sources.json": {
+      "bytes": 130205,
+      "sha256": "66c612ecc2dafd92ad17dffef79c6f176141fad3f171cd42d3f30625eb1dc068"
+    },
+    "catchment_assertions.json": {
+      "bytes": 1322701,
+      "sha256": "8c2664ba069531d794d051d75f87cf5ce7d56daf7d9fd4cc820d7253158fa17d"
+    },
+    "INGEST_MAP.md": {
+      "bytes": 886,
+      "sha256": "99b77a7f15fad75afe4939db6a5dc5628a230419658b2fdd56e5d2065b81c46b"
+    },
+    "CHANGELOG.md": {
+      "bytes": 1268,
+      "sha256": "da037c1e2c5e78c449f572b1b8c9feffb26e3f9dfe6ea7fb10cb5e582c85046a"
+    },
+    "DISTANCES-README.md": {
+      "bytes": 3051,
+      "sha256": "a508d5489de030cf94e7987dac89d56739162fa55ac6995d364de64c47032119"
+    },
+    "PHASE_STATUS.md": {
+      "bytes": 157,
+      "sha256": "1a9deda9a649299b9d2a6aad25d623d6a0dffbd37939dbf56f5413244b9ba30c"
+    },
+    "PROVENANCE-AUDIT-2026-09-18.md": {
+      "bytes": 4347,
+      "sha256": "968de6df2b162e41adbfc78fd6e542d9bda1235713b4b4e28a92f9a41f341dbb"
+    }
+  }
+}

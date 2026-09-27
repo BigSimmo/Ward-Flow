@@ -1,0 +1,18 @@
+{
+  "appHead": "1ef9ed3975078b789e9b5d70b3f000c64edc3809",
+  "uncommitted": true,
+  "files": {
+    "src/components/ward-management/hub/hub-screen.tsx": "104edcf3b6ca7afa88395a7b60b23fa3b7bf95a0b53154c4174fe4ba66576598",
+    "src/components/ward-management/hub/hub.module.css": "b4c4a8badd8f43d23e177a479239894aecf2463760099c920fcef4ffe77d881d",
+    "src/components/ward-management/shell/ward-bar.tsx": "de57dea0b48b4d2edb04c082f0481ea3a314dcbed81d759cd29bd2709fced8d0",
+    "src/components/ward-management/shell/ward-bar.module.css": "8d662564d7a080c02263351cfddacf2648a979c487dbedd5802289871c5ce6d0",
+    "src/components/ward-management/shell/ward-rail.tsx": "7d27d784007c8923c8f5344168a4c3b6c238dc27692deb1a36d76e15d5dfd431",
+    "src/components/ward-management/shell/ward-rail.module.css": "089192b3923069b60a4b94b11be47df7558b578d0c374c88ceadbcbf08418626",
+    "src/components/ward-management/shell/ward-live-region.tsx": "e77ef79783647d3f1f516d9135b6f605509bc493301b2c7ddbd7b8e4547c56e3",
+    "src/components/ward-management/ward-shell.module.css": "1e328ec0a947f2cb0d30f54420bd68da75373d4e807b81e2eef774ee2a515ed3",
+    "tests/ward-shell-third-edition.dom.test.tsx": "41ca87b32de929dee13fb8fd221a9cab1a077375001ba7e4f392c0571afe13d4",
+    "tests/ward-hub-bar-colours.test.ts": "f0fdcf51d136f0098631c33dab734de7dd06f2c0e8f3448c2aff46ea11b97654"
+  },
+  "testVerdict": "blocked before runner start by other-worktree admission; no final-source passing test claim",
+  "visualStatus": "six-cell independent closure received; recorded deviates for documented engine adaptations; human acceptance pending"
+}

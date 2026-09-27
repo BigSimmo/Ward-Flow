@@ -1,0 +1,101 @@
+/*
+ * The declines register's own module — self-contained tokens on each root class, the same
+ * convention `override-register.module.css` documents: this component can be mounted anywhere
+ * (Task 5 mounts it inside `coordinator.module.css`'s scope), so nothing may be borrowed from a
+ * caller's local custom properties.
+ *
+ * Design tokens only — no literal colours. Deliberately the SAME palette entries
+ * `override-register.module.css` uses (never copied by value, only by the token name), so a
+ * decline row and an override row read as the same kind of accountability record.
+ */
+.list,
+.placeholder {
+  --dr-space-4: 0.25rem;
+  --dr-space-6: 0.375rem;
+  --dr-space-8: 0.5rem;
+  --dr-space-10: 0.625rem;
+  --dr-leading-body: 1.4;
+}
+
+.placeholder {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-2xs);
+  line-height: var(--dr-leading-body);
+}
+
+.list {
+  display: grid;
+  gap: var(--dr-space-10);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry {
+  /* Declared here, not on a root class — same reasoning as `override-register.module.css`'s
+     `.entry`: this module has no wrapper, so a token declared on `.list`/`.placeholder` never
+     reaches a sibling `<li>`. */
+  --wf-border: var(--neutral-500);
+  display: grid;
+  min-width: 0;
+  gap: var(--dr-space-6);
+  border: 0.0625rem solid var(--wf-border, var(--neutral-500));
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  padding: var(--dr-space-10);
+}
+
+.entryHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--dr-space-8);
+}
+
+.entryHeader strong {
+  color: var(--text-heading);
+  font-size: var(--text-2xs);
+}
+
+.entryReason {
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: var(--text-2xs);
+  line-height: var(--dr-leading-body);
+}
+
+.entryMeta {
+  overflow-wrap: anywhere;
+  color: var(--text-muted);
+  font-size: var(--text-3xs);
+  line-height: var(--dr-leading-body);
+}
+
+/*
+ * Forced colours puts the system border token back — same reasoning and same measured contrast
+ * ratios as `override-register.module.css`'s identical rule: `--neutral-500` reads well against
+ * `--surface-subtle` for everyone else, but a high-contrast user is owed the system border colour
+ * (`ButtonBorder`/`CanvasText` under `forced-colors`), not this component's own palette choice.
+ */
+@media (forced-colors: active) {
+  .entry {
+    --wf-border: var(--border);
+  }
+}
+
+/*
+ * No `wardTokens` composition and no wrapping root class — same reasoning as
+ * `override-register.module.css`'s identical comment: `.placeholder` and `.list` are alternate
+ * top-level renders of this component, so every themed selector is enumerated by hand.
+ */
+@media print {
+  .placeholder,
+  .entry,
+  .entryHeader strong,
+  .entryReason,
+  .entryMeta {
+    color: CanvasText !important;
+    background-color: Canvas !important;
+  }
+}

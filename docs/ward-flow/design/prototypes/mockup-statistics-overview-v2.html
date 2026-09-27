@@ -1,0 +1,2229 @@
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ward Flow — Statistics Overview (Across All Services)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+/>
+
+<style>
+  /* ═══════════════════════════════════════════════════════════════════════
+       WARD FLOW — "Board" language, second edition.
+
+       This is a PROPOSED EVOLUTION of the canonical block in community-home.html,
+       written to the owner's brief of 2026-09-04: keep the system as inspiration,
+       lift the craft. If it is approved, the canonical block should be replaced
+       from this file — the language must stay in one place, and two editions
+       living side by side is the drift the first edition warned about.
+
+       WHAT IS KEPT, because it is clinical rather than cosmetic:
+         · State is a WORD first. Colour only ever reinforces a word already there.
+         · Contrast floor 4.5:1, computed rather than judged. Every pairing below
+           was measured against every surface it can sit on.
+         · Figures are JetBrains Mono and tabular. Anything comparable lines up.
+         · Absence is stated, never blank.
+         · Every invented figure is listed at the foot of the page.
+
+       WHAT CHANGED:
+         · A real accent. The first edition had no brand hue at all, only alarm
+           colours, so nothing on the page could be calm and important at once.
+           The accent is PsychSift's own primary, which is what ties the two
+           products together.
+         · Crisp white surfaces. The owner's standing note: no cream. Panels are
+           #ffffff and state is carried by an edge, a word and a colour — not by
+           tinting a large surface.
+         · Softer geometry. 3px corners read as a spreadsheet; 8px reads as an
+           application, without becoming a consumer app.
+         · Real elevation, used sparingly: raised for what floats, flat for what
+           sits on the page.
+         · A sticky application bar carrying identity, the ward switcher and the
+           one action you always want.
+       ═══════════════════════════════════════════════════════════════════════ */
+
+  :root {
+    color-scheme: light;
+
+    --ground: #f1f4f8;
+    --surface: #ffffff;
+    --surface-2: #f7f9fc;
+    --sunken: #eef2f7;
+
+    --ink: #0d1421;
+    --ink-2: #33415a;
+    --muted: #55637a;
+    /* 4.81:1 on the ground, 5.31:1 on white, 5.04:1 on the tinted panel head —
+         computed, not judged. The first edition's faint failed at 3.08:1 and the
+         whole quiet layer of the page went with it. */
+    --faint: #5e6c84;
+
+    --rule: #e4e9f0;
+    --rule-2: #cfd7e3;
+
+    --accent: #1d6fb8;
+    --accent-strong: #185c99;
+    --accent-wash: #eff5fc;
+    --accent-contrast: #ffffff;
+
+    --good: #0c6b41;
+    --good-wash: #f2fbf6;
+    --signal: #8a4d05;
+    --signal-wash: #fffaf2;
+    --crit: #a3190f;
+    --crit-wash: #fdf5f4;
+    --cool: #0f6b73;
+    --cool-wash: #f1fafb;
+
+    --shadow-1: 0 1px 2px rgb(13 20 33 / 0.05);
+    --shadow-2: 0 1px 3px rgb(13 20 33 / 0.07), 0 6px 16px -8px rgb(13 20 33 / 0.1);
+    --shadow-3: 0 12px 36px -14px rgb(13 20 33 / 0.3), 0 2px 8px rgb(13 20 33 / 0.08);
+
+    --r-sm: 5px;
+    --r: 8px;
+    --r-lg: 12px;
+
+    /* The production tap floor, taken from the app's own --spacing-tap (3rem)
+         rather than picked here. globals.css says of it: "Never reduce below it."
+         A dense clinical board earns tighter controls with a mouse; a thumb does
+         not, so the floor is applied at pointer:coarse and phone widths only. */
+    --tap: 3rem;
+
+    /* Controls and typed text read one step above surrounding prose — this is the
+         text a clinician reads back to check what they wrote, and 14px is mean for
+         it. 1rem also matches the 16px floor globals.css already forces on
+         controls below 640px to stop iOS zooming the viewport on focus, so the
+         size does not change across that breakpoint.
+
+         Ward Builder Three proposed this at 0.9375rem and then corrected its own
+         value to 1rem for the reason above — the first value was already being
+         overridden on every phone, so the control text changed size across 640px
+         for no stated reason. Taken from what the app enforces, not picked. */
+    --t-input: 1rem;
+
+    --sp-1: 0.25rem;
+    --sp-2: 0.5rem;
+    --sp-3: 0.75rem;
+    --sp-4: 1rem;
+    --sp-5: 1.5rem;
+    --sp-6: 2rem;
+    --sp-7: 3rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --ground: #0a0e15;
+      --surface: #131924;
+      --surface-2: #1a2130;
+      --sunken: #0f141d;
+      --ink: #e8edf5;
+      --ink-2: #c3cdda;
+      --muted: #98a5b8;
+      --faint: #8593a7;
+      --rule: #232c3a;
+      --rule-2: #354152;
+      --accent: #6ea8e0;
+      --accent-strong: #8dbdea;
+      --accent-wash: #132132;
+      --accent-contrast: #0a0e15;
+      --good: #4ec38d;
+      --good-wash: #0f2119;
+      --signal: #e0a63f;
+      --signal-wash: #241c0e;
+      --crit: #f0755c;
+      --crit-wash: #26130f;
+      --cool: #4fb3bd;
+      --cool-wash: #0d2124;
+      --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+      --shadow-2: 0 1px 3px rgb(0 0 0 / 0.5), 0 6px 16px -8px rgb(0 0 0 / 0.55);
+      --shadow-3: 0 12px 36px -14px rgb(0 0 0 / 0.75), 0 2px 8px rgb(0 0 0 / 0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ground: #0a0e15;
+    --surface: #131924;
+    --surface-2: #1a2130;
+    --sunken: #0f141d;
+    --ink: #e8edf5;
+    --ink-2: #c3cdda;
+    --muted: #98a5b8;
+    --faint: #8593a7;
+    --rule: #232c3a;
+    --rule-2: #354152;
+    --accent: #6ea8e0;
+    --accent-strong: #8dbdea;
+    --accent-wash: #132132;
+    --accent-contrast: #0a0e15;
+    --good: #4ec38d;
+    --good-wash: #0f2119;
+    --signal: #e0a63f;
+    --signal-wash: #241c0e;
+    --crit: #f0755c;
+    --crit-wash: #26130f;
+    --cool: #4fb3bd;
+    --cool-wash: #0d2124;
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-2: 0 1px 3px rgb(0 0 0 / 0.5), 0 6px 16px -8px rgb(0 0 0 / 0.55);
+    --shadow-3: 0 12px 36px -14px rgb(0 0 0 / 0.75), 0 2px 8px rgb(0 0 0 / 0.5);
+  }
+
+  /* ─── base ────────────────────────────────────────────────────────────── */
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family:
+      "Archivo",
+      system-ui,
+      -apple-system,
+      "Segoe UI",
+      sans-serif;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  p,
+  dl,
+  dd,
+  dt,
+  ul,
+  ol,
+  figure {
+    margin: 0;
+  }
+  ul,
+  ol {
+    padding: 0;
+    list-style: none;
+  }
+  a {
+    color: inherit;
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--r-sm);
+  }
+  .skip {
+    position: absolute;
+    left: var(--sp-2);
+    top: var(--sp-2);
+    z-index: 100;
+    padding: 0.5rem 0.85rem;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    border-radius: var(--r-sm);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-decoration: none;
+    transform: translateY(-200%);
+  }
+  .skip:focus {
+    transform: none;
+  }
+  .sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .num,
+  .figure,
+  .mono {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+
+  /* ─── application bar ─────────────────────────────────────────────────── */
+  .appbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    flex-wrap: wrap;
+    padding: var(--sp-2) var(--sp-4);
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    backdrop-filter: saturate(1.4) blur(10px);
+    border-bottom: 1px solid var(--rule);
+  }
+  .mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    font-size: 0.8125rem;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .mark .dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--accent);
+    flex: none;
+  }
+  .appbar .spacer {
+    flex: 1 1 2rem;
+  }
+  .appbar-right {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    flex-wrap: wrap;
+  }
+
+  /* ─── THE WARD SWITCHER ────────────────────────────────────────────────
+       The owner asked for this specifically. It replaces a bare <select>, which
+       could not show a ward's designation or how many beds it has ready, sorted
+       23 unrelated names into one flat alphabetical list, and gave no way to
+       search. The network is 23 wards across 15 hospitals with beds — a list
+       that looks fine at nine becomes unusable at that size. */
+  .switcher {
+    position: relative;
+  }
+  .switcher > summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: 0.35rem 0.6rem 0.35rem 0.7rem;
+    border: 1px solid var(--rule-2);
+    border-radius: var(--r);
+    background: var(--surface);
+    box-shadow: var(--shadow-1);
+    transition:
+      border-color 0.12s ease,
+      box-shadow 0.12s ease;
+  }
+  .switcher > summary::-webkit-details-marker {
+    display: none;
+  }
+  .switcher > summary:hover {
+    border-color: var(--rule-2);
+    box-shadow: var(--shadow-2);
+  }
+  .switcher[open] > summary {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-wash);
+  }
+  .sw-id {
+    display: grid;
+    gap: 0.05rem;
+    min-width: 0;
+  }
+  .sw-eyebrow {
+    font-size: 0.5625rem;
+    font-weight: 600;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--faint);
+    line-height: 1.4;
+  }
+  .sw-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: -0.012em;
+    color: var(--ink);
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .sw-chev {
+    flex: none;
+    color: var(--muted);
+    transition: transform 0.12s ease;
+  }
+  .switcher[open] .sw-chev {
+    transform: rotate(180deg);
+  }
+  .sw-panel {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    z-index: 60;
+    width: min(25rem, calc(100vw - 2rem));
+    background: var(--surface);
+    border: 1px solid var(--rule-2);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-3);
+    overflow: hidden;
+  }
+  .sw-search {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-3);
+    border-bottom: 1px solid var(--rule);
+    background: var(--surface-2);
+  }
+  .sw-count {
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--faint);
+    white-space: nowrap;
+  }
+  .sw-scroll {
+    scrollbar-width: thin;
+  }
+  .sw-search input {
+    flex: 1;
+    font: inherit;
+    font-size: 0.8125rem;
+    padding: 0.4rem 0.55rem;
+    border: 1px solid var(--rule-2);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    color: var(--ink);
+    min-width: 0;
+  }
+  .sw-scroll {
+    max-height: 24rem;
+    overflow-y: auto;
+    padding: var(--sp-2) 0;
+  }
+  .sw-group {
+    padding: var(--sp-3) var(--sp-3) var(--sp-1);
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .sw-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.1rem var(--sp-3);
+    padding: 0.45rem var(--sp-3);
+    margin: 0 var(--sp-2);
+    border-radius: var(--r-sm);
+    border-left: 3px solid transparent;
+    text-decoration: none;
+  }
+  .sw-item:hover {
+    background: var(--surface-2);
+  }
+  .sw-item[aria-current="true"] {
+    background: var(--accent-wash);
+    border-left-color: var(--accent);
+  }
+  .sw-item-name {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .sw-item-meta {
+    grid-column: 1;
+    font-size: 0.6875rem;
+    color: var(--muted);
+  }
+  .sw-item-n {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+    text-align: right;
+    font-size: 0.6875rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .sw-item-n b {
+    display: block;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--ink);
+  }
+  .sw-item-n[data-none="true"] b {
+    color: var(--faint);
+  }
+  .sw-here {
+    font-size: 0.5625rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-strong);
+    margin-left: 0.4rem;
+  }
+  .sw-foot {
+    padding: var(--sp-3);
+    border-top: 1px solid var(--rule);
+    background: var(--surface-2);
+    font-size: 0.6875rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* ─── page frame ──────────────────────────────────────────────────────── */
+  .shell {
+    max-width: 108rem;
+    margin: 0 auto;
+    padding: var(--sp-4) var(--sp-4) var(--sp-7);
+  }
+  .prototype {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.6rem;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--faint);
+    padding-bottom: var(--sp-3);
+  }
+
+  .masthead {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-4);
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-bottom: var(--sp-4);
+  }
+  .masthead h1 {
+    font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2.125rem);
+    font-weight: 700;
+    letter-spacing: -0.028em;
+    line-height: 1.1;
+    text-wrap: balance;
+  }
+  .eyebrow {
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-strong);
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: var(--sp-3);
+  }
+  .fact {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--ink-2);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 100px;
+    padding: 0.2rem 0.6rem;
+  }
+  .fact b {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+  }
+  .fact[data-tone="accent"] {
+    color: var(--accent-strong);
+    border-color: color-mix(in oklab, var(--accent) 35%, transparent);
+    background: var(--accent-wash);
+  }
+  .liveness {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.6875rem;
+    color: var(--muted);
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .pip {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--good);
+    flex: none;
+  }
+
+  .scope {
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--r);
+    background: var(--surface);
+    box-shadow: var(--shadow-1);
+    padding: var(--sp-3) var(--sp-4);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--muted);
+    margin-bottom: var(--sp-4);
+  }
+  .scope strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* ─── figures strip ───────────────────────────────────────────────────── */
+  /* Five figures do not wrap tidily on an auto-fit grid — at most widths one
+     tile is left alone on its own row, which reads as a dropped tile rather
+     than as a second row. Explicit steps instead: two, then three (5 = 3 + 2,
+     no orphan), then all five. A lone final tile on the two-column step spans
+     the full width, so it reads as deliberate. */
+  .kpis {
+    display: grid;
+    gap: var(--sp-3);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: var(--sp-3);
+  }
+  .kpis > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+  @media (min-width: 48rem) {
+    .kpis {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .kpis > :last-child:nth-child(odd) {
+      grid-column: auto;
+    }
+  }
+  @media (min-width: 75rem) {
+    .kpis {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+  /* --- figure tile --------------------------------------------------------
+     THE COLOURED TOP BAR IS GONE, at the owner's instruction on 2026-09-05:
+     "removing the colour scheme top for the square components and modernising
+     them". It was a 3px rule across the top of every tile, tinted per tone.
+
+     IT COST NOTHING INFORMATIONAL, AND THAT IS WHY IT COULD GO. The tone was
+     already carried twice over - by the tile's own label ("Referrals awaiting
+     your answer") and by the figure's colour. The bar was a third statement of
+     a fact stated twice, and five tiles in a row each wearing a different
+     coloured cap is what made the strip read as decoration rather than data.
+
+     BUT IT MEANS THE FIGURE COLOUR IS NOW THE ONLY COLOUR SIGNAL, so the
+     language's own rule does more work than it did: a tile's meaning must be in
+     its LABEL, and colour may only reinforce it. A tile whose tone is the only
+     thing distinguishing it from its neighbour is now a defect rather than a
+     weak design - there is nothing left to fall back on.
+
+     Modernised with it: one uniform hairline edge instead of a heavy cap, more
+     room around the figure, and a three-row grid so a two-line label cannot
+     shove the figure off the baseline its neighbours sit on. */
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--r);
+    box-shadow: var(--shadow-1);
+    padding: var(--sp-4);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 0.15rem;
+  }
+  .kpi dt {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+  .kpi dd .figure {
+    font-size: 1.875rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: var(--ink);
+  }
+  .kpi .caption {
+    font-size: 0.6875rem;
+    color: var(--faint);
+  }
+  /* Tone is the FIGURE only now. No edge, no cap, no tinted surface. */
+  .kpi[data-tone="good"] dd .figure {
+    color: var(--good);
+  }
+  .kpi[data-tone="signal"] dd .figure {
+    color: var(--signal);
+  }
+  .kpi[data-tone="crit"] dd .figure {
+    color: var(--crit);
+  }
+  .kpi[data-tone="accent"] dd .figure {
+    color: var(--accent-strong);
+  }
+
+  /* A movement indicator for the dashboard screens. IT CARRIES A WORD, NOT ONLY
+     AN ARROW - "up 3 on yesterday" survives a reader with no colour perception
+     and a greyscale printout; a red triangle does not. And it never says
+     "worse": whether a rising figure is bad is a clinical judgement this
+     software does not make, which is why every direction is the same ink. */
+  .kpi-delta {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--ink-2);
+  }
+  .kpi-delta .n {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  .kpi-delta[data-dir="flat"] {
+    color: var(--faint);
+  }
+
+  /* --- data table ---------------------------------------------------------
+     Added 2026-09-05 for the owner's "modular tabular layout". The second
+     edition had NO table primitive at all - measured at zero occurrences of any
+     table class - so every screen needing one was about to invent one, and nine
+     screens inventing a table is nine tables.
+
+     THE WRAPPER SCROLLS, NEVER THE PAGE. A wide table that widens the body is
+     the defect this exists to prevent: it drags every other column on the
+     screen sideways, and on a phone it makes the whole page swipe.
+
+     NO ZEBRA STRIPING, DELIBERATELY. Alternating fills read as meaning on a
+     screen where every other fill does mean something, and they are the first
+     thing a printer drops - so the row you were reading changes identity
+     between the screen and the paper. One hairline rule per row instead. */
+  .table-wrap {
+    overflow-x: auto;
+    border-top: 1px solid var(--rule);
+  }
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+  }
+  .dtable caption {
+    text-align: left;
+    padding: var(--sp-3) var(--sp-4);
+    font-size: 0.6875rem;
+    color: var(--faint);
+    line-height: 1.5;
+  }
+  .dtable th,
+  .dtable td {
+    padding: 0.5rem var(--sp-4);
+    text-align: left;
+    vertical-align: baseline;
+    border-bottom: 1px solid var(--rule);
+  }
+  .dtable thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--surface-2);
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.085em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+    border-bottom: 1px solid var(--rule-2);
+  }
+  .dtable tbody th {
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .dtable td {
+    color: var(--ink-2);
+  }
+  /* Anything a reader compares down a column lines up, and sits right-aligned
+     so the digits form one edge. */
+  .dtable .n,
+  .dtable th.n {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+  .dtable tbody tr:last-child th,
+  .dtable tbody tr:last-child td {
+    border-bottom: 0;
+  }
+  .dtable tbody tr:hover th,
+  .dtable tbody tr:hover td {
+    background: var(--surface-2);
+  }
+  /* A flagged row carries a word in one of its own cells; this only reinforces
+     it. Never the sole carrier of the flag. */
+  .dtable tbody tr[data-level="urgent"] th {
+    box-shadow: inset 3px 0 0 var(--crit);
+  }
+  .dtable tbody tr[data-level="stalled"] th {
+    box-shadow: inset 3px 0 0 var(--signal);
+  }
+  .dtable tbody tr[data-level="ok"] th {
+    box-shadow: inset 3px 0 0 var(--good);
+  }
+  /* A totals row is a different KIND of row, not a heavier one. */
+  .dtable tfoot th,
+  .dtable tfoot td {
+    border-top: 2px solid var(--rule-2);
+    border-bottom: 0;
+    font-weight: 700;
+    color: var(--ink);
+    background: var(--surface-2);
+  }
+
+  /* ─── body grid ───────────────────────────────────────────────────────── */
+  .grid {
+    display: grid;
+    gap: var(--sp-3);
+    align-items: start;
+  }
+  .col {
+    display: grid;
+    gap: var(--sp-3);
+    min-width: 0;
+  }
+  @media (min-width: 62rem) {
+    .grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+  }
+  @media (min-width: 90rem) {
+    .grid {
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) 21rem;
+    }
+  }
+
+  /* ─── panel ───────────────────────────────────────────────────────────── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--r);
+    box-shadow: var(--shadow-1);
+    overflow: hidden;
+  }
+  .panel > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-3);
+    flex-wrap: wrap;
+    padding: var(--sp-3) var(--sp-4);
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--rule);
+  }
+  .panel-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .n {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.6875rem;
+    color: var(--muted);
+  }
+  .head-act {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+  }
+  .blurb {
+    padding: var(--sp-3) var(--sp-4) 0;
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+  .panel-body {
+    padding: var(--sp-4);
+    display: grid;
+    gap: var(--sp-3);
+  }
+  .panel-foot {
+    padding: var(--sp-3) var(--sp-4);
+    border-top: 1px solid var(--rule);
+    background: var(--surface-2);
+    font-size: 0.6875rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .panel-foot strong {
+    color: var(--ink-2);
+    font-weight: 600;
+  }
+
+  /* ─── controls. Nothing on this page stretches. ───────────────────────── */
+  .btn {
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.45rem 0.75rem;
+    cursor: pointer;
+    border: 1px solid var(--rule-2);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    color: var(--ink);
+    white-space: nowrap;
+    width: auto;
+    justify-self: start;
+    text-decoration: none;
+    transition:
+      background 0.12s ease,
+      border-color 0.12s ease;
+  }
+  .btn:hover {
+    background: var(--surface-2);
+    border-color: var(--rule-2);
+  }
+  .btn--primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-contrast);
+  }
+  .btn--primary:hover {
+    background: var(--accent-strong);
+    border-color: var(--accent-strong);
+  }
+  .btn--quiet {
+    border-color: transparent;
+    background: transparent;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .btn--quiet:hover {
+    background: var(--sunken);
+    color: var(--ink);
+  }
+  .field {
+    font: inherit;
+    font-size: 0.8125rem;
+    padding: 0.4rem 0.55rem;
+    border: 1px solid var(--rule-2);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    color: var(--ink);
+    min-width: 0;
+  }
+  .field--num {
+    width: 3.5rem;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    font-weight: 700;
+  }
+  .field-label {
+    display: block;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin-bottom: 0.25rem;
+  }
+  .inline-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+    align-items: flex-end;
+  }
+
+  /* Hit areas. Every control keeps its typographic size and grows its BOX, so
+       nothing about the layout changes on a desktop and nothing is too small for
+       a thumb on a ward round. */
+  @media (pointer: coarse), (max-width: 40rem) {
+    .btn,
+    .filter,
+    .field,
+    .switcher > summary,
+    .sw-item {
+      min-height: var(--tap);
+    }
+    .btn,
+    .filter {
+      padding-inline: var(--sp-3);
+    }
+    .seg a {
+      display: inline-flex;
+      align-items: center;
+      min-height: calc(var(--tap) - 0.5rem);
+    }
+  }
+
+  /* ─── chips ───────────────────────────────────────────────────────────── */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    white-space: nowrap;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.45rem;
+    border-radius: var(--r-sm);
+    border: 1px solid transparent;
+    color: var(--muted);
+    border-color: var(--rule-2);
+  }
+  .chip[data-level="urgent"] {
+    color: var(--crit);
+    border-color: color-mix(in oklab, var(--crit) 40%, transparent);
+    background: var(--crit-wash);
+  }
+  .chip[data-level="stalled"] {
+    color: var(--signal);
+    border-color: color-mix(in oklab, var(--signal) 42%, transparent);
+    background: var(--signal-wash);
+  }
+  .chip[data-level="accepted"] {
+    color: var(--good);
+    border-color: color-mix(in oklab, var(--good) 40%, transparent);
+    background: var(--good-wash);
+  }
+  .chip[data-level="planned"] {
+    color: var(--cool);
+    border-color: color-mix(in oklab, var(--cool) 40%, transparent);
+    background: var(--cool-wash);
+  }
+  .chip[data-level="accent"] {
+    color: var(--accent-strong);
+    border-color: color-mix(in oklab, var(--accent) 38%, transparent);
+    background: var(--accent-wash);
+  }
+
+  /* ─── occupancy bar ───────────────────────────────────────────────────── */
+  .occ {
+    padding: var(--sp-4) var(--sp-4) var(--sp-3);
+    display: grid;
+    gap: var(--sp-2);
+  }
+  .occ-bar {
+    display: flex;
+    height: 0.6rem;
+    border-radius: 100px;
+    overflow: hidden;
+    background: var(--sunken);
+  }
+  .occ-bar span {
+    display: block;
+  }
+  .occ-bar span[data-bed="ready"] {
+    background: var(--good);
+  }
+  .occ-bar span[data-bed="held"] {
+    background: var(--signal);
+  }
+  .occ-bar span[data-bed="blocked"] {
+    background: var(--crit);
+  }
+  .occ-bar span[data-bed="occupied"] {
+    background: var(--rule-2);
+  }
+  .occ-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem var(--sp-4);
+  }
+  .occ-key li {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    font-size: 0.6875rem;
+    color: var(--muted);
+  }
+  .occ-key .sw {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 2px;
+    flex: none;
+    align-self: center;
+  }
+  .occ-key .sw[data-bed="ready"] {
+    background: var(--good);
+  }
+  .occ-key .sw[data-bed="held"] {
+    background: var(--signal);
+  }
+  .occ-key .sw[data-bed="blocked"] {
+    background: var(--crit);
+  }
+  .occ-key .sw[data-bed="occupied"] {
+    background: var(--rule-2);
+  }
+  .occ-key .sw[data-bed="leave"] {
+    background: var(--cool);
+  }
+  .occ-key b {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .occ-key .zero {
+    color: var(--faint);
+    font-family: inherit;
+    font-weight: 500;
+  }
+
+  /* ─── THE BED MAP ─────────────────────────────────────────────────────── */
+  .bedgroup {
+    border-top: 1px solid var(--rule);
+  }
+  .bedgroup > h3 {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--sp-3);
+    flex-wrap: wrap;
+    padding: var(--sp-3) var(--sp-4) 0;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .bedgroup > h3 .sub {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted);
+  }
+  .beds {
+    display: grid;
+    gap: var(--sp-2);
+    grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
+    padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  }
+  .bed {
+    display: grid;
+    gap: 0.1rem;
+    align-content: start;
+    padding: 0.5rem 0.55rem;
+    min-height: 4.5rem;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--rule-2);
+    border-radius: var(--r-sm);
+    text-decoration: none;
+    color: inherit;
+    transition:
+      border-color 0.12s ease,
+      box-shadow 0.12s ease,
+      transform 0.12s ease;
+  }
+  .bed:hover {
+    border-color: var(--rule-2);
+    box-shadow: var(--shadow-2);
+    transform: translateY(-1px);
+  }
+  .bed .bn {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--faint);
+    letter-spacing: 0.06em;
+  }
+  .bed .state {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+    line-height: 1.25;
+  }
+  .bed .note {
+    font-size: 0.6875rem;
+    color: var(--muted);
+    line-height: 1.35;
+  }
+  .bed .stay {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.15;
+  }
+  .bed .stay span {
+    font-family: "Archivo", sans-serif;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--muted);
+    margin-left: 0.15rem;
+  }
+  .bed[data-bed="ready"] {
+    border-left-color: var(--good);
+    background: var(--good-wash);
+    border-color: color-mix(in oklab, var(--good) 22%, var(--rule));
+  }
+  .bed[data-bed="ready"] .state {
+    color: var(--good);
+  }
+  .bed[data-bed="held"] {
+    border-left-color: var(--signal);
+  }
+  .bed[data-bed="held"] .state {
+    color: var(--signal);
+  }
+  .bed[data-bed="blocked"] {
+    border-left-color: var(--crit);
+  }
+  .bed[data-bed="blocked"] .state {
+    color: var(--crit);
+  }
+  .bed[data-bed="occupied"] .state {
+    color: var(--faint);
+  }
+  .bed[data-bed="leave"] {
+    border-left-color: var(--cool);
+  }
+  .bed[data-bed="leave"] .state {
+    color: var(--cool);
+  }
+  .bed .flagword {
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--signal);
+  }
+
+  /* ─── the three daily questions ───────────────────────────────────────── */
+  .ask {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--sp-2) var(--sp-3);
+    align-items: start;
+    padding: var(--sp-3) var(--sp-4);
+    border-bottom: 1px solid var(--rule);
+  }
+  .ask:last-child {
+    border-bottom: 0;
+  }
+  .ask[data-answered="yes"] {
+    background: var(--surface-2);
+  }
+  .ask-q {
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
+    justify-items: start;
+  }
+  .ask-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.35;
+  }
+  .ask-when {
+    font-size: 0.6875rem;
+    color: var(--muted);
+  }
+  .ask-value {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--ink);
+    text-align: right;
+  }
+  .ask-controls {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+    align-items: center;
+  }
+  .ask-controls .grow {
+    flex: 1 1 8rem;
+  }
+  .answer {
+    font-size: 0.75rem;
+    color: var(--ink-2);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-sm);
+    padding: 0.3rem 0.5rem;
+  }
+
+  /* ─── stacked record rows ─────────────────────────────────────────────── */
+  .stack > li {
+    padding: var(--sp-3) var(--sp-4);
+    border-bottom: 1px solid var(--rule);
+    display: grid;
+    gap: 0.35rem;
+  }
+  .stack > li:last-child {
+    border-bottom: 0;
+  }
+  .line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+    align-items: center;
+  }
+  .rid {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+  }
+  .attrs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.5rem;
+    font-size: 0.6875rem;
+    color: var(--muted);
+  }
+  .attrs b {
+    color: var(--ink-2);
+    font-weight: 600;
+  }
+  .attrs .sep {
+    color: var(--rule-2);
+  }
+  .acts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+    margin-top: 0.15rem;
+  }
+  .note-box {
+    font-size: 0.6875rem;
+    line-height: 1.5;
+    padding: 0.4rem 0.55rem;
+    border-radius: var(--r-sm);
+    border: 1px solid color-mix(in oklab, var(--crit) 35%, transparent);
+    background: var(--crit-wash);
+    color: var(--crit);
+    font-weight: 500;
+  }
+  .note-box[data-level="soft"] {
+    border-color: color-mix(in oklab, var(--signal) 40%, transparent);
+    background: var(--signal-wash);
+    color: var(--signal);
+  }
+  .note-box[data-level="ok"] {
+    border-color: color-mix(in oklab, var(--good) 35%, transparent);
+    background: var(--good-wash);
+    color: var(--good);
+  }
+
+  /* ─── attention list ──────────────────────────────────────────────────── */
+  .attention > li {
+    padding: var(--sp-3) var(--sp-4);
+    border-bottom: 1px solid var(--rule);
+    font-size: 0.75rem;
+    line-height: 1.55;
+    color: var(--muted);
+    border-left: 3px solid var(--signal);
+  }
+  .attention > li:last-child {
+    border-bottom: 0;
+  }
+  .attention .who {
+    display: block;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+    margin-bottom: 0.1rem;
+  }
+
+  /* ─── empty states ────────────────────────────────────────────────────── */
+  .absent {
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  /* ─── band ────────────────────────────────────────────────────────────── */
+  .band {
+    display: grid;
+    gap: var(--sp-3);
+    margin-top: var(--sp-3);
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  }
+
+  /* ─── footnote ────────────────────────────────────────────────────────── */
+  .footnote {
+    margin-top: var(--sp-6);
+    padding-top: var(--sp-4);
+    border-top: 1px solid var(--rule-2);
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+  .footnote h2 {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    margin: var(--sp-4) 0 var(--sp-2);
+  }
+  .footnote h2:first-child {
+    margin-top: 0;
+  }
+  .footnote li {
+    padding-left: 1rem;
+    position: relative;
+    margin-bottom: 0.3rem;
+  }
+  .footnote li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.6em;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--rule-2);
+  }
+  .footnote b {
+    color: var(--ink-2);
+    font-weight: 600;
+  }
+  .footnote code {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.6875rem;
+    background: var(--sunken);
+    border-radius: 3px;
+    padding: 0.05rem 0.25rem;
+  }
+
+  /* ─── high contrast ───────────────────────────────────────────────────
+       ⚠️ THE FIRST EDITION HAD NO forced-colors HANDLING ANYWHERE IN THE SHARED
+       LAYER — not in the language block, and not in ward-tokens, ward-panel,
+       ward-chip or ward-figure. A screen that adopted the layer and deleted its
+       own override was not inheriting a replacement, it was losing high-contrast
+       borders outright, and no test in this repository renders under forced
+       colours, so nothing said so.
+
+       Every token is re-pointed to a system colour, which deliberately COLLAPSES
+       the semantic hues into one. That is the mode working as intended, and it
+       is survivable here only because rule 2 holds: every state already carries
+       its own word, so nothing is lost when the colour goes. The one element
+       that carries meaning in colour alone is the occupancy bar, which is why it
+       is marked role="img" with a label and repeated as a worded key beneath. */
+  @media (forced-colors: active) {
+    :root {
+      --ground: Canvas;
+      --surface: Canvas;
+      --surface-2: Canvas;
+      --sunken: Canvas;
+      --ink: CanvasText;
+      --ink-2: CanvasText;
+      --muted: CanvasText;
+      --faint: CanvasText;
+      --rule: CanvasText;
+      --rule-2: CanvasText;
+      --accent: LinkText;
+      --accent-strong: LinkText;
+      --accent-wash: Canvas;
+      --accent-contrast: Canvas;
+      --good: CanvasText;
+      --good-wash: Canvas;
+      --signal: CanvasText;
+      --signal-wash: Canvas;
+      --crit: CanvasText;
+      --crit-wash: Canvas;
+      --cool: CanvasText;
+      --cool-wash: Canvas;
+      --shadow-1: none;
+      --shadow-2: none;
+      --shadow-3: none;
+    }
+    /* Anything whose only edge was a wash now needs a drawn one, or it merges
+         into the page the moment the fill is dropped. */
+    .chip,
+    .bed,
+    .kpi,
+    .panel,
+    .fact,
+    .btn,
+    .field,
+    .filter,
+    .note-box,
+    .answer {
+      border: 1px solid CanvasText;
+    }
+    .btn--primary,
+    .filter[aria-pressed="true"] {
+      border-width: 2px;
+    }
+    .bed {
+      border-left-width: 4px;
+    }
+    /* The kpi tone cap is gone (see the figure-tile block), so there is no
+       border-width left to thicken here. Under forced colours a toned tile and
+       a plain one are now identical, which is correct: the label is the signal
+       and colour was only ever reinforcing it. */
+    .dtable thead th,
+    .dtable tfoot th,
+    .dtable tfoot td {
+      border-bottom: 1px solid CanvasText;
+      border-top: 1px solid CanvasText;
+    }
+    /* An inset box-shadow is dropped outright under forced colours, so a
+       flagged row would lose its only mark. */
+    .dtable tbody tr[data-level] th {
+      border-left: 4px solid CanvasText;
+    }
+    .occ-bar span,
+    .occ-key .sw {
+      forced-color-adjust: none;
+    }
+  }
+
+  /* ─── print: the board is printed and taped up, so it must not come out
+       as white text on a colour the printer drops. ────────────────────────── */
+  @media print {
+    /* Forced to a light palette by hand rather than left to the theme: a ward
+       prints this board and tapes it up, and a viewer in dark mode would
+       otherwise send white text to a printer that drops the background behind it.
+       Re-pointed on BOTH :root and the dark stamp, because a print block that
+       only sets :root loses to :root[data-theme="dark"] on specificity — the
+       stamped viewer is exactly the one who needs this and would not get it.
+
+       ⚠️ AND ON :root:not([data-theme="light"]), WHICH IS THE ONE THAT MATTERS
+       MOST AND WAS MISSING UNTIL 2026-09-05. The paragraph above had the right
+       argument and stopped one selector short. The dark palette is written to
+       `:root:not([data-theme="light"])` — also 0,2,0, and earlier in this file —
+       so it beat the `:root` above for any root carrying NO data-theme at all.
+       That root is not an edge case: it is every dark-mode reader who has never
+       touched the theme control, which is the default. For them the whole dark
+       palette reached the paper — `--ink` stayed #e8edf5 and went onto white
+       paper the moment the printer dropped the backgrounds, which is precisely
+       the outcome this block exists to prevent. Half a fix, and the half that
+       was missing was the majority case.
+
+       Measured in a browser, with all three outcomes written down before the
+       run: unstamped root took the dark value, `data-theme="dark"` and
+       `data-theme="light"` both took the print value. A control token proved the
+       later rules were being read at all — the first attempt at that probe
+       returned a clean, wrong answer from a zero-width viewport where no media
+       query matched, which is indistinguishable from a real result.
+
+       THE SECOND HALF: this rule used to re-point thirteen neutral tokens and
+       none of the twelve state colours, so those kept their dark values for
+       EVERY dark-mode reader, stamped or not — `--good-wash` is #0f2119, and a
+       green note box printed as near-black. All twelve now take their
+       light-theme value, which is the conservative fix: it changes nothing at
+       all for a reader already in light mode, and gives the dark reader the
+       same page. The rule is now checkable in one sentence — FOR PRINT, EVERY
+       TOKEN TAKES ITS LIGHT-THEME VALUE. */
+    :root,
+    :root[data-theme="dark"],
+    :root:not([data-theme="light"]) {
+      --ground: #ffffff;
+      --surface: #ffffff;
+      --surface-2: #ffffff;
+      --sunken: #ffffff;
+      --ink: #000000;
+      --ink-2: #1a1a1a;
+      --muted: #333333;
+      --faint: #444444;
+      --rule: #999999;
+      --rule-2: #666666;
+      --accent: #1d6fb8;
+      --accent-strong: #185c99;
+      --accent-wash: #eff5fc;
+      --accent-contrast: #ffffff;
+      --good: #0c6b41;
+      --good-wash: #f2fbf6;
+      --signal: #8a4d05;
+      --signal-wash: #fffaf2;
+      --crit: #a3190f;
+      --crit-wash: #fdf5f4;
+      --cool: #0f6b73;
+      --cool-wash: #f1fafb;
+      --shadow-1: none;
+      --shadow-2: none;
+      --shadow-3: none;
+    }
+    body {
+      background: #ffffff;
+    }
+    .appbar {
+      position: static;
+      backdrop-filter: none;
+    }
+    .panel,
+    .kpi,
+    .bed {
+      box-shadow: none;
+      break-inside: avoid;
+    }
+    /* A table that scrolls on screen must not be cropped on paper, and a header
+       repeated on every page is what makes a multi-page table readable at all. */
+    .table-wrap {
+      overflow-x: visible;
+    }
+    .dtable thead {
+      display: table-header-group;
+    }
+    .dtable tr {
+      break-inside: avoid;
+    }
+    /* Controls do nothing on paper, and a filter bar printed as eight grey
+       lozenges reads as data rather than as a control. */
+    .btn,
+    .switcher,
+    .toolbar,
+    .skip,
+    .seg {
+      display: none;
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     STATISTICS OVERVIEW, SECOND EDITION — everything above is the canonical
+     block, byte for byte. Verified, not asserted: this block was written to
+     a file by reading the style element's own content out of
+     `design-language.html` with a small script and concatenating it
+     directly, so nothing above this marker was retyped by hand.
+
+     This screen sits above every ward, department and community-team switcher
+     — it is the one screen those switchers route OUT of, never into — so like
+     its v1 predecessor it carries no switcher of its own. Everything below the
+     marker is new: a six-tile headline strip (the canonical strip is tuned for
+     five, 5 = 3 + 2 with no orphan; six is actually simpler, since 2 and 3 both
+     divide it and only the widest step needs its own rule), a two-column
+     pairing grid sized for this page's two body panels rather than the
+     canonical three-rail `.grid`, a three-up flow strip, a muted-cell utility
+     for a table cell that is a word ("no unit", "unknown") instead of a
+     number, and the centrepiece: a plain inline SVG bar chart of the seven
+     movement stages, built the same way the v1 admissions/discharges chart
+     was — no library, every bar carries a native `<title>`, and the same
+     numbers are repeated as a written caption below it.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  /* ─── intro line under the page name ──────────────────────────────────── */
+  .lede {
+    margin-top: 0.3rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--muted);
+    max-width: 62rem;
+  }
+  .lede b {
+    color: var(--ink-2);
+    font-weight: 600;
+  }
+
+  /* ─── a two-column pairing grid ───────────────────────────────────────
+     Its own class rather than a reuse of `.grid`: the canonical `.grid` locks
+     a third fixed-width rail on at 90rem, built for the ward board's
+     main/aside/rail composition. This page has exactly two body panels
+     (ready beds, out-of-area), so a third fixed track would sit empty at
+     1440px. Stays two columns from 62rem up, including the widest tested
+     width. */
+  .pair {
+    display: grid;
+    gap: var(--sp-3);
+    align-items: start;
+  }
+  @media (min-width: 62rem) {
+    .pair {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* ─── small spacing utilities, so the same nudge isn't retyped inline ─── */
+  .section-gap {
+    margin-bottom: var(--sp-3);
+  }
+  .bar-pad {
+    padding: 0 var(--sp-4) var(--sp-4);
+  }
+
+  /* ─── six figures, not five ────────────────────────────────────────────
+     See the marker note above: six is the easier number, because 2 and 3
+     both divide it with no remainder, so only the five-column step the
+     canonical strip fixes at 75rem needs overriding here. */
+  .kpis[data-n="6"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  @media (min-width: 48rem) {
+    .kpis[data-n="6"] {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 75rem) {
+    .kpis[data-n="6"] {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+
+  /* ─── three figures, evenly ─────────────────────────────────────────── */
+  .kpis[data-n="3"] {
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 40rem) {
+    .kpis[data-n="3"] {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* ─── a table cell that is a word, not a number ────────────────────────
+     "No unit" (a service or cohort with no unit of that kind — a structural
+     fact) and "unknown" (a figure that has not been confirmed — ruling R16)
+     both sit in a numeric column and must still line up under it, so they
+     keep the column's own `.n` alignment and monospace face; only the colour
+     changes, and only to reinforce the word already there. */
+  .cell-muted {
+    color: var(--faint);
+  }
+
+  /* ─── the pipeline chart ────────────────────────────────────────────────
+     Plain inline SVG, no library, built the same way as the v1 flow chart:
+     every bar carries a native <title> tooltip, the figure/aria-label states
+     the numbers in words, and the one stage holding people longest is
+     flagged by a WORD ("longest hold") reinforced by the crit tone — never
+     by colour alone. Stage names use the body face; every number uses the
+     tabular monospace face, matching the rest of the language. */
+  .stage-fig {
+    padding: var(--sp-4);
+  }
+  .stage-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .stage-axis-line {
+    stroke: var(--rule);
+    stroke-width: 1;
+  }
+  .stage-axis-line--base {
+    stroke: var(--rule-2);
+  }
+  .stage-axis-text {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 10px;
+    fill: var(--muted);
+  }
+  .stage-name {
+    font-family: "Archivo", sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    fill: var(--ink-2);
+  }
+  .stage-name--flag {
+    fill: var(--crit);
+    font-weight: 700;
+  }
+  .stage-bar {
+    fill: var(--accent);
+  }
+  .stage-bar--flag {
+    fill: var(--crit);
+  }
+  .stage-count {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 13px;
+    font-weight: 700;
+    fill: var(--ink);
+  }
+  .stage-hours {
+    font-family: "Archivo", sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    fill: var(--muted);
+  }
+  .stage-hours--flag {
+    fill: var(--crit);
+    font-weight: 700;
+  }
+  .stage-note {
+    padding: var(--sp-3) var(--sp-4) 0;
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+  .stage-note b {
+    color: var(--ink-2);
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-weight: 700;
+  }
+
+  /* Print: every fill above resolves through --accent/--crit/--ink tokens,
+     which the canonical print block already re-points to their light-theme
+     values, so the chart needs no print rule of its own. */
+
+  /* ─── forced colours, for what this screen adds ────────────────────────
+     The bars fill a length with colour alone (the count beside each one is
+     the words-not-colour fallback, per rule 5) — same treatment the
+     canonical .occ-bar and the ward screen's .los-bar already carry. */
+  @media (forced-colors: active) {
+    .stage-bar,
+    .stage-bar--flag {
+      forced-color-adjust: none;
+    }
+  }
+
+  /* ─── print, for what this screen adds ─────────────────────────────────
+     Six-figure and three-figure strips, the pairing grid and the chart are
+     all static layout with no page-break needs of their own; only the panel
+     itself needs to say it should not be split across a page. */
+  @media print {
+    .panel {
+      break-inside: avoid;
+    }
+  }
+</style>
+
+<header class="appbar">
+  <span class="mark"><span class="dot" aria-hidden="true"></span>Ward Flow</span>
+  <span class="spacer"></span>
+  <span class="appbar-right">
+    <span class="liveness">
+      <span class="pip" aria-hidden="true"></span>Live <span aria-hidden="true">&middot;</span> confirmed 10:42 by 14 of
+      15 hospitals
+    </span>
+  </span>
+</header>
+
+<div class="shell" role="main">
+  <p class="prototype">
+    <span>Synthetic prototype</span><span aria-hidden="true">&middot;</span><span>No real patient data</span
+    ><span aria-hidden="true">&middot;</span><span>Every invented figure listed at the foot</span>
+  </p>
+
+  <!-- ══════════ THE HEADING ══════════ -->
+  <header class="masthead">
+    <div>
+      <span class="eyebrow">System overview, statewide</span>
+      <h1>Where the system is stuck, right now</h1>
+      <p class="lede">
+        Every referral, bed and movement the four health services run, in one screen &mdash; <b>EMHS</b>,
+        <b>SMHS</b>, <b>NMHS</b> and <b>WACHS</b>, plus contracted private capacity, across <b>23 units</b> in
+        <b>15 hospitals</b>. This page is read-only: every figure below belongs to the service, ward or team where
+        the decision actually gets made, not to this screen.
+      </p>
+      <div class="facts">
+        <span class="fact" data-tone="accent"><b>47</b> people waiting for a bed right now</span>
+        <span class="fact"><b>4</b> health services, plus private capacity</span>
+        <span class="fact"><b>16</b> Adult &middot; <b>6</b> Older adult &middot; <b>1</b> Youth unit</span>
+      </div>
+    </div>
+  </header>
+
+  <p class="scope">
+    <strong>This board is a convenience, not a source of truth (ruling R17).</strong> Every figure below is what a
+    ward, department or team has recorded &mdash; nothing here can be edited or confirmed. Before a placement is
+    made on the strength of anything on this page, confirm the bed with the ward by phone.
+  </p>
+
+  <!-- ══════════ THE SIX HEADLINE FIGURES ══════════ -->
+  <dl class="kpis" data-n="6">
+    <div class="kpi" data-tone="signal">
+      <dt>Waiting for a bed</dt>
+      <dd><span class="figure num">47</span></dd>
+      <span class="caption">Across all four services, right now</span>
+      <span class="kpi-delta" data-dir="up"><span class="n">+5</span> on yesterday</span>
+    </div>
+    <div class="kpi" data-tone="crit">
+      <dt>Longest wait</dt>
+      <dd><span class="figure num">31h</span></dd>
+      <span class="caption">WF-013 &mdash; Royal Perth Hospital ED</span>
+    </div>
+    <div class="kpi" data-tone="good">
+      <dt>Ready</dt>
+      <dd><span class="figure num">12</span></dd>
+      <span class="caption">Confirmed; 1 unit unconfirmed, not counted</span>
+    </div>
+    <div class="kpi" data-tone="signal">
+      <dt>No bed available</dt>
+      <dd><span class="figure num">9</span></dd>
+      <span class="caption">May change this afternoon</span>
+    </div>
+    <div class="kpi">
+      <dt>Not a match for any bed</dt>
+      <dd><span class="figure num">5</span></dd>
+      <span class="caption">Clinical, legal or cohort reason &mdash; will not change with more capacity</span>
+    </div>
+    <div class="kpi" data-tone="accent">
+      <dt>Out-of-area today</dt>
+      <dd><span class="figure num">7</span></dd>
+      <span class="caption">Of 27 placements, 26% placed outside their own service</span>
+    </div>
+  </dl>
+
+  <p class="scope section-gap">
+    <strong>Two different reasons produce the same outcome &mdash; &ldquo;nowhere to go yet.&rdquo;</strong>
+    <b>9</b> referrals have no acceptance only because no bed is free right now; that may change this afternoon. A
+    further <b>5</b> have no acceptance because no available bed is a clinical, legal or cohort match for that
+    patient; more capacity will not change that. The two counts are never added together on this page &mdash; they
+    are different problems with different fixes.
+  </p>
+
+  <!-- ══════════ WHERE THE SYSTEM IS STUCK ══════════ -->
+  <section class="panel section-gap" id="pipeline">
+    <header>
+      <h2 class="panel-title">Where the system is stuck</h2>
+      <span class="n">7 stages &middot; 49 people in the pipeline right now</span>
+    </header>
+    <p class="blurb">
+      Every open movement passes through the same seven stages, in order. The bar is how many people sit at that
+      stage right now; the figure beside it is the typical (median) time somebody spends there.
+    </p>
+    <figure class="stage-fig">
+      <figcaption class="sr">
+        Bar chart of the seven movement stages and how many people sit at each right now, in process order.
+        Placement requested: 8 people, median 1 hour. Destination review: 5 people, median 2 hours. Accepted,
+        awaiting bed: 21 people, median 14 hours &mdash; the longest hold anywhere in the system, and where WF-013's
+        31-hour wait sits. Bed pulled: 6 people, median 3 hours. Handover ready: 4 people, median 1.5 hours. Moving:
+        3 people, median 45 minutes. Arrived: 2 people, median 20 minutes.
+      </figcaption>
+      <svg
+        viewBox="0 0 760 360"
+        class="stage-svg"
+        role="img"
+        aria-label="Seven movement stages and how many people sit at each right now. Accepted, awaiting bed holds the most people, 21, and the longest median wait, 14 hours — including the single longest current wait in the network, 31 hours, for WF-013 at Royal Perth Hospital ED."
+      >
+        <line x1="230" y1="10" x2="230" y2="328" class="stage-axis-line stage-axis-line--base" />
+        <line x1="316" y1="10" x2="316" y2="328" class="stage-axis-line" />
+        <line x1="402" y1="10" x2="402" y2="328" class="stage-axis-line" />
+        <line x1="488" y1="10" x2="488" y2="328" class="stage-axis-line" />
+        <line x1="574" y1="10" x2="574" y2="328" class="stage-axis-line" />
+        <line x1="660" y1="10" x2="660" y2="328" class="stage-axis-line" />
+        <line x1="230" y1="328" x2="660" y2="328" class="stage-axis-line stage-axis-line--base" />
+        <text x="230" y="344" class="stage-axis-text" text-anchor="middle">0</text>
+        <text x="316" y="344" class="stage-axis-text" text-anchor="middle">5</text>
+        <text x="402" y="344" class="stage-axis-text" text-anchor="middle">10</text>
+        <text x="488" y="344" class="stage-axis-text" text-anchor="middle">15</text>
+        <text x="574" y="344" class="stage-axis-text" text-anchor="middle">20</text>
+        <text x="660" y="344" class="stage-axis-text" text-anchor="middle">25 people</text>
+
+        <text x="8" y="47" class="stage-name">Placement requested</text>
+        <rect x="230" y="31" width="138" height="22" class="stage-bar">
+          <title>Placement requested: 8 people, median 1 hour</title>
+        </rect>
+        <text x="376" y="47" class="stage-count">8</text>
+        <text x="396" y="47" class="stage-hours">1h</text>
+
+        <text x="8" y="91" class="stage-name">Destination review</text>
+        <rect x="230" y="75" width="86" height="22" class="stage-bar">
+          <title>Destination review: 5 people, median 2 hours</title>
+        </rect>
+        <text x="324" y="91" class="stage-count">5</text>
+        <text x="344" y="91" class="stage-hours">2h</text>
+
+        <text x="8" y="135" class="stage-name stage-name--flag">Accepted, awaiting bed</text>
+        <rect x="230" y="119" width="361" height="22" class="stage-bar stage-bar--flag">
+          <title>Accepted, awaiting bed: 21 people, median 14 hours — the longest hold in the system</title>
+        </rect>
+        <text x="599" y="135" class="stage-count">21</text>
+        <text x="623" y="135" class="stage-hours stage-hours--flag">14h</text>
+        <text x="651" y="135" class="stage-hours stage-hours--flag">&middot; longest hold</text>
+
+        <text x="8" y="179" class="stage-name">Bed pulled</text>
+        <rect x="230" y="163" width="103" height="22" class="stage-bar">
+          <title>Bed pulled: 6 people, median 3 hours</title>
+        </rect>
+        <text x="341" y="179" class="stage-count">6</text>
+        <text x="361" y="179" class="stage-hours">3h</text>
+
+        <text x="8" y="223" class="stage-name">Handover ready</text>
+        <rect x="230" y="207" width="69" height="22" class="stage-bar">
+          <title>Handover ready: 4 people, median 1.5 hours</title>
+        </rect>
+        <text x="307" y="223" class="stage-count">4</text>
+        <text x="327" y="223" class="stage-hours">1.5h</text>
+
+        <text x="8" y="267" class="stage-name">Moving</text>
+        <rect x="230" y="251" width="52" height="22" class="stage-bar">
+          <title>Moving: 3 people, median 45 minutes</title>
+        </rect>
+        <text x="290" y="267" class="stage-count">3</text>
+        <text x="310" y="267" class="stage-hours">45m</text>
+
+        <text x="8" y="311" class="stage-name">Arrived</text>
+        <rect x="230" y="295" width="34" height="22" class="stage-bar">
+          <title>Arrived: 2 people, median 20 minutes</title>
+        </rect>
+        <text x="272" y="311" class="stage-count">2</text>
+        <text x="292" y="311" class="stage-hours">20m</text>
+      </svg>
+      <p class="stage-note">
+        <b>47</b> people are between &ldquo;placement requested&rdquo; and &ldquo;moving&rdquo; right now &mdash; not
+        yet physically in the bed offered to them. A further <b>2</b> have arrived and are being settled in. The
+        system is stuck at <b>accepted, awaiting bed</b>: <b>21</b> people sit there, more than at any other stage,
+        with a typical wait of <b>14 hours</b> &mdash; and the single longest wait anywhere in the network,
+        <b>31 hours</b> for WF-013 at Royal Perth Hospital ED, is one of them.
+      </p>
+    </figure>
+  </section>
+
+  <!-- ══════════ READY BEDS AND OUT-OF-AREA ══════════ -->
+  <div class="pair section-gap">
+    <section class="panel">
+      <header>
+        <h2 class="panel-title">Ready beds, by service and cohort</h2>
+        <span class="n">12 confirmed &middot; 1 unconfirmed</span>
+      </header>
+      <p class="blurb">
+        Ready is the smaller of what a ward says it can staff and what is physically empty &mdash; the beds that
+        can actually take somebody today (ruling R-B-09). A service with no unit of a cohort states that in words,
+        not a zero; an unconfirmed count reads as unknown, never as a number (ruling R16).
+      </p>
+      <div class="table-wrap">
+        <table class="dtable">
+          <caption class="sr">
+            Ready beds by health service and cohort
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Service</th>
+              <th scope="col" class="n">Adult</th>
+              <th scope="col" class="n">Older adult</th>
+              <th scope="col" class="n">Youth</th>
+              <th scope="col" class="n">Ready</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">EMHS &mdash; East Metro</th>
+              <td class="n">1</td>
+              <td class="n">0</td>
+              <td class="n">0</td>
+              <td class="n">1</td>
+            </tr>
+            <tr>
+              <th scope="row">SMHS &mdash; South Metro</th>
+              <td class="n">3</td>
+              <td class="n">1</td>
+              <td class="n cell-muted">no unit</td>
+              <td class="n">4</td>
+            </tr>
+            <tr data-level="stalled">
+              <th scope="row">NMHS &mdash; North Metro <span class="chip" data-level="stalled">Unconfirmed</span></th>
+              <td class="n">2</td>
+              <td class="n cell-muted">unknown</td>
+              <td class="n cell-muted">no unit</td>
+              <td class="n">2</td>
+            </tr>
+            <tr>
+              <th scope="row">WACHS &mdash; country</th>
+              <td class="n">4</td>
+              <td class="n cell-muted">no unit</td>
+              <td class="n cell-muted">no unit</td>
+              <td class="n">4</td>
+            </tr>
+            <tr>
+              <th scope="row">Private (contracted)</th>
+              <td class="n">1</td>
+              <td class="n cell-muted">no unit</td>
+              <td class="n cell-muted">no unit</td>
+              <td class="n">1</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row">All services</th>
+              <td class="n">11</td>
+              <td class="n">1</td>
+              <td class="n">0</td>
+              <td class="n">12</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <p class="panel-foot">
+        <strong>North Metro's Older Adult unit (Graylands) has not confirmed since 05:42</strong> &mdash; more than
+        three hours past its own staleness window. It is left out of every total on this page rather than carried
+        forward at its last confirmed count. <strong>Ready across the network is at least 12</strong>, and may be
+        13 once Graylands confirms.
+      </p>
+    </section>
+
+    <section class="panel">
+      <header>
+        <h2 class="panel-title">Out-of-area placements today</h2>
+        <span class="n">7 of 27 placements</span>
+      </header>
+      <p class="blurb">
+        A placement is out-of-area when the receiving ward sits outside the patient's own health service, counted
+        at the moment a bed is accepted.
+      </p>
+      <div class="table-wrap">
+        <table class="dtable">
+          <caption class="sr">
+            Placements today by home health service, in area versus out of area
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Home service</th>
+              <th scope="col" class="n">Placed</th>
+              <th scope="col" class="n">In area</th>
+              <th scope="col" class="n">Out of area</th>
+              <th scope="col" class="n">Rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">EMHS &mdash; East Metro</th>
+              <td class="n">9</td>
+              <td class="n">7</td>
+              <td class="n">2</td>
+              <td class="n">22%</td>
+            </tr>
+            <tr>
+              <th scope="row">NMHS &mdash; North Metro</th>
+              <td class="n">7</td>
+              <td class="n">6</td>
+              <td class="n">1</td>
+              <td class="n">14%</td>
+            </tr>
+            <tr>
+              <th scope="row">SMHS &mdash; South Metro</th>
+              <td class="n">6</td>
+              <td class="n">6</td>
+              <td class="n">0</td>
+              <td class="n">0%</td>
+            </tr>
+            <tr data-level="urgent">
+              <th scope="row">WACHS &mdash; country <span class="chip" data-level="urgent">Watch</span></th>
+              <td class="n">5</td>
+              <td class="n">1</td>
+              <td class="n">4</td>
+              <td class="n">80%</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row">All four services</th>
+              <td class="n">27</td>
+              <td class="n">20</td>
+              <td class="n">7</td>
+              <td class="n">26%</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <p class="panel-foot">
+        <strong>WACHS carries the equity gap.</strong> Four of its five placements today went to a metropolitan
+        ward rather than a country one &mdash; not because a country bed was declined, but because none was ready.
+        Out-of-area is a fact about geography, not a judgement on any one placement.
+      </p>
+    </section>
+  </div>
+
+  <!-- ══════════ FLOW, TODAY VERSUS YESTERDAY ══════════ -->
+  <section class="panel section-gap">
+    <header>
+      <h2 class="panel-title">Flow, today versus yesterday</h2>
+      <span class="n">All four services</span>
+    </header>
+    <p class="blurb">
+      What moved through the system today, and how that compares with yesterday. These are completed events, a
+      different measure from &ldquo;waiting for a bed right now&rdquo; above &mdash; that figure is who is in the
+      pipeline at this moment, regardless of which day they were referred.
+    </p>
+    <dl class="kpis bar-pad" data-n="3">
+      <div class="kpi">
+        <dt>Referrals raised</dt>
+        <dd><span class="figure num">27</span></dd>
+        <span class="caption">Asking a ward for a bed, today</span>
+        <span class="kpi-delta" data-dir="up"><span class="n">+3</span> on yesterday</span>
+      </div>
+      <div class="kpi" data-tone="good">
+        <dt>Placements accepted</dt>
+        <dd><span class="figure num">19</span></dd>
+        <span class="caption">A bed confirmed or on the way</span>
+        <span class="kpi-delta" data-dir="down"><span class="n">-2</span> on yesterday</span>
+      </div>
+      <div class="kpi">
+        <dt>Arrivals completed</dt>
+        <dd><span class="figure num">14</span></dd>
+        <span class="caption">Physically moved into the bed</span>
+        <span class="kpi-delta" data-dir="down"><span class="n">-3</span> on yesterday</span>
+      </div>
+    </dl>
+  </section>
+
+  <div class="footnote">
+    <h2>What is real, taken from the repository</h2>
+    <ul>
+      <li>
+        <b>23 units across 15 hospitals &mdash; 16 Adult, 6 Older adult, 1 Youth &mdash; and which service each
+        belongs to.</b> Read from <code>ward-sites.ts</code>: EMHS (East Metro), SMHS (South Metro), NMHS (North
+        Metro) and WACHS between them hold 21 of the 23 units; St John of God Subiaco's two Adult units are
+        contracted private capacity, not one of the four state health services, which is why they get their own row
+        rather than being folded into one of the four.
+      </li>
+      <li>
+        <b>North Metro's Older Adult unit (Graylands) is genuinely stale in the source model</b> &mdash; its last
+        confirmation sits more than three hours past its own staleness window, against the same synthetic
+        &ldquo;now&rdquo; (10:42) every other confirmation time on this page is set against. That fact was reused
+        here rather than invented, which is why its Ready count reads as unknown rather than a number.
+      </li>
+      <li>
+        <b>The seven movement stages, in order</b>, and the ruled distinction between &ldquo;no bed
+        available&rdquo; and &ldquo;not a match for any bed&rdquo;, are the domain model this page is built to, not
+        invented for it.
+      </li>
+      <li>
+        <b>The shared visual language</b> &mdash; every colour, spacing value, panel, table, chip and figure-tile
+        rule above the marker in this file &mdash; is the canonical block, copied unedited from
+        <code>design-language.html</code>.
+      </li>
+    </ul>
+
+    <h2>What is invented</h2>
+    <ul>
+      <li>
+        <b>Every count on this page.</b> The 47 people waiting for a bed and their +5-on-yesterday movement; the
+        seven stage counts and their median hold times (8, 5, 21, 6, 4, 3 and 2 people; 1h, 2h, 14h, 3h, 1.5h,
+        45 min and 20 min); WF-013's 31-hour wait at Royal Perth Hospital ED; every Ready-bed count in the
+        service-and-cohort table other than the one stale read; today's and yesterday's referral, acceptance and
+        arrival figures; and every out-of-area placement and rate in the equity table.
+      </li>
+      <li>
+        <b>The &ldquo;confirmed 10:42 by 14 of 15 hospitals&rdquo; liveness marker</b> at the top of the page.
+      </li>
+    </ul>
+
+    <h2>What this screen deliberately does not do</h2>
+    <ul>
+      <li>
+        <b>It has no switcher, and no action that changes a record.</b> This is the top of the hierarchy every
+        ward, department and community-team switcher routes out of; a built version would link each figure onward
+        to the service, ward or team it belongs to, rather than acting on it here.
+      </li>
+      <li>
+        <b>It never adds &ldquo;no bed available&rdquo; to &ldquo;not a match for any bed.&rdquo;</b> The two counts
+        stay side by side on this page, stated as different problems with different fixes, precisely so a reader
+        does not combine them into one number that implies one cause.
+      </li>
+      <li>
+        A zero anywhere on this page is a real, measured zero. A service or cohort with no unit of that kind says so
+        in words rather than showing a zero it never had to measure, and an unconfirmed figure says
+        &ldquo;unknown&rdquo; rather than showing its last known number.
+      </li>
+    </ul>
+  </div>
+</div>

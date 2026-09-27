@@ -1,0 +1,4 @@
+{
+  "$comment": "Only reproduced @quarantine Playwright tests belong here. Entries use an exact title and expire within 30 days. The ledger is intentionally empty after stale, non-reproducible entries were removed.",
+  "flakes": []
+}

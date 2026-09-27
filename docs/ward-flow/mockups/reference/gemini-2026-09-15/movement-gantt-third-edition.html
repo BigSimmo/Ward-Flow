@@ -1,0 +1,2188 @@
+<!doctype html>
+<html lang="en-AU" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <title>Ward Flow — Movement & 48-Hour Bed Horizon</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+    />
+    <style>
+      /* ═══════════════════════════════════════════════════════════════════════
+       WARD FLOW — PLATINUM RAISED COOL (THIRD EDITION DESIGN SYSTEM)
+       Ultra-Pristine Materiality & Micro-Typographic Polish
+       ═══════════════════════════════════════════════════════════════════════ */
+      :root {
+        color-scheme: light;
+        --canvas: #eef2f6;
+        --ground: #e4e9f0;
+        --ground-2: #dbe2ec;
+        --surface: #ffffff;
+        --surface-2: #f7f9fc;
+        --surface-3: #eff3f8;
+        --sunk: #eaeff5;
+
+        --ink: #0f141a;
+        --ink-soft: #384250;
+        --muted: #5e6b7c;
+        --faint: #8d9aa9;
+
+        --line: rgba(15, 23, 42, 0.08);
+        --line-strong: rgba(15, 23, 42, 0.18);
+        --line-subtle: rgba(15, 23, 42, 0.04);
+
+        --accent: #23415c;
+        --accent-ink: #1c344a;
+        --accent-press: #162a3c;
+        --accent-soft: #e2ebf5;
+        --accent-surface: #edf3fa;
+        --on-accent: #ffffff;
+        --stripe: #23415c;
+
+        --gilt: #836427;
+        --gilt-soft: #fbf5e9;
+        --gilt-border: #d4b882;
+
+        --good: #1a7447;
+        --good-soft: #e7f5ed;
+        --good-border: #7ecba2;
+
+        --warn: #8a6008;
+        --warn-soft: #fcf4e4;
+        --warn-border: #e3be75;
+
+        --danger: #b33325;
+        --danger-soft: #fbeeed;
+        --danger-border: #f0958a;
+        --danger-ink: #8f2317;
+
+        --svc-east: #23415c;
+        --svc-north: #63538f;
+        --svc-north-soft: #f2edf9;
+        --svc-south: #2c6870;
+        --svc-wachs: #855333;
+
+        --lift: 0 1px 3px rgba(15, 28, 48, 0.05), 0 16px 36px -20px rgba(15, 28, 48, 0.22);
+        --lift-high: 0 10px 40px -15px rgba(15, 28, 48, 0.35);
+        --hl: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+
+        --r1: 12px;
+        --r1i: 10px;
+        --r2: 7px;
+        --r3: 5px;
+
+        --t-00: 10px;
+        --t-0: 11.5px;
+        --t-1: 12.5px;
+        --t-2: 13.5px;
+        --t-3: 14.5px;
+        --t-4: 16.5px;
+        --t-5: 21px;
+
+        --body: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --mono: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+      }
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --canvas: #090c10;
+        --ground: #0d1117;
+        --ground-2: #090d12;
+        --surface: #151b23;
+        --surface-2: #1b222d;
+        --surface-3: #222b38;
+        --sunk: #10151c;
+
+        --ink: #f0f4f8;
+        --ink-soft: #b8c4d2;
+        --muted: #7f8e9f;
+        --faint: #526071;
+
+        --line: rgba(255, 255, 255, 0.08);
+        --line-strong: rgba(255, 255, 255, 0.18);
+        --line-subtle: rgba(255, 255, 255, 0.035);
+
+        --accent: #97b9dc;
+        --accent-ink: #c1d6ee;
+        --accent-press: #81a4ca;
+        --accent-soft: #172433;
+        --accent-surface: #1a2839;
+        --on-accent: #090c10;
+        --stripe: #3a5775;
+
+        --gilt: #dfc185;
+        --gilt-soft: #272115;
+        --gilt-border: #63512a;
+
+        --good: #6edb9f;
+        --good-soft: #142a1e;
+        --good-border: #286341;
+
+        --warn: #eec465;
+        --warn-soft: #2a2212;
+        --warn-border: #675020;
+
+        --danger: #ff8b7b;
+        --danger-soft: #341916;
+        --danger-border: #752a21;
+        --danger-ink: #ffa497;
+
+        --svc-east: #97b9dc;
+        --svc-north: #b8a6e3;
+        --svc-north-soft: #231c33;
+        --svc-south: #7bc7d2;
+        --svc-wachs: #e19c77;
+
+        --lift: 0 1px 3px rgba(0, 0, 0, 0.4), 0 20px 42px -20px rgba(0, 0, 0, 0.85);
+        --lift-high: 0 12px 48px -10px rgba(0, 0, 0, 0.95);
+        --hl: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: var(--body);
+        font-size: var(--t-3);
+        line-height: 1.45;
+        color: var(--ink);
+        background: radial-gradient(ellipse at top, var(--canvas) 0%, var(--ground) 100%);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-feature-settings:
+          "tnum" 1,
+          "cv02" 1;
+      }
+
+      /* Top Brand Stripe */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--stripe), #517799, var(--stripe));
+        z-index: 1000;
+      }
+
+      /* ═══════════════════════════════════════════════════════ MASTHEAD */
+      .masthead {
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        padding: 10px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        z-index: 100;
+        position: sticky;
+        top: 0;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+      }
+
+      .brandWrap {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .brandLogo {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-press));
+        color: var(--on-accent);
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 700;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+      }
+
+      .brandTitle {
+        font-weight: 700;
+        font-size: var(--t-4);
+        letter-spacing: -0.02em;
+        color: var(--ink);
+      }
+
+      .syntheticChip {
+        font-family: var(--mono);
+        font-size: var(--t-00);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        padding: 3px 9px;
+        border-radius: 999px;
+        background: var(--sunk);
+        border: 1px solid var(--line);
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .mastheadControls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .clockBadge {
+        font-family: var(--mono);
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        background: var(--surface-2);
+        padding: 4px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        box-shadow: var(--hl);
+      }
+
+      .clockPulse {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--good);
+        box-shadow: 0 0 0 2px rgba(26, 116, 71, 0.2);
+        animation: pulseGlow 2.5s infinite;
+      }
+
+      @keyframes pulseGlow {
+        0%,
+        100% {
+          box-shadow: 0 0 0 2px rgba(26, 116, 71, 0.2);
+        }
+        50% {
+          box-shadow: 0 0 0 5px rgba(26, 116, 71, 0.4);
+        }
+      }
+
+      .themeBtn {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        color: var(--ink-soft);
+        padding: 4px 12px;
+        border-radius: var(--r2);
+        cursor: pointer;
+        font-family: var(--body);
+        font-size: var(--t-1);
+        font-weight: 500;
+        transition: all 0.15s ease;
+        box-shadow: var(--hl);
+      }
+      .themeBtn:hover {
+        background: var(--surface-3);
+        color: var(--ink);
+      }
+
+      /* ═══════════════════════════════════════════════════════ APP SHELL & RAIL */
+      .appShell {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+        height: calc(100vh - 51px);
+      }
+
+      .navRail {
+        width: 224px;
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        user-select: none;
+        overflow-y: auto;
+      }
+
+      .railGroup {
+        padding: 14px 12px 6px;
+      }
+
+      .railGroupTitle {
+        font-family: var(--mono);
+        font-size: var(--t-00);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+        padding: 0 10px 8px;
+        font-weight: 600;
+      }
+
+      .railList {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .railItem {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 7px 11px;
+        border-radius: var(--r2);
+        color: var(--ink-soft);
+        text-decoration: none;
+        font-size: var(--t-2);
+        font-weight: 500;
+        transition:
+          background 0.12s,
+          color 0.12s;
+        position: relative;
+      }
+
+      .railItem:hover {
+        background: var(--surface-2);
+        color: var(--ink);
+      }
+
+      .railItem.active {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
+
+      .railItem.active::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 6px;
+        bottom: 6px;
+        width: 3.5px;
+        border-radius: 0 2px 2px 0;
+        background: var(--gilt);
+      }
+
+      .railCount {
+        font-family: var(--mono);
+        font-size: var(--t-00);
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: var(--sunk);
+        border: 1px solid var(--line);
+        color: var(--muted);
+      }
+
+      .railItem.active .railCount {
+        background: var(--surface);
+        color: var(--accent-ink);
+        border-color: var(--line-strong);
+      }
+
+      .railFoot {
+        margin-top: auto;
+        padding: 16px 14px;
+        border-top: 1px solid var(--line);
+        font-size: var(--t-0);
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      /* ═══════════════════════════════════════════════════════ WORKSPACE */
+      .workspace {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        padding: 18px 24px 36px;
+        gap: 16px;
+      }
+
+      /* 1. Day Vitals Strip */
+      .dayVitalsCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        padding: 16px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .dayVitalsCard::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: var(--hl);
+      }
+
+      .vitalsHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .vitalsTitleWrap {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+      }
+
+      .vitalsHeading {
+        font-size: var(--t-5);
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        color: var(--ink);
+      }
+
+      .vitalsSubtitle {
+        font-size: var(--t-1);
+        color: var(--muted);
+      }
+
+      .horizonTag {
+        font-family: var(--mono);
+        font-size: var(--t-00);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--accent-ink);
+        background: var(--accent-soft);
+        border: 1px solid var(--line);
+        padding: 3px 10px;
+        border-radius: 999px;
+      }
+
+      .vitalsStatsGrid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--line-subtle);
+      }
+
+      .vitalBox {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r1i);
+        padding: 10px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        box-shadow: var(--hl);
+        position: relative;
+      }
+
+      .vitalLabel {
+        font-size: var(--t-00);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-weight: 600;
+      }
+
+      .vitalNum {
+        font-family: var(--mono);
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+        line-height: 1.15;
+      }
+
+      .vitalMeta {
+        font-size: var(--t-0);
+        color: var(--ink-soft);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .attnStrip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: var(--t-1);
+        flex-wrap: wrap;
+      }
+
+      .attnTitle {
+        font-family: var(--mono);
+        font-size: var(--t-00);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--gilt);
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .attnChip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        padding: 4px 10px;
+        border-radius: 999px;
+        cursor: pointer;
+        color: var(--ink);
+        font-size: var(--t-1);
+        transition: all 0.15s ease;
+        box-shadow: var(--hl);
+      }
+      .attnChip:hover {
+        background: var(--surface-3);
+        border-color: var(--line-strong);
+        transform: translateY(-1px);
+      }
+
+      .attnTag {
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 999px;
+        letter-spacing: 0.04em;
+      }
+      .attnTag.danger {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border: 1px solid var(--danger-border);
+      }
+      .attnTag.warn {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid var(--warn-border);
+      }
+      .attnTag.info {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border: 1px solid var(--line);
+      }
+
+      /* ═══════════════════════════════════════════════════════ GANTT SECTION */
+      .ganttSection {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .ganttSection.enlarged {
+        position: fixed;
+        top: 55px;
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        z-index: 500;
+        border-radius: var(--r1);
+        box-shadow: var(--lift-high);
+      }
+
+      .ganttHeader {
+        padding: 12px 20px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+
+      .ganttTitleGroup {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .ganttHeading {
+        font-size: var(--t-4);
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .segGroup {
+        display: inline-flex;
+        background: var(--sunk);
+        padding: 2.5px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line);
+        gap: 2px;
+      }
+
+      .segBtn {
+        background: transparent;
+        border: none;
+        color: var(--ink-soft);
+        font-family: var(--body);
+        font-size: var(--t-1);
+        font-weight: 500;
+        padding: 4px 11px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.12s ease;
+      }
+
+      .segBtn:hover {
+        color: var(--ink);
+      }
+
+      .segBtn.active {
+        background: var(--surface);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+
+      .ganttControls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .btnIcon {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        color: var(--ink);
+        font-size: var(--t-1);
+        font-weight: 500;
+        padding: 5px 12px;
+        border-radius: var(--r2);
+        cursor: pointer;
+        box-shadow: var(--hl);
+        transition: all 0.15s ease;
+      }
+      .btnIcon:hover {
+        background: var(--surface-2);
+        border-color: var(--line-strong);
+      }
+      .btnIcon.active {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+
+      /* ═══════════════════════════════════════════════════════ BESPOKE SCRUBBER */
+      .scrubberBar {
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        background: var(--surface);
+        flex-wrap: wrap;
+      }
+
+      .scrubberControl {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex: 1;
+        max-width: 580px;
+      }
+
+      .scrubberLabel {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+
+      .scrubberValueBadge {
+        font-family: var(--mono);
+        font-size: var(--t-1);
+        font-weight: 700;
+        color: var(--accent-ink);
+        background: var(--accent-soft);
+        padding: 3px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        min-width: 105px;
+        text-align: center;
+      }
+
+      /* Custom Pristine Slider */
+      .sliderWrap {
+        flex: 1;
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .sliderInput {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 6px;
+        border-radius: 999px;
+        background: var(--sunk);
+        border: 1px solid var(--line);
+        outline: none;
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+
+      .sliderInput::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--accent);
+        border: 2px solid #ffffff;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+        cursor: pointer;
+        transition:
+          transform 0.1s ease,
+          box-shadow 0.1s ease;
+      }
+
+      .sliderInput::-webkit-slider-thumb:hover {
+        transform: scale(1.15);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+      }
+
+      .legendWrap {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+      }
+
+      .legendItem {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--t-0);
+        font-weight: 500;
+      }
+
+      .legendPill {
+        width: 12px;
+        height: 9px;
+        border-radius: 2.5px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+      }
+      .pill-admit {
+        background: var(--accent);
+      }
+      .pill-transit {
+        background: var(--svc-north);
+      }
+      .pill-leave {
+        background: var(--gilt);
+        background-image: repeating-linear-gradient(
+          45deg,
+          transparent,
+          transparent 3px,
+          rgba(0, 0, 0, 0.15) 3px,
+          rgba(0, 0, 0, 0.15) 6px
+        );
+      }
+      .pill-disch {
+        background: var(--good);
+      }
+      .pill-pred {
+        background: var(--warn-soft);
+        border: 1px solid var(--warn-border);
+      }
+      .pill-delay {
+        background: var(--danger);
+      }
+
+      /* ═══════════════════════════════════════════════════════ GANTT GRID */
+      .ganttCanvas {
+        display: flex;
+        flex-direction: column;
+        overflow-x: auto;
+        overflow-y: auto;
+        max-height: 520px;
+        position: relative;
+        background: var(--surface);
+      }
+
+      .ganttGrid {
+        min-width: 1040px;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+
+      /* Scrubber Vertical Cursor */
+      .scrubberCursor {
+        position: absolute;
+        top: 36px;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(180deg, var(--accent) 0%, rgba(35, 65, 92, 0.2) 100%);
+        z-index: 25;
+        pointer-events: none;
+        box-shadow: 0 0 8px rgba(35, 65, 92, 0.4);
+        transition: left 0.06s ease-out;
+      }
+
+      .scrubberFlag {
+        position: absolute;
+        top: -26px;
+        left: -32px;
+        background: var(--accent);
+        color: var(--on-accent);
+        font-family: var(--mono);
+        font-size: 10.5px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 4px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+        white-space: nowrap;
+      }
+      .scrubberFlag::after {
+        content: "";
+        position: absolute;
+        bottom: -4px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-width: 4px 4px 0;
+        border-style: solid;
+        border-color: var(--accent) transparent transparent;
+      }
+
+      /* Scale Row */
+      .timeScaleRow {
+        display: flex;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface-2);
+        position: sticky;
+        top: 0;
+        z-index: 15;
+      }
+
+      .laneHeaderCol {
+        width: 250px;
+        min-width: 250px;
+        padding: 9px 16px;
+        font-family: var(--mono);
+        font-size: var(--t-00);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+        font-weight: 600;
+        border-right: 1px solid var(--line);
+        background: var(--surface-2);
+      }
+
+      .timeTicksCol {
+        flex: 1;
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+      }
+
+      .tickCell {
+        padding: 9px 6px;
+        text-align: center;
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--ink-soft);
+        border-right: 1px solid var(--line);
+        position: relative;
+      }
+
+      .tickCell.nowTick {
+        font-weight: 700;
+        color: var(--accent-ink);
+        background: var(--accent-soft);
+      }
+
+      /* Gantt Lanes */
+      .ganttRow {
+        display: flex;
+        border-bottom: 1px solid var(--line);
+        min-height: 52px;
+        transition: background 0.12s ease;
+      }
+      .ganttRow:hover {
+        background: var(--surface-2);
+      }
+
+      .laneLabelCell {
+        width: 250px;
+        min-width: 250px;
+        padding: 8px 16px;
+        border-right: 1px solid var(--line);
+        background: var(--surface);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 3px;
+      }
+
+      .laneTitle {
+        font-weight: 600;
+        font-size: var(--t-2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        letter-spacing: -0.01em;
+      }
+
+      .laneMeta {
+        font-size: var(--t-00);
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--mono);
+      }
+
+      .laneBadge {
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 600;
+        padding: 1px 5px;
+        border-radius: 3px;
+        background: var(--sunk);
+        border: 1px solid var(--line);
+        color: var(--ink-soft);
+      }
+
+      .laneEventsCell {
+        flex: 1;
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        position: relative;
+        padding: 8px 0;
+      }
+
+      .laneEventsCell .gridCol {
+        border-right: 1px solid var(--line-subtle);
+        height: 100%;
+      }
+      .laneEventsCell .gridCol:nth-child(even) {
+        background: rgba(125, 140, 160, 0.018);
+      }
+
+      /* ═══════════════════════════════════════════════════════ EVENT BARS */
+      .eventBar {
+        position: absolute;
+        top: 9px;
+        bottom: 9px;
+        border-radius: 5px;
+        padding: 2px 10px;
+        font-size: var(--t-0);
+        font-family: var(--mono);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+        box-shadow:
+          0 1px 3px rgba(0, 0, 0, 0.12),
+          inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        transition:
+          transform 0.12s ease,
+          box-shadow 0.12s ease,
+          filter 0.12s ease;
+        z-index: 5;
+      }
+
+      .eventBar:hover {
+        transform: translateY(-1.5px);
+        box-shadow:
+          0 4px 10px rgba(0, 0, 0, 0.22),
+          inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        filter: brightness(1.05);
+        z-index: 15;
+      }
+
+      .eventBar.activeSelect {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+        box-shadow:
+          0 0 0 3px rgba(35, 65, 92, 0.25),
+          0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 16;
+      }
+
+      .bar-admit {
+        background: linear-gradient(180deg, var(--accent), var(--accent-press));
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .bar-transit {
+        background: linear-gradient(180deg, var(--svc-north), #4e4073);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+
+      .bar-leave {
+        background: var(--gilt-soft);
+        background-image: repeating-linear-gradient(
+          45deg,
+          transparent,
+          transparent 5px,
+          rgba(131, 100, 39, 0.08) 5px,
+          rgba(131, 100, 39, 0.08) 10px
+        );
+        border: 1px dashed var(--gilt-border);
+        color: var(--gilt);
+        font-weight: 600;
+      }
+
+      .bar-disch {
+        background: linear-gradient(180deg, var(--good), #145e39);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .bar-pred {
+        background: var(--warn-soft);
+        border: 1px solid var(--warn-border);
+        color: var(--warn);
+        font-weight: 600;
+      }
+
+      .bar-delay {
+        background: linear-gradient(180deg, var(--danger), var(--danger-ink));
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+      }
+
+      /* ═══════════════════════════════════════════════════════ SPLIT SECTION */
+      .bottomGrid {
+        display: grid;
+        grid-template-columns: 1fr 350px;
+        gap: 16px;
+        flex: 1;
+      }
+
+      .worklistPanel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .panelHead {
+        padding: 12px 18px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .panelHeading {
+        font-size: var(--t-3);
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .worklistBody {
+        overflow-y: auto;
+        max-height: 460px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .worklistRow {
+        padding: 11px 18px;
+        border-bottom: 1px solid var(--line-subtle);
+        display: grid;
+        grid-template-columns: 95px 1.4fr 1.1fr 1fr 85px;
+        align-items: center;
+        gap: 12px;
+        font-size: var(--t-2);
+        cursor: pointer;
+        transition: background 0.12s ease;
+      }
+      .worklistRow:hover {
+        background: var(--surface-2);
+      }
+      .worklistRow.selected {
+        background: var(--accent-surface);
+        box-shadow: inset 0 0 0 1.5px var(--accent);
+      }
+
+      .idChip {
+        font-family: var(--mono);
+        font-weight: 700;
+        font-size: var(--t-1);
+        color: var(--accent-ink);
+      }
+
+      .corridorText {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .corridorFromTo {
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .corridorSub {
+        font-size: var(--t-0);
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+
+      .stageChip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 9px;
+        border-radius: 999px;
+        font-size: var(--t-00);
+        font-family: var(--mono);
+        font-weight: 600;
+        width: fit-content;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .stageChip.inTransit {
+        background: var(--svc-north);
+        color: #fff;
+      }
+      .stageChip.awaitVehicle {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid var(--warn-border);
+      }
+      .stageChip.booked {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border: 1px solid var(--line);
+      }
+      .stageChip.arrived {
+        background: var(--good-soft);
+        color: var(--good);
+        border: 1px solid var(--good-border);
+      }
+
+      .etaBadge {
+        font-family: var(--mono);
+        font-size: var(--t-1);
+        font-weight: 700;
+        color: var(--ink);
+        text-align: right;
+      }
+
+      /* Detail Drawer */
+      .detailDrawer {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .drawerContent {
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        overflow-y: auto;
+      }
+
+      .drawerProfile {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .drawerId {
+        font-family: var(--mono);
+        font-size: var(--t-4);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--accent-ink);
+      }
+
+      .drawerDemog {
+        font-size: var(--t-1);
+        color: var(--muted);
+      }
+
+      .drawerSection {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+
+      .drawerSecTitle {
+        font-family: var(--mono);
+        font-size: var(--t-00);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .statBox {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r1i);
+        padding: 10px 12px;
+        font-size: var(--t-1);
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        box-shadow: var(--hl);
+      }
+
+      .statRow {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .statRow .k {
+        color: var(--muted);
+      }
+      .statRow .v {
+        font-family: var(--mono);
+        font-weight: 600;
+      }
+
+      .actionButtonGroup {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 6px;
+      }
+
+      .btnAction {
+        width: 100%;
+        padding: 9px 14px;
+        border-radius: var(--r2);
+        font-size: var(--t-2);
+        font-weight: 600;
+        border: 1px solid var(--line);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: all 0.15s ease;
+        box-shadow: var(--hl);
+      }
+      .btnAction.primary {
+        background: linear-gradient(180deg, var(--accent), var(--accent-press));
+        color: var(--on-accent);
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+      .btnAction.primary:hover {
+        filter: brightness(1.08);
+        transform: translateY(-1px);
+      }
+      .btnAction.secondary {
+        background: var(--surface-2);
+        color: var(--ink);
+      }
+      .btnAction.secondary:hover {
+        background: var(--surface-3);
+        border-color: var(--line-strong);
+      }
+      .btnAction.danger {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border-color: var(--danger-border);
+      }
+      .btnAction.danger:hover {
+        background: #f8dedb;
+      }
+
+      /* ═══════════════════════════════════════════════════════ RESPONSIVE */
+      @media (max-width: 1100px) {
+        .bottomGrid {
+          grid-template-columns: 1fr;
+        }
+        .vitalsStatsGrid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .appShell {
+          flex-direction: column;
+        }
+        .navRail {
+          width: 100%;
+          height: auto;
+          border-right: none;
+          border-bottom: 1px solid var(--line);
+        }
+        .vitalsStatsGrid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Top Masthead -->
+    <header class="masthead">
+      <div class="brandWrap">
+        <div class="brandLogo">WF</div>
+        <span class="brandTitle">Ward Flow</span>
+        <span class="syntheticChip">Synthetic Prototype</span>
+      </div>
+      <div class="mastheadControls">
+        <div class="clockBadge">
+          <span class="clockPulse"></span>
+          <span id="liveClock">Mon 14:00 AWST</span>
+        </div>
+        <button type="button" class="themeBtn" onclick="toggleTheme()" aria-label="Toggle light/dark appearance">
+          Theme
+        </button>
+      </div>
+    </header>
+
+    <div class="appShell">
+      <!-- Q005 Standard Navigation Rail -->
+      <nav class="navRail" aria-label="Ward Flow Sections">
+        <div class="railGroup">
+          <div class="railGroupTitle">Operations</div>
+          <ul class="railList">
+            <li>
+              <a href="#" class="railItem"><span>Command</span><span class="railCount">5</span></a>
+            </li>
+            <li>
+              <a href="#" class="railItem"><span>Capacity</span><span class="railCount">24h</span></a>
+            </li>
+            <li>
+              <a href="#" class="railItem"><span>Delays</span><span class="railCount">7</span></a>
+            </li>
+            <li>
+              <a href="#" class="railItem active"><span>Movement</span><span class="railCount">48h</span></a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="railGroup">
+          <div class="railGroupTitle">Service Hubs</div>
+          <ul class="railList">
+            <li>
+              <a href="#" class="railItem"><span>Ward</span></a>
+            </li>
+            <li>
+              <a href="#" class="railItem"><span>Bed Board</span></a>
+            </li>
+            <li>
+              <a href="#" class="railItem"><span>Emergency Dept</span></a>
+            </li>
+            <li>
+              <a href="#" class="railItem"><span>Community Team</span></a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="railGroup">
+          <div class="railGroupTitle">Care Coordination</div>
+          <ul class="railList">
+            <li>
+              <a href="#" class="railItem"><span>Patient Search</span></a>
+            </li>
+            <li>
+              <a href="#" class="railItem"><span>Patient Now</span></a>
+            </li>
+            <li>
+              <a href="#" class="railItem"><span>Search Hub</span></a>
+            </li>
+            <li>
+              <a href="#" class="railItem"><span>Raise Referral</span></a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="railGroup">
+          <div class="railGroupTitle">Oversight</div>
+          <ul class="railList">
+            <li>
+              <a href="#" class="railItem"><span>Statistics</span></a>
+            </li>
+            <li>
+              <a href="#" class="railItem"><span>Governance</span></a>
+            </li>
+            <li>
+              <a href="#" class="railItem"><span>Settings</span></a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="railFoot">
+          <p><strong>WA Health Services</strong></p>
+          <p>NMHS · SMHS · EMHS · WACHS</p>
+          <p style="margin-top: 4px; color: var(--muted)">All data synthetic · No PII</p>
+        </div>
+      </nav>
+
+      <!-- Main Operational Workspace -->
+      <main class="workspace" id="workspace">
+        <!-- 1. The Day & Movement Vitals Strip -->
+        <section class="dayVitalsCard" aria-label="Today's Movement Vitals">
+          <div class="vitalsHeader">
+            <div class="vitalsTitleWrap">
+              <h1 class="vitalsHeading">Movement & 48-Hour Bed Horizon</h1>
+              <span class="vitalsSubtitle">Statewide patient flow, bed churn & active transit logistics</span>
+            </div>
+            <span class="horizonTag">48-Hour Trajectory</span>
+          </div>
+
+          <div class="vitalsStatsGrid">
+            <div class="vitalBox">
+              <span class="vitalLabel">Active Movements</span>
+              <span class="vitalNum" id="numActive">24</span>
+              <span class="vitalMeta">Across 8 hospitals</span>
+            </div>
+            <div class="vitalBox">
+              <span class="vitalLabel">In Transit Now</span>
+              <span class="vitalNum" style="color: var(--svc-north)" id="numTransit">5</span>
+              <span class="vitalMeta">4 St John · 1 RFDS</span>
+            </div>
+            <div class="vitalBox">
+              <span class="vitalLabel">Awaiting Vehicle</span>
+              <span class="vitalNum" style="color: var(--warn)" id="numAwaiting">8</span>
+              <span class="vitalMeta">Avg wait: 42m</span>
+            </div>
+            <div class="vitalBox">
+              <span class="vitalLabel">Trial Leave Returns</span>
+              <span class="vitalNum" style="color: var(--gilt)" id="numLeave">11</span>
+              <span class="vitalMeta">Reserved Form 5A beds</span>
+            </div>
+            <div class="vitalBox">
+              <span class="vitalLabel">48h Planned Egress</span>
+              <span class="vitalNum" style="color: var(--good)" id="numEgress">19</span>
+              <span class="vitalMeta">12 Confirmed · 7 Pred</span>
+            </div>
+          </div>
+
+          <div class="attnStrip">
+            <span class="attnTitle">⚡ Immediate Action Needed</span>
+            <div class="attnChip" onclick="selectEvent('WF-104')">
+              <span class="attnTag danger">BREACH RISK</span>
+              <span>WF-104 (FSH ED ➔ Graylands) · Transport wait >75m</span>
+            </div>
+            <div class="attnChip" onclick="selectEvent('WF-308')">
+              <span class="attnTag warn">BED COLLISION</span>
+              <span>WF-308 · Form 5A Leave return at 20:00 (Bed 04 reserved)</span>
+            </div>
+            <div class="attnChip" onclick="selectEvent('WF-512')">
+              <span class="attnTag info">RFDS FLIGHT</span>
+              <span>WF-512 (Kalgoorlie ➔ SCGH) · Wheels down 17:30</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. 48-Hour Bed Movement Gantt Chart -->
+        <section class="ganttSection" id="ganttSection" aria-label="48-Hour Bed Movement Horizon">
+          <div class="ganttHeader">
+            <div class="ganttTitleGroup">
+              <h2 class="ganttHeading">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                  <path d="M8 14h4" />
+                  <path d="M12 18h6" />
+                </svg>
+                <span>48-Hour Bed Movement Horizon</span>
+              </h2>
+              <div class="segGroup" role="group" aria-label="Group Lanes By">
+                <button type="button" class="segBtn active" id="btnGroupWard" onclick="setLaneGrouping('ward')">
+                  By Ward / Unit
+                </button>
+                <button type="button" class="segBtn" id="btnGroupStage" onclick="setLaneGrouping('stage')">
+                  By Journey Stage
+                </button>
+                <button type="button" class="segBtn" id="btnGroupTransport" onclick="setLaneGrouping('transport')">
+                  By Transport Mode
+                </button>
+              </div>
+            </div>
+
+            <div class="ganttControls">
+              <div class="segGroup" role="group" aria-label="Zoom Horizon">
+                <button type="button" class="segBtn" onclick="setZoom(12)">12h</button>
+                <button type="button" class="segBtn" onclick="setZoom(24)">24h</button>
+                <button type="button" class="segBtn active" onclick="setZoom(48)">48h</button>
+              </div>
+              <button
+                type="button"
+                class="btnIcon"
+                id="btnEnlarge"
+                onclick="toggleEnlarge()"
+                title="Toggle full-width workspace"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                </svg>
+                <span id="enlargeText">Enlarge Canvas</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Scrubber & Legend -->
+          <div class="scrubberBar">
+            <div class="scrubberControl">
+              <span class="scrubberLabel">Shift Scrubber:</span>
+              <div class="sliderWrap">
+                <input
+                  type="range"
+                  class="sliderInput"
+                  id="scrubberInput"
+                  min="0"
+                  max="48"
+                  step="1"
+                  value="0"
+                  oninput="handleScrub(this.value)"
+                />
+              </div>
+              <span class="scrubberValueBadge" id="scrubberDisplay">NOW (+0h)</span>
+              <button type="button" class="btnIcon" style="padding: 3px 8px; font-size: 11px" onclick="resetScrub()">
+                Reset
+              </button>
+            </div>
+
+            <div class="legendWrap">
+              <div class="legendItem"><span class="legendPill pill-admit"></span><span>Inbound Admit</span></div>
+              <div class="legendItem">
+                <span class="legendPill pill-transit"></span><span>In Transit (En Route)</span>
+              </div>
+              <div class="legendItem">
+                <span class="legendPill pill-leave"></span><span>Leave Return (Form 5A)</span>
+              </div>
+              <div class="legendItem"><span class="legendPill pill-disch"></span><span>Confirmed Disch</span></div>
+              <div class="legendItem"><span class="legendPill pill-pred"></span><span>Predicted Egress</span></div>
+              <div class="legendItem"><span class="legendPill pill-delay"></span><span>Delay / Hold</span></div>
+            </div>
+          </div>
+
+          <!-- Gantt Grid Canvas -->
+          <div class="ganttCanvas" id="ganttCanvas">
+            <div class="ganttGrid" id="ganttGrid">
+              <!-- Dynamic Cursor Line with Floating Pin -->
+              <div class="scrubberCursor" id="scrubberCursor" style="left: calc(250px + 0%)">
+                <div class="scrubberFlag" id="cursorFlag">NOW 14:00</div>
+              </div>
+
+              <!-- Time Scale Row (48 Hours) -->
+              <div class="timeScaleRow">
+                <div class="laneHeaderCol" id="laneHeaderLabel">Ward / Receiving Unit</div>
+                <div class="timeTicksCol">
+                  <div class="tickCell nowTick">NOW (Mon 14:00)</div>
+                  <div class="tickCell">+6h (Mon 20:00)</div>
+                  <div class="tickCell">+12h (Tue 02:00)</div>
+                  <div class="tickCell">+18h (Tue 08:00)</div>
+                  <div class="tickCell">+24h (Tue 14:00)</div>
+                  <div class="tickCell">+30h (Tue 20:00)</div>
+                  <div class="tickCell">+36h (Wed 02:00)</div>
+                  <div class="tickCell">+48h (Wed 14:00)</div>
+                </div>
+              </div>
+
+              <!-- Gantt Lanes Container -->
+              <div id="ganttRowsContainer"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. Bottom Grid: Open Movements Worklist & Clinical Inspector Drawer -->
+        <div class="bottomGrid">
+          <!-- Open Movements Worklist -->
+          <section class="worklistPanel" aria-label="Open Movements Worklist">
+            <div class="panelHead">
+              <h3 class="panelHeading">
+                <span>Open Movements Worklist</span>
+                <span class="railCount" id="worklistCount">7 Active</span>
+              </h3>
+              <div class="segGroup">
+                <button type="button" class="segBtn active" onclick="filterWorklist('all')">All</button>
+                <button type="button" class="segBtn" onclick="filterWorklist('transit')">In Transit</button>
+                <button type="button" class="segBtn" onclick="filterWorklist('unallocated')">No Bed</button>
+              </div>
+            </div>
+
+            <div class="worklistBody" id="worklistRows">
+              <!-- Populated via JS -->
+            </div>
+          </section>
+
+          <!-- Clinical & Logistical Inspector Drawer -->
+          <aside class="detailDrawer" id="detailDrawer" aria-label="Movement Inspector">
+            <div class="panelHead">
+              <h3 class="panelHeading">Movement Detail</h3>
+              <span class="stageChip inTransit" id="drawerStageChip">In Transit</span>
+            </div>
+
+            <div class="drawerContent" id="drawerContent">
+              <div class="drawerProfile">
+                <span class="drawerId" id="drawerId">WF-104</span>
+                <span class="drawerDemog" id="drawerDemog">Male · 34yo · Acute Adult Cohort</span>
+                <span style="font-size: var(--t-0); color: var(--gilt); font-weight: 600" id="drawerLegal"
+                  >WA MHA 2014 Form 1A (Expires in 18h)</span
+                >
+              </div>
+
+              <div class="drawerSection">
+                <span class="drawerSecTitle">Corridor & Transport</span>
+                <div class="statBox">
+                  <div class="statRow">
+                    <span class="k">Origin:</span><span class="v" id="drawerOrigin">Fiona Stanley Hospital ED</span>
+                  </div>
+                  <div class="statRow">
+                    <span class="k">Destination:</span
+                    ><span class="v" id="drawerDest">Graylands Hospital (Ward 3)</span>
+                  </div>
+                  <div class="statRow">
+                    <span class="k">Transport:</span
+                    ><span class="v" id="drawerCarrier">St John Ambulance (Priority 2)</span>
+                  </div>
+                  <div class="statRow">
+                    <span class="k">ETA:</span
+                    ><span class="v" id="drawerEta" style="color: var(--good)">14:45 (In 22 min)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="drawerSection">
+                <span class="drawerSecTitle">Receiving Bed Allocation</span>
+                <div class="statBox">
+                  <div class="statRow">
+                    <span class="k">Bed ID:</span><span class="v" id="drawerBed">Ward 3 · Bed 04 (Single)</span>
+                  </div>
+                  <div class="statRow">
+                    <span class="k">Bed Status:</span
+                    ><span class="v" id="drawerBedStatus" style="color: var(--good)">Clean & Staffed</span>
+                  </div>
+                  <div class="statRow"><span class="k">Handover Nurse:</span><span class="v">RN C. Jenkins</span></div>
+                </div>
+              </div>
+
+              <div class="actionButtonGroup">
+                <button
+                  type="button"
+                  class="btnAction primary"
+                  onclick="alert('Bed confirmed ready. Receiving team notified.')"
+                >
+                  Confirm Bed Ready
+                </button>
+                <button type="button" class="btnAction secondary" onclick="alert('Transport dispatch phoned.')">
+                  Call Transport Dispatch
+                </button>
+                <button type="button" class="btnAction danger" onclick="alert('Delay logged against corridor.')">
+                  Record Delay Reason
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      /* ═══════════════════════════════════════════════════════════════════════
+       INTERACTIVE GANTT DATA & STATE ENGINE
+       ═══════════════════════════════════════════════════════════════════════ */
+
+      const LANES_BY_WARD = [
+        {
+          id: "fsh-w4a",
+          name: "FSH · Ward 4A",
+          service: "SMHS",
+          bedCount: 24,
+          events: [
+            {
+              id: "WF-104",
+              patient: "WF-104",
+              type: "transit",
+              label: "WF-104 · In Transit (ETA 14:45)",
+              startH: 0,
+              durH: 2,
+              origin: "FSH ED",
+              dest: "FSH W4A",
+              carrier: "St John Priority 2",
+              bed: "Bed 08",
+            },
+            {
+              id: "WF-202",
+              patient: "WF-202",
+              type: "disch",
+              label: "WF-202 · Disch (16:30)",
+              startH: 2.5,
+              durH: 3.5,
+              origin: "FSH W4A",
+              dest: "Home / Step-down",
+              carrier: "Private Escort",
+              bed: "Bed 12",
+            },
+            {
+              id: "WF-308",
+              patient: "WF-308",
+              type: "leave",
+              label: "WF-308 · Leave Return (20:00)",
+              startH: 6,
+              durH: 14,
+              origin: "Community Pass",
+              dest: "FSH W4A",
+              carrier: "Independent",
+              bed: "Bed 04",
+            },
+            {
+              id: "WF-415",
+              patient: "WF-415",
+              type: "pred",
+              label: "WF-415 · Pred Disch (+26h)",
+              startH: 26,
+              durH: 6,
+              origin: "FSH W4A",
+              dest: "NDIS Supported",
+              carrier: "Pending",
+              bed: "Bed 15",
+            },
+          ],
+        },
+        {
+          id: "rph-2k",
+          name: "RPH · Ward 2K",
+          service: "EMHS",
+          bedCount: 20,
+          events: [
+            {
+              id: "WF-119",
+              patient: "WF-119",
+              type: "delay",
+              label: "WF-119 · Hold (Bed Block)",
+              startH: 0,
+              durH: 4.5,
+              origin: "RPH ED",
+              dest: "RPH 2K",
+              carrier: "Secure Van",
+              bed: "Bed 02",
+            },
+            {
+              id: "WF-225",
+              patient: "WF-225",
+              type: "admit",
+              label: "WF-225 · Direct Admit (+8h)",
+              startH: 8,
+              durH: 5,
+              origin: "Mh Triage",
+              dest: "RPH 2K",
+              carrier: "Hospital Escort",
+              bed: "Bed 07",
+            },
+            {
+              id: "WF-331",
+              patient: "WF-331",
+              type: "disch",
+              label: "WF-331 · Disch (+22h)",
+              startH: 22,
+              durH: 4,
+              origin: "RPH 2K",
+              dest: "Community MH",
+              carrier: "Family",
+              bed: "Bed 09",
+            },
+          ],
+        },
+        {
+          id: "graylands-w3",
+          name: "Graylands · Ward 3",
+          service: "NMHS",
+          bedCount: 30,
+          events: [
+            {
+              id: "WF-109",
+              patient: "WF-109",
+              type: "admit",
+              label: "WF-109 · Accepted (ETA 16:00)",
+              startH: 1,
+              durH: 4,
+              origin: "SCGH ED",
+              dest: "Graylands W3",
+              carrier: "MHCT Secure",
+              bed: "Bed 14",
+            },
+            {
+              id: "WF-214",
+              patient: "WF-214",
+              type: "leave",
+              label: "WF-214 · Form 5A Leave (+14h)",
+              startH: 14,
+              durH: 18,
+              origin: "Weekend Trial",
+              dest: "Graylands W3",
+              carrier: "Independent",
+              bed: "Bed 18",
+            },
+            {
+              id: "WF-440",
+              patient: "WF-440",
+              type: "pred",
+              label: "WF-440 · Pred Disch (+32h)",
+              startH: 32,
+              durH: 8,
+              origin: "Graylands W3",
+              dest: "SUSD Facility",
+              carrier: "SUSD Transport",
+              bed: "Bed 21",
+            },
+          ],
+        },
+        {
+          id: "bentley-w2",
+          name: "Bentley · Ward 2",
+          service: "EMHS",
+          bedCount: 18,
+          events: [
+            {
+              id: "WF-130",
+              patient: "WF-130",
+              type: "transit",
+              label: "WF-130 · In Transit (ETA 15:15)",
+              startH: 0.5,
+              durH: 2.5,
+              origin: "Midland ED",
+              dest: "Bentley W2",
+              carrier: "St John Ambul",
+              bed: "Bed 05",
+            },
+            {
+              id: "WF-240",
+              patient: "WF-240",
+              type: "disch",
+              label: "WF-240 · Confirmed Disch (+10h)",
+              startH: 10,
+              durH: 4,
+              origin: "Bentley W2",
+              dest: "Private Resid.",
+              carrier: "Family",
+              bed: "Bed 11",
+            },
+            {
+              id: "WF-350",
+              patient: "WF-350",
+              type: "admit",
+              label: "WF-350 · Planned Admit (+36h)",
+              startH: 36,
+              durH: 8,
+              origin: "Bentley Clinic",
+              dest: "Bentley W2",
+              carrier: "Direct Intake",
+              bed: "Bed 03",
+            },
+          ],
+        },
+        {
+          id: "scgh-mhu",
+          name: "SCGH · Mental Health",
+          service: "NMHS",
+          bedCount: 22,
+          events: [
+            {
+              id: "WF-512",
+              patient: "WF-512",
+              type: "transit",
+              label: "WF-512 · RFDS Kalgoorlie (ETA 17:30)",
+              startH: 1.5,
+              durH: 4.5,
+              origin: "Kalgoorlie Hosp",
+              dest: "SCGH MHU",
+              carrier: "RFDS Aeromedical",
+              bed: "Bed 01 (HDU)",
+            },
+            {
+              id: "WF-362",
+              patient: "WF-362",
+              type: "leave",
+              label: "WF-362 · Leave Return (+24h)",
+              startH: 24,
+              durH: 12,
+              origin: "Overnight Leave",
+              dest: "SCGH MHU",
+              carrier: "Independent",
+              bed: "Bed 06",
+            },
+          ],
+        },
+        {
+          id: "rockingham-w1",
+          name: "Rockingham · Adult W1",
+          service: "SMHS",
+          bedCount: 16,
+          events: [
+            {
+              id: "WF-145",
+              patient: "WF-145",
+              type: "delay",
+              label: "WF-145 · Delay (Awaiting Meds)",
+              startH: 0,
+              durH: 3,
+              origin: "Peel Health ED",
+              dest: "Rockingham W1",
+              carrier: "Secure Escort",
+              bed: "Bed 10",
+            },
+            {
+              id: "WF-260",
+              patient: "WF-260",
+              type: "pred",
+              label: "WF-260 · Pred Disch (+18h)",
+              startH: 18,
+              durH: 6,
+              origin: "Rockingham W1",
+              dest: "Community Step-down",
+              carrier: "Transit Van",
+              bed: "Bed 04",
+            },
+          ],
+        },
+      ];
+
+      let currentGrouping = "ward";
+      let currentZoomHours = 48;
+      let currentScrubH = 0;
+      let isEnlarged = false;
+      let selectedEventId = "WF-104";
+
+      function renderGantt() {
+        const container = document.getElementById("ganttRowsContainer");
+        container.innerHTML = "";
+
+        const lanes = LANES_BY_WARD;
+
+        lanes.forEach((lane) => {
+          const row = document.createElement("div");
+          row.className = "ganttRow";
+
+          // Left Label Cell
+          const labelCell = document.createElement("div");
+          labelCell.className = "laneLabelCell";
+          labelCell.innerHTML = `
+          <div class="laneTitle">
+            <span>${lane.name}</span>
+            <span class="laneBadge">${lane.service}</span>
+          </div>
+          <div class="laneMeta">
+            <span>${lane.bedCount} Physical Beds</span>
+            <span>·</span>
+            <span>${lane.events.length} moves</span>
+          </div>
+        `;
+          row.appendChild(labelCell);
+
+          // Right Event Timeline Cell
+          const eventsCell = document.createElement("div");
+          eventsCell.className = "laneEventsCell";
+
+          // Add 8 grid columns for subtle alternating shading
+          for (let i = 0; i < 8; i++) {
+            const col = document.createElement("div");
+            col.className = "gridCol";
+            eventsCell.appendChild(col);
+          }
+
+          // Draw Events
+          lane.events.forEach((ev) => {
+            const leftPct = (ev.startH / currentZoomHours) * 100;
+            const widthPct = Math.max((ev.durH / currentZoomHours) * 100, 4.5);
+
+            if (ev.startH < currentZoomHours) {
+              const bar = document.createElement("div");
+              bar.className = `eventBar bar-${ev.type}` + (ev.id === selectedEventId ? " activeSelect" : "");
+              bar.style.left = `${leftPct}%`;
+              bar.style.width = `${Math.min(widthPct, 100 - leftPct)}%`;
+              bar.title = `${ev.label} (${ev.origin} ➔ ${ev.dest})`;
+              bar.innerHTML = `<span>${ev.label}</span><span style="font-size: 10px; opacity: 0.85; margin-left: 6px;">${ev.bed}</span>`;
+              bar.onclick = (e) => {
+                e.stopPropagation();
+                selectEvent(ev.id);
+              };
+              eventsCell.appendChild(bar);
+            }
+          });
+
+          row.appendChild(eventsCell);
+          container.appendChild(row);
+        });
+
+        renderWorklist();
+      }
+
+      function renderWorklist() {
+        const worklistContainer = document.getElementById("worklistRows");
+        worklistContainer.innerHTML = "";
+
+        const allEvents = [];
+        LANES_BY_WARD.forEach((l) => l.events.forEach((e) => allEvents.push(e)));
+
+        allEvents.slice(0, 7).forEach((ev) => {
+          const row = document.createElement("div");
+          row.className = "worklistRow" + (ev.id === selectedEventId ? " selected" : "");
+          row.onclick = () => selectEvent(ev.id);
+
+          let stageClass = "booked";
+          let stageLabel = "Booked";
+          if (ev.type === "transit") {
+            stageClass = "inTransit";
+            stageLabel = "In Transit";
+          }
+          if (ev.type === "delay") {
+            stageClass = "awaitVehicle";
+            stageLabel = "Delayed";
+          }
+          if (ev.type === "disch") {
+            stageClass = "arrived";
+            stageLabel = "Discharging";
+          }
+
+          row.innerHTML = `
+          <span class="idChip">${ev.id}</span>
+          <div class="corridorText">
+            <span class="corridorFromTo">${ev.origin} ➔ ${ev.dest}</span>
+            <span class="corridorSub">${ev.carrier}</span>
+          </div>
+          <div>
+            <span class="stageChip ${stageClass}">${stageLabel}</span>
+          </div>
+          <span class="corridorSub">${ev.bed}</span>
+          <span class="etaBadge">+${ev.startH}h</span>
+        `;
+          worklistContainer.appendChild(row);
+        });
+      }
+
+      function selectEvent(id) {
+        selectedEventId = id;
+        let target = null;
+        LANES_BY_WARD.forEach((l) => {
+          const found = l.events.find((e) => e.id === id);
+          if (found) target = found;
+        });
+
+        if (!target) return;
+
+        // Update Inspector Drawer
+        document.getElementById("drawerId").textContent = target.id;
+        document.getElementById("drawerOrigin").textContent = target.origin;
+        document.getElementById("drawerDest").textContent = target.dest;
+        document.getElementById("drawerCarrier").textContent = target.carrier;
+        document.getElementById("drawerBed").textContent = target.bed;
+        document.getElementById("drawerEta").textContent =
+          target.startH === 0 ? "Underway now" : `In +${target.startH} hours`;
+
+        const stageChip = document.getElementById("drawerStageChip");
+        stageChip.textContent = target.type.toUpperCase();
+        stageChip.className = `stageChip ${target.type === "transit" ? "inTransit" : "booked"}`;
+
+        renderGantt();
+      }
+
+      function handleScrub(val) {
+        currentScrubH = parseInt(val, 10);
+        document.getElementById("scrubberDisplay").textContent =
+          currentScrubH === 0 ? "NOW (+0h)" : `+${currentScrubH}h Forecast`;
+
+        const pct = (currentScrubH / currentZoomHours) * 100;
+        const cursor = document.getElementById("scrubberCursor");
+        const flag = document.getElementById("cursorFlag");
+
+        cursor.style.left = `calc(250px + ${pct * (currentZoomHours / 48)}%)`;
+        flag.textContent = currentScrubH === 0 ? "NOW 14:00" : `+${currentScrubH}h`;
+      }
+
+      function resetScrub() {
+        document.getElementById("scrubberInput").value = 0;
+        handleScrub(0);
+      }
+
+      function setLaneGrouping(mode) {
+        currentGrouping = mode;
+        document.getElementById("btnGroupWard").className = "segBtn" + (mode === "ward" ? " active" : "");
+        document.getElementById("btnGroupStage").className = "segBtn" + (mode === "stage" ? " active" : "");
+        document.getElementById("btnGroupTransport").className = "segBtn" + (mode === "transport" ? " active" : "");
+        renderGantt();
+      }
+
+      function setZoom(hours) {
+        currentZoomHours = hours;
+        renderGantt();
+      }
+
+      function toggleEnlarge() {
+        const section = document.getElementById("ganttSection");
+        const btnText = document.getElementById("enlargeText");
+        const btn = document.getElementById("btnEnlarge");
+
+        isEnlarged = !isEnlarged;
+        if (isEnlarged) {
+          section.classList.add("enlarged");
+          btn.classList.add("active");
+          btnText.textContent = "Restore Split View";
+        } else {
+          section.classList.remove("enlarged");
+          btn.classList.remove("active");
+          btnText.textContent = "Enlarge Canvas";
+        }
+      }
+
+      function toggleTheme() {
+        const html = document.documentElement;
+        const current = html.getAttribute("data-theme");
+        html.setAttribute("data-theme", current === "dark" ? "light" : "dark");
+      }
+
+      function filterWorklist(type) {
+        renderWorklist();
+      }
+
+      // Initialize on load
+      renderGantt();
+      selectEvent("WF-104");
+    </script>
+  </body>
+</html>

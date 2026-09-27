@@ -1,0 +1,1384 @@
+/*
+ * Task 9: Transport Officer Dispatch Console — Third Edition Sovereign Standard.
+ */
+.screen {
+  composes: wardTokens from "../ward-tokens.module.css";
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  composes: descendantKill from "../ward-reduced-motion.module.css";
+
+  /* The pinned action bar's reserve for mobile viewports */
+  --of-bar-pad-y: var(--ward-space-8);
+  --of-bar-safe-bottom: max(var(--ward-space-8), var(--safe-area-bottom));
+  --of-bar-reserve: calc(var(--spacing-tap) + var(--of-bar-pad-y) + var(--of-bar-safe-bottom) + 0.0625rem);
+
+  display: block;
+  min-width: 0;
+  min-height: 100%;
+  color: var(--ink);
+  background:
+    linear-gradient(180deg, var(--ground-hi) 0%, var(--ground) 55%, var(--ground-2) 100%) fixed,
+    var(--ground);
+  font-family: var(--body);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+
+  --text: var(--ink);
+  --text-heading: var(--ink);
+  --text-muted: var(--muted);
+  --warning-border: var(--warn);
+  --clinical-accent: var(--accent);
+  --clinical-accent-border: var(--accent);
+  --clinical-accent-contrast: var(--on-accent);
+  --surface-chrome: var(--surface-2);
+  --surface-subtle: var(--surface-2);
+  --e2: var(--lift);
+}
+
+/* Sovereign Top Action Header */
+.hdr1 {
+  height: 48px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  gap: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.hdrTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.hdrTitleText {
+  font-size: var(--t-3);
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chipMark {
+  font-size: var(--t-0);
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--pill);
+  background: var(--sunk);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.hdrEnd {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-shrink: 0;
+}
+
+.main {
+  grid-column: auto;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1.25rem;
+  overflow-x: clip;
+  overflow-y: visible;
+  padding: 1.25rem 1.5rem 2rem;
+  min-height: 20rem;
+  scroll-padding: 0.5rem;
+}
+
+.pageHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.pageHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--accent-ink);
+  font-family: var(--mono);
+  font-size: var(--t-1);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pageTitle {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.pageSubtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-2);
+  line-height: 1.4;
+}
+
+/* 4-card KPI Strip — Hairline borders, zero colored top/side stripes */
+.kpiStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.875rem;
+}
+
+.kpiCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1rem 1.125rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r2);
+  box-shadow: none;
+  min-height: 5.5rem;
+}
+
+.kpiCard[data-tone="accent"] .kpiVal {
+  color: var(--accent-ink);
+}
+
+.kpiCard[data-tone="good"] .kpiVal {
+  color: var(--good);
+}
+
+.kpiCard[data-tone="warn"] .kpiVal {
+  color: var(--warn);
+}
+
+.kpiLabel {
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.kpiVal {
+  font-size: 1.875rem;
+  font-weight: 750;
+  color: var(--ink);
+  font-family: var(--mono);
+  line-height: 1.1;
+  margin: 0.25rem 0;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.kpiSub {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+/* Fleet Asset Status Panel */
+.fleetPanel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.fleetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.fleetHeader > div {
+  min-width: 0;
+}
+
+.fleetTitle {
+  margin: 0;
+  font-size: var(--t-2);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+
+.fleetSubtitle {
+  margin: 0.125rem 0 0;
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.fleetBadge {
+  font-size: var(--t-0);
+  font-family: var(--mono);
+  font-weight: 600;
+  padding: 0.1875rem 0.5rem;
+  border-radius: var(--pill);
+  background: var(--surface);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.fleetGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.875rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+}
+
+.fleetCard {
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  padding: 0.875rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.fleetCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.fleetVehicleType {
+  font-size: var(--t-1);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.fleetStatusPill {
+  font-size: var(--t-0);
+  font-weight: 600;
+  padding: 0.125rem 0.4375rem;
+  border-radius: var(--pill);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-family: var(--mono);
+}
+
+.fleetStatusPill[data-tone="good"] {
+  background: var(--good-soft);
+  color: var(--good);
+  border: 1px solid var(--good);
+}
+
+.fleetStatusPill[data-tone="accent"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent);
+}
+
+.fleetCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fleetMetric {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.fleetVal {
+  font-size: 1.5rem;
+  font-weight: 750;
+  color: var(--ink);
+  font-family: var(--mono);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.fleetSub {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.fleetMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: var(--t-0);
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  padding-top: 0.5rem;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.fleetMeta strong {
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Refused Actions Surface */
+.refusals {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+
+.refusalsTitle {
+  margin: 0;
+  color: var(--warn);
+  font-size: var(--t-2);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.refusalsCount {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--pill);
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.refusalsList {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0;
+  list-style: none;
+  margin: 0;
+}
+
+.refusalsItem {
+  border-radius: var(--r2);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+  padding: 0.625rem 0.875rem;
+  color: var(--danger-ink);
+  font-size: var(--t-1);
+  line-height: 1.4;
+}
+
+/* Cancelled Transports / Stand-Downs Section */
+.cancelledSection {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+
+.cancelledTitle {
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--t-2);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.cancelledCount {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--pill);
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.cancelledList {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0;
+  list-style: none;
+  margin: 0;
+}
+
+.cancelledItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: var(--r2);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+  padding: 0.625rem 0.875rem;
+  color: var(--danger-ink);
+  font-size: var(--t-1);
+  line-height: 1.4;
+}
+
+.cancelledBadge {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--r2);
+  background: var(--danger);
+  color: var(--surface);
+  white-space: nowrap;
+}
+
+.cancelledNote {
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+/* Transport Jobs Section */
+.jobsPanel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+
+.panelHeader {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  padding: 0.875rem 1.25rem;
+  flex-wrap: wrap;
+}
+
+.panelHeader > div {
+  min-width: 0;
+}
+
+.panelHeader h2 {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--t-2);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.panelHeader p {
+  margin: 0.125rem 0 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.4;
+}
+
+.jobsCountBadge {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.panelBody {
+  min-width: 0;
+  padding: 1.125rem 1.25rem;
+  min-height: 20rem;
+  scroll-padding: 0.5rem;
+}
+
+.panelBody:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.governanceBanner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  margin-top: 0.375rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.governanceBanner p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.4;
+}
+
+.prototypeBadge {
+  flex-shrink: 0;
+  border: 1px solid var(--warn);
+  border-radius: var(--pill);
+  background: var(--warn-soft);
+  padding: 0.125rem 0.5rem;
+  color: var(--warn);
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.placeholder {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-2);
+}
+
+.jobList {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Job Cards */
+.jobCard,
+.jobCardActive {
+  display: grid;
+  min-width: 0;
+  gap: 0.875rem;
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  padding: 1.125rem 1.25rem;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.jobCardActive {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.jobTopHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.jobIdAndRoute {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.jobIdBadgeGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.jobIdText {
+  color: var(--ink);
+  font-size: var(--t-3);
+  font-weight: 700;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.legBadge {
+  font-size: var(--t-0);
+  font-weight: 600;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--pill);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.legBadge[data-tone="good"] {
+  background: var(--good-soft);
+  color: var(--good);
+  border: 1px solid var(--good);
+}
+
+.legBadge[data-tone="warn"] {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+}
+
+.legBadge[data-tone="accent"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent);
+}
+
+.legBadge[data-tone="default"] {
+  background: var(--sunk);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.escortBadge {
+  font-size: var(--t-0);
+  font-weight: 600;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--pill);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.routeLine {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-2);
+  line-height: 1.4;
+}
+
+.routeLine strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.routeArrow {
+  color: var(--accent);
+  font-weight: 700;
+  margin: 0 0.25rem;
+}
+
+.jobHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-shrink: 0;
+}
+
+.jobMeta {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Stepper Component */
+.stepperWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.stepper {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  background: var(--sunk);
+  padding: 0.625rem 0.75rem;
+  border-radius: var(--r2);
+  border: 1px solid var(--line);
+}
+
+.stageBar {
+  display: block;
+  min-width: 0;
+  height: 0.375rem;
+  border: 1px solid var(--line);
+  border-radius: var(--pill);
+  background: var(--line);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.stageBar[data-s="done"] {
+  border-color: var(--good);
+  background: var(--good);
+}
+
+.stageBar[data-s="now"] {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.stageBar[data-s="todo"] {
+  border-color: transparent;
+  background: var(--line);
+}
+
+.stageLine {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.stageLine strong {
+  font-weight: 700;
+  color: var(--accent-ink);
+}
+
+.stageLine span {
+  color: var(--muted);
+}
+
+/* Job Details Definition List */
+.jobDetails {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.625rem 1rem;
+  margin: 0;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.jobDetailRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  font-size: var(--t-1);
+}
+
+.jobDetailRow dt {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.jobDetailRow dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-weight: 600;
+  text-align: left;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Buttons and Controls — Third Edition Sovereign Standard */
+.btnPrimary,
+.btnSecondary,
+.btnGood,
+.btnSm,
+.selectButton,
+.actionButton {
+  border-radius: var(--r2);
+  font-family: var(--body);
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+  text-decoration: none;
+  border: 1px solid var(--line-strong);
+}
+
+.linkInspect {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  min-width: 44px;
+  padding: 0 0.75rem;
+  font-size: var(--t-0);
+  font-weight: 600;
+  border-radius: var(--r2);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.linkInspect:hover {
+  background: var(--sunk);
+}
+
+.btnPrimary {
+  min-height: var(--ward-tap);
+  padding: 0 1rem;
+  font-size: var(--t-1);
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+
+.btnPrimary:hover {
+  filter: brightness(1.08);
+}
+
+.btnSecondary {
+  min-height: var(--ward-tap);
+  padding: 0 0.875rem;
+  font-size: var(--t-1);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.btnSecondary:hover {
+  background: var(--sunk);
+}
+
+.btnGood {
+  min-height: var(--ward-tap);
+  padding: 0 1rem;
+  font-size: var(--t-1);
+  background: var(--good);
+  color: var(--on-accent);
+  border-color: var(--good);
+}
+
+.btnGood:hover {
+  filter: brightness(1.08);
+}
+
+.btnSm {
+  min-height: 2.75rem;
+  min-width: 44px;
+  padding: 0 0.75rem;
+  font-size: var(--t-0);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.btnSm:hover {
+  background: var(--sunk);
+}
+
+.selectButton {
+  min-height: var(--ward-tap);
+  width: 100%;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  border-color: var(--line-strong);
+}
+
+.selectButton:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.inactiveRow {
+  display: flex;
+  padding-top: 0.25rem;
+}
+
+/* Primary Action Row (Desktop) */
+.actionRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.625rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.875rem;
+}
+
+.actionButton {
+  min-height: 48px;
+  min-width: 44px;
+  box-sizing: border-box;
+  padding: 0.5rem 0.75rem;
+  font-size: var(--t-1);
+  font-weight: 700;
+  text-align: center;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+
+.actionButton:hover:not([aria-disabled="true"]) {
+  filter: brightness(1.08);
+}
+
+.actionButton[aria-disabled="true"] {
+  cursor: not-allowed;
+  border-color: var(--line);
+  background: var(--surface-2);
+  color: var(--muted);
+  filter: none;
+}
+
+/* Modals & Dialogs */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+}
+
+.modalDialog {
+  width: min(94vw, 32rem);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modalHead {
+  padding: 0.875rem 1.125rem;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.modalBody {
+  padding: 1.25rem 1.125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: var(--surface);
+}
+
+.modalFoot {
+  padding: 0.875rem 1.125rem;
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.625rem;
+}
+
+.verificationBanner {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 0.75rem 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.verificationBanner strong {
+  color: var(--ink);
+  font-size: var(--t-1);
+}
+
+.verificationBanner p {
+  margin: 0;
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.checkItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.checkItem input {
+  margin-top: 0.1875rem;
+  accent-color: var(--good);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.formLabel {
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.formInput {
+  min-height: var(--ward-tap);
+  padding: 0 0.75rem;
+  border-radius: var(--r2);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--t-1);
+}
+
+.formInput[readonly] {
+  background: var(--surface-2);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--surface);
+  padding: 0.625rem 1.125rem;
+  border-radius: var(--r2);
+  font-size: var(--t-1);
+  font-weight: 500;
+  box-shadow: var(--lift);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 1000;
+  animation: toastFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: min(90vw, 36rem);
+}
+
+@keyframes toastFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.toastIcon {
+  color: var(--good);
+  flex-shrink: 0;
+}
+
+/* Tablet Responsiveness */
+@media (max-width: 62.5rem) {
+  .fleetGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .jobDetails {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Mobile Responsiveness & Pinned Action Bar */
+@media (max-width: 48rem) {
+  .hdr1 {
+    /* Decision 3: WardBar's `.bar` is the ONE top-anchored phone element. This header is
+       `position: sticky; top: 0` above, which is right on a wide screen and a second top owner
+       on a phone — the exact arrangement `tests/ward-chrome-owner.test.ts` exists to catch.
+       Same release as `.workspaceHeader` and `.answerHeader`. */
+    position: static;
+    padding: 0 1rem;
+  }
+
+  .hdrTitleText {
+    font-size: var(--t-2);
+  }
+
+  .main {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .kpiStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.625rem;
+  }
+
+  .fleetGrid {
+    grid-template-columns: 1fr;
+    padding: 0.875rem 1rem;
+  }
+
+  .stepper {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.375rem;
+  }
+
+  .jobDetails {
+    grid-template-columns: 1fr;
+  }
+
+  /*
+   * Pinned Action Bar for Mobile.
+   * Pins to literal viewport bottom with safe-area padding.
+   */
+  .actionRow {
+    position: fixed;
+    z-index: var(--z-overlay);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-wrap: nowrap;
+    border-top: 1px solid var(--line-strong);
+    background: var(--surface);
+    box-shadow: var(--e2);
+    padding: var(--of-bar-pad-y) var(--ward-space-12) var(--of-bar-safe-bottom);
+    gap: 0.5rem;
+  }
+
+  .actionButton {
+    flex: 1 1 0;
+    min-width: 44px;
+    min-height: 48px;
+    height: 48px;
+    box-sizing: border-box;
+    padding: 0 0.25rem;
+    font-size: var(--t-0);
+  }
+
+  .main:has(.actionRow) {
+    padding-bottom: calc(var(--of-bar-reserve) + 1rem);
+    margin-bottom: calc(var(--of-bar-reserve) + 1rem);
+  }
+
+  .toast {
+    bottom: calc(var(--of-bar-reserve) + 1rem);
+    margin-bottom: calc(var(--of-bar-reserve) + 1rem);
+  }
+}
+
+@media (max-width: 40rem) {
+  .kpiStrip {
+    grid-template-columns: 1fr;
+  }
+
+  .main {
+    padding: 0.75rem;
+  }
+
+  .jobTopHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .jobHeaderActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* Dark Mode Crisp Borders Contract */
+@media (prefers-color-scheme: dark) {
+  .kpiCard,
+  .fleetPanel,
+  .fleetCard,
+  .refusals,
+  .jobsPanel,
+  .jobCard,
+  .stepper,
+  .modalDialog,
+  .chipMark,
+  .fleetBadge {
+    border-color: var(--line-strong);
+  }
+
+  .panelHeader,
+  .fleetHeader,
+  .modalHead,
+  .hdr1 {
+    border-bottom-color: var(--line-strong);
+  }
+
+  .jobDetails,
+  .fleetMeta,
+  .modalFoot,
+  .actionRow {
+    border-top-color: var(--line-strong);
+  }
+
+  .jobDetails {
+    border-bottom-color: var(--line-strong);
+  }
+}
+
+/* Forced Colors */
+@media (forced-colors: active) {
+  .screen {
+    --ward-border: var(--border);
+    --ward-divider: var(--border);
+  }
+  .actionButton[aria-disabled="true"] {
+    border-color: GrayText;
+    color: GrayText;
+  }
+}
+
+/* Print — R2-14: chase the officer-screen print loss.
+ * Root cause class: panels use overflow:hidden and the print block only opened height on
+ * .jobsPanel, so fleet/jobs/refusals still clipped once the sheet paginated. Also force every
+ * content surface visible and keep interactive chrome (actions, modals, select-job control) off
+ * the page.
+ */
+
+.uploadedFormTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 4px);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.officerOverdueAlert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+  border-radius: var(--r2, 4px);
+  color: var(--danger-ink);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 500;
+  margin-top: 8px;
+}
+
+@media print {
+  .screen,
+  .screen * {
+    color: CanvasText !important;
+  }
+
+  .screen {
+    background: none;
+    color-scheme: light;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .main {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .hdr1,
+  .hdrEnd,
+  .actionRow,
+  .inactiveRow,
+  .toast,
+  .modalBackdrop {
+    display: none !important;
+  }
+
+  .pageHeader,
+  .kpiStrip,
+  .fleetPanel,
+  .jobsPanel,
+  .refusals,
+  .cancelledSection,
+  .governanceBanner {
+    display: block !important;
+    visibility: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .jobsPanel .panelBody,
+  .fleetGrid,
+  .fleetCard,
+  .kpiCard {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  .governanceBanner {
+    display: flex !important;
+    background: none;
+  }
+}

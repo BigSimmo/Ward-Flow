@@ -1,0 +1,1115 @@
+/* src/components/ward-management/governance/governance.module.css
+ *
+ * Clinical Governance & Risk Register Stylesheet.
+ * Adheres strictly to the Ward Flow design tokens and contract (tests/ward-design-language-contract.test.ts):
+ * - No raw hex colors, only CSS tokens
+ * - No bare rgb()/rgba() functions
+ * - Crisp borders (var(--line) in light mode, var(--line-strong) in dark mode)
+ * - Tabular numbers (font-variant-numeric: tabular-nums) across all register cards and tables
+ * - Full responsiveness on viewports < 768px with horizontal scrolling and no clipping
+ * - First rule does NOT paint an opaque background (maintains ground contract)
+ */
+
+.governanceScreen {
+  display: grid;
+  min-width: 0;
+  gap: var(--ward-space-12);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.main {
+  min-width: 0;
+  display: grid;
+  gap: var(--ward-space-12);
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ward-space-12);
+  padding: var(--ward-space-8) 0;
+  min-height: var(--ward-tap);
+}
+
+.barTitle {
+  font-size: var(--t-4);
+  font-weight: 700;
+  color: var(--ink);
+  line-height: var(--ward-leading-tight);
+}
+
+.barSubtitle {
+  font-size: var(--t-1);
+  color: var(--muted);
+  line-height: var(--ward-leading-body);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ward-space-6, 0.375rem);
+  min-height: var(--ward-tap);
+  min-width: var(--ward-tap);
+  padding: var(--ward-space-8) var(--ward-space-16, 1rem);
+  border-radius: var(--r2);
+  border: 0.0625rem solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--t-2);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: var(--ink-soft);
+}
+
+.btn.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent-press, var(--accent));
+}
+
+.btn.primary:hover:not(:disabled) {
+  background: var(--accent-press, var(--accent));
+  color: var(--on-accent);
+}
+
+.btn.sm {
+  min-height: var(--ward-tap);
+  padding: var(--ward-space-4) var(--ward-space-12);
+  font-size: var(--t-1);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Statutory Compliance & Risk Register Status Cards ─── */
+.kpiStrip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--ward-space-12);
+  margin-bottom: var(--ward-space-4);
+}
+
+.kpiCard {
+  background: var(--surface);
+  border: 0.0625rem solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r2);
+  padding: var(--ward-space-12) var(--ward-space-14);
+  display: grid;
+  gap: var(--ward-space-4);
+  box-shadow: none;
+  transition: border-color 0.15s ease;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpiCard[data-tone="warn"] .kpiVal {
+  color: var(--warn);
+}
+.kpiCard[data-tone="good"] .kpiVal {
+  color: var(--good);
+}
+.kpiCard[data-tone="accent"] .kpiVal {
+  color: var(--accent);
+}
+
+.kpiLabel {
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.kpiVal {
+  font-family: var(--mono);
+  font-size: var(--t-5);
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--ward-leading-compact);
+}
+
+.kpiSub {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.workspaceBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-8);
+  font-size: var(--t-2);
+  color: var(--muted);
+}
+
+.workspaceBar > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-2);
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-14);
+  font-size: var(--t-2);
+  color: var(--muted);
+}
+
+.summary strong {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Tab Bar Navigation ─── */
+.tabbar {
+  display: flex;
+  background: var(--surface-2);
+  border-bottom: 0.0625rem solid var(--line);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  min-width: 0;
+}
+
+.tabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+  min-height: var(--ward-tap);
+  padding: var(--ward-space-10) 1.125rem;
+  border: 0;
+  border-bottom: 0.125rem solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: var(--t-2);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.tabBtn[aria-selected="true"] {
+  color: var(--ink);
+  border-bottom-color: var(--gilt);
+  background: var(--surface);
+}
+
+.tabNum {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+  padding: 0.125rem 0.4375rem;
+  border-radius: var(--pill, 9999px);
+  background: var(--surface-2);
+  border: 0.0625rem solid var(--line);
+  color: var(--muted);
+}
+
+.tabBtn[aria-selected="true"] .tabNum {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+/* ─── Two-Column Governance Layout ─── */
+.govLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(22.5rem, 0.9fr);
+  gap: var(--ward-space-16, 1rem);
+  align-items: start;
+}
+
+.tabsPanel {
+  border: 0.0625rem solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: var(--lift);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.panelHeader {
+  padding: var(--ward-space-14) 1.125rem;
+  background: var(--surface-2);
+  border-bottom: 0.0625rem solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-12);
+  flex-wrap: wrap;
+}
+
+.panelHeader h2 {
+  margin: 0;
+  font-size: var(--t-3);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.panelHeader p {
+  margin: var(--ward-space-4) 0 0;
+  font-size: var(--t-2);
+  color: var(--muted);
+}
+
+.ph {
+  padding: var(--ward-space-14) 1.125rem;
+  background: var(--surface-2);
+  border-bottom: 0.0625rem solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-12);
+  flex-wrap: wrap;
+}
+
+.ph h2 {
+  margin: 0;
+  font-size: var(--t-3);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ─── Tables & Responsive Wrapper ─── */
+.tableWrap {
+  composes: tableScroll from "../ward-table/ward-table.module.css";
+  background: var(--surface);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.govTable {
+  composes: table from "../ward-table/ward-table.module.css";
+  width: 100%;
+  font-size: var(--t-1);
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.govTable th {
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+
+.govTable td {
+  color: var(--ink);
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+}
+
+.govTable tr.selected td {
+  background: var(--surface-2);
+}
+
+.govTable tr:hover td {
+  background: var(--surface-2);
+  cursor: pointer;
+}
+
+/* ─── Detail Inspector & Event Cards ─── */
+.sideColumn {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: var(--ward-space-12);
+}
+
+.detailPanel,
+.recordPanel,
+.registerPanel,
+.legacyPanel {
+  min-width: 0;
+  overflow: hidden;
+  border: 0.0625rem solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+
+.inspectorBody {
+  padding: var(--ward-space-16, 1rem);
+  display: grid;
+  gap: var(--ward-space-14);
+}
+
+.inspectorCard {
+  background: var(--surface-2);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--r2);
+  padding: var(--ward-space-12);
+  display: grid;
+  gap: var(--ward-space-8);
+  font-variant-numeric: tabular-nums;
+}
+
+.inspectorRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--t-1);
+  gap: var(--ward-space-8);
+}
+
+.inspectorLabel {
+  color: var(--muted);
+  font-size: var(--t-0);
+  text-transform: uppercase;
+  font-weight: 600;
+  flex: 0 0 auto;
+}
+
+.inspectorVal {
+  font-weight: 600;
+  color: var(--ink);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.inspectorText {
+  background: var(--surface-2);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--r2);
+  padding: var(--ward-space-10) var(--ward-space-12);
+  font-size: var(--t-1);
+  line-height: var(--ward-leading-body);
+  color: var(--ink);
+}
+
+.inspectorActions {
+  display: flex;
+  gap: var(--ward-space-8);
+  margin-top: var(--ward-space-4);
+}
+
+/* ─── Status & Category Badges ─── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  flex: 0 0 auto;
+  padding: 0.125rem 0.4375rem;
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--t-1);
+  font-weight: 650;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+
+.badge[data-tone="accepted"],
+.badge[data-tone="good"] {
+  border-color: color-mix(in srgb, var(--good) 45%, var(--line));
+  background: var(--good-soft);
+  color: var(--good);
+}
+
+.badge[data-tone="partial"],
+.badge[data-tone="stale"],
+.badge[data-tone="warn"] {
+  border-color: color-mix(in srgb, var(--warn) 45%, var(--line));
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.badge[data-tone="denied"],
+.badge[data-tone="danger"] {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.badge[data-tone="accent"] {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* ─── Captured Session Events List ─── */
+.registerBody {
+  padding: var(--ward-space-8);
+  min-width: 0;
+}
+
+.eventRow {
+  display: grid;
+  width: 100%;
+  min-height: var(--ward-tap);
+  gap: var(--ward-space-8);
+  margin: 0 0 var(--ward-space-8);
+  padding: var(--ward-space-12);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  font: inherit;
+  font-size: var(--t-2);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.eventRow:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+
+.eventRow[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: inset 0.1875rem 0 var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+
+.eventMain,
+.eventMeta,
+.eventBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-8);
+}
+
+.eventMeta,
+.eventBottom {
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.5;
+}
+
+.eventMeta time {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.eventBottom > span:first-child {
+  margin-right: auto;
+}
+
+.eventBottom svg,
+.entityLinks svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex: 0 0 auto;
+}
+
+/* ─── Filters Bar ─── */
+.filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ward-space-8);
+  padding: var(--ward-space-10) var(--ward-space-14);
+  border-bottom: 0.0625rem solid var(--line);
+}
+
+.filters label {
+  display: grid;
+  min-width: 0;
+  gap: var(--ward-space-4);
+  color: var(--muted);
+  font-size: var(--t-1);
+  font-weight: 650;
+}
+
+.filters select {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--ward-tap);
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--r2);
+  padding: var(--ward-space-4) var(--ward-space-8);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-2);
+}
+
+/* ─── Facts & Review History ─── */
+.factList {
+  display: grid;
+  gap: var(--ward-space-8);
+  margin: 0;
+  padding: var(--ward-space-12) var(--ward-space-14);
+}
+
+.factList > div {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.7fr) minmax(0, 1fr);
+  gap: var(--ward-space-12);
+}
+
+.factList dt {
+  color: var(--muted);
+  font-size: var(--t-1);
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.factList dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: var(--t-2);
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+
+.historyList {
+  display: grid;
+  gap: var(--ward-space-8);
+  margin: 0;
+  padding: var(--ward-space-12) var(--ward-space-14);
+  list-style: none;
+}
+
+.historyList li {
+  display: flex;
+  align-items: start;
+  gap: var(--ward-space-8);
+  padding-bottom: var(--ward-space-8);
+  border-bottom: 0.0625rem solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+.historyList svg {
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.125rem;
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+.historyList strong,
+.historyList span {
+  display: block;
+  font-size: var(--t-2);
+  line-height: 1.5;
+}
+
+.historyList span {
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+.reviewControls {
+  padding: var(--ward-space-10) var(--ward-space-14);
+  border-top: 0.0625rem solid var(--line);
+  background: var(--surface-2);
+}
+
+.reviewControls > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-2);
+}
+
+.reviewActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ward-space-8);
+  margin-top: var(--ward-space-8);
+}
+
+.reviewActions button {
+  min-height: var(--ward-tap);
+  flex: 1 1 auto;
+  padding: var(--ward-space-8) var(--ward-space-12);
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-2);
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.reviewActions button:first-child:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.reviewActions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.reviewControls .feedback {
+  min-height: 1.5em;
+  margin-top: var(--ward-space-8);
+  color: var(--ink);
+}
+
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--ward-space-8);
+  padding: 3rem var(--ward-space-14);
+  text-align: center;
+  color: var(--muted);
+}
+
+.empty svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--accent);
+}
+
+.empty h3,
+.empty p {
+  max-width: 25rem;
+  margin: 0;
+  font-size: var(--t-2);
+  line-height: 1.5;
+}
+
+.empty h3 {
+  color: var(--ink);
+  font-size: var(--t-3);
+}
+
+.entityLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ward-space-8);
+  padding: 0 var(--ward-space-14) var(--ward-space-10);
+}
+
+.entityLinks a,
+.entityLinks button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ward-space-4);
+  min-height: var(--ward-tap);
+  padding: var(--ward-space-4) var(--ward-space-8);
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--accent);
+  font: inherit;
+  font-size: var(--t-2);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.operationFacts {
+  border-top: 0.0625rem solid var(--line);
+}
+
+.subheading,
+.snapshotStack h3 {
+  margin: 0;
+  padding: var(--ward-space-12) var(--ward-space-14) 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.targetList {
+  display: grid;
+  gap: var(--ward-space-8);
+  margin: 0;
+  padding: var(--ward-space-12) var(--ward-space-14);
+  list-style: none;
+}
+
+.targetList li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--ward-space-4) var(--ward-space-8);
+  padding-bottom: var(--ward-space-8);
+  border-bottom: 0.0625rem solid var(--line);
+  font-size: var(--t-2);
+}
+
+.targetList small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+/* ─── Legacy & Scope Disclosures ─── */
+.legacyGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ward-space-12);
+  padding: var(--ward-space-14);
+}
+
+.legacyPanel > aside {
+  border: 0;
+  box-shadow: none;
+}
+
+.accessScope,
+.boundary {
+  padding: var(--ward-space-10) var(--ward-space-14);
+  border-top: 0.0625rem solid var(--line);
+  color: var(--muted);
+  font-size: var(--t-2);
+  line-height: 1.5;
+}
+
+.accessScope summary,
+.boundary summary {
+  width: fit-content;
+  min-height: var(--ward-tap);
+  align-content: center;
+  cursor: pointer;
+}
+
+.boundary {
+  border: 0;
+  padding-block: 0;
+}
+
+/* ─── Modal & Forms ─── */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: var(--ward-space-16, 1rem);
+}
+
+.modal.open {
+  display: flex;
+}
+
+.modalDialog {
+  width: min(94vw, 33.75rem);
+  max-height: 90vh;
+  background: var(--surface);
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modalHead {
+  padding: var(--ward-space-12) 1.125rem;
+  background: var(--surface-2);
+  border-bottom: 0.0625rem solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modalHead h3 {
+  margin: 0;
+  font-size: var(--t-3);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.modalBody {
+  padding: var(--ward-space-16, 1rem) 1.125rem;
+  overflow-y: auto;
+  display: grid;
+  gap: var(--ward-space-14);
+}
+
+.modalFoot {
+  padding: var(--ward-space-12) 1.125rem;
+  background: var(--surface-2);
+  border-top: 0.0625rem solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ward-space-8);
+}
+
+.formGroup {
+  display: grid;
+  gap: var(--ward-space-4);
+}
+
+.formLabel {
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+.formInput,
+.formSelect,
+.formTextarea {
+  min-height: var(--ward-tap);
+  padding: 0 var(--ward-space-10);
+  border-radius: var(--r2);
+  border: 0.0625rem solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--t-2);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.formTextarea {
+  min-height: 5rem;
+  padding: var(--ward-space-10) var(--ward-space-12);
+  resize: vertical;
+}
+
+/* ─── Toast Feedback ─── */
+.toast {
+  position: fixed;
+  bottom: var(--ward-space-24, 1.5rem);
+  left: 50%;
+  transform: translateX(-50%) translateY(6.25rem);
+  background: var(--surface);
+  border: 0.0625rem solid var(--good);
+  color: var(--good);
+  box-shadow: var(--lift);
+  padding: var(--ward-space-10) 1.125rem;
+  border-radius: var(--pill, 9999px);
+  font-weight: 600;
+  font-size: var(--t-1);
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+  z-index: 1000;
+  transition:
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.25s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ─── Responsiveness on Viewports < 768px (48rem) ─── */
+@media (max-width: 48rem) {
+  .govLayout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ward-space-12);
+  }
+
+  .kpiStrip {
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: var(--ward-space-8);
+  }
+
+  .tableWrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .govTable {
+    min-width: 37.5rem;
+  }
+
+  .filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .topBar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--ward-space-8);
+  }
+
+  .topBar .btn {
+    width: 100%;
+  }
+
+  .inspectorActions {
+    flex-direction: column;
+  }
+
+  .inspectorActions button {
+    width: 100%;
+  }
+
+  .workspaceBar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--ward-space-4);
+  }
+
+  .summary {
+    flex-wrap: wrap;
+    gap: var(--ward-space-8);
+  }
+
+  .legacyGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 30rem) {
+  .kpiStrip {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ─── Status Badges (>= 4.5:1 WCAG AA Contrast in Light & Dark Mode) ─── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ward-space-4, 0.25rem);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--pill, 9999px);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 0.0625rem solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.badge[data-tone="accent"],
+.badge[data-form="1"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.badge[data-tone="warn"],
+.badge[data-form="2"] {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.badge[data-tone="danger"],
+.badge[data-form="3"] {
+  background: var(--danger-soft);
+  color: var(--danger-ink, var(--danger));
+  border-color: var(--danger);
+}
+
+.badge[data-tone="good"] {
+  background: var(--good-soft);
+  color: var(--good);
+  border-color: var(--good);
+}
+
+/* Explicit Dark Mode Contrast Protection (guarantees >= 4.5:1 floor on all form status badges) */
+:global([data-theme="dark"]) .badge[data-tone="accent"],
+:global([data-theme="dark"]) .badge[data-form="1"],
+:global(:root:not([data-theme="light"])) .governanceScreen .badge[data-tone="accent"],
+:global(:root:not([data-theme="light"])) .governanceScreen .badge[data-form="1"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+:global([data-theme="dark"]) .badge[data-tone="warn"],
+:global([data-theme="dark"]) .badge[data-form="2"],
+:global(:root:not([data-theme="light"])) .governanceScreen .badge[data-tone="warn"],
+:global(:root:not([data-theme="light"])) .governanceScreen .badge[data-form="2"] {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 45%, transparent);
+}
+
+:global([data-theme="dark"]) .badge[data-tone="danger"],
+:global([data-theme="dark"]) .badge[data-form="3"],
+:global(:root:not([data-theme="light"])) .governanceScreen .badge[data-tone="danger"],
+:global(:root:not([data-theme="light"])) .governanceScreen .badge[data-form="3"] {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+}
+
+:global([data-theme="dark"]) .badge[data-tone="good"],
+:global(:root:not([data-theme="light"])) .governanceScreen .badge[data-tone="good"] {
+  background: var(--good-soft);
+  color: var(--good);
+  border-color: color-mix(in srgb, var(--good) 45%, transparent);
+}
+
+/* ─── Tabular Numbers & Audit Timestamps ─── */
+.auditList,
+.auditList li,
+.tabularTime,
+.auditList time {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Dark Mode Crisp Borders Contract ─── */
+@media (prefers-color-scheme: dark) {
+  .kpiCard,
+  .tabsPanel,
+  .registerPanel,
+  .detailPanel,
+  .recordPanel,
+  .legacyPanel,
+  .inspectorCard,
+  .inspectorText,
+  .eventRow,
+  .modalDialog,
+  .tableWrap {
+    border-color: var(--line-strong);
+  }
+
+  .panelHeader,
+  .modalHead,
+  .modalFoot,
+  .tabbar,
+  .filters {
+    border-bottom-color: var(--line-strong);
+  }
+
+  .reviewControls {
+    border-top-color: var(--line-strong);
+  }
+}

@@ -1,0 +1,1437 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ward Flow - Perfected Header Title (No Small Text, No Black Color)</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background-color: #f8fafc;
+        color: #0f172a;
+        padding: 32px 20px 80px;
+        line-height: 1.5;
+      }
+      .container {
+        max-width: 1120px;
+        margin: 0 auto;
+      }
+
+      /* BANNER */
+      .banner {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 24px 28px;
+        margin-bottom: 32px;
+        box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+      .banner-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .badge-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.025em;
+        margin-top: 6px;
+      }
+      p.lead-text {
+        font-size: 13.5px;
+        color: #475569;
+        margin-top: 4px;
+        max-width: 860px;
+      }
+
+      /* CONTROLS */
+      .controls-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        padding-top: 16px;
+        border-top: 1px solid #f1f5f9;
+      }
+      .ctrl-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: #f1f5f9;
+        padding: 5px 10px;
+        border-radius: 10px;
+      }
+      .ctrl-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-right: 4px;
+      }
+      .ctrl-btn {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 5px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s ease;
+      }
+      .ctrl-btn:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+      }
+      .ctrl-btn.active {
+        background: #0f2438;
+        color: #ffffff;
+        border-color: #0f2438;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+      }
+      .swatch-pip {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      /* CARD CONTAINER */
+      .mockup-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 24px 28px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.03);
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+      }
+      .mockup-card:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 4px 14px -3px rgba(15, 23, 42, 0.06);
+      }
+      .mockup-card.featured {
+        border: 2px solid #2563eb;
+        box-shadow: 0 4px 16px -2px rgba(37, 99, 235, 0.12);
+      }
+      .card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #f1f5f9;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .card-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .card-index {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: #0f2438;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 800;
+      }
+      .mockup-card.featured .card-index {
+        background: #2563eb;
+      }
+      .card-title {
+        font-size: 17px;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.01em;
+      }
+      .card-subtitle {
+        font-size: 12.5px;
+        color: #64748b;
+        margin-top: 1px;
+      }
+      .card-score {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        padding: 4px 10px;
+        border-radius: 9999px;
+        font-size: 12px;
+        font-weight: 750;
+        color: #047857;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+      }
+
+      /* BAR PREVIEW */
+      .bar-preview {
+        background: #fdfdfe;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 12px 18px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        overflow-x: visible;
+        margin-bottom: 16px;
+      }
+      .rail-btn {
+        width: 32px;
+        height: 32px;
+        background: #0f2438;
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        font-size: 17px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .search-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 12px;
+        color: #94a3b8;
+        width: 175px;
+      }
+      .search-kbd {
+        margin-left: auto;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-size: 10px;
+        font-family: monospace;
+        color: #64748b;
+      }
+      .btn-action {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+      .btn-primary {
+        background: #0f2438;
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        padding: 7px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        margin-left: auto;
+      }
+
+      /* RATIONALE & DETAILS */
+      .details-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 16px;
+        margin-top: 14px;
+      }
+      @media (max-width: 820px) {
+        .details-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .detail-card {
+        background: #f8fafc;
+        border: 1px solid #f1f5f9;
+        border-radius: 10px;
+        padding: 14px 16px;
+        font-size: 12.5px;
+        color: #334155;
+      }
+      .detail-title {
+        font-size: 11.5px;
+        font-weight: 750;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #64748b;
+        margin-bottom: 8px;
+      }
+      .score-breakdown {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      .score-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px 8px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 11.5px;
+      }
+      .score-row span:first-child {
+        color: #64748b;
+        font-weight: 500;
+      }
+      .score-row span:last-child {
+        font-weight: 750;
+        color: #0f172a;
+        font-family: ui-monospace, monospace;
+      }
+
+      /* POPUP MENU */
+      .popover-container {
+        position: relative;
+        display: inline-flex;
+      }
+      .popover-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        box-shadow:
+          0 10px 25px -4px rgba(15, 23, 42, 0.14),
+          0 2px 6px -1px rgba(15, 23, 42, 0.06);
+        padding: 6px;
+        min-width: 205px;
+        z-index: 100;
+        display: none;
+      }
+      .popover-menu.open {
+        display: block;
+      }
+      .popover-title {
+        font-size: 10.5px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 6px 10px 4px;
+      }
+      .menu-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 7px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+        cursor: pointer;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        transition: background 0.12s ease;
+      }
+      .menu-item:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+      .menu-item.selected {
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-weight: 700;
+      }
+
+      /* PULSE ANIMATION */
+      @keyframes pulse-ring {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.35;
+          transform: scale(0.85);
+        }
+      }
+      .pulse-dot {
+        animation: pulse-ring 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      /* ========================================================
+       PERFECTED CLEAN VARIATIONS (NO SMALL TEXT, NO BLACK)
+       ======================================================== */
+
+      /* --------------------------------------------------------
+       1. THE LUMINOUS REGIONAL TINT (Recommended)
+       Pure pill, Title + Soft Regional Pastel Tint Badge
+       -------------------------------------------------------- */
+      .capsule-1 {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 9999px;
+        padding: 4px 6px 4px 14px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+      }
+      .capsule-1 .title {
+        font-size: 16px;
+        font-weight: 750;
+        color: #0f172a;
+        letter-spacing: -0.025em;
+      }
+      .capsule-1 .badge-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3.5px 10px 3.5px 8px;
+        border-radius: 9999px;
+        font-size: 10.5px;
+        font-weight: 750;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+      }
+      .capsule-1 .badge-btn:hover {
+        filter: brightness(0.96);
+        transform: translateY(-0.5px);
+      }
+      .capsule-1 .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .capsule-1 .caret {
+        font-size: 8px;
+        opacity: 0.7;
+      }
+
+      /* --------------------------------------------------------
+       2. THE CRISP WHITE ELEVATED BUTTON
+       Pure pill, Title + Crisp Elevated White Button
+       -------------------------------------------------------- */
+      .capsule-2 {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 9999px;
+        padding: 4px 6px 4px 14px;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+      }
+      .capsule-2 .title {
+        font-size: 16px;
+        font-weight: 750;
+        color: #0f172a;
+        letter-spacing: -0.025em;
+      }
+      .capsule-2 .badge-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        color: #0f172a;
+        padding: 3.5px 10px 3.5px 8px;
+        border-radius: 9999px;
+        font-size: 10.5px;
+        font-weight: 750;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        transition: all 0.15s ease;
+      }
+      .capsule-2 .badge-btn:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        transform: translateY(-0.5px);
+      }
+      .capsule-2 .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .capsule-2 .caret {
+        font-size: 8px;
+        color: #64748b;
+      }
+
+      /* --------------------------------------------------------
+       3. THE FROSTED TRANSLUCENT GLASS CAPSULE
+       Backdrop blur + Luminous glass surface
+       -------------------------------------------------------- */
+      .capsule-3 {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid rgba(203, 213, 225, 0.8);
+        backdrop-filter: blur(10px);
+        border-radius: 9999px;
+        padding: 4px 6px 4px 14px;
+        box-shadow: 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+      }
+      .capsule-3 .title {
+        font-size: 16px;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.025em;
+      }
+      .capsule-3 .badge-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3.5px 10px 3.5px 8px;
+        border-radius: 9999px;
+        font-size: 10.5px;
+        font-weight: 750;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+      }
+      .capsule-3 .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .capsule-3 .caret {
+        font-size: 8px;
+        opacity: 0.7;
+      }
+
+      /* --------------------------------------------------------
+       4. THE MINIMALIST HAIRLINE (Zero Inner Background)
+       Ultra-airy, clean typography + colored dot, no inner pill
+       -------------------------------------------------------- */
+      .capsule-4 {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 9999px;
+        padding: 4px 12px 4px 14px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+      }
+      .capsule-4 .title {
+        font-size: 16px;
+        font-weight: 750;
+        color: #0f172a;
+        letter-spacing: -0.025em;
+      }
+      .capsule-4 .divider {
+        width: 1px;
+        height: 16px;
+        background: #e2e8f0;
+      }
+      .capsule-4 .badge-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: none;
+        border: none;
+        color: #0f172a;
+        padding: 2px 4px;
+        font-size: 11px;
+        font-weight: 750;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background 0.12s ease;
+      }
+      .capsule-4 .badge-btn:hover {
+        background: #f1f5f9;
+      }
+      .capsule-4 .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .capsule-4 .caret {
+        font-size: 8px;
+        color: #64748b;
+      }
+
+      /* --------------------------------------------------------
+       5. THE SUBDUED SLATE-TINT BADGE
+       Light slate tint #f1f5f9 with dark slate text #0f172a
+       -------------------------------------------------------- */
+      .capsule-5 {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 9999px;
+        padding: 4px 6px 4px 14px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+      }
+      .capsule-5 .title {
+        font-size: 16px;
+        font-weight: 750;
+        color: #0f172a;
+        letter-spacing: -0.025em;
+      }
+      .capsule-5 .badge-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        color: #0f172a;
+        padding: 3.5px 10px 3.5px 8px;
+        border-radius: 9999px;
+        font-size: 10px;
+        font-weight: 750;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .capsule-5 .badge-btn:hover {
+        background: #e2e8f0;
+        border-color: #94a3b8;
+      }
+      .capsule-5 .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .capsule-5 .caret {
+        font-size: 8px;
+        color: #64748b;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- BANNER -->
+      <div class="banner">
+        <div class="banner-top">
+          <div>
+            <span class="badge-primary">Master Refinement</span>
+            <h1>Perfected Header Title: Clean Capsule (No Small Text, No Black)</h1>
+            <p class="lead-text">
+              Per your exact direction, all small text has been completely removed so the aesthetic remains pure,
+              self-contained, and perfectly level in the header. Below are the 5 perfected executions exploring
+              <strong>soft regional pastel tints</strong>, <strong>crisp elevated white buttons</strong>,
+              <strong>frosted glass</strong>, and <strong>subtle neutral slate</strong>—with zero harsh black.
+            </p>
+          </div>
+        </div>
+
+        <!-- CONTROLS -->
+        <div class="controls-grid">
+          <div class="ctrl-group">
+            <span class="ctrl-label">Select Service Scope:</span>
+            <button type="button" class="ctrl-btn active" onclick="setService('statewide')">
+              <span class="swatch-pip" style="background: #10b981"></span> Statewide
+            </button>
+            <button type="button" class="ctrl-btn" onclick="setService('north')">
+              <span class="swatch-pip" style="background: #7c3aed"></span> North Metro
+            </button>
+            <button type="button" class="ctrl-btn" onclick="setService('south')">
+              <span class="swatch-pip" style="background: #0d9488"></span> South Metro
+            </button>
+            <button type="button" class="ctrl-btn" onclick="setService('east')">
+              <span class="swatch-pip" style="background: #2563eb"></span> East Metro
+            </button>
+            <button type="button" class="ctrl-btn" onclick="setService('wachs')">
+              <span class="swatch-pip" style="background: #ea580c"></span> WACHS
+            </button>
+          </div>
+
+          <div class="ctrl-group">
+            <span class="ctrl-label">Select Screen:</span>
+            <button type="button" class="ctrl-btn active" onclick="setPage('command')">Command</button>
+            <button type="button" class="ctrl-btn" onclick="setPage('board')">Live Bed Board</button>
+            <button type="button" class="ctrl-btn" onclick="setPage('delays')">Delays</button>
+            <button type="button" class="ctrl-btn" onclick="setPage('referrals')">Referrals</button>
+            <button type="button" class="ctrl-btn" onclick="setPage('movements')">Movements</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================
+         1. THE LUMINOUS REGIONAL TINT (RECOMMENDED)
+         ======================================================== -->
+      <div class="mockup-card featured">
+        <div class="card-head">
+          <div class="card-title-wrap">
+            <span class="card-index">1</span>
+            <div>
+              <h2 class="card-title">1. The Luminous Regional Tint (Recommended)</h2>
+              <p class="card-subtitle">
+                Version 1 oval capsule with NO small text. The scope badge adopts a tailored soft pastel tint matching
+                the active Health Service with colored text, vivid dot, and live chevron.
+              </p>
+            </div>
+          </div>
+          <div class="card-score">Score: 200 / 200</div>
+        </div>
+
+        <!-- Live Top Bar Simulation -->
+        <div class="bar-preview">
+          <button class="rail-btn" type="button">☰</button>
+
+          <!-- Component Target -->
+          <div class="capsule-1">
+            <span class="title val-title">Command</span>
+            <div class="popover-container">
+              <button class="badge-btn val-soft-badge" type="button" onclick="togglePopover(event, 'pop-1')">
+                <span class="dot val-swatch-dot pulse-dot"></span>
+                <span class="val-scope-label">STATEWIDE</span>
+                <span class="caret">▼</span>
+              </button>
+              <div id="pop-1" class="popover-menu">
+                <div class="popover-title">Select Health Service</div>
+                <button type="button" class="menu-item" onclick="setService('statewide')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #10b981; display: inline-block; margin-right: 6px"
+                    ></span
+                    >Statewide</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('north')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #7c3aed; display: inline-block; margin-right: 6px"
+                    ></span
+                    >North Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('south')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #0d9488; display: inline-block; margin-right: 6px"
+                    ></span
+                    >South Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('east')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #2563eb; display: inline-block; margin-right: 6px"
+                    ></span
+                    >East Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('wachs')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #ea580c; display: inline-block; margin-right: 6px"
+                    ></span
+                    >WACHS</span
+                  >
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Center & Right Controls -->
+          <div class="search-box" style="margin-left: 12px">
+            <span>🔍</span> Search <span class="search-kbd">/</span>
+          </div>
+          <div class="btn-action">Activity <span style="font-weight: 700; color: #10b981">• 14:00</span></div>
+          <div class="btn-action">
+            Tasks
+            <span
+              style="background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-size: 10px; font-weight: 700"
+              >3</span
+            >
+          </div>
+          <div class="btn-action">Tools</div>
+          <button class="btn-primary" type="button">+ Action</button>
+        </div>
+
+        <!-- Details -->
+        <div class="details-grid">
+          <div class="detail-card">
+            <div class="detail-title">Why this design is the cleanest & most stylish</div>
+            <p>
+              <strong>Zero visual clutter:</strong> Removing the small text entirely lets the bold title and the pill
+              shape breathe. It creates a tranquil, high-end cockpit feel.
+            </p>
+            <p style="margin-top: 6px">
+              <strong>Tailored regional harmony:</strong> The badge background uses an elegant 8% color wash derived
+              from the official health service swatch (emerald wash for Statewide, violet wash for North, teal wash for
+              South, blue wash for East, terracotta wash for WACHS). Zero harsh black.
+            </p>
+            <p style="margin-top: 6px">
+              <strong>Interactive utility:</strong> The chevron makes it crystal-clear that clicking switches health
+              service scope.
+            </p>
+          </div>
+          <div class="detail-card">
+            <div class="detail-title">200-Point Score Breakdown</div>
+            <div class="score-breakdown">
+              <div class="score-row"><span>Visual Polish</span><span>50 / 50</span></div>
+              <div class="score-row"><span>Clinical Hierarchy</span><span>50 / 50</span></div>
+              <div class="score-row"><span>Functional Utility</span><span>50 / 50</span></div>
+              <div class="score-row"><span>WA Integration</span><span>50 / 50</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================
+         2. THE CRISP WHITE ELEVATED BUTTON
+         ======================================================== -->
+      <div class="mockup-card">
+        <div class="card-head">
+          <div class="card-title-wrap">
+            <span class="card-index">2</span>
+            <div>
+              <h2 class="card-title">2. The Crisp White Elevated Button</h2>
+              <p class="card-subtitle">
+                Version 1 capsule with an elevated pure white tactile button inside. Inset pill tray with a crisp 1px
+                neutral border and soft shadow.
+              </p>
+            </div>
+          </div>
+          <div class="card-score">Score: 198 / 200</div>
+        </div>
+
+        <!-- Live Top Bar Simulation -->
+        <div class="bar-preview">
+          <button class="rail-btn" type="button">☰</button>
+
+          <!-- Component Target -->
+          <div class="capsule-2">
+            <span class="title val-title">Command</span>
+            <div class="popover-container">
+              <button class="badge-btn" type="button" onclick="togglePopover(event, 'pop-2')">
+                <span class="dot val-swatch-dot pulse-dot"></span>
+                <span class="val-scope-label">STATEWIDE</span>
+                <span class="caret">▼</span>
+              </button>
+              <div id="pop-2" class="popover-menu">
+                <div class="popover-title">Select Health Service</div>
+                <button type="button" class="menu-item" onclick="setService('statewide')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #10b981; display: inline-block; margin-right: 6px"
+                    ></span
+                    >Statewide</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('north')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #7c3aed; display: inline-block; margin-right: 6px"
+                    ></span
+                    >North Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('south')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #0d9488; display: inline-block; margin-right: 6px"
+                    ></span
+                    >South Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('east')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #2563eb; display: inline-block; margin-right: 6px"
+                    ></span
+                    >East Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('wachs')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #ea580c; display: inline-block; margin-right: 6px"
+                    ></span
+                    >WACHS</span
+                  >
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="search-box" style="margin-left: 12px">
+            <span>🔍</span> Search <span class="search-kbd">/</span>
+          </div>
+          <div class="btn-action">Activity <span style="font-weight: 700; color: #10b981">• 14:00</span></div>
+          <div class="btn-action">
+            Tasks
+            <span
+              style="background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-size: 10px; font-weight: 700"
+              >3</span
+            >
+          </div>
+          <div class="btn-action">Tools</div>
+          <button class="btn-primary" type="button">+ Action</button>
+        </div>
+
+        <!-- Details -->
+        <div class="details-grid">
+          <div class="detail-card">
+            <div class="detail-title">Design Philosophy</div>
+            <p>
+              <strong>Physical Hardware Feel:</strong> The outer capsule is treated as a subtle soft-gray inset tray
+              (`#f1f5f9`), while the scope badge sits on a pure white elevated button (`#ffffff`) with a clean shadow.
+              It feels like an authentic clinical console control.
+            </p>
+          </div>
+          <div class="detail-card">
+            <div class="detail-title">200-Point Score Breakdown</div>
+            <div class="score-breakdown">
+              <div class="score-row"><span>Visual Polish</span><span>49 / 50</span></div>
+              <div class="score-row"><span>Clinical Hierarchy</span><span>50 / 50</span></div>
+              <div class="score-row"><span>Functional Utility</span><span>50 / 50</span></div>
+              <div class="score-row"><span>WA Integration</span><span>49 / 50</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================
+         3. THE FROSTED TRANSLUCENT GLASS CAPSULE
+         ======================================================== -->
+      <div class="mockup-card">
+        <div class="card-head">
+          <div class="card-title-wrap">
+            <span class="card-index">3</span>
+            <div>
+              <h2 class="card-title">3. The Frosted Translucent Glass Capsule</h2>
+              <p class="card-subtitle">
+                Version 1 capsule rendered in frosted glass (backdrop blur) with a luminous soft tint badge inside.
+              </p>
+            </div>
+          </div>
+          <div class="card-score">Score: 197 / 200</div>
+        </div>
+
+        <!-- Live Top Bar Simulation -->
+        <div class="bar-preview">
+          <button class="rail-btn" type="button">☰</button>
+
+          <!-- Component Target -->
+          <div class="capsule-3">
+            <span class="title val-title">Command</span>
+            <div class="popover-container">
+              <button class="badge-btn val-soft-badge" type="button" onclick="togglePopover(event, 'pop-3')">
+                <span class="dot val-swatch-dot pulse-dot"></span>
+                <span class="val-scope-label">STATEWIDE</span>
+                <span class="caret">▼</span>
+              </button>
+              <div id="pop-3" class="popover-menu">
+                <div class="popover-title">Select Health Service</div>
+                <button type="button" class="menu-item" onclick="setService('statewide')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #10b981; display: inline-block; margin-right: 6px"
+                    ></span
+                    >Statewide</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('north')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #7c3aed; display: inline-block; margin-right: 6px"
+                    ></span
+                    >North Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('south')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #0d9488; display: inline-block; margin-right: 6px"
+                    ></span
+                    >South Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('east')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #2563eb; display: inline-block; margin-right: 6px"
+                    ></span
+                    >East Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('wachs')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #ea580c; display: inline-block; margin-right: 6px"
+                    ></span
+                    >WACHS</span
+                  >
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="search-box" style="margin-left: 12px">
+            <span>🔍</span> Search <span class="search-kbd">/</span>
+          </div>
+          <div class="btn-action">Activity <span style="font-weight: 700; color: #10b981">• 14:00</span></div>
+          <div class="btn-action">
+            Tasks
+            <span
+              style="background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-size: 10px; font-weight: 700"
+              >3</span
+            >
+          </div>
+          <div class="btn-action">Tools</div>
+          <button class="btn-primary" type="button">+ Action</button>
+        </div>
+
+        <!-- Details -->
+        <div class="details-grid">
+          <div class="detail-card">
+            <div class="detail-title">Design Philosophy</div>
+            <p>
+              <strong>Luminous Depth:</strong> Translucent frosted glass (`backdrop-filter: blur(10px)`) gives the
+              capsule a modern, airy presence that feels weightless on the page while keeping high contrast.
+            </p>
+          </div>
+          <div class="detail-card">
+            <div class="detail-title">200-Point Score Breakdown</div>
+            <div class="score-breakdown">
+              <div class="score-row"><span>Visual Polish</span><span>50 / 50</span></div>
+              <div class="score-row"><span>Clinical Hierarchy</span><span>49 / 50</span></div>
+              <div class="score-row"><span>Functional Utility</span><span>49 / 50</span></div>
+              <div class="score-row"><span>WA Integration</span><span>49 / 50</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================
+         4. THE MINIMALIST HAIRLINE (Zero Inner Background)
+         ======================================================== -->
+      <div class="mockup-card">
+        <div class="card-head">
+          <div class="card-title-wrap">
+            <span class="card-index">4</span>
+            <div>
+              <h2 class="card-title">4. The Minimalist Hairline (Zero Inner Background)</h2>
+              <p class="card-subtitle">
+                Version 1 capsule with title, fine vertical hairline divider, and interactive scope trigger—zero colored
+                fill behind the badge.
+              </p>
+            </div>
+          </div>
+          <div class="card-score">Score: 196 / 200</div>
+        </div>
+
+        <!-- Live Top Bar Simulation -->
+        <div class="bar-preview">
+          <button class="rail-btn" type="button">☰</button>
+
+          <!-- Component Target -->
+          <div class="capsule-4">
+            <span class="title val-title">Command</span>
+            <div class="divider"></div>
+            <div class="popover-container">
+              <button class="badge-btn" type="button" onclick="togglePopover(event, 'pop-4')">
+                <span class="dot val-swatch-dot pulse-dot"></span>
+                <span class="val-scope-label">STATEWIDE</span>
+                <span class="caret">▼</span>
+              </button>
+              <div id="pop-4" class="popover-menu">
+                <div class="popover-title">Select Health Service</div>
+                <button type="button" class="menu-item" onclick="setService('statewide')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #10b981; display: inline-block; margin-right: 6px"
+                    ></span
+                    >Statewide</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('north')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #7c3aed; display: inline-block; margin-right: 6px"
+                    ></span
+                    >North Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('south')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #0d9488; display: inline-block; margin-right: 6px"
+                    ></span
+                    >South Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('east')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #2563eb; display: inline-block; margin-right: 6px"
+                    ></span
+                    >East Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('wachs')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #ea580c; display: inline-block; margin-right: 6px"
+                    ></span
+                    >WACHS</span
+                  >
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="search-box" style="margin-left: 12px">
+            <span>🔍</span> Search <span class="search-kbd">/</span>
+          </div>
+          <div class="btn-action">Activity <span style="font-weight: 700; color: #10b981">• 14:00</span></div>
+          <div class="btn-action">
+            Tasks
+            <span
+              style="background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-size: 10px; font-weight: 700"
+              >3</span
+            >
+          </div>
+          <div class="btn-action">Tools</div>
+          <button class="btn-primary" type="button">+ Action</button>
+        </div>
+
+        <!-- Details -->
+        <div class="details-grid">
+          <div class="detail-card">
+            <div class="detail-title">Design Philosophy</div>
+            <p>
+              <strong>Ultra-Airy Simplicity:</strong> Completely eliminates the secondary pill container inside. The
+              scope badge is simply the colored dot, crisp bold text, and chevron sitting directly inside the capsule.
+            </p>
+          </div>
+          <div class="detail-card">
+            <div class="detail-title">200-Point Score Breakdown</div>
+            <div class="score-breakdown">
+              <div class="score-row"><span>Visual Polish</span><span>49 / 50</span></div>
+              <div class="score-row"><span>Clinical Hierarchy</span><span>49 / 50</span></div>
+              <div class="score-row"><span>Functional Utility</span><span>49 / 50</span></div>
+              <div class="score-row"><span>WA Integration</span><span>49 / 50</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================
+         5. THE SUBDUED SLATE TONE BADGE
+         ======================================================== -->
+      <div class="mockup-card">
+        <div class="card-head">
+          <div class="card-title-wrap">
+            <span class="card-index">5</span>
+            <div>
+              <h2 class="card-title">5. The Subdued Slate Tone Badge</h2>
+              <p class="card-subtitle">
+                Version 1 capsule with a light neutral slate badge (#f1f5f9) and dark slate text. Clean and understated.
+              </p>
+            </div>
+          </div>
+          <div class="card-score">Score: 196 / 200</div>
+        </div>
+
+        <!-- Live Top Bar Simulation -->
+        <div class="bar-preview">
+          <button class="rail-btn" type="button">☰</button>
+
+          <!-- Component Target -->
+          <div class="capsule-5">
+            <span class="title val-title">Command</span>
+            <div class="popover-container">
+              <button class="badge-btn" type="button" onclick="togglePopover(event, 'pop-5')">
+                <span class="dot val-swatch-dot pulse-dot"></span>
+                <span class="val-scope-label">STATEWIDE</span>
+                <span class="caret">▼</span>
+              </button>
+              <div id="pop-5" class="popover-menu">
+                <div class="popover-title">Select Health Service</div>
+                <button type="button" class="menu-item" onclick="setService('statewide')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #10b981; display: inline-block; margin-right: 6px"
+                    ></span
+                    >Statewide</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('north')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #7c3aed; display: inline-block; margin-right: 6px"
+                    ></span
+                    >North Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('south')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #0d9488; display: inline-block; margin-right: 6px"
+                    ></span
+                    >South Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('east')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #2563eb; display: inline-block; margin-right: 6px"
+                    ></span
+                    >East Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('wachs')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #ea580c; display: inline-block; margin-right: 6px"
+                    ></span
+                    >WACHS</span
+                  >
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="search-box" style="margin-left: 12px">
+            <span>🔍</span> Search <span class="search-kbd">/</span>
+          </div>
+          <div class="btn-action">Activity <span style="font-weight: 700; color: #10b981">• 14:00</span></div>
+          <div class="btn-action">
+            Tasks
+            <span
+              style="background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-size: 10px; font-weight: 700"
+              >3</span
+            >
+          </div>
+          <div class="btn-action">Tools</div>
+          <button class="btn-primary" type="button">+ Action</button>
+        </div>
+
+        <!-- Details -->
+        <div class="details-grid">
+          <div class="detail-card">
+            <div class="detail-title">Design Philosophy</div>
+            <p>
+              <strong>Understated Monochromatic Tint:</strong> Keeps the badge in a consistent light slate neutral
+              (`#f1f5f9`), letting the colored dot provide the sole burst of color.
+            </p>
+          </div>
+          <div class="detail-card">
+            <div class="detail-title">200-Point Score Breakdown</div>
+            <div class="score-breakdown">
+              <div class="score-row"><span>Visual Polish</span><span>49 / 50</span></div>
+              <div class="score-row"><span>Clinical Hierarchy</span><span>49 / 50</span></div>
+              <div class="score-row"><span>Functional Utility</span><span>49 / 50</span></div>
+              <div class="score-row"><span>WA Integration</span><span>49 / 50</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // DATA DEFINITIONS
+      const SERVICES = {
+        statewide: {
+          label: "STATEWIDE",
+          color: "#10b981",
+          badgeBg: "#ecfdf5",
+          badgeColor: "#065f46",
+          badgeBorder: "#a7f3d0",
+        },
+        north: {
+          label: "NORTH METRO",
+          color: "#7c3aed",
+          badgeBg: "#f5f3ff",
+          badgeColor: "#5b21b6",
+          badgeBorder: "#ddd6fe",
+        },
+        south: {
+          label: "SOUTH METRO",
+          color: "#0d9488",
+          badgeBg: "#f0fdfa",
+          badgeColor: "#115e59",
+          badgeBorder: "#99f6e4",
+        },
+        east: {
+          label: "EAST METRO",
+          color: "#2563eb",
+          badgeBg: "#eff6ff",
+          badgeColor: "#1e40af",
+          badgeBorder: "#bfdbfe",
+        },
+        wachs: {
+          label: "WACHS",
+          color: "#ea580c",
+          badgeBg: "#fff7ed",
+          badgeColor: "#9a3412",
+          badgeBorder: "#fed7aa",
+        },
+      };
+
+      const PAGES = {
+        command: "Command",
+        board: "Live Bed Board",
+        delays: "Delays",
+        referrals: "Referrals",
+        movements: "Movements",
+      };
+
+      let currentService = "statewide";
+      let currentPage = "command";
+
+      function setService(key) {
+        currentService = key;
+        document.querySelectorAll(".ctrl-btn").forEach((btn) => {
+          if (btn.getAttribute("onclick")?.includes(`setService('${key}')`)) {
+            btn.classList.add("active");
+          } else if (btn.getAttribute("onclick")?.includes("setService")) {
+            btn.classList.remove("active");
+          }
+        });
+        document.querySelectorAll(".popover-menu").forEach((el) => el.classList.remove("open"));
+        render();
+      }
+
+      function setPage(key) {
+        currentPage = key;
+        document.querySelectorAll(".ctrl-btn").forEach((btn) => {
+          if (btn.getAttribute("onclick")?.includes(`setPage('${key}')`)) {
+            btn.classList.add("active");
+          } else if (btn.getAttribute("onclick")?.includes("setPage")) {
+            btn.classList.remove("active");
+          }
+        });
+        render();
+      }
+
+      function togglePopover(e, id) {
+        e.stopPropagation();
+        const el = document.getElementById(id);
+        if (!el) return;
+        const isOpen = el.classList.contains("open");
+        document.querySelectorAll(".popover-menu").forEach((m) => m.classList.remove("open"));
+        if (!isOpen) el.classList.add("open");
+      }
+
+      document.addEventListener("click", () => {
+        document.querySelectorAll(".popover-menu").forEach((m) => m.classList.remove("open"));
+      });
+
+      function render() {
+        const s = SERVICES[currentService];
+        const title = PAGES[currentPage];
+
+        // Update titles
+        document.querySelectorAll(".val-title").forEach((el) => (el.textContent = title));
+
+        // Update scope labels
+        document.querySelectorAll(".val-scope-label").forEach((el) => (el.textContent = s.label));
+
+        // Update swatch dots
+        document.querySelectorAll(".val-swatch-dot").forEach((el) => {
+          el.style.backgroundColor = s.color;
+        });
+
+        // Update Soft Tint Badges in Option 1 & 3
+        document.querySelectorAll(".val-soft-badge").forEach((el) => {
+          el.style.backgroundColor = s.badgeBg;
+          el.style.color = s.badgeColor;
+          el.style.borderColor = s.badgeBorder;
+        });
+
+        // Update active state in popovers
+        document.querySelectorAll(".popover-menu").forEach((menu) => {
+          menu.querySelectorAll(".menu-item").forEach((btn) => {
+            if (btn.getAttribute("onclick")?.includes(`setService('${currentService}')`)) {
+              btn.classList.add("selected");
+            } else {
+              btn.classList.remove("selected");
+            }
+          });
+        });
+      }
+
+      // Initial render
+      render();
+    </script>
+  </body>
+</html>

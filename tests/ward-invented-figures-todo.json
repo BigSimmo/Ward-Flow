@@ -1,0 +1,104 @@
+[
+  {
+    "file": "alerts/alerts-screen.tsx",
+    "rule": "hour window",
+    "text": "4 hours (Standard shift duration)",
+    "owner": "Remove invented data"
+  },
+  {
+    "file": "alerts/alerts-screen.tsx",
+    "rule": "hour window",
+    "text": "Prolonged ED Wait (＞24h)",
+    "owner": "Remove invented data"
+  },
+  {
+    "file": "alerts/ward-broadcast-model.ts",
+    "rule": "hour window",
+    "text": "CRITICAL: Multiple patients exceeding 24 hours in emergency departments at Fiona",
+    "owner": "Remove invented data"
+  },
+  {
+    "file": "alerts/ward-broadcast-model.ts",
+    "rule": "hour window",
+    "text": "Metropolitan ED Inflow / Acute Overcrowding (>24h Wait)",
+    "owner": "Remove invented data"
+  },
+  {
+    "file": "alerts/ward-broadcast-model.ts",
+    "rule": "hour window",
+    "text": "REGIONAL LOGISTICS: Royal Flying Doctor Service (RFDS) and WACHS aeromedical pat",
+    "owner": "Remove invented data"
+  },
+  {
+    "file": "alerts/ward-broadcast-model.ts",
+    "rule": "typed percentage",
+    "text": "Metropolitan HDU 100% Occupancy (Statewide Bed Gridlock)",
+    "owner": "Remove invented data"
+  },
+  {
+    "file": "alerts/ward-broadcast-model.ts",
+    "rule": "typed percentage",
+    "text": "URGENT: Metropolitan High Dependency Unit (HDU) capacity at 100% across NMHS, SM",
+    "owner": "Remove invented data"
+  },
+  {
+    "file": "discharges/discharge-board.tsx",
+    "rule": "hour window",
+    "text": "discharged 24h+ ago",
+    "owner": "Remove invented data"
+  },
+  {
+    "file": "handover/handover-page.tsx",
+    "rule": "hour window",
+    "text": "• Form expiries passed over 24h ago: on sheet, outside filter",
+    "owner": "Remove invented data"
+  },
+  {
+    "file": "handover/handover-page.tsx",
+    "rule": "typed percentage",
+    "text": "Severe South Metro secure bed pressure. FSH & Fremantle acute secure units at 10",
+    "owner": "Remove invented data"
+  },
+  {
+    "file": "patients/patient-now-records.ts",
+    "rule": "hour window",
+    "text": "11 hours in ED",
+    "owner": "Build linked demo data"
+  },
+  {
+    "file": "patients/patient-now-records.ts",
+    "rule": "hour window",
+    "text": "11 hours, discharged from the emergency department",
+    "owner": "Build linked demo data"
+  },
+  {
+    "file": "patients/patient-now-records.ts",
+    "rule": "hour window",
+    "text": "Discharged from the emergency department after 11 hours with crisis team follow ",
+    "owner": "Build linked demo data"
+  },
+  {
+    "file": "patients/patient-now-screen.tsx",
+    "rule": "hour window",
+    "text": "4h standard countdown active",
+    "owner": "Build linked demo data"
+  },
+  {
+    "file": "patients/patient-now-screen.tsx",
+    "rule": "hour window",
+    "text": "4h window passed — review the hold",
+    "owner": "Build linked demo data"
+  },
+  {
+    "file": "statistics/statistics-ed-screen.tsx",
+    "rule": "hour window",
+    "text": "positioned by elapsed time since their movement opened. past 24 hours, past 48.",
+    "owner": "Remove invented data"
+  },
+  {
+    "file": "ward-flow-reducer.ts",
+    "rule": "hour window",
+    "text": "Leave bed has been away for more than 24 hours — consider opening it.",
+    "owner": "Remove invented data"
+  }
+]

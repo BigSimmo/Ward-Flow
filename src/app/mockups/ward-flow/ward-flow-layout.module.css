@@ -1,0 +1,61 @@
+/*
+ * src/app/mockups/ward-flow/ward-flow-layout.module.css
+ *
+ * The layout-level shell row that gives `WardRail` (`shell/ward-rail.tsx`) something to sit
+ * beside. `WardRail`'s own stylesheet renders it as a flex column with an explicit width and
+ * `height: 100%` (`ward-rail.module.css`'s own header comment) — it is written to be a flex ITEM,
+ * not a page in its own right, and needs a flex-row ancestor with a real height to size against.
+ * Mounted as a bare sibling of the route's own content with no such ancestor, it would fall back
+ * to ordinary block layout and stack ABOVE the page rather than beside it.
+ *
+ * The approved drawing establishes exactly this two-part shape at its own outermost level
+ * (`docs/ward-flow/mockups/command-third-edition.html`'s `.app { display: grid; grid-template-
+ * columns: 236px minmax(0, 1fr); min-height: 100vh }` plus `.frame { display: flex; flex-
+ * direction: column }`). This file is the same shape, ported to the mount point this app actually
+ * has (`layout.tsx`, not a bare HTML page) and to flexbox rather than a grid track, so `WardRail`'s
+ * own `width` (open/closed, driven by its own CSS variable) is respected without a second,
+ * competing declaration of the same width in a grid column here.
+ *
+ * Paint the rail's full track with the Ward surface. The sticky rail stays viewport-height;
+ * longer route content must not expose the host application's background below it.
+ */
+.shellRow {
+  composes: wardShellTokens from "../../ward-flow-shell-tokens.module.css";
+  display: flex;
+  align-items: stretch;
+  min-height: 100dvh;
+  background: var(--surface);
+}
+
+/*
+ * Design elevation proposal (HOLD-FOR-JOSH, 26 Sept 2026): a focusable area (a div or section
+ * with tabindex) shows the same slate ring as every control, instead of the browser default.
+ * :where() gives it no specificity, so a screen's own focus rule still wins; the inset offset
+ * keeps it from being clipped by a panel's overflow.
+ */
+:where(.shellRow [tabindex]:not([tabindex="-1"]):focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+.shellContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/*
+ * ⚠️ **MUST MATCH `ward-rail.module.css`'S OWN `max-width: 1000px` BREAKPOINT EXACTLY.** Below
+ * it, `WardRail`'s `.rail` sets its own `width: 100%; height: auto` and reflows to a wrapping row
+ * (see that file's own header) — a shape that only makes sense as the FIRST block in a COLUMN,
+ * never as a row sibling still trying to share a line with `.shellContent`. The approved drawing
+ * makes the same switch at the same width, on its own outermost `.app` (`command-third-
+ * edition.html`'s `@media (max-width: 1000px) { .app { grid-template-columns: 1fr } }`) — this is
+ * that rule, ported to flexbox the same way the base rule above is.
+ */
+@media (max-width: 1000px) {
+  .shellRow {
+    flex-direction: column;
+  }
+}

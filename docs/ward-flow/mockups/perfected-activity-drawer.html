@@ -1,0 +1,2271 @@
+<!doctype html>
+<html lang="en-AU" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow — Perfected Activity Drawer (Mockup 1)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+    />
+
+    <style>
+      /* ─── 1. DESIGN TOKENS & SYSTEM CONTRACT ─── */
+      :root {
+        color-scheme: light dark;
+        --display: "Geist", system-ui, -apple-system, sans-serif;
+        --body: "Geist", system-ui, -apple-system, sans-serif;
+        --mono: "Geist Mono", ui-monospace, monospace;
+
+        --t-0: 11px;
+        --t-1: 12px;
+        --t-2: 13.5px;
+        --t-3: 15px;
+        --t-4: 17px;
+        --t-5: 20px;
+        --t-6: 24px;
+
+        --r-xs: 4px;
+        --r-sm: 6px;
+        --r-md: 10px;
+        --r-lg: 14px;
+        --r-xl: 18px;
+        --pill: 9999px;
+
+        --drawer-w: 420px;
+        --rail-w: 220px;
+      }
+
+      :root,
+      :root[data-theme="light"] {
+        --ground: #eaedf2;
+        --surface: #ffffff;
+        --surface-2: #f4f6f9;
+        --sunk: #eef2f6;
+        --ink: #11151b;
+        --ink-soft: #384252;
+        --muted: #647082;
+        --subtle: #94a3b8;
+
+        --accent: #2f4c66;
+        --accent-ink: #1c3245;
+        --accent-soft: #e2eaf2;
+        --on-accent: #ffffff;
+
+        --gilt: #82632b;
+        --gilt-soft: #f5efe2;
+
+        --good: #1a7a4c;
+        --good-soft: #e3f3eb;
+        --good-ink: #0f5433;
+
+        --warn: #a16207;
+        --warn-soft: #fef3c7;
+        --warn-ink: #78350f;
+
+        --danger: #b91c1c;
+        --danger-soft: #fee2e2;
+        --danger-ink: #7f1d1d;
+
+        --info: #2563eb;
+        --info-soft: #dbeafe;
+        --info-ink: #1e40af;
+
+        --line: rgba(15, 23, 42, 0.08);
+        --line-strong: rgba(15, 23, 42, 0.16);
+        --line-subtle: rgba(15, 23, 42, 0.04);
+
+        --lift-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+        --lift-card: 0 2px 8px -1px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+        --lift-drawer: -4px 0 24px -2px rgba(15, 23, 42, 0.12), -1px 0 4px rgba(15, 23, 42, 0.06);
+        --scrim: rgba(15, 23, 42, 0.38);
+
+        --switcher-bg: #eef2f6;
+        --switcher-active-bg: #ffffff;
+        --switcher-active-shadow: 0 2px 8px -1px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+      }
+
+      :root[data-theme="dark"] {
+        --ground: #0d1014;
+        --surface: #14171d;
+        --surface-2: #1b2028;
+        --sunk: #0f1217;
+        --ink: #f0f3f8;
+        --ink-soft: #b4bfd0;
+        --muted: #79879c;
+        --subtle: #4b586c;
+
+        --accent: #90b0d3;
+        --accent-ink: #d4e3f3;
+        --accent-soft: #1d2734;
+        --on-accent: #0b1219;
+
+        --gilt: #e0be77;
+        --gilt-soft: #2d2415;
+
+        --good: #4ade80;
+        --good-soft: #142e1f;
+        --good-ink: #86efac;
+
+        --warn: #fbbf24;
+        --warn-soft: #382a0d;
+        --warn-ink: #fde68a;
+
+        --danger: #f87171;
+        --danger-soft: #381515;
+        --danger-ink: #fca5a5;
+
+        --info: #60a5fa;
+        --info-soft: #172844;
+        --info-ink: #93c5fd;
+
+        --line: rgba(255, 255, 255, 0.08);
+        --line-strong: rgba(255, 255, 255, 0.15);
+        --line-subtle: rgba(255, 255, 255, 0.03);
+
+        --lift-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+        --lift-card: 0 3px 10px -2px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+        --lift-drawer: -6px 0 28px -4px rgba(0, 0, 0, 0.7);
+        --scrim: rgba(0, 0, 0, 0.65);
+
+        --switcher-bg: #10141a;
+        --switcher-active-bg: #1c222b;
+        --switcher-active-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: var(--body);
+        font-size: var(--t-2);
+        color: var(--ink);
+        background: var(--ground);
+        min-height: 100vh;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      /* Top brand stripe */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent) 0%, var(--gilt) 100%);
+        z-index: 100;
+        pointer-events: none;
+      }
+
+      /* ─── 2. TOP PRESENTATION & DEMO CONTROLS BAR ─── */
+      .previewBar {
+        position: sticky;
+        top: 0;
+        z-index: 60;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        gap: 12px;
+        box-shadow: var(--lift-sm);
+      }
+      .previewBrand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .previewTag {
+        font-size: var(--t-0);
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        padding: 2px 7px;
+        border-radius: var(--r-xs);
+      }
+      .previewTitle {
+        font-size: var(--t-2);
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .previewMuted {
+        font-size: var(--t-1);
+        color: var(--muted);
+      }
+      .previewControls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .btnPill {
+        height: 28px;
+        padding: 0 12px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line-strong);
+        background: var(--surface-2);
+        font-family: var(--body);
+        font-size: var(--t-1);
+        font-weight: 500;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s ease;
+      }
+      .btnPill:hover {
+        background: var(--sunk);
+        color: var(--ink);
+        border-color: var(--ink-soft);
+      }
+      .btnPill.active {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+
+      /* ─── 3. SIMULATED APP CANVAS (BACKGROUND STAGE) ─── */
+      .appLayout {
+        display: grid;
+        grid-template-columns: var(--rail-w) 1fr;
+        min-height: calc(100vh - 44px);
+        position: relative;
+      }
+      .simRail {
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        padding: 16px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .railBrandBlock {
+        padding: 4px 8px;
+      }
+      .railLogo {
+        font-size: var(--t-3);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--accent);
+      }
+      .railSub {
+        font-size: var(--t-0);
+        color: var(--gilt);
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .railNavList {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .railNavItem {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 10px;
+        border-radius: var(--r-sm);
+        font-size: var(--t-2);
+        color: var(--ink-soft);
+        text-decoration: none;
+        font-weight: 500;
+      }
+      .railNavItem.current {
+        background: var(--surface-2);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: inset 3px 0 0 var(--accent);
+      }
+      .railBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        background: var(--sunk);
+        color: var(--muted);
+        padding: 1px 6px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line);
+      }
+
+      .simCanvas {
+        padding: 24px 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        max-width: 1200px;
+      }
+      .canvasHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 16px;
+      }
+      .canvasHeaderTitle h1 {
+        font-size: var(--t-5);
+        font-weight: 600;
+        color: var(--ink);
+        letter-spacing: -0.02em;
+      }
+      .canvasHeaderTitle p {
+        font-size: var(--t-1);
+        color: var(--muted);
+        margin-top: 4px;
+      }
+      .canvasBtnGroup {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .openDrawerBtn {
+        height: 34px;
+        padding: 0 14px;
+        border-radius: var(--pill);
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        color: var(--ink);
+        font-family: var(--body);
+        font-size: var(--t-1);
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        box-shadow: var(--lift-sm);
+        transition: all 0.15s ease;
+      }
+      .openDrawerBtn:hover {
+        background: var(--sunk);
+        border-color: var(--ink-soft);
+        transform: translateY(-1px);
+      }
+      .openDrawerBtn .pulseDot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--good);
+        box-shadow: 0 0 0 3px var(--good-soft);
+      }
+
+      /* Canvas Mock Cards */
+      .canvasGrid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+      .simCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r-md);
+        padding: 16px;
+        box-shadow: var(--lift-sm);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .simCardHead {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .simCardTitle {
+        font-size: var(--t-2);
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .simCardValue {
+        font-family: var(--mono);
+        font-size: var(--t-5);
+        font-weight: 600;
+        color: var(--accent);
+      }
+
+      /* ─── 4. BACKDROP SCRIM ─── */
+      .drawerScrim {
+        position: fixed;
+        inset: 0;
+        background: var(--scrim);
+        backdrop-filter: blur(2px);
+        z-index: 70;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .drawerScrim.visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* ─── 5. PERFECTED OFF-CANVAS ACTIVITY DRAWER SHELL ─── */
+      .activityDrawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: min(var(--drawer-w), 100vw);
+        height: 100vh;
+        background: var(--surface);
+        border-left: 1px solid var(--line-strong);
+        box-shadow: var(--lift-drawer);
+        z-index: 80;
+        display: flex;
+        flex-direction: column;
+        transform: translateX(0);
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow: hidden;
+      }
+      .activityDrawer.closed {
+        transform: translateX(100%);
+      }
+
+      /* Drawer Header */
+      .drawerHeader {
+        padding: 16px 20px 14px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      .drawerHeaderTop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .drawerTitleGroup {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .drawerTitle {
+        font-family: var(--display);
+        font-size: var(--t-4);
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        color: var(--ink);
+      }
+      .scopeBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        letter-spacing: 0.02em;
+      }
+
+      /* Squircle Close Button with Esc Badge */
+      .drawerCloseBtn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 30px;
+        padding: 0 8px 0 10px;
+        border-radius: 8px; /* Squircle curvature */
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        color: var(--ink-soft);
+        cursor: pointer;
+        font-family: var(--body);
+        font-size: var(--t-1);
+        font-weight: 500;
+        transition: all 0.15s ease;
+      }
+      .drawerCloseBtn:hover {
+        background: var(--sunk);
+        border-color: var(--line-strong);
+        color: var(--ink);
+        transform: translateY(-1px);
+      }
+      .drawerCloseBtn:active {
+        transform: translateY(0);
+      }
+      .escKeyBadge {
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 600;
+        background: var(--surface);
+        color: var(--muted);
+        border: 1px solid var(--line-strong);
+        border-radius: 4px;
+        padding: 1px 4px;
+        line-height: 1.1;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06);
+      }
+
+      /* Freshness Banner */
+      .freshnessBanner {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: var(--t-0);
+        color: var(--muted);
+        letter-spacing: 0.01em;
+      }
+      .liveDot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--good);
+        box-shadow: 0 0 0 2px var(--good-soft);
+        position: relative;
+        flex-shrink: 0;
+      }
+      .liveDot::after {
+        content: "";
+        position: absolute;
+        inset: -3px;
+        border-radius: 50%;
+        border: 1px solid var(--good);
+        opacity: 0.6;
+        animation: pulseAura 2.2s infinite ease-out;
+      }
+      @keyframes pulseAura {
+        0% {
+          transform: scale(0.8);
+          opacity: 0.8;
+        }
+        100% {
+          transform: scale(2.2);
+          opacity: 0;
+        }
+      }
+
+      /* ─── 6. THE HERO SWITCHER (CONDENSED, CURVED, ELEVATED) ─── */
+      .switcherSection {
+        padding: 14px 20px 10px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+
+      /* Curved Pill Outer Track */
+      .heroSwitcher {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3px;
+        height: 38px;
+        padding: 3px;
+        background: var(--switcher-bg);
+        border-radius: var(--pill);
+        border: 1px solid var(--line);
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+        position: relative;
+      }
+
+      /* Switcher Segment Tab */
+      .switcherTab {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        height: 100%;
+        border-radius: var(--pill);
+        border: 1px solid transparent;
+        background: transparent;
+        font-family: var(--body);
+        font-size: var(--t-2);
+        font-weight: 500;
+        color: var(--muted);
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        user-select: none;
+      }
+      .switcherTab:hover:not(.active) {
+        color: var(--ink);
+      }
+      .switcherTab.active {
+        background: var(--switcher-active-bg);
+        color: var(--ink);
+        font-weight: 600;
+        border-color: var(--line);
+        box-shadow: var(--switcher-active-shadow);
+        cursor: default;
+      }
+
+      /* Tab Count Badges & Context Chips */
+      .tabCountBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        padding: 1px 7px;
+        border-radius: var(--pill);
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        line-height: 1.3;
+        border: 1px solid rgba(47, 76, 102, 0.15);
+        transition: background 0.15s ease;
+      }
+      .tabContextChip {
+        font-family: var(--display);
+        font-size: 10.5px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1px 6px;
+        border-radius: var(--pill);
+        background: var(--surface-2);
+        color: var(--muted);
+        border: 1px solid var(--line);
+        line-height: 1.3;
+      }
+      .switcherTab.active .tabContextChip {
+        background: var(--sunk);
+        color: var(--ink-soft);
+      }
+
+      /* Secondary Filter Chips Row */
+      .filterChipsTrack {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+        scrollbar-width: none;
+      }
+      .filterChipsTrack::-webkit-scrollbar {
+        display: none;
+      }
+      .filterChip {
+        height: 26px;
+        padding: 0 10px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        color: var(--ink-soft);
+        font-family: var(--body);
+        font-size: var(--t-1);
+        font-weight: 500;
+        white-space: nowrap;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.12s ease;
+      }
+      .filterChip:hover {
+        background: var(--sunk);
+        color: var(--ink);
+        border-color: var(--line-strong);
+      }
+      .filterChip.active {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+      .filterChip .chipCount {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        opacity: 0.85;
+      }
+
+      /* ─── 7. DRAWER SCROLLABLE CONTENT BODY ─── */
+      .drawerScrollBody {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+        scrollbar-width: thin;
+        scrollbar-color: var(--line-strong) transparent;
+      }
+      .drawerScrollBody::-webkit-scrollbar {
+        width: 6px;
+      }
+      .drawerScrollBody::-webkit-scrollbar-thumb {
+        background: var(--line-strong);
+        border-radius: var(--pill);
+      }
+
+      /* Views container */
+      .viewPanel {
+        display: flex;
+        flex-direction: column;
+        animation: fadeInView 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .viewPanel.hidden {
+        display: none;
+      }
+      @keyframes fadeInView {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ─── 8. ACTIVITY FEED: TIMELINE WITH CONNECTED HAIRLINE ─── */
+      .feedSection {
+        padding: 12px 18px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      /* Pulse Summary Banner */
+      .pulseSummaryCard {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r-md);
+        padding: 10px 14px;
+        font-size: var(--t-1);
+        line-height: 1.45;
+        color: var(--ink-soft);
+      }
+      .pulseSummaryCard b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .pulseHighlightWarn {
+        color: var(--warn);
+        font-weight: 600;
+      }
+      .pulseHighlightDanger {
+        color: var(--danger);
+        font-weight: 600;
+      }
+
+      .feedTimelineHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 2px 2px;
+      }
+      .feedTimelineTitle {
+        font-size: var(--t-0);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+      .feedTimelineMeta {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+
+      /* Connected Hairline Timeline Container */
+      .timelineThread {
+        position: relative;
+        margin-left: 20px;
+        padding-left: 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      /* Vertical connecting thread line */
+      .timelineThread::before {
+        content: "";
+        position: absolute;
+        top: 10px;
+        bottom: 12px;
+        left: 0;
+        width: 2px;
+        background: var(--line);
+        border-radius: var(--pill);
+      }
+
+      /* Individual Event Row */
+      .timelineEvent {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 2px 0 2px 4px;
+        font-size: var(--t-2);
+        line-height: 1.45;
+        color: var(--ink-soft);
+        transition: opacity 0.15s ease;
+      }
+      .timelineEvent.filteredOut {
+        display: none;
+      }
+
+      /* Tone Dots anchored on the vertical thread */
+      .timelineDot {
+        position: absolute;
+        left: -26px; /* center on line at left:0 */
+        top: 6px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--muted);
+        border: 2px solid var(--surface);
+        box-shadow: 0 0 0 1px var(--line);
+        flex-shrink: 0;
+        z-index: 2;
+      }
+      .timelineDot[data-tone="warn"] {
+        background: var(--warn);
+        box-shadow: 0 0 0 1px rgba(161, 98, 7, 0.3);
+      }
+      .timelineDot[data-tone="good"] {
+        background: var(--good);
+        box-shadow: 0 0 0 1px rgba(26, 122, 76, 0.3);
+      }
+      .timelineDot[data-tone="danger"] {
+        background: var(--danger);
+        box-shadow: 0 0 0 1px rgba(185, 28, 28, 0.3);
+      }
+      .timelineDot[data-tone="info"] {
+        background: var(--info);
+        box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.3);
+      }
+
+      /* Event Meta Header Line (Timestamp · Entity Chip · Tone Badge) */
+      .eventMetaRow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .eventTime {
+        font-family: var(--mono);
+        font-size: var(--t-1);
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
+        color: var(--muted);
+      }
+      .entityChip {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--ink);
+        background: var(--sunk);
+        border: 1px solid var(--line-strong);
+        padding: 1px 6px;
+        border-radius: 4px;
+        letter-spacing: -0.01em;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.12s ease;
+      }
+      .entityChip:hover {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+      }
+      .eventCategoryBadge {
+        font-size: 10.5px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+      .eventCategoryBadge.badge-escalation {
+        background: var(--warn-soft);
+        color: var(--warn-ink);
+      }
+      .eventCategoryBadge.badge-decline {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+      }
+      .eventCategoryBadge.badge-referral {
+        background: var(--good-soft);
+        color: var(--good-ink);
+      }
+      .eventCategoryBadge.badge-transfer {
+        background: var(--info-soft);
+        color: var(--info-ink);
+      }
+
+      /* Event Body Description */
+      .eventDesc {
+        color: var(--ink-soft);
+        font-size: var(--t-2);
+        line-height: 1.4;
+      }
+      .eventDesc b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .eventReason {
+        font-style: italic;
+        color: var(--muted);
+      }
+
+      /* ─── 9. INTERACTIVE DISCLOSURES (ACCORDIONS) ─── */
+      .disclosuresBlock {
+        padding: 0 18px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .disclosureCard {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r-md);
+        overflow: hidden;
+        transition: border-color 0.15s ease;
+      }
+      .disclosureCard:hover {
+        border-color: var(--line-strong);
+      }
+      .disclosureToggle {
+        width: 100%;
+        padding: 10px 14px;
+        background: transparent;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        font-family: var(--body);
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink);
+        text-align: left;
+      }
+      .disclosureLeft {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .disclosureChevron {
+        width: 16px;
+        height: 16px;
+        color: var(--muted);
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .disclosureCard.open .disclosureChevron {
+        transform: rotate(180deg);
+      }
+      .disclosureContent {
+        display: none;
+        padding: 4px 14px 12px;
+        border-top: 1px solid var(--line);
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        animation: expandContent 0.18s ease;
+      }
+      .disclosureCard.open .disclosureContent {
+        display: block;
+      }
+      @keyframes expandContent {
+        from {
+          opacity: 0;
+          transform: translateY(-4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Event Key Items */
+      .keyGrid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin-top: 6px;
+      }
+      .keyRow {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: var(--t-1);
+      }
+      .keyRow .keyDot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .keyRow b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      /* Reconciliation Checks List */
+      .reconList {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 6px;
+      }
+      .reconItem {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        font-size: var(--t-1);
+      }
+      .reconCheckIcon {
+        color: var(--good);
+        font-weight: 700;
+        font-size: var(--t-2);
+      }
+
+      /* ─── 10. VIEW 2: LIVE TALLY (COMMAND METRICS & BREAKDOWNS) ─── */
+      .tallySection {
+        padding: 16px 18px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .tallyHeadline {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+      .tallyTitle {
+        font-size: var(--t-3);
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .tallySubtitle {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+
+      /* 2x2 Command KPI Tiles */
+      .tallyTileGrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .kpiTile {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r-md);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        transition: all 0.15s ease;
+      }
+      .kpiTile:hover {
+        border-color: var(--line-strong);
+        transform: translateY(-1px);
+      }
+      .kpiTileHeader {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+      .kpiTileNumber {
+        font-family: var(--mono);
+        font-size: var(--t-6);
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+      }
+      .kpiTile[data-tone="danger"] .kpiTileNumber {
+        color: var(--danger);
+      }
+      .kpiTile[data-tone="warn"] .kpiTileNumber {
+        color: var(--warn);
+      }
+      .kpiTileNote {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+
+      /* Operational Facts Table */
+      .tallyGroup {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r-md);
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .tallyGroupTitle {
+        font-size: var(--t-1);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+      .factsDList {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px 12px;
+        font-size: var(--t-1);
+      }
+      .factsDList dt {
+        color: var(--ink-soft);
+      }
+      .factsDList dd {
+        font-family: var(--mono);
+        font-weight: 600;
+        color: var(--ink);
+        text-align: right;
+      }
+      .factsDList dd[data-tone="warn"] {
+        color: var(--warn);
+      }
+      .factsDList dd[data-tone="danger"] {
+        color: var(--danger);
+      }
+
+      /* Breakdown Data Table */
+      .miniTable {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--t-1);
+        text-align: left;
+      }
+      .miniTable th {
+        padding: 6px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        border-bottom: 1px solid var(--line-strong);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .miniTable td {
+        padding: 8px 8px;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink-soft);
+      }
+      .miniTable tr:last-child td {
+        border-bottom: none;
+      }
+      .miniTable .numCell {
+        font-family: var(--mono);
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .miniTable .zeroNote {
+        color: var(--muted);
+        font-style: italic;
+        font-size: 11px;
+      }
+
+      /* ─── 11. POLISHED DRAWER FOOTER ─── */
+      .drawerFooter {
+        padding: 12px 20px;
+        background: var(--surface);
+        border-top: 1px solid var(--line);
+        font-size: var(--t-0);
+        color: var(--muted);
+        line-height: 1.45;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex-shrink: 0;
+      }
+      .footerNotice {
+        color: var(--muted);
+      }
+      .footerTelemetry {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 4px;
+        border-top: 1px solid var(--line-subtle);
+      }
+      .telemetryStatus {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 500;
+        color: var(--ink-soft);
+      }
+      .telemetryStatus .statusDot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--good);
+      }
+
+      /* ─── 12. POPUP TOAST & ENTITY DETAILS MODAL ─── */
+      .toastNotification {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: var(--ink);
+        color: var(--surface);
+        padding: 8px 16px;
+        border-radius: var(--pill);
+        font-size: var(--t-1);
+        font-weight: 500;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+        z-index: 120;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .toastNotification.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      /* Entity Micro-Flyout */
+      .entityFlyout {
+        position: fixed;
+        z-index: 95;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r-md);
+        box-shadow: var(--lift-card);
+        padding: 12px 14px;
+        width: 280px;
+        display: none;
+        flex-direction: column;
+        gap: 6px;
+        animation: popIn 0.15s ease;
+      }
+      .entityFlyout.visible {
+        display: flex;
+      }
+      @keyframes popIn {
+        from {
+          opacity: 0;
+          transform: scale(0.96);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      .flyoutHeader {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 6px;
+      }
+      .flyoutTitle {
+        font-family: var(--mono);
+        font-size: var(--t-2);
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .flyoutBody {
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        line-height: 1.4;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- TOP PREVIEW & CONTROL BAR -->
+    <header class="previewBar" role="banner">
+      <div class="previewBrand">
+        <span class="previewTag">Mockup 1</span>
+        <span class="previewTitle">Ward Flow — Perfected Activity Drawer</span>
+        <span class="previewMuted">· Elevated Hero Switcher &amp; Feed</span>
+      </div>
+      <div class="previewControls">
+        <button
+          type="button"
+          class="btnPill"
+          id="themeToggleBtn"
+          onclick="toggleTheme()"
+          aria-label="Toggle light/dark appearance"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <span id="themeToggleLabel">Dark Theme</span>
+        </button>
+
+        <button type="button" class="btnPill" id="drawerToggleBtn" onclick="toggleActivityDrawer()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="15" y1="3" x2="15" y2="21"></line>
+          </svg>
+          <span id="drawerToggleLabel">Close Drawer</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- SIMULATED WARD FLOW APPLICATION CANVAS -->
+    <div class="appLayout">
+      <!-- Left Navigation Rail -->
+      <nav class="simRail" aria-label="Primary Navigation">
+        <div class="railBrandBlock">
+          <div class="railLogo">WARD FLOW</div>
+          <div class="railSub">WA Mental Health</div>
+        </div>
+        <ul class="railNavList">
+          <li>
+            <a href="#" class="railNavItem current"><span>Command Hub</span><span class="railBadge">Live</span></a>
+          </li>
+          <li>
+            <a href="#" class="railNavItem"><span>Bed Board</span><span class="railBadge">196</span></a>
+          </li>
+          <li>
+            <a href="#" class="railNavItem"
+              ><span>Delays &amp; Holds</span><span class="railBadge" style="color: var(--warn)">3</span></a
+            >
+          </li>
+          <li>
+            <a href="#" class="railNavItem"><span>Capacity</span><span class="railBadge">16 free</span></a>
+          </li>
+          <li>
+            <a href="#" class="railNavItem"><span>Referrals</span><span class="railBadge">4</span></a>
+          </li>
+          <li>
+            <a href="#" class="railNavItem"><span>Governance</span></a>
+          </li>
+          <li>
+            <a href="#" class="railNavItem"><span>Shift Handover</span></a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Canvas Main Workspace -->
+      <main class="simCanvas" role="main">
+        <div class="canvasHeader">
+          <div class="canvasHeaderTitle">
+            <h1>State Bed Coordination Desk</h1>
+            <p>Perth Metropolitan &amp; WA Country Health Services · Operational shift 07:00 – 15:30 AWST</p>
+          </div>
+          <div class="canvasBtnGroup">
+            <button type="button" class="openDrawerBtn" onclick="openActivityDrawer()">
+              <span class="pulseDot"></span>
+              <span>Activity Drawer</span>
+              <span class="railBadge" style="background: var(--accent-soft); color: var(--accent-ink); font-weight: 600"
+                >20</span
+              >
+            </button>
+          </div>
+        </div>
+
+        <div class="canvasGrid">
+          <div class="simCard">
+            <div class="simCardHead">
+              <span class="simCardTitle">Waiting in EDs</span>
+              <span class="simCardValue">23</span>
+            </div>
+            <p style="font-size: var(--t-1); color: var(--muted)">
+              8 emergency departments reporting. 2 breaching &gt;24h statutory deadline.
+            </p>
+          </div>
+          <div class="simCard">
+            <div class="simCardHead">
+              <span class="simCardTitle">Operational Beds Free</span>
+              <span class="simCardValue">16</span>
+            </div>
+            <p style="font-size: var(--t-1); color: var(--muted)">
+              196 total beds across adult open, secure, and youth acute facilities.
+            </p>
+          </div>
+          <div class="simCard">
+            <div class="simCardHead">
+              <span class="simCardTitle">Pending State Escalations</span>
+              <span class="simCardValue" style="color: var(--warn)">2</span>
+            </div>
+            <p style="font-size: var(--t-1); color: var(--muted)">
+              WF-009 (multiple hospital declines) and WF-022 awaiting central allocation.
+            </p>
+          </div>
+        </div>
+
+        <div
+          style="
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--r-md);
+            padding: 24px;
+            box-shadow: var(--lift-sm);
+          "
+        >
+          <h2 style="font-size: var(--t-3); font-weight: 600; margin-bottom: 8px">
+            Activity Drawer Perfection Architecture
+          </h2>
+          <p style="font-size: var(--t-2); color: var(--ink-soft); line-height: 1.6; max-width: 75ch">
+            This mockup delivers the requested <b>modern, mature, condensed, and curved</b> segmented switcher control
+            with an elevated layout, paired with the full 20-event recent activity timeline and live tally metrics for
+            Ward Flow.
+          </p>
+          <ul style="margin: 16px 0 0 20px; font-size: var(--t-1); color: var(--ink-soft); line-height: 1.7">
+            <li>
+              <b>Curved Pill Switcher:</b> 38px balanced height, 9999px continuous border-radius with compact 3px
+              padding.
+            </li>
+            <li><b>Floating Active Pill:</b> Micro-elevated shadow with crisp micro-border and smooth transition.</li>
+            <li>
+              <b>Badges &amp; Context Chips:</b> Tabular count badge (20) in accent-soft and context indicator
+              (Command).
+            </li>
+            <li>
+              <b>Interactive View Switching:</b> Real-time toggling between Activity Feed and Live Tally snapshot.
+            </li>
+            <li>
+              <b>Connected Hairline Timeline:</b> Connected vertical thread linking timestamps, tone dots, and crisp
+              entity chips.
+            </li>
+            <li>
+              <b>Secondary Filter Chips:</b> Live dynamic filtering for All (20), Escalations (2), Declines (4),
+              Referrals (8), and Transfers (6).
+            </li>
+          </ul>
+        </div>
+      </main>
+    </div>
+
+    <!-- BACKDROP SCRIM -->
+    <div class="drawerScrim visible" id="drawerScrim" onclick="closeActivityDrawer()" aria-hidden="true"></div>
+
+    <!-- ─── 13. THE OFF-CANVAS ACTIVITY DRAWER ─── -->
+    <aside
+      class="activityDrawer"
+      id="activityDrawer"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Activity and State Drawer"
+    >
+      <!-- 13.1 DRAWER HEADER -->
+      <div class="drawerHeader">
+        <div class="drawerHeaderTop">
+          <div class="drawerTitleGroup">
+            <h2 class="drawerTitle">Activity</h2>
+            <span class="scopeBadge">all services</span>
+          </div>
+          <button
+            type="button"
+            class="drawerCloseBtn"
+            onclick="closeActivityDrawer()"
+            aria-label="Close activity drawer"
+          >
+            <span>Close</span>
+            <kbd class="escKeyBadge">Esc</kbd>
+          </button>
+        </div>
+        <div class="freshnessBanner">
+          <span class="liveDot" aria-hidden="true"></span>
+          <span>Synthetic state · demo time 13:58 · last event 13:52</span>
+        </div>
+      </div>
+
+      <!-- 13.2 THE HERO SWITCHER SECTION (CONDENSED, CURVED, ELEVATED) -->
+      <div class="switcherSection">
+        <!-- Curved Pill Switcher Control -->
+        <div class="heroSwitcher" role="tablist" aria-label="Activity views">
+          <button
+            type="button"
+            class="switcherTab active"
+            id="tabBtnActivity"
+            role="tab"
+            aria-selected="true"
+            aria-controls="activityFeedView"
+            onclick="switchView('activity')"
+          >
+            <span>Activity</span>
+            <span class="tabCountBadge">20</span>
+          </button>
+          <button
+            type="button"
+            class="switcherTab"
+            id="tabBtnTally"
+            role="tab"
+            aria-selected="false"
+            aria-controls="liveTallyView"
+            onclick="switchView('tally')"
+          >
+            <span>Live tally</span>
+            <span class="tabContextChip">Command</span>
+          </button>
+        </div>
+
+        <!-- Secondary Filter Chips (Only applicable to Activity Feed) -->
+        <div class="filterChipsTrack" id="feedFilterChips" role="group" aria-label="Filter events by category">
+          <button type="button" class="filterChip active" data-filter="all" onclick="filterFeed('all', this)">
+            <span>All</span>
+            <span class="chipCount">(20)</span>
+          </button>
+          <button type="button" class="filterChip" data-filter="escalation" onclick="filterFeed('escalation', this)">
+            <span>Escalations</span>
+            <span class="chipCount">(2)</span>
+          </button>
+          <button type="button" class="filterChip" data-filter="decline" onclick="filterFeed('decline', this)">
+            <span>Declines</span>
+            <span class="chipCount">(4)</span>
+          </button>
+          <button type="button" class="filterChip" data-filter="referral" onclick="filterFeed('referral', this)">
+            <span>Referrals</span>
+            <span class="chipCount">(8)</span>
+          </button>
+          <button type="button" class="filterChip" data-filter="transfer" onclick="filterFeed('transfer', this)">
+            <span>Transfers</span>
+            <span class="chipCount">(6)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 13.3 SCROLLABLE BODY -->
+      <div class="drawerScrollBody">
+        <!-- ─── VIEW 1: ACTIVITY FEED ─── -->
+        <div class="viewPanel" id="activityFeedView" role="tabpanel" aria-labelledby="tabBtnActivity">
+          <div class="feedSection">
+            <!-- What is Going On Clinical Pulse Card -->
+            <div class="pulseSummaryCard">
+              <b>23</b> people waiting in <b>8</b> EDs ·
+              <span class="pulseHighlightDanger">2 passed legal deadline</span> · <b>16</b> beds free across network ·
+              Handover due at <b>14:00</b>.
+            </div>
+
+            <div class="feedTimelineHeader">
+              <span class="feedTimelineTitle">Recent Changes</span>
+              <span class="feedTimelineMeta" id="feedCounterLabel">20 of 20 events</span>
+            </div>
+
+            <!-- Connected Hairline Timeline Container -->
+            <div class="timelineThread" id="eventsTimelineThread">
+              <!-- Event 1: 13:52 Escalation -->
+              <div class="timelineEvent" data-category="escalation">
+                <span class="timelineDot" data-tone="warn" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">13:52</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('WF-009', event)">WF-009</button>
+                  <span class="eventCategoryBadge badge-escalation">Escalation</span>
+                </div>
+                <div class="eventDesc"><b>WF-009</b> escalated to State bed coordination desk.</div>
+              </div>
+
+              <!-- Event 2: 13:50 Decline -->
+              <div class="timelineEvent" data-category="decline">
+                <span class="timelineDot" data-tone="warn" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">13:50</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('WF-009', event)">WF-009</button>
+                  <span class="eventCategoryBadge badge-decline">Decline</span>
+                </div>
+                <div class="eventDesc">
+                  RGH Adult Secure declined <b>WF-009</b>. <span class="eventReason">capability mismatch.</span>
+                </div>
+              </div>
+
+              <!-- Event 3: 13:50 Escalation -->
+              <div class="timelineEvent" data-category="escalation">
+                <span class="timelineDot" data-tone="warn" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">13:50</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('WF-022', event)">WF-022</button>
+                  <span class="eventCategoryBadge badge-escalation">Escalation</span>
+                </div>
+                <div class="eventDesc"><b>WF-022</b> escalated to State bed coordination desk.</div>
+              </div>
+
+              <!-- Event 4: 13:40 Decline -->
+              <div class="timelineEvent" data-category="decline">
+                <span class="timelineDot" data-tone="warn" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">13:40</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('WF-009', event)">WF-009</button>
+                  <span class="eventCategoryBadge badge-decline">Decline</span>
+                </div>
+                <div class="eventDesc">
+                  FSH Adult Secure declined <b>WF-009</b>. <span class="eventReason">specialling unavailable.</span>
+                </div>
+              </div>
+
+              <!-- Event 5: 13:35 Referral -->
+              <div class="timelineEvent" data-category="referral">
+                <span class="timelineDot" data-tone="good" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">13:35</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('RF-005', event)">RF-005</button>
+                  <span class="eventCategoryBadge badge-referral">Referral</span>
+                </div>
+                <div class="eventDesc"><b>RF-005</b> referral raised. Older adult, Perth Metropolitan.</div>
+              </div>
+
+              <!-- Event 6: 13:25 Decline -->
+              <div class="timelineEvent" data-category="decline">
+                <span class="timelineDot" data-tone="warn" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">13:25</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('WF-009', event)">WF-009</button>
+                  <span class="eventCategoryBadge badge-decline">Decline</span>
+                </div>
+                <div class="eventDesc">
+                  BTY Adult Secure declined <b>WF-009</b>.
+                  <span class="eventReason">bed pulled for earlier referral.</span>
+                </div>
+              </div>
+
+              <!-- Event 7: 13:25 Referral -->
+              <div class="timelineEvent" data-category="referral">
+                <span class="timelineDot" data-tone="good" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">13:25</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('RF-003', event)">RF-003</button>
+                  <span class="eventCategoryBadge badge-referral">Triage</span>
+                </div>
+                <div class="eventDesc"><b>RF-003</b> triaged.</div>
+              </div>
+
+              <!-- Event 8: 13:25 Referral -->
+              <div class="timelineEvent" data-category="referral">
+                <span class="timelineDot" data-tone="good" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">13:25</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('RF-007', event)">RF-007</button>
+                  <span class="eventCategoryBadge badge-referral">Referral</span>
+                </div>
+                <div class="eventDesc"><b>RF-007</b> referral raised. Youth, Mid West.</div>
+              </div>
+
+              <!-- Event 9: 13:20 Referral -->
+              <div class="timelineEvent" data-category="referral">
+                <span class="timelineDot" data-tone="good" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">13:20</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('RF-009', event)">RF-009</button>
+                  <span class="eventCategoryBadge badge-referral">Referral</span>
+                </div>
+                <div class="eventDesc"><b>RF-009</b> referral raised. Adult, Perth Metropolitan.</div>
+              </div>
+
+              <!-- Event 10: 13:15 Transfer / Opening -->
+              <div class="timelineEvent" data-category="transfer">
+                <span class="timelineDot" data-tone="info" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">13:15</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('WF-018', event)">WF-018</button>
+                  <span class="eventCategoryBadge badge-transfer">Opened</span>
+                </div>
+                <div class="eventDesc">
+                  <b>WF-018</b> opened at Sir Charles Gairdner Hospital Emergency Department, Tier 3.
+                </div>
+              </div>
+
+              <!-- Event 11: 13:10 Transfer -->
+              <div class="timelineEvent" data-category="transfer">
+                <span class="timelineDot" data-tone="info" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">13:10</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('WF-014', event)">WF-014</button>
+                  <span class="eventCategoryBadge badge-transfer">In Transit</span>
+                </div>
+                <div class="eventDesc"><b>WF-014</b> in transit to Armadale Kelmscott Memorial Hospital.</div>
+              </div>
+
+              <!-- Event 12: 13:08 Referral -->
+              <div class="timelineEvent" data-category="referral">
+                <span class="timelineDot" data-tone="good" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">13:08</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('RF-004', event)">RF-004</button>
+                  <span class="eventCategoryBadge badge-referral">Allocation</span>
+                </div>
+                <div class="eventDesc"><b>RF-004</b> allocated to Bentley Adult Open.</div>
+              </div>
+
+              <!-- Event 13: 13:02 Decline -->
+              <div class="timelineEvent" data-category="decline">
+                <span class="timelineDot" data-tone="warn" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">13:02</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('WF-004', event)">WF-004</button>
+                  <span class="eventCategoryBadge badge-decline">Decline</span>
+                </div>
+                <div class="eventDesc">
+                  MHAU Adult Secure declined <b>WF-004</b>. <span class="eventReason">acuity ceiling reached.</span>
+                </div>
+              </div>
+
+              <!-- Event 14: 12:58 Transfer -->
+              <div class="timelineEvent" data-category="transfer">
+                <span class="timelineDot" data-tone="info" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">12:58</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('WF-027', event)">WF-027</button>
+                  <span class="eventCategoryBadge badge-transfer">Dispatch</span>
+                </div>
+                <div class="eventDesc"><b>WF-027</b> departure logged from Midland ED via St John Ambulance.</div>
+              </div>
+
+              <!-- Event 15: 12:54 Referral -->
+              <div class="timelineEvent" data-category="referral">
+                <span class="timelineDot" data-tone="good" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">12:54</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('RF-002', event)">RF-002</button>
+                  <span class="eventCategoryBadge badge-referral">Triage</span>
+                </div>
+                <div class="eventDesc"><b>RF-002</b> clinical triage completed. Tier 2 Priority.</div>
+              </div>
+
+              <!-- Event 16: 12:45 Transfer -->
+              <div class="timelineEvent" data-category="transfer">
+                <span class="timelineDot" data-tone="info" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">12:45</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('WF-021', event)">WF-021</button>
+                  <span class="eventCategoryBadge badge-transfer">Bed Hold</span>
+                </div>
+                <div class="eventDesc"><b>WF-021</b> bed hold confirmed at RPH Adult Secure.</div>
+              </div>
+
+              <!-- Event 17: 12:41 Referral -->
+              <div class="timelineEvent" data-category="referral">
+                <span class="timelineDot" data-tone="good" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">12:41</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('RF-008', event)">RF-008</button>
+                  <span class="eventCategoryBadge badge-referral">Referral</span>
+                </div>
+                <div class="eventDesc"><b>RF-008</b> referral raised. Youth, South Metro.</div>
+              </div>
+
+              <!-- Event 18: 12:35 Transfer -->
+              <div class="timelineEvent" data-category="transfer">
+                <span class="timelineDot" data-tone="info" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">12:35</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('WF-011', event)">WF-011</button>
+                  <span class="eventCategoryBadge badge-transfer">Completed</span>
+                </div>
+                <div class="eventDesc"><b>WF-011</b> transfer completed at Graylands Hospital.</div>
+              </div>
+
+              <!-- Event 19: 12:30 Referral -->
+              <div class="timelineEvent" data-category="referral">
+                <span class="timelineDot" data-tone="good" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">12:30</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('RF-001', event)">RF-001</button>
+                  <span class="eventCategoryBadge badge-referral">Accepted</span>
+                </div>
+                <div class="eventDesc"><b>RF-001</b> accepted for transfer at FSH Adult Open.</div>
+              </div>
+
+              <!-- Event 20: 12:15 Transfer -->
+              <div class="timelineEvent" data-category="transfer">
+                <span class="timelineDot" data-tone="info" aria-hidden="true"></span>
+                <div class="eventMetaRow">
+                  <span class="eventTime">12:15</span>
+                  <button type="button" class="entityChip" onclick="showEntityFlyout('WF-006', event)">WF-006</button>
+                  <span class="eventCategoryBadge badge-transfer">Admitted</span>
+                </div>
+                <div class="eventDesc"><b>WF-006</b> arrival confirmed at SCGH Mental Health Unit.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Disclosures: Event Key & Figure Checks -->
+          <div class="disclosuresBlock">
+            <!-- Event Key Accordion -->
+            <div class="disclosureCard" id="disclosureKey">
+              <button type="button" class="disclosureToggle" onclick="toggleDisclosure('disclosureKey')">
+                <div class="disclosureLeft">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                      d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"
+                    ></path>
+                  </svg>
+                  <span>Event key</span>
+                </div>
+                <svg class="disclosureChevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+              <div class="disclosureContent">
+                <div class="keyGrid">
+                  <div class="keyRow">
+                    <span class="keyDot" style="background: var(--info)"></span>
+                    <span><b>Recorded update:</b> Standard status change, admission or transit logged.</span>
+                  </div>
+                  <div class="keyRow">
+                    <span class="keyDot" style="background: var(--warn)"></span>
+                    <span><b>Needs attention:</b> Unit decline or desk escalation requiring coordinator action.</span>
+                  </div>
+                  <div class="keyRow">
+                    <span class="keyDot" style="background: var(--danger)"></span>
+                    <span><b>Deadline or refused action:</b> Statutory time breach (&gt;24h) or protocol lock.</span>
+                  </div>
+                  <div class="keyRow">
+                    <span class="keyDot" style="background: var(--good)"></span>
+                    <span><b>Referral progression:</b> Referral submission, clinical triage, or bed match.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Figure Checks (Reconciliation) Accordion -->
+            <div class="disclosureCard" id="disclosureChecks">
+              <button type="button" class="disclosureToggle" onclick="toggleDisclosure('disclosureChecks')">
+                <div class="disclosureLeft">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                  <span>Figure checks (6 of 6 reconcile)</span>
+                </div>
+                <svg class="disclosureChevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+              <div class="disclosureContent">
+                <ul class="reconList">
+                  <li class="reconItem">
+                    <span class="reconCheckIcon">✓</span>
+                    <span
+                      ><b>Waiting ED total:</b> 23 matches sum across 8 department rosters (NM:6, EM:10, SM:7,
+                      WAC:0).</span
+                    >
+                  </li>
+                  <li class="reconItem">
+                    <span class="reconCheckIcon">✓</span>
+                    <span
+                      ><b>Statutory Breaches:</b> 2 patients confirmed &gt;24h in ED (RPH Adult: 1, FSH Adult: 1).</span
+                    >
+                  </li>
+                  <li class="reconItem">
+                    <span class="reconCheckIcon">✓</span>
+                    <span><b>Operational Bed Pool:</b> 16 available of 196 total capacity across network.</span>
+                  </li>
+                  <li class="reconItem">
+                    <span class="reconCheckIcon">✓</span>
+                    <span><b>Referral Registry:</b> 4 awaiting triage + 1 allocated matching intake queue.</span>
+                  </li>
+                  <li class="reconItem">
+                    <span class="reconCheckIcon">✓</span>
+                    <span><b>Decline Trail:</b> 4 logged declines accounted for in active movement logs.</span>
+                  </li>
+                  <li class="reconItem">
+                    <span class="reconCheckIcon">✓</span>
+                    <span><b>Escalations:</b> 2 active desk cases currently monitored without orphaned state.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── VIEW 2: LIVE TALLY ─── -->
+        <div class="viewPanel hidden" id="liveTallyView" role="tabpanel" aria-labelledby="tabBtnTally">
+          <div class="tallySection">
+            <div class="tallyHeadline">
+              <span class="tallyTitle">Command snapshot</span>
+              <span class="tallySubtitle">13:58 AWST · All Services</span>
+            </div>
+
+            <!-- 2x2 Metric KPI Tiles -->
+            <div class="tallyTileGrid">
+              <div class="kpiTile">
+                <span class="kpiTileHeader">Waiting in ED</span>
+                <span class="kpiTileNumber">23</span>
+                <span class="kpiTileNote">Across 8 emergency sites</span>
+              </div>
+              <div class="kpiTile" data-tone="danger">
+                <span class="kpiTileHeader">Breached (&gt;24h)</span>
+                <span class="kpiTileNumber">2</span>
+                <span class="kpiTileNote">Statutory legal threshold</span>
+              </div>
+              <div class="kpiTile" data-tone="warn">
+                <span class="kpiTileHeader">Approaching Deadline</span>
+                <span class="kpiTileNumber">3</span>
+                <span class="kpiTileNote">Within 2h of 24h breach</span>
+              </div>
+              <div class="kpiTile">
+                <span class="kpiTileHeader">Longest Wait</span>
+                <span class="kpiTileNumber" style="font-size: var(--t-4)">25h 10m</span>
+                <span class="kpiTileNote">at Royal Perth Hospital ED</span>
+              </div>
+            </div>
+
+            <!-- Operational State Facts -->
+            <div class="tallyGroup">
+              <span class="tallyGroupTitle">Now</span>
+              <dl class="factsDList">
+                <dt>Movements with no owner</dt>
+                <dd data-tone="warn">1</dd>
+                <dt>Declined by every ward asked</dt>
+                <dd><i>none</i></dd>
+                <dt>Accepted with no bed pulled</dt>
+                <dd>1</dd>
+                <dt>Referrals awaiting triage</dt>
+                <dd>4</dd>
+                <dt>Overrides for governance review</dt>
+                <dd>4</dd>
+                <dt>Beds free</dt>
+                <dd>16 <span style="font-weight: 400; color: var(--muted)">of 196</span></dd>
+              </dl>
+            </div>
+
+            <!-- By Health Service Table -->
+            <div class="tallyGroup">
+              <span class="tallyGroupTitle">By Health Service</span>
+              <table class="miniTable">
+                <thead>
+                  <tr>
+                    <th>Service</th>
+                    <th style="text-align: right">Waiting</th>
+                    <th style="text-align: right">Free</th>
+                    <th style="text-align: right">Breached</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>North Metro</td>
+                    <td class="numCell">6</td>
+                    <td class="numCell">5</td>
+                    <td class="numCell"><span class="zeroNote">none</span></td>
+                  </tr>
+                  <tr>
+                    <td>East Metro</td>
+                    <td class="numCell">10</td>
+                    <td class="numCell">4</td>
+                    <td class="numCell" style="color: var(--danger); font-weight: 600">1</td>
+                  </tr>
+                  <tr>
+                    <td>South Metro</td>
+                    <td class="numCell">7</td>
+                    <td class="numCell">7</td>
+                    <td class="numCell" style="color: var(--danger); font-weight: 600">1</td>
+                  </tr>
+                  <tr>
+                    <td>WA Country</td>
+                    <td class="numCell"><span class="zeroNote">none</span></td>
+                    <td class="numCell"><span class="zeroNote">none</span></td>
+                    <td class="numCell"><span class="zeroNote">none</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- By Tier Table -->
+            <div class="tallyGroup">
+              <span class="tallyGroupTitle">By Clinical Urgency Tier</span>
+              <table class="miniTable">
+                <thead>
+                  <tr>
+                    <th>Tier</th>
+                    <th style="text-align: right">Waiting</th>
+                    <th style="text-align: right">Target Placement</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Tier 1 (Immediate / Life Threat)</td>
+                    <td class="numCell">5</td>
+                    <td class="numCell">&lt; 4 hours</td>
+                  </tr>
+                  <tr>
+                    <td>Tier 2 (High Acuity / Secure)</td>
+                    <td class="numCell">11</td>
+                    <td class="numCell">&lt; 12 hours</td>
+                  </tr>
+                  <tr>
+                    <td>Tier 3 (Subacute / Open)</td>
+                    <td class="numCell">7</td>
+                    <td class="numCell">&lt; 24 hours</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 13.4 POLISHED DRAWER FOOTER -->
+      <div class="drawerFooter">
+        <div class="footerNotice">Synthetic events are derived from current demo records and listed newest first.</div>
+        <div class="footerTelemetry">
+          <div class="telemetryStatus">
+            <span class="statusDot"></span>
+            <span>Feed: Streaming (WebSocket)</span>
+          </div>
+          <span style="font-family: var(--mono)">Reconciled at 13:58</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ENTITY DETAIL MICRO-FLYOUT -->
+    <div class="entityFlyout" id="entityFlyout" role="tooltip" aria-hidden="true">
+      <div class="flyoutHeader">
+        <span class="flyoutTitle" id="flyoutId">WF-009</span>
+        <span style="font-size: var(--t-0); color: var(--muted)" id="flyoutStatus">Escalated</span>
+      </div>
+      <div class="flyoutBody" id="flyoutBody">Loading case record...</div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div class="toastNotification" id="toastBox">Notification message</div>
+
+    <!-- ─── 14. INTERACTIVE JAVASCRIPT CONTROLLER ─── -->
+    <script>
+      (function () {
+        "use strict";
+
+        // ── 1. Drawer Open/Close State ──
+        var drawer = document.getElementById("activityDrawer");
+        var scrim = document.getElementById("drawerScrim");
+        var drawerToggleLabel = document.getElementById("drawerToggleLabel");
+
+        window.openActivityDrawer = function () {
+          drawer.classList.remove("closed");
+          scrim.classList.add("visible");
+          drawerToggleLabel.textContent = "Close Drawer";
+          showToast("Activity Drawer opened");
+        };
+
+        window.closeActivityDrawer = function () {
+          drawer.classList.add("closed");
+          scrim.classList.remove("visible");
+          drawerToggleLabel.textContent = "Open Drawer";
+          hideEntityFlyout();
+        };
+
+        window.toggleActivityDrawer = function () {
+          if (drawer.classList.contains("closed")) {
+            openActivityDrawer();
+          } else {
+            closeActivityDrawer();
+          }
+        };
+
+        // Keyboard Esc to Close Drawer
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" || e.keyCode === 27) {
+            if (!drawer.classList.contains("closed")) {
+              closeActivityDrawer();
+            }
+            hideEntityFlyout();
+          }
+        });
+
+        // ── 2. Hero Switcher View Controller (Activity vs Live Tally) ──
+        var tabBtnActivity = document.getElementById("tabBtnActivity");
+        var tabBtnTally = document.getElementById("tabBtnTally");
+        var activityFeedView = document.getElementById("activityFeedView");
+        var liveTallyView = document.getElementById("liveTallyView");
+        var feedFilterChips = document.getElementById("feedFilterChips");
+
+        window.switchView = function (viewName) {
+          if (viewName === "activity") {
+            tabBtnActivity.classList.add("active");
+            tabBtnActivity.setAttribute("aria-selected", "true");
+            tabBtnTally.classList.remove("active");
+            tabBtnTally.setAttribute("aria-selected", "false");
+
+            activityFeedView.classList.remove("hidden");
+            liveTallyView.classList.add("hidden");
+            feedFilterChips.style.display = "flex";
+          } else if (viewName === "tally") {
+            tabBtnTally.classList.add("active");
+            tabBtnTally.setAttribute("aria-selected", "true");
+            tabBtnActivity.classList.remove("active");
+            tabBtnActivity.setAttribute("aria-selected", "false");
+
+            liveTallyView.classList.remove("hidden");
+            activityFeedView.classList.add("hidden");
+            feedFilterChips.style.display = "none";
+          }
+        };
+
+        // ── 3. Secondary Filter Chips Controller ──
+        var filterButtons = document.querySelectorAll(".filterChip");
+        var timelineEvents = document.querySelectorAll(".timelineEvent");
+        var feedCounterLabel = document.getElementById("feedCounterLabel");
+
+        window.filterFeed = function (category, btnElement) {
+          filterButtons.forEach(function (btn) {
+            btn.classList.remove("active");
+          });
+          btnElement.classList.add("active");
+
+          var visibleCount = 0;
+          timelineEvents.forEach(function (ev) {
+            var evCat = ev.getAttribute("data-category");
+            if (category === "all" || evCat === category) {
+              ev.classList.remove("filteredOut");
+              visibleCount++;
+            } else {
+              ev.classList.add("filteredOut");
+            }
+          });
+
+          feedCounterLabel.textContent = visibleCount + " of 20 events";
+          showToast("Filter: " + category.toUpperCase() + " (" + visibleCount + ")");
+        };
+
+        // ── 4. Interactive Accordions (Disclosures) ──
+        window.toggleDisclosure = function (id) {
+          var card = document.getElementById(id);
+          if (card) {
+            card.classList.toggle("open");
+          }
+        };
+
+        // ── 5. Theme Toggle Controller ──
+        var themeToggleLabel = document.getElementById("themeToggleLabel");
+        window.toggleTheme = function () {
+          var html = document.documentElement;
+          var current = html.getAttribute("data-theme") || "light";
+          var next = current === "dark" ? "light" : "dark";
+          html.setAttribute("data-theme", next);
+          themeToggleLabel.textContent = next === "dark" ? "Light Theme" : "Dark Theme";
+          showToast("Appearance switched to " + next.toUpperCase());
+        };
+
+        // ── 6. Entity Flyout on Identifier Click ──
+        var flyout = document.getElementById("entityFlyout");
+        var flyoutId = document.getElementById("flyoutId");
+        var flyoutStatus = document.getElementById("flyoutStatus");
+        var flyoutBody = document.getElementById("flyoutBody");
+
+        var entityRegistry = {
+          "WF-009": {
+            status: "State Escalation",
+            text: "Adult Male (38), Tier 2 Involuntary Form 1A. Originating: RPH ED (wait: 18h). Reason for escalation: Declined sequentially by RGH, FSH, and BTY due to capacity & gender mix.",
+          },
+          "WF-022": {
+            status: "State Escalation",
+            text: "Older Adult Female (72), Tier 2. Specialling 1:1 required. Originating: Joondalup Health Campus ED. Central bed desk sourcing psychogeriatric placement.",
+          },
+          "RF-005": {
+            status: "Referral Intake",
+            text: "Older adult referral raised from North Metro Community Mental Health. Target: Selby Older Adult Acute Unit.",
+          },
+          "RF-003": {
+            status: "Triage Complete",
+            text: "Adult male (41), South Metro. Assigned Tier 3 priority. Scheduled for bed allocation round at 14:30 AWST.",
+          },
+          "RF-007": {
+            status: "Regional Referral",
+            text: "Youth (16), Geraldton Regional Hospital. Awaiting aeromedical evacuation transfer to Perth Adolescent Unit.",
+          },
+          "RF-009": {
+            status: "Intake Pending",
+            text: "Adult (29), self-presentation via Peel Health Campus. Referral triaged by Duty Registrar.",
+          },
+          "WF-018": {
+            status: "ED Holding",
+            text: "SCGH ED Bed 09. Tier 3 voluntary presentation. Case coordinator reviewing voluntary open beds.",
+          },
+          "WF-014": {
+            status: "In Transit",
+            text: "St John transport vehicle #412 departed FSH ED at 12:45. ETA Armadale Memorial: 13:20 AWST.",
+          },
+          "RF-004": {
+            status: "Allocated",
+            text: "Bed hold placed at Bentley Hospital Adult Open Bed 14. NUM notified for arrival check-in.",
+          },
+          "WF-004": {
+            status: "Re-routing",
+            text: "MHAU declined due to acuity ceiling. Coordination desk evaluating Graylands Acute.",
+          },
+          "WF-027": {
+            status: "Dispatched",
+            text: "Midland ED discharge complete. Transfer en route to Graylands Hospital.",
+          },
+          "RF-002": {
+            status: "Triaged",
+            text: "North Metro catchment intake reviewed. Awaiting clinical clearance confirmation.",
+          },
+          "WF-021": {
+            status: "Bed Held",
+            text: "RPH Adult Secure Bed 08 reserved. Statutory paperwork Form 4A verified.",
+          },
+          "RF-008": {
+            status: "Intake",
+            text: "Youth emergency referral from Fiona Stanley Hospital Paediatric liaison team.",
+          },
+          "WF-011": {
+            status: "Completed",
+            text: "Safe arrival confirmed at Graylands Hospital. Transfer closed.",
+          },
+          "RF-001": {
+            status: "Accepted",
+            text: "FSH Adult Open accepted transfer request. Transport booking confirmed for 14:15.",
+          },
+          "WF-006": {
+            status: "Completed",
+            text: "SCGH Mental Health Unit admission completed. Bed 12 occupied.",
+          },
+        };
+
+        window.showEntityFlyout = function (entityCode, evt) {
+          evt.stopPropagation();
+          var data = entityRegistry[entityCode] || {
+            status: "Active Record",
+            text: "Referral record " + entityCode + " in active statewide coordination queue.",
+          };
+
+          flyoutId.textContent = entityCode;
+          flyoutStatus.textContent = data.status;
+          flyoutBody.textContent = data.text;
+
+          var rect = evt.target.getBoundingClientRect();
+          var flyoutLeft = Math.max(10, rect.left - 290);
+          var flyoutTop = Math.min(window.innerHeight - 150, rect.bottom + 6);
+
+          flyout.style.left = flyoutLeft + "px";
+          flyout.style.top = flyoutTop + "px";
+          flyout.classList.add("visible");
+          flyout.setAttribute("aria-hidden", "false");
+        };
+
+        window.hideEntityFlyout = function () {
+          flyout.classList.remove("visible");
+          flyout.setAttribute("aria-hidden", "true");
+        };
+
+        document.addEventListener("click", function (e) {
+          if (!flyout.contains(e.target)) {
+            hideEntityFlyout();
+          }
+        });
+
+        // ── 7. Toast Messenger ──
+        var toastBox = document.getElementById("toastBox");
+        var toastTimer = null;
+        window.showToast = function (msg) {
+          if (toastTimer) clearTimeout(toastTimer);
+          toastBox.textContent = msg;
+          toastBox.classList.add("show");
+          toastTimer = setTimeout(function () {
+            toastBox.classList.remove("show");
+          }, 2200);
+        };
+      })();
+    </script>
+  </body>
+</html>

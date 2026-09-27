@@ -1,0 +1,1238 @@
+.screen {
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  min-width: 0;
+  min-height: 100%;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--t-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 0.875rem 1.5rem 1.5rem;
+}
+.pageHeader {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.pageTitle {
+  margin: 0;
+  font-size: var(--t-6);
+  font-weight: 600;
+}
+
+.hubShell {
+  display: grid;
+  min-width: 0;
+  gap: 0.875rem;
+  grid-template-columns: minmax(28rem, 2fr) minmax(20rem, 1fr);
+  align-items: stretch;
+}
+.hubLeft,
+.hubRight {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+
+.panelHeader,
+.detailHead {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--line);
+  border-radius: var(--r1i) var(--r1i) 0 0;
+  background: var(--surface-2);
+}
+.panelHeader {
+  flex-wrap: wrap;
+}
+.panelHeader > div {
+  min-width: 0;
+  flex: 1 1 100%;
+}
+.panelHeader > .groupCount {
+  margin-left: auto;
+}
+.panelHeader h2,
+.detailTitle {
+  margin: 0;
+  color: var(--accent-ink);
+  font-family: var(--display);
+  font-size: var(--t-3);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.panelHeader p {
+  max-width: 78ch;
+  margin: 0.75rem 0 0 0.75rem;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.searchBar {
+  display: grid;
+  flex: none;
+  gap: 0;
+  background: var(--surface-2);
+}
+.searchInputWrap {
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.625rem 1rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  box-shadow: var(--lift);
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+.searchInputWrap:focus-within {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.searchGlyph {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  color: var(--muted);
+}
+.searchInput {
+  min-width: 0;
+  min-height: 3rem;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-2);
+}
+.searchInput::placeholder {
+  color: var(--muted);
+}
+.clearButton {
+  display: inline-flex;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  margin-right: -0.5rem;
+  border: 0;
+  border-radius: var(--r2);
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: var(--t-0);
+  font-weight: 600;
+  cursor: pointer;
+}
+.clearButton:hover,
+.clearButton:focus-visible,
+.memoryRow:hover,
+.memoryRow:focus-visible {
+  background: var(--sunk);
+}
+.searchHint {
+  margin: 0;
+  padding: 0 1rem 0.625rem;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.45;
+}
+
+.kindTabsWrap {
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.kindTabs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+}
+.kindTab {
+  display: inline-flex;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0 0.875rem;
+  border: 1px solid var(--line);
+  border-radius: var(--pill);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: var(--lift);
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    color 120ms ease,
+    box-shadow 120ms ease;
+}
+.kindTabActive {
+  composes: kindTab;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+.kindTab:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+.kindTab:focus-visible,
+.kindTabActive:focus-visible {
+  color: var(--ink);
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.groupCount {
+  flex: none;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+.tabCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--pill);
+  background: var(--sunk);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+.kindTabActive .tabCount {
+  background: var(--accent);
+  color: var(--surface);
+}
+
+.listScroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.groupHead {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.5625rem 1rem 0.3125rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.subGroupHead {
+  margin: 0;
+  padding: 0.5rem 1rem 0.25rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.groupList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.resultRow {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  color: inherit;
+}
+.resultRow:hover {
+  background: var(--sunk);
+}
+.resultRowActive {
+  composes: resultRow;
+  background: var(--accent-soft);
+  outline: 1px solid var(--line-strong);
+  outline-offset: -1px;
+}
+.resultMain {
+  display: flex;
+  min-width: 0;
+  min-height: 3rem;
+  flex: 1;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.5rem 1rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.resultMain:focus-visible,
+.pinButton:focus-visible,
+.rowAction:focus-visible,
+.ctaButton:focus-visible,
+.statsLink:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -3px;
+}
+.resultText {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.resultName {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: var(--t-3);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.resultSub {
+  max-width: 100%;
+  overflow: hidden;
+  margin-top: 0.125rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.resultStat {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-2);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.resultStatStale {
+  composes: resultStat;
+  color: var(--warn);
+}
+.pinButton {
+  display: inline-flex;
+  min-width: 3rem;
+  min-height: 3rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--t-3);
+  line-height: 1;
+  cursor: pointer;
+}
+.pinButtonOn {
+  composes: pinButton;
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+.pinIcon {
+  display: inline-block;
+  vertical-align: middle;
+  color: var(--muted);
+}
+.pinIconPinned {
+  display: inline-block;
+  vertical-align: middle;
+  color: var(--gilt);
+  fill: var(--gilt);
+}
+
+.emptyState,
+.nothing,
+.absent,
+.statsAbsent {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.55;
+}
+.emptyState {
+  padding: 1.5rem 1rem;
+  text-align: center;
+}
+.emptyState strong,
+.notesList b,
+.aboutPanel b {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+.detailHead {
+  align-items: center;
+}
+.detailEyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+.detailSub {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+.detailBadges,
+.ctaActions,
+.barLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.detailBadges {
+  margin-top: 0.625rem;
+}
+
+.kindBadge,
+.infoPill,
+.flagPill,
+.firstFlag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.kindBadgeWard {
+  composes: kindBadge;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+.kindBadgeEd {
+  composes: kindBadge;
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.kindBadgeCommunity {
+  composes: kindBadge;
+  background: var(--good-soft);
+  color: var(--good);
+}
+.infoPill {
+  border: 1px solid var(--line);
+  background: var(--sunk);
+  color: var(--ink-soft);
+}
+.flagPill,
+.firstFlag {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+}
+
+.detailBody,
+.overviewBody {
+  display: grid;
+  min-height: 0;
+  gap: 0;
+  overflow-y: auto;
+}
+.detailSection {
+  padding: 0.75rem 0.875rem;
+  border-bottom: 1px solid var(--line);
+}
+.detailSection h3 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.capacityGrid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(6.25rem, 1fr));
+}
+.capacityCell {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+.capacityNum,
+.capacityNumMuted {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-5);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.capacityNumMuted {
+  color: var(--ink-soft);
+}
+.capacityLbl {
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.3;
+}
+
+.capacityBar {
+  display: flex;
+  height: 0.25rem;
+  overflow: hidden;
+  margin-top: 0.625rem;
+  border-radius: 2px;
+  background: var(--sunk);
+}
+.capacityBar span {
+  height: 100%;
+}
+.barReady {
+  width: var(--bar-ready, 0%);
+  background: var(--good);
+}
+.barNotYet {
+  width: var(--bar-not-yet, 0%);
+  background: var(--warn);
+}
+.barBlocked {
+  width: var(--bar-blocked, 0%);
+  background: repeating-linear-gradient(45deg, var(--danger) 0 2px, var(--surface) 2px 4px);
+}
+.barLegend {
+  margin-top: 0.5rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+.capacityTotal {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.45;
+}
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+.legendSwatch {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: none;
+  border-radius: 2px;
+}
+
+.queue,
+.notesList,
+.memoryList {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.queue {
+  gap: 0.375rem;
+}
+.decisionRow {
+  display: block;
+  min-height: 3rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+.decisionBody {
+  min-width: 0;
+  flex: 1;
+}
+.decisionRef {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--ink);
+  font-size: var(--t-2);
+  font-weight: 600;
+}
+.decisionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.625rem;
+}
+.decisionAge {
+  flex: none;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.decisionReason {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.45;
+}
+.rowAction,
+.ctaButton,
+.statsLink {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.75rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-1);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+.ctaButton {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  text-decoration: none;
+}
+.rowAction:hover,
+.statsLink:hover {
+  background: var(--sunk);
+}
+.rowAction {
+  justify-content: flex-start;
+  margin-top: 0.125rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.rowAction:hover {
+  background: transparent;
+  color: var(--accent-ink);
+}
+.ctaButton:hover {
+  background: var(--accent-press);
+}
+.notesList {
+  gap: 0.375rem;
+}
+.notesList li {
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.5;
+}
+
+.overviewTable {
+  --ward-table-cell-inset: 0.375rem 0.75rem;
+  color: var(--ink);
+  font-size: var(--t-2);
+}
+.overviewTable th {
+  text-align: left;
+  font-weight: 600;
+}
+.overviewTable thead th {
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--t-0);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.overviewTable thead th:last-child {
+  text-align: right;
+}
+.overviewTable tfoot th,
+.overviewTable tfoot td {
+  background: var(--surface-2);
+  font-weight: 700;
+}
+.overviewTable th.numCell,
+.overviewTable td.numCell {
+  color: var(--ink);
+  font-family: var(--mono);
+  text-align: right;
+}
+.detailCta {
+  display: grid;
+  gap: 0.625rem;
+  padding: 0.75rem 0.875rem;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.ctaNote {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.45;
+}
+
+.memoryRow {
+  display: flex;
+  width: 100%;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.375rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.memoryName {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: var(--t-2);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.memoryStat {
+  flex: none;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-1);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.aboutPanel {
+  flex: none;
+  max-height: min(45%, 22rem);
+  overflow-y: auto;
+  padding: 0.625rem 0.875rem;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 var(--r1i) var(--r1i);
+  background: var(--surface-2);
+}
+.aboutPanel > h3,
+.aboutPanel h4 {
+  margin: 0 0 0.25rem;
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.aboutPanel h4 {
+  margin-bottom: 0.125rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.aboutPanel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.55;
+}
+.metaTimestamp {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.asAt {
+  display: flex !important;
+  align-items: center;
+  gap: 0.375rem;
+  margin-bottom: 0.375rem !important;
+  color: var(--ink-soft) !important;
+}
+.asAt b,
+.asAtTime {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.liveDot {
+  position: relative;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+  background: var(--good, var(--ward-success));
+}
+.liveDot::after {
+  content: "";
+  position: absolute;
+  inset: -0.125rem;
+  border-radius: 50%;
+  pointer-events: none;
+  border: 1px solid var(--good, var(--ward-success));
+  box-shadow: 0 0 0.375rem var(--good, var(--ward-success));
+  animation: hubMetroPulse 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+@keyframes hubMetroPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .liveDot::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+@media (forced-colors: active) {
+  .liveDot {
+    background: CanvasText;
+  }
+  .liveDot::after {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+}
+
+@media (min-width: 68.001rem) {
+  .hubShell {
+    height: calc(100dvh - 5.375rem);
+  }
+  .hubLeft,
+  .hubRight {
+    max-height: 100%;
+  }
+  .listScroll,
+  .overviewBody,
+  .detailBody {
+    flex: 1;
+  }
+}
+
+@media (max-width: 68rem) {
+  .main {
+    padding: 0.75rem 0.875rem 1.5rem;
+  }
+  .hubShell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .listScroll {
+    max-height: 26rem;
+  }
+  .hubRight {
+    max-height: 42rem;
+  }
+}
+
+/* Q003: the two dashboard instruments share one bounded desktop workspace. Their headers and
+ * search controls remain outside the independently scrolling bodies, while the clamp's minimum
+ * lets a short viewport grow the page instead of crushing either panel. This follows the narrow
+ * fallback; the follow-up range below stacks these panels until both minimum columns fit. */
+@media (min-width: 62.5625rem) {
+  .hubShell {
+    grid-template-columns: minmax(28rem, 2fr) minmax(20rem, 1fr);
+    height: var(--ward-workspace-height, clamp(36rem, calc(100dvh - 9rem), 64rem));
+  }
+
+  .hubLeft,
+  .hubRight {
+    height: 100%;
+    max-height: none;
+  }
+
+  .listScroll,
+  .overviewBody,
+  .detailBody {
+    min-height: 0;
+    max-height: none;
+    flex: 1 1 auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+}
+
+@media (min-width: 62.5625rem) and (max-width: 70rem) {
+  .hubShell {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+
+  .hubLeft,
+  .hubRight {
+    height: auto;
+  }
+
+  .listScroll {
+    max-height: 26rem;
+  }
+
+  .hubRight {
+    max-height: 42rem;
+  }
+}
+
+@media (max-width: 40rem) {
+  .main {
+    padding: 0.75rem;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  .hubShell {
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+    max-width: 100%;
+    gap: 0.75rem;
+  }
+
+  .hubLeft,
+  .hubRight {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .hubRight,
+  .overviewBody,
+  .detailBody,
+  .aboutPanel {
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  .hubRight {
+    overflow: visible;
+  }
+
+  .panelHeader p {
+    margin-left: 0.75rem;
+  }
+
+  .kindTabsWrap {
+    overflow: hidden;
+  }
+
+  .kindTabsWrap::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 2.25rem;
+    pointer-events: none;
+    background: linear-gradient(to left, var(--surface-2), transparent);
+    z-index: 2;
+  }
+
+  .kindTabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 0.5rem 0.75rem;
+    mask-image: linear-gradient(to right, black calc(100% - 2rem), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 2rem), transparent 100%);
+  }
+
+  .kindTabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .kindTab {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    min-height: 2.75rem;
+  }
+
+  .resultRow {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .resultMain {
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .resultText {
+    flex-basis: 100%;
+    min-width: 0;
+  }
+
+  .resultStat {
+    text-align: left;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .capacityGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .capacityCell {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .decisionRow {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .overviewTable {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen *,
+  .screen *::before,
+  .screen *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .hubLeft,
+  .hubRight,
+  .searchInputWrap,
+  .capacityCell,
+  .rowAction,
+  .ctaButton,
+  .statsLink {
+    border-color: CanvasText;
+  }
+  .searchInputWrap:focus-within {
+    outline-color: CanvasText;
+  }
+  .resultRowActive {
+    outline: 2px solid CanvasText;
+    outline-offset: -3px;
+    box-shadow: none;
+  }
+  .barReady,
+  .barNotYet,
+  .barBlocked {
+    border-right: 1px solid CanvasText;
+  }
+}
+
+@media print {
+  .screen,
+  .screen *,
+  .screen *::before,
+  .screen *::after {
+    background: Canvas !important;
+    color: CanvasText !important;
+    box-shadow: none !important;
+  }
+  .hubShell {
+    display: block;
+    height: auto;
+  }
+  .hubLeft,
+  .hubRight {
+    max-height: none;
+    overflow: visible;
+    break-inside: avoid;
+    box-shadow: none;
+  }
+  .hubRight {
+    margin-top: 1rem;
+  }
+  .listScroll,
+  .overviewBody,
+  .detailBody {
+    max-height: none;
+    overflow: visible;
+  }
+  .searchBar,
+  .pinButton,
+  .detailCta {
+    display: none;
+  }
+  .resultMain {
+    display: flex !important;
+  }
+  .aboutPanel {
+    max-height: none;
+    overflow: visible;
+  }
+  .capacityBar {
+    height: 0.5rem;
+    border: 1px solid CanvasText !important;
+  }
+  .capacityBar span,
+  .legendSwatch {
+    box-sizing: border-box;
+    border: 1px solid CanvasText !important;
+  }
+  .barNotYet {
+    border-style: dashed !important;
+  }
+  .barBlocked {
+    border-style: double !important;
+  }
+}
+
+/* Q004: compact controls and provenance leave the network lists in view. */
+.panelHeader {
+  flex-wrap: nowrap;
+  align-items: center;
+}
+.panelHeader > div {
+  flex: 1 1 auto;
+}
+.panelHeader p {
+  margin: 0.375rem 0 0;
+}
+.panelHeader > .groupCount {
+  flex: none;
+}
+.searchHint {
+  font-size: var(--t-0);
+}
+.aboutPanel {
+  max-height: 12rem;
+}
+.capacityCell {
+  padding: 0.625rem;
+}
+.ctaNote:empty {
+  display: none;
+}
+
+:global([data-theme="dark"]) .hubLeft,
+:global([data-theme="dark"]) .hubRight,
+:global([data-theme="dark"]) .panelHeader,
+:global([data-theme="dark"]) .detailHead,
+:global([data-theme="dark"]) .searchInputWrap,
+:global([data-theme="dark"]) .kindTabsWrap,
+:global([data-theme="dark"]) .kindTab,
+:global([data-theme="dark"]) .groupHead,
+:global([data-theme="dark"]) .resultRow,
+:global([data-theme="dark"]) .infoPill,
+:global([data-theme="dark"]) .detailSection,
+:global([data-theme="dark"]) .capacityCell,
+:global([data-theme="dark"]) .decisionRow,
+:global([data-theme="dark"]) .detailCta,
+:global([data-theme="dark"]) .memoryRow,
+:global([data-theme="dark"]) .aboutPanel,
+:global([data-theme="dark"]) .statsLink,
+:global(:root:not([data-theme="light"])) .screen .hubLeft,
+:global(:root:not([data-theme="light"])) .screen .hubRight,
+:global(:root:not([data-theme="light"])) .screen .panelHeader,
+:global(:root:not([data-theme="light"])) .screen .detailHead,
+:global(:root:not([data-theme="light"])) .screen .searchInputWrap,
+:global(:root:not([data-theme="light"])) .screen .kindTabsWrap,
+:global(:root:not([data-theme="light"])) .screen .kindTab,
+:global(:root:not([data-theme="light"])) .screen .groupHead,
+:global(:root:not([data-theme="light"])) .screen .resultRow,
+:global(:root:not([data-theme="light"])) .screen .infoPill,
+:global(:root:not([data-theme="light"])) .screen .detailSection,
+:global(:root:not([data-theme="light"])) .screen .capacityCell,
+:global(:root:not([data-theme="light"])) .screen .decisionRow,
+:global(:root:not([data-theme="light"])) .screen .detailCta,
+:global(:root:not([data-theme="light"])) .screen .memoryRow,
+:global(:root:not([data-theme="light"])) .screen .aboutPanel,
+:global(:root:not([data-theme="light"])) .screen .statsLink {
+  border-color: var(--line-strong);
+}
+
+:global([data-theme="dark"]) .kindTabActive,
+:global(:root:not([data-theme="light"])) .screen .kindTabActive {
+  border-color: var(--accent);
+}

@@ -1,0 +1,914 @@
+{
+  "schemaVersion": 1,
+  "product": "ward-flow",
+  "systems": [
+    "behaviour",
+    "data-content",
+    "documentation-knowledge",
+    "issue-health",
+    "safety-governance",
+    "change-recovery"
+  ],
+  "roots": [
+    "src/components/ward-management/**",
+    "src/app/mockups/ward-flow/**",
+    "src/components/ward-flow-sign-in/**",
+    "src/app/mockups/ward-flow-sign-in/**",
+    "src/app/mockups/ward-flow-digest/**",
+    "docs/ward-flow/**",
+    "docs/ward-*.md",
+    "docs/superpowers/plans/*ward-*",
+    "docs/superpowers/specs/*ward-*",
+    "tests/ward-*",
+    "tests/ui-ward-*",
+    "tests/helpers/ward-*",
+    "scripts/ward-flow/**",
+    "scripts/*ward*.mjs",
+    "tests/__screenshots__/**",
+    "package.json",
+    "package-lock.json",
+    "vitest.config.mts",
+    "playwright.config.ts",
+    "tsconfig.json",
+    "tsconfig.typecheck.json",
+    "next.config.ts",
+    "eslint.config.mjs",
+    "postcss.config.mjs",
+    "AGENTS.md",
+    "scripts/run-vitest.mjs",
+    "scripts/run-playwright.mjs",
+    "scripts/ensure-local-server.mjs",
+    "scripts/gate-receipts.mjs",
+    "scripts/test-environment.mjs",
+    "scripts/test-run-lock.mjs",
+    "tests/setup/jsdom.setup.ts",
+    "tests/helpers/ast-string-literals.ts",
+    "tests/helpers/guard-control.ts",
+    "tests/helpers/module-graph.ts",
+    "tests/helpers/strip-source-comments.ts",
+    "src/app/layout.tsx",
+    "src/app/globals.css",
+    "src/app/mockups/layout.tsx",
+    "src/app/mockups/error.tsx",
+    "src/app/mockups/mockups-layout-client.tsx",
+    "src/proxy.ts",
+    "src/components/ui-primitives.tsx",
+    "src/components/ui/missing-value.tsx",
+    "src/components/ui/sheet.tsx",
+    "src/components/ui/tooltip.tsx",
+    "src/components/clinical-dashboard/brand.tsx",
+    "src/components/clinical-dashboard/use-theme.ts",
+    "src/components/contextual-back-link.tsx",
+    "src/components/developer-area/developer-area-gate.tsx",
+    "src/lib/client-store-factory.ts",
+    "src/lib/developer-area/headers.ts",
+    "src/lib/form-register.ts",
+    "src/lib/local-server-utils.mjs",
+    "src/lib/theme.ts",
+    "src/components/developer-area/ward-flow-access-gate.tsx",
+    "src/lib/ward-output.ts"
+  ],
+  "sourceClasses": [
+    {
+      "id": "code",
+      "extensions": [".ts", ".tsx", ".js", ".mjs", ".mts", ".css", ".py", ".sh", ".html"]
+    },
+    {
+      "id": "documentation",
+      "extensions": [".md", ".txt"]
+    },
+    {
+      "id": "structured-reference",
+      "extensions": [".json", ".yaml", ".yml"]
+    }
+  ],
+  "denials": [
+    "**/private/**",
+    "**/sensitive/**",
+    "**/*.secret.*",
+    "docs/ward-flow/lessons/**",
+    "**/*.tsv",
+    "**/*.jsonl"
+  ],
+  "rules": [
+    {
+      "id": "ward-modules",
+      "pattern": "src/components/ward-management/**",
+      "priority": 0,
+      "owner": "ward-flow",
+      "system": null,
+      "module": "ward-flow",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-routes",
+      "pattern": "src/app/mockups/ward-flow/**",
+      "priority": 0,
+      "owner": "ward-flow",
+      "system": null,
+      "module": "ward-flow",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-sign-in",
+      "pattern": "src/components/ward-flow-sign-in/**",
+      "priority": 0,
+      "owner": "ward-flow",
+      "system": "safety-governance",
+      "module": "access",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-sign-in-route",
+      "pattern": "src/app/mockups/ward-flow-sign-in/**",
+      "priority": 0,
+      "owner": "ward-flow",
+      "system": "safety-governance",
+      "module": "access",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-digest",
+      "pattern": "src/app/mockups/ward-flow-digest/**",
+      "priority": 0,
+      "owner": "ward-flow",
+      "system": "data-content",
+      "module": "handover",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-docs",
+      "pattern": "docs/ward-flow/**",
+      "priority": 0,
+      "owner": "ward-flow",
+      "system": "documentation-knowledge",
+      "module": "documentation",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-doc-siblings",
+      "pattern": "docs/ward-*.md",
+      "priority": 0,
+      "owner": "ward-flow",
+      "system": "documentation-knowledge",
+      "module": "documentation",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-plans",
+      "pattern": "docs/superpowers/plans/*ward-*",
+      "priority": 0,
+      "owner": "ward-flow",
+      "system": "documentation-knowledge",
+      "module": "planning",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-specs",
+      "pattern": "docs/superpowers/specs/*ward-*",
+      "priority": 0,
+      "owner": "ward-flow",
+      "system": "documentation-knowledge",
+      "module": "planning",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-tests",
+      "pattern": "tests/ward-*",
+      "priority": 0,
+      "owner": "ward-flow",
+      "system": "issue-health",
+      "module": "verification",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-ui-tests",
+      "pattern": "tests/ui-ward-*",
+      "priority": 0,
+      "owner": "ward-flow",
+      "system": "issue-health",
+      "module": "verification",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-test-helpers",
+      "pattern": "tests/helpers/ward-*",
+      "priority": 0,
+      "owner": "ward-flow",
+      "system": "issue-health",
+      "module": "verification",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-tools",
+      "pattern": "scripts/ward-flow/**",
+      "priority": 0,
+      "owner": "ward-flow",
+      "system": "change-recovery",
+      "module": "tooling",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-tool-siblings",
+      "pattern": "scripts/*ward*.mjs",
+      "priority": 0,
+      "owner": "ward-flow",
+      "system": "change-recovery",
+      "module": "tooling",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-engine",
+      "pattern": "src/components/ward-management/ward-flow-reducer.ts",
+      "priority": 10,
+      "owner": "ward-flow",
+      "system": "behaviour",
+      "module": "engine",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-events",
+      "pattern": "src/components/ward-management/ward-flow-events.ts",
+      "priority": 10,
+      "owner": "ward-flow",
+      "system": "behaviour",
+      "module": "engine",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-model",
+      "pattern": "src/components/ward-management/ward-model.ts",
+      "priority": 10,
+      "owner": "ward-flow",
+      "system": "data-content",
+      "module": "model",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex installed-source verification and selector correction, 2026-09-22"
+    },
+    {
+      "id": "ward-reference-data",
+      "pattern": "src/components/ward-management/reference/**",
+      "priority": 10,
+      "owner": "ward-flow",
+      "system": "data-content",
+      "module": "reference",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-safety",
+      "pattern": "src/components/ward-management/ward-flow-persistence-classification.ts",
+      "priority": 10,
+      "owner": "ward-flow",
+      "system": "safety-governance",
+      "module": "privacy",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-design-reference",
+      "pattern": "docs/ward-flow/mockups/**",
+      "priority": 20,
+      "owner": "design-reference",
+      "system": null,
+      "module": "design",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-design-snapshots",
+      "pattern": "tests/__screenshots__/**",
+      "priority": 0,
+      "owner": "design-reference",
+      "system": null,
+      "module": "design",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    }
+  ],
+  "exceptions": [
+    {
+      "id": "shared-boundary-1",
+      "path": "package.json",
+      "owner": "mixed",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-2",
+      "path": "package-lock.json",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-3",
+      "path": "vitest.config.mts",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-4",
+      "path": "playwright.config.ts",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-5",
+      "path": "tsconfig.json",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-6",
+      "path": "tsconfig.typecheck.json",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-7",
+      "path": "next.config.ts",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-8",
+      "path": "eslint.config.mjs",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-9",
+      "path": "postcss.config.mjs",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-10",
+      "path": "AGENTS.md",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-11",
+      "path": "scripts/run-vitest.mjs",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-12",
+      "path": "scripts/run-playwright.mjs",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-13",
+      "path": "scripts/ensure-local-server.mjs",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-14",
+      "path": "scripts/gate-receipts.mjs",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-15",
+      "path": "scripts/test-environment.mjs",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-16",
+      "path": "scripts/test-run-lock.mjs",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-17",
+      "path": "tests/setup/jsdom.setup.ts",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-18",
+      "path": "tests/helpers/ast-string-literals.ts",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-19",
+      "path": "tests/helpers/guard-control.ts",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-20",
+      "path": "tests/helpers/module-graph.ts",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-21",
+      "path": "tests/helpers/strip-source-comments.ts",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-22",
+      "path": "src/app/layout.tsx",
+      "owner": "mixed",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-23",
+      "path": "src/app/globals.css",
+      "owner": "mixed",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-24",
+      "path": "src/app/mockups/layout.tsx",
+      "owner": "mixed",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-25",
+      "path": "src/app/mockups/error.tsx",
+      "owner": "mixed",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-26",
+      "path": "src/app/mockups/mockups-layout-client.tsx",
+      "owner": "mixed",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-27",
+      "path": "src/proxy.ts",
+      "owner": "mixed",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-28",
+      "path": "src/components/ui-primitives.tsx",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-29",
+      "path": "src/components/ui/missing-value.tsx",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-30",
+      "path": "src/components/ui/sheet.tsx",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-31",
+      "path": "src/components/ui/tooltip.tsx",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-32",
+      "path": "src/components/clinical-dashboard/brand.tsx",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-33",
+      "path": "src/components/clinical-dashboard/use-theme.ts",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-34",
+      "path": "src/components/contextual-back-link.tsx",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-35",
+      "path": "src/components/developer-area/developer-area-gate.tsx",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-36",
+      "path": "src/lib/client-store-factory.ts",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-37",
+      "path": "src/lib/developer-area/headers.ts",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-39",
+      "path": "src/lib/form-register.ts",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-40",
+      "path": "src/lib/local-server-utils.mjs",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "shared-boundary-41",
+      "path": "src/lib/theme.ts",
+      "owner": "shared",
+      "module": "host-boundary",
+      "system": "change-recovery",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-access-41",
+      "path": "src/components/developer-area/ward-flow-access-gate.tsx",
+      "owner": "ward-flow",
+      "module": "access",
+      "system": "safety-governance",
+      "reference": "tests/ward-flow-seam.test.ts",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "psychsift-ward-output-exclusion",
+      "path": "src/lib/ward-output.ts",
+      "owner": "excluded",
+      "module": null,
+      "system": null,
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    }
+  ],
+  "canonicalSources": [
+    {
+      "id": "source-entry",
+      "path": "docs/ward-flow/README.md",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "source-workflow",
+      "path": "docs/ward-flow/HOW-WE-WORK.md",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "source-tasks",
+      "path": "docs/ward-flow-task-ledger.md",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "source-decisions",
+      "path": "docs/ward-flow-ledger.md",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "source-rulings",
+      "path": "docs/ward-flow/OWNER-RULINGS.md",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "source-seam",
+      "path": "tests/ward-flow-seam.test.ts",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "source-status",
+      "path": "docs/ward-flow/STATUS.md",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    }
+  ],
+  "renames": [],
+  "unresolved": [
+    {
+      "id": "existing-metadata-1",
+      "path": "docs/ward-flow/journey/ward-patient-journey.bpmn",
+      "reason": "Existing journey interchange drawing: metadata-only; Design/runtime interpretation is deferred.",
+      "owner": "Ward Lead",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 metadata-boundary review, 2026-09-22",
+      "scope": {
+        "sourceClass": null,
+        "contentHash": null,
+        "reasons": ["unknown-source-class"]
+      }
+    },
+    {
+      "id": "existing-metadata-2",
+      "path": "docs/ward-flow/sdd-rescued/builder-plan-2026-09-01/review-21e2cc5d8..aa97b92a1.diff",
+      "reason": "Historical rescued patch: metadata-only; not current implementation or accepted review evidence.",
+      "owner": "Ward Lead",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 metadata-boundary review, 2026-09-22",
+      "scope": {
+        "sourceClass": null,
+        "contentHash": null,
+        "reasons": ["unknown-source-class"]
+      }
+    },
+    {
+      "id": "existing-metadata-3",
+      "path": "docs/ward-flow/sdd-rescued/builder-plan-2026-09-01/review-3bf4f6678..783ffb0b6.diff",
+      "reason": "Historical rescued patch: metadata-only; not current implementation or accepted review evidence.",
+      "owner": "Ward Lead",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 metadata-boundary review, 2026-09-22",
+      "scope": {
+        "sourceClass": null,
+        "contentHash": null,
+        "reasons": ["unknown-source-class"]
+      }
+    },
+    {
+      "id": "existing-metadata-4",
+      "path": "docs/ward-flow/sdd-rescued/builder-plan-2026-09-01/review-3bf4f6678..e810ef589.diff",
+      "reason": "Historical rescued patch: metadata-only; not current implementation or accepted review evidence.",
+      "owner": "Ward Lead",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 metadata-boundary review, 2026-09-22",
+      "scope": {
+        "sourceClass": null,
+        "contentHash": null,
+        "reasons": ["unknown-source-class"]
+      }
+    },
+    {
+      "id": "existing-metadata-5",
+      "path": "docs/ward-flow/sdd-rescued/builder-plan-2026-09-01/review-783ffb0b6..21e2cc5d8.diff",
+      "reason": "Historical rescued patch: metadata-only; not current implementation or accepted review evidence.",
+      "owner": "Ward Lead",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 metadata-boundary review, 2026-09-22",
+      "scope": {
+        "sourceClass": null,
+        "contentHash": null,
+        "reasons": ["unknown-source-class"]
+      }
+    },
+    {
+      "id": "existing-metadata-6",
+      "path": "docs/ward-flow/sdd-rescued/builder-plan-2026-09-01/review-80790923a..783ffb0b6.diff",
+      "reason": "Historical rescued patch: metadata-only; not current implementation or accepted review evidence.",
+      "owner": "Ward Lead",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 metadata-boundary review, 2026-09-22",
+      "scope": {
+        "sourceClass": null,
+        "contentHash": null,
+        "reasons": ["unknown-source-class"]
+      }
+    },
+    {
+      "id": "existing-metadata-7",
+      "path": "docs/ward-flow/sdd-rescued/builder-plan-2026-09-01/review-aa97b92a1..e4a46590c.diff",
+      "reason": "Historical rescued patch: metadata-only; not current implementation or accepted review evidence.",
+      "owner": "Ward Lead",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 metadata-boundary review, 2026-09-22",
+      "scope": {
+        "sourceClass": null,
+        "contentHash": null,
+        "reasons": ["unknown-source-class"]
+      }
+    },
+    {
+      "id": "existing-metadata-8",
+      "path": "docs/ward-flow/sdd-rescued/builder-plan-2026-09-01/review-b2b7089f2..80790923a.diff",
+      "reason": "Historical rescued patch: metadata-only; not current implementation or accepted review evidence.",
+      "owner": "Ward Lead",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 metadata-boundary review, 2026-09-22",
+      "scope": {
+        "sourceClass": null,
+        "contentHash": null,
+        "reasons": ["unknown-source-class"]
+      }
+    },
+    {
+      "id": "existing-metadata-9",
+      "path": "docs/ward-flow/sdd-rescued/builder-plan-2026-09-01/review-e810ef589..b2b7089f2.diff",
+      "reason": "Historical rescued patch: metadata-only; not current implementation or accepted review evidence.",
+      "owner": "Ward Lead",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 metadata-boundary review, 2026-09-22",
+      "scope": {
+        "sourceClass": null,
+        "contentHash": null,
+        "reasons": ["unknown-source-class"]
+      }
+    },
+    {
+      "id": "existing-metadata-10",
+      "path": "docs/ward-flow/sdd-rescued/ward-statistics-skeleton/merge-resolution-cd0e7d585.diff",
+      "reason": "Historical rescued patch: metadata-only; not current implementation or accepted review evidence.",
+      "owner": "Ward Lead",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 metadata-boundary review, 2026-09-22",
+      "scope": {
+        "sourceClass": null,
+        "contentHash": null,
+        "reasons": ["unknown-source-class"]
+      }
+    },
+    {
+      "id": "existing-metadata-11",
+      "path": "docs/ward-flow/sdd-rescued/ward-statistics-skeleton/re-review-constant-gap-round1.diff",
+      "reason": "Historical rescued patch: metadata-only; not current implementation or accepted review evidence.",
+      "owner": "Ward Lead",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 metadata-boundary review, 2026-09-22",
+      "scope": {
+        "sourceClass": null,
+        "contentHash": null,
+        "reasons": ["unknown-source-class"]
+      }
+    },
+    {
+      "id": "existing-metadata-12",
+      "path": "docs/ward-flow/sdd-rescued/ward-statistics-skeleton/review-ab16d11a9..2245e0ecf.diff",
+      "reason": "Historical rescued patch: metadata-only; not current implementation or accepted review evidence.",
+      "owner": "Ward Lead",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 metadata-boundary review, 2026-09-22",
+      "scope": {
+        "sourceClass": null,
+        "contentHash": null,
+        "reasons": ["unknown-source-class"]
+      }
+    },
+    {
+      "id": "existing-metadata-13",
+      "path": "docs/ward-flow/sdd-rescued/ward-statistics-skeleton/review-e4a46590c..8b42f0c9d.diff",
+      "reason": "Historical rescued patch: metadata-only; not current implementation or accepted review evidence.",
+      "owner": "Ward Lead",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 metadata-boundary review, 2026-09-22",
+      "scope": {
+        "sourceClass": null,
+        "contentHash": null,
+        "reasons": ["unknown-source-class"]
+      }
+    },
+    {
+      "id": "existing-metadata-14",
+      "path": "docs/ward-flow/sdd-rescued/ward-statistics-skeleton/review-skeleton-task1.diff",
+      "reason": "Historical rescued patch: metadata-only; not current implementation or accepted review evidence.",
+      "owner": "Ward Lead",
+      "reference": "docs/ward-flow-task-ledger.md",
+      "reviewedBy": "Codex C1 metadata-boundary review, 2026-09-22",
+      "scope": {
+        "sourceClass": null,
+        "contentHash": null,
+        "reasons": ["unknown-source-class"]
+      }
+    }
+  ]
+}

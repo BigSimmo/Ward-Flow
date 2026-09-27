@@ -1,0 +1,59 @@
+name: Setup UI e2e environment
+description: >-
+  Node with a clean npm install plus cached npm downloads, and Chromium. Browser archives
+  are reused on cache hits, while Playwright system dependencies are installed on every
+  fresh runner. The repository runner then builds and boots an isolated production app and
+  warms its routes before testing.
+runs:
+  using: composite
+  steps:
+    - name: Setup Node and dependencies
+      uses: ./.github/actions/setup-node-cached
+
+    - name: Restore Chromium browser cache
+      id: pw-cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-chromium-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+        # Without a prefix fallback, any lockfile bump forces a cold browser download in
+        # every UI job at once. A stale archive is harmless: `playwright install` below
+        # still fetches whatever the new version needs.
+        restore-keys: |
+          playwright-chromium-${{ runner.os }}-
+
+    # The browser archive is cached, but apt libraries are runner-local and must be
+    # installed even on a browser-cache hit. `install-deps` shells out to `apt-get
+    # update`, which occasionally hangs indefinitely against the runner's default
+    # azure.archive.ubuntu.com mirror (no timeout of its own) and silently burns the
+    # whole job until something external cancels it. Rewrite the flaky azure mirror
+    # to archive.ubuntu.com, set bounded APT timeouts, and bound each attempt with
+    # retries so a stuck mirror fails fast and recovers instead of stalling the job.
+    - name: Install Chromium
+      shell: bash
+      run: |
+        if command -v sudo >/dev/null 2>&1; then
+          sudo sed -i 's/azure\.archive\.ubuntu\.com/archive.ubuntu.com/g' /etc/apt/sources.list /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list 2>/dev/null || true
+          sudo mkdir -p /etc/apt/apt.conf.d
+          sudo tee /etc/apt/apt.conf.d/99flaky-mirror-resilience >/dev/null << 'EOF'
+        Acquire::Retries "3";
+        Acquire::http::Timeout "30";
+        Acquire::https::Timeout "30";
+        EOF
+        fi
+        install_chromium() {
+          if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
+            npx playwright install-deps chromium
+            npx playwright install chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
+        }
+        for attempt in 1 2 3; do
+          if timeout 180 bash -c "$(declare -f install_chromium); install_chromium"; then
+            exit 0
+          fi
+          echo "Chromium install attempt $attempt timed out or failed, retrying..." >&2
+          sleep 5
+        done
+        exit 1

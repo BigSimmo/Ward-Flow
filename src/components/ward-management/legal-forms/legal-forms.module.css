@@ -1,0 +1,1678 @@
+/* The Legal forms screen — Third Edition Sovereign Standard.
+ * Multi-layer background tones, hairline borders (1px solid var(--line)), zero colored side-stripes,
+ * tabular numbers, and full responsive layout across 390px, 820px, and 1440px. */
+
+.screen {
+  composes: wardTokens from "../ward-tokens.module.css";
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  display: block;
+  min-width: 0;
+  min-height: 100%;
+  color: var(--ink);
+  background:
+    linear-gradient(180deg, var(--ground-hi) 0%, var(--ground) 55%, var(--ground-2) 100%) fixed,
+    var(--ground);
+  font-family: var(--body);
+  font-variant-numeric: tabular-nums;
+
+  --text: var(--ink);
+  --text-heading: var(--ink);
+  --text-muted: var(--muted);
+  --warning-border: var(--warn);
+  --surface-chrome: var(--surface-2);
+
+  /* `--surface-3` is read below for a hover surface but was never ported into
+   * `ward-flow-shell-tokens.module.css` (out of this task's scope). Aliased to the next darkest
+   * declared surface tone rather than left unresolved. */
+  --surface-3: var(--sunk);
+}
+
+.main {
+  grid-column: auto;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--ward-space-16, 1rem);
+  overflow-x: clip;
+  overflow-y: visible;
+  padding: 0.875rem 1.5rem 2rem;
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ── Top Header Bar (Third Edition) ── */
+.hdr1 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  padding: 0.625rem 1rem;
+  box-shadow: var(--lift);
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.hdrTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-weight: 650;
+  font-size: var(--t-2);
+  color: var(--ink);
+  flex-wrap: wrap;
+}
+
+.hdrTitleIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  vertical-align: middle;
+}
+
+.hdrEnd {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Synthetic Prototype Badge (FF8) */
+.prototypeBadge {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  border: 1px solid var(--warning-border);
+  border-radius: var(--pill, 9999px);
+  background: var(--ward-warning-soft, var(--warn-soft));
+  padding: 0.15rem 0.5rem;
+  color: var(--ward-warning, var(--warn));
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Page Title & Summary Header ── */
+.pageHeader {
+  display: flex;
+  min-width: 0;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--ward-space-16, 1rem);
+  flex-wrap: wrap;
+}
+
+.pageHeaderTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.pageHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.pageHeader > div {
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0 0 var(--ward-space-2, 0.25rem);
+  color: var(--accent-ink);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pageTitle {
+  margin: 0;
+  color: var(--text-heading);
+  font-family: var(--display);
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.pageSubtitle {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+  font-size: var(--t-1);
+  line-height: 1.4;
+}
+
+/* Summary Definition List */
+.summary,
+.summary dt,
+.summary dd {
+  margin: 0;
+}
+
+.summary {
+  display: grid;
+  min-width: min(100%, 34rem);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+
+.summary > div {
+  display: grid;
+  gap: 0.125rem;
+  border-left: 1px solid var(--line);
+  padding: 0.625rem 0.75rem;
+}
+
+.summary > div:first-child {
+  border-left: 0;
+}
+
+.summary > div[data-tone="danger"] {
+  background: color-mix(in srgb, var(--surface) 95%, var(--danger) 5%);
+}
+
+.summary dt {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.summary dd {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-3);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Recorded-form alert banner ── */
+.formAlertBanner {
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+  border-radius: var(--r1);
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.formAlertBannerContent {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1 1 25rem;
+  min-width: 0;
+}
+
+.formAlertBadge {
+  display: inline-flex;
+  align-items: center;
+  background: var(--danger);
+  color: var(--on-accent);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--r2);
+  font-weight: 700;
+  font-size: var(--t-0);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.formAlertBannerText {
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.4;
+  overflow-wrap: break-word;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Recorded-form KPI cards strip ── */
+.formKpiStrip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.kpiCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+  padding: 0.75rem 1rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.kpiCard[data-tone="danger"] .kpiVal {
+  color: var(--danger);
+}
+.kpiCard[data-tone="warn"] .kpiVal {
+  color: var(--warn);
+}
+.kpiCard[data-tone="good"] .kpiVal {
+  color: var(--good);
+}
+.kpiCard[data-tone="accent"] .kpiVal {
+  color: var(--accent);
+}
+
+.kpiLabel {
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.kpiVal {
+  font-family: var(--mono);
+  font-size: var(--t-5);
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.kpiSub {
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+/* ── Registry Main Two-Column Layout ── */
+.registryLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+/* ── Left Authority Catalogue Card & Category Tabs ── */
+.authorityCardSection {
+  display: block;
+}
+
+.catalogueSummary {
+  min-height: var(--ward-tap, 3rem);
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.catalogueSummary::-webkit-details-marker {
+  display: none;
+}
+
+.authorityCardSection[open] > .catalogueSummary {
+  margin-bottom: 0.75rem;
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+
+.scrollHeaderBar {
+  display: none;
+}
+
+.scrollHeaderTitle {
+  font-size: var(--t-1);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+
+.scrollControls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.scrollCueText {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.scrollChevronBtn {
+  display: none;
+}
+
+.authorityScrollTrack {
+  position: relative;
+}
+
+.scrollFadeLeft,
+.scrollFadeRight,
+.scrollIndicatorTrack {
+  display: none;
+}
+
+.tabularTime,
+.screen time {
+  font-variant-numeric: tabular-nums;
+}
+
+.authorityCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.authorityHead {
+  padding: 0.75rem 0.875rem;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  background: var(--surface-2);
+}
+
+.authorityHead h3 {
+  margin: 0;
+  font-size: var(--t-1);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+
+.catalogItem {
+  padding: 0.75rem 0.875rem;
+  min-height: 2.75rem; /* 44px minimum tap target floor */
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-left: 1px solid transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+  display: grid;
+  gap: 0.25rem;
+  text-align: left;
+  background: transparent;
+  width: 100%;
+}
+
+.catalogItem:hover {
+  background: var(--surface-2);
+}
+
+.catalogItemActive {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+
+.catalogTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.catalogRightWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.catalogChevron {
+  color: var(--muted);
+  flex-shrink: 0;
+  transition:
+    transform 0.15s ease,
+    color 0.15s ease;
+}
+
+.catalogItem:hover .catalogChevron {
+  color: var(--ink);
+  transform: translateX(2px);
+}
+
+.catalogItemActive .catalogChevron {
+  color: var(--accent);
+}
+
+.catalogCode {
+  font-family: var(--mono);
+  font-size: var(--t-1);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.catalogTitle {
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.catalogMeta {
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+/* ── Right Content Columns: Primary List & Secondary Context ── */
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ward-space-16, 1rem);
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  .columns {
+    grid-template-columns: minmax(0, 1.75fr) minmax(17rem, 0.75fr);
+    gap: var(--ward-space-12, 0.75rem);
+  }
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.deadlineContextCard {
+  min-width: 0;
+}
+
+@media (min-width: 68.0625rem) {
+  .registryLayout {
+    grid-template-columns: 310px minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+
+  .authorityCardSection {
+    display: block;
+    width: 100%;
+  }
+
+  .catalogueSummary {
+    display: none !important;
+  }
+
+  .scrollHeaderBar,
+  .scrollControls,
+  .scrollFadeLeft,
+  .scrollFadeRight,
+  .scrollIndicatorTrack {
+    display: none !important;
+  }
+
+  .authorityScrollTrack {
+    display: block;
+    width: 100%;
+  }
+
+  .authorityCard {
+    display: flex;
+    flex-direction: column;
+    overflow-x: visible;
+    overflow-y: visible;
+    gap: 0;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-bottom-color: var(--line-strong);
+    border-radius: var(--r1);
+    box-shadow: var(--lift);
+  }
+
+  .authorityHead {
+    display: flex;
+    padding: 0.75rem 1rem;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line);
+    border-top-left-radius: var(--r1i, 9px);
+    border-top-right-radius: var(--r1i, 9px);
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .catalogItem {
+    display: grid;
+    gap: 0.25rem;
+    width: 100%;
+    flex: none;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    text-align: left;
+    transition: background 0.15s ease;
+  }
+
+  .catalogItem:last-child {
+    border-bottom: none;
+  }
+
+  .catalogItem:hover {
+    background: var(--surface-2);
+  }
+
+  .catalogItemActive {
+    background: var(--accent-soft);
+    box-shadow: inset 0 0 0 1.5px var(--accent);
+  }
+}
+
+.primary {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--ward-space-12, 0.75rem);
+}
+
+.secondary {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--ward-space-12, 0.75rem);
+}
+
+.panelBody {
+  min-width: 0;
+}
+
+.panelBody:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* Filter Strip Above Records */
+.filterStripWrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filterLabel {
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.filterButtons {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.filterBtn {
+  font-size: var(--t-0);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem; /* 44px minimum tap target floor */
+  min-width: 2.75rem; /* 44px */
+  padding: 0.375rem 0.875rem;
+  border-radius: var(--pill, 9999px);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.filterBtn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.filterBtnActive {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+
+.filterBtnActive:hover {
+  background: var(--accent-ink);
+  color: var(--on-accent);
+}
+
+/* Population scope sentence */
+.scope {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-relaxed, 1.5);
+  color: var(--muted);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  font-size: var(--t-1);
+  line-height: var(--ward-leading-relaxed, 1.5);
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.note + .note {
+  border-top: 1px solid var(--line);
+}
+
+.absent {
+  margin: 0;
+  padding: 1.25rem 1rem;
+  font-size: var(--t-1);
+  line-height: 1.5;
+  color: var(--muted);
+  text-align: center;
+  background: var(--surface);
+  border-radius: var(--r2);
+}
+
+/* Third Edition Hairline Records & Zero Side-Stripes */
+.screen [data-ward-primitive="record-list"] {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.screen [data-ward-primitive="record-row"] {
+  border: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  padding: 0.875rem 1rem;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+  box-shadow: var(--lift);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.375rem 1rem;
+  align-items: center;
+}
+
+.screen [data-ward-primitive="record-row"]:hover {
+  background: var(--surface-2);
+}
+
+.screen [data-ward-primitive="record-row"] > span:first-child {
+  grid-column: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.screen [data-ward-primitive="record-row"] > span:nth-of-type(2) {
+  grid-column: 1;
+  font-size: var(--t-0);
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.screen [data-ward-primitive="record-row"] small,
+.screen [data-ward-primitive="record-row"] [class*="clockSub"],
+.screen [data-ward-primitive="record-row"] [class*="attrs"],
+.screen [data-ward-primitive="record-row"] [class*="attr"] {
+  font-size: var(--t-0);
+}
+
+.screen [class*="groupTitle"],
+.screen [class*="groupCount"],
+.screen [class*="groupNote"] {
+  font-size: var(--t-0);
+}
+
+.screen [data-ward-primitive="record-row"] > [data-ward-primitive="record-reason"] {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.screen [data-ward-primitive="record-row"] > span:last-child {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  justify-self: end;
+  align-self: center;
+}
+
+@media (max-width: 48rem) {
+  .screen [data-ward-primitive="record-row"] {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .screen [data-ward-primitive="record-row"] > span:last-child {
+    justify-self: stretch;
+    align-self: stretch;
+    margin-top: 0.25rem;
+  }
+
+  .rowActions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* Sovereign subtle tinting for toned rows with zero colored side-stripes */
+.screen [data-ward-primitive="record-row"][data-tone="danger"] {
+  border: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 95%, var(--danger) 5%);
+}
+
+.screen [data-ward-primitive="record-row"][data-tone="warning"] {
+  border: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 96%, var(--warn) 4%);
+}
+
+.screen [data-ward-primitive="record-row"][data-tone="good"] {
+  border: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 96%, var(--good) 4%);
+}
+
+.screen [data-ward-primitive="record-row"][data-tone="neutral"] {
+  border: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.screen [data-ward-primitive="record-reason"] {
+  max-width: 100%;
+  justify-self: start;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 0.35rem 0.625rem;
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+}
+
+.screen [data-ward-primitive="record-reason"][data-level="danger"] {
+  color: var(--danger-ink, var(--danger));
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 25%, transparent);
+}
+
+.screen [data-ward-primitive="record-reason"][data-level="warning"] {
+  color: var(--warn);
+  background: var(--warn-soft);
+  border-color: color-mix(in srgb, var(--warn) 25%, transparent);
+}
+
+.screen [data-ward-primitive="record-reason"][data-level="ok"] {
+  color: var(--good);
+  background: var(--good-soft);
+  border-color: color-mix(in srgb, var(--good) 25%, transparent);
+}
+
+.screen .noDeadlineRows :global([data-ward-primitive="record-reason"][data-level="ok"]) {
+  border-color: var(--line);
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+/* ── Buttons (Sovereign Standard with 44px Minimum Tap Target Floor) ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-height: 2.75rem; /* 44px minimum tap target floor */
+  min-width: 2.75rem; /* 44px */
+  padding: 0.375rem 0.875rem;
+  border-radius: var(--r2);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+  text-decoration: none;
+  touch-action: manipulation;
+}
+
+.btn:hover {
+  background: var(--surface-2);
+}
+
+.btnSm {
+  min-height: 2.75rem; /* 44px minimum tap target floor */
+  min-width: 2.75rem; /* 44px */
+  padding: 0.25rem 0.75rem;
+  font-size: var(--t-0);
+}
+
+.actionChevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+@media (pointer: coarse) {
+  .btn,
+  .btnSm,
+  .filterBtn,
+  .scrollChevronBtn,
+  .actionBlockBtn {
+    min-height: var(--ward-tap, 3rem);
+  }
+}
+
+.btnPrimary {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+
+.btnPrimary:hover {
+  background: var(--accent-ink);
+  border-color: var(--accent-ink);
+}
+
+.btnDanger {
+  background: var(--danger-soft);
+  color: var(--danger-ink, var(--danger));
+  border-color: var(--danger);
+}
+
+.btnDanger:hover {
+  background: var(--danger);
+  color: var(--on-accent);
+}
+
+/* D4 Unconnected Button Standard */
+.btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  background: var(--surface-2);
+  color: var(--muted);
+  border-color: var(--line-strong);
+  opacity: 0.85;
+}
+
+.btn[aria-disabled="true"]:hover {
+  background: var(--surface-2);
+}
+
+.confirmNote {
+  align-self: center;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 500;
+}
+
+/* ── Badges and Status Pills ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--pill, 9999px);
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.badge[data-tone="accent"],
+.badge[data-form="1"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.badge[data-tone="danger"],
+.badge[data-form="3"] {
+  background: var(--danger-soft);
+  color: var(--danger-ink, var(--danger));
+  border-color: var(--danger);
+}
+
+.badge[data-tone="warn"],
+.badge[data-form="2"] {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.badge[data-tone="good"] {
+  background: var(--good-soft);
+  color: var(--good);
+  border-color: var(--good);
+}
+
+/* Explicit Dark Mode Contrast Protection (guarantees >= 4.5:1 floor on all form status badges) */
+:global([data-theme="dark"]) .badge[data-tone="accent"],
+:global([data-theme="dark"]) .badge[data-form="1"],
+:global(:root:not([data-theme="light"])) .screen .badge[data-tone="accent"],
+:global(:root:not([data-theme="light"])) .screen .badge[data-form="1"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+:global([data-theme="dark"]) .badge[data-tone="danger"],
+:global([data-theme="dark"]) .badge[data-form="3"],
+:global(:root:not([data-theme="light"])) .screen .badge[data-tone="danger"],
+:global(:root:not([data-theme="light"])) .screen .badge[data-form="3"] {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+}
+
+:global([data-theme="dark"]) .badge[data-tone="warn"],
+:global([data-theme="dark"]) .badge[data-form="2"],
+:global(:root:not([data-theme="light"])) .screen .badge[data-tone="warn"],
+:global(:root:not([data-theme="light"])) .screen .badge[data-form="2"] {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 45%, transparent);
+}
+
+:global([data-theme="dark"]) .badge[data-tone="good"],
+:global(:root:not([data-theme="light"])) .screen .badge[data-tone="good"] {
+  background: var(--good-soft);
+  color: var(--good);
+  border-color: color-mix(in srgb, var(--good) 45%, transparent);
+}
+
+/* ── Off-Canvas Right Inspector Drawer ── */
+.drawerBackdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  z-index: 550;
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.inspectorDrawer {
+  width: min(30rem, 94vw);
+  height: 100%;
+  background: var(--surface);
+  border-left: 1px solid var(--line-strong);
+  /* `--lift` is always declared here — `.screen` composes `wardShellTokens` on this same page,
+   * and this drawer is a plain inline child (no portal), so the fallback below could never
+   * actually be used. Removed rather than kept as dead raw-colour cover. */
+  box-shadow: var(--lift);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  animation: slideLeft 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 560;
+}
+
+@keyframes slideLeft {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.drawerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.drawerTitle {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--t-3);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.drawerSubtitle {
+  display: block;
+  font-size: var(--t-0);
+  color: var(--muted);
+  margin-top: 0.125rem;
+}
+
+.drawerCloseBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: var(--ward-tap, 48px);
+  min-width: var(--ward-tap, 48px);
+  padding: 0 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+  justify-content: center;
+}
+
+.drawerCloseBtn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.escKey {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+
+.drawerBody {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+/* Dossier Card Inside Drawer */
+.dossierCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  padding: 1rem;
+  display: grid;
+  gap: 0.875rem;
+}
+
+.dossierCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.625rem;
+  gap: 0.5rem;
+}
+
+.dossierCode {
+  font-family: var(--mono);
+  font-size: var(--t-3);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.dossierAct {
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.dossierGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  font-size: var(--t-1);
+}
+
+.dossierField {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.dossierLabel {
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.dossierVal {
+  color: var(--ink);
+  font-weight: 500;
+  overflow-wrap: break-word;
+}
+
+.dossierValMono {
+  font-family: var(--mono);
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: break-word;
+}
+
+.dossierStatusNote {
+  border-top: 1px dashed var(--line-strong);
+  padding-top: 0.625rem;
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Authorized Practitioner Actions Section */
+.practitionerSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sectionHeading {
+  margin: 0;
+  font-size: var(--t-1);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+
+.actionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+}
+
+.unavailableActionGroup {
+  background: var(--surface-2);
+}
+
+.actionGroupHead {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.actionGroupTitle {
+  margin: 0;
+  font-size: var(--t-1);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.actionGroupNote {
+  margin: 0;
+  font-size: var(--t-0);
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.actionItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.actionItem form,
+form.actionItem {
+  gap: 0.625rem;
+}
+
+.actionBlockBtn {
+  width: 100%;
+  justify-content: center;
+  min-height: 2.75rem; /* 44px minimum tap target floor */
+}
+
+/* ── Modals ── */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 600;
+  padding: 1rem;
+}
+
+.modalDialog {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+  width: min(100%, 34rem);
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalHead {
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface-2);
+  gap: 0.5rem;
+}
+
+.modalHead h3 {
+  margin: 0;
+  font-size: var(--t-3);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.modalCloseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--ward-tap, 2.75rem);
+  min-height: var(--ward-tap, 2.75rem);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.modalCloseBtn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.modalBody {
+  padding: 1.25rem;
+  display: grid;
+  gap: 0.875rem;
+  overflow-y: auto;
+}
+
+.modalFoot {
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  background: var(--surface-2);
+  flex-wrap: wrap;
+}
+
+.formGroup {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.formLabel {
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+.formInput,
+.formSelect,
+.formTextarea {
+  min-height: 2.25rem;
+  padding: 0 0.625rem;
+  border-radius: var(--r2);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--t-1);
+  width: 100%;
+}
+
+.formTextarea {
+  min-height: 4.5rem;
+  padding: 0.5rem 0.625rem;
+  resize: vertical;
+}
+
+/* ── Responsive Ergonomics (390px Mobile, 820px Tablet, 1440px Desktop) ── */
+@media (max-width: 68rem) {
+  .registryLayout {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .authorityCardSection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .scrollHeaderBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.25rem 0.25rem 0.375rem;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .scrollControls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .scrollCueText {
+    font-size: var(--t-0);
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .scrollChevronBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--ward-tap, 3rem);
+    min-height: var(--ward-tap, 3rem);
+    width: var(--ward-tap, 3rem);
+    height: var(--ward-tap, 3rem);
+    padding: 0;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r2);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease,
+      opacity 0.15s ease;
+  }
+
+  .scrollChevronBtn:hover:not(:disabled) {
+    background: var(--surface-2);
+  }
+
+  .scrollChevronBtn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .scrollChevronBtn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .authorityScrollTrack {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .scrollFadeLeft,
+  .scrollFadeRight {
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2.25rem;
+    pointer-events: none;
+    z-index: 2;
+    border-radius: var(--r1);
+  }
+
+  .scrollFadeLeft {
+    left: 0;
+    background: linear-gradient(to right, color-mix(in srgb, var(--surface) 95%, transparent), transparent);
+  }
+
+  .scrollFadeRight {
+    right: 0;
+    background: linear-gradient(to left, color-mix(in srgb, var(--surface) 95%, transparent), transparent);
+  }
+
+  .authorityCard {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 0.625rem;
+    padding: 0.625rem;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scroll-padding-inline: 0.625rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) var(--surface-2);
+  }
+
+  .authorityCard::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .authorityCard::-webkit-scrollbar-track {
+    background: var(--surface-2);
+    border-radius: var(--pill, 9999px);
+  }
+
+  .authorityCard::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border-radius: var(--pill, 9999px);
+  }
+
+  .scrollIndicatorTrack {
+    display: block;
+    position: relative;
+    width: 100%;
+    height: 0.25rem;
+    background: var(--surface-2);
+    border-radius: var(--pill, 9999px);
+    overflow: hidden;
+    margin-top: 0.375rem;
+  }
+
+  .scrollIndicatorThumb {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    height: 100%;
+    background: var(--line-strong);
+    border-radius: var(--pill, 9999px);
+    transition:
+      left 0.1s ease,
+      width 0.1s ease;
+    min-width: 1.5rem;
+  }
+
+  .authorityHead {
+    display: none;
+  }
+
+  .catalogItem {
+    flex: 0 0 calc(min(16rem, 76vw));
+    margin: 0;
+    border-radius: var(--r2);
+    border: 1px solid var(--line);
+    scroll-snap-align: start;
+    scroll-snap-stop: normal;
+    min-height: 2.75rem; /* 44px minimum tap target floor */
+  }
+
+  .formKpiStrip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 48rem) {
+  .main {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+
+  .pageHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .summary {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .summary > div:nth-child(odd) {
+    border-left: 0;
+  }
+
+  .summary > div:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
+  }
+
+  .formKpiStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .formAlertBanner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* 48px Minimum Touch Target on Mobile/Tablet */
+  .btn {
+    min-height: var(--ward-tap, 48px);
+    padding: 0.5rem 0.875rem;
+  }
+
+  .btnSm {
+    min-height: var(--ward-tap, 48px);
+    padding: 0.5rem 0.75rem;
+  }
+
+  .filterBtn {
+    min-height: var(--ward-tap, 48px);
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .catalogItem {
+    min-height: var(--ward-tap, 48px);
+    padding: 0.75rem;
+  }
+
+  .formInput,
+  .formSelect {
+    min-height: var(--ward-tap, 48px);
+  }
+}
+
+@media print {
+  .screen,
+  .screen * {
+    color: CanvasText !important;
+    background-color: Canvas !important;
+  }
+
+  .hdr1,
+  .filterStripWrap,
+  .rowActions,
+  .drawerBackdrop,
+  .modal {
+    display: none !important;
+  }
+
+  .columns,
+  .primary > :global([data-ward-primitive="panel"]),
+  .secondary > :global([data-ward-primitive="panel"]) {
+    height: auto;
+    max-height: none;
+  }
+
+  .panelBody {
+    overflow: visible;
+  }
+}

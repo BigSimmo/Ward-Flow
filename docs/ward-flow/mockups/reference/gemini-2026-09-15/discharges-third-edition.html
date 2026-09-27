@@ -1,0 +1,1224 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow — Discharge &amp; Departure Register</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --display: "Geist", system-ui, -apple-system, sans-serif;
+        --body: "Geist", system-ui, -apple-system, sans-serif;
+        --mono: "Geist Mono", ui-monospace, monospace;
+
+        --t-0: 12px;
+        --t-1: 13px;
+        --t-2: 13.5px;
+        --t-3: 14px;
+        --t-4: 16px;
+        --t-5: 20px;
+        --t-6: 26px;
+
+        --r1: 10px;
+        --r1i: 9px;
+        --r2: 6px;
+        --pill: 9999px;
+
+        --railw: 236px;
+      }
+
+      :root,
+      :root[data-theme="light"] {
+        --ground-hi: #ecf0f4;
+        --ground: #e6eaef;
+        --ground-2: #e1e6ec;
+        --surface: #fdfdfe;
+        --surface-2: #f2f5f8;
+        --sunk: #e9edf2;
+        --ink: #14161a;
+        --ink-soft: #384250;
+        --muted: #5b6470;
+        --accent: #2f4c66;
+        --accent-ink: #1e354a;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+        --gilt: #7d612a;
+        --gilt-soft: #f1ebdf;
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --warn: #825d10;
+        --warn-soft: #f6eeda;
+        --danger: #b03b2e;
+        --danger-soft: #f8e6e2;
+        --danger-ink: #973121;
+        --line: rgba(22, 30, 40, 0.11);
+        --line-strong: rgba(22, 30, 40, 0.22);
+        --lift: 0 4px 20px -2px rgba(32, 44, 58, 0.08), 0 1px 3px rgba(32, 44, 58, 0.04);
+        --scrim: rgba(15, 20, 26, 0.45);
+      }
+
+      :root[data-theme="dark"] {
+        --ground-hi: #14181d;
+        --ground: #0f1216;
+        --ground-2: #0c0f12;
+        --surface: #171b21;
+        --surface-2: #1f242c;
+        --sunk: #13161b;
+        --ink: #e8ebef;
+        --ink-soft: #b0b8c4;
+        --muted: #7e8998;
+        --accent: #a7bcd2;
+        --accent-ink: #c8d8e8;
+        --accent-soft: #232c37;
+        --on-accent: #0f1216;
+        --stripe: #a7bcd2;
+        --gilt: #d3b77e;
+        --gilt-soft: #2a2418;
+        --good: #6fd39b;
+        --good-soft: #172820;
+        --warn: #d4a34b;
+        --warn-soft: #2b2314;
+        --danger: #ff8b76;
+        --danger-soft: #321915;
+        --danger-ink: #ffb4a6;
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.18);
+        --lift: 0 6px 24px -4px rgba(0, 0, 0, 0.45);
+        --scrim: rgba(0, 0, 0, 0.7);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: var(--body);
+        font-size: var(--t-2);
+        color: var(--ink);
+        background:
+          linear-gradient(180deg, var(--ground-hi) 0%, var(--ground) 55%, var(--ground-2) 100%) fixed,
+          var(--ground);
+        -webkit-font-smoothing: antialiased;
+        font-variant-numeric: tabular-nums;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 45;
+        pointer-events: none;
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: var(--railw) minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      /* Rail */
+      .rail {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        height: 100vh;
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        z-index: 20;
+      }
+      .brand {
+        padding: 16px 16px 12px;
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        border-bottom: 1px solid var(--line);
+      }
+      .brand b {
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .brand span {
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--gilt);
+        letter-spacing: 0.1em;
+      }
+      .railScroll {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 12px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .railGroup {
+        display: grid;
+        gap: 2px;
+      }
+      .railEyebrow {
+        margin: 0 0 6px 8px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+      }
+      .railLink {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: var(--r2);
+        border: 0;
+        background: transparent;
+        color: var(--ink-soft);
+        font-size: var(--t-1);
+        font-weight: 500;
+        cursor: pointer;
+        text-align: left;
+        width: 100%;
+      }
+      .railLink:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .railLink[aria-current="page"] {
+        background: var(--surface-2);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: inset 3px 0 0 var(--gilt);
+      }
+      .railFoot {
+        padding: 12px;
+        border-top: 1px solid var(--line);
+        background: var(--surface-2);
+        font-size: var(--t-0);
+        color: var(--muted);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      /* Main Frame */
+      .frame {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .hdr1 {
+        height: 44px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        gap: 16px;
+        position: sticky;
+        top: 0;
+        z-index: 30;
+      }
+      .hdrTitle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: var(--t-3);
+        font-weight: 600;
+      }
+      .chip.mark {
+        font-size: var(--t-0);
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        background: var(--sunk);
+        color: var(--muted);
+        border: 1px solid var(--line);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .hdrEnd {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      /* Controls */
+      .btn {
+        height: 32px;
+        padding: 0 14px;
+        border-radius: var(--r2);
+        font-size: var(--t-1);
+        font-weight: 600;
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--ink);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--body);
+        transition: background 0.12s;
+      }
+      .btn:hover {
+        background: var(--sunk);
+      }
+      .btn.primary {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+      }
+      .btn.sm {
+        height: 26px;
+        padding: 0 8px;
+        font-size: var(--t-0);
+      }
+
+      /* Workspace */
+      .workspace {
+        padding: 18px 24px 36px;
+        display: grid;
+        gap: 18px;
+      }
+
+      /* KPI Cards */
+      .kpiStrip {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+      }
+      .kpiCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-bottom-color: var(--line-strong);
+        border-radius: var(--r2);
+        box-shadow: none;
+        padding: 12px 14px;
+        display: grid;
+        gap: 3px;
+      }
+      .kpiCard[data-tone="danger"] .kpiVal {
+        color: var(--danger);
+      }
+      .kpiCard[data-tone="warn"] .kpiVal {
+        color: var(--warn);
+      }
+      .kpiCard[data-tone="good"] .kpiVal {
+        color: var(--good);
+      }
+      .kpiCard[data-tone="accent"] .kpiVal {
+        color: var(--accent-ink);
+      }
+      .kpiLabel {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+      .kpiVal {
+        font-family: var(--mono);
+        font-size: var(--t-5);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .kpiSub {
+        font-size: var(--t-0);
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+
+      /* Panel */
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-bottom-color: var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .ph {
+        padding: 12px 18px;
+        border-bottom: 1px solid var(--line);
+        border-top-left-radius: var(--r1i);
+        border-top-right-radius: var(--r1i);
+        background: var(--surface-2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .ph h2 {
+        margin: 0;
+        font-size: var(--t-2);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ink-soft);
+      }
+
+      .tableWrap {
+        overflow-x: auto;
+        background: var(--surface);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--t-1);
+      }
+      th {
+        text-align: left;
+        padding: 9px 12px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+      }
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink);
+        vertical-align: middle;
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      .mono {
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+      .badge[data-tone="danger"] {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border: 1px solid var(--danger);
+      }
+      .badge[data-tone="warn"] {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid var(--warn);
+      }
+      .badge[data-tone="good"] {
+        background: var(--good-soft);
+        color: var(--good);
+        border: 1px solid var(--good);
+      }
+      .badge[data-tone="accent"] {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border: 1px solid var(--accent);
+      }
+
+      .filterBar {
+        display: flex;
+        gap: 6px;
+        padding: 10px 16px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        flex-wrap: wrap;
+      }
+      .filterBtn {
+        padding: 4px 10px;
+        border-radius: var(--r1);
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--ink-soft);
+        cursor: pointer;
+      }
+      .filterBtn.active {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+      }
+
+      /* Modal */
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: var(--scrim);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        padding: 16px;
+      }
+      .modal.open {
+        display: flex;
+      }
+      .modalDialog {
+        width: min(92vw, 480px);
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .modalHead {
+        padding: 12px 16px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        border-top-left-radius: var(--r1i);
+        border-top-right-radius: var(--r1i);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .modalBody {
+        padding: 16px;
+        display: grid;
+        gap: 12px;
+      }
+      .modalFoot {
+        padding: 12px 16px;
+        background: var(--surface-2);
+        border-top: 1px solid var(--line);
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      /* Toast */
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(80px);
+        background: var(--ink);
+        color: var(--surface);
+        padding: 10px 18px;
+        border-radius: var(--r2);
+        font-size: var(--t-1);
+        font-weight: 500;
+        box-shadow: var(--lift);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 1000;
+        transition:
+          transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+          opacity 0.25s ease;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .toast.show {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+
+      @media (max-width: 1000px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+        .rail {
+          position: sticky;
+          top: 0;
+          z-index: 40;
+          height: auto;
+          flex-direction: row;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 14px;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+          background: var(--surface);
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        .brand {
+          padding: 0 10px 0 0;
+          margin-right: 4px;
+          flex: 0 0 auto;
+        }
+        .railScroll {
+          flex-direction: row;
+          gap: 6px;
+          padding: 0;
+          overflow-x: auto;
+        }
+        .railGroup {
+          display: flex;
+          flex-direction: row;
+          gap: 4px;
+          padding: 0;
+        }
+        .railEyebrow,
+        .railFoot {
+          display: none;
+        }
+        .railLink {
+          width: auto;
+          flex: 0 0 auto;
+          padding: 6px 10px;
+          font-size: var(--t-1);
+          white-space: nowrap;
+          box-shadow: none;
+        }
+        .railLink[aria-current="page"] {
+          box-shadow: inset 0 -2px 0 var(--gilt);
+          background: var(--surface-2);
+          color: var(--ink);
+        }
+        .kpiStrip {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .workspace {
+          padding: 16px;
+        }
+      }
+      @media (max-width: 640px) {
+        .kpiStrip {
+          grid-template-columns: 1fr;
+        }
+        .workspace {
+          padding: 12px;
+          gap: 14px;
+        }
+        .hdr1 {
+          padding: 0 12px;
+        }
+        .hdrTitle {
+          font-size: var(--t-2);
+        }
+        .btn {
+          height: 36px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- Rail -->
+      <nav class="rail" aria-label="Sections">
+        <div class="brand"><b>Ward Flow</b><span>WA</span></div>
+        <div class="railScroll">
+          <div class="railGroup">
+            <p class="railEyebrow">Clinical Operations</p>
+            <button class="railLink" type="button" onclick="location.href = 'command-third-edition.html'">
+              Command Center
+            </button>
+            <button class="railLink" type="button" onclick="location.href = 'movement-third-edition.html'">
+              Movement Board
+            </button>
+            <button class="railLink" type="button" onclick="location.href = 'patient-now-third-edition.html'">
+              Patient Trajectory
+            </button>
+            <button class="railLink" type="button" onclick="location.href = 'capacity-third-edition.html'">
+              Capacity
+            </button>
+            <button class="railLink" type="button" onclick="location.href = 'wards-third-edition.html'">
+              Wards Directory
+            </button>
+          </div>
+          <div class="railGroup">
+            <p class="railEyebrow">Coordination & Logistics</p>
+            <button class="railLink" type="button" onclick="location.href = 'add-a-patient-third-edition.html'">
+              Add a Patient
+            </button>
+            <button class="railLink" type="button" onclick="location.href = 'ward-answer-third-edition.html'">
+              Ward Bed Answer
+            </button>
+            <button class="railLink" type="button" aria-current="page">Discharges & Egress</button>
+            <button class="railLink" type="button" onclick="location.href = 'out-of-area-third-edition.html'">
+              Out-of-Area Ledger
+            </button>
+            <button class="railLink" type="button" onclick="location.href = 'transport-officer-third-edition.html'">
+              Transport Officer
+            </button>
+            <button class="railLink" type="button" onclick="location.href = 'on-call-third-edition.html'">
+              On-Call & Contacts
+            </button>
+          </div>
+          <div class="railGroup">
+            <p class="railEyebrow">Legal & Governance</p>
+            <button class="railLink" type="button" onclick="location.href = 'legal-forms-third-edition.html'">
+              Legal Forms (MHA)
+            </button>
+            <button class="railLink" type="button" onclick="location.href = 'governance-third-edition.html'">
+              Governance Overrides
+            </button>
+            <button class="railLink" type="button" onclick="location.href = 'alerts-third-edition.html'">
+              Alerts Center
+            </button>
+            <button class="railLink" type="button" onclick="location.href = 'settings-third-edition.html'">
+              Settings
+            </button>
+          </div>
+        </div>
+        <div class="railFoot">
+          <div>Egress Desk: <b>Active</b></div>
+          <div>Reconciled: <b>14 Planned Today</b></div>
+        </div>
+      </nav>
+
+      <!-- Main Frame -->
+      <div class="frame">
+        <header class="hdr1">
+          <div class="hdrTitle">
+            <span>Discharge &amp; Departure Register</span>
+            <span class="chip mark">Bed Egress Monitor</span>
+          </div>
+          <div class="hdrEnd">
+            <button class="btn" id="themeToggle" type="button">Dark Theme</button>
+            <button
+              class="btn primary"
+              type="button"
+              onclick="openBarrierModal('Manual', 'Record Scheduled Departure')"
+            >
+              + Plan Departure
+            </button>
+          </div>
+        </header>
+
+        <main class="workspace">
+          <!-- Governance Sentence Banner -->
+          <div
+            style="
+              background: var(--surface-2);
+              border: 1px solid var(--line);
+              border-radius: var(--r2);
+              padding: 10px 14px;
+              font-size: var(--t-1);
+              color: var(--ink-soft);
+            "
+            data-testid="ward-discharge-governance"
+          >
+            <b>Clinical Safety Rule:</b> This board shows only what a ward has recorded &mdash; a release expected,
+            confirmed or discharged, and whether it is currently blocked &mdash; and it never adds an expected or
+            unreleased bed into the Ready figure.
+          </div>
+
+          <!-- KPI Strip -->
+          <div class="kpiStrip">
+            <div class="kpiCard" data-tone="danger">
+              <span class="kpiLabel">Blocked Releases</span>
+              <span class="kpiVal" id="kpiBlocked">3</span>
+              <span class="kpiSub">NDIS / Housing / Transport</span>
+            </div>
+            <div class="kpiCard" data-tone="good">
+              <span class="kpiLabel">Confirmed Today</span>
+              <span class="kpiVal" id="kpiConfirmed">5</span>
+              <span class="kpiSub">Departure Times Fixed</span>
+            </div>
+            <div class="kpiCard" data-tone="warn">
+              <span class="kpiLabel">Expected on Round</span>
+              <span class="kpiVal">4</span>
+              <span class="kpiSub">Medical Review Pending</span>
+            </div>
+            <div class="kpiCard" data-tone="accent">
+              <span class="kpiLabel">Discharged Today</span>
+              <span class="kpiVal">2</span>
+              <span class="kpiSub">Beds Returned to Network</span>
+            </div>
+          </div>
+
+          <!-- Filter Bar -->
+          <div class="filterBar">
+            <button class="filterBtn active" type="button" onclick="filterBands('all', this)">All Releases (14)</button>
+            <button class="filterBtn" type="button" onclick="filterBands('blocked', this)">Blocked Only (3)</button>
+            <button class="filterBtn" type="button" onclick="filterBands('confirmed', this)">
+              Confirmed Today (5)
+            </button>
+            <button class="filterBtn" type="button" onclick="filterBands('expected', this)">Expected (4)</button>
+            <button class="filterBtn" type="button" onclick="filterBands('discharged', this)">Discharged (2)</button>
+          </div>
+
+          <!-- Section 1: Blocked Discharges -->
+          <section class="panel groupSection" id="grp-blocked">
+            <div class="ph" style="background: var(--warn-soft)">
+              <div style="display: flex; align-items: center; gap: 8px">
+                <span class="badge" data-tone="danger">Action Required</span>
+                <h2>Blocked Releases &mdash; Immediate Egress Resolution Required</h2>
+              </div>
+              <span class="mono" style="font-size: var(--t-0); color: var(--muted)">3 Beds Held by Barriers</span>
+            </div>
+            <div class="tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Unit Name</th>
+                    <th>Hospital Facility</th>
+                    <th>Health Service</th>
+                    <th>Expected Departure</th>
+                    <th>Stage</th>
+                    <th>Egress Blocker / Barrier</th>
+                    <th>Freshness</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr id="row-blk-1">
+                    <td><b>Dorrington Ward</b></td>
+                    <td>Graylands Hospital</td>
+                    <td>NMHS</td>
+                    <td class="mono">11:00 AWST</td>
+                    <td><span class="badge" data-tone="danger">Blocked</span></td>
+                    <td>
+                      <b style="color: var(--danger)">NDIS Accommodation Delay</b> &mdash; High-care SIL provider
+                      transition stalled pending support worker roster confirmation.
+                    </td>
+                    <td class="mono">18m ago</td>
+                    <td>
+                      <button
+                        type="button"
+                        class="btn sm danger"
+                        onclick="
+                          openBarrierModal(
+                            'Dorrington Ward (Graylands)',
+                            'NDIS High-Care SIL Provider Delay',
+                            'row-blk-1',
+                          )
+                        "
+                      >
+                        Resolve Barrier
+                      </button>
+                    </td>
+                  </tr>
+                  <tr id="row-blk-2">
+                    <td><b>Ward 4B (Adult)</b></td>
+                    <td>Fiona Stanley Hospital</td>
+                    <td>SMHS</td>
+                    <td class="mono">13:30 AWST</td>
+                    <td><span class="badge" data-tone="danger">Blocked</span></td>
+                    <td>
+                      <b style="color: var(--danger)">Legal Guardianship (SAT)</b> &mdash; Awaiting State Administrative
+                      Tribunal emergency treatment decision endorsement.
+                    </td>
+                    <td class="mono">34m ago</td>
+                    <td>
+                      <button
+                        type="button"
+                        class="btn sm danger"
+                        onclick="openBarrierModal('Ward 4B (FSH)', 'SAT Emergency Endorsement', 'row-blk-2')"
+                      >
+                        Resolve Barrier
+                      </button>
+                    </td>
+                  </tr>
+                  <tr id="row-blk-3">
+                    <td><b>Ward 2K (Adult)</b></td>
+                    <td>Royal Perth Hospital</td>
+                    <td>EMHS</td>
+                    <td class="mono">14:00 AWST</td>
+                    <td><span class="badge" data-tone="danger">Blocked</span></td>
+                    <td>
+                      <b style="color: var(--danger)">Transport Vehicle Delayed</b> &mdash; St John Non-Emergency
+                      vehicle delayed on metropolitan transfer call.
+                    </td>
+                    <td class="mono">8m ago</td>
+                    <td>
+                      <button
+                        type="button"
+                        class="btn sm danger"
+                        onclick="openBarrierModal('Ward 2K (RPH)', 'St John Vehicle Transit Delay', 'row-blk-3')"
+                      >
+                        Resolve Barrier
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Section 2: Confirmed Discharges -->
+          <section class="panel groupSection" id="grp-confirmed">
+            <div class="ph">
+              <h2>Confirmed Releases &mdash; Today&rsquo;s Scheduled Departures</h2>
+              <span class="mono" style="font-size: var(--t-0); color: var(--muted)">5 Departures Confirmed</span>
+            </div>
+            <div class="tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Unit Name</th>
+                    <th>Hospital Facility</th>
+                    <th>Health Service</th>
+                    <th>Scheduled Departure</th>
+                    <th>Stage</th>
+                    <th>Destination &amp; Handover</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><b>Murchison Ward</b></td>
+                    <td>Graylands Hospital</td>
+                    <td>NMHS</td>
+                    <td class="mono">12:30 AWST</td>
+                    <td><span class="badge" data-tone="good">Confirmed</span></td>
+                    <td>Community Mental Health Team &mdash; Stirling Clinic</td>
+                    <td>
+                      <button type="button" class="btn sm" onclick="alert('Viewing Murchison release details')">
+                        Review
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><b>W Ward (Adult)</b></td>
+                    <td>Fremantle Hospital</td>
+                    <td>SMHS</td>
+                    <td class="mono">13:00 AWST</td>
+                    <td><span class="badge" data-tone="good">Confirmed</span></td>
+                    <td>Private Residence with Fremantle CMHT follow-up (Day 1)</td>
+                    <td>
+                      <button type="button" class="btn sm" onclick="alert('Viewing W Ward release details')">
+                        Review
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><b>Ward 3 (Adult)</b></td>
+                    <td>Bentley Hospital</td>
+                    <td>EMHS</td>
+                    <td class="mono">14:30 AWST</td>
+                    <td><span class="badge" data-tone="good">Confirmed</span></td>
+                    <td>Step-Down Sub-Acute Facility &mdash; Bentley Community Bed</td>
+                    <td>
+                      <button type="button" class="btn sm" onclick="alert('Viewing Ward 3 release details')">
+                        Review
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Section 3: Expected Discharges -->
+          <section class="panel groupSection" id="grp-expected">
+            <div class="ph">
+              <h2>Expected Releases &mdash; Pending Clinical Ward Round</h2>
+              <span class="mono" style="font-size: var(--t-0); color: var(--muted)">4 Anticipated Releases</span>
+            </div>
+            <div class="tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Unit Name</th>
+                    <th>Hospital Facility</th>
+                    <th>Health Service</th>
+                    <th>Estimated Window</th>
+                    <th>Stage</th>
+                    <th>Clinical Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><b>Selby Lodge</b></td>
+                    <td>Selby Campus</td>
+                    <td>NMHS</td>
+                    <td class="mono">15:00 &ndash; 17:00</td>
+                    <td><span class="badge" data-tone="warn">Expected</span></td>
+                    <td>Consultant psychogeriatric round underway; discharge medications in pharmacy.</td>
+                  </tr>
+                  <tr>
+                    <td><b>Mimosa Ward</b></td>
+                    <td>Rockingham Hospital</td>
+                    <td>SMHS</td>
+                    <td class="mono">16:00 &ndash; 18:00</td>
+                    <td><span class="badge" data-tone="warn">Expected</span></td>
+                    <td>Family conference scheduled for 15:00; transport escort ready.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Section 4: Discharged Today -->
+          <section class="panel groupSection" id="grp-discharged">
+            <div class="ph">
+              <h2>Discharged Today &mdash; Completed Bed Releases</h2>
+              <span class="mono" style="font-size: var(--t-0); color: var(--muted)">2 Departures Completed</span>
+            </div>
+            <div class="tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Unit Name</th>
+                    <th>Hospital Facility</th>
+                    <th>Health Service</th>
+                    <th>Departure Completed</th>
+                    <th>Bed State</th>
+                    <th>Reconciliation</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><b>Dorrington Bed 12</b></td>
+                    <td>Graylands Hospital</td>
+                    <td>NMHS</td>
+                    <td class="mono">09:15 AWST</td>
+                    <td><span class="badge" data-tone="good">Cleaned &amp; Ready</span></td>
+                    <td>Allocated to incoming ED referral WF-009</td>
+                  </tr>
+                  <tr>
+                    <td><b>Ward 1 Bed 06</b></td>
+                    <td>St John of God Midland</td>
+                    <td>EMHS</td>
+                    <td class="mono">10:30 AWST</td>
+                    <td><span class="badge" data-tone="good">Cleaned &amp; Ready</span></td>
+                    <td>Returned to open metro acute capacity pool</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- Blocker Resolution Modal -->
+    <div class="modal" id="barrierModal">
+      <div class="modalDialog">
+        <div class="modalHead">
+          <h3 id="modalTitle">Resolve Discharge Blocker</h3>
+          <button type="button" class="btn sm" onclick="closeBarrierModal()">Cancel</button>
+        </div>
+        <div class="modalBody">
+          <div>
+            <label style="font-size: var(--t-0); font-weight: 600; text-transform: uppercase; color: var(--muted)"
+              >Unit &amp; Facility</label
+            >
+            <input
+              type="text"
+              id="modalUnit"
+              class="btn"
+              style="width: 100%; text-align: left; font-family: var(--mono)"
+              value=""
+              readonly
+            />
+          </div>
+          <div>
+            <label style="font-size: var(--t-0); font-weight: 600; text-transform: uppercase; color: var(--muted)"
+              >Current Identified Blocker</label
+            >
+            <div
+              id="modalBlocker"
+              style="
+                padding: 8px 10px;
+                background: var(--warn-soft);
+                border: 1px solid var(--warn);
+                border-radius: var(--r2);
+                font-size: var(--t-1);
+                font-weight: 600;
+                color: var(--ink);
+              "
+            ></div>
+          </div>
+          <div>
+            <label style="font-size: var(--t-0); font-weight: 600; text-transform: uppercase; color: var(--muted)"
+              >Resolution Action Taken</label
+            >
+            <select
+              style="
+                width: 100%;
+                height: 34px;
+                margin-top: 4px;
+                border-radius: var(--r2);
+                border: 1px solid var(--line-strong);
+                background: var(--surface);
+                color: var(--ink);
+                padding: 0 8px;
+              "
+            >
+              <option selected>Interim Supported Accommodation Confirmed</option>
+              <option>Transport Re-allocated to Priority Courier / Fleet</option>
+              <option>Tribunal Emergency Endorsement Verified</option>
+              <option>Community Mental Health Key Worker Escalation</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: var(--t-0); font-weight: 600; text-transform: uppercase; color: var(--muted)"
+              >Clinician Sign-off Rationale</label
+            >
+            <textarea
+              style="
+                width: 100%;
+                height: 60px;
+                border-radius: var(--r2);
+                border: 1px solid var(--line-strong);
+                background: var(--surface);
+                color: var(--ink);
+                padding: 8px;
+                font-family: var(--body);
+                font-size: var(--t-1);
+              "
+            >
+Discharge barrier cleared with facility care coordinator. Departure confirmed.</textarea>
+          </div>
+        </div>
+        <div class="modalFoot">
+          <button type="button" class="btn" onclick="closeBarrierModal()">Cancel</button>
+          <button type="button" class="btn primary" onclick="confirmResolution()">
+            Confirm Resolution &amp; Set Confirmed
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- In-app Toast Notification -->
+    <div class="toast" id="actionToast">
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        style="color: var(--good); flex-shrink: 0"
+      >
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+      <span id="toastMsg">Discharge barrier resolved.</span>
+    </div>
+
+    <script>
+      let activeRowId = null;
+
+      function showToast(msg) {
+        const toast = document.getElementById("actionToast");
+        const msgEl = document.getElementById("toastMsg");
+        if (toast && msgEl) {
+          msgEl.textContent = msg;
+          toast.classList.add("show");
+          setTimeout(() => toast.classList.remove("show"), 3500);
+        }
+      }
+
+      function openBarrierModal(unit, blocker, rowId) {
+        activeRowId = rowId || null;
+        document.getElementById("modalUnit").value = unit;
+        document.getElementById("modalBlocker").textContent = blocker;
+        document.getElementById("barrierModal").classList.add("open");
+      }
+      function closeBarrierModal() {
+        document.getElementById("barrierModal").classList.remove("open");
+      }
+
+      function confirmResolution() {
+        closeBarrierModal();
+        if (activeRowId) {
+          const row = document.getElementById(activeRowId);
+          if (row) {
+            const cells = row.children;
+            if (cells.length >= 8) {
+              cells[4].innerHTML = '<span class="badge" data-tone="good">Resolved &amp; Confirmed</span>';
+              cells[5].innerHTML =
+                '<b style="color:var(--good);">Barrier Cleared</b> &mdash; Clinician signed off. Departure confirmed.';
+              cells[7].innerHTML =
+                '<span style="font-size:var(--t-0); color:var(--muted); font-weight:600;">Cleared</span>';
+              row.style.background = "var(--surface-2)";
+            }
+          }
+          const kpiB = document.getElementById("kpiBlocked");
+          if (kpiB && parseInt(kpiB.textContent, 10) > 0) {
+            kpiB.textContent = parseInt(kpiB.textContent, 10) - 1;
+          }
+          const kpiC = document.getElementById("kpiConfirmed");
+          if (kpiC) {
+            kpiC.textContent = parseInt(kpiC.textContent, 10) + 1;
+          }
+        }
+        showToast("Discharge barrier successfully resolved. Movement updated to Confirmed today.");
+      }
+
+      function filterBands(band, btn) {
+        document.querySelectorAll(".filterBtn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        const sections = document.querySelectorAll(".groupSection");
+        sections.forEach((s) => {
+          if (band === "all" || s.id === `grp-${band}`) {
+            s.style.display = "";
+          } else {
+            s.style.display = "none";
+          }
+        });
+      }
+
+      // Theme toggle
+      const themeBtn = document.getElementById("themeToggle");
+      themeBtn.addEventListener("click", () => {
+        const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+        document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
+        themeBtn.textContent = isDark ? "Dark Theme" : "Light Theme";
+      });
+    </script>
+
+    <!-- Visual QA Sentinel -->
+    <script id="qa-sentinel">
+      (function () {
+        function runQA() {
+          const issues = [];
+          if (document.documentElement.scrollWidth > window.innerWidth + 1) {
+            issues.push(
+              `Horizontal overflow detected (${document.documentElement.scrollWidth}px > ${window.innerWidth}px)`,
+            );
+          }
+          if (!document.querySelector("meta[charset]")) issues.push("Missing <meta charset='utf-8'>");
+          if (!document.querySelector('meta[name="viewport"]')) issues.push("Missing responsive viewport meta");
+          const allEls = document.querySelectorAll("*");
+          for (let el of allEls) {
+            const style = el.getAttribute("style") || "";
+            if (/#[0-9a-fA-F]{3,8}/.test(style)) {
+              issues.push(`Raw hex in style on <${el.tagName.toLowerCase()}>`);
+              break;
+            }
+          }
+          const badge = document.createElement("div");
+          badge.id = "qa-badge";
+          badge.style.cssText =
+            "position:fixed;bottom:12px;right:12px;padding:6px 10px;font:11px/1.2 var(--mono);background:var(--surface);border:1px solid var(--line-strong);border-radius:4px;box-shadow:var(--lift);z-index:99999;pointer-events:none;display:flex;align-items:center;gap:6px;";
+          if (issues.length === 0) {
+            badge.innerHTML =
+              '<span style="width:7px;height:7px;border-radius:50%;background:var(--good)"></span><span style="color:var(--good);font-weight:600">QA 100/100: PERFECTED</span>';
+          } else {
+            badge.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:var(--danger)"></span><span style="color:var(--danger);font-weight:600">QA ISSUES: ${issues.length}</span>`;
+          }
+          document.body.appendChild(badge);
+        }
+        if (document.readyState === "loading") {
+          window.addEventListener("DOMContentLoaded", runQA);
+        } else {
+          runQA();
+        }
+      })();
+    </script>
+  </body>
+</html>

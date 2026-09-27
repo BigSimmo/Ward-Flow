@@ -1,0 +1,11 @@
+# F00 search and Tasks content — revision 1
+
+Read `../../2026-09-13-visual-rebuild-full-estate.md`, `../PROGRESS.md` and `F00-inputs-r1.json`. Owner: verification_plan / Luna medium; bounded presentation work with independent Sol review before acceptance. Acknowledge before writing.
+
+Exclusive files: `src/components/ward-management/ward-global-search.tsx`, `ward-global-search.module.css`, `ward-tasks-drawer.tsx`, `ward-tasks-drawer.module.css`. Do not edit shell/bar/rail/Sheet/tokens, tests, engine or drawings. Bar worker owns carrier/layout and sizes Tasks sheet to28rem/94vw. Tasks retains its own existing header/close so focus ownership remains correct.
+
+Authority: served Command reference's inline search/Tasks styles and script, WARD-FLOW-DESIGN-SYSTEM, kit/inputs/SHELL-SPEC.md. Do not use stale kit/shell fragments. Root already sees search squeezed by overlong header labels and oversized painted buttons. Bar worker adjusts label ladder and `.searchWrap`; coordinate no CSS override fight. At<=1000 search will have a dedicated full row. Apply local third-edition typography/surfaces, target cap30rem desktop and useful results width min(92vw,36rem) with viewport clamp. Show concise Search placeholder with full accessible name/context. Preserve slash/CtrlK/Escape, active results, route/refusal behavior and search scope. No invented ranking, clinical answers or new search behavior. Keep visible text>=12px and actual input/controls>=48px; compact fine-pointer painted face may be inset34px.
+
+Tasks: replace old token palette and nested-card visual hierarchy with third-edition drawer head/body/footer, Notices and Work open regions using current notices/tasks only. Preserve engine ordering, acknowledge/complete semantics, refs/focus, empty states and authorization. No invented task counts/labels/status. Use existing shared token composition; avoid generic host UI changes. Correct stale 'unmounted' comment where necessary.
+
+Read installed Next CSS guide. No tests/server/browser/newagents/Git actions. Root serves/compares current work and runs focused tests. Save `F00-search-tasks-report-r1.md` with exact changes, retained behavior, deviations, output hashes, checks unrun and requested tests. Return source ownership on handoff.

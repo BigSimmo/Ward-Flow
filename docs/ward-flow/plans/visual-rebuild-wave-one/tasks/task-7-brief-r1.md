@@ -1,0 +1,11 @@
+# Task 7 Bed board — revision 1
+
+Model: existing statistics_inventory Sol medium, bounded board presentation; controller handles shared questions and independent review. Read current Ward README, plan Task7 and global constraints, wave protocol and task-6-7-inventory-r1.md. Plan SHA256 9ECE16E99228AF0B4053D7C6ED75CF694354EE9BBCBA9D0EC48A20F55573201E; HEAD 1ef9ed3975078b789e9b5d70b3f000c64edc3809. Owned board source clean at dispatch. Shell/Hub/Stats/Command/Delays are dirty and not yours.
+
+Own only src/components/ward-management/board/ward-board.tsx and board.module.css. No daily-sheet change without exact proven request to controller. Named tests only if proven presentation-stale: tests/ward-board-page.dom.test.tsx and tests/ward-board-third-edition-headings.dom.test.tsx. Report task-7-report-r1.md in this folder.
+
+Goal: match bed-board-third-edition.html design while preserving all five bed states, capacity/state/warning facts, selection/actions, people panel and full printing via WardDailySheet. Root data-ward-design third-edition and canonical token composition, no --text-* or sub12px HTML in certified CSS. One coherent implementation and one batched review correction. All source state/reducer/data/derivation behavior remains authoritative. No fake actions, beds or statistics. Retain three existing flow populations and app-only actions/absence statements.
+
+Read controller-provided HTTP served drawing desktop/phone screenshots before visual edits; source preparation allowed while waiting. Drawings authoritative for layout; tab presentation can organize existing regions but keep panels mounted (hidden while inactive), preserve state and mandatory warnings, keyboard tab behavior and print visibility. If that would need a clinical/role decision, report exact question and continue independent styling; never silently keep legacy layout.
+
+Controller alone runs tests/browser/server. No Git writes, providers, recursive agents, new dependencies, unrelated source, protected deletion/move. Modify in place. Acknowledge exact scope before editing. Save report with input/output hashes, retained behavior, each visual/behavior deviation and reason, checks unrun by worker, visual/human pending. If you reach a decision this brief does not cover, stop and hand it back.

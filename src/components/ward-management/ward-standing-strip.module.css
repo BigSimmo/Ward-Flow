@@ -1,0 +1,199 @@
+/* src/components/ward-management/ward-standing-strip.module.css
+ *
+ * The wrapper around `<WardFigureStrip>` in `ward-standing-strip.tsx` — Ward Flow's global header
+ * strip. Every value resolves through a `--ward-*` token declared in `ward-tokens.module.css`.
+ *
+ * 🔴 THE THREE CLUSTERS (SUPPLY / DEMAND / RISK) ARE DRAWN IN CSS, NOT MARKUP. `WardFigureStrip`
+ * counts flagged children with `Children.toArray` and throws above two (`ward-figure.tsx`) — a
+ * wrapper element around any subset of the seven figures would remove them from that count and
+ * silently disarm the only place the two-flag rule can be enforced. So the figures stay direct
+ * children of the `<dl>`, and the grouping is a left border placed by POSITION, targeting the
+ * primitive's own `[data-ward-primitive="figure"]` attribute with `:nth-child()` rather than a
+ * class the markup would have to opt into.
+ *
+ * Dark mode needs nothing extra here, on purpose: the app switches themes with the `.dark` class
+ * on `<html>` (`ckb-v2-tokens.css`), not `prefers-color-scheme`, so every `--ward-*` reference
+ * below already repaints through that class rather than through a media query this file would
+ * have to duplicate.
+ */
+.wrap {
+  composes: wardTokens from "./ward-tokens.module.css";
+
+  /*
+   * 🔴 **THE "STANDING" STRIP DID NOT STAND, AND I SHIPPED IT THAT WAY.**
+   *
+   * Measured at 1440x900 on `/capacity`: the page is **6043px tall in a 900px viewport**, and
+   * scrolling down 1200px put the strip at `top: -1200` — entirely off screen. A coordinator
+   * scrolling a ward board lost every figure, which is the exact opposite of this component's one
+   * promise: *the figures do not move, do not collapse and are not behind a click.*
+   *
+   * ⚠️ **STICKY IS SAFE HERE AND IS NOT SAFE ONE LEVEL DOWN.** A sticky element pins to its NEAREST
+   * scrollport, and 24 ward stylesheets declare `.main { overflow-y: auto }` inside a
+   * `min-height` grid — a scrollport that can never scroll, because the grid grows with its
+   * content. Anything sticky inside one of those applies, computes correctly and never moves.
+   * **This strip is mounted in the LAYOUT, a sibling of `{children}`, so its nearest scrollport is
+   * the window** — which is the case where sticky does what it says. Verified by scrolling, not by
+   * reading the rule.
+   */
+  /*
+   * ⚠️ **STICKY MOVED TO `ward-chrome-header.module.css`'s `.bar` ON 2026-09-07, DELIBERATELY.**
+   * The panel is a DROP-DOWN and scrolls away with the page, which is right. What must never scroll
+   * away is the ALARM, and the alarm lives on the toggle, which is in the header row. Pinning both
+   * would need the panel to know the row's height — a number that would be wrong the first time
+   * anybody changed the row.
+   */
+  min-width: 0;
+  border-bottom: 1px solid var(--ward-border);
+  background: var(--ward-chrome);
+  padding: var(--ward-space-12) var(--ward-space-16);
+
+  /* Defensive, not load-bearing: `.figureStrip` (ward-figure.module.css) is already a grid of
+   * `minmax(0, 1fr)` tracks, which shrink instead of forcing width at 375px. If a future figure's
+   * value or sub ever demands a wider minimum than that, the strip scrolls in place rather than
+   * pushing the page wide — never the other way round. */
+  overflow-x: auto;
+}
+
+/*
+ * 🔴 THE CLUSTER SEAM. Figures render in a fixed order — 1 Ready now, 2 Out today (SUPPLY),
+ * 3 Waiting, 4 In ED, 5 Longest wait (DEMAND), 6 Deadline passed, 7 Due within 1h (RISK) — and the
+ * seam is a left border on the first figure of DEMAND and the first figure of RISK.
+ *
+ * `[data-ward-primitive="figure"]` is a plain attribute selector, not a CSS-modules class, so it
+ * matches regardless of which stylesheet's class names are on the element — it is the one contract
+ * this primitive publishes on purpose (`ward-figure.tsx`). Scoping under `.strip` gives this rule
+ * specificity (0,3,0: one class, one attribute, one `:nth-child()`), which beats both rules it has
+ * to win against on the LEFT side only, leaving the other three sides untouched:
+ *   - `.figure`'s own `border: 1px solid var(--border)` (ward-figure.module.css, 0,1,0) — regardless
+ *     of which stylesheet the bundler emits first, since higher specificity wins before source order
+ *     is ever consulted;
+ *   - `.figure[data-flagged="true"]`'s `border-color: var(--ward-warning)` (0,2,0) — so a flagged
+ *     figure 6 keeps its warning-coloured border on three sides and the cluster seam on the fourth,
+ *     deliberately: the seam is a fact about POSITION and must survive the tile's own state.
+ *
+ * `--ward-border-strong` over `--ward-divider`: this is a boundary BETWEEN panels, the same class of
+ * thing `ward-tokens.module.css` reserves the stronger weight for, not a hairline inside one.
+ *
+ * ⚠️ THE SEAM IS A REAL BORDER, NOT A COLOUR CUE, BECAUSE IT MUST SURVIVE FORCED COLOURS — under
+ * `forced-colors: active`, colour is replaced and geometry is not, so a drawn edge is the only way a
+ * grouping like this can still be seen. No separate `@media (forced-colors: active)` block is needed
+ * to make that true here: `--ward-border-strong` aliases `--text-muted`, which `ckb-v2-tokens.css`'s
+ * own forced-colors block already re-points to `CanvasText` app-wide (scoped to `.ckb-v2.ckb-v2` on
+ * `<html>`, which every ward screen sits inside), so the border keeps drawing, in the one colour
+ * forced colours allows.
+ *
+ * ⚠️ WRAP CAVEAT, STATED RATHER THAN HIDDEN. `.figureStrip` reflows to 3 and then 5 columns as the
+ * viewport widens, so figure 6 can land at the START of a wrapped row (5-column layout) instead of
+ * beside figure 5. Its left border still draws there — correct in isolation, just not adjacent to
+ * the figure it separates from, because the row break already carries that separation visually.
+ * Not fixed here: doing so would mean reading grid placement in script to conditionally suppress the
+ * border, which is exactly the markup-side cluster logic the file-top note rules out.
+ */
+.wrap [data-ward-primitive="figure"]:nth-child(3),
+.wrap [data-ward-primitive="figure"]:nth-child(6) {
+  border-left: var(--ward-space-4) solid var(--ward-border-strong);
+}
+
+/*
+ * 🔴 PRINT SURVIVAL, SCOPED TO THIS FILE'S OWN CLASS — NOT A CHANGE TO THE GLOBAL RULE.
+ *
+ * `globals.css`'s print block hides every `header`, `nav` and `button` outright
+ * (`display: none !important`), because most of that chrome is navigation a printed page has no use
+ * for. This strip is different: a coordinator handing over a shift wants exactly these seven numbers
+ * on the printed sheet. `ward-standing-strip.tsx`'s own doc comment calls this component "the
+ * owner's approved header", so a future ward layout mounting it inside a `<header>` (or `<nav>`) is
+ * the expected shape, not a hypothetical — and once THAT ancestor carries `display: none`, no rule
+ * on `.strip` alone could restore an element already removed from layout.
+ *
+ * `:has(.strip)` keeps the restore scoped to a header or nav that actually contains THIS component —
+ * every other header, nav and button on every other route stays hidden exactly as the global rule
+ * intends; nothing here weakens it. Specificity (0,1,1: one pseudo-class plus one element) beats the
+ * global rule's bare element selector (0,0,1) even though both carry `!important`, so this does not
+ * depend on stylesheet order either.
+ *
+ * `overflow-x: visible` undoes the screen-only scroll container: a printed page has no scrollbar to
+ * offer, so the honest failure mode on paper is letting the content run to its natural width, not
+ * clipping it at the container edge.
+ */
+@media print {
+  /*
+   * The toggle is a `button`, so `globals.css` removes it on paper -- correct, a control is no use
+   * printed. But that makes what prints depend on which way somebody left it, unless the panel is
+   * restored regardless. It is, here: the figures are the point of a handover sheet.
+   *
+   * The panel is always in the DOM and hidden with the `hidden` attribute rather than conditionally
+   * rendered, exactly so this rule has something to restore. `[hidden]`'s UA rule is a plain
+   * `display: none`, so this class-plus-attribute selector outranks it without `!important`.
+   */
+  .panel[hidden] {
+    display: block;
+  }
+
+  .wrap {
+    overflow-x: visible;
+  }
+}
+
+/*
+ * THE TOGGLE. The owner asked for the figures behind a drop-down (2026-09-07), and the safety
+ * property that came with it lives here as much as in the markup: whatever is flagged is stated on
+ * the button's own face, so a CLOSED panel can never be read as "nothing is wrong".
+ */
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+  min-height: var(--spacing-tap);
+  padding: 0 var(--ward-space-12);
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-md);
+  background: var(--ward-chrome);
+  color: var(--ward-heading);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  /* Matches its three header-row neighbours (`.tasks`, `.handover`, `.action` in
+   * ward-chrome-header.module.css): without this, the label wraps to a second line at narrow
+   * widths and the control grows taller than the 48px every other header control holds to — the
+   * one height deviation in the whole header. `.figureStrip`'s own `overflow-x: auto` (the parent
+   * `.wrap` above) is the row's answer to "not enough room", the same pattern `.bar` in
+   * ward-chrome-header.module.css already relies on for its own unwrappable controls — and this
+   * control sits inside THAT row (`WardChromeHeader` composes `WardStatsToggle` directly into
+   * `.bar`), so the same "the row breaks, the control does not" contract applies to it too. */
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/*
+ * ⚠️ **THE ALARM STATE IS NOT CARRIED BY COLOUR.** The border WIDTH changes as well as the hue, so
+ * the distinction survives `forced-colors: active` — where colour is replaced and geometry is not —
+ * and survives greyscale and colour blindness. The words on the button carry it a third time.
+ */
+.toggleAlarm {
+  border-width: 0.1875rem;
+  border-color: var(--ward-danger);
+  color: var(--ward-danger);
+}
+
+.toggleLabel {
+  font-weight: 650;
+}
+
+.toggleState {
+  color: var(--ward-muted);
+  font-size: var(--text-xs);
+  font-weight: 400;
+}
+
+.toggleAlarm .toggleState {
+  color: var(--ward-danger);
+  font-weight: 650;
+}
+
+.chev {
+  color: var(--ward-muted);
+  font-size: var(--text-2xs);
+}
+
+.panel {
+  margin-top: var(--ward-space-10);
+}

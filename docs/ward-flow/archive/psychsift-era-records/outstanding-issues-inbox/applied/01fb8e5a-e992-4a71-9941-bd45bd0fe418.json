@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "id": "01fb8e5a-e992-4a71-9941-bd45bd0fe418",
+  "createdOn": "2026-09-09",
+  "action": "add",
+  "payload": {
+    "pri": "P1",
+    "type": "task",
+    "summary": "Ward Flow: the Command prototype and the shipped reducer disagree about whether a prior decline is final",
+    "detail": "VERIFIED 2026-09-09. The third-edition Command mockup (docs/ward-flow/mockups/command-third-edition.html) lists prior_decline in ABSOLUTE_GATES and prints the fixed sentence 'A recorded reason does not undo a ward's decline', so a coordinator taught by the prototype learns that a ward which has declined is closed to that patient. The shipped reducer (src/components/ward-management/ward-flow-reducer.ts, the comment block above SUITABILITY_GATES, around lines 441 to 452) deliberately leaves prior_decline out of both the world-fact group and SUITABILITY_GATES: a ward that declined ninety minutes ago because it had no bed is the commonest thing in bed management, beds free up, none of the five OVERRIDE_REASONS names a mismatch that exists, and enforcing it broke 23 tests across 7 files. The comment records the question as open for the owner. So the prototype teaches one rule and the engine runs another. NEXT ACTION: the owner decides whether re-approaching a ward that declined needs a recorded reason (engine changes, tests re-proved) or is routine (the mockup's gate moves out of ABSOLUTE_GATES and its sentence goes); then write the decision into section 8.4 of docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md so the next mockup inherits it. HARD GATE BEFORE ANY REAL-PATIENT USE, because the two accounts differ about what the coordinator may do next.",
+    "source": "Ward Flow design review, 2026-09-09: the reviewing Codex chat's findings F1 to F4, each re-verified against the code by the design-review chat; the owner approved recording them the same day",
+    "issueUlid": "01M232MYSFFGDD3DC4AM39ZG0Z"
+  }
+}

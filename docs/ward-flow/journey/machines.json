@@ -1,0 +1,1463 @@
+{
+  "machines": [
+    {
+      "id": "referral",
+      "name": "A referral destination",
+      "subject": "One of the (up to three) places a referral was addressed to. Each one carries its own state and answers independently of the others.",
+      "width": 1064,
+      "height": 456,
+      "states": [
+        {
+          "id": "start",
+          "kind": "start",
+          "x": 482,
+          "y": 20,
+          "w": 80,
+          "h": 40,
+          "label": "raised"
+        },
+        {
+          "id": "queued",
+          "kind": "normal",
+          "x": 412,
+          "y": 110,
+          "w": 220,
+          "h": 76,
+          "label": "Waiting",
+          "sub": "Doing nothing is a real answer, and the commonest one. It stays here indefinitely."
+        },
+        {
+          "id": "accepted",
+          "kind": "terminal",
+          "x": 804,
+          "y": 110,
+          "w": 220,
+          "h": 76,
+          "label": "Accepted",
+          "sub": "Only a ward acceptance starts anything."
+        },
+        {
+          "id": "declined",
+          "kind": "terminal",
+          "x": 20,
+          "y": 110,
+          "w": 220,
+          "h": 76,
+          "label": "Declined",
+          "sub": "Ends this arm only. The others carry on."
+        },
+        {
+          "id": "cancelled",
+          "kind": "terminal",
+          "x": 804,
+          "y": 270,
+          "w": 220,
+          "h": 86,
+          "label": "Cancelled",
+          "sub": "Closed automatically because another destination accepted. Nobody is asked."
+        },
+        {
+          "id": "withdrawn",
+          "kind": "flag",
+          "x": 20,
+          "y": 270,
+          "w": 220,
+          "h": 96,
+          "label": "Withdrawn — a flag, not a state",
+          "sub": "Stamped on every destination still waiting. The arm stays waiting; it does not end."
+        }
+      ],
+      "transitions": [
+        {
+          "from": "start",
+          "to": "queued",
+          "action": "RECEIVE_REFERRAL",
+          "route": "down"
+        },
+        {
+          "from": "queued",
+          "to": "accepted",
+          "action": "ACCEPT_REFERRAL",
+          "route": "straight"
+        },
+        {
+          "from": "queued",
+          "to": "declined",
+          "action": "DECLINE_REFERRAL",
+          "route": "straight",
+          "guard": "the reason must come from this destination kind's own list"
+        },
+        {
+          "from": "queued",
+          "to": "cancelled",
+          "action": "ACCEPT_REFERRAL",
+          "route": "below",
+          "offset": 40,
+          "label": "another arm accepted",
+          "kind": "side",
+          "guard": "a community arm is exempt in both directions and is never cancelled"
+        },
+        {
+          "from": "queued",
+          "to": "withdrawn",
+          "action": "RECORD_REFERRER_WITHDRAWAL",
+          "route": "below",
+          "offset": 40,
+          "guard": "refused once anything is accepted, and refused outright once transport has collected the patient",
+          "kind": "side",
+          "label": "stamps every waiting arm"
+        }
+      ],
+      "note": "The four states are exactly those the code names. A referrer's withdrawal is a stamp on an arm that is still waiting — recorded deliberately as a field, so that a destination which has already answered keeps its answer."
+    },
+    {
+      "id": "movement",
+      "name": "A movement",
+      "subject": "The record created when a ward-addressed referral is accepted. This is the one that actually moves — seven stages, and a closure that is not a stage.",
+      "width": 3122,
+      "height": 600,
+      "states": [
+        {
+          "id": "start",
+          "kind": "start",
+          "x": 20,
+          "y": 250,
+          "w": 230,
+          "h": 60,
+          "label": "raised in a department"
+        },
+        {
+          "id": "placement_requested",
+          "kind": "normal",
+          "x": 20,
+          "y": 60,
+          "w": 230,
+          "h": 86,
+          "label": "Placement requested",
+          "sub": "Wards can be asked from here."
+        },
+        {
+          "id": "destination_review",
+          "kind": "normal",
+          "x": 492,
+          "y": 60,
+          "w": 230,
+          "h": 86,
+          "label": "Destination review",
+          "sub": "Wards can be asked from here too — and only from these two."
+        },
+        {
+          "id": "accepted_awaiting_bed",
+          "kind": "normal",
+          "x": 964,
+          "y": 60,
+          "w": 230,
+          "h": 86,
+          "label": "Accepted, awaiting bed",
+          "sub": "A ward has said yes. No bed is set aside."
+        },
+        {
+          "id": "pulled",
+          "kind": "normal",
+          "x": 1436,
+          "y": 60,
+          "w": 230,
+          "h": 86,
+          "label": "Bed pulled",
+          "sub": "A named bed is held, expiring in four hours."
+        },
+        {
+          "id": "handover_ready",
+          "kind": "normal",
+          "x": 1908,
+          "y": 60,
+          "w": 230,
+          "h": 86,
+          "label": "Handover ready",
+          "sub": "Refused unless transport is already booked."
+        },
+        {
+          "id": "moving",
+          "kind": "normal",
+          "x": 2380,
+          "y": 60,
+          "w": 230,
+          "h": 86,
+          "label": "Moving",
+          "sub": "The patient is in the vehicle."
+        },
+        {
+          "id": "arrived",
+          "kind": "terminal",
+          "x": 2852,
+          "y": 60,
+          "w": 230,
+          "h": 86,
+          "label": "Arrived",
+          "sub": "Irreversible. Nothing can step back from here."
+        },
+        {
+          "id": "closed",
+          "kind": "terminal",
+          "x": 1396,
+          "y": 420,
+          "w": 310,
+          "h": 90,
+          "label": "Closed — did not proceed",
+          "sub": "Not a stage. The stage it closed at is still recorded."
+        }
+      ],
+      "transitions": [
+        {
+          "from": "start",
+          "to": "placement_requested",
+          "action": "RAISE_REFERRAL",
+          "route": "up",
+          "label": "creates it"
+        },
+        {
+          "from": "placement_requested",
+          "to": "destination_review",
+          "action": "REFER_TO_UNITS",
+          "route": "straight"
+        },
+        {
+          "from": "destination_review",
+          "to": "destination_review",
+          "action": "DECLINE",
+          "route": "self",
+          "offset": 0,
+          "label": "a ward says no",
+          "guard": "that ward drops off the list; the stage does not move"
+        },
+        {
+          "from": "destination_review",
+          "to": "destination_review",
+          "action": "WITHDRAW_WARD_REQUEST",
+          "route": "self",
+          "offset": 34,
+          "label": "take one ward back"
+        },
+        {
+          "from": "destination_review",
+          "to": "destination_review",
+          "action": "REFER_TO_UNITS",
+          "route": "self",
+          "offset": 68,
+          "label": "ask more wards"
+        },
+        {
+          "from": "destination_review",
+          "to": "accepted_awaiting_bed",
+          "action": "ACCEPT_IN_PRINCIPLE",
+          "route": "straight"
+        },
+        {
+          "from": "accepted_awaiting_bed",
+          "to": "destination_review",
+          "action": "WITHDRAW_ACCEPTANCE",
+          "route": "below",
+          "offset": 40,
+          "kind": "back",
+          "guard": "this one step only, and only while no bed is held"
+        },
+        {
+          "from": "accepted_awaiting_bed",
+          "to": "pulled",
+          "action": "PULL_PATIENT",
+          "route": "straight"
+        },
+        {
+          "from": "pulled",
+          "to": "accepted_awaiting_bed",
+          "action": "RELEASE_PULL",
+          "route": "below",
+          "offset": 90,
+          "kind": "back"
+        },
+        {
+          "from": "pulled",
+          "to": "handover_ready",
+          "action": "HANDOVER_READY",
+          "route": "straight"
+        },
+        {
+          "from": "handover_ready",
+          "to": "moving",
+          "action": "PATIENT_COLLECTED",
+          "route": "straight",
+          "guard": "refused while a revoked examination still holds the bed"
+        },
+        {
+          "from": "moving",
+          "to": "arrived",
+          "action": "PATIENT_ARRIVED",
+          "route": "straight"
+        },
+        {
+          "from": "pulled",
+          "to": "arrived",
+          "action": "PATIENT_ARRIVED",
+          "route": "above",
+          "offset": 30,
+          "label": "no transport needed",
+          "kind": "skip"
+        },
+        {
+          "from": "pulled",
+          "to": "closed",
+          "action": "WITHDRAW_REFERRAL",
+          "route": "exit",
+          "offset": 0,
+          "kind": "exit"
+        },
+        {
+          "from": "pulled",
+          "to": "closed",
+          "action": "RECORD_ED_OUTCOME",
+          "route": "exit",
+          "offset": 38,
+          "kind": "exit"
+        },
+        {
+          "from": "pulled",
+          "to": "closed",
+          "action": "REFER_TO_COMMUNITY_TEAM",
+          "route": "exit",
+          "offset": 76,
+          "kind": "exit"
+        },
+        {
+          "from": "pulled",
+          "to": "closed",
+          "action": "RECORD_EXAMINATION",
+          "route": "exit",
+          "offset": 114,
+          "kind": "exit",
+          "label": "community order or revoked",
+          "guard": "only before transport is committed — at handover ready or moving it raises a flag instead and the bed stays held"
+        },
+        {
+          "from": "moving",
+          "to": "closed",
+          "action": "STOP_TRANSPORT",
+          "route": "exit",
+          "offset": 0,
+          "kind": "exit",
+          "guard": "the bed deliberately stays held; only releasing the held bed gives it back"
+        },
+        {
+          "from": "arrived",
+          "to": "closed",
+          "action": "PATIENT_ARRIVED",
+          "route": "exit",
+          "offset": 0,
+          "kind": "side",
+          "label": "closes as arrived, not as did-not-proceed"
+        },
+        {
+          "from": "moving",
+          "to": "placement_requested",
+          "action": "STEP_BACK_STAGE",
+          "route": "above",
+          "offset": 80,
+          "kind": "back",
+          "label": "to ANY strictly earlier stage",
+          "guard": "refused once arrived; touches nothing but the stage — no bed given back, no transport cancelled"
+        }
+      ],
+      "note": "STEP_BACK_STAGE can move the stage to ANY strictly earlier one, with a reason, and is refused once arrived. It is drawn once rather than as twenty-one arrows — it deliberately touches nothing but the stage."
+    },
+    {
+      "id": "admission",
+      "name": "An admission",
+      "subject": "The record of a person in a bed. Created when a bed is pulled — not when they arrive.",
+      "width": 1684,
+      "height": 426,
+      "states": [
+        {
+          "id": "none",
+          "kind": "start",
+          "x": 20,
+          "y": 60,
+          "w": 190,
+          "h": 76,
+          "label": "No admission"
+        },
+        {
+          "id": "pulled",
+          "kind": "normal",
+          "x": 458,
+          "y": 60,
+          "w": 230,
+          "h": 76,
+          "label": "Held",
+          "sub": "A bed is theirs. They are not here yet."
+        },
+        {
+          "id": "occupied",
+          "kind": "normal",
+          "x": 936,
+          "y": 60,
+          "w": 230,
+          "h": 76,
+          "label": "Occupied",
+          "sub": "Stays theirs through leave, an ED trip, and an absconding."
+        },
+        {
+          "id": "departed",
+          "kind": "terminal",
+          "x": 1414,
+          "y": 60,
+          "w": 230,
+          "h": 76,
+          "label": "Departed",
+          "sub": "Kept. Ended, never deleted."
+        },
+        {
+          "id": "deleted",
+          "kind": "flag",
+          "x": 423,
+          "y": 250,
+          "w": 300,
+          "h": 86,
+          "label": "Removed — not a state",
+          "sub": "There is no “deleted” among the four admission states. The record itself is taken away."
+        },
+        {
+          "id": "waitlisted",
+          "kind": "unreachable",
+          "x": 1434,
+          "y": 250,
+          "w": 190,
+          "h": 86,
+          "label": "Waitlisted",
+          "sub": "No action in the engine can produce this. Only the starting fixture writes it."
+        }
+      ],
+      "transitions": [
+        {
+          "from": "none",
+          "to": "pulled",
+          "action": "PULL_PATIENT",
+          "route": "straight",
+          "label": "creates it"
+        },
+        {
+          "from": "pulled",
+          "to": "occupied",
+          "action": "PATIENT_ARRIVED",
+          "route": "straight"
+        },
+        {
+          "from": "occupied",
+          "to": "departed",
+          "action": "RECORD_LEAVING",
+          "route": "straight",
+          "guard": "only from occupied, and only by the ward they are on"
+        },
+        {
+          "from": "occupied",
+          "to": "occupied",
+          "action": "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
+          "route": "self",
+          "offset": 0,
+          "label": "away at an ED — bed untouched"
+        },
+        {
+          "from": "occupied",
+          "to": "occupied",
+          "action": "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
+          "route": "self",
+          "offset": 34,
+          "label": "and back"
+        },
+        {
+          "from": "pulled",
+          "to": "deleted",
+          "action": "RELEASE_PULL",
+          "route": "exit",
+          "offset": 0,
+          "kind": "exit"
+        },
+        {
+          "from": "pulled",
+          "to": "deleted",
+          "action": "RELEASE_HELD_BED",
+          "route": "exit",
+          "offset": 38,
+          "kind": "exit"
+        },
+        {
+          "from": "pulled",
+          "to": "deleted",
+          "action": "WITHDRAW_REFERRAL",
+          "route": "exit",
+          "offset": 76,
+          "kind": "exit"
+        },
+        {
+          "from": "pulled",
+          "to": "deleted",
+          "action": "RECORD_ED_OUTCOME",
+          "route": "exit",
+          "offset": 114,
+          "kind": "exit"
+        },
+        {
+          "from": "pulled",
+          "to": "deleted",
+          "action": "REFER_TO_COMMUNITY_TEAM",
+          "route": "exit",
+          "offset": 152,
+          "kind": "exit"
+        },
+        {
+          "from": "pulled",
+          "to": "deleted",
+          "action": "RECORD_EXAMINATION",
+          "route": "exit",
+          "offset": 190,
+          "kind": "exit"
+        }
+      ],
+      "note": "Ending and deleting are deliberately different. A departed admission is kept as a record that somebody was here; a released pull is removed, because the claim that they would be here is being retracted."
+    },
+    {
+      "id": "transport",
+      "name": "A transport job",
+      "subject": "Booked by phone and logged here. Collection is the line that changes what is possible.",
+      "width": 2390,
+      "height": 436,
+      "states": [
+        {
+          "id": "none",
+          "kind": "start",
+          "x": 20,
+          "y": 60,
+          "w": 170,
+          "h": 76,
+          "label": "No job"
+        },
+        {
+          "id": "booked",
+          "kind": "normal",
+          "x": 432,
+          "y": 60,
+          "w": 190,
+          "h": 76,
+          "label": "Booked"
+        },
+        {
+          "id": "accepted",
+          "kind": "normal",
+          "x": 864,
+          "y": 60,
+          "w": 190,
+          "h": 76,
+          "label": "Crew accepted"
+        },
+        {
+          "id": "enroute",
+          "kind": "normal",
+          "x": 1296,
+          "y": 60,
+          "w": 190,
+          "h": 76,
+          "label": "En route"
+        },
+        {
+          "id": "collected",
+          "kind": "normal",
+          "x": 1728,
+          "y": 60,
+          "w": 190,
+          "h": 76,
+          "label": "Collected",
+          "sub": "After this, cancelling is impossible."
+        },
+        {
+          "id": "arrived",
+          "kind": "terminal",
+          "x": 2160,
+          "y": 60,
+          "w": 190,
+          "h": 76,
+          "label": "Arrived"
+        },
+        {
+          "id": "cancelled",
+          "kind": "terminal",
+          "x": 829,
+          "y": 260,
+          "w": 260,
+          "h": 86,
+          "label": "Deleted",
+          "sub": "The job is removed, not marked. Nothing is rebooked."
+        },
+        {
+          "id": "stopped",
+          "kind": "terminal",
+          "x": 1683,
+          "y": 260,
+          "w": 280,
+          "h": 86,
+          "label": "Stopped",
+          "sub": "Somebody must say where the patient now is."
+        }
+      ],
+      "transitions": [
+        {
+          "from": "none",
+          "to": "booked",
+          "action": "BOOK_TRANSPORT",
+          "route": "straight",
+          "guard": "five answers, none defaulted"
+        },
+        {
+          "from": "booked",
+          "to": "accepted",
+          "action": "TRANSPORT_ACCEPTED",
+          "route": "straight"
+        },
+        {
+          "from": "accepted",
+          "to": "enroute",
+          "action": "TRANSPORT_EN_ROUTE",
+          "route": "straight",
+          "guard": "carries no check on the legal authority — this is where a crew can be sent for somebody who cannot then be collected"
+        },
+        {
+          "from": "enroute",
+          "to": "collected",
+          "action": "PATIENT_COLLECTED",
+          "route": "straight"
+        },
+        {
+          "from": "collected",
+          "to": "arrived",
+          "action": "PATIENT_ARRIVED",
+          "route": "straight"
+        },
+        {
+          "from": "booked",
+          "to": "cancelled",
+          "action": "CANCEL_TRANSPORT",
+          "route": "exit",
+          "offset": 0,
+          "kind": "exit"
+        },
+        {
+          "from": "accepted",
+          "to": "cancelled",
+          "action": "CANCEL_TRANSPORT",
+          "route": "exit",
+          "offset": 0,
+          "kind": "exit"
+        },
+        {
+          "from": "enroute",
+          "to": "cancelled",
+          "action": "CANCEL_TRANSPORT",
+          "route": "exit",
+          "offset": 0,
+          "kind": "exit",
+          "guard": "only whoever booked it, plus the coordinator and the department"
+        },
+        {
+          "from": "collected",
+          "to": "stopped",
+          "action": "STOP_TRANSPORT",
+          "route": "exit",
+          "offset": 0,
+          "kind": "exit"
+        }
+      ],
+      "note": "Cancel and stop are not two names for one thing. Cancel deletes a job before collection and leaves the bed held; stop ends a journey already underway, closes the movement, and also leaves the bed held — but only stop demands to know where the patient is."
+    },
+    {
+      "id": "bedrelease",
+      "name": "A bed release",
+      "subject": "A ward's plan for a bed coming free. It names the stay it belongs to, and nothing else about the person leaving.",
+      "width": 1709,
+      "height": 426,
+      "states": [
+        {
+          "id": "none",
+          "kind": "start",
+          "x": 20,
+          "y": 60,
+          "w": 170,
+          "h": 76,
+          "label": "Not flagged"
+        },
+        {
+          "id": "expected",
+          "kind": "normal",
+          "x": 463,
+          "y": 60,
+          "w": 210,
+          "h": 76,
+          "label": "Expected",
+          "sub": "Carries what it is waiting on — one of seven."
+        },
+        {
+          "id": "confirmed",
+          "kind": "normal",
+          "x": 946,
+          "y": 60,
+          "w": 210,
+          "h": 76,
+          "label": "Confirmed",
+          "sub": "Decided. Still not a free bed."
+        },
+        {
+          "id": "discharged",
+          "kind": "terminal",
+          "x": 1429,
+          "y": 60,
+          "w": 240,
+          "h": 76,
+          "label": "Discharged",
+          "sub": "The only step here that moves a real bed count."
+        },
+        {
+          "id": "blocked",
+          "kind": "flag",
+          "x": 428,
+          "y": 250,
+          "w": 280,
+          "h": 86,
+          "label": "Stuck — a flag, not a stage",
+          "sub": "One of nine reasons. Sits on top of expected or confirmed."
+        },
+        {
+          "id": "preparing",
+          "kind": "flag",
+          "x": 901,
+          "y": 250,
+          "w": 300,
+          "h": 86,
+          "label": "Being made ready — a flag",
+          "sub": "Cleaning or repair. Never stops the bed being offered."
+        }
+      ],
+      "transitions": [
+        {
+          "from": "none",
+          "to": "expected",
+          "action": "FLAG_BED_RELEASE",
+          "route": "straight"
+        },
+        {
+          "from": "expected",
+          "to": "confirmed",
+          "action": "CONFIRM_BED_RELEASE",
+          "route": "straight"
+        },
+        {
+          "from": "confirmed",
+          "to": "expected",
+          "action": "REVERT_BED_RELEASE",
+          "route": "below",
+          "offset": 40,
+          "kind": "back"
+        },
+        {
+          "from": "confirmed",
+          "to": "discharged",
+          "action": "RECORD_LEAVING",
+          "route": "straight"
+        },
+        {
+          "from": "expected",
+          "to": "discharged",
+          "action": "RECORD_LEAVING",
+          "route": "above",
+          "offset": 30,
+          "kind": "skip",
+          "label": "straight from expected"
+        },
+        {
+          "from": "expected",
+          "to": "blocked",
+          "action": "BLOCK_BED_RELEASE",
+          "route": "exit",
+          "offset": 0,
+          "kind": "side"
+        },
+        {
+          "from": "blocked",
+          "to": "expected",
+          "action": "CLEAR_BED_RELEASE_BLOCK",
+          "route": "exit",
+          "offset": 0,
+          "kind": "side"
+        },
+        {
+          "from": "expected",
+          "to": "preparing",
+          "action": "SET_BED_PREPARATION",
+          "route": "exit",
+          "offset": 0,
+          "kind": "side"
+        }
+      ],
+      "note": "Being stuck used to be a fourth stage and was deliberately removed on 28 August 2026, because each stage says only how certain the discharge is. Stuck-ness and cleaning are two separate flags sitting on top."
+    },
+    {
+      "id": "expects",
+      "name": "The front door — an expect becomes a referral",
+      "subject": "A door the earlier drawing missed entirely. A referral that has been triaged but whose patient has not arrived sits on a separate list; marking them present is what moves it.",
+      "width": 2011,
+      "height": 240,
+      "states": [
+        {
+          "id": "raised",
+          "kind": "start",
+          "x": 20,
+          "y": 60,
+          "w": 200,
+          "h": 70,
+          "label": "Raised"
+        },
+        {
+          "id": "expected",
+          "kind": "normal",
+          "x": 537,
+          "y": 60,
+          "w": 260,
+          "h": 90,
+          "label": "Expected to arrive",
+          "sub": "Triaged, and the patient is not here yet. It sits on the Expects list."
+        },
+        {
+          "id": "present",
+          "kind": "normal",
+          "x": 1114,
+          "y": 60,
+          "w": 260,
+          "h": 90,
+          "label": "In the department",
+          "sub": "Marked present. It now reads as a referral rather than an expect."
+        },
+        {
+          "id": "cleared",
+          "kind": "flag",
+          "x": 1691,
+          "y": 60,
+          "w": 280,
+          "h": 90,
+          "label": "Medically cleared — or not",
+          "sub": "Three answers, not two: unrecorded, cleared, and explicitly not cleared."
+        }
+      ],
+      "transitions": [
+        {
+          "from": "raised",
+          "to": "expected",
+          "action": "RECEIVE_REFERRAL",
+          "route": "straight"
+        },
+        {
+          "from": "expected",
+          "to": "present",
+          "action": "RECORD_ARRIVED_IN_DEPARTMENT",
+          "route": "straight",
+          "guard": "stamped once; a repeat keeps the earliest time"
+        },
+        {
+          "from": "present",
+          "to": "cleared",
+          "action": "RECORD_MEDICAL_CLEARANCE",
+          "route": "straight",
+          "kind": "side"
+        }
+      ],
+      "note": "The owner's own words for this, quoted in the model: “When expects arrive and are marked as arrived, they become referrals.” Being marked present is the only door between the two lists."
+    },
+    {
+      "id": "legalstatus",
+      "name": "A patient's legal status",
+      "subject": "Four values, on a movement, changeable at any point by one action. Changing it triggers nothing on its own — even when it makes an already-accepted bed unlawful.",
+      "width": 1683,
+      "height": 226,
+      "states": [
+        {
+          "id": "voluntary",
+          "kind": "normal",
+          "x": 20,
+          "y": 60,
+          "w": 240,
+          "h": 76,
+          "label": "Voluntary"
+        },
+        {
+          "id": "referred",
+          "kind": "normal",
+          "x": 451,
+          "y": 60,
+          "w": 280,
+          "h": 76,
+          "label": "Referred for psychiatric examination"
+        },
+        {
+          "id": "detained",
+          "kind": "normal",
+          "x": 922,
+          "y": 60,
+          "w": 280,
+          "h": 76,
+          "label": "Detained awaiting examination"
+        },
+        {
+          "id": "involuntary",
+          "kind": "normal",
+          "x": 1393,
+          "y": 60,
+          "w": 250,
+          "h": 76,
+          "label": "Involuntary inpatient"
+        }
+      ],
+      "transitions": [
+        {
+          "from": "voluntary",
+          "to": "referred",
+          "action": "CHANGE_LEGAL_STATUS",
+          "route": "straight"
+        },
+        {
+          "from": "referred",
+          "to": "detained",
+          "action": "CHANGE_LEGAL_STATUS",
+          "route": "straight"
+        },
+        {
+          "from": "detained",
+          "to": "involuntary",
+          "action": "CHANGE_LEGAL_STATUS",
+          "route": "straight"
+        },
+        {
+          "from": "involuntary",
+          "to": "voluntary",
+          "action": "CHANGE_LEGAL_STATUS",
+          "route": "below",
+          "offset": 20,
+          "kind": "back",
+          "label": "any value to any other"
+        }
+      ],
+      "note": "Any value can be set to any other — there is no ordering the code enforces, so the arrows show the usual path rather than the only one. Each change records one of two reasons: recorded by the treating team, or correcting an error. If the change makes the accepted ward unlawful, that surfaces as something for a person to look at, never as a block."
+    },
+    {
+      "id": "examination",
+      "name": "An examination",
+      "subject": "Four outcomes. Two of them end the bed search; one of them asks for another examination and is the only way a second one is allowed.",
+      "width": 1757,
+      "height": 426,
+      "states": [
+        {
+          "id": "none",
+          "kind": "start",
+          "x": 20,
+          "y": 60,
+          "w": 200,
+          "h": 70,
+          "label": "Not examined"
+        },
+        {
+          "id": "further",
+          "kind": "normal",
+          "x": 449,
+          "y": 60,
+          "w": 260,
+          "h": 90,
+          "label": "Further examination ordered",
+          "sub": "The only outcome that allows another examination."
+        },
+        {
+          "id": "inpatient",
+          "kind": "terminal",
+          "x": 938,
+          "y": 60,
+          "w": 250,
+          "h": 90,
+          "label": "Inpatient order",
+          "sub": "Recorded. Nothing else changes."
+        },
+        {
+          "id": "ended",
+          "kind": "terminal",
+          "x": 1417,
+          "y": 60,
+          "w": 300,
+          "h": 90,
+          "label": "Community order, or revoked",
+          "sub": "The bed search ends — but what happens to the bed depends on how far the journey got."
+        },
+        {
+          "id": "superseded",
+          "kind": "flag",
+          "x": 320,
+          "y": 250,
+          "w": 300,
+          "h": 86,
+          "label": "Superseded",
+          "sub": "The previous examination is kept, not overwritten."
+        }
+      ],
+      "transitions": [
+        {
+          "from": "none",
+          "to": "further",
+          "action": "RECORD_EXAMINATION",
+          "route": "straight"
+        },
+        {
+          "from": "none",
+          "to": "inpatient",
+          "action": "RECORD_EXAMINATION",
+          "route": "above",
+          "offset": 26,
+          "kind": "skip"
+        },
+        {
+          "from": "none",
+          "to": "ended",
+          "action": "RECORD_EXAMINATION",
+          "route": "above",
+          "offset": 60,
+          "kind": "skip"
+        },
+        {
+          "from": "further",
+          "to": "superseded",
+          "action": "RECORD_EXAMINATION",
+          "route": "exit",
+          "offset": 0,
+          "kind": "side",
+          "label": "a second examination",
+          "guard": "a second examination is refused unless the last one ordered a further one"
+        }
+      ],
+      "note": "Before a bed is held, a community order or a revocation closes the movement and gives the bed back. Once transport is committed it does not — a flag is raised instead and a person must act. Collecting the patient is then refused while that bed is still held, but sending the crew out is not."
+    },
+    {
+      "id": "notice",
+      "name": "A notice",
+      "subject": "Twenty-three kinds of message, addressed to one role at one place. Written once, never rewritten, never deleted and never expiring.",
+      "width": 1442,
+      "height": 246,
+      "states": [
+        {
+          "id": "none",
+          "kind": "start",
+          "x": 20,
+          "y": 60,
+          "w": 200,
+          "h": 70,
+          "label": "Nothing sent"
+        },
+        {
+          "id": "unread",
+          "kind": "normal",
+          "x": 531,
+          "y": 60,
+          "w": 280,
+          "h": 96,
+          "label": "Raised, unread",
+          "sub": "Its wording is frozen at the moment it is written, even if the thing it describes later changes."
+        },
+        {
+          "id": "read",
+          "kind": "terminal",
+          "x": 1122,
+          "y": 60,
+          "w": 280,
+          "h": 96,
+          "label": "Read",
+          "sub": "Only the addressee can mark it, only by clicking, and only once."
+        }
+      ],
+      "transitions": [
+        {
+          "from": "none",
+          "to": "unread",
+          "action": "ACCEPT_REFERRAL",
+          "route": "straight",
+          "label": "one of twenty-three kinds",
+          "guard": "raised as a side-effect of an action, never on its own"
+        },
+        {
+          "from": "unread",
+          "to": "read",
+          "action": "MARK_NOTICE_READ",
+          "route": "straight",
+          "guard": "refused if you are not the addressee, and refused a second time"
+        }
+      ],
+      "note": "Opening the drawer does not mark anything read. There is no delete and no expiry — the list only ever grows. And a referral raised by anyone other than an ED doctor has no addressee this system can resolve, so no notice is raised at all: absent was judged safer than wrong."
+    },
+    {
+      "id": "inbox",
+      "name": "A row in the coordinator's inbox",
+      "subject": "Not stored anywhere. Each row is recomputed from the movements themselves, so it appears when its situation becomes true and leaves when it stops being true.",
+      "width": 1640,
+      "height": 416,
+      "states": [
+        {
+          "id": "absent",
+          "kind": "start",
+          "x": 20,
+          "y": 60,
+          "w": 220,
+          "h": 70,
+          "label": "Not showing"
+        },
+        {
+          "id": "showing",
+          "kind": "normal",
+          "x": 620,
+          "y": 60,
+          "w": 300,
+          "h": 96,
+          "label": "Showing",
+          "sub": "One of five situations is true of a movement right now."
+        },
+        {
+          "id": "acknowledged",
+          "kind": "normal",
+          "x": 1300,
+          "y": 60,
+          "w": 300,
+          "h": 96,
+          "label": "Acknowledged",
+          "sub": "Somebody has seen it. The row stays exactly where it was."
+        },
+        {
+          "id": "ticked",
+          "kind": "unreachable",
+          "x": 1140,
+          "y": 230,
+          "w": 300,
+          "h": 96,
+          "label": "Ticked off",
+          "sub": "Unreachable today. Every one of the five is a live fact, and a fact can never be ticked."
+        }
+      ],
+      "transitions": [
+        {
+          "from": "absent",
+          "to": "showing",
+          "action": "ACKNOWLEDGE_INBOX_ITEM",
+          "route": "straight",
+          "label": "the situation becomes true",
+          "kind": "side",
+          "guard": "nothing raises a row — it is derived, and appears on its own"
+        },
+        {
+          "from": "showing",
+          "to": "acknowledged",
+          "action": "ACKNOWLEDGE_INBOX_ITEM",
+          "route": "straight",
+          "guard": "hides nothing and removes nothing; a second person acknowledging is a second real fact"
+        },
+        {
+          "from": "acknowledged",
+          "to": "ticked",
+          "action": "COMPLETE_INBOX_ITEM",
+          "route": "exit",
+          "offset": 0,
+          "kind": "exit",
+          "guard": "refused for every category that exists — nobody may silence a live legal breach by ticking a box"
+        },
+        {
+          "from": "ticked",
+          "to": "acknowledged",
+          "action": "REOPEN_INBOX_ITEM",
+          "route": "exit",
+          "offset": 40,
+          "kind": "exit"
+        }
+      ],
+      "note": "The five situations, all of them facts: the accepted ward is no longer lawful for this patient; a legal deadline has passed; a bed hold has run out; every ward asked has declined; and a crew has accepted a job but not set off. A coordinator can say they have seen any of them. None can be ticked off, by owner ruling of 6 September 2026 — ticking would remove the signal while the situation was still true."
+    },
+    {
+      "id": "legalform",
+      "name": "A legal form's receipt",
+      "subject": "Whether the paperwork has physically arrived. It can be undone, and then happen again.",
+      "width": 1382,
+      "height": 240,
+      "states": [
+        {
+          "id": "not",
+          "kind": "start",
+          "x": 20,
+          "y": 60,
+          "w": 240,
+          "h": 76,
+          "label": "Not recorded as received"
+        },
+        {
+          "id": "received",
+          "kind": "normal",
+          "x": 521,
+          "y": 60,
+          "w": 260,
+          "h": 90,
+          "label": "Recorded as received",
+          "sub": "Any of the nine forms with a legal clock, not only 1A. A second receipt is refused."
+        },
+        {
+          "id": "expiry",
+          "kind": "flag",
+          "x": 1042,
+          "y": 60,
+          "w": 300,
+          "h": 90,
+          "label": "An expiry, typed by a clinician",
+          "sub": "Nothing is computed. An extension must be strictly later than what is there."
+        }
+      ],
+      "transitions": [
+        {
+          "from": "not",
+          "to": "received",
+          "action": "RECORD_LEGAL_FORM_RECEIVED",
+          "route": "straight"
+        },
+        {
+          "from": "received",
+          "to": "not",
+          "action": "CORRECT_LEGAL_FORM_RECEIPT",
+          "route": "below",
+          "offset": 20,
+          "kind": "back",
+          "guard": "three reasons: recorded in error, recorded against the wrong movement, or the form had not physically arrived"
+        },
+        {
+          "from": "received",
+          "to": "expiry",
+          "action": "RECORD_LEGAL_FORM_EXPIRY",
+          "route": "straight",
+          "kind": "side"
+        }
+      ],
+      "note": "Undoing a receipt does not erase it — the correction is appended, so the record shows that somebody recorded it, then took it back, and why."
+    }
+  ],
+  "resources": {
+    "title": "A ward's two bed counts",
+    "blurb": "Not a state machine — two numbers, and the complete list of what moves each. Since 26 September the two tracks meet here: a bed release names its patient, and recording that patient leaving is what raises both counts and completes the release, once.",
+    "counts": [
+      {
+        "name": "Allocatable",
+        "means": "Beds the ward will let a coordinator take.",
+        "moves": [
+          {
+            "action": "PULL_PATIENT",
+            "effect": "− 1"
+          },
+          {
+            "action": "RELEASE_PULL",
+            "effect": "+ 1"
+          },
+          {
+            "action": "RELEASE_HELD_BED",
+            "effect": "+ 1"
+          },
+          {
+            "action": "WITHDRAW_REFERRAL",
+            "effect": "+ 1",
+            "note": "via the same release"
+          },
+          {
+            "action": "RECORD_ED_OUTCOME",
+            "effect": "+ 1",
+            "note": "via the same release"
+          },
+          {
+            "action": "REFER_TO_COMMUNITY_TEAM",
+            "effect": "+ 1",
+            "note": "via the same release"
+          },
+          {
+            "action": "RECORD_EXAMINATION",
+            "effect": "+ 1",
+            "note": "via the same release"
+          },
+          {
+            "action": "RECORD_LEAVING",
+            "effect": "+ 1",
+            "note": "the named patient leaving, which also completes their bed release"
+          },
+          {
+            "action": "CONFIRM_CAPACITY",
+            "effect": "set outright",
+            "note": "a ward's own self-report, which can put it above the empty count"
+          }
+        ]
+      },
+      {
+        "name": "Empty",
+        "means": "Beds with physically nobody in them.",
+        "moves": [
+          {
+            "action": "PATIENT_ARRIVED",
+            "effect": "− 1"
+          },
+          {
+            "action": "RECORD_LEAVING",
+            "effect": "+ 1",
+            "note": "once, for the leaving; the bed release it completes moves nothing more"
+          }
+        ]
+      }
+    ]
+  },
+  "gates": {
+    "title": "Can this ward take this patient?",
+    "blurb": "Thirteen named gates. They are asked on two different occasions — when a ward answers a referral at the front door, and when a movement is sent to wards or a bed is taken — and the two occasions deliberately do not ask the same questions. Eight of the thirteen can be pushed past with a recorded reason. Five cannot.",
+    "overridable": "Overridable means a coordinator may proceed anyway by choosing one of five recorded reasons: the receiving team has agreed despite the mismatch; clinical urgency outweighs the mismatch; the bed information is known to be out of date; continuity with a previous admission at this unit; closer to the person's home or family.",
+    "rows": [
+      {
+        "gate": "Authorisation",
+        "override": true,
+        "referral": false,
+        "movement": true,
+        "asks": "If this patient is not voluntary, is the ward authorised under the Mental Health Act?"
+      },
+      {
+        "gate": "Legal status",
+        "override": true,
+        "referral": true,
+        "movement": false,
+        "asks": "The same question, asked at the front door instead — is an authorised bed needed, and does this ward have one?"
+      },
+      {
+        "gate": "Cohort",
+        "override": true,
+        "referral": false,
+        "movement": true,
+        "asks": "Does the ward's cohort match the patient's — adult, older adult, or youth?"
+      },
+      {
+        "gate": "Age",
+        "override": true,
+        "referral": true,
+        "movement": false,
+        "asks": "The same question at the front door, asked against the age band on the referral."
+      },
+      {
+        "gate": "Security",
+        "override": true,
+        "referral": true,
+        "movement": true,
+        "differs": true,
+        "asks": "Does the patient need a locked bed?",
+        "note": "THE SAME NAME, TWO DIFFERENT QUESTIONS. At the front door it asks whether a locked bed is free right now. On a movement it asks only whether the ward has locked beds at all. The gap is known and written down."
+      },
+      {
+        "gate": "Sex mix",
+        "override": true,
+        "referral": true,
+        "movement": true,
+        "differs": true,
+        "asks": "Is there already an occupant of the same sex, or more than one free bed?",
+        "note": "The front door counts beds that are both allocatable and physically empty; a movement counts allocatable beds alone. The front door is the stricter of the two."
+      },
+      {
+        "gate": "Forensic",
+        "override": true,
+        "referral": true,
+        "movement": true,
+        "asks": "Is this a forensic ward? If so it is never offered."
+      },
+      {
+        "gate": "Capacity freshness",
+        "override": true,
+        "referral": true,
+        "movement": true,
+        "asks": "How long ago did the ward last confirm its numbers? A stale figure fails."
+      },
+      {
+        "gate": "Gender designation",
+        "override": false,
+        "referral": true,
+        "movement": true,
+        "hard": true,
+        "asks": "Does the ward's designation suit the gender recorded at referral?",
+        "note": "NOT OVERRIDABLE, AND STRUCTURALLY SO. It is checked before an override reason is even read, and the code will not compile if somebody adds it to the overridable list. If gender is not recorded, a single-gender ward refuses outright and says to record it first. The one way past is for a non-binary patient, and it is not an override — it is a coordinator recording a reason after checking with the ward."
+      },
+      {
+        "gate": "Acuity",
+        "override": false,
+        "referral": true,
+        "movement": true,
+        "hard": true,
+        "asks": "Does the ward staff any high-acuity places at all?",
+        "note": "This asks about the ward's authored total, not how many are left. Whether one is actually free is a separate check made when the bed is taken — and that one IS overridable, with the nurse unit manager consulted."
+      },
+      {
+        "gate": "Specialling",
+        "override": false,
+        "referral": true,
+        "movement": true,
+        "hard": true,
+        "differs": true,
+        "asks": "Is the ward staffed for one-to-one observation?",
+        "note": "On the front-door path this gate can never fail — a referral has no field for whether specialling is needed, and the gate says so rather than pretending to check."
+      },
+      {
+        "gate": "Prior decline",
+        "override": false,
+        "referral": false,
+        "movement": true,
+        "hard": true,
+        "asks": "Has this ward already declined this patient?"
+      },
+      {
+        "gate": "A bed to allocate",
+        "override": false,
+        "referral": true,
+        "movement": true,
+        "hard": true,
+        "differs": true,
+        "asks": "Is there a bed to give?",
+        "note": "ONE NAME, TWO PASS CONDITIONS, ON PURPOSE. A movement passes on the ward's allocatable count alone — deliberately lenient, because accepting in principle is not arriving. The front door passes only when a bed is both allocatable and physically empty. The real floor is at arrival, which refuses when no bed is physically empty."
+      }
+    ],
+    "outside": {
+      "title": "And seven checks that are not gates at all",
+      "blurb": "These sit outside the thirteen and are evaluated first. A coordinator can be refused by one of these without ever reaching a named gate.",
+      "items": [
+        "No bed is physically empty — refused at arrival. This is the real floor under the whole thing.",
+        "Every free bed is still being made ready — refused when a bed is taken.",
+        "No one-to-one place actually left, counted from the beds in use rather than the ward's authored total.",
+        "No high-acuity place actually left — overridable, and uniquely also requires that the nurse unit manager was consulted.",
+        "No locked bed currently free — refused when a bed is taken, which is the check the movement-path security gate knowingly leaves open.",
+        "No coordinator has recorded a ward-checked reason for placing a non-binary patient on this ward.",
+        "The gender was corrected after a ward was already chosen — re-checked at four later points, deliberately not at arrival."
+      ]
+    }
+  },
+  "gaps": [
+    {
+      "title": "A ward's “held beds” figure is written down and read by nobody",
+      "body": "Every held-bed figure any screen shows is worked out from other numbers. The field meant to hold it is read in exactly zero places across the source, the tests and the scripts. Typing a real held-bed count into it changes no number anywhere — and there is no symptom, because there is no wrong figure, just no figure.",
+      "question": "Should the field be removed, so nobody fills it in believing it does something?"
+    },
+    {
+      "title": "A whole gender eligibility check is built, tested, and never called",
+      "body": "There is a complete check for whether a ward accepts a patient's gender, written against the person's own recorded gender rather than the gender written on the referral. It has its own result type and its own tests. Nothing anywhere calls it — because neither a referral nor a movement can reliably be resolved back to a patient record yet.",
+      "question": "Is that the check you actually want making this decision? If so, the missing piece is joining a referral to a person, not the check itself."
+    },
+    {
+      "title": "The coordinator's inbox has a tick that can never be ticked",
+      "body": "Five situations can put a row in the inbox, and every one of them is a live fact — an unlawful destination, a passed legal deadline, an expired bed hold, declined by everyone, a crew that has not set off. Ticking off a row is refused for all five, by design: nobody may silence a live legal breach by ticking a box. So the control exists and always refuses.",
+      "question": "That is a sound rule. The question is whether the tick should be visible at all when nothing it applies to exists — an owner ruling on 6 September said the panel is acknowledge-only."
+    }
+  ]
+}

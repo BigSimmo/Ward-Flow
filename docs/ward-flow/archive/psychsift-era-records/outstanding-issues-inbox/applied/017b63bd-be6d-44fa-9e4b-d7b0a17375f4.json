@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "id": "017b63bd-be6d-44fa-9e4b-d7b0a17375f4",
+  "createdOn": "2026-09-09",
+  "action": "add",
+  "payload": {
+    "pri": "P1",
+    "type": "task",
+    "summary": "Ward Flow: Mental Health Act authorisation is an overridable gate in both the mockup and the engine, and the standard's own test says a fact about the world is not",
+    "detail": "VERIFIED 2026-09-09. Section 8.4 of the design standard states the test: a judgement about the patient is overridable by a named coordinator with a recorded reason, a fact about the world is not. Whether a ward is an authorised hospital under the Mental Health Act 2014 (WA) is a fact about the ward's legal status, yet the Command mockup classifies authorisation as overridable and the engine lists it in SUITABILITY_GATES beside cohort and security (ward-flow-reducer.ts around line 487). The same reading applies to security, where whether a locked bed exists is a fact. THE RULING ALREADY EXISTS BUT ONLY IN THE CODE: the reducer's comment above eligibilityRefusal records the owner's 2026-09-02 ruling that every suitability gate is overridable, on the reasoning that a rule nobody can override does not stop the placement, it stops the record of the placement, and that making one gate un-overridable (the forensic gate is named) reverses an explicit owner ruling. The standard does not carry that reasoning, so the classification and the stated test point in opposite directions on the page. NEXT ACTION: the owner confirms the 2026-09-02 ruling covers authorisation and security specifically; then write the reasoning into section 8.4 of the standard, and into the mockup's gate detail sentences, so the page explains why a legal-status fact is treated as overridable (the record, not the placement, is what the override protects). If the owner instead moves authorisation to the absolute side, the engine's SUITABILITY_GATES, its tests and the mockup's ABSOLUTE_GATES all change together. HARD GATE BEFORE ANY REAL-PATIENT USE.",
+    "source": "Ward Flow design review, 2026-09-09: the reviewing Codex chat's findings F1 to F4, each re-verified against the code by the design-review chat; the owner approved recording them the same day",
+    "issueUlid": "01M232MZJ3TFTDF49923HERX0K"
+  }
+}

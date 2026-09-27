@@ -1,0 +1,46 @@
+{
+  "verifiedAt": "2026-09-13T10:49:24.453Z",
+  "head": "1ef9ed3975078b789e9b5d70b3f000c64edc3809",
+  "reportFiles": [
+    {
+      "name": "review-evidence.json",
+      "valid": true
+    },
+    {
+      "name": "test-failure-comparison.json",
+      "valid": true
+    },
+    {
+      "name": "WardFlow_Local_Final_Audit.md",
+      "valid": true
+    },
+    {
+      "name": "WardFlow_Local_Issue_Register.csv",
+      "valid": true
+    },
+    {
+      "name": "WardFlow_Local_Issue_Register.json",
+      "valid": true
+    }
+  ],
+  "originalIdsPresent": true,
+  "totalIds": 51,
+  "core": [
+    {
+      "path": "src/components/ward-management/ward-audit.ts",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/ward-management/ward-discharge-records.ts",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/ward-management/ward-flow-events.ts",
+      "unchanged": true
+    },
+    {
+      "path": "src/components/ward-management/ward-flow-reducer.ts",
+      "unchanged": true
+    }
+  ]
+}

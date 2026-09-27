@@ -1,0 +1,90 @@
+/* WardFilters and WardSegmented — the two control shapes the merged screens share.
+ * Every value resolves through a --ward-* token declared in ward-tokens.module.css. */
+.filters {
+  composes: wardTokens from "./ward-tokens.module.css";
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ward-space-5);
+}
+
+/*
+ * 🔴 **THE 48px TAP FLOOR, ADDED 2026-09-08 — THESE PILLS MEASURED 27.6px ON A PHONE.** Found by a
+ * browser sweep of every interactive element on the Delays screen at 375px: 66 of 69 controls
+ * passed and these three did not, because this rule declared no `min-height` at all and the
+ * computed value was `auto`. Padding alone had been carrying the height.
+ *
+ * ⚠️ **IT LOOKED LIKE AN UNRESOLVED TOKEN AND IT WAS NOT — MEASURED, NOT ASSUMED.** The sibling
+ * `.tabBtn` (`delays.module.css`) already declares `min-height: var(--ward-tap)`, so the first
+ * hypothesis was that `--ward-tap` fails to resolve here and the declaration silently does nothing,
+ * which is a real failure shape in this codebase. It is not what happened: `getComputedStyle` on the
+ * live pills returns `--ward-tap: 3rem`, resolving correctly through this file's own `composes:
+ * wardTokens`. The token was fine. The declaration was simply absent.
+ *
+ * ⚠️ `display: inline-flex` and `align-items: center` are load-bearing, not decoration — a bare
+ * `min-height` on a non-flex button grows the box while leaving the label at the top of it, so the
+ * control gets its 48px and still reads as misaligned.
+ *
+ * Do NOT lower this to 44px for a generic WCAG figure. This repository's floor is 48px
+ * (`--spacing-tap: 3rem`), it is deliberate, and reducing it has reintroduced a known smoke-test
+ * flake before.
+ */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--ward-tap);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: var(--ward-leading-ui);
+  padding: var(--ward-space-5) var(--ward-space-10);
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--ward-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--ward-radius-pixel);
+}
+.pill:hover {
+  background: var(--ward-chrome);
+}
+.pill[aria-pressed="true"] {
+  color: var(--ward-blue);
+  background: var(--ward-blue-soft);
+  border-color: var(--ward-blue-border);
+}
+
+.pillCount {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-0, 0.75rem);
+}
+
+.segmented {
+  display: inline-flex;
+  overflow: hidden;
+  background: var(--ward-canvas);
+  border: 1px solid var(--ward-border);
+  border-radius: var(--ward-radius-pixel);
+}
+
+.segment {
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: var(--ward-leading-ui);
+  padding: var(--ward-space-6) var(--ward-space-12);
+  cursor: pointer;
+  color: var(--ward-muted);
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--ward-divider);
+}
+.segment:last-child {
+  border-right: 0;
+}
+.segment[aria-pressed="true"] {
+  color: var(--ward-blue);
+  background: var(--ward-blue-soft);
+}

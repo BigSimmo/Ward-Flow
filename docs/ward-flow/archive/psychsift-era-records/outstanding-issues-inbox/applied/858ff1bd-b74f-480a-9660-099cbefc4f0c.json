@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "id": "858ff1bd-b74f-480a-9660-099cbefc4f0c",
+  "createdOn": "2026-09-07",
+  "action": "add",
+  "payload": {
+    "pri": "P2",
+    "type": "task",
+    "summary": "Ward Flow: link Movements and Delays in both directions — a per-row route to the reason a patient is stuck, not a drawer",
+    "detail": "OWNER DECISION 2026-09-07, in his own words: 'the instinct is I'm looking at a movement and I want to know why it's stuck. Answer that with a link on the row, not a drawer holding a whole screen. One patient's reason, in context, going to the full Delays page. There is currently no link at all between the two screens, which is the real gap.'",
+    "issueUlid": "01M1XK5QGMX5Q4XYYKD0X197PZ"
+  }
+}

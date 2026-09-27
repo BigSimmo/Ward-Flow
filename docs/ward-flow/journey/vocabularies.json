@@ -1,0 +1,587 @@
+{
+ "vocabularies": {
+  "HEALTH_SERVICES": {
+   "file": "ward-model.ts",
+   "members": [
+    "North Metro",
+    "South Metro",
+    "East Metro",
+    "WACHS",
+    "CAHS",
+    "Private"
+   ]
+  },
+  "COHORTS": {
+   "file": "ward-model.ts",
+   "members": [
+    "Adult",
+    "Older adult",
+    "Youth"
+   ]
+  },
+  "BLOCKERS_MEANING_NOTHING_IS_BLOCKING": {
+   "file": "ward-model.ts",
+   "members": [
+    "No blocker",
+    "None — in transit",
+    "None — handover complete",
+    "None — the movement did not proceed",
+    "None — cleared"
+   ]
+  },
+  "SEXES": {
+   "file": "ward-model.ts",
+   "members": [
+    "Female",
+    "Male"
+   ]
+  },
+  "RECORDED_SEXES": {
+   "file": "ward-model.ts",
+   "members": [
+    "Another term",
+    "Not recorded"
+   ]
+  },
+  "URGENCY_LEVELS": {
+   "file": "ward-model.ts",
+   "members": [
+    "1",
+    "2",
+    "3"
+   ]
+  },
+  "ARRIVAL_MODES": {
+   "file": "ward-model.ts",
+   "members": [
+    "mental_health_transport",
+    "ambulance",
+    "police",
+    "hospital_transfer",
+    "self"
+   ]
+  },
+  "SEX_DESIGNATIONS": {
+   "file": "ward-model.ts",
+   "members": [
+    "Undesignated",
+    "Female only",
+    "Male only"
+   ]
+  },
+  "REFERRAL_GENDERS": {
+   "file": "ward-model.ts",
+   "members": [
+    "Female",
+    "Male",
+    "Non-binary",
+    "Different term"
+   ]
+  },
+  "MOVEMENT_STAGES": {
+   "file": "ward-model.ts",
+   "members": [
+    "placement_requested",
+    "destination_review",
+    "accepted_awaiting_bed",
+    "pulled",
+    "handover_ready",
+    "moving",
+    "arrived"
+   ]
+  },
+  "DECLINE_REASONS": {
+   "file": "ward-model.ts",
+   "members": [
+    "no_bed",
+    "sex_mix",
+    "specialling_unavailable",
+    "acuity_mix",
+    "capability_mismatch",
+    "bed_pulled_for_earlier_referral",
+    "out_of_catchment"
+   ]
+  },
+  "STEP_BACK_REASONS": {
+   "file": "ward-model.ts",
+   "members": [
+    "recorded_in_error",
+    "the_decision_changed",
+    "the_patient_situation_changed",
+    "the_bed_was_lost"
+   ]
+  },
+  "TRANSPORT_PROVIDERS": {
+   "file": "ward-model.ts",
+   "members": [
+    "Ambulance service",
+    "Patient transport service",
+    "Ward escort"
+   ]
+  },
+  "TRANSPORT_LEGAL_STATUSES": {
+   "file": "ward-model.ts",
+   "members": [
+    "voluntary",
+    "involuntary"
+   ]
+  },
+  "MOVEMENT_REFERRAL_ABSENCE_REASONS": {
+   "file": "ward-model.ts",
+   "members": [
+    "none_raised",
+    "not_asked"
+   ]
+  },
+  "BED_RELEASE_STATES": {
+   "file": "ward-model.ts",
+   "members": [
+    "expected",
+    "confirmed",
+    "discharged"
+   ]
+  },
+  "BED_RELEASE_WAITING_ON": {
+   "file": "ward-model.ts",
+   "members": [
+    "Awaiting ward round",
+    "Awaiting family or carer agreement",
+    "Awaiting accommodation",
+    "Awaiting community team acceptance",
+    "Awaiting legal or Mental Health Act process",
+    "Awaiting transport",
+    "Nothing outstanding"
+   ]
+  },
+  "REFERRAL_SOURCES": {
+   "file": "ward-model.ts",
+   "members": [
+    "community",
+    "crisis_service",
+    "police",
+    "ambulance",
+    "inter_hospital",
+    "ed_medical",
+    "gp",
+    "psychiatric_ward"
+   ]
+  },
+  "REFERRAL_STATES": {
+   "file": "ward-model.ts",
+   "members": [
+    "queued",
+    "accepted",
+    "declined"
+   ]
+  },
+  "REFERRAL_DECLINE_REASONS": {
+   "file": "ward-model.ts",
+   "members": [
+    "no_suitable_bed",
+    "age_band_not_provided_here",
+    "sex_designation_unavailable",
+    "secure_bed_unavailable",
+    "belongs_to_another_service",
+    "referred_elsewhere",
+    "another_reason"
+   ]
+  },
+  "COMMUNITY_DECLINE_REASONS": {
+   "file": "ward-model.ts",
+   "members": [
+    "outside_the_teams_catchment",
+    "needs_inpatient_care_not_community_follow_up",
+    "client_declined_or_could_not_be_contacted",
+    "already_open_to_another_community_team"
+   ]
+  },
+  "HOME_REGIONS": {
+   "file": "ward-model.ts",
+   "members": [
+    "Perth Metropolitan",
+    "Peel",
+    "South West",
+    "Great Southern",
+    "Wheatbelt",
+    "Goldfields-Esperance",
+    "Mid West",
+    "Gascoyne",
+    "Pilbara",
+    "Kimberley"
+   ]
+  },
+  "REFERRAL_DESTINATION_KINDS": {
+   "file": "ward-model.ts",
+   "members": [
+    "psychiatric_ward",
+    "emergency_department",
+    "community_team"
+   ]
+  },
+  "REFERRAL_PURPOSES": {
+   "file": "ward-model.ts",
+   "members": [
+    "bed",
+    "psychiatric_review",
+    "medical_assessment"
+   ]
+  },
+  "REFERRAL_ADDRESSING_STATES": {
+   "file": "ward-model.ts",
+   "members": [
+    "queued",
+    "accepted",
+    "declined",
+    "cancelled"
+   ]
+  },
+  "SUBURB_UNKNOWN_REASONS": {
+   "file": "ward-model.ts",
+   "members": [
+    "not_known"
+   ]
+  },
+  "URGENCY_CHANGE_REASONS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "reassessed",
+    "new_information",
+    "correcting_an_error"
+   ]
+  },
+  "LEGAL_STATUS_CHANGE_REASONS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "recorded_by_treating_team",
+    "correcting_an_error"
+   ]
+  },
+  "LEGAL_FORM_RECEIPT_CORRECTION_REASONS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "recorded_in_error",
+    "recorded_against_wrong_movement",
+    "form_had_not_physically_arrived"
+   ]
+  },
+  "RELEASE_PULL_REASONS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "patient_no_longer_coming",
+    "bed_needed_for_another_patient",
+    "ward_withdrew_the_bed",
+    "pull_made_in_error"
+   ]
+  },
+  "CANCEL_TRANSPORT_REASONS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "provider_unavailable",
+    "patient_not_ready",
+    "destination_changed",
+    "job_created_in_error"
+   ]
+  },
+  "STOP_TRANSPORT_REASONS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "The examination was revoked",
+    "The referral was withdrawn",
+    "The receiving ward can no longer take the patient"
+   ]
+  },
+  "TRANSPORT_WHEREABOUTS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "Back at the sending emergency department",
+    "At another emergency department",
+    "At a general hospital",
+    "With the transport crew",
+    "Another place — needs follow-up"
+   ]
+  },
+  "DIVERSION_REASONS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "Needs urgent medical care on the way",
+    "The vehicle or crew was sent to an emergency",
+    "The receiving ward can no longer take the patient",
+    "Another reason — needs follow-up"
+   ]
+  },
+  "ESCALATION_CONTACTS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "State bed coordination desk",
+    "Duty psychiatrist",
+    "Bed management",
+    "Nurse unit manager (destination ward)",
+    "Escort or transport provider",
+    "Other service"
+   ]
+  },
+  "BED_RELEASE_BLOCKERS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "Awaiting clean",
+    "Awaiting pharmacy",
+    "Awaiting placement confirmation",
+    "Awaiting service coordination",
+    "Awaiting accommodation",
+    "Awaiting transport",
+    "Awaiting receiving-service acceptance",
+    "Awaiting family or carer arrangement",
+    "Funding or plan decision pending"
+   ]
+  },
+  "WITHDRAWAL_REASONS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "another_unit_accepted",
+    "referrer_withdrew",
+    "coordinator_withdrew",
+    "ed_outcome_recorded"
+   ]
+  },
+  "WARD_REQUEST_WITHDRAWAL_REASONS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "no_answer_from_the_ward",
+    "bed_no_longer_available",
+    "needs_changed_ward_no_longer_suits",
+    "closer_to_home_or_family_elsewhere",
+    "making_room_within_the_referral_limit",
+    "referred_in_error",
+    "another_reason"
+   ]
+  },
+  "OVERRIDE_REASONS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "The receiving team has agreed despite the mismatch",
+    "Clinical urgency outweighs the mismatch",
+    "The bed information is known to be out of date",
+    "Continuity with a previous admission at this unit",
+    "Closer to the person's home or family"
+   ]
+  },
+  "BED_PREPARATION_NOTES": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "Being cleaned",
+    "Awaiting maintenance or repair"
+   ]
+  },
+  "GENDER_PLACEMENT_REASONS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "A single room is available on this ward",
+    "The patient's stated preference, agreed with the ward",
+    "No single room is free; the ward agreed a bed and a plan for privacy",
+    "The only suitable Ready bed, agreed with the ward",
+    "The patient knows this ward from an earlier stay",
+    "Closer to the patient's home or supports"
+   ]
+  },
+  "URGENT_MARK_REASONS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "cannot_safely_prevent_leaving",
+    "cannot_be_observed_safely_here",
+    "safety_of_others_in_this_setting",
+    "no_psychiatric_cover_at_this_site",
+    "needs_medical_care_unavailable_here",
+    "escort_in_place_and_unsustainable",
+    "cannot_protect_from_others_here",
+    "setting_unsuitable_for_age_group",
+    "this_setting_cannot_continue_current_care",
+    "another_reason_not_listed"
+   ]
+  },
+  "WARD_INTAKE_CONSTRAINTS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "staffing_shortage",
+    "infection_control",
+    "bay_or_room_closed",
+    "high_acuity_on_ward",
+    "waiting_for_bed_clean",
+    "other_call_the_ward"
+   ]
+  },
+  "DISCHARGE_DELAY_REASONS": {
+   "file": "ward-change-reasons.ts",
+   "members": [
+    "sat_hearing",
+    "public_guardian"
+   ]
+  },
+  "ADMISSION_STATES": {
+   "file": "ward-admissions.ts",
+   "members": [
+    "waitlisted",
+    "pulled",
+    "occupied",
+    "departed"
+   ]
+  },
+  "FOLLOW_UP_STATES": {
+   "file": "ward-admissions.ts",
+   "members": [
+    "arranged",
+    "not_arranged"
+   ]
+  },
+  "DISCHARGE_BARRIERS": {
+   "file": "ward-admissions.ts",
+   "members": [
+    "Accommodation / Housing",
+    "NDIS",
+    "SAT / Public Guardian",
+    "RACF / Aged Care",
+    "Clinical / Treatment",
+    "Social / Family",
+    "Several"
+   ]
+  },
+  "PULL_RELEASE_REASONS": {
+   "file": "ward-admissions.ts",
+   "members": [
+    "Clinical condition changed",
+    "Transport unavailable",
+    "Admission declined",
+    "Pulled in error"
+   ]
+  },
+  "DISCHARGE_ROLE_LABELS": {
+   "file": "ward-admissions.ts",
+   "members": [
+    "Ward manager"
+   ]
+  },
+  "RELEASE_BANDS": {
+   "file": "ward-bed-availability.ts",
+   "members": [
+    "now",
+    "by-midday",
+    "by-1600",
+    "tonight",
+    "tomorrow"
+   ]
+  },
+  "GENDERS": {
+   "file": "ward-patients.ts",
+   "members": [
+    "Female",
+    "Male",
+    "Non-binary",
+    "Different term"
+   ]
+  },
+  "PATIENT_FIELDS": {
+   "file": "ward-patients.ts",
+   "members": [
+    "id",
+    "umrn",
+    "givenName",
+    "familyName",
+    "dateOfBirth",
+    "preferredName",
+    "sex",
+    "gender",
+    "address",
+    "suburb",
+    "generalPractitioner",
+    "catchmentCommunityTeam",
+    "legalStatus",
+    "aboriginalOrTorresStraitIslanderStatus",
+    "interpreterLanguage"
+   ]
+  },
+  "ELIGIBILITY_GATES": {
+   "file": "ward-eligibility.ts",
+   "members": [
+    "acuity",
+    "age",
+    "allocatable_bed",
+    "authorisation",
+    "capacity_freshness",
+    "cohort",
+    "forensic",
+    "legal_status",
+    "prior_decline",
+    "security",
+    "gender_designation",
+    "sex_mix",
+    "specialling"
+   ]
+  }
+ },
+ "labels": {
+  "stepBackReasonLabels": {
+   "recorded_in_error": "Recorded in error",
+   "the_decision_changed": "The decision changed",
+   "the_patient_situation_changed": "The situation changed",
+   "the_bed_was_lost": "The bed was lost"
+  },
+  "suburbUnknownLabels": {
+   "not_known": "Suburb not known"
+  },
+  "legalFormReceiptCorrectionReasonLabels": {
+   "recorded_in_error": "Recorded in error",
+   "recorded_against_wrong_movement": "Recorded against the wrong movement",
+   "form_had_not_physically_arrived": "Form had not physically arrived"
+  },
+  "withdrawalReasonLabels": {
+   "another_unit_accepted": "Withdrawn — another unit accepted this patient.",
+   "referrer_withdrew": "Withdrawn by the referrer.",
+   "coordinator_withdrew": "Withdrawn by the coordinator.",
+   "ed_outcome_recorded": "Withdrawn — the department recorded an outcome for this patient."
+  },
+  "wardRequestWithdrawalReasonLabels": {
+   "no_answer_from_the_ward": "No answer from the ward yet",
+   "bed_no_longer_available": "The bed is no longer available",
+   "needs_changed_ward_no_longer_suits": "Needs have changed; this ward no longer suits",
+   "closer_to_home_or_family_elsewhere": "Closer to home or family elsewhere",
+   "making_room_within_the_referral_limit": "Making room within the referral limit",
+   "referred_in_error": "Referred in error",
+   "another_reason": "Another reason — needs follow-up"
+  },
+  "changeReasonLabels": {
+   "cannot_be_observed_safely_here": "Cannot be observed safely here",
+   "no_psychiatric_cover_at_this_site": "No psychiatric cover at this site",
+   "cannot_safely_prevent_leaving": "Cannot safely prevent leaving",
+   "needs_medical_care_unavailable_here": "Needs medical care unavailable here",
+   "safety_of_others_in_this_setting": "Safety of others in this setting",
+   "escort_in_place_and_unsustainable": "Escort in place and unsustainable",
+   "cannot_protect_from_others_here": "Cannot protect from harm by others here",
+   "setting_unsuitable_for_age_group": "No age-appropriate area here",
+   "this_setting_cannot_continue_current_care": "This setting cannot continue current care",
+   "another_reason_not_listed": "Another reason, not listed here",
+   "reassessed": "Reassessed",
+   "new_information": "New information",
+   "correcting_an_error": "Correcting an error",
+   "recorded_by_treating_team": "Recorded by treating team",
+   "patient_no_longer_coming": "No longer coming",
+   "bed_needed_for_another_patient": "Bed needed elsewhere",
+   "ward_withdrew_the_bed": "Ward withdrew the bed",
+   "pull_made_in_error": "Pull made in error",
+   "provider_unavailable": "Provider unavailable",
+   "patient_not_ready": "Not yet ready",
+   "destination_changed": "Destination changed",
+   "job_created_in_error": "Job created in error"
+  },
+  "wardIntakeConstraintLabels": {
+   "staffing_shortage": "Staffing shortage",
+   "infection_control": "Infection control",
+   "bay_or_room_closed": "Bay or room closed",
+   "high_acuity_on_ward": "High acuity on the ward",
+   "waiting_for_bed_clean": "Waiting for a bed to be cleaned",
+   "other_call_the_ward": "Other — call the ward"
+  },
+  "dischargeDelayReasonLabels": {
+   "sat_hearing": "State Administrative Tribunal (SAT) hearing pending",
+   "public_guardian": "Public Guardian / Public Advocate determination pending"
+  }
+ }
+}

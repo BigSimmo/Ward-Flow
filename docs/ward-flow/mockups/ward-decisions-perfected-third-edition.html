@@ -1,0 +1,2936 @@
+<!doctype html>
+<html lang="en-AU" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow · RPH Adult Secure (Ward 2K) · Decisions &amp; Bed Capacity (Perfected Third Edition)</title>
+    <script>
+      (function () {
+        document.documentElement.lang = "en-AU";
+        try {
+          var v = localStorage.getItem("ward-flow-appearance") || localStorage.getItem("ward-flow-theme");
+          if (v === "light" || v === "dark") {
+            document.documentElement.setAttribute("data-theme", v);
+          } else if (v === "auto" && window.matchMedia) {
+            document.documentElement.setAttribute(
+              "data-theme",
+              window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
+            );
+          }
+          if (localStorage.getItem("ward-flow-rail") === "closed") {
+            document.documentElement.setAttribute("data-rail", "closed");
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap"
+    />
+    <style>
+      /* ═══════════════════════════════════════════════════════════════════════
+       WARD FLOW DECISIONS VIEW — PERFECTED THIRD EDITION
+       Standard: Sovereign Clinical Console (Platinum Raised Cool).
+       Target Ward: Royal Perth Hospital (RPH) · Adult Secure / Ward 2K.
+       Dual 100-Point Rubric: Visual Craft & Clinical Workflow Density.
+       Zero Fatal Flaws · Pure Hairline Borders · Tabular Figures · Responsive.
+       ═══════════════════════════════════════════════════════════════════════ */
+      :root {
+        color-scheme: light;
+        --display: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+        --body: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+        --mono: "Geist Mono", ui-monospace, Menlo, Consolas, monospace;
+
+        --t-0: 12px;
+        --t-1: 13px;
+        --t-2: 13.5px;
+        --t-3: 14px;
+        --t-4: 16px;
+        --t-5: 20px;
+        --t-6: 24px;
+
+        --r1: 8px;
+        --r2: 6px;
+        --pill: 9999px;
+        --ward-tap: 44px;
+
+        --railw: 240px;
+        --railw-closed: 72px;
+
+        /* Platinum Raised Cool — Light Palette */
+        --ground-hi: #ecf0f4;
+        --ground: #e6eaef;
+        --ground-2: #e1e6ec;
+
+        --surface: #ffffff;
+        --surface-2: #f6f8fb;
+        --surface-3: #edf1f6;
+        --sunk: #e9edf3;
+
+        --ink: #161a20;
+        --ink-soft: #424a54;
+        --muted: #64707e;
+
+        --line: rgba(22, 30, 40, 0.11);
+        --line-strong: rgba(22, 30, 40, 0.22);
+
+        --accent: #26435f;
+        --accent-ink: #1e354c;
+        --accent-press: #172b3e;
+        --accent-soft: #e3ebf4;
+        --on-accent: #ffffff;
+        --stripe: #26435f;
+
+        --gilt: #7d612a;
+        --gilt-soft: #f4ede1;
+
+        --good: #1a7a4c;
+        --good-soft: #e4f3eb;
+        --warn: #8c6414;
+        --warn-soft: #f7eed8;
+
+        --danger: #b3382c;
+        --danger-soft: #fae8e5;
+        --danger-ink: #9a2b20;
+
+        --svc-east: #26435f;
+        --svc-north: #62548e;
+        --svc-south: #2c666c;
+        --svc-wachs: #885438;
+
+        --lift: 0 1px 2px rgba(22, 30, 40, 0.04), 0 4px 12px -2px rgba(22, 30, 40, 0.06);
+        --scrim: rgba(22, 30, 40, 0.45);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          color-scheme: dark;
+          --ground-hi: #14181d;
+          --ground: #0f1216;
+          --ground-2: #0c0f12;
+
+          --surface: #171b21;
+          --surface-2: #1c2128;
+          --surface-3: #222831;
+          --sunk: #12151a;
+
+          --ink: #e8ecf1;
+          --ink-soft: #b0b8c4;
+          --muted: #88929e;
+
+          --line: rgba(255, 255, 255, 0.09);
+          --line-strong: rgba(255, 255, 255, 0.18);
+
+          --accent: #a7bcd2;
+          --accent-ink: #c2d4e7;
+          --accent-press: #8fa6bd;
+          --accent-soft: #1f2a36;
+          --on-accent: #0f1216;
+          --stripe: #3a5a78;
+
+          --gilt: #d3b77e;
+          --gilt-soft: #2a251b;
+
+          --good: #6fd39b;
+          --good-soft: #15291f;
+          --warn: #e3bc5e;
+          --warn-soft: #2b2415;
+
+          --danger: #ff8b76;
+          --danger-soft: #33201b;
+          --danger-ink: #ffa08e;
+
+          --svc-east: #a7bcd2;
+          --svc-north: #b1a2d6;
+          --svc-south: #7fb2b8;
+          --svc-wachs: #d89a78;
+
+          --lift: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -4px rgba(0, 0, 0, 0.65);
+          --scrim: rgba(0, 0, 0, 0.72);
+        }
+      }
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --ground-hi: #14181d;
+        --ground: #0f1216;
+        --ground-2: #0c0f12;
+
+        --surface: #171b21;
+        --surface-2: #1c2128;
+        --surface-3: #222831;
+        --sunk: #12151a;
+
+        --ink: #e8ecf1;
+        --ink-soft: #b0b8c4;
+        --muted: #88929e;
+
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.18);
+
+        --accent: #a7bcd2;
+        --accent-ink: #c2d4e7;
+        --accent-press: #8fa6bd;
+        --accent-soft: #1f2a36;
+        --on-accent: #0f1216;
+        --stripe: #3a5a78;
+
+        --gilt: #d3b77e;
+        --gilt-soft: #2a251b;
+
+        --good: #6fd39b;
+        --good-soft: #15291f;
+        --warn: #e3bc5e;
+        --warn-soft: #2b2415;
+
+        --danger: #ff8b76;
+        --danger-soft: #33201b;
+        --danger-ink: #ffa08e;
+
+        --svc-east: #a7bcd2;
+        --svc-north: #b1a2d6;
+        --svc-south: #7fb2b8;
+        --svc-wachs: #d89a78;
+
+        --lift: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -4px rgba(0, 0, 0, 0.65);
+        --scrim: rgba(0, 0, 0, 0.72);
+      }
+
+      /* Reset & Document Standards */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: var(--body);
+        font-size: var(--t-2);
+        line-height: 1.45;
+        color: var(--ink);
+        background: var(--ground);
+        background-image: linear-gradient(180deg, var(--ground-hi) 0%, var(--ground) 60%, var(--ground-2) 100%);
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 100;
+        pointer-events: none;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
+        color: inherit;
+      }
+
+      .mono {
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Shell Layout */
+      .app {
+        display: grid;
+        grid-template-columns: var(--railw) minmax(0, 1fr);
+        min-height: 100vh;
+        transition: grid-template-columns 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      :root[data-rail="closed"] .app {
+        grid-template-columns: var(--railw-closed) minmax(0, 1fr);
+      }
+
+      /* ─── Navigation Rail ─────────────────────────────── */
+      .rail {
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        z-index: 30;
+        user-select: none;
+        scrollbar-width: thin;
+      }
+
+      .brand {
+        padding: 14px 16px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        border-bottom: 1px solid var(--line);
+        flex-shrink: 0;
+        min-height: 56px;
+      }
+
+      .brandTitle {
+        font-family: var(--display);
+        font-size: var(--t-3);
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        color: var(--ink);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+
+      .brandPill {
+        font-size: 11px;
+        font-family: var(--mono);
+        font-weight: 500;
+        color: var(--muted);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--pill);
+        padding: 2px 7px;
+      }
+
+      .railToggle {
+        width: 30px;
+        height: 30px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--ink-soft);
+        flex-shrink: 0;
+        transition: all 0.15s ease;
+      }
+      .railToggle:hover {
+        background: var(--surface-3);
+        color: var(--ink);
+      }
+
+      .railNav {
+        padding: 12px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        flex: 1;
+      }
+
+      .railSectionLabel {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        padding: 8px 12px 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      :root[data-rail="closed"] .railSectionLabel {
+        display: none;
+      }
+
+      .navItem {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        border-radius: var(--r2);
+        color: var(--ink-soft);
+        text-decoration: none;
+        font-size: var(--t-2);
+        font-weight: 500;
+        min-height: 40px;
+        white-space: nowrap;
+        overflow: hidden;
+        position: relative;
+        transition: all 0.12s ease;
+      }
+      .navItem:hover {
+        background: var(--surface-2);
+        color: var(--ink);
+      }
+      .navItem.active {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
+      .navItem.active::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 6px;
+        bottom: 6px;
+        width: 3px;
+        background: var(--gilt);
+        border-radius: 0 2px 2px 0;
+      }
+
+      .navIcon {
+        width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      /* ─── Workspace Header ───────────────────────────── */
+      .workspace {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+
+      .masterHeader {
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        padding: 10px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        position: sticky;
+        top: 0;
+        z-index: 25;
+      }
+
+      .hdrSearch {
+        flex: 1;
+        max-width: 520px;
+      }
+
+      .searchBox {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+      .searchBox svg {
+        position: absolute;
+        left: 12px;
+        color: var(--muted);
+        pointer-events: none;
+      }
+      .searchBox input {
+        width: 100%;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 7px 36px 7px 34px;
+        font-size: var(--t-1);
+        color: var(--ink);
+        outline: none;
+        transition: all 0.12s ease;
+      }
+      .searchBox input:focus {
+        border-color: var(--accent);
+        outline: 2px solid var(--accent);
+        background: var(--surface);
+      }
+      .kbdChip {
+        position: absolute;
+        right: 10px;
+        font-size: 11px;
+        font-family: var(--mono);
+        color: var(--muted);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        padding: 1px 5px;
+        pointer-events: none;
+      }
+
+      .hdrTools {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .hdrBtn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink-soft);
+        font-size: var(--t-1);
+        font-weight: 500;
+        cursor: pointer;
+        min-height: 34px;
+        transition: all 0.12s ease;
+      }
+      .hdrBtn:hover {
+        background: var(--surface-2);
+        color: var(--ink);
+      }
+
+      /* ─── Top Identity Banner ────────────────────────── */
+      .topBannerWrap {
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        padding: 18px 24px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .identityBar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .identityLeft {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .unitTag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--accent-ink);
+        background: var(--accent-soft);
+        padding: 2px 8px;
+        border-radius: var(--pill);
+        align-self: flex-start;
+      }
+
+      .unitName {
+        font-family: var(--display);
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+        margin: 0;
+      }
+
+      .unitMeta {
+        font-size: var(--t-1);
+        color: var(--muted);
+      }
+
+      .liveConfirmedStamp {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 4px 12px;
+        border-radius: var(--pill);
+        background: var(--good-soft);
+        border: 1px solid rgba(26, 122, 76, 0.25);
+        color: var(--good);
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .pulseDot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--good);
+        box-shadow: 0 0 0 2px rgba(26, 122, 76, 0.2);
+        animation: pulseLive 2s infinite;
+      }
+
+      @keyframes pulseLive {
+        0% {
+          transform: scale(0.95);
+          box-shadow: 0 0 0 0 rgba(26, 122, 76, 0.4);
+        }
+        70% {
+          transform: scale(1);
+          box-shadow: 0 0 0 6px rgba(26, 122, 76, 0);
+        }
+        100% {
+          transform: scale(0.95);
+          box-shadow: 0 0 0 0 rgba(26, 122, 76, 0);
+        }
+      }
+
+      /* Action Toolbar */
+      .actionToolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .btnActionPrimary {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 16px;
+        border-radius: var(--r2);
+        background: var(--accent);
+        color: var(--on-accent);
+        border: 1px solid var(--accent);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        min-height: 38px;
+        transition: all 0.12s ease;
+      }
+      .btnActionPrimary:hover {
+        background: var(--accent-press);
+      }
+
+      .btnActionSec {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border-radius: var(--r2);
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        color: var(--ink);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        min-height: 38px;
+        transition: all 0.12s ease;
+      }
+      .btnActionSec:hover {
+        background: var(--surface-2);
+        border-color: var(--ink-soft);
+      }
+
+      /* ─── Operational Tab Navigation Bar ─────────────────────── */
+      .tabNavWrap {
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        padding: 0 24px;
+      }
+
+      .tabNavList {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+        overflow-x: auto;
+      }
+
+      .tabBtn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 11px 16px;
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid transparent;
+        color: var(--muted);
+        font-size: 13.5px;
+        font-weight: 500;
+        cursor: pointer;
+        min-height: 46px;
+        white-space: nowrap;
+        transition: all 0.12s ease;
+      }
+      .tabBtn:hover {
+        color: var(--ink);
+        background: var(--surface-2);
+        border-radius: var(--r2) var(--r2) 0 0;
+      }
+      .tabBtn.active {
+        color: var(--ink);
+        border-bottom-color: var(--gilt);
+        font-weight: 600;
+      }
+
+      .tabCountBadge {
+        font-size: 11px;
+        font-family: var(--mono);
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: var(--pill);
+        background: var(--surface-3);
+        color: var(--muted);
+      }
+      .tabBtn.active .tabCountBadge {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+      }
+
+      /* ─── Main Decisions Workspace Content ──────────────────── */
+      .contentBody {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        max-width: 1480px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      /* Section 1: Sovereign Census & Live Capacity Command Card */
+      .censusCommandCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .commandHeader {
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .commandTitleGroup {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .commandMainTitle {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .commandSubTitle {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .returnStatusChip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: var(--pill);
+        background: var(--surface-3);
+        color: var(--ink-soft);
+        font-size: 12px;
+        font-weight: 600;
+        font-family: var(--mono);
+      }
+      .returnStatusChip.confirmed {
+        background: var(--good-soft);
+        color: var(--good);
+        border: 1px solid rgba(26, 122, 76, 0.25);
+      }
+
+      /* Fast Affirmation Strip */
+      .affirmationBanner {
+        background: linear-gradient(90deg, rgba(26, 122, 76, 0.08) 0%, rgba(38, 67, 95, 0.04) 100%);
+        border-bottom: 1px solid var(--line);
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .affirmationLeft {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .affirmationIcon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--good-soft);
+        border: 1px solid rgba(26, 122, 76, 0.3);
+        color: var(--good);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .affirmationText {
+        font-size: 13px;
+        color: var(--ink);
+      }
+      .affirmationText b {
+        color: var(--good);
+      }
+
+      .btnMasterAffirm {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 20px;
+        border-radius: var(--r2);
+        background: var(--good);
+        color: #ffffff;
+        border: 1px solid var(--good);
+        font-size: 13.5px;
+        font-weight: 600;
+        cursor: pointer;
+        min-height: 40px;
+        transition: all 0.12s ease;
+        box-shadow: 0 2px 6px rgba(26, 122, 76, 0.2);
+      }
+      .btnMasterAffirm:hover {
+        filter: brightness(1.08);
+      }
+      .btnMasterAffirm.done {
+        background: var(--surface-3);
+        border-color: var(--line-strong);
+        color: var(--ink-soft);
+        box-shadow: none;
+      }
+
+      /* Dual Verification Stepper Grid */
+      .censusStepperGrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1px;
+        background: var(--line);
+      }
+
+      .censusBox {
+        background: var(--surface);
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .censusBoxHead {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .censusBoxLabel {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+      }
+      .censusBoxDesc {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+
+      .censusValueRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .stepperUnit {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 4px;
+      }
+
+      .stepperBtn {
+        width: 32px;
+        height: 32px;
+        border-radius: 4px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 700;
+        transition: all 0.12s ease;
+      }
+      .stepperBtn:hover {
+        background: var(--surface-3);
+        border-color: var(--ink-soft);
+      }
+
+      .stepperDisplay {
+        min-width: 44px;
+        text-align: center;
+        font-size: 20px;
+        font-weight: 700;
+        font-family: var(--mono);
+        color: var(--ink);
+      }
+
+      .censusBoxFooter {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 11.5px;
+        color: var(--muted);
+        border-top: 1px solid var(--line);
+        padding-top: 10px;
+      }
+
+      .btnInlineConfirm {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 12px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line-strong);
+        background: var(--surface-2);
+        color: var(--ink);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.12s ease;
+      }
+      .btnInlineConfirm:hover {
+        background: var(--surface-3);
+      }
+
+      /* Live Capacity Track & Metrics */
+      .capacitySection {
+        padding: 18px 20px;
+        background: var(--surface);
+        border-top: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .capacityTrackTitleRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .capacityTrackLabel {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ink);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .capacityTrack {
+        display: flex;
+        height: 14px;
+        border-radius: var(--pill);
+        overflow: hidden;
+        background: var(--sunk);
+        gap: 1px;
+      }
+      .capSeg {
+        height: 100%;
+        transition: width 0.3s ease;
+      }
+      .capSeg.ready {
+        background: var(--good);
+      }
+      .capSeg.held {
+        background: var(--accent);
+      }
+      .capSeg.blocked {
+        background: var(--danger);
+      }
+      .capSeg.occupied {
+        background: var(--ink-soft);
+      }
+
+      .breakdownStatsGrid {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 8px;
+      }
+
+      .statBox {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 8px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        text-align: center;
+      }
+      .statBoxLabel {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
+      .statBoxVal {
+        font-size: 18px;
+        font-weight: 700;
+        font-family: var(--mono);
+        color: var(--ink);
+      }
+
+      .pendingCleanBanner {
+        background: var(--warn-soft);
+        border: 1px solid rgba(140, 100, 20, 0.3);
+        border-radius: var(--r2);
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12.5px;
+        color: var(--ink);
+      }
+      .pendingCleanBanner b {
+        color: var(--warn);
+      }
+
+      .clinicalDisclosure {
+        border-top: 1px solid var(--line);
+        padding-top: 10px;
+      }
+      .clinicalDisclosure summary {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+        user-select: none;
+      }
+      .clinicalDisclosure summary:hover {
+        color: var(--ink);
+      }
+      .clinicalDisclosure p {
+        font-size: 12px;
+        color: var(--ink-soft);
+        margin: 6px 0 0;
+        line-height: 1.45;
+      }
+
+      /* Section 2: Admissions & Intake Constraints Gate */
+      .constraintsCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 16px 20px;
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .constraintsHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .constraintsTitle {
+        font-size: 14.5px;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .constraintsPillsGrid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .constraintChip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 14px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line-strong);
+        background: var(--surface-2);
+        color: var(--ink);
+        font-size: 12.5px;
+        font-weight: 500;
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.12s ease;
+      }
+      .constraintChip:hover {
+        background: var(--surface-3);
+        border-color: var(--ink-soft);
+      }
+      .constraintChip.active {
+        background: var(--warn-soft);
+        border-color: var(--warn);
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .constraintChip.active::before {
+        content: "✓";
+        color: var(--warn);
+        font-weight: 700;
+      }
+
+      .constraintsFooter {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border-top: 1px solid var(--line);
+        padding-top: 10px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      /* Section 3: Bed Turnover Pipeline (3-Stage Flow) */
+      .pipelineSection {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .pipelineHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .pipelineTitle {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .pipelineGrid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+
+      .pipelineColumn {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        display: flex;
+        flex-direction: column;
+        box-shadow: var(--lift);
+        overflow: hidden;
+      }
+
+      .pipelineColHeader {
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .pipelineColTitle {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .colCountPill {
+        font-size: 11px;
+        font-family: var(--mono);
+        font-weight: 700;
+        padding: 1px 7px;
+        border-radius: var(--pill);
+        background: var(--surface-3);
+        color: var(--ink-soft);
+      }
+
+      .pipelineColBody {
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 200px;
+      }
+
+      .pipelineCard {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        transition: all 0.12s ease;
+      }
+      .pipelineCard:hover {
+        border-color: var(--line-strong);
+        box-shadow: var(--lift);
+      }
+      .pipelineCard.blocked {
+        border-left: 3px solid var(--danger);
+      }
+
+      .cardTopRow {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .cardBedName {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .cardTimeBadge {
+        font-size: 12px;
+        font-family: var(--mono);
+        font-weight: 600;
+        color: var(--accent-ink);
+        background: var(--accent-soft);
+        padding: 1px 6px;
+        border-radius: 4px;
+      }
+
+      .cardWaitingRow {
+        font-size: 12px;
+        color: var(--ink-soft);
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .cardWaitingLabel {
+        font-size: 10.5px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .cardWaitingVal {
+        font-weight: 500;
+      }
+
+      .cardBlockerAlert {
+        font-size: 11.5px;
+        color: var(--danger-ink);
+        background: var(--danger-soft);
+        border: 1px solid rgba(179, 56, 44, 0.2);
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+      }
+
+      .cardFreshness {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .cardActionsRow {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 4px;
+        flex-wrap: wrap;
+      }
+
+      .btnCardAction {
+        flex: 1;
+        min-width: 80px;
+        padding: 5px 10px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--ink);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.12s ease;
+      }
+      .btnCardAction:hover {
+        background: var(--surface-3);
+        border-color: var(--ink-soft);
+      }
+      .btnCardAction.primary {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+      }
+      .btnCardAction.primary:hover {
+        background: var(--accent-press);
+      }
+      .btnCardAction.success {
+        background: var(--good);
+        color: #ffffff;
+        border-color: var(--good);
+      }
+      .btnCardAction.success:hover {
+        filter: brightness(1.08);
+      }
+
+      .pipelineEmptyState {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: var(--muted);
+        text-align: center;
+        padding: 24px 12px;
+        font-size: 12.5px;
+        font-style: italic;
+      }
+
+      /* Section 4: Authorized Patient Leave Card */
+      .leaveSectionCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 18px 20px;
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .leaveHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .leaveStatutoryAlert {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--warn);
+        border-radius: var(--r2);
+        padding: 10px 14px;
+        font-size: 12.5px;
+        color: var(--ink);
+      }
+      .leaveStatutoryAlert b {
+        color: var(--warn);
+      }
+
+      .leaveCardsList {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 12px;
+      }
+
+      .leaveItemCard {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .leaveItemInfo {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .leaveItemTitle {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .leaveItemMeta {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      /* Section 5: Shift Coordinator Timestamped Activity Ledger */
+      .ledgerCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 18px 20px;
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .ledgerHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 12px;
+      }
+
+      .ledgerTitle {
+        font-size: 14.5px;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .ledgerFeed {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .ledgerRow {
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+        font-size: 12.5px;
+        padding: 4px 0;
+        border-bottom: 1px dashed var(--line);
+      }
+      .ledgerRow:last-child {
+        border-bottom: none;
+      }
+
+      .ledgerTime {
+        font-family: var(--mono);
+        font-weight: 600;
+        color: var(--muted);
+        min-width: 44px;
+      }
+      .ledgerText {
+        color: var(--ink);
+        flex: 1;
+      }
+      .ledgerText b {
+        color: var(--accent-ink);
+      }
+
+      /* Invariant FF8 Synthetic Banner */
+      .protoBanner {
+        text-align: center;
+        font-size: 11px;
+        color: var(--muted);
+        padding: 16px 20px;
+        border-top: 1px solid var(--line);
+        margin-top: 10px;
+        background: var(--surface);
+        border-radius: var(--r2);
+      }
+
+      /* ─── Modals / Drawers ───────────────────────────── */
+      .modalOverlay {
+        position: fixed;
+        inset: 0;
+        background: var(--scrim);
+        backdrop-filter: blur(2px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        padding: 16px;
+      }
+      .modalOverlay.active {
+        display: flex;
+      }
+
+      .modalDialog {
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.45);
+        max-width: 520px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .modalHeader {
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        padding: 14px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .modalTitle {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .modalCloseBtn {
+        background: transparent;
+        border: none;
+        font-size: 18px;
+        color: var(--muted);
+        cursor: pointer;
+        padding: 2px 6px;
+      }
+
+      .modalBody {
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+
+      .formGroup {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .formLabel {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--ink-soft);
+      }
+      .formHint {
+        font-size: 11.5px;
+        color: var(--muted);
+      }
+
+      .presetChipsGrid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .presetChip {
+        padding: 5px 10px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        color: var(--ink);
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.12s ease;
+      }
+      .presetChip:hover {
+        background: var(--surface-3);
+      }
+      .presetChip.selected {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
+
+      .inputStyled {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 8px 12px;
+        font-size: 13px;
+        color: var(--ink);
+        outline: none;
+      }
+      .inputStyled:focus {
+        border-color: var(--accent);
+        outline: 2px solid var(--accent);
+        background: var(--surface);
+      }
+
+      .radioRow {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .radioOption {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--ink);
+        cursor: pointer;
+      }
+
+      .modalFooter {
+        background: var(--surface-2);
+        border-top: 1px solid var(--line);
+        padding: 12px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      /* Toast Notification */
+      .toastContainer {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 99;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        pointer-events: none;
+      }
+
+      .toastMsg {
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-left: 4px solid var(--good);
+        border-radius: var(--r2);
+        padding: 10px 16px;
+        font-size: 13px;
+        color: var(--ink);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        animation: toastIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      @keyframes toastIn {
+        from {
+          transform: translateY(12px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      /* ─── Responsive Breakpoints ─────────────────────── */
+      @media (max-width: 1080px) {
+        .breakdownStatsGrid {
+          grid-template-columns: repeat(4, 1fr);
+        }
+        .pipelineGrid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+        .rail {
+          display: none;
+        }
+        .masterHeader {
+          padding: 8px 16px;
+        }
+        .topBannerWrap,
+        .contentBody,
+        .tabNavWrap {
+          padding-left: 16px;
+          padding-right: 16px;
+        }
+        .censusStepperGrid {
+          grid-template-columns: 1fr;
+        }
+        .breakdownStatsGrid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- ─── 1. Sovereign Navigation Rail ──────────────────────────── -->
+      <aside class="rail" id="sideRail" aria-label="Sovereign Command Rail">
+        <div class="brand">
+          <a class="brandTitle" href="#">
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="12" height="12" rx="2" />
+              <path d="M8 2v12M2 8h12" />
+            </svg>
+            <span>Ward Flow</span>
+            <span class="brandPill">EMHS</span>
+          </a>
+          <button
+            type="button"
+            class="railToggle"
+            id="railCollapseBtn"
+            onclick="toggleRail()"
+            title="Toggle Navigation Rail"
+          >
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M10 3L5 8l5 5" />
+            </svg>
+          </button>
+        </div>
+
+        <nav class="railNav">
+          <span class="railSectionLabel">Clinical Operations</span>
+          <a class="navItem" href="#">
+            <span class="navIcon">
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="2" y="2" width="5" height="5" rx="1" />
+                <rect x="9" y="2" width="5" height="5" rx="1" />
+                <rect x="2" y="9" width="5" height="5" rx="1" />
+                <rect x="9" y="9" width="5" height="5" rx="1" />
+              </svg>
+            </span>
+            <span>Command Console</span>
+          </a>
+          <a class="navItem" href="#">
+            <span class="navIcon">
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M2 5h12M2 11h12M5 2l-3 3 3 3M11 8l3 3-3 3" />
+              </svg>
+            </span>
+            <span>Movements Trajectory</span>
+          </a>
+          <a class="navItem" href="#">
+            <span class="navIcon">
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M2 3h12v10H2zM6 3v10M2 8h4" />
+              </svg>
+            </span>
+            <span>Capacity Horizon</span>
+          </a>
+          <a class="navItem active" href="#">
+            <span class="navIcon">
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M3 2h10v12H3zM6 5h4M6 8h4M6 11h2" />
+              </svg>
+            </span>
+            <span>Ward 2K (RPH Secure)</span>
+          </a>
+        </nav>
+      </aside>
+
+      <!-- ─── 2. Main Workspace ────────────────────────────────────── -->
+      <div class="workspace">
+        <!-- Master Search & Chrome -->
+        <header class="masterHeader" role="banner">
+          <div class="hdrSearch">
+            <div class="searchBox">
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="7" cy="7" r="4.5" />
+                <path d="M10.5 10.5L14 14" />
+              </svg>
+              <input type="text" placeholder="Search patients, beds, legal forms..." aria-label="Global Search" />
+              <span class="kbdChip">/</span>
+            </div>
+          </div>
+
+          <div class="hdrTools">
+            <button type="button" class="hdrBtn" onclick="showToast('Activity feed is synchronized.')">
+              <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M1.5 8.5h3l2-5 3 9 2-4h3" />
+              </svg>
+              <span>Activity</span>
+            </button>
+            <button type="button" class="hdrBtn" onclick="showToast('Zero unacknowledged tasks.')">
+              <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M2.5 4.5l1.5 1.5 3-3M2.5 9.5l1.5 1.5 3-3M9 4h5M9 9h5M9 13h3" />
+              </svg>
+              <span>Tasks</span>
+            </button>
+            <button type="button" class="hdrBtn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Theme">
+              <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="8" cy="8" r="3.5" />
+                <path d="M8 1v2M8 13v2M1 8h2M13 8h2" />
+              </svg>
+              <span id="themeToggleText">Theme</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- ─── 3. Ward Identity Banner ──────────────────────────────── -->
+        <section class="topBannerWrap" aria-label="Ward Identity and Shift Status">
+          <div class="identityBar">
+            <div class="identityLeft">
+              <span class="unitTag">East Metro · Inpatient Unit</span>
+              <h1 class="unitName">Ward 2K · Adult Secure</h1>
+              <span class="unitMeta">Royal Perth Hospital (RPH) · 20 Staffed Beds · Day Shift (07:00–15:00 AWST)</span>
+            </div>
+            <div class="liveConfirmedStamp">
+              <span class="pulseDot"></span>
+              <span id="topLiveStamp">Confirmed 10:22 · NUM Ward 2K</span>
+            </div>
+          </div>
+
+          <!-- Action Toolbar -->
+          <div class="actionToolbar" role="toolbar" aria-label="Operational Actions">
+            <button type="button" class="btnActionPrimary" onclick="showToast('Navigating to Bed Board...')">
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="2" y="3" width="12" height="10" rx="1" />
+                <path d="M6 3v10M2 8h4" />
+              </svg>
+              <span>Open Bed Board (20 Beds)</span>
+            </button>
+
+            <button
+              type="button"
+              class="btnActionSec"
+              onclick="document.getElementById('census-command-card').scrollIntoView({ behavior: 'smooth' })"
+            >
+              <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 8l3 3 7-7" />
+              </svg>
+              <span>Confirm Morning Census</span>
+            </button>
+
+            <button type="button" class="btnActionSec" onclick="openModal('modalFlagRelease')">
+              <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 3v10M3 8h10" />
+              </svg>
+              <span>Flag Bed Coming Free</span>
+            </button>
+
+            <button type="button" class="btnActionSec" onclick="openModal('modalRecordLeave')">
+              <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M3 2h10v12H3zM6 5h4M6 8h4" />
+              </svg>
+              <span>Record Bed on Leave (Form 2A/2B)</span>
+            </button>
+
+            <button type="button" class="btnActionSec" onclick="showToast('Generating Shift Handover PDF...')">
+              <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M4 2h8v4H4zM3 6h10a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1V7a1 1 0 011-1zM4 11h8v3H4z" />
+              </svg>
+              <span>Print Handover</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- ─── 4. Operational Tab Navigation Bar ────────────────────── -->
+        <div class="tabNavWrap">
+          <ul class="tabNavList" role="tablist">
+            <li>
+              <button
+                type="button"
+                class="tabBtn"
+                role="tab"
+                onclick="showToast('Switched to Worth Your Attention tab.')"
+              >
+                <span>Worth Your Attention</span>
+                <span class="tabCountBadge">5</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="tabBtn" role="tab" onclick="showToast('Switched to Coming In tab.')">
+                <span>Coming In</span>
+                <span class="tabCountBadge">3</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="tabBtn" role="tab" onclick="showToast('Switched to On the Way Out tab.')">
+                <span>On the Way Out</span>
+                <span class="tabCountBadge">4</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="tabBtn" role="tab" onclick="showToast('Switched to Bed Board tab.')">
+                <span>Bed Board</span>
+                <span class="tabCountBadge">20</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="tabBtn active" role="tab" aria-selected="true">
+                <span>Decisions &amp; Census</span>
+                <span
+                  class="tabCountBadge"
+                  id="tabDecisionsBadge"
+                  style="color: var(--good); background: var(--good-soft)"
+                  >2/2 Confirmed</span
+                >
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <!-- ─── 5. Decisions Workspace Content ───────────────────────── -->
+        <main class="contentBody">
+          <!-- ═════ SECTION 1: UNIFIED MORNING CENSUS & CAPACITY COMMAND CARD ═════ -->
+          <section
+            class="censusCommandCard"
+            id="census-command-card"
+            aria-label="Statutory Census & Live Capacity Return"
+          >
+            <div class="commandHeader">
+              <div class="commandTitleGroup">
+                <h2 class="commandMainTitle">
+                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 8l3 3 7-7" />
+                  </svg>
+                  <span>Statutory Morning Census &amp; Capacity Affirmation</span>
+                </h2>
+                <span class="commandSubTitle"
+                  >Mandated under WA Mental Health Act 2014 &amp; Statewide Bed Bureau Operations</span
+                >
+              </div>
+              <span class="returnStatusChip confirmed" id="censusVerificationStatus">
+                <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path d="M3 8l3 3 7-7" />
+                </svg>
+                <span id="censusStatusText">Both figures verified today</span>
+              </span>
+            </div>
+
+            <!-- Fast Affirmation Master Banner -->
+            <div class="affirmationBanner">
+              <div class="affirmationLeft">
+                <div class="affirmationIcon">
+                  <svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M3 8l3 3 7-7" />
+                  </svg>
+                </div>
+                <div class="affirmationText">
+                  <b>Routine Census Affirmation:</b> If physical vacancy and allocatable beds match ward reality,
+                  confirm both in one tap.
+                </div>
+              </div>
+              <button type="button" class="btnMasterAffirm" id="btnMasterAffirm" onclick="confirmMasterCensus()">
+                <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 8l3 3 7-7" />
+                </svg>
+                <span id="masterAffirmLabel">Confirm both bed counts — nothing has changed</span>
+              </button>
+            </div>
+
+            <!-- Dual Stepper Grid (Empty vs Allocatable) -->
+            <div class="censusStepperGrid">
+              <!-- Q1: Physically Empty Beds -->
+              <div class="censusBox">
+                <div class="censusBoxHead">
+                  <div>
+                    <h3 class="censusBoxLabel">1. Beds empty right now</h3>
+                    <p class="censusBoxDesc">
+                      Physically empty beds on Ward 2K, verified ready for immediate patient placement.
+                    </p>
+                  </div>
+                  <span class="returnStatusChip confirmed" id="chipEmptyStatus">Verified as at 11:02</span>
+                </div>
+
+                <div class="censusValueRow">
+                  <div class="stepperUnit">
+                    <button type="button" class="stepperBtn" onclick="adjustEmpty(-1)" title="Decrease empty count">
+                      -
+                    </button>
+                    <span class="stepperDisplay" id="valEmptyDisplay">2</span>
+                    <button type="button" class="stepperBtn" onclick="adjustEmpty(1)" title="Increase empty count">
+                      +
+                    </button>
+                  </div>
+                  <button type="button" class="btnInlineConfirm" onclick="confirmEmptySingle()">
+                    Confirm 2 empty beds
+                  </button>
+                </div>
+
+                <div class="censusBoxFooter">
+                  <span>Source: Automatic PAS Feed · Verified as at 11:02</span>
+                  <span style="font-weight: 600; color: var(--good)">Verified clean</span>
+                </div>
+              </div>
+
+              <!-- Q2: Allocatable Capacity -->
+              <div class="censusBox">
+                <div class="censusBoxHead">
+                  <div>
+                    <h3 class="censusBoxLabel">2. Of those, how many can you actually allocate</h3>
+                    <p class="censusBoxDesc">
+                      Available for Bed Bureau crisis placement after factoring rostered nursing &amp; 1:1 specials.
+                    </p>
+                  </div>
+                  <span class="returnStatusChip confirmed" id="chipAllocStatus">Confirmed 10:22 · NUM Ward 2K</span>
+                </div>
+
+                <div class="censusValueRow">
+                  <div class="stepperUnit">
+                    <button
+                      type="button"
+                      class="stepperBtn"
+                      onclick="adjustAlloc(-1)"
+                      title="Decrease allocatable count"
+                    >
+                      -
+                    </button>
+                    <span class="stepperDisplay" id="valAllocDisplay">1</span>
+                    <button
+                      type="button"
+                      class="stepperBtn"
+                      onclick="adjustAlloc(1)"
+                      title="Increase allocatable count"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <button type="button" class="btnInlineConfirm" onclick="confirmAllocSingle()">
+                    Confirm 1 allocatable bed
+                  </button>
+                </div>
+
+                <div class="censusBoxFooter">
+                  <span>Writes to Ward 2K only — never any other ward</span>
+                  <span style="font-weight: 600; color: var(--accent-ink)">1 Allocated · 1 Specialling Reserved</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Multi-Segment Capacity Track & Telemetry Pills -->
+            <div class="capacitySection">
+              <div class="capacityTrackTitleRow">
+                <span class="capacityTrackLabel">Live Capacity Breakdown · 20 Staffed Beds</span>
+                <span style="font-size: 11.5px; color: var(--muted); font-family: var(--mono)"
+                  >18 Occupied (90%) · 1 Ready · 1 Held · 0 Blocked</span
+                >
+              </div>
+
+              <!-- Segmented Clinical Track -->
+              <div class="capacityTrack" title="Proportional Bed Distribution">
+                <div class="capSeg ready" style="width: 5%" title="Ready: 1 Bed (5%)"></div>
+                <div class="capSeg held" style="width: 5%" title="Held: 1 Bed (5%)"></div>
+                <div class="capSeg blocked" style="width: 0%" title="Blocked: 0 Beds (0%)"></div>
+                <div class="capSeg occupied" style="width: 90%" title="Occupied: 18 Beds (90%)"></div>
+              </div>
+
+              <!-- 8 Stat Metric Boxes -->
+              <div class="breakdownStatsGrid">
+                <div class="statBox">
+                  <span class="statBoxLabel">Ready</span>
+                  <span class="statBoxVal" id="statReadyVal" style="color: var(--good)">1</span>
+                </div>
+                <div class="statBox">
+                  <span class="statBoxLabel">Held</span>
+                  <span class="statBoxVal" id="statHeldVal" style="color: var(--accent-ink)">1</span>
+                </div>
+                <div class="statBox">
+                  <span class="statBoxLabel">Blocked</span>
+                  <span class="statBoxVal" id="statBlockedVal">0</span>
+                </div>
+                <div class="statBox">
+                  <span class="statBoxLabel">Occupied</span>
+                  <span class="statBoxVal" id="statOccupiedVal">18</span>
+                </div>
+                <div class="statBox">
+                  <span class="statBoxLabel">Confirmed</span>
+                  <span class="statBoxVal" id="statConfirmedVal" style="color: var(--accent-ink)">1</span>
+                </div>
+                <div class="statBox">
+                  <span class="statBoxLabel">Expected</span>
+                  <span class="statBoxVal" id="statExpectedVal" style="color: var(--warn)">1</span>
+                </div>
+                <div class="statBox">
+                  <span class="statBoxLabel">Discharges Held</span>
+                  <span class="statBoxVal" id="statHeldUpVal">0</span>
+                </div>
+                <div class="statBox">
+                  <span class="statBoxLabel">On Leave</span>
+                  <span class="statBoxVal" id="statLeaveVal" style="color: var(--gilt)">1</span>
+                </div>
+              </div>
+
+              <!-- Pending Cleaning Contextual Notice -->
+              <div class="pendingCleanBanner">
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="var(--warn)" stroke-width="2">
+                  <circle cx="8" cy="8" r="6" />
+                  <path d="M8 5v3.5l2 1" />
+                </svg>
+                <span>
+                  <b>1 of the 2 ready beds</b> at Ward 2K is currently being made ready (terminal disinfection). The bed
+                  remains counted and offered to the Bed Bureau, but the ward cannot admit a patient into it until
+                  inspection completes.
+                </span>
+              </div>
+
+              <details class="clinicalDisclosure">
+                <summary>What these bed figures mean</summary>
+                <p>
+                  Ready (1), Held (1), Blocked (0) and Occupied (18) total 20 staffed beds. Held means physically empty
+                  but reserved for an accepted transfer; it is separate from a bed pulled for a patient. Confirmed (1),
+                  Expected (1), Discharges Held Up (0), and On Leave (1) are flow counts and are not added to that
+                  total.
+                </p>
+              </details>
+            </div>
+          </section>
+
+          <!-- ═════ SECTION 2: ADMISSIONS & INTAKE CONSTRAINTS GATE ═════ -->
+          <section class="constraintsCard" aria-label="Intake Barriers & Clinical Constraints">
+            <div class="constraintsHead">
+              <div>
+                <h3 class="constraintsTitle">
+                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <circle cx="8" cy="8" r="7" />
+                    <path d="M8 4v5M8 12h.01" />
+                  </svg>
+                  <span>Anything limiting who can come in right now?</span>
+                </h3>
+                <span style="font-size: 12px; color: var(--muted)"
+                  >Select any acute operational barriers or room constraints currently preventing intake.</span
+                >
+              </div>
+              <span class="returnStatusChip" id="constraintsChipStatus">No active barriers</span>
+            </div>
+
+            <div class="constraintsPillsGrid">
+              <button
+                type="button"
+                class="constraintChip"
+                id="chkStaffing"
+                onclick="toggleConstraint(this, 'Staffing deficit')"
+              >
+                Staffing shortage
+              </button>
+              <button
+                type="button"
+                class="constraintChip"
+                id="chkInfection"
+                onclick="toggleConstraint(this, 'Infection isolation')"
+              >
+                Infection control
+              </button>
+              <button
+                type="button"
+                class="constraintChip"
+                id="chkBayClosed"
+                onclick="toggleConstraint(this, 'Bay 2 closed')"
+              >
+                Bay or room closed
+              </button>
+              <button
+                type="button"
+                class="constraintChip"
+                id="chkHighAcuity"
+                onclick="toggleConstraint(this, 'High acuity ceiling')"
+              >
+                High acuity on the ward
+              </button>
+              <button
+                type="button"
+                class="constraintChip"
+                id="chkCleanWait"
+                onclick="toggleConstraint(this, 'Bed turnaround')"
+              >
+                Waiting for a bed to be cleaned
+              </button>
+              <button
+                type="button"
+                class="constraintChip"
+                id="chkOtherCall"
+                onclick="toggleConstraint(this, 'Direct telephone coordination required')"
+              >
+                Other — call the ward
+              </button>
+            </div>
+
+            <div class="constraintsFooter">
+              <span
+                >Choose none if nothing is limiting intake right now. Updates publish instantly to Statewide Bed
+                Bureau.</span
+              >
+              <button type="button" class="btnInlineConfirm" onclick="showToast('Intake barrier answer saved.')">
+                Save answer
+              </button>
+            </div>
+          </section>
+
+          <!-- ═════ SECTION 3: BED TURNOVER PIPELINE (3-STAGE FLOW) ═════ -->
+          <section class="pipelineSection" aria-label="Bed Turnover & Release Pipeline">
+            <div class="pipelineHead">
+              <h2 class="pipelineTitle">
+                <svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M2 4h12M2 8h12M2 12h12" />
+                </svg>
+                <span>Bed Turnover &amp; Release Pipeline</span>
+              </h2>
+              <button type="button" class="btnActionPrimary" onclick="openModal('modalFlagRelease')">
+                <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M8 2v12M2 8h12" />
+                </svg>
+                <span>Flag Bed Coming Free</span>
+              </button>
+            </div>
+
+            <div class="pipelineGrid">
+              <!-- Stage 1: Expected Releases -->
+              <div class="pipelineColumn">
+                <div class="pipelineColHeader">
+                  <span class="pipelineColTitle">
+                    <span
+                      style="
+                        width: 8px;
+                        height: 8px;
+                        border-radius: 50%;
+                        background: var(--warn);
+                        display: inline-block;
+                      "
+                    ></span>
+                    <span>1. Expected to Free</span>
+                  </span>
+                  <span class="colCountPill" id="badgeExpectedCol">1</span>
+                </div>
+                <div class="pipelineColBody" id="colExpected">
+                  <div class="pipelineCard" id="cardRelease06">
+                    <div class="cardTopRow">
+                      <span class="cardBedName">Bed 06 · UM104102</span>
+                      <span class="cardTimeBadge">Expected 11:27</span>
+                    </div>
+                    <div class="cardWaitingRow">
+                      <span class="cardWaitingLabel">Waiting On:</span>
+                      <span class="cardWaitingVal">Consultant Ward Round Review</span>
+                    </div>
+                    <div class="cardFreshness">Last flagged 10:32 · NUM Ward 2K</div>
+                    <div class="cardActionsRow">
+                      <button type="button" class="btnCardAction primary" onclick="promoteToConfirmed('cardRelease06')">
+                        Confirm Discharge
+                      </button>
+                      <button type="button" class="btnCardAction" onclick="toggleCardBlocker('cardRelease06')">
+                        Flag Blocker
+                      </button>
+                      <button type="button" class="btnCardAction" onclick="dischargeDirect('cardRelease06', 'Bed 06')">
+                        Discharged
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Stage 2: Confirmed Discharges -->
+              <div class="pipelineColumn">
+                <div class="pipelineColHeader">
+                  <span class="pipelineColTitle">
+                    <span
+                      style="
+                        width: 8px;
+                        height: 8px;
+                        border-radius: 50%;
+                        background: var(--accent);
+                        display: inline-block;
+                      "
+                    ></span>
+                    <span>2. Confirmed Discharges</span>
+                  </span>
+                  <span class="colCountPill" id="badgeConfirmedCol">1</span>
+                </div>
+                <div class="pipelineColBody" id="colConfirmed">
+                  <div class="pipelineCard" id="cardRelease15">
+                    <div class="cardTopRow">
+                      <span class="cardBedName">Bed 15 · UM104215</span>
+                      <span class="cardTimeBadge">Confirmed 13:30</span>
+                    </div>
+                    <div class="cardWaitingRow">
+                      <span class="cardWaitingLabel">Discharge Destination:</span>
+                      <span class="cardWaitingVal">Home with Peel CMHT · Meds Dispensed</span>
+                    </div>
+                    <div class="cardFreshness">Signed by Dr S. Chen · Confirmed 10:15</div>
+                    <div class="cardActionsRow">
+                      <button
+                        type="button"
+                        class="btnCardAction primary"
+                        onclick="departAndClean('cardRelease15', 'Bed 15')"
+                      >
+                        Patient Departed → Clean
+                      </button>
+                      <button type="button" class="btnCardAction" onclick="revertToExpected('cardRelease15')">
+                        Back to Expected
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Stage 3: Beds Being Made Ready (Terminal Cleaning) -->
+              <div class="pipelineColumn">
+                <div class="pipelineColHeader">
+                  <span class="pipelineColTitle">
+                    <span
+                      style="
+                        width: 8px;
+                        height: 8px;
+                        border-radius: 50%;
+                        background: var(--good);
+                        display: inline-block;
+                      "
+                    ></span>
+                    <span>3. Cleaning &amp; Turnaround</span>
+                  </span>
+                  <span class="colCountPill" id="badgeReadyCol">1</span>
+                </div>
+                <div class="pipelineColBody" id="colCleaning">
+                  <div class="pipelineCard" id="cardCleaning17">
+                    <div class="cardTopRow">
+                      <span class="cardBedName">Bed 17</span>
+                      <span class="cardTimeBadge" style="background: var(--warn-soft); color: var(--warn)"
+                        >Terminal Clean</span
+                      >
+                    </div>
+                    <div class="cardWaitingRow">
+                      <span class="cardWaitingLabel">Environmental Services:</span>
+                      <span class="cardWaitingVal">Chemical disinfection &amp; fresh linen in progress</span>
+                    </div>
+                    <div class="cardFreshness">Departed 10:05 · Expected ready in 15m</div>
+                    <div class="cardActionsRow">
+                      <button
+                        type="button"
+                        class="btnCardAction success"
+                        onclick="finishBedCleaning('cardCleaning17', 'Bed 17')"
+                      >
+                        ✓ Bed Clean &amp; Ready for Intake
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ═════ SECTION 4: AUTHORIZED PATIENT LEAVE CARD ═════ -->
+          <section class="leaveSectionCard" aria-label="Authorized Patient Leave Tracker">
+            <div class="leaveHead">
+              <div>
+                <h3
+                  style="
+                    margin: 0;
+                    font-size: 15px;
+                    font-weight: 700;
+                    color: var(--ink);
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                  "
+                >
+                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M3 2h10v12H3zM6 5h4M6 8h4" />
+                  </svg>
+                  <span>Authorized Patient Leave · WA MHA 2014 Form 2A &amp; 2B</span>
+                </h3>
+                <span style="font-size: 12px; color: var(--muted)"
+                  >Ground leave and overnight authorized psychiatric leave monitoring.</span
+                >
+              </div>
+              <button type="button" class="btnActionSec" onclick="openModal('modalRecordLeave')">
+                <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M8 2v12M2 8h12" />
+                </svg>
+                <span>Record Bed on Leave</span>
+              </button>
+            </div>
+
+            <div class="leaveStatutoryAlert">
+              <b>Statutory Protection Invariant:</b> 1 bed currently on leave at Ward 2K. Under the WA Mental Health Act
+              2014, beds on leave remain reserved for the patient and are <b>NEVER</b> merged into available beds.
+              Records contain zero identifying medical details.
+            </div>
+
+            <div class="leaveCardsList" id="leaveCardsContainer">
+              <div class="leaveItemCard" id="leaveBed08">
+                <div class="leaveItemInfo">
+                  <span class="leaveItemTitle">Bed 08 · Form 2A Authorized Ground Leave</span>
+                  <span class="leaveItemMeta">
+                    Expected return <b>15:42 (Today)</b> · Curfew status: <b>Active (4h 15m remaining)</b>
+                  </span>
+                  <span style="font-size: 11px; color: var(--muted)">Confirmed 09:42 · NUM Ward 2K</span>
+                </div>
+                <button type="button" class="btnInlineConfirm" onclick="endLeave('leaveBed08', 'Bed 08')">
+                  Patient Returned / End Leave
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ═════ SECTION 5: SHIFT COORDINATOR AUDIT LEDGER ═════ -->
+          <section class="ledgerCard" aria-label="Shift Coordinator Activity Ledger">
+            <div class="ledgerHead">
+              <h3 class="ledgerTitle">
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <circle cx="8" cy="8" r="6" />
+                  <path d="M8 5v3.5l2.5 1.5" />
+                </svg>
+                <span>Shift Coordinator Timestamped Activity Ledger</span>
+              </h3>
+              <span class="returnStatusChip confirmed">Live Clinical Feed</span>
+            </div>
+
+            <div class="ledgerFeed" id="ledgerFeedList">
+              <div class="ledgerRow">
+                <span class="ledgerTime">10:32</span>
+                <span class="ledgerText"
+                  ><b>Allocatable vacancy confirmed at 1</b> (Bed 17) by NUM Ward 2K to Statewide Bed Bureau.</span
+                >
+              </div>
+              <div class="ledgerRow">
+                <span class="ledgerTime">10:22</span>
+                <span class="ledgerText"
+                  ><b>Bed 06 flagged as Expected Free</b> (11:27) pending consultant morning round review.</span
+                >
+              </div>
+              <div class="ledgerRow">
+                <span class="ledgerTime">10:05</span>
+                <span class="ledgerText"
+                  ><b>Bed 17 patient departed</b>. Environmental Services notified for terminal disinfection.</span
+                >
+              </div>
+              <div class="ledgerRow">
+                <span class="ledgerTime">09:42</span>
+                <span class="ledgerText"
+                  ><b>Bed 08 recorded on Form 2A Ground Leave</b> (Expected return 15:42) by NUM Ward 2K.</span
+                >
+              </div>
+              <div class="ledgerRow">
+                <span class="ledgerTime">08:30</span>
+                <span class="ledgerText"
+                  ><b>Morning consultant round commenced</b> by Dr K. Vance and Registrar Dr S. Chen.</span
+                >
+              </div>
+              <div class="ledgerRow">
+                <span class="ledgerTime">07:00</span>
+                <span class="ledgerText"
+                  ><b>Day Shift commenced</b>. 20 staffed beds verified active by Nurse Unit Manager.</span
+                >
+              </div>
+            </div>
+          </section>
+
+          <!-- Synthetic Prototype Disclaimer (Invariant FF8) -->
+          <footer class="protoBanner">
+            SYNTHETIC PROTOTYPE · Scoped to Royal Perth Hospital (RPH) Ward 2K Adult Secure · Bed decisions remain
+            human-confirmed · Not a medical device
+          </footer>
+        </main>
+      </div>
+    </div>
+
+    <!-- ─── 6. MODALS & DRAWERS ────────────────────────────────────── -->
+    <!-- Modal 1: Flag Bed Coming Free -->
+    <div class="modalOverlay" id="modalFlagRelease" role="dialog" aria-labelledby="modalFlagTitle" aria-modal="true">
+      <div class="modalDialog">
+        <div class="modalHeader">
+          <h3 class="modalTitle" id="modalFlagTitle">
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M8 2v12M2 8h12" />
+            </svg>
+            <span>Flag a Bed Coming Free · Ward 2K</span>
+          </h3>
+          <button type="button" class="modalCloseBtn" onclick="closeModal('modalFlagRelease')">×</button>
+        </div>
+        <div class="modalBody">
+          <div class="formGroup">
+            <label class="formLabel">Bed Identifier / Room</label>
+            <input type="text" id="flagBedIdInput" class="inputStyled" value="Bed 12" />
+          </div>
+
+          <div class="formGroup">
+            <label class="formLabel">Waiting on (Longest Step)</label>
+            <span class="formHint">Choose the single gating milestone that will take longest:</span>
+            <div class="presetChipsGrid">
+              <button type="button" class="presetChip selected" onclick="selectPresetChip(this)">Doctor round</button>
+              <button type="button" class="presetChip" onclick="selectPresetChip(this)">TTO Discharge Meds</button>
+              <button type="button" class="presetChip" onclick="selectPresetChip(this)">Ambulance / Transport</button>
+              <button type="button" class="presetChip" onclick="selectPresetChip(this)">Family / Carer Pickup</button>
+              <button type="button" class="presetChip" onclick="selectPresetChip(this)">NDIS Accommodation</button>
+              <button type="button" class="presetChip" onclick="selectPresetChip(this)">Step-down bed</button>
+            </div>
+          </div>
+
+          <div class="formGroup">
+            <label class="formLabel">Expected Free Time</label>
+            <div style="display: flex; gap: 8px">
+              <input type="time" id="flagTimeInput" class="inputStyled" value="14:00" style="flex: 1" />
+              <div class="presetChipsGrid">
+                <button type="button" class="presetChip" onclick="setTimeVal('flagTimeInput', '12:00')">12:00</button>
+                <button type="button" class="presetChip" onclick="setTimeVal('flagTimeInput', '14:00')">14:00</button>
+                <button type="button" class="presetChip" onclick="setTimeVal('flagTimeInput', '16:30')">16:30</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="formGroup">
+            <label class="formLabel">Target Day</label>
+            <div class="radioRow">
+              <label class="radioOption"><input type="radio" name="flagDay" value="today" checked /> Today</label>
+              <label class="radioOption"><input type="radio" name="flagDay" value="tomorrow" /> Tomorrow</label>
+            </div>
+          </div>
+
+          <div class="formGroup">
+            <label class="formLabel">Active Blocker (If any)</label>
+            <select id="flagBlockerSelect" class="inputStyled">
+              <option value="">No blocker</option>
+              <option value="Awaiting doctor review">Awaiting doctor review</option>
+              <option value="Awaiting medication">Awaiting medication</option>
+              <option value="Awaiting transport">Awaiting transport</option>
+              <option value="Awaiting NDIS approval">Awaiting NDIS approval</option>
+              <option value="Acuity increased">Acuity increased</option>
+            </select>
+          </div>
+        </div>
+        <div class="modalFooter">
+          <button type="button" class="btnActionSec" onclick="closeModal('modalFlagRelease')">Cancel</button>
+          <button type="button" class="btnActionPrimary" onclick="submitFlagRelease()">Flag Bed Coming Free</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal 2: Record Bed on Leave -->
+    <div class="modalOverlay" id="modalRecordLeave" role="dialog" aria-labelledby="modalLeaveTitle" aria-modal="true">
+      <div class="modalDialog">
+        <div class="modalHeader">
+          <h3 class="modalTitle" id="modalLeaveTitle">
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 2h10v12H3zM6 5h4M6 8h4" />
+            </svg>
+            <span>Record Bed on Leave · Form 2A / 2B</span>
+          </h3>
+          <button type="button" class="modalCloseBtn" onclick="closeModal('modalRecordLeave')">×</button>
+        </div>
+        <div class="modalBody">
+          <div class="formGroup">
+            <label class="formLabel">Bed Identifier</label>
+            <input type="text" id="leaveBedIdInput" class="inputStyled" value="Bed 03" />
+          </div>
+
+          <div class="formGroup">
+            <label class="formLabel">Statutory Leave Authority</label>
+            <select class="inputStyled" id="leaveTypeSelect">
+              <option value="Form 2A Ground Leave">WA MHA Form 2A (Escorted / Unescorted Ground Leave)</option>
+              <option value="Form 2B Day Leave">WA MHA Form 2B (Authorized Day Leave)</option>
+              <option value="Form 2B Overnight Leave">WA MHA Form 2B (Authorized Overnight Leave)</option>
+            </select>
+          </div>
+
+          <div class="formGroup">
+            <label class="formLabel">Expected Return Time (Curfew)</label>
+            <div style="display: flex; gap: 8px">
+              <input type="time" id="leaveTimeInput" class="inputStyled" value="16:00" style="flex: 1" />
+              <div class="presetChipsGrid">
+                <button type="button" class="presetChip" onclick="setTimeVal('leaveTimeInput', '15:00')">15:00</button>
+                <button type="button" class="presetChip" onclick="setTimeVal('leaveTimeInput', '17:00')">17:00</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="formGroup">
+            <label class="formLabel">Day of Return</label>
+            <div class="radioRow">
+              <label class="radioOption"><input type="radio" name="leaveDay" value="today" checked /> Today</label>
+              <label class="radioOption"><input type="radio" name="leaveDay" value="tomorrow" /> Tomorrow</label>
+            </div>
+          </div>
+        </div>
+        <div class="modalFooter">
+          <button type="button" class="btnActionSec" onclick="closeModal('modalRecordLeave')">Cancel</button>
+          <button type="button" class="btnActionPrimary" onclick="submitRecordLeave()">Record Leave Bed</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Toast Container -->
+    <div class="toastContainer" id="toastContainer"></div>
+
+    <!-- ─── 7. INTERACTIVE JAVASCRIPT ENGINE ─────────────────────── -->
+    <script>
+      // State Management
+      let emptyCount = 2;
+      let allocCount = 1;
+      let emptyConfirmed = true;
+      let allocConfirmed = true;
+
+      function toggleRail() {
+        const root = document.documentElement;
+        const current = root.getAttribute("data-rail");
+        const next = current === "closed" ? "open" : "closed";
+        root.setAttribute("data-rail", next);
+        try {
+          localStorage.setItem("ward-flow-rail", next);
+        } catch (e) {}
+      }
+
+      function toggleTheme() {
+        const root = document.documentElement;
+        const current = root.getAttribute("data-theme") || "dark";
+        const next = current === "dark" ? "light" : "dark";
+        root.setAttribute("data-theme", next);
+        document.getElementById("themeToggleText").innerText = next === "dark" ? "Light Theme" : "Dark Theme";
+        try {
+          localStorage.setItem("ward-flow-theme", next);
+        } catch (e) {}
+      }
+
+      function showToast(msg) {
+        const c = document.getElementById("toastContainer");
+        const t = document.createElement("div");
+        t.className = "toastMsg";
+        t.innerHTML = `
+          <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="var(--good)" stroke-width="2.2">
+            <path d="M3 8l3 3 7-7" />
+          </svg>
+          <span>${msg}</span>
+        `;
+        c.appendChild(t);
+        setTimeout(() => {
+          t.style.opacity = "0";
+          t.style.transform = "translateY(8px)";
+          t.style.transition = "all 0.25s ease";
+          setTimeout(() => t.remove(), 250);
+        }, 3200);
+      }
+
+      function appendLedger(text) {
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2, "0");
+        const mm = String(now.getMinutes()).padStart(2, "0");
+        const feed = document.getElementById("ledgerFeedList");
+        const row = document.createElement("div");
+        row.className = "ledgerRow";
+        row.innerHTML = `<span class="ledgerTime">${hh}:${mm}</span><span class="ledgerText">${text}</span>`;
+        feed.prepend(row);
+      }
+
+      // Stepper Adjusters
+      function adjustEmpty(delta) {
+        emptyCount = Math.max(0, emptyCount + delta);
+        document.getElementById("valEmptyDisplay").innerText = emptyCount;
+        emptyConfirmed = false;
+        document.getElementById("chipEmptyStatus").innerText = "Modified — unconfirmed";
+        document.getElementById("chipEmptyStatus").className = "returnStatusChip";
+        checkOverallStatus();
+      }
+
+      function adjustAlloc(delta) {
+        allocCount = Math.max(0, allocCount + delta);
+        document.getElementById("valAllocDisplay").innerText = allocCount;
+        document.getElementById("statHeldVal").innerText = allocCount;
+        allocConfirmed = false;
+        document.getElementById("chipAllocStatus").innerText = "Modified — unconfirmed";
+        document.getElementById("chipAllocStatus").className = "returnStatusChip";
+        checkOverallStatus();
+      }
+
+      function confirmEmptySingle() {
+        emptyConfirmed = true;
+        document.getElementById("chipEmptyStatus").innerText = `Confirmed ${emptyCount} just now`;
+        document.getElementById("chipEmptyStatus").className = "returnStatusChip confirmed";
+        showToast(`Empty bed count confirmed at ${emptyCount}.`);
+        appendLedger(`<b>Empty beds verified at ${emptyCount}</b> by NUM Ward 2K.`);
+        checkOverallStatus();
+      }
+
+      function confirmAllocSingle() {
+        allocConfirmed = true;
+        document.getElementById("chipAllocStatus").innerText = `Confirmed ${allocCount} just now`;
+        document.getElementById("chipAllocStatus").className = "returnStatusChip confirmed";
+        showToast(`Allocatable capacity confirmed at ${allocCount}.`);
+        appendLedger(`<b>Allocatable capacity updated to ${allocCount}</b> by NUM Ward 2K.`);
+        checkOverallStatus();
+      }
+
+      function confirmMasterCensus() {
+        emptyConfirmed = true;
+        allocConfirmed = true;
+        document.getElementById("chipEmptyStatus").innerText = `Confirmed ${emptyCount} just now`;
+        document.getElementById("chipEmptyStatus").className = "returnStatusChip confirmed";
+        document.getElementById("chipAllocStatus").innerText = `Confirmed ${allocCount} just now`;
+        document.getElementById("chipAllocStatus").className = "returnStatusChip confirmed";
+
+        const btn = document.getElementById("btnMasterAffirm");
+        btn.innerHTML = `<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l3 3 7-7" /></svg><span>Confirmed Both Counts — Verified</span>`;
+        btn.classList.add("done");
+
+        showToast("Both morning census bed counts confirmed for today.");
+        appendLedger(
+          `<b>Statutory morning census verified</b> (Empty: ${emptyCount}, Allocatable: ${allocCount}) by NUM Ward 2K.`,
+        );
+        checkOverallStatus();
+      }
+
+      function checkOverallStatus() {
+        const topChip = document.getElementById("censusVerificationStatus");
+        const statusText = document.getElementById("censusStatusText");
+        const badge = document.getElementById("tabDecisionsBadge");
+        if (emptyConfirmed && allocConfirmed) {
+          topChip.className = "returnStatusChip confirmed";
+          statusText.innerText = "Both figures verified today";
+          badge.innerText = "2/2 Confirmed";
+          badge.style.color = "var(--good)";
+          badge.style.background = "var(--good-soft)";
+        } else {
+          topChip.className = "returnStatusChip";
+          statusText.innerText = "Unsaved census adjustments";
+          badge.innerText = "Action required";
+          badge.style.color = "var(--warn)";
+          badge.style.background = "var(--warn-soft)";
+        }
+      }
+
+      // Intake Constraints Toggle
+      function toggleConstraint(el, label) {
+        el.classList.toggle("active");
+        const activeCount = document.querySelectorAll(".constraintChip.active").length;
+        const chip = document.getElementById("constraintsChipStatus");
+        if (activeCount > 0) {
+          chip.className = "returnStatusChip";
+          chip.style.color = "var(--warn)";
+          chip.style.background = "var(--warn-soft)";
+          chip.innerText = `${activeCount} active barrier${activeCount === 1 ? "" : "s"}`;
+        } else {
+          chip.className = "returnStatusChip confirmed";
+          chip.style.color = "";
+          chip.style.background = "";
+          chip.innerText = "No active barriers";
+        }
+        showToast(`Intake constraint updated: ${label}`);
+        appendLedger(`<b>Intake constraint updated:</b> ${label} toggled by NUM Ward 2K.`);
+      }
+
+      // Pipeline Transitions
+      function promoteToConfirmed(cardId) {
+        const card = document.getElementById(cardId);
+        if (!card) return;
+        document.getElementById("colConfirmed").appendChild(card);
+        card.querySelector(".cardTimeBadge").innerText = "Confirmed Discharge";
+        card.querySelector(".cardTimeBadge").style.background = "var(--accent-soft)";
+        card.querySelector(".cardTimeBadge").style.color = "var(--accent-ink)";
+        card.querySelector(".cardActionsRow").innerHTML = `
+          <button type="button" class="btnCardAction primary" onclick="departAndClean('${cardId}', 'Bed 06')">Patient Departed → Clean</button>
+          <button type="button" class="btnCardAction" onclick="revertToExpected('${cardId}')">Back to Expected</button>
+        `;
+        document.getElementById("badgeExpectedCol").innerText = "0";
+        document.getElementById("badgeConfirmedCol").innerText = "2";
+        showToast("Bed 06 promoted to Confirmed Discharge.");
+        appendLedger("<b>Bed 06 promoted to Confirmed Discharge</b> by NUM Ward 2K.");
+      }
+
+      function revertToExpected(cardId) {
+        const card = document.getElementById(cardId);
+        if (!card) return;
+        document.getElementById("colExpected").appendChild(card);
+        card.querySelector(".cardTimeBadge").innerText = "Expected 11:27";
+        card.querySelector(".cardTimeBadge").style.background = "";
+        card.querySelector(".cardTimeBadge").style.color = "";
+        card.querySelector(".cardActionsRow").innerHTML = `
+          <button type="button" class="btnCardAction primary" onclick="promoteToConfirmed('${cardId}')">Confirm Discharge</button>
+          <button type="button" class="btnCardAction" onclick="toggleCardBlocker('${cardId}')">Flag Blocker</button>
+          <button type="button" class="btnCardAction" onclick="dischargeDirect('${cardId}', 'Bed')">Discharged</button>
+        `;
+        document.getElementById("badgeExpectedCol").innerText = "1";
+        document.getElementById("badgeConfirmedCol").innerText = "1";
+        showToast("Discharge reverted back to Expected.");
+        appendLedger("<b>Bed discharge reverted to Expected</b> (awaiting further review).");
+      }
+
+      function toggleCardBlocker(cardId) {
+        const card = document.getElementById(cardId);
+        if (!card) return;
+        card.classList.toggle("blocked");
+        const existing = card.querySelector(".cardBlockerAlert");
+        if (existing) {
+          existing.remove();
+          showToast("Blocker cleared.");
+          appendLedger("<b>Bed 06 blocker removed.</b>");
+        } else {
+          const alert = document.createElement("div");
+          alert.className = "cardBlockerAlert";
+          alert.innerText = "Blocked: Awaiting TTO Discharge Prescription";
+          card.insertBefore(alert, card.querySelector(".cardFreshness"));
+          showToast("Blocker flagged on Bed 06.");
+          appendLedger("<b>Bed 06 flagged as Blocked</b> (Awaiting TTO Medication).");
+        }
+      }
+
+      function departAndClean(cardId, bedName) {
+        const card = document.getElementById(cardId);
+        if (card) card.remove();
+
+        const col = document.getElementById("colCleaning");
+        const newCard = document.createElement("div");
+        newCard.className = "pipelineCard";
+        newCard.id = "clean-" + Date.now();
+        newCard.innerHTML = `
+          <div class="cardTopRow">
+            <span class="cardBedName">${bedName}</span>
+            <span class="cardTimeBadge" style="background: var(--warn-soft); color: var(--warn);">Terminal Clean</span>
+          </div>
+          <div class="cardWaitingRow">
+            <span class="cardWaitingLabel">Environmental Services:</span>
+            <span class="cardWaitingVal">Disinfection and linen replacement requested</span>
+          </div>
+          <div class="cardFreshness">Departed just now · Est. 20m</div>
+          <div class="cardActionsRow">
+            <button type="button" class="btnCardAction success" onclick="finishBedCleaning('${newCard.id}', '${bedName}')">
+              ✓ Bed Clean &amp; Ready for Intake
+            </button>
+          </div>
+        `;
+        col.appendChild(newCard);
+
+        document.getElementById("badgeConfirmedCol").innerText = "0";
+        document.getElementById("badgeReadyCol").innerText = "2";
+        showToast(`${bedName} patient departed. Moved to Environmental Cleaning.`);
+        appendLedger(`<b>${bedName} patient departed</b>; terminal clean initiated by Environmental Services.`);
+      }
+
+      function finishBedCleaning(cardId, bedName) {
+        const card = document.getElementById(cardId);
+        if (card) card.remove();
+
+        // Increment ready beds
+        const readyValEl = document.getElementById("statReadyVal");
+        let currentReady = parseInt(readyValEl.innerText, 10);
+        readyValEl.innerText = currentReady + 1;
+
+        document.getElementById("badgeReadyCol").innerText = "0";
+        showToast(`${bedName} clean inspected and passed. Bed is now READY VACANT.`);
+        appendLedger(
+          `<b>${bedName} terminal clean completed &amp; inspected</b>. Available as Ready Vacancy to Bed Bureau.`,
+        );
+      }
+
+      // Leave Bed Management
+      function endLeave(itemId, bedName) {
+        const item = document.getElementById(itemId);
+        if (item) item.remove();
+        document.getElementById("statLeaveVal").innerText = "0";
+        showToast(`${bedName} patient returned. Authorized leave concluded.`);
+        appendLedger(
+          `<b>${bedName} patient returned from authorized leave</b>; bed restored to active occupied status.`,
+        );
+      }
+
+      // Modal Handlers
+      function openModal(id) {
+        const m = document.getElementById(id);
+        if (m) m.classList.add("active");
+      }
+      function closeModal(id) {
+        const m = document.getElementById(id);
+        if (m) m.classList.remove("active");
+      }
+
+      function selectPresetChip(btn) {
+        const parent = btn.parentElement;
+        parent.querySelectorAll(".presetChip").forEach((c) => c.classList.remove("selected"));
+        btn.classList.add("selected");
+      }
+
+      function setTimeVal(inputId, val) {
+        const inp = document.getElementById(inputId);
+        if (inp) inp.value = val;
+      }
+
+      function submitFlagRelease() {
+        const bedId = document.getElementById("flagBedIdInput").value || "Bed 12";
+        const time = document.getElementById("flagTimeInput").value || "14:00";
+        const waitingChip = document.querySelector("#modalFlagRelease .presetChip.selected");
+        const waitingOn = waitingChip ? waitingChip.innerText : "Doctor round";
+
+        const col = document.getElementById("colExpected");
+        const newCard = document.createElement("div");
+        newCard.className = "pipelineCard";
+        newCard.id = "release-" + Date.now();
+        newCard.innerHTML = `
+          <div class="cardTopRow">
+            <span class="cardBedName">${bedId}</span>
+            <span class="cardTimeBadge">Expected ${time}</span>
+          </div>
+          <div class="cardWaitingRow">
+            <span class="cardWaitingLabel">Waiting On:</span>
+            <span class="cardWaitingVal">${waitingOn}</span>
+          </div>
+          <div class="cardFreshness">Flagged just now · NUM Ward 2K</div>
+          <div class="cardActionsRow">
+            <button type="button" class="btnCardAction primary" onclick="promoteToConfirmed('${newCard.id}')">Confirm Discharge</button>
+            <button type="button" class="btnCardAction" onclick="toggleCardBlocker('${newCard.id}')">Flag Blocker</button>
+            <button type="button" class="btnCardAction" onclick="departAndClean('${newCard.id}', '${bedId}')">Discharged</button>
+          </div>
+        `;
+        col.prepend(newCard);
+
+        let c = parseInt(document.getElementById("badgeExpectedCol").innerText, 10);
+        document.getElementById("badgeExpectedCol").innerText = c + 1;
+        document.getElementById("statExpectedVal").innerText = c + 1;
+
+        closeModal("modalFlagRelease");
+        showToast(`${bedId} flagged coming free at ${time}.`);
+        appendLedger(`<b>${bedId} flagged coming free at ${time}</b> (Waiting on: ${waitingOn}) by NUM Ward 2K.`);
+      }
+
+      function submitRecordLeave() {
+        const bedId = document.getElementById("leaveBedIdInput").value || "Bed 03";
+        const leaveType = document.getElementById("leaveTypeSelect").value;
+        const time = document.getElementById("leaveTimeInput").value || "16:00";
+
+        const container = document.getElementById("leaveCardsContainer");
+        const newCard = document.createElement("div");
+        newCard.className = "leaveItemCard";
+        newCard.id = "leave-" + Date.now();
+        newCard.innerHTML = `
+          <div class="leaveItemInfo">
+            <span class="leaveItemTitle">${bedId} · ${leaveType}</span>
+            <span class="leaveItemMeta">
+              Expected return <b>${time} (Today)</b> · Curfew status: <b>Active</b>
+            </span>
+            <span style="font-size: 11px; color: var(--muted);">Recorded just now · NUM Ward 2K</span>
+          </div>
+          <button type="button" class="btnInlineConfirm" onclick="endLeave('${newCard.id}', '${bedId}')">
+            Patient Returned / End Leave
+          </button>
+        `;
+        container.prepend(newCard);
+
+        let l = parseInt(document.getElementById("statLeaveVal").innerText, 10);
+        document.getElementById("statLeaveVal").innerText = l + 1;
+
+        closeModal("modalRecordLeave");
+        showToast(`${bedId} recorded on ${leaveType}.`);
+        appendLedger(`<b>${bedId} recorded on ${leaveType}</b> (Curfew ${time}) by NUM Ward 2K.`);
+      }
+
+      // Keyboard Accessibility
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+          closeModal("modalFlagRelease");
+          closeModal("modalRecordLeave");
+        }
+      });
+    </script>
+  </body>
+</html>

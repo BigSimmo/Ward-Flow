@@ -1,0 +1,3641 @@
+<!doctype html>
+<html lang="en-AU" data-theme="dark" data-rail="open">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow · System Configuration &amp; Operational Threshold Settings (Perfected Third Edition)</title>
+    <script>
+      (function () {
+        document.documentElement.lang = "en-AU";
+        try {
+          var v = localStorage.getItem("ward-flow-appearance") || localStorage.getItem("ward-flow-theme");
+          if (v === "light" || v === "dark") {
+            document.documentElement.setAttribute("data-theme", v);
+          } else if (v === "auto" && window.matchMedia) {
+            document.documentElement.setAttribute(
+              "data-theme",
+              window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
+            );
+          }
+          if (localStorage.getItem("ward-flow-rail") === "closed") {
+            document.documentElement.setAttribute("data-rail", "closed");
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap"
+    />
+    <style>
+      /* ═══════════════════════════════════════════════════════════════════════
+         WARD FLOW SYSTEM SETTINGS — PERFECTED THIRD EDITION
+         Standard: Sovereign Clinical Console (Platinum Raised Cool).
+         200-Point Dual-Engine Precision Standard.
+         ═══════════════════════════════════════════════════════════════════════ */
+      :root {
+        color-scheme: light;
+        --display: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+        --body: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+        --mono: "Geist Mono", ui-monospace, Menlo, Consolas, monospace;
+
+        --t-0: 12px;
+        --t-1: 13px;
+        --t-2: 13.5px;
+        --t-3: 14px;
+        --t-4: 16px;
+        --t-5: 20px;
+        --t-6: 26px;
+
+        --r1: 10px;
+        --r1i: 9px;
+        --r2: 6px;
+        --pill: 9999px;
+
+        --railw: 240px;
+        --railw-closed: 72px;
+
+        /* Platinum Raised Cool — Light Palette */
+        --ground-hi: #ecf0f4;
+        --ground: #e6eaef;
+        --ground-2: #e1e6ec;
+
+        --surface: #fdfdfe;
+        --surface-2: #f4f7fa;
+        --surface-3: #e8ecf2;
+        --sunk: #eef2f6;
+
+        --ink: #161a20;
+        --ink-soft: #414953;
+        --muted: #5f6873;
+
+        --line: rgba(22, 30, 40, 0.11);
+        --line-strong: rgba(22, 30, 40, 0.26);
+
+        --accent: #2f4c66;
+        --accent-ink: #27405a;
+        --accent-press: #27405a;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+
+        --gilt: #7d612a;
+        --gilt-soft: #f1ebdf;
+
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --warn: #825d10;
+        --warn-soft: #f6eeda;
+
+        --danger: #b03b2e;
+        --danger-soft: #f8e6e2;
+        --danger-ink: #973121;
+
+        --svc-east: #2f4c66;
+        --svc-north: #685a94;
+        --svc-south: #356a70;
+        --svc-wachs: #8c5a3c;
+
+        --lift: 0 1px 1px rgba(30, 48, 66, 0.05), 0 14px 30px -22px rgba(30, 48, 66, 0.45);
+        --edge-shade: rgba(30, 48, 66, 0.16);
+        --scrim: rgba(30, 48, 66, 0.42);
+        --ward-tap: 48px;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          color-scheme: dark;
+          --ground-hi: #14181d;
+          --ground: #0f1216;
+          --ground-2: #0c0f12;
+
+          --surface: #171b21;
+          --surface-2: #1b2026;
+          --surface-3: #20262e;
+          --sunk: #13171c;
+
+          --ink: #e8ecf1;
+          --ink-soft: #b2bac5;
+          --muted: #8a929d;
+
+          --line: rgba(255, 255, 255, 0.09);
+          --line-strong: rgba(255, 255, 255, 0.21);
+
+          --accent: #a7bcd2;
+          --accent-ink: #bfd0e2;
+          --accent-press: #8ea6bf;
+          --accent-soft: #1f2a36;
+          --on-accent: #0f1216;
+          --stripe: #3a5a78;
+
+          --gilt: #d3b77e;
+          --gilt-soft: #2a251b;
+
+          --good: #6fd39b;
+          --good-soft: #15291f;
+          --warn: #e3bc5e;
+          --warn-soft: #2b2415;
+
+          --danger: #ff8b76;
+          --danger-soft: #33201b;
+          --danger-ink: #ffa08e;
+
+          --svc-east: #a7bcd2;
+          --svc-north: #b1a2d6;
+          --svc-south: #7fb2b8;
+          --svc-wachs: #d89a78;
+
+          --lift: 0 1px 1px rgba(0, 0, 0, 0.4), 0 16px 34px -22px rgba(0, 0, 0, 0.95);
+          --edge-shade: rgba(0, 0, 0, 0.55);
+          --scrim: rgba(0, 0, 0, 0.72);
+        }
+      }
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --ground-hi: #14181d;
+        --ground: #0f1216;
+        --ground-2: #0c0f12;
+
+        --surface: #171b21;
+        --surface-2: #1b2026;
+        --surface-3: #20262e;
+        --sunk: #13171c;
+
+        --ink: #e8ecf1;
+        --ink-soft: #b2bac5;
+        --muted: #8a929d;
+
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.21);
+
+        --accent: #a7bcd2;
+        --accent-ink: #bfd0e2;
+        --accent-press: #8ea6bf;
+        --accent-soft: #1f2a36;
+        --on-accent: #0f1216;
+        --stripe: #3a5a78;
+
+        --gilt: #d3b77e;
+        --gilt-soft: #2a251b;
+
+        --good: #6fd39b;
+        --good-soft: #15291f;
+        --warn: #e3bc5e;
+        --warn-soft: #2b2415;
+
+        --danger: #ff8b76;
+        --danger-soft: #33201b;
+        --danger-ink: #ffa08e;
+
+        --svc-east: #a7bcd2;
+        --svc-north: #b1a2d6;
+        --svc-south: #7fb2b8;
+        --svc-wachs: #d89a78;
+
+        --lift: 0 1px 1px rgba(0, 0, 0, 0.4), 0 16px 34px -22px rgba(0, 0, 0, 0.95);
+        --edge-shade: rgba(0, 0, 0, 0.55);
+        --scrim: rgba(0, 0, 0, 0.72);
+      }
+
+      /* Reset & Base */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: var(--body);
+        font-size: var(--t-2);
+        line-height: 1.45;
+        color: var(--ink);
+        background: var(--ground);
+        background-image: linear-gradient(180deg, var(--ground-hi) 0%, var(--ground) 55%, var(--ground-2) 100%);
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 100;
+        pointer-events: none;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
+        color: inherit;
+      }
+
+      .mono {
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Layout Shell */
+      .app {
+        display: grid;
+        grid-template-columns: var(--railw) minmax(0, 1fr);
+        min-height: 100vh;
+        transition: grid-template-columns 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      :root[data-rail="closed"] .app {
+        grid-template-columns: var(--railw-closed) minmax(0, 1fr);
+      }
+
+      /* ─── Sovereign Primary Navigation Rail ───────────────────────────────── */
+      .rail {
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        z-index: 30;
+        user-select: none;
+        scrollbar-width: thin;
+        scrollbar-color: var(--line) transparent;
+      }
+
+      .brand {
+        padding: 14px 16px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        border-bottom: 1px solid var(--line);
+        flex-shrink: 0;
+        min-height: 56px;
+      }
+      .brandTitle {
+        font-family: var(--display);
+        font-size: var(--t-3);
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        color: var(--ink);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+      .brandTitle b {
+        color: var(--accent);
+        font-weight: 700;
+      }
+      .brandBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 700;
+        padding: 1px 5px;
+        border-radius: var(--r2);
+        background: var(--gilt-soft);
+        color: var(--gilt);
+        border: 1px solid var(--line);
+        letter-spacing: 0.04em;
+      }
+
+      .railToggle {
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        cursor: pointer;
+        color: var(--muted);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          background 0.12s,
+          color 0.12s;
+        flex-shrink: 0;
+      }
+      .railToggle:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+
+      :root[data-rail="closed"] .brandTitle span,
+      :root[data-rail="closed"] .brandBadge {
+        display: none;
+      }
+
+      /* Shift & Coordinator Status Card in Rail */
+      .shiftCard {
+        padding: 10px 14px;
+        margin: 10px 8px 0;
+        border-radius: var(--r2);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+      .shiftDot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--good);
+        box-shadow: 0 0 0 2px var(--good-soft);
+        flex-shrink: 0;
+      }
+      .shiftMeta {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .shiftRole {
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .shiftDesk {
+        font-size: var(--t-0);
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      :root[data-rail="closed"] .shiftCard {
+        padding: 10px 0;
+        justify-content: center;
+        margin: 8px 4px 0;
+      }
+      :root[data-rail="closed"] .shiftMeta {
+        display: none;
+      }
+
+      /* Nav Sections & Items */
+      .railNav {
+        padding: 12px 8px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .railSectionLabel {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        padding: 10px 8px 4px;
+        font-weight: 600;
+      }
+      :root[data-rail="closed"] .railSectionLabel {
+        display: none;
+      }
+
+      .railLink {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: var(--r2);
+        color: var(--ink-soft);
+        text-decoration: none;
+        font-size: var(--t-1);
+        font-weight: 500;
+        transition:
+          background 0.1s,
+          color 0.1s;
+        position: relative;
+        white-space: nowrap;
+      }
+      .railLink:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .railLink.active {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
+      .railLink.active::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 6px;
+        bottom: 6px;
+        width: 3px;
+        background: var(--gilt);
+        border-radius: 0 2px 2px 0;
+      }
+      .railIcon {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        color: inherit;
+      }
+      :root[data-rail="closed"] .railLink span:not(.railIcon) {
+        display: none;
+      }
+      :root[data-rail="closed"] .railLink {
+        justify-content: center;
+        padding: 10px 0;
+      }
+
+      /* Rail Foot */
+      .railFoot {
+        padding: 12px 10px;
+        border-top: 1px solid var(--line);
+        background: var(--surface);
+        font-size: var(--t-0);
+        color: var(--muted);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      :root[data-rail="closed"] .railFoot {
+        display: none;
+      }
+
+      /* ─── Main Content Area ──────────────────────────────────────────────── */
+      .main {
+        padding: 0 28px 40px;
+        max-width: 1440px;
+        margin: 0 auto;
+        width: 100%;
+        min-width: 0;
+      }
+
+      /* Sovereign Page Header */
+      .pageHdr {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 0 16px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 20px;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .pageHdrLeft {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .pageTitle {
+        font-family: var(--display);
+        font-size: var(--t-6);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 0;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .surgePill {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: var(--pill);
+        background: var(--sunk);
+        color: var(--muted);
+        border: 1px solid var(--line);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .surgePill.active {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border-color: rgba(176, 59, 46, 0.35);
+      }
+      .surgePill.active::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--danger);
+        animation: pulse 1.5s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.4;
+          transform: scale(1.2);
+        }
+      }
+
+      .hdrActions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .hdrDivider {
+        width: 1px;
+        height: 26px;
+        background: var(--line);
+        margin: 0 4px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font-size: var(--t-1);
+        font-weight: 600;
+        padding: 7px 14px;
+        border-radius: var(--r2);
+        cursor: pointer;
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--ink);
+        transition: all 0.12s;
+        min-height: 34px;
+        white-space: nowrap;
+      }
+      .btn:hover {
+        background: var(--sunk);
+      }
+      .btnPrimary {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: transparent;
+      }
+      .btnPrimary:hover {
+        background: var(--accent-press);
+      }
+      .btnSurge {
+        background: var(--surface-2);
+        color: var(--danger-ink);
+        border-color: rgba(176, 59, 46, 0.3);
+      }
+      .btnSurge:hover {
+        background: var(--danger-soft);
+      }
+      .btnSurge.active {
+        background: var(--danger);
+        color: #ffffff;
+        border-color: transparent;
+      }
+
+      .iconBtn {
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--r2);
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--muted);
+        cursor: pointer;
+        position: relative;
+      }
+      .iconBtn:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .iconBadge {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 700;
+        background: var(--accent);
+        color: var(--on-accent);
+        border-radius: var(--pill);
+        padding: 0 4px;
+        line-height: 14px;
+        min-width: 14px;
+        text-align: center;
+      }
+
+      /* Clinical Operator Profile Card in Header */
+      .userProfileWrap {
+        position: relative;
+      }
+      .userProfile {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 10px 4px 6px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line);
+        background: var(--surface);
+        cursor: pointer;
+        transition: all 0.12s;
+        color: var(--ink);
+        min-height: 34px;
+      }
+      .userProfile:hover {
+        background: var(--sunk);
+        border-color: var(--line-strong);
+      }
+      .userProfile.open {
+        background: var(--sunk);
+        border-color: var(--accent);
+      }
+      .userProfile:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .userAvatar {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: var(--on-accent);
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        flex-shrink: 0;
+      }
+      .userStatusDot {
+        position: absolute;
+        bottom: -1px;
+        right: -1px;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--good);
+        border: 1.5px solid var(--surface);
+      }
+      .userInfo {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+        text-align: left;
+      }
+      .userNameRow {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .userName {
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .userRoleBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 1px 5px;
+        border-radius: var(--pill);
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+      }
+      .userRoleDesc {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+      .userChevron {
+        color: var(--muted);
+        transition: transform 0.15s;
+        margin-left: 2px;
+      }
+      .userProfile.open .userChevron {
+        transform: rotate(180deg);
+      }
+
+      /* Profile Popover */
+      .profilePopover {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        width: 320px;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        padding: 16px;
+        z-index: 90;
+        display: none;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .profilePopover.open {
+        display: flex;
+      }
+      .popoverHdr {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 12px;
+      }
+      .popoverAvatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: var(--on-accent);
+        font-family: var(--mono);
+        font-size: var(--t-3);
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .popoverIdentity {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        text-align: left;
+      }
+      .popoverName {
+        font-size: var(--t-2);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .popoverSub {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+      .popoverBody {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .popoverSection {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .popoverLabel {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+      .popoverRow {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: var(--t-1);
+        padding: 2px 0;
+      }
+      .popoverRow span:first-child {
+        color: var(--ink-soft);
+      }
+      .popoverRow span:last-child {
+        font-weight: 600;
+        color: var(--ink);
+        text-align: right;
+      }
+      .popoverActions {
+        display: flex;
+        gap: 8px;
+        margin-top: 4px;
+        padding-top: 10px;
+        border-top: 1px solid var(--line);
+      }
+
+      /* ─── 4-Card KPI Strip ───────────────────────────────────────────────── */
+      .kpiStrip {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 22px;
+      }
+      .kpiCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 14px 16px;
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        position: relative;
+        overflow: hidden;
+      }
+      .kpiLabel {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .kpiVal {
+        font-family: var(--mono);
+        font-size: var(--t-5);
+        font-weight: 700;
+        color: var(--ink);
+        letter-spacing: -0.02em;
+      }
+      .kpiSub {
+        font-size: var(--t-0);
+        color: var(--ink-soft);
+      }
+
+      /* ─── Split Console Layout ───────────────────────────────────────────── */
+      .consoleLayout {
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr);
+        gap: 20px;
+        align-items: start;
+        min-width: 0;
+      }
+
+      /* Left Domain Nav with Search Bar */
+      .domainNav {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 10px;
+        box-shadow: var(--lift);
+        position: sticky;
+        top: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .sidebarSearchWrap {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .searchInputWrap {
+        position: relative;
+        width: 100%;
+        display: flex;
+        align-items: center;
+      }
+      .searchIcon {
+        position: absolute;
+        left: 10px;
+        width: 14px;
+        height: 14px;
+        color: var(--muted);
+        pointer-events: none;
+      }
+      .searchInput {
+        width: 100%;
+        padding: 8px 30px 8px 30px;
+        font-size: var(--t-1);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        background: var(--surface-2);
+        color: var(--ink);
+        outline: none;
+        transition:
+          border 0.12s,
+          background 0.12s;
+      }
+      .searchInput:focus {
+        border-color: var(--accent);
+        background: var(--surface);
+      }
+      .searchKbd {
+        position: absolute;
+        right: 8px;
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 700;
+        padding: 1px 5px;
+        border-radius: 4px;
+        background: var(--sunk);
+        color: var(--muted);
+        border: 1px solid var(--line);
+        pointer-events: none;
+      }
+      .searchClear {
+        position: absolute;
+        right: 8px;
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        cursor: pointer;
+        padding: 3px;
+        display: none;
+      }
+      .searchClear.visible {
+        display: flex;
+      }
+
+      .domainNavDivider {
+        height: 1px;
+        background: var(--line);
+        margin: 2px 0;
+      }
+      .domainNavList {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .domainNavHdr {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        font-weight: 700;
+        padding: 6px 8px 4px;
+      }
+      .domainNavItem {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 10px;
+        border-radius: var(--r2);
+        color: var(--ink-soft);
+        text-decoration: none;
+        font-size: var(--t-1);
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        width: 100%;
+        text-align: left;
+        transition: all 0.12s;
+      }
+      .domainNavItem:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .domainNavItem.active {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
+      .domainLabel {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .domainBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        padding: 1px 6px;
+        border-radius: var(--pill);
+        background: var(--sunk);
+        color: var(--muted);
+      }
+      .domainNavItem.active .domainBadge {
+        background: var(--surface);
+        color: var(--accent-ink);
+      }
+
+      /* Right Settings Panels */
+      .panelsCol {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+      }
+
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        overflow: hidden;
+      }
+      .panelHdr {
+        padding: 14px 18px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .panelTitle {
+        font-family: var(--display);
+        font-size: var(--t-4);
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .panelBody {
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      /* Control Rows & Setting Cards */
+      .settingCard {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r1i);
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .settingRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .settingMeta {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .settingName {
+        font-size: var(--t-2);
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .settingDesc {
+        font-size: var(--t-0);
+        color: var(--ink-soft);
+        line-height: 1.4;
+      }
+
+      /* Steppers & Sliders */
+      .stepper {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        background: var(--surface);
+        overflow: hidden;
+      }
+      .stepBtn {
+        width: 32px;
+        height: 32px;
+        background: transparent;
+        border: none;
+        color: var(--ink);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.1s;
+      }
+      .stepBtn:hover {
+        background: var(--sunk);
+      }
+      .stepVal {
+        font-family: var(--mono);
+        font-size: var(--t-2);
+        font-weight: 700;
+        padding: 0 12px;
+        min-width: 90px;
+        text-align: center;
+        color: var(--ink);
+      }
+
+      .sliderWrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        max-width: 380px;
+      }
+      .rangeInput {
+        flex: 1;
+        accent-color: var(--accent);
+        cursor: pointer;
+      }
+
+      /* Toggle Switch */
+      .toggleSwitch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+        flex-shrink: 0;
+      }
+      .toggleSwitch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .toggleSlider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--sunk);
+        border: 1px solid var(--line-strong);
+        transition: 0.15s;
+        border-radius: 24px;
+      }
+      .toggleSlider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 2px;
+        bottom: 2px;
+        background-color: var(--surface);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        transition: 0.15s;
+        border-radius: 50%;
+      }
+      input:checked + .toggleSlider {
+        background-color: var(--accent);
+        border-color: var(--accent);
+      }
+      input:checked + .toggleSlider:before {
+        transform: translateX(20px);
+        background-color: #ffffff;
+      }
+
+      /* Data Tables */
+      .tableWrap {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: var(--r1i);
+      }
+      .dataTable {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--t-1);
+        text-align: left;
+      }
+      .dataTable th {
+        background: var(--surface-2);
+        padding: 10px 14px;
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        border-bottom: 1px solid var(--line);
+      }
+      .dataTable td {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink);
+      }
+      .dataTable tr:last-child td {
+        border-bottom: none;
+      }
+      .dataTable tr:hover td {
+        background: var(--sunk);
+      }
+
+      /* Badges & Tags */
+      .badge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: var(--r2);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+        border: 1px solid transparent;
+      }
+      .badgeGood {
+        background: var(--good-soft);
+        color: var(--good);
+        border-color: rgba(34, 117, 80, 0.2);
+      }
+      .badgeWarn {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border-color: rgba(130, 93, 16, 0.25);
+      }
+      .badgeDanger {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border-color: rgba(176, 59, 46, 0.25);
+      }
+      .badgeAccent {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-color: rgba(47, 76, 102, 0.2);
+      }
+      .badgeMuted {
+        background: var(--sunk);
+        color: var(--muted);
+        border-color: var(--line);
+      }
+
+      /* Smart Matcher Preview Card */
+      .matcherCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1i);
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .matcherHdr {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 8px;
+      }
+      .matcherCandidates {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      .candidateItem {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .candidateTop {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .candidateName {
+        font-weight: 600;
+        font-size: var(--t-1);
+        color: var(--ink);
+      }
+      .candidateScore {
+        font-family: var(--mono);
+        font-weight: 700;
+        font-size: var(--t-2);
+        color: var(--good);
+      }
+      .candidateReason {
+        font-size: var(--t-0);
+        color: var(--ink-soft);
+      }
+
+      /* Radar Warning Box */
+      .radarBox {
+        background: var(--warn-soft);
+        border: 1px solid rgba(130, 93, 16, 0.3);
+        border-radius: var(--r1i);
+        padding: 12px 16px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .radarIcon {
+        color: var(--warn);
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .radarContent {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .radarTitle {
+        font-size: var(--t-2);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .radarText {
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+      }
+
+      /* ─── Drawers & Modals ────────────────────────────────────────────────── */
+      .drawerBackdrop {
+        position: fixed;
+        inset: 0;
+        background: var(--scrim);
+        z-index: 50;
+        display: none;
+        backdrop-filter: blur(2px);
+      }
+      .drawerBackdrop.open {
+        display: block;
+      }
+
+      .drawer {
+        position: fixed;
+        top: 0;
+        right: -480px;
+        bottom: 0;
+        width: 480px;
+        max-width: 100vw;
+        background: var(--surface);
+        border-left: 1px solid var(--line);
+        box-shadow: -8px 0 32px rgba(0, 0, 0, 0.25);
+        z-index: 51;
+        transition: right 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex;
+        flex-direction: column;
+      }
+      .drawer.open {
+        right: 0;
+      }
+      .drawerHdr {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--surface-2);
+      }
+      .drawerTitle {
+        font-family: var(--display);
+        font-size: var(--t-4);
+        font-weight: 700;
+        margin: 0;
+      }
+      .drawerClose {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: var(--muted);
+        padding: 4px;
+        display: flex;
+      }
+      .drawerClose:hover {
+        color: var(--ink);
+      }
+      .drawerBody {
+        padding: 20px;
+        overflow-y: auto;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      /* Modal Dialog */
+      .modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.95);
+        width: 520px;
+        max-width: 90vw;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+        z-index: 60;
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        transition: transform 0.15s ease-out;
+      }
+      .modal.open {
+        display: flex;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      .modalHdr {
+        padding: 16px 20px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .modalTitle {
+        font-family: var(--display);
+        font-size: var(--t-4);
+        font-weight: 700;
+        margin: 0;
+        color: var(--ink);
+      }
+      .modalBody {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        color: var(--ink-soft);
+        font-size: var(--t-2);
+      }
+      .modalFoot {
+        padding: 14px 20px;
+        background: var(--surface-2);
+        border-top: 1px solid var(--line);
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      /* Live In-App Toast */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        padding: 12px 18px;
+        box-shadow: var(--lift);
+        z-index: 70;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: var(--t-1);
+        font-weight: 500;
+        color: var(--ink);
+        transform: translateY(100px);
+        opacity: 0;
+        transition:
+          transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+          opacity 0.2s;
+        max-width: 420px;
+      }
+      .toast.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      .toastIcon {
+        color: var(--good);
+        flex-shrink: 0;
+      }
+
+      /* ─── Invariant FF8 Synthetic Disclaimer Footer ───────────────────────── */
+      .protoFooter {
+        margin-top: 40px;
+        padding: 18px 24px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        text-align: center;
+        font-size: var(--t-0);
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      .protoFooter strong {
+        color: var(--ink-soft);
+      }
+
+      /* Responsive Adaptations */
+      @media (max-width: 1024px) {
+        .kpiStrip {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .consoleLayout {
+          grid-template-columns: minmax(0, 1fr);
+          min-width: 0;
+        }
+        .domainNav {
+          position: static;
+          min-width: 0;
+          max-width: 100%;
+        }
+        .sidebarSearchWrap {
+          min-width: 0;
+          max-width: 100%;
+        }
+        .domainNavList {
+          display: flex;
+          flex-direction: row;
+          overflow-x: auto;
+          scrollbar-width: none;
+          min-width: 0;
+          max-width: 100%;
+          -webkit-overflow-scrolling: touch;
+        }
+        .domainNavItem {
+          white-space: nowrap;
+          flex-shrink: 0;
+          width: auto;
+        }
+        .matcherCandidates {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .app {
+          grid-template-columns: 100%;
+          min-width: 0;
+          max-width: 100vw;
+        }
+        .rail {
+          display: none;
+        }
+        .main {
+          padding: 0 16px 30px;
+          min-width: 0;
+          max-width: 100%;
+        }
+        .kpiStrip {
+          grid-template-columns: 1fr;
+        }
+        .consoleLayout {
+          grid-template-columns: 100%;
+          min-width: 0;
+          max-width: 100%;
+        }
+        .pageHdr {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 14px;
+        }
+        .hdrActions {
+          width: 100%;
+          justify-content: flex-start;
+          flex-wrap: wrap;
+        }
+        .userProfileWrap {
+          width: 100%;
+        }
+        .userProfile {
+          width: 100%;
+          justify-content: space-between;
+          min-height: var(--ward-tap);
+        }
+        .profilePopover {
+          width: calc(100vw - 32px);
+          max-width: 360px;
+          right: 0;
+        }
+        .settingRow {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 12px;
+        }
+        .sliderWrap {
+          max-width: 100%;
+        }
+        .btn,
+        .iconBtn,
+        .stepBtn,
+        .toggleSlider,
+        .domainNavItem {
+          min-height: var(--ward-tap);
+        }
+        .iconBtn,
+        .stepBtn {
+          min-width: var(--ward-tap);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- ─── Sovereign Primary Navigation Rail ─────────────────────────────── -->
+      <aside class="rail" aria-label="Primary Navigation Rail">
+        <div class="brand">
+          <a href="command-third-edition.html" class="brandTitle">
+            <span class="brandBadge">WF</span>
+            <span>Ward<b>Flow</b></span>
+          </a>
+          <button
+            type="button"
+            class="railToggle"
+            id="railToggleBtn"
+            title="Toggle Navigation Rail"
+            aria-label="Toggle Navigation Rail"
+          >
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M2 3h12M2 8h12M2 13h12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="shiftCard">
+          <div class="shiftDot"></div>
+          <div class="shiftMeta">
+            <span class="shiftRole">State Bed Coordinator</span>
+            <span class="shiftDesk">Perth Central Desk · AWST</span>
+          </div>
+        </div>
+
+        <nav class="railNav" aria-label="Main Navigation">
+          <span class="railSectionLabel">Coordination</span>
+          <a href="command-third-edition.html" class="railLink">
+            <svg class="railIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            </svg>
+            <span>Command Console</span>
+          </a>
+          <a href="wards-third-edition.html" class="railLink">
+            <svg class="railIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+            <span>Wards Directory</span>
+          </a>
+          <a href="bed-board-third-edition.html" class="railLink">
+            <svg class="railIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9" />
+            </svg>
+            <span>Bed Board Matrix</span>
+          </a>
+          <a href="patient-search-third-edition.html" class="railLink">
+            <svg class="railIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+            <span>Patient Search</span>
+          </a>
+          <a href="referrals-third-edition.html" class="railLink">
+            <svg class="railIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+            <span>Referrals Queue</span>
+          </a>
+
+          <span class="railSectionLabel">Statewide Network</span>
+          <a href="emergency-department-third-edition.html" class="railLink">
+            <svg class="railIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
+            <span>Emergency Depts</span>
+          </a>
+          <a href="community-team-third-edition.html" class="railLink">
+            <svg class="railIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            <span>Community Teams</span>
+          </a>
+          <a href="transport-officer-third-edition.html" class="railLink">
+            <svg class="railIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="3" width="15" height="13" />
+              <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+              <circle cx="5.5" cy="18.5" r="2.5" />
+              <circle cx="18.5" cy="18.5" r="2.5" />
+            </svg>
+            <span>Custodial Transport</span>
+          </a>
+          <a href="delays-third-edition.html" class="railLink">
+            <svg class="railIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span>Delays &amp; Exceptions</span>
+          </a>
+
+          <span class="railSectionLabel">Governance &amp; Rules</span>
+          <a href="legal-forms-third-edition.html" class="railLink">
+            <svg class="railIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            <span>Legal Orders (MHA)</span>
+          </a>
+          <a href="handover-third-edition.html" class="railLink">
+            <svg class="railIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 2v14a2 2 0 0 0 2 2h14" />
+              <path d="M18 18V4a2 2 0 0 0-2-2H8" />
+            </svg>
+            <span>Clinical Handover</span>
+          </a>
+          <a href="statistics-third-edition.html" class="railLink">
+            <svg class="railIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10" />
+              <line x1="12" y1="20" x2="12" y2="4" />
+              <line x1="6" y1="20" x2="6" y2="14" />
+            </svg>
+            <span>Executive Stats</span>
+          </a>
+          <a href="governance-third-edition.html" class="railLink">
+            <svg class="railIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+            <span>Clinical Governance</span>
+          </a>
+          <a href="settings-third-edition.html" class="railLink active">
+            <svg class="railIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+              />
+            </svg>
+            <span>System Settings</span>
+          </a>
+        </nav>
+
+        <div class="railFoot">
+          <div>Reconciled: <strong>09:30 AWST</strong></div>
+          <div>Synthetic data · Prototype only</div>
+        </div>
+      </aside>
+
+      <!-- ─── Main Content Surface ─────────────────────────────────────────── -->
+      <main class="main" id="mainContent">
+        <!-- Sovereign Executive Page Header with Operator Profile -->
+        <header class="pageHdr">
+          <div class="pageHdrLeft">
+            <p class="eyebrow">
+              <span class="badge badgeAccent" style="font-size: var(--t-0)">WA Health</span>
+              <span>Statewide Bed Coordination</span>
+              <span>·</span>
+              <span>Perth Central Desk</span>
+              <span>·</span>
+              <span class="shiftIndicator"><span class="shiftDot"></span>Day Shift 08:00–16:30 AWST</span>
+            </p>
+            <div class="titleRow">
+              <h1 class="pageTitle">
+                <span>Settings &amp; Operational Levers</span>
+                <span class="surgePill" id="surgeStatusPill"><span class="surgeDot"></span>Standard Ops</span>
+              </h1>
+            </div>
+          </div>
+          <div class="hdrActions">
+            <button
+              type="button"
+              class="btn btnSurge"
+              id="surgeToggleBtn"
+              aria-pressed="false"
+              title="One-click declared statewide surge protocol"
+            >
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 1v14M1 8h14" />
+              </svg>
+              <span id="surgeBtnText">Declared Surge Protocol</span>
+            </button>
+            <button
+              type="button"
+              class="btn"
+              id="openResetModalBtn"
+              title="Reset operational levers to WA Health statutory baseline"
+            >
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2.5 8a5.5 5.5 0 1 1 1.6 3.9L2 14M2 9.5V14h4.5" />
+              </svg>
+              <span>Reset to baseline</span>
+            </button>
+            <button
+              type="button"
+              class="btn btnPrimary"
+              id="saveConfigBtn"
+              title="Save in-memory threshold adjustments"
+            >
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13.5 4.5l-7 7L3 8" />
+              </svg>
+              <span>Save Configuration</span>
+            </button>
+
+            <div class="hdrDivider" aria-hidden="true"></div>
+
+            <!-- Drawers Triggers -->
+            <button
+              type="button"
+              class="iconBtn"
+              id="openActivityBtn"
+              title="Activity Drawer"
+              aria-label="Activity Drawer"
+            >
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="8" cy="8" r="6" />
+                <polyline points="8 4 8 8 11 10" />
+              </svg>
+              <span class="iconBadge">3</span>
+            </button>
+            <button type="button" class="iconBtn" id="openTasksBtn" title="Tasks Drawer" aria-label="Tasks Drawer">
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 5h10M3 8h10M3 11h6" />
+              </svg>
+              <span class="iconBadge">2</span>
+            </button>
+            <button
+              type="button"
+              class="iconBtn"
+              id="openToolsBtn"
+              title="Tools &amp; Simulation"
+              aria-label="Tools Drawer"
+            >
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 2v3M11 2v3M2 8h12M4 14h8" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="iconBtn"
+              id="themeQuickToggleBtn"
+              title="Toggle Light/Dark Theme"
+              aria-label="Toggle Theme"
+            >
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path
+                  d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5L13 13M3 13l1.5-1.5M11.5 4.5L13 3M8 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"
+                />
+              </svg>
+            </button>
+
+            <div class="hdrDivider" aria-hidden="true"></div>
+
+            <!-- Clinical Operator Profile Component -->
+            <div class="userProfileWrap">
+              <button
+                type="button"
+                class="userProfile"
+                id="userProfileBtn"
+                aria-haspopup="dialog"
+                aria-expanded="false"
+                title="Clinical Operator Profile · Dr S. Chen"
+              >
+                <div class="userAvatar">
+                  <span class="userInitials">SC</span>
+                  <span class="userStatusDot" title="On Duty"></span>
+                </div>
+                <div class="userInfo">
+                  <div class="userNameRow">
+                    <span class="userName">Dr S. Chen</span>
+                    <span class="userRoleBadge">Consultant</span>
+                  </div>
+                  <span class="userRoleDesc">Duty Coordinator · Central Desk</span>
+                </div>
+                <svg
+                  class="userChevron"
+                  viewBox="0 0 16 16"
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M4 6l4 4 4-4" />
+                </svg>
+              </button>
+
+              <!-- Operator Profile Popover -->
+              <div class="profilePopover" id="profilePopover" role="dialog" aria-label="Operator Profile Details">
+                <div class="popoverHdr">
+                  <div class="popoverAvatar">SC</div>
+                  <div class="popoverIdentity">
+                    <span class="popoverName">Dr S. Chen (MBBS, FRANZCP)</span>
+                    <span class="popoverSub">Consultant Psychiatrist · State Bed Desk</span>
+                    <span class="badge badgeGood" style="align-self: flex-start; margin-top: 3px; font-size: var(--t-0)"
+                      >Active Session · On Duty</span
+                    >
+                  </div>
+                </div>
+                <div class="popoverBody">
+                  <div class="popoverSection">
+                    <span class="popoverLabel">CLINICAL DELEGATION</span>
+                    <div class="popoverRow">
+                      <span>Operational Scope:</span>
+                      <span>Statewide Bed Desk</span>
+                    </div>
+                    <div class="popoverRow">
+                      <span>Clinical Governance:</span>
+                      <span>SMHS &amp; WACHS Liaison</span>
+                    </div>
+                    <div class="popoverRow">
+                      <span>Statutory Forms:</span>
+                      <span class="mono">Forms 1A, 3A, 4A, 5A, 6A</span>
+                    </div>
+                    <div class="popoverRow">
+                      <span>AHPRA Number:</span>
+                      <span class="mono">MED0001892041</span>
+                    </div>
+                    <div class="popoverRow">
+                      <span>Shift Schedule:</span>
+                      <span class="mono">08:00–16:30 AWST</span>
+                    </div>
+                  </div>
+                  <div class="popoverActions">
+                    <button
+                      type="button"
+                      class="btn"
+                      style="flex: 1"
+                      onclick="showToast('Credentials verified against OCP register.')"
+                    >
+                      Verify OCP Authority
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btnPrimary"
+                      style="flex: 1"
+                      onclick="showToast('Profile switching not wired in this prototype.')"
+                    >
+                      Switch Operator
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- 4-Card Operational KPI Strip -->
+        <section class="kpiStrip" aria-label="Operational KPI Summary">
+          <div class="kpiCard">
+            <span class="kpiLabel">Statutory Framework</span>
+            <span class="kpiVal">WA MHA 2014</span>
+            <span class="kpiSub">8 Statutory Forms active in register</span>
+          </div>
+          <div class="kpiCard">
+            <span class="kpiLabel">ED Access Target</span>
+            <span class="kpiVal mono" id="kpiEdVal">24h Target</span>
+            <span class="kpiSub" id="kpiEdSub">State bed desk escalation at breach</span>
+          </div>
+          <div class="kpiCard">
+            <span class="kpiLabel">Regional &amp; Flight Hold</span>
+            <span class="kpiVal mono" id="kpiHoldVal">120m + 180m RFDS</span>
+            <span class="kpiSub">Transit-adjusted buffer enabled</span>
+          </div>
+          <div class="kpiCard">
+            <span class="kpiLabel">Surge &amp; Parallel Cap</span>
+            <span class="kpiVal mono" id="kpiCapVal">3 Units [Surge: 5]</span>
+            <span class="kpiSub" id="kpiCapSub">Max concurrent unit shortlists</span>
+          </div>
+        </section>
+
+        <!-- Split Console Layout -->
+        <div class="consoleLayout">
+          <!-- Left Domain Navigation Rail with Integrated Search -->
+          <nav class="domainNav" id="domainNav" aria-label="Settings Categories and Search">
+            <div class="sidebarSearchWrap">
+              <div class="searchInputWrap">
+                <svg class="searchIcon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="7" cy="7" r="5" />
+                  <path d="m11 11 3.5 3.5" />
+                </svg>
+                <input
+                  type="text"
+                  class="searchInput"
+                  id="settingsSearchInput"
+                  placeholder="Filter levers... (/)"
+                  autocomplete="off"
+                />
+                <span class="searchKbd">/</span>
+                <button type="button" class="searchClear" id="searchClearBtn" aria-label="Clear Search">
+                  <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 3l10 10M13 3L3 13" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="domainNavDivider"></div>
+
+            <div class="domainNavList">
+              <button type="button" class="domainNavItem active" data-target="all">
+                <span class="domainLabel">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="2" width="4" height="4" rx="1" />
+                    <rect x="10" y="2" width="4" height="4" rx="1" />
+                    <rect x="2" y="10" width="4" height="4" rx="1" />
+                    <rect x="10" y="10" width="4" height="4" rx="1" />
+                  </svg>
+                  <span>All Levers</span>
+                </span>
+                <span class="domainBadge" id="matchCountAll">28</span>
+              </button>
+              <button type="button" class="domainNavItem" data-target="domain-surge">
+                <span class="domainLabel">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8 1v14M1 8h14" />
+                  </svg>
+                  <span>Surge &amp; Levers</span>
+                </span>
+                <span class="domainBadge" id="matchCountSurge">5</span>
+              </button>
+              <button type="button" class="domainNavItem" data-target="domain-transit">
+                <span class="domainLabel">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="1" y="3" width="10" height="9" />
+                    <path d="m11 7 4 3v2h-4" />
+                  </svg>
+                  <span>Transit Buffers</span>
+                </span>
+                <span class="domainBadge" id="matchCountTransit">4</span>
+              </button>
+              <button type="button" class="domainNavItem" data-target="domain-smart">
+                <span class="domainLabel">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="8" cy="8" r="6" />
+                    <circle cx="8" cy="8" r="2" />
+                  </svg>
+                  <span>Smart Matcher</span>
+                </span>
+                <span class="domainBadge" id="matchCountSmart">4</span>
+              </button>
+              <button type="button" class="domainNavItem" data-target="domain-vulnerable">
+                <span class="domainLabel">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                  <span>Youth &amp; Egress</span>
+                </span>
+                <span class="domainBadge" id="matchCountVulnerable">3</span>
+              </button>
+              <button type="button" class="domainNavItem" data-target="domain-statutory">
+                <span class="domainLabel">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" />
+                  </svg>
+                  <span>Statutory Forms</span>
+                </span>
+                <span class="domainBadge" id="matchCountStatutory">5</span>
+              </button>
+              <button type="button" class="domainNavItem" data-target="domain-roles">
+                <span class="domainLabel">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="8" cy="5" r="3" />
+                    <path d="M2 14a6 6 0 0 1 12 0" />
+                  </svg>
+                  <span>Clinical Roles</span>
+                </span>
+                <span class="domainBadge" id="matchCountRoles">4</span>
+              </button>
+              <button type="button" class="domainNavItem" data-target="domain-display">
+                <span class="domainLabel">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="3" width="12" height="10" rx="2" />
+                    <path d="M8 13v2M5 15h6" />
+                  </svg>
+                  <span>Display &amp; Cache</span>
+                </span>
+                <span class="domainBadge" id="matchCountDisplay">3</span>
+              </button>
+            </div>
+          </nav>
+
+          <!-- Right Panels Column -->
+          <div class="panelsCol">
+            <!-- DOMAIN 1: Operational Levers & Declared Surge -->
+            <section class="panel" id="domain-surge" data-domain="domain-surge">
+              <div class="panelHdr">
+                <h2 class="panelTitle">
+                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8 1v14M1 8h14" />
+                  </svg>
+                  <span>Core Operational Levers &amp; Declared Surge Protocol</span>
+                </h2>
+                <span class="badge badgeAccent">Live System Governors</span>
+              </div>
+              <div class="panelBody">
+                <!-- Surge Protocol Master Banner -->
+                <div class="settingCard" style="border-color: rgba(176, 59, 46, 0.3); background: var(--surface)">
+                  <div class="settingRow">
+                    <div class="settingMeta">
+                      <span class="settingName" style="color: var(--danger-ink)"
+                        >Declared Statewide Surge Protocol Preset</span
+                      >
+                      <span class="settingDesc"
+                        >One-click activation during acute post-holiday bed shortages. Expands parallel enquiry cap to
+                        5, compresses ED escalation to 12h, and halves hold buffers to 60m to prevent bed sitting.</span
+                      >
+                    </div>
+                    <label class="toggleSwitch">
+                      <input type="checkbox" id="surgeProtocolMasterToggle" />
+                      <span class="toggleSlider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- ED Access Target -->
+                <div
+                  class="settingCard searchable"
+                  data-search="ed access target emergency dwell breach 24 hours 12 hours"
+                >
+                  <div class="settingRow">
+                    <div class="settingMeta">
+                      <span class="settingName">Emergency Department Access Target</span>
+                      <span class="settingDesc"
+                        >Maximum clinical dwell time in ED before automated escalation alert triggers to the State Bed
+                        Desk. Standard: 24h. Surge: 12h.</span
+                      >
+                    </div>
+                    <div class="sliderWrap">
+                      <input type="range" class="rangeInput" id="edSlider" min="4" max="48" step="1" value="24" />
+                      <div class="stepper">
+                        <button type="button" class="stepBtn" id="edMinus" aria-label="Decrease ED Target">-</button>
+                        <span class="stepVal mono" id="edValText">24 Hours</span>
+                        <button type="button" class="stepBtn" id="edPlus" aria-label="Increase ED Target">+</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Parallel Referral Enquiry Cap -->
+                <div
+                  class="settingCard searchable"
+                  data-search="parallel referral enquiry cap metropolitan unit shortlist candidate limit"
+                >
+                  <div class="settingRow">
+                    <div class="settingMeta">
+                      <span class="settingName">Parallel Referral Enquiry Cap</span>
+                      <span class="settingDesc"
+                        >Maximum concurrent inpatient units shortlisted for parallel enquiry during acute bed searches.
+                        Prevents artificial bed-locking across hospital clusters.</span
+                      >
+                    </div>
+                    <div class="stepper">
+                      <button type="button" class="stepBtn" id="capMinus" aria-label="Decrease Cap">-</button>
+                      <span class="stepVal mono" id="capValText">3 Units</span>
+                      <button type="button" class="stepBtn" id="capPlus" aria-label="Increase Cap">+</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Bed Pull Hold Duration -->
+                <div
+                  class="settingCard searchable"
+                  data-search="pulled bed reservation hold buffer transit duration minutes"
+                >
+                  <div class="settingRow">
+                    <div class="settingMeta">
+                      <span class="settingName">Metropolitan Bed Pull Reservation Hold</span>
+                      <span class="settingDesc"
+                        >Grace period a bed remains reserved after coordinator allocation while awaiting local ambulance
+                        transport dispatch.</span
+                      >
+                    </div>
+                    <div class="stepper">
+                      <button type="button" class="stepBtn" id="holdMinus" aria-label="Decrease Hold">-</button>
+                      <span class="stepVal mono" id="holdValText">120 Minutes</span>
+                      <button type="button" class="stepBtn" id="holdPlus" aria-label="Increase Hold">+</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Morning Shift Bed Reconciliation Deadline -->
+                <div
+                  class="settingCard searchable"
+                  data-search="morning shift bed reconciliation deadline rollup target time 09:30 awst num discharge confirm"
+                >
+                  <div class="settingRow">
+                    <div class="settingMeta">
+                      <span class="settingName">Morning Bed Rollup Target Time</span>
+                      <span class="settingDesc"
+                        >Target time by which Ward Nurse Unit Managers must confirm today's planned discharges. Wards
+                        unconfirmed by deadline display an amber reconciliation flag on the statewide board.</span
+                      >
+                    </div>
+                    <div class="stepper">
+                      <button type="button" class="stepBtn" id="rollupMinus" aria-label="Decrease Rollup Time">
+                        -
+                      </button>
+                      <span class="stepVal mono" id="rollupValText">09:30 AWST</span>
+                      <button type="button" class="stepBtn" id="rollupPlus" aria-label="Increase Rollup Time">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- DOMAIN 2: Regional Transit & RFDS Buffers -->
+            <section class="panel" id="domain-transit" data-domain="domain-transit">
+              <div class="panelHdr">
+                <h2 class="panelTitle">
+                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="1" y="3" width="10" height="9" />
+                    <path d="m11 7 4 3v2h-4" />
+                  </svg>
+                  <span>Regional &amp; Cross-Catchment Transit Buffers (WACHS to Metro)</span>
+                </h2>
+                <span class="badge badgeGood">Aeromedical Protected</span>
+              </div>
+              <div class="panelBody">
+                <!-- Transit-Adjusted Bed Hold Extension -->
+                <div
+                  class="settingCard searchable"
+                  data-search="transit-adjusted bed hold extension rfds aeromedical flight albany kalgoorlie buffer"
+                >
+                  <div class="settingRow">
+                    <div class="settingMeta">
+                      <span class="settingName">Transit-Adjusted Bed Hold Extension</span>
+                      <span class="settingDesc"
+                        >Automatically extends pulled bed hold duration when Royal Flying Doctor Service (RFDS) or
+                        regional road transit is booked from WACHS facilities. Prevents wards releasing beds while
+                        flights are airborne.</span
+                      >
+                    </div>
+                    <label class="toggleSwitch">
+                      <input type="checkbox" id="transitExtensionToggle" checked />
+                      <span class="toggleSlider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div
+                  class="settingCard searchable"
+                  data-search="rfds flight hold buffer aeromedical aerodrome transit extension minutes"
+                >
+                  <div class="settingRow">
+                    <div class="settingMeta">
+                      <span class="settingName">RFDS Aeromedical Flight Extension Buffer</span>
+                      <span class="settingDesc"
+                        >Additional reservation minutes added to standard hold upon confirmed flight plan dispatch from
+                        Albany, Kalgoorlie, Geraldton or Broome.</span
+                      >
+                    </div>
+                    <div class="stepper">
+                      <button type="button" class="stepBtn" id="rfdsMinus" aria-label="Decrease RFDS Buffer">-</button>
+                      <span class="stepVal mono" id="rfdsValText">+180 Minutes</span>
+                      <button type="button" class="stepBtn" id="rfdsPlus" aria-label="Increase RFDS Buffer">+</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Regional Road Transit Buffer -->
+                <div
+                  class="settingCard searchable"
+                  data-search="regional road transit buffer bunbury northam distance extension"
+                >
+                  <div class="settingRow">
+                    <div class="settingMeta">
+                      <span class="settingName">Regional Road Transport Buffer (e.g. Bunbury / Northam)</span>
+                      <span class="settingDesc"
+                        >Additional grace buffer applied to road transport journeys exceeding 75km from metropolitan
+                        receiving centers.</span
+                      >
+                    </div>
+                    <div class="stepper">
+                      <button type="button" class="stepBtn" id="roadMinus" aria-label="Decrease Road Buffer">-</button>
+                      <span class="stepVal mono" id="roadValText">+90 Minutes</span>
+                      <button type="button" class="stepBtn" id="roadPlus" aria-label="Increase Road Buffer">+</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Cross-Catchment Escalation Horizon -->
+                <div
+                  class="settingCard searchable"
+                  data-search="cross-catchment escalation horizon threshold search expand all metro services"
+                >
+                  <div class="settingRow">
+                    <div class="settingMeta">
+                      <span class="settingName">Automatic Cross-Catchment Escalation Horizon</span>
+                      <span class="settingDesc"
+                        >Elapsed emergency wait time after which candidate unit searches expand beyond the patient's
+                        home health service to all metropolitan clusters (North, South, East Metro).</span
+                      >
+                    </div>
+                    <div class="stepper">
+                      <button
+                        type="button"
+                        class="stepBtn"
+                        id="crossCatchMinus"
+                        aria-label="Decrease Cross Catchment Threshold"
+                      >
+                        -
+                      </button>
+                      <span class="stepVal mono" id="crossCatchValText">12 Hours</span>
+                      <button
+                        type="button"
+                        class="stepBtn"
+                        id="crossCatchPlus"
+                        aria-label="Increase Cross Catchment Threshold"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- DOMAIN 3: Smart Placement Matcher & Acuity Balancer -->
+            <section class="panel" id="domain-smart" data-domain="domain-smart">
+              <div class="panelHdr">
+                <h2 class="panelTitle">
+                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="8" cy="8" r="6" />
+                    <circle cx="8" cy="8" r="2" />
+                  </svg>
+                  <span>Smart Placement Matcher &amp; Acuity Balancer Engine</span>
+                </h2>
+                <span class="badge badgeAccent">Predictive Coordination</span>
+              </div>
+              <div class="panelBody">
+                <!-- Smart Matcher Engine Master Toggle -->
+                <div
+                  class="settingCard searchable"
+                  data-search="smart placement matcher scoring engine multi-criteria ranking algorithm"
+                >
+                  <div class="settingRow">
+                    <div class="settingMeta">
+                      <span class="settingName">Automated Candidate Unit Scoring Engine</span>
+                      <span class="settingDesc"
+                        >Computes multi-dimensional clinical suitability scores across catchment alignment, gazetted
+                        authority, locked/open plant, gender mix, and specialling load.</span
+                      >
+                    </div>
+                    <label class="toggleSwitch">
+                      <input type="checkbox" id="smartMatcherToggle" checked />
+                      <span class="toggleSlider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Live Scoring Simulation Dossier -->
+                <div class="matcherCard">
+                  <div class="matcherHdr">
+                    <span style="font-weight: 700; font-size: var(--t-2)"
+                      >Live Scoring Simulation: Patient Tobias Wren (Peel ED · SMHS)</span
+                    >
+                    <span class="badge badgeGood">6 Criteria Active</span>
+                  </div>
+                  <div class="matcherCandidates">
+                    <div class="candidateItem" style="border-color: rgba(34, 117, 80, 0.3)">
+                      <div class="candidateTop">
+                        <span class="candidateName">1. Fremantle Ward 4W</span>
+                        <span class="candidateScore">94% Match</span>
+                      </div>
+                      <span class="candidateReason"
+                        >In catchment, single room ready, specialling load within safe baseline (1/3).</span
+                      >
+                    </div>
+                    <div class="candidateItem">
+                      <div class="candidateTop">
+                        <span class="candidateName">2. Rockingham Adult Unit</span>
+                        <span class="candidateScore">86% Match</span>
+                      </div>
+                      <span class="candidateReason"
+                        >In catchment, shared bay available, requires gender segregation check.</span
+                      >
+                    </div>
+                    <div class="candidateItem">
+                      <div class="candidateTop">
+                        <span class="candidateName">3. Fiona Stanley Adult Secure</span>
+                        <span class="candidateScore">78% Match</span>
+                      </div>
+                      <span class="candidateReason"
+                        >High-acuity locked bed ready, cross-corridor transport required.</span
+                      >
+                    </div>
+                    <div class="candidateItem" style="opacity: 0.7">
+                      <div class="candidateTop">
+                        <span class="candidateName">4. SCGH Tanami Unit</span>
+                        <span class="candidateScore" style="color: var(--muted)">42% Match</span>
+                      </div>
+                      <span class="candidateReason"
+                        >Cross-catchment North Metro; reserved for local tertiary intake.</span
+                      >
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Predictive Breach Early-Warning Radar -->
+                <div
+                  class="radarBox searchable"
+                  data-search="predictive breach early-warning radar tobias wren peel ed transport dispatch transit averted"
+                >
+                  <svg
+                    class="radarIcon"
+                    viewBox="0 0 24 24"
+                    width="22"
+                    height="22"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <circle cx="12" cy="11" r="3" />
+                  </svg>
+                  <div class="radarContent">
+                    <span class="radarTitle">Predictive Breach Early-Warning Radar Active</span>
+                    <span class="radarText"
+                      >Patient Tobias Wren at Peel ED will reach 24h breach in <strong class="mono">2h 10m</strong>.
+                      Current transport dispatch delay to Fremantle is <strong class="mono">55m</strong>. Coordinator
+                      action required within <strong class="mono">75 minutes</strong> to avert breach.</span
+                    >
+                  </div>
+                </div>
+
+                <!-- Dynamic Acuity & 1:1 Specialling Balancer -->
+                <div
+                  class="settingCard searchable"
+                  data-search="dynamic acuity 1:1 specialling load balancer nursing ceiling high-vigilance intake pause"
+                >
+                  <div class="settingRow">
+                    <div class="settingMeta">
+                      <span class="settingName">Unit 1:1 Specialling Nursing Ceiling</span>
+                      <span class="settingDesc"
+                        >Maximum concurrent 1:1 or 2:1 high-vigilance nursing specials permitted per acute ward before
+                        automated placement pause activates.</span
+                      >
+                    </div>
+                    <div class="stepper">
+                      <button type="button" class="stepBtn" id="specialMinus" aria-label="Decrease Specialling Ceiling">
+                        -
+                      </button>
+                      <span class="stepVal mono" id="specialValText">3 Specials</span>
+                      <button type="button" class="stepBtn" id="specialPlus" aria-label="Increase Specialling Ceiling">
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- DOMAIN 4: Youth & Complex Egress Boundaries -->
+            <section class="panel" id="domain-vulnerable" data-domain="domain-vulnerable">
+              <div class="panelHdr">
+                <h2 class="panelTitle">
+                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                  <span>Youth &amp; Complex Egress Boundaries</span>
+                </h2>
+                <span class="badge badgeWarn">Safeguard Gates</span>
+              </div>
+              <div class="panelBody">
+                <!-- Under-18 Adult Bed Safeguard Gate -->
+                <div
+                  class="settingCard searchable"
+                  data-search="under-18 adult bed safeguard gate youth camhs clinical director sign-off 16-17"
+                >
+                  <div class="settingRow">
+                    <div class="settingMeta">
+                      <span class="settingName">Under-18 Adult Facility Safeguard Gate</span>
+                      <span class="settingDesc"
+                        >Mandates formal Child &amp; Adolescent Mental Health Service (CAMHS) Executive / Clinical
+                        Director endorsement before any 16- or 17-year-old patient may be placed in an adult acute
+                        bed.</span
+                      >
+                    </div>
+                    <label class="toggleSwitch">
+                      <input type="checkbox" id="youthGateToggle" checked />
+                      <span class="toggleSlider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Complex Egress Delay Escalation Trigger -->
+                <div
+                  class="settingCard searchable"
+                  data-search="complex discharge egress stalling horizon ndis sat public trustee delay trigger days"
+                >
+                  <div class="settingRow">
+                    <div class="settingMeta">
+                      <span class="settingName">Complex Egress Stalling Escalation Trigger</span>
+                      <span class="settingDesc"
+                        >Threshold days of non-clinical discharge delay (NDIS package delays, SAT Guardianship hearings,
+                        Public Trustee administration) after which a patient is automatically placed on the Statewide
+                        Complex Egress Escalation Panel.</span
+                      >
+                    </div>
+                    <div class="stepper">
+                      <button type="button" class="stepBtn" id="egressMinus" aria-label="Decrease Egress Trigger">
+                        -
+                      </button>
+                      <span class="stepVal mono" id="egressValText">14 Days</span>
+                      <button type="button" class="stepBtn" id="egressPlus" aria-label="Increase Egress Trigger">
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Older Adult / Psychogeriatric Boundary -->
+                <div
+                  class="settingCard searchable"
+                  data-search="older adult psychogeriatric cohort boundary murchison bentley aged 65"
+                >
+                  <div class="settingRow">
+                    <div class="settingMeta">
+                      <span class="settingName">Older Adult Cohort Protection Filter</span>
+                      <span class="settingDesc"
+                        >Automatically recommends specialised psychogeriatric units (e.g. Murchison at Graylands,
+                        Bentley Older Adult) for patients aged 65+ with cognitive comorbidity.</span
+                      >
+                    </div>
+                    <label class="toggleSwitch">
+                      <input type="checkbox" id="olderAdultToggle" checked />
+                      <span class="toggleSlider"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- DOMAIN 5: Statutory Mental Health Act 2014 Parameters -->
+            <section class="panel" id="domain-statutory" data-domain="domain-statutory">
+              <div class="panelHdr">
+                <h2 class="panelTitle">
+                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" />
+                  </svg>
+                  <span>Statutory Mental Health Act 2014 Parameters</span>
+                </h2>
+                <span class="badge badgeGood">OCP Verified</span>
+              </div>
+              <div class="panelBody">
+                <p class="settingDesc" style="margin: 0">
+                  Official statutory forms registered under the Western Australian Mental Health Act 2014. Verified
+                  against the Office of the Chief Psychiatrist WA register. Zero calculated legal deadlines rendered per
+                  Owner Rule D5.
+                </p>
+                <div class="tableWrap">
+                  <table class="dataTable" aria-label="Statutory Forms Matrix">
+                    <thead>
+                      <tr>
+                        <th>Form Code</th>
+                        <th>Statutory Official Title</th>
+                        <th>Authorized Clinician</th>
+                        <th>Statutory Validity Window</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="searchable" data-search="form 1a referral for examination by a psychiatrist 72h 24h">
+                        <td><span class="badge badgeAccent mono">Form 1A</span></td>
+                        <td>Referral for Examination by a Psychiatrist</td>
+                        <td>Medical Practitioner / NP</td>
+                        <td class="mono">72h validity · 24h exam window</td>
+                        <td><span class="badge badgeGood">Registered</span></td>
+                      </tr>
+                      <tr
+                        class="searchable"
+                        data-search="form 2 order authorising transport by police or transport officer"
+                      >
+                        <td><span class="badge badgeAccent mono">Form 2</span></td>
+                        <td>Order Authorising Transport by Police or Transport Officer</td>
+                        <td>Psychiatrist / Med Practitioner</td>
+                        <td class="mono">Valid until executed</td>
+                        <td><span class="badge badgeGood">Registered</span></td>
+                      </tr>
+                      <tr
+                        class="searchable"
+                        data-search="form 3a order for involuntary detention for examination in an authorised hospital"
+                      >
+                        <td><span class="badge badgeAccent mono">Form 3A</span></td>
+                        <td>Order for Involuntary Detention for Examination in an Authorised Hospital</td>
+                        <td>Psychiatrist / Med Practitioner</td>
+                        <td class="mono">72h maximum detention</td>
+                        <td><span class="badge badgeGood">Registered</span></td>
+                      </tr>
+                      <tr class="searchable" data-search="form 3b order continuing involuntary detention">
+                        <td><span class="badge badgeAccent mono">Form 3B</span></td>
+                        <td>Order Continuing Involuntary Detention</td>
+                        <td>Consultant Psychiatrist</td>
+                        <td class="mono">72h extension window</td>
+                        <td><span class="badge badgeGood">Registered</span></td>
+                      </tr>
+                      <tr
+                        class="searchable"
+                        data-search="form 3c order authorising apprehension and return of an involuntary patient"
+                      >
+                        <td><span class="badge badgeAccent mono">Form 3C</span></td>
+                        <td>Order Authorising Apprehension &amp; Return of Involuntary Patient</td>
+                        <td>Authorised Hospital Person</td>
+                        <td class="mono">Apprehension window active</td>
+                        <td><span class="badge badgeGood">Registered</span></td>
+                      </tr>
+                      <tr
+                        class="searchable"
+                        data-search="form 4a order to transport a person for examination assessment"
+                      >
+                        <td><span class="badge badgeAccent mono">Form 4A</span></td>
+                        <td>Order to Transport a Person for Examination / Assessment</td>
+                        <td>Medical Practitioner</td>
+                        <td class="mono">Immediate transport execution</td>
+                        <td><span class="badge badgeGood">Registered</span></td>
+                      </tr>
+                      <tr class="searchable" data-search="form 5a community treatment order cto">
+                        <td><span class="badge badgeAccent mono">Form 5A</span></td>
+                        <td>Community Treatment Order (CTO)</td>
+                        <td>Consultant Psychiatrist</td>
+                        <td class="mono">Up to 3 months statutory duration</td>
+                        <td><span class="badge badgeGood">Registered</span></td>
+                      </tr>
+                      <tr class="searchable" data-search="form 6a involuntary inpatient treatment order">
+                        <td><span class="badge badgeAccent mono">Form 6A</span></td>
+                        <td>Involuntary Inpatient Treatment Order</td>
+                        <td>Consultant Psychiatrist</td>
+                        <td class="mono">Up to 21 days general adult</td>
+                        <td><span class="badge badgeGood">Registered</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+
+            <!-- DOMAIN 6: Statewide Clinical Roles & Delegations Matrix -->
+            <section class="panel" id="domain-roles" data-domain="domain-roles">
+              <div class="panelHdr">
+                <h2 class="panelTitle">
+                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="8" cy="5" r="3" />
+                    <path d="M2 14a6 6 0 0 1 12 0" />
+                  </svg>
+                  <span>Statewide Clinical Roles &amp; Delegations Matrix</span>
+                </h2>
+                <span class="badge badgeAccent">Governance Protocol</span>
+              </div>
+              <div class="panelBody">
+                <div class="tableWrap">
+                  <table class="dataTable" aria-label="Clinical Roles Matrix">
+                    <thead>
+                      <tr>
+                        <th>Clinical Role</th>
+                        <th>Operational Scope</th>
+                        <th>Statutory Forms Authority</th>
+                        <th>Clinical Override Authority</th>
+                        <th>Handover Clearance</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        class="searchable"
+                        data-search="state bed coordinator statewide system flow desk full authority catchment acuity"
+                      >
+                        <td><strong>State Bed Coordinator</strong></td>
+                        <td>Statewide System Flow Desk</td>
+                        <td><span class="badge badgeGood">Full Authority</span></td>
+                        <td><span class="badge badgeGood">Catchment &amp; Acuity</span></td>
+                        <td><span class="badge badgeGood">Authorised</span></td>
+                      </tr>
+                      <tr
+                        class="searchable"
+                        data-search="duty consultant psychiatrist health service cluster examination detention"
+                      >
+                        <td><strong>Duty Consultant Psychiatrist</strong></td>
+                        <td>Health Service Cluster</td>
+                        <td><span class="badge badgeGood">Forms 1A, 3A, 5A, 6A</span></td>
+                        <td><span class="badge badgeGood">Clinical Exceptions</span></td>
+                        <td><span class="badge badgeGood">Authorised</span></td>
+                      </tr>
+                      <tr
+                        class="searchable"
+                        data-search="ward num shift coordinator single inpatient unit form 4a receive"
+                      >
+                        <td><strong>Ward NUM / Coordinator</strong></td>
+                        <td>Single Inpatient Facility</td>
+                        <td><span class="badge badgeAccent">Form 4A Receive</span></td>
+                        <td><span class="badge badgeWarn">Bed Allocation Only</span></td>
+                        <td><span class="badge badgeGood">Authorised</span></td>
+                      </tr>
+                      <tr
+                        class="searchable"
+                        data-search="ed mental health liaison emergency department pod form 1a recorded"
+                      >
+                        <td><strong>ED MH Liaison Nurse</strong></td>
+                        <td>Emergency Department Pod</td>
+                        <td><span class="badge badgeAccent">Form 1A Recorded</span></td>
+                        <td><span class="badge badgeWarn">Escalation Request</span></td>
+                        <td><span class="badge badgeGood">Authorised</span></td>
+                      </tr>
+                      <tr
+                        class="searchable"
+                        data-search="custodial transport officer secure transit vehicle form 4a recorded"
+                      >
+                        <td><strong>Custodial Transport Officer</strong></td>
+                        <td>Secure Transport Vehicle</td>
+                        <td><span class="badge badgeAccent">Form 4A Transport</span></td>
+                        <td><span class="badge badgeAccent">Route Alteration</span></td>
+                        <td><span class="badge badgeGood">Transit Handover</span></td>
+                      </tr>
+                      <tr
+                        class="searchable"
+                        data-search="clinical governance lead statewide directorate audit formal review"
+                      >
+                        <td><strong>Clinical Governance Lead</strong></td>
+                        <td>Statewide Directorate</td>
+                        <td><span class="badge badgeGood">Audit &amp; Review</span></td>
+                        <td><span class="badge badgeGood">Formal Review Verdict</span></td>
+                        <td><span class="badge badgeAccent">Audit Only</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+
+            <!-- DOMAIN 7: Display, Ergonomics & System Reset -->
+            <section class="panel" id="domain-display" data-domain="domain-display">
+              <div class="panelHdr">
+                <h2 class="panelTitle">
+                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="3" width="12" height="10" rx="2" />
+                    <path d="M8 13v2M5 15h6" />
+                  </svg>
+                  <span>Display, Ergonomics &amp; Local Cache Lifecycle</span>
+                </h2>
+                <span class="badge badgeMuted">Per-Browser State</span>
+              </div>
+              <div class="panelBody">
+                <!-- Theme Mode -->
+                <div
+                  class="settingCard searchable"
+                  data-search="theme mode appearance light dark auto night shift contrast"
+                >
+                  <div class="settingRow">
+                    <div class="settingMeta">
+                      <span class="settingName">Visual Theme &amp; Night Shift Ergonomics</span>
+                      <span class="settingDesc"
+                        >Shared across Ward Flow and Tools drawer via <code class="mono">ward-flow-appearance</code>.
+                        Night shift dark mode protects scotopic vision during night rounds.</span
+                      >
+                    </div>
+                    <div style="display: flex; gap: 8px">
+                      <button type="button" class="btn" id="themeLightBtn">Light</button>
+                      <button type="button" class="btn" id="themeDarkBtn">Dark</button>
+                      <button type="button" class="btn" id="themeAutoBtn">Auto</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Navigation Rail Preference -->
+                <div
+                  class="settingCard searchable"
+                  data-search="navigation rail preference open closed collapsed expand drawer"
+                >
+                  <div class="settingRow">
+                    <div class="settingMeta">
+                      <span class="settingName">Navigation Rail Workspace Width</span>
+                      <span class="settingDesc"
+                        >Sets default state for primary navigation rail (<code class="mono"
+                          >data-rail="open|closed"</code
+                        >) to maximize horizontal data density on laptop viewports.</span
+                      >
+                    </div>
+                    <div style="display: flex; gap: 8px">
+                      <button type="button" class="btn" id="railOpenBtn">Expanded</button>
+                      <button type="button" class="btn" id="railCloseBtn">Compact (72px)</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Audio Breach Chimes -->
+                <div
+                  class="settingCard searchable"
+                  data-search="audio breach chimes sound alerts critical wait statutory expiry"
+                >
+                  <div class="settingRow">
+                    <div class="settingMeta">
+                      <span class="settingName">Audio Breach Chimes</span>
+                      <span class="settingDesc"
+                        >Emits subtle non-alarming sound tone on desktop browser upon emergency department access target
+                        breach or statutory expiry.</span
+                      >
+                    </div>
+                    <label class="toggleSwitch">
+                      <input type="checkbox" id="audioChimesToggle" />
+                      <span class="toggleSlider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Local Storage Footprint Audit -->
+                <div class="tableWrap searchable" data-search="local storage footprint audit keys preferences baseline">
+                  <table class="dataTable" aria-label="Local Storage Audit">
+                    <thead>
+                      <tr>
+                        <th>Storage Key</th>
+                        <th>Clinical Purpose</th>
+                        <th>Current In-Memory State</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><code class="mono">ward-flow-appearance</code></td>
+                        <td>Theme preference (light / dark / auto)</td>
+                        <td class="mono" id="storageAppearanceVal">dark</td>
+                        <td>
+                          <button
+                            type="button"
+                            class="btn"
+                            style="padding: 2px 8px; font-size: var(--t-0)"
+                            onclick="showToast('Key validated.')"
+                          >
+                            Inspect
+                          </button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><code class="mono">ward-flow-rail</code></td>
+                        <td>Rail width preference (open / closed)</td>
+                        <td class="mono" id="storageRailVal">open</td>
+                        <td>
+                          <button
+                            type="button"
+                            class="btn"
+                            style="padding: 2px 8px; font-size: var(--t-0)"
+                            onclick="showToast('Key validated.')"
+                          >
+                            Inspect
+                          </button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><code class="mono">ward-flow-surge</code></td>
+                        <td>Declared surge protocol active flag</td>
+                        <td class="mono" id="storageSurgeVal">false</td>
+                        <td>
+                          <button
+                            type="button"
+                            class="btn"
+                            style="padding: 2px 8px; font-size: var(--t-0)"
+                            onclick="showToast('Key validated.')"
+                          >
+                            Inspect
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <!-- Invariant FF8 Synthetic Disclaimer Footer -->
+        <footer class="protoFooter">
+          <strong>Western Australian Mental Health Act 2014 Bed-Coordination Simulation Console.</strong><br />
+          Synthetic demonstration data only. Zero real patient identifiers. Does not write to live clinical
+          repositories.
+        </footer>
+      </main>
+    </div>
+
+    <!-- ─── Reset Confirmation Modal Dialog ─────────────────────────────────── -->
+    <div class="drawerBackdrop" id="modalBackdrop"></div>
+    <div class="modal" id="resetModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modalHdr">
+        <h3 class="modalTitle" id="modalTitle">Reset Settings to Baseline?</h3>
+        <button type="button" class="drawerClose" id="closeModalX" aria-label="Close dialog">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3l10 10M13 3L3 13" />
+          </svg>
+        </button>
+      </div>
+      <div class="modalBody">
+        <p>
+          This will restore all operational thresholds, transit buffers, and clinical levers to their default Western
+          Australian statutory baseline:
+        </p>
+        <ul style="margin: 0; padding-left: 20px; line-height: 1.6; font-size: var(--t-1)">
+          <li>ED Access Target: <strong>24 Hours</strong></li>
+          <li>Parallel Referral Enquiry Cap: <strong>3 Units</strong></li>
+          <li>Bed Pull Hold Duration: <strong>120 Minutes</strong></li>
+          <li>Regional RFDS Flight Buffer: <strong>+180 Minutes</strong></li>
+          <li>Declared Surge Protocol: <strong>Deactivated</strong></li>
+        </ul>
+        <p style="margin: 0; font-size: var(--t-0); color: var(--muted)">
+          Stored preferences in local storage will be refreshed.
+        </p>
+      </div>
+      <div class="modalFoot">
+        <button type="button" class="btn" id="cancelResetBtn">Cancel</button>
+        <button type="button" class="btn btnPrimary" id="confirmResetBtn">Confirm Baseline Reset</button>
+      </div>
+    </div>
+
+    <!-- ─── Slide-out Drawers (Activity, Tasks, Tools) ────────────────────────── -->
+    <div class="drawerBackdrop" id="drawerBackdrop"></div>
+
+    <!-- Activity Drawer -->
+    <div class="drawer" id="activityDrawer" role="region" aria-label="Activity Drawer">
+      <div class="drawerHdr">
+        <h3 class="drawerTitle">Recent Coordination Activity</h3>
+        <button type="button" class="drawerClose" id="closeActivityBtn" aria-label="Close Activity">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3l10 10M13 3L3 13" />
+          </svg>
+        </button>
+      </div>
+      <div class="drawerBody">
+        <div class="settingCard">
+          <span style="font-weight: 600; font-size: var(--t-1)">09:14 AWST · Bed Allocation Reserved</span>
+          <span style="font-size: var(--t-0); color: var(--ink-soft)"
+            >Tobias Wren allocated to Fremantle Ward 4W. Transit hold clock started (120m).</span
+          >
+        </div>
+        <div class="settingCard">
+          <span style="font-weight: 600; font-size: var(--t-1)">08:45 AWST · RFDS Flight Dispatch Logged</span>
+          <span style="font-size: var(--t-0); color: var(--ink-soft)"
+            >Kalgoorlie ED patient transfer confirmed. +180m aeromedical buffer applied.</span
+          >
+        </div>
+        <div class="settingCard">
+          <span style="font-weight: 600; font-size: var(--t-1)">08:00 AWST · Day Shift Handover Initialized</span>
+          <span style="font-size: var(--t-0); color: var(--ink-soft)"
+            >Perth Central Desk operational parameters verified against WA MHA 2014 baseline.</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- Tasks Drawer -->
+    <div class="drawer" id="tasksDrawer" role="region" aria-label="Tasks Drawer">
+      <div class="drawerHdr">
+        <h3 class="drawerTitle">Coordinator Action Items</h3>
+        <button type="button" class="drawerClose" id="closeTasksBtn" aria-label="Close Tasks">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3l10 10M13 3L3 13" />
+          </svg>
+        </button>
+      </div>
+      <div class="drawerBody">
+        <div class="settingCard" style="border-color: rgba(130, 93, 16, 0.3)">
+          <span style="font-weight: 600; font-size: var(--t-1); color: var(--warn)">Morning Census Overdue</span>
+          <span style="font-size: var(--t-0); color: var(--ink-soft)"
+            >Armadale Ward 2 has not confirmed today's planned discharges. Target was 09:30 AWST.</span
+          >
+          <button
+            type="button"
+            class="btn"
+            style="margin-top: 6px; font-size: var(--t-0)"
+            onclick="showToast('Not wired in this prototype.')"
+          >
+            Send Census Prompt
+          </button>
+        </div>
+        <div class="settingCard">
+          <span style="font-weight: 600; font-size: var(--t-1)">Under-18 Placement Review</span>
+          <span style="font-size: var(--t-0); color: var(--ink-soft)"
+            >CAMHS clinical director endorsement pending for 17yo referral at Sir Charles Gairdner.</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- Tools Drawer -->
+    <div class="drawer" id="toolsDrawer" role="region" aria-label="Tools Drawer">
+      <div class="drawerHdr">
+        <h3 class="drawerTitle">Simulation &amp; Demo Tools</h3>
+        <button type="button" class="drawerClose" id="closeToolsBtn" aria-label="Close Tools">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3l10 10M13 3L3 13" />
+          </svg>
+        </button>
+      </div>
+      <div class="drawerBody">
+        <div class="settingCard">
+          <span style="font-weight: 600; font-size: var(--t-1)">Advance Simulation Clock</span>
+          <div style="display: flex; gap: 8px; margin-top: 6px">
+            <button type="button" class="btn" onclick="showToast('Clock advanced +15m (demo)')">+15 min</button>
+            <button type="button" class="btn" onclick="showToast('Clock advanced +60m (demo)')">+60 min</button>
+          </div>
+        </div>
+        <div class="settingCard">
+          <span style="font-weight: 600; font-size: var(--t-1)">Simulation Scenario Preset</span>
+          <span style="font-size: var(--t-0); color: var(--ink-soft)">Switch baseline synthetic load profiles.</span>
+          <div style="display: flex; gap: 8px; margin-top: 6px">
+            <button type="button" class="btn" onclick="showToast('Standard scenario loaded')">Standard</button>
+            <button type="button" class="btn" onclick="showToast('Scarce bed scenario loaded')">Scarce</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Toast Container -->
+    <div class="toast" id="liveToast" role="status" aria-live="polite">
+      <svg
+        class="toastIcon"
+        viewBox="0 0 16 16"
+        width="16"
+        height="16"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M13.5 4.5l-7 7L3 8" />
+      </svg>
+      <span id="toastMessage">Configuration saved to local storage.</span>
+    </div>
+
+    <!-- ─── Interactive Client Logic ─────────────────────────────────────────── -->
+    <script>
+      (function () {
+        // State
+        var isSurge = false;
+        var edHours = 24;
+        var capUnits = 3;
+        var holdMinutes = 120;
+        var rfdsMinutes = 180;
+        var roadMinutes = 90;
+        var crossCatchHours = 12;
+        var specialCeiling = 3;
+        var egressDays = 14;
+        var rollupTime = "09:30 AWST";
+
+        // Elements
+        var edValText = document.getElementById("edValText");
+        var edSlider = document.getElementById("edSlider");
+        var capValText = document.getElementById("capValText");
+        var holdValText = document.getElementById("holdValText");
+        var rfdsValText = document.getElementById("rfdsValText");
+        var roadValText = document.getElementById("roadValText");
+        var crossCatchValText = document.getElementById("crossCatchValText");
+        var specialValText = document.getElementById("specialValText");
+        var egressValText = document.getElementById("egressValText");
+        var rollupValText = document.getElementById("rollupValText");
+
+        var kpiEdVal = document.getElementById("kpiEdVal");
+        var kpiCapVal = document.getElementById("kpiCapVal");
+        var kpiHoldVal = document.getElementById("kpiHoldVal");
+        var kpiEdSub = document.getElementById("kpiEdSub");
+        var kpiCapSub = document.getElementById("kpiCapSub");
+
+        var surgeToggleBtn = document.getElementById("surgeToggleBtn");
+        var surgeBtnText = document.getElementById("surgeBtnText");
+        var surgeStatusPill = document.getElementById("surgeStatusPill");
+        var surgeProtocolMasterToggle = document.getElementById("surgeProtocolMasterToggle");
+        var storageSurgeVal = document.getElementById("storageSurgeVal");
+
+        var toast = document.getElementById("liveToast");
+        var toastMessage = document.getElementById("toastMessage");
+        var toastTimeout = null;
+
+        function showToast(msg) {
+          if (toastTimeout) clearTimeout(toastTimeout);
+          toastMessage.textContent = msg;
+          toast.classList.add("show");
+          toastTimeout = setTimeout(function () {
+            toast.classList.remove("show");
+          }, 3200);
+        }
+        window.showToast = showToast;
+
+        function updateUI() {
+          edValText.textContent = edHours + " Hours";
+          edSlider.value = edHours;
+          capValText.textContent = capUnits + " Units";
+          holdValText.textContent = holdMinutes + " Minutes";
+          rfdsValText.textContent = "+" + rfdsMinutes + " Minutes";
+          roadValText.textContent = "+" + roadMinutes + " Minutes";
+          crossCatchValText.textContent = crossCatchHours + " Hours";
+          specialValText.textContent = specialCeiling + " Specials";
+          egressValText.textContent = egressDays + " Days";
+          rollupValText.textContent = rollupTime;
+
+          if (isSurge) {
+            kpiEdVal.textContent = edHours + "h (SURGE)";
+            kpiEdSub.textContent = "Accelerated surge escalation active";
+            kpiCapVal.textContent = capUnits + " Units [SURGE]";
+            kpiCapSub.textContent = "Expanded emergency shortlist limit";
+            kpiHoldVal.textContent = holdMinutes + "m [SURGE]";
+
+            surgeStatusPill.textContent = "SURGE ACTIVE";
+            surgeStatusPill.classList.add("active");
+            surgeToggleBtn.classList.add("active");
+            surgeBtnText.textContent = "Deactivate Surge Protocol";
+            surgeProtocolMasterToggle.checked = true;
+            storageSurgeVal.textContent = "true";
+          } else {
+            kpiEdVal.textContent = edHours + "h Target";
+            kpiEdSub.textContent = "State bed desk escalation at breach";
+            kpiCapVal.textContent = capUnits + " Units [Surge: 5]";
+            kpiCapSub.textContent = "Max concurrent unit shortlists";
+            kpiHoldVal.textContent = holdMinutes + "m + " + rfdsMinutes + "m RFDS";
+
+            surgeStatusPill.textContent = "Standard Ops";
+            surgeStatusPill.classList.remove("active");
+            surgeToggleBtn.classList.remove("active");
+            surgeBtnText.textContent = "Declared Surge Protocol";
+            surgeProtocolMasterToggle.checked = false;
+            storageSurgeVal.textContent = "false";
+          }
+        }
+
+        // Surge Toggle Logic
+        function toggleSurge(forceState) {
+          isSurge = typeof forceState === "boolean" ? forceState : !isSurge;
+          if (isSurge) {
+            edHours = 12;
+            capUnits = 5;
+            holdMinutes = 60;
+            showToast("DECLARED SURGE PROTOCOL ACTIVATED: Parallel cap expanded to 5, ED breach accelerated to 12h.");
+          } else {
+            edHours = 24;
+            capUnits = 3;
+            holdMinutes = 120;
+            showToast("Surge protocol deactivated. Parameters restored to standard operational baseline.");
+          }
+          try {
+            localStorage.setItem("ward-flow-surge", isSurge ? "true" : "false");
+          } catch (e) {}
+          updateUI();
+        }
+
+        surgeToggleBtn.addEventListener("click", function () {
+          toggleSurge();
+        });
+        surgeProtocolMasterToggle.addEventListener("change", function () {
+          toggleSurge(this.checked);
+        });
+
+        // ED Target Controls
+        document.getElementById("edMinus").addEventListener("click", function () {
+          if (edHours > 4) {
+            edHours--;
+            updateUI();
+          }
+        });
+        document.getElementById("edPlus").addEventListener("click", function () {
+          if (edHours < 48) {
+            edHours++;
+            updateUI();
+          }
+        });
+        edSlider.addEventListener("input", function () {
+          edHours = parseInt(this.value, 10);
+          updateUI();
+        });
+
+        // Cap Controls
+        document.getElementById("capMinus").addEventListener("click", function () {
+          if (capUnits > 1) {
+            capUnits--;
+            updateUI();
+          }
+        });
+        document.getElementById("capPlus").addEventListener("click", function () {
+          if (capUnits < 8) {
+            capUnits++;
+            updateUI();
+          }
+        });
+
+        // Hold Controls
+        document.getElementById("holdMinus").addEventListener("click", function () {
+          if (holdMinutes > 15) {
+            holdMinutes -= 15;
+            updateUI();
+          }
+        });
+        document.getElementById("holdPlus").addEventListener("click", function () {
+          if (holdMinutes < 240) {
+            holdMinutes += 15;
+            updateUI();
+          }
+        });
+
+        // RFDS Controls
+        document.getElementById("rfdsMinus").addEventListener("click", function () {
+          if (rfdsMinutes > 60) {
+            rfdsMinutes -= 30;
+            updateUI();
+          }
+        });
+        document.getElementById("rfdsPlus").addEventListener("click", function () {
+          if (rfdsMinutes < 360) {
+            rfdsMinutes += 30;
+            updateUI();
+          }
+        });
+
+        // Road Controls
+        document.getElementById("roadMinus").addEventListener("click", function () {
+          if (roadMinutes > 30) {
+            roadMinutes -= 15;
+            updateUI();
+          }
+        });
+        document.getElementById("roadPlus").addEventListener("click", function () {
+          if (roadMinutes < 240) {
+            roadMinutes += 15;
+            updateUI();
+          }
+        });
+
+        // Cross-Catchment Controls
+        document.getElementById("crossCatchMinus").addEventListener("click", function () {
+          if (crossCatchHours > 4) {
+            crossCatchHours -= 2;
+            updateUI();
+          }
+        });
+        document.getElementById("crossCatchPlus").addEventListener("click", function () {
+          if (crossCatchHours < 24) {
+            crossCatchHours += 2;
+            updateUI();
+          }
+        });
+
+        // Specialling Controls
+        document.getElementById("specialMinus").addEventListener("click", function () {
+          if (specialCeiling > 1) {
+            specialCeiling--;
+            updateUI();
+          }
+        });
+        document.getElementById("specialPlus").addEventListener("click", function () {
+          if (specialCeiling < 6) {
+            specialCeiling++;
+            updateUI();
+          }
+        });
+
+        // Egress Controls
+        document.getElementById("egressMinus").addEventListener("click", function () {
+          if (egressDays > 7) {
+            egressDays -= 7;
+            updateUI();
+          }
+        });
+        document.getElementById("egressPlus").addEventListener("click", function () {
+          if (egressDays < 28) {
+            egressDays += 7;
+            updateUI();
+          }
+        });
+
+        // Rollup Time Controls
+        var rollups = ["08:30 AWST", "09:00 AWST", "09:30 AWST", "10:00 AWST", "10:30 AWST"];
+        document.getElementById("rollupMinus").addEventListener("click", function () {
+          var idx = rollups.indexOf(rollupTime);
+          if (idx > 0) {
+            rollupTime = rollups[idx - 1];
+            updateUI();
+          }
+        });
+        document.getElementById("rollupPlus").addEventListener("click", function () {
+          var idx = rollups.indexOf(rollupTime);
+          if (idx < rollups.length - 1) {
+            rollupTime = rollups[idx + 1];
+            updateUI();
+          }
+        });
+
+        // Save Configuration Button
+        document.getElementById("saveConfigBtn").addEventListener("click", function () {
+          showToast(
+            "Configuration saved: ED access target " +
+              edHours +
+              "h, parallel cap " +
+              capUnits +
+              " units, hold " +
+              holdMinutes +
+              "m.",
+          );
+        });
+
+        // Reset Modal Controls
+        var resetModal = document.getElementById("resetModal");
+        var modalBackdrop = document.getElementById("modalBackdrop");
+        var openResetModalBtn = document.getElementById("openResetModalBtn");
+        var closeModalX = document.getElementById("closeModalX");
+        var cancelResetBtn = document.getElementById("cancelResetBtn");
+        var confirmResetBtn = document.getElementById("confirmResetBtn");
+
+        function openModal() {
+          resetModal.classList.add("open");
+          modalBackdrop.classList.add("open");
+          confirmResetBtn.focus();
+        }
+        function closeModal() {
+          resetModal.classList.remove("open");
+          modalBackdrop.classList.remove("open");
+          openResetModalBtn.focus();
+        }
+
+        openResetModalBtn.addEventListener("click", openModal);
+        closeModalX.addEventListener("click", closeModal);
+        cancelResetBtn.addEventListener("click", closeModal);
+        modalBackdrop.addEventListener("click", closeModal);
+
+        confirmResetBtn.addEventListener("click", function () {
+          isSurge = false;
+          edHours = 24;
+          capUnits = 3;
+          holdMinutes = 120;
+          rfdsMinutes = 180;
+          roadMinutes = 90;
+          crossCatchHours = 12;
+          specialCeiling = 3;
+          egressDays = 14;
+          rollupTime = "09:30 AWST";
+          updateUI();
+          closeModal();
+          showToast("Settings restored to statutory WA Health baseline.");
+        });
+
+        // Drawers (Activity, Tasks, Tools)
+        var drawerBackdrop = document.getElementById("drawerBackdrop");
+        var activityDrawer = document.getElementById("activityDrawer");
+        var tasksDrawer = document.getElementById("tasksDrawer");
+        var toolsDrawer = document.getElementById("toolsDrawer");
+
+        function closeAllDrawers() {
+          activityDrawer.classList.remove("open");
+          tasksDrawer.classList.remove("open");
+          toolsDrawer.classList.remove("open");
+          drawerBackdrop.classList.remove("open");
+          closeProfilePopover();
+        }
+
+        document.getElementById("openActivityBtn").addEventListener("click", function () {
+          closeAllDrawers();
+          activityDrawer.classList.add("open");
+          drawerBackdrop.classList.add("open");
+        });
+        document.getElementById("closeActivityBtn").addEventListener("click", closeAllDrawers);
+
+        document.getElementById("openTasksBtn").addEventListener("click", function () {
+          closeAllDrawers();
+          tasksDrawer.classList.add("open");
+          drawerBackdrop.classList.add("open");
+        });
+        document.getElementById("closeTasksBtn").addEventListener("click", closeAllDrawers);
+
+        document.getElementById("openToolsBtn").addEventListener("click", function () {
+          closeAllDrawers();
+          toolsDrawer.classList.add("open");
+          drawerBackdrop.classList.add("open");
+        });
+        document.getElementById("closeToolsBtn").addEventListener("click", closeAllDrawers);
+
+        drawerBackdrop.addEventListener("click", closeAllDrawers);
+
+        // Clinical Operator Profile Popover
+        var userProfileBtn = document.getElementById("userProfileBtn");
+        var profilePopover = document.getElementById("profilePopover");
+
+        function closeProfilePopover() {
+          if (profilePopover && profilePopover.classList.contains("open")) {
+            profilePopover.classList.remove("open");
+            if (userProfileBtn) userProfileBtn.setAttribute("aria-expanded", "false");
+          }
+        }
+
+        function toggleProfilePopover(e) {
+          if (e) e.stopPropagation();
+          if (!profilePopover) return;
+          var isOpen = profilePopover.classList.contains("open");
+          if (isOpen) {
+            closeProfilePopover();
+          } else {
+            closeAllDrawers();
+            profilePopover.classList.add("open");
+            if (userProfileBtn) userProfileBtn.setAttribute("aria-expanded", "true");
+          }
+        }
+
+        if (userProfileBtn) {
+          userProfileBtn.addEventListener("click", toggleProfilePopover);
+        }
+
+        if (profilePopover) {
+          profilePopover.addEventListener("click", function (e) {
+            e.stopPropagation();
+          });
+        }
+
+        document.addEventListener("click", function (e) {
+          if (
+            profilePopover &&
+            profilePopover.classList.contains("open") &&
+            userProfileBtn &&
+            !userProfileBtn.contains(e.target)
+          ) {
+            closeProfilePopover();
+          }
+        });
+
+        // Escape Key Global Handler
+        window.addEventListener("keydown", function (e) {
+          if (e.key === "Escape") {
+            if (resetModal && resetModal.classList.contains("open")) {
+              closeModal();
+            } else if (profilePopover && profilePopover.classList.contains("open")) {
+              closeProfilePopover();
+            } else {
+              closeAllDrawers();
+            }
+          } else if (e.key === "/" && document.activeElement !== searchInput) {
+            e.preventDefault();
+            if (searchInput) searchInput.focus();
+          }
+        });
+
+        // Search & Filter Index Logic
+        var searchInput = document.getElementById("settingsSearchInput");
+        var searchClearBtn = document.getElementById("searchClearBtn");
+        var searchableItems = document.querySelectorAll(".searchable");
+        var domainNavItems = document.querySelectorAll(".domainNavItem");
+        var panels = document.querySelectorAll(".panel");
+
+        function getActiveDomain() {
+          var activeItem = document.querySelector(".domainNavItem.active");
+          return activeItem ? activeItem.getAttribute("data-target") : "all";
+        }
+
+        function filterContent(query, filterDomain) {
+          var q = (query || "").toLowerCase().trim();
+          var activeDomain = filterDomain || getActiveDomain();
+
+          var visibleCounts = {
+            all: 0,
+            "domain-surge": 0,
+            "domain-transit": 0,
+            "domain-smart": 0,
+            "domain-vulnerable": 0,
+            "domain-statutory": 0,
+            "domain-roles": 0,
+            "domain-display": 0,
+          };
+
+          searchableItems.forEach(function (el) {
+            var searchData = (el.getAttribute("data-search") || "").toLowerCase();
+            var textData = el.textContent.toLowerCase();
+            var panel = el.closest(".panel");
+            var domainId = panel ? panel.getAttribute("data-domain") : null;
+
+            var matchesSearch = !q || searchData.indexOf(q) !== -1 || textData.indexOf(q) !== -1;
+            var matchesDomain = !activeDomain || activeDomain === "all" || domainId === activeDomain;
+
+            if (matchesSearch) {
+              if (domainId && visibleCounts[domainId] !== undefined) {
+                visibleCounts[domainId]++;
+              }
+              visibleCounts.all++;
+            }
+
+            if (matchesSearch && matchesDomain) {
+              el.style.display = "";
+            } else {
+              el.style.display = "none";
+            }
+          });
+
+          // Check if panel has any visible items or matches
+          panels.forEach(function (p) {
+            var domainId = p.getAttribute("data-domain");
+            var visibleChildren = p.querySelectorAll('.searchable:not([style*="display: none"])');
+            if (visibleChildren.length > 0 && (!activeDomain || activeDomain === "all" || activeDomain === domainId)) {
+              p.style.display = "";
+            } else {
+              p.style.display = "none";
+            }
+          });
+
+          // Update match badges in domain nav
+          var countAllEl = document.getElementById("matchCountAll");
+          if (countAllEl) countAllEl.textContent = visibleCounts.all;
+          var countSurgeEl = document.getElementById("matchCountSurge");
+          if (countSurgeEl) countSurgeEl.textContent = visibleCounts["domain-surge"];
+          var countTransitEl = document.getElementById("matchCountTransit");
+          if (countTransitEl) countTransitEl.textContent = visibleCounts["domain-transit"];
+          var countSmartEl = document.getElementById("matchCountSmart");
+          if (countSmartEl) countSmartEl.textContent = visibleCounts["domain-smart"];
+          var countVulnEl = document.getElementById("matchCountVulnerable");
+          if (countVulnEl) countVulnEl.textContent = visibleCounts["domain-vulnerable"];
+          var countStatEl = document.getElementById("matchCountStatutory");
+          if (countStatEl) countStatEl.textContent = visibleCounts["domain-statutory"];
+          var countRolesEl = document.getElementById("matchCountRoles");
+          if (countRolesEl) countRolesEl.textContent = visibleCounts["domain-roles"];
+          var countDispEl = document.getElementById("matchCountDisplay");
+          if (countDispEl) countDispEl.textContent = visibleCounts["domain-display"];
+
+          if (searchClearBtn) {
+            if (q.length > 0) {
+              searchClearBtn.classList.add("visible");
+            } else {
+              searchClearBtn.classList.remove("visible");
+            }
+          }
+        }
+
+        if (searchInput) {
+          searchInput.addEventListener("input", function () {
+            filterContent(this.value, getActiveDomain());
+          });
+        }
+
+        if (searchClearBtn) {
+          searchClearBtn.addEventListener("click", function () {
+            if (searchInput) {
+              searchInput.value = "";
+              searchInput.focus();
+            }
+            filterContent("", getActiveDomain());
+          });
+        }
+
+        // Domain Nav Click
+        domainNavItems.forEach(function (item) {
+          item.addEventListener("click", function () {
+            domainNavItems.forEach(function (i) {
+              i.classList.remove("active");
+            });
+            this.classList.add("active");
+            var targetId = this.getAttribute("data-target");
+            var q = searchInput ? searchInput.value : "";
+            filterContent(q, targetId);
+            if (targetId && targetId !== "all") {
+              var targetPanel = document.getElementById(targetId);
+              if (targetPanel) {
+                targetPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+              }
+            } else {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+          });
+        });
+
+        // Theme and Rail Mechanics
+        function applyTheme(theme) {
+          if (theme === "auto") {
+            var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+            document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+          } else {
+            document.documentElement.setAttribute("data-theme", theme);
+          }
+          try {
+            localStorage.setItem("ward-flow-appearance", theme);
+          } catch (e) {}
+          document.getElementById("storageAppearanceVal").textContent = theme;
+          showToast("Theme preference set to " + theme);
+        }
+
+        document.getElementById("themeLightBtn").addEventListener("click", function () {
+          applyTheme("light");
+        });
+        document.getElementById("themeDarkBtn").addEventListener("click", function () {
+          applyTheme("dark");
+        });
+        document.getElementById("themeAutoBtn").addEventListener("click", function () {
+          applyTheme("auto");
+        });
+        document.getElementById("themeQuickToggleBtn").addEventListener("click", function () {
+          var cur = document.documentElement.getAttribute("data-theme") || "dark";
+          applyTheme(cur === "dark" ? "light" : "dark");
+        });
+
+        function setRail(state) {
+          document.documentElement.setAttribute("data-rail", state);
+          try {
+            localStorage.setItem("ward-flow-rail", state);
+          } catch (e) {}
+          document.getElementById("storageRailVal").textContent = state;
+          showToast("Navigation rail " + state);
+        }
+
+        document.getElementById("railOpenBtn").addEventListener("click", function () {
+          setRail("open");
+        });
+        document.getElementById("railCloseBtn").addEventListener("click", function () {
+          setRail("closed");
+        });
+        document.getElementById("railToggleBtn").addEventListener("click", function () {
+          var cur = document.documentElement.getAttribute("data-rail") || "open";
+          setRail(cur === "open" ? "closed" : "open");
+        });
+
+        // Audio Breach Chimes Toggle
+        document.getElementById("audioChimesToggle").addEventListener("change", function () {
+          showToast(this.checked ? "Audio breach chimes enabled." : "Audio breach chimes muted.");
+        });
+
+        // Initialize UI
+        updateUI();
+        filterContent("", "all");
+      })();
+    </script>
+  </body>
+</html>

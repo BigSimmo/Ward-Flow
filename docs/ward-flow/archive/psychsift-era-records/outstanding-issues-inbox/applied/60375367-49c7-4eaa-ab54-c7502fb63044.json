@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "id": "60375367-49c7-4eaa-ab54-c7502fb63044",
+  "createdOn": "2026-09-12",
+  "action": "cancel",
+  "payload": {
+    "requestId": "c8a3914a-eb0c-4b47-9e0a-a31645a8f700",
+    "reason": "Superseded by 297e9dcf-26ef-48b7-94fc-f50158fac22d, which is later by ULID (01M25KSGG6 against 01M25K9PXH) and records the same single 2026-09-10 run. No false count in this one, but applying it creates a fourth issue for one event. Its three ward defects were independently confirmed fixed against the ward line at 57ca0ed793. Cancelled by Ward Verifier 2026-09-12."
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "id": "43847026-36f7-422a-8185-c14d5a7b252b",
+  "createdOn": "2026-09-09",
+  "action": "add",
+  "payload": {
+    "pri": "P2",
+    "type": "issue",
+    "summary": "Ward Flow end-to-end suite runs in NEITHER verify:ui project, so it has been passing by not running — and its one failure must not be recorded as a flake",
+    "detail": "The ward end-to-end specs live in the chromium-mockups Playwright project. Neither verify:ui project selects it, and test:focused cannot select these specs either because it chooses by import graph. So the suite is green in the sense that nothing runs it. It ran for the first time on 2026-09-06: 78 tests, 72 passed, 5 skipped, 1 failure — and that failure was Playwright losing its browser under memory pressure, not an assertion. STOP RULE, and it is the point of this row: THAT IS ONE OCCURRENCE. Repository flake policy needs THREE reproductions on the SAME SHA before quarantine via tests/flake-ledger.json. Do not record it as a known flake, and do not record the suite as green. NEXT ACTION: decide whether these specs should be selected by a scheduled run or by one of the verify:ui projects, then re-run the suite on a repaired install and reconcile passed+failed+skipped against the declared test count before reporting any result — a batched run has previously printed a normal summary while five files never ran. NOTE: this machine's process load is implicated in three separate failures on 2026-09-08/09 (a dev-server PostCSS crash and two partial npm ci runs, at ~76-91 node processes), so a browser lost under memory pressure is environmental here far more often than it is a test defect.",
+    "source": "Ward Verifier session 2026-09-09; suite never run in this session, last known state 2026-09-06",
+    "issueUlid": "01M236DDY1QFQCDM4CYVR3C4HP"
+  }
+}

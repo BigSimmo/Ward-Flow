@@ -1,0 +1,3226 @@
+/*
+ * The community hub. Composes the shared ward token layer (`ward-tokens.module.css`) — adopted
+ * 2026-09-04, replacing the self-contained `--cm-*` scale this file used to declare. Every
+ * `--cm-space-*` value was an exact twin of its `--ward-space-*` counterpart, so the substitution
+ * moved no pixel.
+ *
+ * ⚠️ EXCEPT ONE, AND IT IS THE ONE TO CHECK IF THIS SCREEN LOOKS WRONG. `--cm-leading-body` was
+ * `1.45`, which is `--ward-leading-RELAXED`, NOT `--ward-leading-body` (1.4). Seven declarations
+ * here take it. The names invite the wrong mapping and no test in this repository would catch it —
+ * mutation-checked on the sibling index screen the same day, across 194 test files, with a failure
+ * set identical to the control.
+ *
+ * ⚠️ NOTHING IN THIS FILE CHANGES WITH A DURATION OR A DATE. There is no threshold styling, no
+ * warning ramp, no red row and no colour keyed to how long ago somebody was discharged. This is the
+ * screen where an invented urgency would look most authoritative, and the absence of any such rule
+ * here is what makes that impossible rather than merely unwritten.
+ *
+ * The two `.absenceNotice` blocks — "follow-up is not recorded" and "referrals cannot be attributed
+ * to a team" — carry the warning treatment, and that IS deliberate weighting: they are the two
+ * sentences that stop an empty list being read as an all-clear.
+ *
+ * ⚠️ SECOND-EDITION PRESENTATION PASS, 2026-09-05 — MARKUP AND STYLE ONLY, SAME RULE
+ * `community-index.module.css` RECORDS FOR ITS OWN PASS THE SAME DAY. Every sentence this screen
+ * renders, it still renders; every `data-testid` it carried, it still carries. Three changes:
+ *
+ *   1. `.section`/`.sectionHeading` are GONE. The four numbered lists are now `WardPanel`
+ *      (`ward-panel.tsx`/`ward-panel.module.css`) — the panel border, header bar, uppercase title
+ *      and the count slot in the corner all come from the primitive now, not from a local copy of
+ *      the same shape. `.panelBody` replaces `.section`'s own padding for the content each panel
+ *      holds, the same way `community-index.module.css`'s `.emptyNotice`/`.teamList` supply their
+ *      own padding into a primitive that paints none.
+ *   2. The two page-level warning notices (the placeholder-source statement and the invisible-
+ *      cohort count) are grouped under `.noticeGroup` so they read as one governance cluster above
+ *      the four clinical panels, rather than as loose warnings interleaved with them — each keeps
+ *      its own bordered box; only the stacking is shared.
+ *   3. A `.eyebrow` line now sits above the team's own name, stating what kind of thing a
+ *      community team page is — the identity block the second-edition layout calls for, in the same
+ *      idiom `statistics-sections.module.css` already uses for its own eyebrow.
+ *
+ * The team switcher stays a `<nav>` for its landmark role — `WardPanel` renders a `<section>` — and
+ * instead `composes` `ward-panel.module.css`'s own `panel`/`panelHeader`/`panelTitle` classes, so
+ * its chrome is pixel-identical to a real panel's rather than a hand-copied approximation of one.
+ *
+ * Contrast RE-DERIVED for every pair that changed surface, computed from the live token values
+ * (`src/app/ckb-v2-tokens.css`, the file that wins by specificity — see the forced-colours block
+ * below for why), never quoted from a document:
+ *
+ *     --text        on --ward-canvas (= --surface)   15.45:1 light,  16.78:1 dark   (`.count`)
+ *     --text-muted  on --ward-canvas (= --surface)     6.15:1 light,   8.45:1 dark   (`.footnote`, `.emptyNote`)
+ *     --text-muted  on --ward-ground (= --surface-inset)  5.72:1 light,   9.11:1 dark   (`.eyebrow`, top-level `.notice`/`.provenance`)
+ *     --warning-text on --warning-bg                    6.52:1 light,   7.94:1 dark   (`.notice`, `.absenceNotice`, `.notFoundBody`)
+ *
+ * The middle two match the figures already measured lower in this file for `--text-muted` against
+ * the canvas and the ground — recomputed here rather than assumed, because a panel moving content
+ * from `--surface-subtle` onto `--ward-canvas` is exactly the kind of surface change that can
+ * silently change which floor applies. Every pair clears 4.5:1 by a wide margin in both themes.
+ */
+.screen {
+  composes: wardTokens from "../ward-tokens.module.css";
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+
+  display: block;
+  min-height: 100dvh;
+  /* ⚠️ NO `background` HERE, DELIBERATELY. This was painting `var(--surface)` straight over
+     `--ward-ground`, which `WardGround` (`ward-shell.module.css`) paints on a real DOM ancestor of
+     this page's `<main>` — the defect `COVERING_THE_GROUND` named this file for. Removed
+     2026-09-04.
+
+     ⚠️ AND IT MUST BE DELETED, NEVER RENAMED. `--ward-canvas` is an alias for `--surface`, so
+     repainting this as `var(--ward-canvas)` covers the ground exactly as before while reading as
+     adoption in the diff. The detector could not tell the difference until it was fixed earlier
+     the same day; the rule holds whether or not a gate is watching.
+
+     On grey: this hub's own panels paint their own surfaces, so the space between and around them
+     now shows the shell's ground rather than a second, redundant white layer. */
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.main {
+  grid-column: 2;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--ward-space-16);
+  overflow-x: clip;
+  overflow-y: visible;
+  padding: var(--ward-space-16) var(--ward-space-20) var(--ward-space-24);
+}
+
+.governanceBanner {
+  display: flex;
+  min-height: var(--ward-tap);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ward-space-12);
+  border-bottom: 0.0625rem solid var(--line);
+  background: var(--surface-2);
+  padding: var(--ward-space-8) var(--ward-space-12);
+}
+
+.governanceBanner p {
+  min-width: 0;
+  flex: 1 1 12rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-relaxed);
+}
+
+.prototypeBadge {
+  display: inline-block;
+  flex-shrink: 0;
+  margin-inline-end: var(--ward-space-6);
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.05rem 0.4rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  vertical-align: 0.05rem;
+}
+
+.pageHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ward-space-6) var(--ward-space-10);
+}
+
+/* The identity, the name and the sentence share one baseline. `.prototypeNote` is the exception —
+   it takes the full width beneath them, because a safety line reading as a fourth item on a busy
+   line is a safety line nobody reads. */
+.prototypeNote {
+  flex-basis: 100%;
+}
+
+.headSep {
+  color: var(--line-strong);
+}
+
+/* "What kind of thing it is" — the identity block's category label, above the team's own name.
+   Same idiom as `statistics-sections.module.css`'s `.eyebrow`: quiet, uppercase, muted rather than
+   heading-coloured, so it reads as a label and not a second heading. */
+.eyebrow {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pageTitle {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-5);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.pageSubtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+/*
+ * The two page-level warning notices, stacked as one governance cluster — the separation from the
+ * clinical panels below that the second-edition layout asks for. Each `.notice` keeps its own
+ * bordered warning box; this only supplies the gap between them.
+ */
+.noticeGroup {
+  display: grid;
+  gap: var(--ward-space-8);
+}
+
+/*
+ * ⚠️ THESE TWO WERE FILLED AMBER FIELDS UNTIL 2026-09-05, AND THE PROMINENCE IS NOT WHAT CHANGED.
+ *
+ * The owner's standing principle, recorded verbatim in `globals.css` beside the identical change he
+ * asked for on `--warning-bg` on 2026-09-04 — "I want the crisp white... not the cream colour" —
+ * is that the signal "sits in `--warning-border` and `--warning-text`, which already carry it,
+ * rather than in a large tinted field". Three of these stacked above the first figure on this page
+ * were the cream he was pointing at.
+ *
+ * **What they say is load-bearing and none of it is quieter now.** The text keeps `--warning-text`,
+ * which is the colour carrying the signal, and gains a solid 3px edge in the same ink — so the
+ * notice still reads as a warning at a glance, from the two properties the system says should carry
+ * it. What goes is the wash behind the words, which was doing the same job a third time.
+ *
+ * ⚠️ DO NOT DEMOTE THESE TO `--text-muted` WHILE YOU ARE HERE. The reason they exist is that an
+ * empty list under one of these headings reads as an all-clear when it is nothing of the kind. A
+ * grey note beside a list of zero is worse than no note, because it looks like a caption.
+ */
+/* The placeholder statement and the missing-region count. Full width, full text, above every list
+   and never collapsed behind anything — they are the reason this screen can be shown to anyone. */
+.notice {
+  margin: 0;
+  border: 0;
+  border-inline-start: 0.1875rem solid var(--warn);
+  border-radius: 0;
+  padding: var(--ward-space-2) 0 var(--ward-space-2) var(--ward-space-12);
+  color: var(--warn);
+  font-size: var(--t-1);
+  line-height: var(--ward-leading-relaxed);
+}
+
+/* Quieter than the notices above: it qualifies the lists rather than disclaiming a claim. */
+.provenance {
+  margin: 0;
+  border-left: 0.125rem solid var(--line);
+  padding-left: var(--ward-space-10);
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-relaxed);
+}
+
+/*
+ * The content each `WardPanel` holds. `ward-panel.module.css`'s `.panel` paints no body padding of
+ * its own — deliberately, so a panel can hold a table that wants to run edge to edge — so every
+ * consumer supplies its own, the same way `community-index.module.css`'s `.emptyNotice`/`.teamList`
+ * and `delays.module.css`'s `.bar`/`.filters`/`.attention` already do. Same shape `.section` used to
+ * declare directly; only the surrounding border/radius/background moved into the primitive.
+ */
+.panelBody {
+  display: grid;
+  gap: var(--ward-space-8);
+  padding: var(--ward-space-12) var(--ward-space-14);
+}
+
+/*
+ * The two sentences that say what a list CANNOT tell you, inside their own panel and directly
+ * beneath its heading. Same treatment as the page-level notices, because they carry the same kind
+ * of weight: an empty list under either of these headings would otherwise read as an all-clear.
+ */
+/*
+ * 🔴 **THE INFO REGISTER, NOT THE WARNING ONE, AND THAT IS THE WHOLE POINT OF THE CLASS.**
+ *
+ * `.notice` and `.absenceNotice` are amber: something is missing, or something is unsafe to
+ * assume. **A ratified service alias is the opposite — a person has RESOLVED something**, and
+ * rendering it amber would read as "there is a problem here" when the problem is the one that has
+ * just been answered.
+ *
+ * ⚠️ **IT MUST ALSO NOT LOOK LIKE THE NEAR-DUPLICATE SENTENCE IN THE PARAGRAPH ABOVE IT.** That
+ * sentence is a string resemblance a rule computed. This is a clinical judgement a named person
+ * made on a named date. **They carry completely different authority and a reader has to be able to
+ * tell which is which without being told** — which is why this is a separate element in a separate
+ * colour rather than another `<strong>` in the same paragraph.
+ */
+.ratifiedNotice {
+  margin: 0;
+  border: 0;
+  border-inline-start: 0.1875rem solid var(--line-strong);
+  border-radius: 0;
+  padding: var(--ward-space-2) 0 var(--ward-space-2) var(--ward-space-12);
+  color: var(--accent-ink);
+  font-size: var(--t-1);
+  line-height: var(--ward-leading-relaxed);
+}
+
+.ratifiedProvenance {
+  display: block;
+  margin-top: var(--ward-space-2);
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.absenceNotice {
+  margin: 0;
+  border: 0;
+  border-inline-start: 0.1875rem solid var(--warn);
+  border-radius: 0;
+  padding: var(--ward-space-2) 0 var(--ward-space-2) var(--ward-space-12);
+  color: var(--warn);
+  font-size: var(--t-1);
+  line-height: var(--ward-leading-relaxed);
+}
+
+.count {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-2);
+  font-weight: 600;
+  line-height: var(--ward-leading-relaxed);
+}
+
+.footnote {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-relaxed);
+}
+
+.emptyNote {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  font-style: italic;
+}
+
+/* The published contact detail for a team a person has paired with a real service. Definition list
+   rather than paragraphs, because label and value are exactly what this is, and a screen reader
+   should hear "Phone, 08 9416 3800" rather than one run-on line. */
+.contactList {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 0.75rem;
+  margin: 0 0 0.75rem;
+}
+
+.contactList dt {
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+.contactList dd {
+  margin: 0;
+  font-size: var(--t-1);
+}
+
+/*
+ * Cards at every width rather than a table on the desktop and cards on a phone. Each row carries
+ * two or three short facts, not four columns of comparable values, so there is nothing here for a
+ * table to align — and a single treatment means the phone view is not a second rendering that a
+ * DOM assertion could pass against while the other one was wrong.
+ */
+.cardList {
+  display: grid;
+  gap: var(--ward-space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: grid;
+  gap: var(--ward-space-4);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: var(--ward-space-10) var(--ward-space-12);
+}
+
+.cardHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-8);
+  flex-wrap: wrap;
+}
+
+.cardUnit {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-2);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.referralStatusMarker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ward-space-6);
+  padding: var(--ward-space-2) var(--ward-space-8);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--pill);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 600;
+  line-height: var(--ward-leading-ui);
+}
+
+.statusDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--warn);
+  flex-shrink: 0;
+}
+
+.cardDetail {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  overflow-wrap: anywhere;
+}
+
+.cardActionsGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-8);
+  margin-top: var(--ward-space-8);
+  padding-top: var(--ward-space-8);
+  border-top: 0.0625rem solid var(--line);
+}
+
+.cardWorkflowActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ward-space-8);
+}
+
+.cardActionButton {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ward-space-8) var(--ward-space-12);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+
+.cardActionButton:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+}
+
+.declineActions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ward-space-8);
+  margin-top: var(--ward-space-4);
+  padding-top: var(--ward-space-8);
+  border-top: 0.0625rem solid var(--line);
+}
+
+.declineButton {
+  align-self: flex-start;
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ward-space-8) var(--ward-space-12);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.declineButton:hover {
+  background: var(--surface-2, var(--surface));
+  border-color: var(--line-strong);
+}
+
+.declineForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-8);
+  width: 100%;
+}
+
+.declineLabel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-4);
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+}
+
+.declineSelect {
+  min-height: 44px;
+  min-width: 44px;
+  padding: var(--ward-space-8) var(--ward-space-12);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-1);
+}
+
+.acceptConfirmButton {
+  align-self: flex-start;
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ward-space-8) var(--ward-space-12);
+  border: 0.0625rem solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.acceptConfirmButton:hover {
+  filter: brightness(1.05);
+}
+
+.acceptConfirmButton:disabled,
+.acceptConfirmButton[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.declineConfirmButton {
+  align-self: flex-start;
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ward-space-8) var(--ward-space-12);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--danger-soft, var(--surface));
+  color: var(--danger, var(--ink));
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.declineConfirmButton:disabled,
+.declineConfirmButton[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Admitted-table Actions cluster — drawing look (btnSm*) + 48px tap faces for book/cancel. */
+.actionsCol {
+  text-align: right;
+}
+
+.actionsCell {
+  text-align: right;
+  vertical-align: middle;
+}
+
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--ward-space-8);
+}
+
+.rowActions .btnSmPrimary,
+.rowActions .btnSmSec,
+.rowActions .transportCancelButton {
+  min-height: 3rem;
+  min-width: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ward-space-8) var(--ward-space-12);
+  font-size: var(--t-1);
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
+}
+
+.transportActionButton {
+  align-self: flex-start;
+  min-height: 3rem;
+  min-width: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ward-space-8) var(--ward-space-12);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--radius-md, var(--r2));
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.transportActionButton:hover {
+  background: var(--surface-2, var(--sunk, var(--surface)));
+  border-color: var(--line-strong);
+}
+
+.transportCancelButton {
+  background: var(--danger-soft, var(--surface));
+  color: var(--danger, var(--ink));
+  border: 1px solid var(--danger, var(--line));
+  padding: 0.3125rem 0.625rem;
+  font-size: var(--t-0);
+  font-weight: 600;
+  border-radius: var(--r2);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.transportCancelButton:hover {
+  background: var(--danger-soft, var(--sunk));
+  border-color: var(--danger, var(--line-strong));
+}
+
+.transportBookedNote {
+  margin: var(--ward-space-8) 0 0;
+  color: var(--text-muted, var(--muted));
+  font-size: var(--t-1);
+  line-height: var(--ward-leading-relaxed);
+  text-align: right;
+}
+
+.transportFieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-8);
+}
+
+.transportOption {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+  min-height: 3rem;
+  color: var(--ink);
+  font-size: var(--t-1);
+  cursor: pointer;
+}
+
+.transportHint {
+  margin: 0;
+  color: var(--text-muted, var(--muted));
+  font-size: var(--t-1);
+}
+
+.transportConfirmButton {
+  align-self: flex-start;
+  min-height: 3rem;
+  min-width: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ward-space-8) var(--ward-space-12);
+  border: 0.0625rem solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.transportConfirmButton:hover {
+  filter: brightness(1.05);
+}
+
+.transportConfirmButton[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+}
+
+/*
+ * The switcher stays a `<nav>` for its landmark role (`getByRole("navigation", ...)`) — `WardPanel`
+ * renders a `<section>`, so it cannot be the outer element here. `composes` borrows the primitive's
+ * own panel/header/title classes instead, so this nav's chrome is the same panel look pixel for
+ * pixel rather than a hand-copied approximation that can drift from it.
+ */
+.teamSwitcher {
+  composes: panel from "../ward-panel.module.css";
+}
+
+.teamSwitcherHeader {
+  composes: panelHeader from "../ward-panel.module.css";
+}
+
+.teamSwitcherTitle {
+  composes: panelTitle from "../ward-panel.module.css";
+}
+
+/* `padding`, not `margin`: the composed `.panel` paints no body inset of its own, same reasoning as
+   `.panelBody` above and `community-index.module.css`'s `.teamList`. */
+.teamList {
+  display: grid;
+  gap: var(--ward-space-6);
+  margin: 0;
+  padding: var(--ward-space-12) var(--ward-space-14);
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  list-style: none;
+}
+
+/* 48px, the production tap target this repository holds to — never reduced to 44px for a generic
+   WCAG figure, which reintroduces a known ui-smoke flake. */
+.teamLink {
+  display: flex;
+  min-height: var(--ward-tap);
+  min-width: 44px;
+  align-items: center;
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: var(--ward-space-8) var(--ward-space-12);
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.teamLink:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.notFoundHeading {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-4);
+  font-weight: 700;
+}
+
+/* Warning treatment, matching `statistics-sections.module.css`'s `.notFoundBody`: the one state on
+   this screen where what the reader asked for genuinely does not exist, and the page must not look
+   as though it answered anyway. `--warning-text` on `--warning-bg` is the same pair `.notice` and
+   `.absenceNotice` already use — 6.52:1 light, 7.94:1 dark, computed above. */
+.notFoundBody {
+  margin: 0;
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  padding: var(--ward-space-10) var(--ward-space-12);
+  color: var(--warn);
+  font-size: var(--t-1);
+  line-height: var(--ward-leading-relaxed);
+}
+
+/*
+ * ── Third edition: the reordered layout ─────────────────────────────────────────────────────
+ * A two-column layout below the figure strip — the seven ordered panels on the left, the rail on
+ * the right — collapsing to one column on anything narrower than `ward-tokens.module.css`'s own
+ * board breakpoint. `WardFigureStrip` (`ward-figure.module.css`) already handles the figure row's
+ * own responsive columns, so nothing here repeats that.
+ */
+.contentGrid {
+  display: grid;
+  gap: var(--ward-space-16);
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.primaryColumn {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--ward-space-16);
+}
+
+/* The rail's own panels are `WardPanel`s like every other panel on this page — this only supplies
+   the gap between them and the column's own width once there is room for two columns. */
+.rail {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--ward-space-16);
+}
+
+/*
+ * ⚠️ 64rem IS OFF THE KNOWN SCALE (48 / 52 / 60 / 76) AND IT IS DERIVED, NOT PICKED. Measured on
+ * the rendered page 2026-09-05 rather than reasoned:
+ *
+ *     at 64rem   the content column resolves to 561px
+ *     the table's own floor is 34rem = 544px  (`--ward-table-min-width`, below)
+ *     so it clears by 17px — the rail can appear without the table scrolling
+ *
+ *     at 60rem   the same layout gives the content column ~497px
+ *                which is 47px UNDER the table's floor, so the table would begin
+ *                scrolling sideways at the exact moment the rail arrived
+ *
+ * **So this number is a consequence of `--ward-table-min-width: 34rem` plus the 20rem rail, and
+ * moving it to the nearest scale step would trade a scale violation for a horizontal scrollbar on
+ * a clinical table.** If that floor ever changes, this breakpoint has to be re-measured with it —
+ * CSS cannot compute a media query from a custom property, which is exactly why the derivation is
+ * written down here instead of being implied by the number.
+ *
+ * ⚠️ AND `KNOWN_BREAKPOINTS` IS NOT TO BE WIDENED TO ADMIT IT. Adding 64rem to the allowlist is the
+ * resolution that goes green and loses the constraint: the gate exists to make an off-scale value
+ * argue for itself, and this comment is the argument. A silent entry in a list is not one.
+ */
+@media (min-width: 64rem) {
+  .contentGrid {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+  }
+}
+
+/* The "admitted while already with this team" table. Same composition `referrals.module.css` and
+   `ward-table.module.css` already establish; `--ward-table-min-width` is the whole reason a
+   composed table keeps scrolling instead of squashing at narrow widths (see that file's own
+   comment) — five columns of duration text need real room. */
+.table {
+  composes: table from "../ward-table/ward-table.module.css";
+  --ward-table-min-width: 34rem;
+}
+
+.tableScroll {
+  overflow-x: auto;
+}
+
+/* "Worth your attention" — a duration or an id leads each item, never a colour: this list's only
+   signal is which entry appears at all, not how it is drawn. */
+.attentionList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attentionItem {
+  border-inline-start: 0.1875rem solid var(--line-strong);
+  padding-inline-start: var(--ward-space-10);
+  color: var(--ink);
+  font-size: var(--t-1);
+  line-height: var(--ward-leading-relaxed);
+}
+
+/* "What this page cannot tell you" — plain prose bullets, no warning treatment: these restate
+   limits the page already states in full elsewhere, so they read as a reference rather than a
+   second set of alarms. */
+.limitsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-10);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: var(--ward-leading-relaxed);
+}
+
+/* "This team" — a `<dl>` of short facts. Each `.factsRow` `<div>` holds exactly one `<dt>`/`<dd>`
+   pair, the one shape a `<dl>` permits inside a wrapping `<div>`. */
+.factsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-6);
+  margin: 0;
+}
+
+.factsRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ward-space-8);
+  font-size: var(--t-1);
+}
+
+.factsRow dt {
+  color: var(--muted);
+}
+
+.factsRow dd {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 600;
+  text-align: right;
+}
+
+/* "Go to" — real routes only; see the component for why each one is there. 48px tap target, the
+   production floor this repository holds to (never 44px, which reintroduces a known flake). */
+.linksList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.linksItem {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.linksItem:hover {
+  color: var(--ink);
+}
+
+/* Keep all six engine figures in a balanced three-by-two band between phone and desktop. */
+@media (min-width: 40.001rem) and (max-width: 68.75rem) {
+  .standing :global([data-ward-primitive="figure-strip"]) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 40rem) {
+  .teamList {
+    grid-template-columns: 1fr;
+  }
+}
+
+/*
+ * ⚠️ FORCED COLOURS PUTS THE SYSTEM TOKENS BACK. `--ward-border` (`ward-tokens.module.css`, which
+ * this screen now composes) deliberately SEVERS the chain to `--border`, because `--border` is not
+ * a faint line, it is no line at all.
+ *
+ * ⚠️ FIGURES CORRECTED 2026-09-04, AND THE ORIGINALS WERE MEASURED AGAINST THE LOSING DECLARATION.
+ * They were computed from `globals.css`'s surfaces. `ckb-v2-tokens.css` wins: `.ckb-v2.ckb-v2` is
+ * specificity (0,2,0) against `:root`'s (0,1,0), both match `<html>`, so specificity decides and
+ * import order is irrelevant. Recomputed against the values that actually apply, light / dark,
+ * anchored on black-on-white returning exactly 21.0000:
+ *
+ *     --border         1.20 / 1.58 on the canvas,  1.11 / 1.70 on the ground
+ *     --neutral-500    4.97 / 4.85 on the canvas,  4.63 / 5.23 on the ground
+ *     --text-muted     6.15 / 8.45 on the canvas,  5.72 / 9.11 on the ground
+ *
+ * The conclusion survives the correction — `--border` is invisible and `--neutral-500` clears the
+ * 3:1 a boundary needs — but every one of the six original numbers was wrong, and the same six
+ * appear in 26 other ward stylesheets. Reported rather than swept from here.
+ *
+ * ⚠️ THAT COUNT SAID 27 UNTIL 2026-09-04 AND WAS ITSELF A STALE FIGURE — the correction to this
+ * file removed one of the 27, and the comment recording the correction kept the pre-correction
+ * total. `grep -rl '1.21:1' src/components/ward-management/` returns 26. Small, and exactly the
+ * failure this comment is about: a number written from recollection while prose was being composed,
+ * inside the paragraph correcting six other numbers written the same way.
+ *
+ * ⚠️ THE BLOCK BELOW IS NOT REDUNDANT AND MUST NOT BE "CLEANED UP" BECAUSE ITS TOKENS MOVED.
+ * Severing the chain costs a high-contrast user the system border colour, which globals.css maps to
+ * `ButtonBorder`/`CanvasText` under forced colours — and `--neutral-500` is NOT remapped there,
+ * while `--border` is. None of the six Board-layer stylesheets carries a forced-colors block to
+ * inherit, so a screen that adopts the shared layer and drops this block loses Windows High
+ * Contrast support outright. No test in this repository renders under forced colours, so nothing
+ * would say so. A fix for one group of users that quietly breaks it for another is not a fix.
+ */
+@media (forced-colors: active) {
+  .screen {
+    --ward-border: var(--line);
+    --ward-border-strong: var(--line-strong);
+  }
+}
+
+/*
+ * ⚠️ PRINT: THE ROOT'S OWN TEXT COLOUR MUST BE RESET, OR THIS SCREEN PRINTS BLANK IN DARK MODE.
+ *
+ * `.screen` sets `color: var(--ink)` on itself. Dark tokens are scoped by the CLASS
+ * `.ckb-v2.dark.ckb-v2` rather than by a media query, so that class is still on `<html>` while
+ * printing and `--text` is still `#f4f6f8` — near-white. `globals.css` resets `body` to black for
+ * print, but an ancestor's declaration cannot beat one made on the element itself, at any
+ * specificity.
+ *
+ * Until 2026-09-04 this root also painted an opaque background, so the result was light text on a
+ * dark band: wrong, but obviously wrong, and therefore reported. Deleting that background during
+ * token adoption removed the band and left near-white ink on white paper — a page that reads as
+ * "there was nothing to print". The background deletion is correct; it just needs this half too.
+ *
+ * ⚠️ BOTH DECLARATIONS ARE LOAD-BEARING. `color-scheme: light` alone does NOT fix it — it governs
+ * UA-rendered chrome and `light-dark()`, and does not re-resolve a token scoped by a class. It is
+ * here so `CanvasText` resolves to black rather than white; `color: CanvasText` is what actually
+ * overrides the root's `var(--ink)`. Remove either and the page goes blank again.
+ *
+ * Not fixable centrally at `.shell`: a colour set on an ancestor cannot beat `.screen`'s own
+ * declaration. It has to live in the file that made the declaration.
+ *
+ * The reset below covers `.screen` AND its descendants, because a colour declared on an element
+ * itself cannot be overridden by any ancestor rule at any specificity — a descendant that sets
+ * `color: var(--ink)` directly needs the same reset `.screen` gets, not just its ancestor's.
+ */
+@media print {
+  .screen,
+  .screen * {
+    color-scheme: light;
+    /* `!important`, not a specificity chase: a compound descendant selector such as `.table td`
+       (0,1,1) outranks this rule's `.screen *` (0,1,0) on specificity alone, so without
+       `!important` a themed leaf using a type-qualified selector would still win and print
+       near-white. The intent here is genuinely "nothing on this sheet overrides this ink". */
+    color: CanvasText !important;
+    /* The background needs the same floor: dark-theme tokens survive into print because nothing
+       else here resets them, so forcing text to `CanvasText` without also neutralising the
+       background produces black ink on a still-dark card. */
+    background-color: Canvas !important;
+  }
+}
+
+/* The one safety line kept in the header, and the footer the three page-level notices moved to.
+   Both mirror `community-index.module.css` exactly, so the two community screens do not drift into
+   two treatments of the same idea. */
+.prototypeNote {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: var(--ward-leading-relaxed);
+}
+
+.prototypeNote strong {
+  color: var(--ink);
+}
+
+.aboutPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-10);
+  margin-block-start: var(--ward-space-32);
+  border-top: 0.0625rem solid var(--line);
+  padding-block-start: var(--ward-space-16);
+}
+
+.aboutHeading {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Visual rebuild, 2026-09-13. The served third-edition drawing supersedes the older
+   two-column rail and edge-marked cards described above. All existing facts remain. */
+.screen {
+  display: block;
+  min-height: 0;
+  padding-top: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-variant-numeric: tabular-nums;
+}
+
+.main {
+  grid-column: auto;
+  gap: 1rem;
+  padding: 1rem 1.5rem 1.5rem;
+}
+
+.standing {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+
+.pageHeader {
+  align-items: baseline;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  padding: 0.75rem 1rem;
+}
+
+.eyebrow,
+.headSep {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.pageTitle {
+  font-size: var(--t-2);
+  line-height: 1.4;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
+.pageSubtitle,
+.prototypeNote {
+  font-size: var(--t-1);
+  line-height: 1.5;
+}
+
+.prototypeNote {
+  flex-basis: auto;
+}
+.prototypeBadge {
+  font-size: var(--t-0);
+}
+
+.contentGrid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.primaryColumn,
+.rail {
+  display: contents;
+}
+.contentGrid :global([data-ward-primitive="panel"]) {
+  grid-column: 1 / -1;
+}
+
+.panelBody {
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+.cardList {
+  gap: 0;
+}
+.card {
+  gap: 0.375rem;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  padding: 0.75rem 0;
+}
+.card:first-child {
+  padding-top: 0;
+}
+.card:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.cardUnit {
+  font-size: var(--t-2);
+  font-weight: 600;
+}
+.cardDetail,
+.count {
+  font-size: var(--t-1);
+}
+.footnote,
+.emptyNote {
+  font-size: var(--t-1);
+  line-height: 1.5;
+}
+.count {
+  font-weight: 500;
+}
+
+.attentionList {
+  gap: 0.625rem;
+}
+.attentionItem {
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  padding: 0.625rem 0.75rem;
+  font-size: var(--t-1);
+}
+
+.notice,
+.absenceNotice,
+.ratifiedNotice,
+.provenance {
+  border: 0;
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  padding: 0.75rem;
+  font-size: var(--t-1);
+}
+.notice,
+.absenceNotice {
+  color: var(--warn);
+}
+.ratifiedNotice {
+  color: var(--accent-ink);
+}
+.ratifiedProvenance {
+  font-size: var(--t-0);
+}
+
+.teamSwitcher {
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+}
+.teamDisclosure {
+  margin: 0;
+}
+.teamSwitcherHeader {
+  display: flex;
+  min-height: 3rem;
+  min-width: 44px;
+  align-items: center;
+  gap: 0.75rem;
+  border: 0;
+  padding: 0.5rem 1rem;
+  background: var(--surface-2);
+  cursor: pointer;
+}
+.teamSwitcherHeader::before {
+  content: "+";
+  font-family: var(--mono);
+}
+.teamDisclosure[open] > .teamSwitcherHeader::before {
+  content: "−";
+}
+.teamSwitcherTitle {
+  font-size: var(--t-1);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.switchCount {
+  margin-left: auto;
+  color: var(--muted);
+  font: var(--t-0) var(--mono);
+}
+.teamList {
+  gap: 0.25rem;
+  padding: 0.5rem;
+}
+.teamLink {
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  border: 0;
+  border-radius: var(--r2);
+  font-size: var(--t-1);
+  font-weight: 500;
+}
+.teamLink:hover {
+  background: var(--surface-2);
+}
+.screen :is(a, summary):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.tableScroll {
+  border: 0;
+  margin-inline: -1rem;
+}
+.table caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.screen .tableScroll[data-ward-scroll-hint="true"] {
+  border: 0;
+}
+.table {
+  --ward-table-min-width: 45rem;
+}
+.aboutPage {
+  margin-block-start: 0;
+  padding-top: 1rem;
+}
+.aboutHeading {
+  font-size: var(--t-0);
+  display: flex;
+  align-items: center;
+  min-height: 3rem;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.aboutDisclosure > :not(summary) {
+  margin-top: 0.75rem;
+}
+
+@media (min-width: 64rem) {
+  .contentGrid {
+    grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
+  }
+  .contentGrid :global([data-testid="ward-community-waiting"]) {
+    grid-column: 1;
+  }
+  .contentGrid :global([data-testid="ward-community-attention"]) {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 40rem) {
+  .main {
+    padding: 0.875rem;
+  }
+  .pageHeader {
+    gap: 0.75rem;
+  }
+  .pageSubtitle {
+    flex-basis: 100%;
+  }
+  .teamList {
+    grid-template-columns: 1fr;
+  }
+  .tableScroll {
+    border: 1px solid var(--line-strong);
+  }
+  .screen .tableScroll[data-ward-scroll-hint="true"] {
+    border: 1px solid var(--line-strong);
+  }
+}
+
+@media (forced-colors: active) {
+  .screen :is(a, summary):focus-visible {
+    outline-color: Highlight;
+  }
+  .standing,
+  .card,
+  .attentionItem,
+  .teamSwitcher {
+    border-color: CanvasText;
+  }
+}
+
+@media print {
+  .screen,
+  .screen * {
+    color-scheme: light;
+    color: CanvasText !important;
+    background-color: Canvas !important;
+  }
+  .standing,
+  .main,
+  .tableScroll {
+    overflow: visible;
+  }
+  .contentGrid {
+    display: block;
+  }
+  .contentGrid :global([data-ward-primitive="panel"]) {
+    margin-bottom: 1rem;
+  }
+}
+
+/* Q003: pair the team's primary lists with its summary panels on desktop. Each row shares a
+ * bottom edge and each panel keeps its heading outside the independently scrolling body. Longer
+ * unmatched lists remain full-width bounded sections below the paired dashboard rows. */
+@media (min-width: 62.5625rem) {
+  .contentGrid {
+    grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
+    align-items: stretch;
+  }
+
+  .contentGrid :global([data-ward-primitive="panel"]) {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .contentGrid :global([data-ward-primitive="panel"]) > :global([data-ward-primitive="panel-header"]) {
+    flex: none;
+  }
+
+  .contentGrid .panelBody {
+    min-height: 0;
+    flex: 1;
+    align-content: start;
+    grid-auto-rows: max-content;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .contentGrid :global([data-testid="ward-community-waiting"]) {
+    height: var(--ward-compact-height, clamp(22rem, calc(100dvh - 18rem), 34rem));
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .contentGrid :global([data-testid="ward-community-attention"]) {
+    height: var(--ward-compact-height, clamp(22rem, calc(100dvh - 18rem), 34rem));
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .contentGrid :global([data-testid="ward-community-admitted"]) {
+    height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .contentGrid :global([data-testid="ward-community-limits"]) {
+    height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .contentGrid :global([data-testid="ward-community-accepted-before-admission"]) {
+    height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .contentGrid :global([data-testid="ward-community-facts"]) {
+    height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  .contentGrid :global([data-testid="ward-community-expected"]) {
+    height: var(--ward-compact-height, clamp(22rem, calc(100dvh - 18rem), 34rem));
+    grid-column: 1;
+    grid-row: 4;
+  }
+
+  .contentGrid :global([data-testid="ward-community-links"]) {
+    height: var(--ward-compact-height, clamp(22rem, calc(100dvh - 18rem), 34rem));
+    grid-column: 2;
+    grid-row: 4;
+  }
+
+  .contentGrid :global([data-testid="ward-community-discharged"]),
+  .contentGrid :global([data-testid="ward-community-other-departures-panel"]),
+  .contentGrid :global([data-testid="ward-community-referrals"]) {
+    grid-column: 1 / -1;
+    max-height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
+  }
+}
+
+@media print {
+  .contentGrid :global([data-ward-primitive="panel"]) {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .contentGrid .panelBody {
+    overflow: visible;
+  }
+}
+/* Q004: content-sized worklists and full-width admission tables follow the team drawing. */
+@media screen and (min-width: 62.5625rem) {
+  .contentGrid {
+    align-items: start;
+  }
+  .contentGrid :global([data-ward-primitive="panel"]) {
+    height: auto;
+    max-height: 38rem;
+  }
+  .contentGrid :global([data-testid="ward-community-admitted"]) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .contentGrid :global([data-testid="ward-community-accepted-before-admission"]) {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+  .contentGrid :global([data-testid="ward-community-expected"]) {
+    grid-column: 1;
+    grid-row: 4;
+  }
+  .contentGrid :global([data-testid="ward-community-discharged"]) {
+    grid-column: 2;
+    grid-row: 4;
+  }
+  .contentGrid :global([data-testid="ward-community-limits"]),
+  .contentGrid :global([data-testid="ward-community-facts"]),
+  .contentGrid :global([data-testid="ward-community-links"]) {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+.panelBody {
+  overflow-wrap: anywhere;
+}
+.factsRow {
+  gap: 0.5rem 1rem;
+}
+.attentionItem {
+  line-height: 1.55;
+}
+@media screen and (max-width: 40rem) {
+  .pageHeader {
+    gap: 0.35rem 0.65rem;
+    padding: 0.75rem;
+  }
+  .panelBody {
+    padding: 0.75rem;
+  }
+  .teamSwitcherHeader {
+    flex-wrap: wrap;
+  }
+  .switchCount {
+    margin-left: 0;
+  }
+}
+
+/* F10 (Opus adversarial review, 2026-09-17) / item 48: this team's own inbox for notices
+   addressed to it — the shared ward-bar Activity panel has no "community" chrome role, so this
+   is the only place these can be seen or marked read. Same token-based shape as
+   `ward-bar.module.css`'s own `.activityFeed`/`.noticeMarkRead`/`.noticeReadLabel`, kept as a
+   separate, community-prefixed set rather than a cross-module CSS import. */
+.teamNoticesHead {
+  margin: 0;
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+}
+
+.teamNoticesHead span {
+  font-family: var(--mono);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.teamNoticesFeed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.teamNoticesFeed li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: var(--t-1);
+  border-bottom: 0.0625rem solid var(--line);
+  padding-bottom: 0.375rem;
+}
+
+.teamNoticesFeed li[data-notice-read="true"] .teamNoticeContent > span:first-child {
+  color: var(--muted);
+}
+
+.teamNoticesFeed time {
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.teamNoticeContent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.teamNoticeMarkRead {
+  display: inline-flex;
+  min-height: var(--ward-tap);
+  min-width: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.75rem;
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: var(--t-0);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.teamNoticeMarkRead:hover {
+  background: var(--surface-2);
+}
+
+.teamNoticeMarkRead:focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: 0.125rem;
+}
+
+.teamNoticeReadLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ward-space-4);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.readDot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+}
+
+.noticeStatusActionRow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+  flex-wrap: wrap;
+}
+
+.alertBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ward-space-4);
+  padding: var(--ward-space-2) var(--ward-space-6);
+  border: 0.0625rem solid var(--warn);
+  border-radius: var(--pill);
+  background: var(--surface-2);
+  color: var(--warn);
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: var(--ward-leading-ui);
+}
+
+.alertDot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--warn);
+  flex-shrink: 0;
+}
+
+/* ── Modals & Action Dialogs ─────────────────────────────────────────────── */
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--ward-z-sticky, 100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--scrim);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  padding: var(--ward-space-16);
+}
+
+.modalDialog {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 28rem;
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: 0 0.625rem 1.5625rem -0.3125rem var(--scrim);
+  overflow: hidden;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--ward-space-12) var(--ward-space-16);
+  border-bottom: 0.0625rem solid var(--line);
+  background: var(--surface-2);
+}
+
+.modalTitle {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-2);
+  font-weight: 700;
+}
+
+.modalCloseBtn {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0.0625rem solid transparent;
+  border-radius: var(--r2);
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modalCloseBtn:hover {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.modalBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-12);
+  padding: var(--ward-space-16);
+  color: var(--ink);
+  font-size: var(--t-1);
+}
+
+.modalProtNote {
+  margin: 0;
+  color: var(--warn);
+}
+
+.modalDetailsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-6);
+  margin: 0;
+}
+
+.modalDetailsList p {
+  margin: 0;
+  color: var(--ink);
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--ward-space-12) var(--ward-space-16);
+  border-top: 0.0625rem solid var(--line);
+  background: var(--surface-2);
+}
+
+.modalDoneBtn {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ward-space-8) var(--ward-space-16);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.modalDoneBtn:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+}
+
+.modalWide {
+  max-width: 36rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.formLabel {
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.formInput,
+.formSelect,
+.formTextarea {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--r2);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--t-1);
+}
+
+.formInput:focus,
+.formSelect:focus,
+.formTextarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ── Action Toasts ───────────────────────────────────────────────────────── */
+
+.actionToast {
+  position: fixed;
+  bottom: var(--ward-space-24);
+  right: var(--ward-space-24);
+  z-index: var(--ward-z-sticky, 100);
+  display: none;
+  align-items: center;
+  gap: var(--ward-space-8);
+  padding: var(--ward-space-10) var(--ward-space-16);
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+}
+
+.actionToast.show {
+  display: flex;
+}
+
+.toastIcon {
+  color: var(--accent);
+  font-size: 1.125rem;
+}
+
+/* ── Tabular Numerals ────────────────────────────────────────────────────── */
+
+.screen :global([data-ward-primitive="figure"]),
+.screen :global([data-ward-primitive="figure-value"]),
+.screen :global([data-ward-primitive="figure-sub"]),
+.teamPopoverMeta,
+.teamLinkMeta,
+.switchCount,
+.factsRow dd,
+.cardDetail,
+.cardUnit,
+.count,
+.table td,
+.table th,
+.attentionItem {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Dark Mode Contrast & Border Enforcement ────────────────────────────── */
+
+:global([data-theme="dark"]) .standing,
+:global(.dark) .standing {
+  border-color: var(--line-strong);
+  background: var(--surface);
+}
+
+:global([data-theme="dark"]) .screen :global([data-ward-primitive="panel"]),
+:global(.dark) .screen :global([data-ward-primitive="panel"]) {
+  border-color: var(--line-strong);
+  background: var(--surface);
+}
+
+:global([data-theme="dark"]) .screen :global([data-ward-primitive="panel-header"]),
+:global(.dark) .screen :global([data-ward-primitive="panel-header"]) {
+  border-bottom-color: var(--line-strong);
+  background: var(--surface-2);
+}
+
+:global([data-theme="dark"]) .card,
+:global(.dark) .card {
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+
+:global([data-theme="dark"]) .attentionItem,
+:global(.dark) .attentionItem {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+
+:global([data-theme="dark"]) .table,
+:global(.dark) .table {
+  border-color: var(--line-strong);
+}
+
+:global([data-theme="dark"]) .teamSwitcherHeader,
+:global(.dark) .teamSwitcherHeader {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+
+:global([data-theme="dark"]) .teamLink,
+:global(.dark) .teamLink {
+  border: 0.0625rem solid var(--line-strong);
+  background: var(--surface-2);
+}
+
+:global([data-theme="dark"]) .cardActionButton,
+:global(.dark) .cardActionButton,
+:global([data-theme="dark"]) .declineButton,
+:global(.dark) .declineButton,
+:global([data-theme="dark"]) .declineSelect,
+:global(.dark) .declineSelect {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+
+:global([data-theme="dark"]) .referralStatusMarker,
+:global(.dark) .referralStatusMarker,
+:global([data-theme="dark"]) .alertBadge,
+:global(.dark) .alertBadge {
+  border-color: var(--line-strong);
+  background: var(--sunk);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THIRD EDITION SOVEREIGN EXTENSIONS
+   Universal Sovereign Header, Telemetry Glance Strip, Action Bar,
+   Priority Referral Triage Queue, Clinician Roster & Operational Drawers
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Universal Sovereign Header ─────────────────────────────────────────── */
+.sovereignHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-12);
+  padding: var(--ward-space-12) var(--ward-space-20);
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 35;
+  box-shadow: var(--lift);
+  flex-wrap: wrap;
+}
+
+.hdrPlace {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ward-space-8);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.hdrPlaceTitle {
+  font-family: var(--display, var(--body));
+  font-size: var(--t-4);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin: 0;
+  white-space: nowrap;
+}
+
+.hdrChip {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--sunk);
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-pill, 9999px);
+  border: 1px solid var(--line);
+  letter-spacing: 0.02em;
+}
+
+.hdrChipFull {
+  display: inline;
+}
+
+.sovereignHeader .duplicateHeaderControl {
+  display: none;
+}
+
+.exampleMenu {
+  position: relative;
+  margin-left: auto;
+}
+
+.exampleMenuSummary {
+  min-height: var(--ward-tap, 3rem);
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+.exampleMenuSummary:hover,
+.exampleMenuSummary:focus-visible {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.exampleMenuActions {
+  position: absolute;
+  top: calc(100% + 0.375rem);
+  right: 0;
+  z-index: 50;
+  width: min(20rem, calc(100vw - 2rem));
+  padding: 0.75rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+  box-shadow: var(--lift);
+  display: grid;
+  gap: 0.5rem;
+}
+
+.exampleMenuActions p {
+  margin: 0 0 0.25rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.45;
+}
+
+.exampleMenuActions .iconBtn {
+  min-height: var(--ward-tap, 3rem);
+  justify-content: flex-start;
+}
+
+/* Universal Search in Header */
+.searchWrap {
+  position: relative;
+  flex: 1;
+  max-width: 24rem;
+  min-width: 12rem;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.625rem;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.searchBox:focus-within {
+  background: var(--surface);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.searchBox svg {
+  width: 0.9375rem;
+  height: 0.9375rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.searchInput {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font-size: var(--t-1);
+  color: var(--ink);
+  outline: none;
+  width: 100%;
+}
+
+.searchInput::placeholder {
+  color: var(--muted);
+}
+
+.searchInputPlaceholder {
+  flex: 1;
+  font-size: var(--t-1);
+  color: var(--muted);
+  text-align: left;
+}
+
+button.searchBox {
+  cursor: pointer;
+  width: 100%;
+  font: inherit;
+  border: 1px solid var(--line);
+}
+
+button.searchBox:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+}
+
+.searchKbd {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  padding: 0.0625rem 0.3125rem;
+  border-radius: 0.25rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.qPop {
+  position: absolute;
+  top: calc(100% + 0.375rem);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  box-shadow: var(--lift);
+  z-index: 50;
+  max-height: 20rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.qHit {
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: background 0.12s;
+  text-align: left;
+}
+
+.qHit:last-child {
+  border-bottom: none;
+}
+
+.qHit:hover {
+  background: var(--sunk);
+}
+
+.qHitTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.qHitMeta {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+  margin-top: 0.1875rem;
+  display: block;
+}
+
+/* Header Controls & End buttons */
+.hdrEnd {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.iconBtn {
+  height: 2.125rem;
+  padding: 0 0.625rem;
+  border-radius: var(--r2);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+
+.iconBtn:hover {
+  background: var(--sunk);
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+.iconBtn[aria-expanded="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.badgePill {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: var(--sunk);
+  border-radius: var(--radius-pill, 9999px);
+  padding: 0.0625rem 0.375rem;
+  border: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.statusPillBadge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  padding: 0.125rem 0.4375rem;
+  border-radius: var(--radius-pill, 9999px);
+  border: 1px solid var(--line);
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+.statusPillBadge[data-tone="good"] {
+  background: var(--good-soft);
+  color: var(--good);
+  border-color: var(--good);
+}
+
+.statusPillBadge[data-tone="warn"] {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.statusPillBadge[data-tone="danger"] {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border-color: var(--danger);
+}
+
+.statusPillBadge[data-tone="neutral"] {
+  background: var(--sunk);
+  color: var(--ink-soft);
+  border-color: var(--line);
+}
+
+/* Service Menu Dropdown */
+.serviceMenu {
+  position: relative;
+}
+
+.dotSvc {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--accent);
+}
+
+.dotSvc[data-svc="east"] {
+  background: var(--svc-east, var(--clinical-domain-ward));
+}
+
+.dotSvc[data-svc="south"] {
+  background: var(--svc-south, var(--clinical-domain-transport));
+}
+
+.dotSvc[data-svc="north"] {
+  background: var(--svc-north, var(--clinical-domain-coordinator));
+}
+
+.dotSvc[data-svc="all"] {
+  background: var(--muted);
+}
+
+/* ── Top Action Bar & Team Selector ─────────────────────────────────────── */
+.topActionBarWrap {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: var(--ward-space-12) var(--ward-space-20);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-12);
+}
+
+.actionBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-12);
+  flex-wrap: wrap;
+}
+
+.actionBtnsLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+  flex-wrap: wrap;
+}
+
+.moreActions {
+  position: relative;
+}
+
+.moreActions > summary {
+  list-style: none;
+}
+
+.moreActions > summary::-webkit-details-marker {
+  display: none;
+}
+
+.moreActions > summary::after {
+  content: "⌄";
+  margin-left: 0.25rem;
+  color: var(--muted);
+}
+
+.moreActions[open] > summary {
+  background: var(--surface-2);
+  border-color: var(--accent);
+}
+
+.moreActionsMenu {
+  position: absolute;
+  top: calc(100% + 0.375rem);
+  right: 0;
+  z-index: 40;
+  min-width: 15rem;
+  padding: 0.5rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+  box-shadow: var(--lift);
+  display: grid;
+  gap: 0.375rem;
+}
+
+.moreActionsMenu .btnActionSec {
+  width: 100%;
+  min-height: var(--ward-tap, 3rem);
+}
+
+.btnPrimaryAction {
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 1px solid var(--accent);
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  font-size: var(--t-2);
+  border-radius: var(--r2);
+  box-shadow: var(--lift);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btnPrimaryAction:hover {
+  background: var(--accent-press, var(--accent));
+  transform: translateY(-1px);
+}
+
+.btnActionSec {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  padding: 0.5rem 0.875rem;
+  font-weight: 500;
+  font-size: var(--t-1);
+  border-radius: var(--r2);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btnActionSec:hover {
+  background: var(--sunk);
+  border-color: var(--line-strong);
+}
+
+.scopeTeamDropdown {
+  position: relative;
+}
+
+.scopeDropdownMenu {
+  position: absolute;
+  top: calc(100% + 0.375rem);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  box-shadow: var(--lift);
+  z-index: 50;
+  min-width: 16rem;
+  display: flex;
+  flex-direction: column;
+  padding: 0.375rem 0;
+}
+
+.scopeDropdownHead {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.375rem 0.75rem;
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.scopeDropdownItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  font-size: var(--t-1);
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.12s;
+  width: 100%;
+  text-align: left;
+}
+
+.scopeDropdownItem:hover {
+  background: var(--sunk);
+}
+
+.scopeDropdownItem[data-selected="true"] {
+  background: var(--surface-2);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* ── Catchment Telemetry Glance Strip ───────────────────────────────────── */
+.glanceStrip {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--ward-space-12);
+  width: 100%;
+}
+
+.glanceCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  padding: 0.625rem 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+  min-width: 0;
+}
+
+.glanceCard:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--lift);
+}
+
+.glanceTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.glanceLbl {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.glanceVal {
+  font-family: var(--display, var(--body));
+  font-size: var(--t-5);
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.glanceVal small {
+  font-size: var(--t-0);
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.glanceSub {
+  font-size: var(--t-0);
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Operational Tab Bar ────────────────────────────────────────────────── */
+.tabBarWrap {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: 0 var(--ward-space-20);
+  position: sticky;
+  top: 3.5rem;
+  z-index: 30;
+}
+
+.tabList {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabList::-webkit-scrollbar {
+  display: none;
+}
+
+.tabBtn {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.625rem 0.75rem;
+  color: var(--muted);
+  font-size: var(--t-2);
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+  white-space: nowrap;
+}
+
+.tabBtn:hover {
+  color: var(--ink);
+}
+
+.tabBtn[aria-selected="true"] {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+.tabBadge {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  background: var(--sunk);
+  color: var(--muted);
+  border-radius: var(--radius-pill, 9999px);
+  padding: 0.0625rem 0.375rem;
+  border: 1px solid var(--line);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabBtn[aria-selected="true"] .tabBadge {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+/* ── Priority Referral Triage Queue (Third Edition Grid) ───────────────── */
+.filterToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: var(--ward-space-12);
+  flex-wrap: wrap;
+}
+
+.filterChipsGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.chipFilterBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.chipFilterBtn:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.chipFilterBtn[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.triageQueueGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  gap: var(--ward-space-12);
+  margin-bottom: var(--ward-space-16);
+}
+
+.refCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  padding: 0.875rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    transform 0.15s;
+}
+
+.refCard:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--lift);
+  transform: translateY(-1px);
+}
+
+.refCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+}
+
+.refId {
+  color: var(--ink);
+}
+
+.refWait {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.refWait[data-breach="true"] {
+  color: var(--danger-ink);
+  background: var(--danger-soft);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--r2);
+  border: 1px solid var(--danger);
+}
+
+.refPatientRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: var(--t-3);
+  color: var(--ink);
+}
+
+.refClinicalSummary {
+  font-size: var(--t-1);
+  line-height: 1.45;
+  color: var(--ink-soft);
+  background: var(--sunk);
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--r2);
+  border: 1px solid var(--line);
+}
+
+.refActionsRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.btnSmPrimary {
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 1px solid var(--accent);
+  padding: 0.3125rem 0.625rem;
+  font-size: var(--t-0);
+  font-weight: 600;
+  border-radius: var(--r2);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.btnSmPrimary:hover {
+  background: var(--accent-press, var(--accent));
+}
+
+.btnSmPrimary[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.intakeForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.intakeField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: var(--t-1);
+  font-weight: 600;
+}
+
+.intakeField .searchInput,
+.intakeField .declineSelect,
+.intakeHistory {
+  width: 100%;
+  font-weight: 400;
+}
+
+.intakeHistory {
+  min-height: 6rem;
+  padding: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--t-1);
+}
+
+.caseloadMeta {
+  display: block;
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.btnSmSec {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  padding: 0.3125rem 0.625rem;
+  font-size: var(--t-0);
+  font-weight: 500;
+  border-radius: var(--r2);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.btnSmSec:hover {
+  background: var(--sunk);
+  border-color: var(--line-strong);
+}
+
+/* ── Team Roster, Fleet & MDT Schedule (Tab 5 / Rail) ─────────────────── */
+.teamRosterGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--ward-space-12);
+  margin-top: var(--ward-space-8);
+}
+
+.staffCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  padding: 0.75rem 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4375rem;
+  transition: all 0.12s;
+}
+
+.staffCard:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--lift);
+}
+
+.staffHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.staffName {
+  font-weight: 700;
+  font-size: var(--t-2);
+  color: var(--ink);
+}
+
+.staffRole {
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.staffMetrics {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--ink-soft);
+  border-top: 1px solid var(--line);
+  padding-top: 0.375rem;
+  margin-top: 0.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.clinicFleetGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--ward-space-12);
+  margin-top: var(--ward-space-12);
+}
+
+.clinicRoomItem,
+.vehicleItem {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 0.625rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.clinicRoomTop,
+.vehicleTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.clinicRoomTitle,
+.vehicleTitle {
+  font-weight: 600;
+  font-size: var(--t-1);
+  color: var(--ink);
+}
+
+/* ── Active Caseload & CTO Table ────────────────────────────────────────── */
+.caseloadSection {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  overflow: hidden;
+  margin-bottom: var(--ward-space-16);
+}
+
+.teamWorkspaceSection {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+
+.teamWorkspaceSummary {
+  min-height: var(--ward-tap, 3rem);
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid transparent;
+  color: var(--ink);
+  font-size: var(--t-2);
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.teamWorkspaceSection[open] > .teamWorkspaceSummary {
+  border-bottom-color: var(--line);
+  background: var(--surface-2);
+}
+
+.illustrativeNotice {
+  margin: 0.75rem 1rem 0;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  line-height: 1.45;
+}
+
+.caseloadHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.caseloadTitle {
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ── Drawers & Modals ───────────────────────────────────────────────────── */
+.drawerScrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  backdrop-filter: blur(2px);
+  z-index: 90;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.drawerPanel {
+  width: min(32rem, 100vw);
+  height: 100%;
+  background: var(--surface);
+  border-left: 1px solid var(--line-strong);
+  box-shadow: -4px 0 24px var(--scrim);
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.drawerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.drawerTitle {
+  font-size: var(--t-3);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.drawerClose {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.drawerClose:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.drawerBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.clinicalToast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--lift);
+  padding: 0.625rem 1rem;
+  border-radius: var(--r2);
+  font-size: var(--t-1);
+  font-weight: 600;
+  z-index: 100;
+  animation: toastFadeIn 0.2s ease;
+}
+
+@keyframes toastFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Modal Overlay & Dialog ────────────────────────────────────────────── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  backdrop-filter: blur(2px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+}
+
+.modalBox {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+  max-width: 44rem;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalScaleUp 0.15s ease-out;
+}
+
+@keyframes modalScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modalHead {
+  padding: 0.875rem 1.125rem;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modalTitle {
+  font-size: var(--t-3);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.modalCloseBtn {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.modalCloseBtn:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.modalBody {
+  padding: 1.125rem 1.25rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modalFoot {
+  padding: 0.75rem 1.125rem;
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.625rem;
+}
+
+.searchPopInputWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.searchPopClose {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0 0.5rem;
+  line-height: 1;
+}
+
+.searchPopClose:hover {
+  color: var(--ink);
+}
+
+/* ── Responsive Adaptations ─────────────────────────────────────────────── */
+@media (max-width: 64rem) {
+  .glanceStrip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 48rem) {
+  .sovereignHeader {
+    /* Decision 3: WardBar's `.bar` is the ONE top-anchored phone element. This header is
+       `position: sticky; top: 0` unconditionally above, which is correct on a wide screen and a
+       competing owner on a phone. Released here rather than unpinned above, so the sovereign
+       header keeps sticky behaviour everywhere the phone bar is not present. Same release as
+       `.boardBar`, `.workspaceHeader`, and `.hdr1`. */
+    position: static;
+    padding: var(--ward-space-8) var(--ward-space-12);
+  }
+  .exampleMenu {
+    margin-left: 0;
+  }
+  .exampleMenuSummary {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .exampleMenuActions {
+    left: 0;
+    right: auto;
+  }
+  .searchWrap {
+    order: 3;
+    max-width: 100%;
+    width: 100%;
+  }
+  .glanceStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .topActionBarWrap {
+    padding: var(--ward-space-8) var(--ward-space-12);
+  }
+  .actionBtnsLeft,
+  .actionBtnsLeft > button,
+  .moreActions,
+  .moreActions > summary {
+    width: 100%;
+  }
+  .actionBtnsLeft > button,
+  .moreActions > summary {
+    justify-content: flex-start;
+  }
+  .moreActionsMenu {
+    position: static;
+    width: 100%;
+    margin-top: 0.375rem;
+    box-shadow: none;
+  }
+  .tabBarWrap {
+    /* Decision 3: same release as `.sovereignHeader` — sticky tab wrap is fine on wide screens
+       and a second top-anchored phone owner when WardBar is present. */
+    position: static;
+    padding: 0 var(--ward-space-12);
+  }
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 var(--ward-space-8, 0.5rem);
+  color: var(--accent-ink, var(--ward-blue));
+  font-size: var(--t-1, 0.875rem);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.1875rem;
+  border-radius: var(--r2, 0.25rem);
+  transition: color 0.12s;
+}
+
+.backLink:hover {
+  color: var(--accent-hover, var(--ward-blue));
+}
+
+.backLink:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

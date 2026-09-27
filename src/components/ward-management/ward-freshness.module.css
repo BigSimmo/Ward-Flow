@@ -1,0 +1,103 @@
+/*
+ * Task 4. The shared freshness stamp, mounted on Tasks 5, 6 and 7's boards. Following the same
+ * self-contained-token convention `ward-role-switcher.module.css` documents: every local token
+ * this file needs is declared here, on its own root class, never borrowed from a wrapping
+ * component's `--ward-*` scope, so this module works regardless of where it is placed.
+ */
+.stamp {
+  composes: wardTokens from "./ward-tokens.module.css";
+  --wf-muted: var(--ward-muted);
+  --wf-space-4: var(--ward-space-4);
+  --wf-leading-body: var(--ward-leading-copy);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-space-4);
+  color: var(--wf-muted);
+  font-size: var(--text-xs);
+  line-height: var(--wf-leading-body);
+}
+
+.dot {
+  position: relative;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+  background: var(--muted, var(--ward-muted));
+}
+
+.dot[data-tone="good"] {
+  background: var(--good, var(--ward-success));
+}
+
+.dot[data-tone="warn"] {
+  background: var(--warn, var(--ward-warning));
+}
+
+.dot[data-tone="danger"] {
+  background: var(--danger, var(--ward-danger));
+}
+
+.dot[data-tone="neutral"] {
+  background: var(--muted, var(--ward-muted));
+}
+
+/* Subtle, sophisticated metro-style live pulse beacon */
+.dot[data-live="true"]::after {
+  content: "";
+  position: absolute;
+  inset: -0.125rem;
+  border-radius: 50%;
+  pointer-events: none;
+  border: 1px solid currentColor;
+  opacity: 0;
+  animation: metroPulse 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.dot[data-tone="good"][data-live="true"]::after {
+  border-color: var(--good, var(--ward-success));
+  box-shadow: 0 0 0.375rem var(--good, var(--ward-success));
+}
+
+.dot[data-tone="warn"][data-live="true"]::after {
+  border-color: var(--warn, var(--ward-warning));
+  box-shadow: 0 0 0.375rem var(--warn, var(--ward-warning));
+}
+
+.dot[data-tone="danger"][data-live="true"]::after {
+  border-color: var(--danger, var(--ward-danger));
+  box-shadow: 0 0 0.375rem var(--danger, var(--ward-danger));
+}
+
+@keyframes metroPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot[data-live="true"]::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .dot {
+    background: CanvasText;
+  }
+  .dot[data-live="true"]::after {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+}

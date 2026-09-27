@@ -1,0 +1,11 @@
+# Q004 Task 3 implementation
+
+Controller inspected the corrected task-3-design.md after independent R1–R5 review. Its minimal local contracts are approved for implementation. All five required revisions are explicit: DTO revision/invalidation; typed mixed destination outcomes without eligibility re-evaluation; reanchor source/guard; generation-bound commands/handles; immutable action-specific discharge facts. No further owner decision is required.
+
+Read README, task-3-design.md and task-3-design-review.md. Implement the corrected design within its exact source/test ownership list, including ward-reanchor.ts and ward-reanchor.test.ts. Preserve existing dirty input by snapshotting every existing owned file under .superpowers/sdd/2026-09-13-product-refinement/task-3-before/ before editing. Do not overwrite another task's changes. New modules are limited to ward-discharge-records.ts and ward-audit.ts; notify controller before any ownership extension.
+
+Important: captured decision metadata must come from the existing branches, without duplicated eligibility calls or reordered clinical guards. Keep the anonymous bed release engine and admission arithmetic unchanged. The new linkage is by unique IDs only and every new action/read has runtime guards. New audit APIs return detached guarded DTOs. Do not claim hosted security or durable retention. Do not widen existing roles, add provider/auth/storage/schema changes, or put patient data into general rejection text.
+
+Author meaningful focused tests for the design's allowed/denied/stale/reset/mixed-outcome/privacy cases. Do not run tests or start servers/browser/Git/provider operations; controller owns gate scheduling. Narrow syntax/format checks are allowed. No subagents. Parent bootstrap already completed for Q004.
+
+Deliver one coherent implementation and report to task-3-report.md with exact files, exposed consumer signatures, outcomes captured, behaviour preserved, test files/cases and any concerns. Send stable interfaces early so Capacity/Discharges/Governance screen work can be prepared without overlapping source writes. Do not mark acceptance complete. Independent code review and controller execution follow once source is stable.

@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "id": "e957c538-6fdb-433c-af15-e4867e0418d9",
+  "createdOn": "2026-09-09",
+  "action": "add",
+  "payload": {
+    "pri": "P2",
+    "type": "task",
+    "summary": "Ward Flow: the mockup's placement gates and the engine's have drifted, ten against twelve, and nothing keeps the two lists together",
+    "detail": "VERIFIED 2026-09-09. The Command mockup's gate list (command-third-edition.html, the gates array around lines 6073 to 6180) carries allocatable_bed, capability, security, sex_mix, acuity, specialling, authorisation, catchment, prior_decline and freshness. The engine (src/components/ward-management/ward-eligibility.ts) emits age, legal_status, authorisation, cohort, security, sex_designation, forensic, sex_mix, specialling, prior_decline, capacity_freshness and allocatable_bed. The engine has age, forensic and legal_status and splits sex_designation from sex_mix; the mockup has acuity and catchment gates the engine does not. The design standard governs colour, type and wording in detail and says nothing about the rule model, so there is no mechanism keeping the lists aligned, and they have already drifted. NEXT ACTION: add a short subsection to section 8 of docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md naming the engine's gate list as the source of truth for any mockup, and a line in the definition of done requiring a mockup's gate keys to be a subset of the engine's, checked by a small script in third-edition-kit that reads both files. Then either add acuity and catchment to the engine (owner decision, they are new clinical rules) or remove them from the mockup.",
+    "source": "Ward Flow design review, 2026-09-09: the reviewing Codex chat's findings F1 to F4, each re-verified against the code by the design-review chat; the owner approved recording them the same day",
+    "issueUlid": "01M232N0AEDBJBK3PAYPNHWW4T"
+  }
+}

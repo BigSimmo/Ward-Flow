@@ -1,0 +1,519 @@
+{
+  "root": "D:\\Worktrees\\Database\\ward-lead",
+  "head": "1ef9ed3975078b789e9b5d70b3f000c64edc3809",
+  "initialAt": "2026-09-13T09:37:01.817Z",
+  "finalAt": "2026-09-13T10:34:00.502Z",
+  "initialFingerprint": "16a53fa817076fc23f99638c0fac2e9e6351df53d2192e7fea3cc653b7b5b071",
+  "finalFingerprint": "daa895d3e8b144b3deefe1c2b469a5e9f1c49ef2658ea895e9d87e49e8442c0e",
+  "snapshotFiles": 809,
+  "driftCount": 52,
+  "coreHashes": [
+    {
+      "path": "src/components/ward-management/ward-audit.ts",
+      "sha256": "d9fba8b27e86d9480d2a035e4c9e02d10f0504ae88f45304b68c463081fd1bb1"
+    },
+    {
+      "path": "src/components/ward-management/ward-discharge-records.ts",
+      "sha256": "a01840a39ec88496b5d0119b9fd32e2de127b0a49b4b40e94866960b7c69ebfd"
+    },
+    {
+      "path": "src/components/ward-management/ward-flow-events.ts",
+      "sha256": "cc2f5fa6197d5e91b5e599927bd936d69d14e0192ef2984a9fbe928d86b912b6"
+    },
+    {
+      "path": "src/components/ward-management/ward-flow-reducer.ts",
+      "sha256": "93234fa21a847a9f59d59cd4984b925c45a8f15fa56ab3289caa8df05d92b07f"
+    }
+  ],
+  "native": {
+    "total": 29,
+    "completed": 29,
+    "setupErrors": 0,
+    "at": "2026-09-13T10:30:47.353Z"
+  },
+  "fullSuite": {
+    "files": 462,
+    "tests": 5255,
+    "passed": 5045,
+    "failed": 135,
+    "pending": 75
+  },
+  "focused": {
+    "files": 56,
+    "tests": 934,
+    "passed": 838,
+    "failed": 96,
+    "pending": 0,
+    "filesStillFailing": 42
+  },
+  "browser": {
+    "first": [
+      {
+        "path": "/mockups/ward-flow",
+        "width": 1440,
+        "status": 200,
+        "overflow": 0,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/capacity",
+        "width": 1440,
+        "status": 200,
+        "overflow": 0,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/ward/rph-adult-secure",
+        "width": 1440,
+        "status": 200,
+        "overflow": 0,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/board/rph-adult-secure",
+        "width": 1440,
+        "errors": [
+          "SyntaxError: Invalid or unexpected token",
+          "ChunkLoadError: Loading chunk app/layout failed.\n(missing: http://127.0.0.1:3615/_next/static/chunks/app/layout.js)"
+        ],
+        "failure": "Error: page.goto: net::ERR_ABORTED at http://127.0.0.1:3615/mockups/ward-flow/board/rph-adult-secure\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3615/mockups/ward-flow/board/rph-adult-secure\", waiting until \"domcontentloaded\"\u001b[22m\n"
+      },
+      {
+        "path": "/mockups/ward-flow/ed/rph-ed",
+        "width": 1440,
+        "status": 200,
+        "overflow": 0,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/transport/officer",
+        "width": 1440,
+        "status": 200,
+        "overflow": 0,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/referrals",
+        "width": 1440,
+        "status": 200,
+        "overflow": 0,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/referrals/new",
+        "width": 1440,
+        "status": 200,
+        "overflow": 0,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/community",
+        "width": 1440,
+        "status": 200,
+        "overflow": 0,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/discharges",
+        "width": 1440,
+        "status": 200,
+        "overflow": 0,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/handover",
+        "width": 1440,
+        "status": 200,
+        "overflow": 0,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/governance",
+        "width": 1440,
+        "status": 200,
+        "overflow": 0,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/movements",
+        "width": 1440,
+        "status": 200,
+        "overflow": 0,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/search",
+        "width": 1440,
+        "status": 200,
+        "overflow": 0,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/statistics",
+        "width": 1440,
+        "status": 200,
+        "overflow": 0,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/out-of-area",
+        "width": 1440,
+        "status": 200,
+        "overflow": 0,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow",
+        "width": 390,
+        "overflow": 0,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/capacity",
+        "width": 390,
+        "overflow": 0,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/referrals/new",
+        "width": 390,
+        "overflow": 0,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/ward/rph-adult-secure",
+        "width": 390,
+        "overflow": 0,
+        "errors": []
+      }
+    ],
+    "followup": [
+      {
+        "path": "/mockups/ward-flow/board/rph-adult-secure",
+        "status": 200,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/board/rph-adult-secure",
+        "status": 200,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/movements/WF-012",
+        "status": 200,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/community/central-wheatbelt",
+        "status": 200,
+        "errors": []
+      },
+      {
+        "path": "/mockups/ward-flow/ward/rph-adult-secure/answer",
+        "status": 200,
+        "errors": []
+      }
+    ],
+    "action": [
+      {
+        "name": "stale-capacity-after-visible-pull",
+        "before": {
+          "draft": "1",
+          "form": "Confirm allocatable beds for RPH Adult Secure\nConfirm capacity\n\nCurrently confirmed 1 at 18:11. Writes to RPH Adult Secure only — never any other ward."
+        },
+        "afterPull": {
+          "draft": "1",
+          "form": "Confirm allocatable beds for RPH Adult Secure\nConfirm capacity\n\nCurrently confirmed 0 at 18:31. Writes to RPH Adult Secure only — never any other ward."
+        },
+        "afterConfirm": {
+          "draft": "1",
+          "form": "Confirm allocatable beds for RPH Adult Secure\nConfirm capacity\n\nCurrently confirmed 1 at 18:31. Writes to RPH Adult Secure only — never any other ward."
+        }
+      }
+    ],
+    "externalRequestsBlocked": [],
+    "endedAt": "2026-09-13T10:31:59.679Z"
+  },
+  "testFileCounts": [
+    [
+      "ward-announced-figures-carry-their-marker.test.ts",
+      1,
+      0
+    ],
+    [
+      "ward-chrome-owner.test.ts",
+      2,
+      0
+    ],
+    [
+      "ward-community-corrected-claims.test.ts",
+      3,
+      3
+    ],
+    [
+      "ward-community-index.test.ts",
+      2,
+      2
+    ],
+    [
+      "ward-design-language-contract.test.ts",
+      2,
+      2
+    ],
+    [
+      "ward-event-permissions.test.ts",
+      1,
+      1
+    ],
+    [
+      "ward-facade-agrees-with-screens.test.ts",
+      9,
+      9
+    ],
+    [
+      "ward-board-selection.dom.test.tsx",
+      5,
+      0
+    ],
+    [
+      "ward-board-triage.dom.test.tsx",
+      1,
+      0
+    ],
+    [
+      "ward-capacity-absorbed-morning-coverage.dom.test.tsx",
+      2,
+      2
+    ],
+    [
+      "ward-capacity-network-fold-empty-service.dom.test.tsx",
+      1,
+      1
+    ],
+    [
+      "ward-capacity-network-fold.dom.test.tsx",
+      4,
+      4
+    ],
+    [
+      "ward-change-audit-enumeration.dom.test.tsx",
+      2,
+      2
+    ],
+    [
+      "ward-command-third-edition.dom.test.tsx",
+      3,
+      3
+    ],
+    [
+      "ward-community-governance-claims.dom.test.tsx",
+      8,
+      8
+    ],
+    [
+      "ward-community-hub.dom.test.tsx",
+      8,
+      8
+    ],
+    [
+      "ward-community-third-edition-headings.dom.test.tsx",
+      1,
+      1
+    ],
+    [
+      "ward-daily-return-rows.dom.test.tsx",
+      1,
+      0
+    ],
+    [
+      "ward-daily-sheet.dom.test.tsx",
+      2,
+      0
+    ],
+    [
+      "ward-delays-nobody-waiting.dom.test.tsx",
+      1,
+      1
+    ],
+    [
+      "ward-delays-screen.dom.test.tsx",
+      1,
+      1
+    ],
+    [
+      "ward-delays-third-edition.dom.test.tsx",
+      3,
+      3
+    ],
+    [
+      "ward-discharge-blocked-emphasis.dom.test.tsx",
+      2,
+      2
+    ],
+    [
+      "ward-discharge-column-contract.dom.test.tsx",
+      3,
+      3
+    ],
+    [
+      "ward-error-boundaries.dom.test.tsx",
+      2,
+      2
+    ],
+    [
+      "ward-flow-clock-consistency.dom.test.tsx",
+      2,
+      2
+    ],
+    [
+      "ward-flow-single-source.test.ts",
+      1,
+      1
+    ],
+    [
+      "ward-governance-claims.test.ts",
+      3,
+      3
+    ],
+    [
+      "ward-nav.test.ts",
+      3,
+      3
+    ],
+    [
+      "ward-patient-link-default-deny.test.ts",
+      1,
+      1
+    ],
+    [
+      "ward-patient-sensitive-adjacency-css.test.ts",
+      1,
+      1
+    ],
+    [
+      "ward-primitives-shared.test.ts",
+      1,
+      0
+    ],
+    [
+      "ward-prototype-disclosure.test.ts",
+      1,
+      1
+    ],
+    [
+      "ward-provenance-sentences-carry-their-own-marker.test.ts",
+      2,
+      2
+    ],
+    [
+      "ward-governance-enumerations.dom.test.tsx",
+      1,
+      1
+    ],
+    [
+      "ward-handover-filters.dom.test.tsx",
+      9,
+      0
+    ],
+    [
+      "ward-handover.dom.test.tsx",
+      9,
+      0
+    ],
+    [
+      "ward-hub-screen.dom.test.tsx",
+      1,
+      0
+    ],
+    [
+      "ward-legal-forms-screen.dom.test.tsx",
+      1,
+      1
+    ],
+    [
+      "ward-network-referral-placement.dom.test.tsx",
+      1,
+      1
+    ],
+    [
+      "ward-on-call-screen.dom.test.tsx",
+      1,
+      1
+    ],
+    [
+      "ward-out-of-area-upgrade.dom.test.tsx",
+      1,
+      1
+    ],
+    [
+      "ward-pull-vocabulary.dom.test.tsx",
+      2,
+      2
+    ],
+    [
+      "ward-sidebar-phone-contract.test.ts",
+      2,
+      0
+    ],
+    [
+      "ward-specs-never-navigate-into-redirect-stubs.test.ts",
+      1,
+      1
+    ],
+    [
+      "ward-statistics-claims.test.ts",
+      1,
+      1
+    ],
+    [
+      "ward-table-min-width.test.ts",
+      1,
+      0
+    ],
+    [
+      "ward-table-single-source.test.ts",
+      2,
+      2
+    ],
+    [
+      "ward-referral-screens.dom.test.tsx",
+      2,
+      2
+    ],
+    [
+      "ward-screen-handover-link.dom.test.tsx",
+      1,
+      0
+    ],
+    [
+      "ward-screen-overview-and-entry.dom.test.tsx",
+      3,
+      0
+    ],
+    [
+      "ward-statistics-community-provenance.dom.test.tsx",
+      2,
+      2
+    ],
+    [
+      "ward-statistics-overview-invented.dom.test.tsx",
+      2,
+      2
+    ],
+    [
+      "ward-statistics-sections.dom.test.tsx",
+      4,
+      4
+    ],
+    [
+      "ward-statistics-service-screen.dom.test.tsx",
+      1,
+      1
+    ],
+    [
+      "ward-statistics.dom.test.tsx",
+      2,
+      2
+    ]
+  ]
+}

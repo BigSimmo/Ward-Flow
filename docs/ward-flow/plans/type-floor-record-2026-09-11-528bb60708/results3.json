@@ -1,0 +1,289 @@
+{
+  "RECORD_NOT_BASELINE": "Raw type-floor enumeration measured 2026-09-11 at worktree tip 528bb60708 (ward master line 1c45f97c42 + docs). A dated record of one tree; nothing should diff against it. Limits in README.md beside this file.",
+  "measuredAtSha": "528bb60708",
+  "lineSha": "1c45f97c42",
+  "measuredOn": "2026-09-11",
+  "viewport": 1600,
+  "reads": "getComputedStyle(el).fontSize per element with own text nodes; unresolved tokens report as the inherited size",
+  "base": "http://localhost:3290",
+  "when": "2026-09-11T14:15:47.118Z",
+  "results": {
+    "/mockups/ward-flow/people/PT-003": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|person.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["This screen is . Every person in this pr"]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 1,
+          "s": ["not a medical device"]
+        },
+        {
+          "k": "p|person.note|10||||",
+          "n": 1,
+          "s": ["A referral started here is recorded agai"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Patient - Ward Flow",
+      "path": "/mockups/ward-flow/people/PT-003"
+    },
+    "/mockups/ward-flow/movements/WF-001": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 3,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span||11||||",
+          "n": 1,
+          "s": ["Ward Flow"]
+        },
+        {
+          "k": "span|ward-management.headerCrumb|11||||",
+          "n": 1,
+          "s": ["Movement WF-001"]
+        },
+        {
+          "k": "span|ward-management.prototypeBadge|11||||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "span|ward-management.eyebrow|11|U|||",
+          "n": 1,
+          "s": ["Movement workspace"]
+        },
+        {
+          "k": "span|ward-management.trackWhen|11||||",
+          "n": 7,
+          "s": ["This is where the movement is now, since", "Not reached.", "Not reached."]
+        },
+        {
+          "k": "span|ward-management.rowRisk|11||||",
+          "n": 1,
+          "s": ["More restrictive than this movement requ"]
+        },
+        {
+          "k": "label|ward-management.blockerLabel|11||||",
+          "n": 1,
+          "s": ["What is holding this up? Wards, roles an"]
+        },
+        {
+          "k": "strong||11|U|||",
+          "n": 4,
+          "s": ["Legal status", "Form readiness", "Transport"]
+        },
+        {
+          "k": "span|ward-management.readinessWhere|11||||",
+          "n": 4,
+          "s": [
+            "What the status is, under Legal and form",
+            "The form and its deadline, under Legal a",
+            "The job, provider, escort and form, unde"
+          ]
+        },
+        {
+          "k": "dt|ward-management.factLabel|11|U|||",
+          "n": 15,
+          "s": ["Legal status", "Form", "Status changes"]
+        },
+        {
+          "k": "time|ward-management.timelineWhen|11||||",
+          "n": 1,
+          "s": ["20:40"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Patient movement workspace - Ward Flow",
+      "path": "/mockups/ward-flow/movements/WF-001"
+    },
+    "/mockups/ward-flow/search?q=RPH": {
+      "items": [
+        {
+          "k": "span|ward-global-search.guidance|11||||",
+          "n": 1,
+          "s": ["Press or to search from anywhere. clears"]
+        },
+        {
+          "k": "kbd||10||||",
+          "n": 4,
+          "s": ["/", "Ctrl K", "Esc"]
+        },
+        {
+          "k": "span|search.prototypeBadge|10|U|||",
+          "n": 1,
+          "s": ["Synthetic prototype"]
+        },
+        {
+          "k": "p||10||||",
+          "n": 1,
+          "s": ["This search is . It looks up people alre"]
+        },
+        {
+          "k": "strong||10||||",
+          "n": 1,
+          "s": ["not a medical device"]
+        },
+        {
+          "k": "label|patient-typeahead.label|11|U|||",
+          "n": 1,
+          "s": ["Search"]
+        },
+        {
+          "k": "p|patient-typeahead.guidance|11||||",
+          "n": 1,
+          "s": ["Related spellings are found too. Press t"]
+        },
+        {
+          "k": "label||10||||",
+          "n": 1,
+          "s": ["Stage"]
+        },
+        {
+          "k": "label|search.field ward-shared.field|10||||",
+          "n": 1,
+          "s": ["Department"]
+        }
+      ],
+      "links": [
+        "/mockups/ward-flow",
+        "/mockups/ward-flow/network",
+        "/mockups/ward-flow/delays",
+        "/mockups/ward-flow/capacity",
+        "/mockups/ward-flow/movements",
+        "/mockups/ward-flow/governance",
+        "/mockups/ward-flow/statistics",
+        "/mockups/ward-flow/wards",
+        "/mockups/ward-flow/community",
+        "/mockups/ward-flow/ward/rph-adult-secure",
+        "/mockups/ward-flow/board/rph-adult-secure",
+        "/mockups/ward-flow/transport/officer",
+        "/mockups/ward-flow/ed/peel-ed",
+        "/mockups/ward-flow/handover",
+        "/mockups/ward-flow/search",
+        "/mockups/ward-flow/hub",
+        "/mockups/ward-flow/discharges",
+        "/mockups/ward-flow/referrals",
+        "/mockups/ward-flow/referrals/new",
+        "/mockups/ward-flow/out-of-area",
+        "/mockups/ward-flow/movements/WF-001",
+        "/mockups/ward-flow/movements/WF-002",
+        "/mockups/ward-flow/movements/WF-003",
+        "/mockups/ward-flow/movements/WF-004",
+        "/mockups/ward-flow/movements/WF-005",
+        "/mockups/ward-flow/movements/WF-006",
+        "/mockups/ward-flow/movements/WF-009",
+        "/mockups/ward-flow/movements/WF-010",
+        "/mockups/ward-flow/movements/WF-011",
+        "/mockups/ward-flow/movements/WF-012",
+        "/mockups/ward-flow/movements/WF-013",
+        "/mockups/ward-flow/movements/WF-014",
+        "/mockups/ward-flow/movements/WF-015",
+        "/mockups/ward-flow/movements/WF-016",
+        "/mockups/ward-flow/movements/WF-017",
+        "/mockups/ward-flow/movements/WF-018",
+        "/mockups/ward-flow/movements/WF-019",
+        "/mockups/ward-flow/movements/WF-020",
+        "/mockups/ward-flow/movements/WF-301",
+        "/mockups/ward-flow/movements/WF-302",
+        "/mockups/ward-flow/movements/WF-303",
+        "/mockups/ward-flow/movements/WF-304",
+        "/mockups/ward-flow/movements/WF-305",
+        "/mockups/ward-flow/movements/WF-306",
+        "/mockups/ward-flow/movements/WF-308",
+        "/mockups/ward-flow/movements/WF-309",
+        "/mockups/ward-flow/movements/WF-310",
+        "/mockups/ward-flow/movements/WF-311",
+        "/mockups/ward-flow/movements/WF-312",
+        "/mockups/ward-flow/movements/WF-313",
+        "/mockups/ward-flow/movements/WF-315",
+        "/mockups/ward-flow/movements/WF-316",
+        "/mockups/ward-flow/movements/WF-317",
+        "/mockups/ward-flow/movements/WF-318",
+        "/mockups/ward-flow/movements/WF-319",
+        "/mockups/ward-flow/movements/WF-320",
+        "/mockups/ward-flow/movements/WF-322",
+        "/mockups/ward-flow/movements/WF-323",
+        "/mockups/ward-flow/movements/WF-324",
+        "/mockups/ward-flow/movements/WF-325",
+        "/mockups/ward-flow/movements/WF-326",
+        "/mockups/ward-flow/movements/WF-327",
+        "/mockups/ward-flow/movements/WF-329"
+      ],
+      "min": 10,
+      "vw": 1600,
+      "title": "Patient search — Ward Flow",
+      "path": "/mockups/ward-flow/search"
+    }
+  }
+}

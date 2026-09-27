@@ -1,0 +1,1113 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow — Patient Trajectory Monitor (WF-009)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --display: "Geist", system-ui, -apple-system, sans-serif;
+        --body: "Geist", system-ui, -apple-system, sans-serif;
+        --mono: "Geist Mono", ui-monospace, monospace;
+
+        --t-0: 12px;
+        --t-1: 13px;
+        --t-2: 14px;
+        --t-3: 15px;
+        --t-4: 17px;
+        --t-5: 20px;
+        --t-6: 24px;
+
+        --r1: 4px;
+        --r2: 6px;
+        --r3: 10px;
+        --pill: 9999px;
+
+        --railw: 236px;
+        --railw-closed: 84px;
+      }
+
+      :root,
+      :root[data-theme="light"] {
+        --ground: #e6eaef;
+        --surface: #fdfdfe;
+        --surface-2: #f2f5f8;
+        --sunk: #e9edf2;
+        --ink: #14161a;
+        --ink-soft: #384250;
+        --muted: #5b6470;
+        --accent: #2f4c66;
+        --accent-ink: #1e354a;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+        --gilt: #7d612a;
+        --gilt-soft: #f1ebdf;
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --warn: #825d10;
+        --warn-soft: #f6eeda;
+        --danger: #b03b2e;
+        --danger-soft: #f8e6e2;
+        --danger-ink: #973121;
+        --line: rgba(22, 30, 40, 0.11);
+        --line-strong: rgba(22, 30, 40, 0.22);
+        --lift: 0 4px 20px -2px rgba(32, 44, 58, 0.08), 0 1px 3px rgba(32, 44, 58, 0.04);
+        --scrim: rgba(15, 20, 26, 0.45);
+      }
+
+      :root[data-theme="dark"] {
+        --ground: #0f1216;
+        --surface: #171b21;
+        --surface-2: #1f242c;
+        --sunk: #13161b;
+        --ink: #e8ebef;
+        --ink-soft: #b0b8c4;
+        --muted: #7e8998;
+        --accent: #a7bcd2;
+        --accent-ink: #c8d8e8;
+        --accent-soft: #232c37;
+        --on-accent: #0f1216;
+        --stripe: #a7bcd2;
+        --gilt: #d3b77e;
+        --gilt-soft: #2a2418;
+        --good: #6fd39b;
+        --good-soft: #172820;
+        --warn: #d4a34b;
+        --warn-soft: #2b2314;
+        --danger: #ff8b76;
+        --danger-soft: #321915;
+        --danger-ink: #ffb4a6;
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.18);
+        --lift: 0 6px 24px -4px rgba(0, 0, 0, 0.45);
+        --scrim: rgba(0, 0, 0, 0.7);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: var(--body);
+        font-size: var(--t-2);
+        color: var(--ink);
+        background: var(--ground);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 45;
+        pointer-events: none;
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: var(--railw) minmax(0, 1fr);
+        min-height: 100vh;
+        transition: grid-template-columns 0.15s ease;
+      }
+
+      /* ─── Rail ─── */
+      .rail {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        height: 100vh;
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        z-index: 20;
+        overflow: hidden;
+      }
+      .brand {
+        padding: 16px 16px 12px;
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        border-bottom: 1px solid var(--line);
+      }
+      .brand b {
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .brand span {
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--gilt);
+        letter-spacing: 0.1em;
+      }
+      .railScroll {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 12px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .railGroup {
+        display: grid;
+        gap: 2px;
+      }
+      .railEyebrow {
+        margin: 0 0 6px 8px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+      }
+      .railLink {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: var(--r2);
+        border: 0;
+        background: transparent;
+        color: var(--ink-soft);
+        font-size: var(--t-1);
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        text-align: left;
+        width: 100%;
+      }
+      .railLink:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .railLink[aria-current="page"] {
+        background: var(--surface-2);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: inset 3px 0 0 var(--gilt);
+      }
+      .railFoot {
+        padding: 12px;
+        border-top: 1px solid var(--line);
+        background: var(--surface-2);
+        font-size: var(--t-0);
+        color: var(--muted);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .railFoot b {
+        color: var(--ink-soft);
+      }
+
+      /* ─── Header ─── */
+      .frame {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .hdr1 {
+        height: 44px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        gap: 16px;
+        position: sticky;
+        top: 0;
+        z-index: 30;
+      }
+      .hdrTitle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: var(--t-3);
+        font-weight: 600;
+      }
+      .chip.mark {
+        font-size: var(--t-0);
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        background: var(--sunk);
+        color: var(--muted);
+        border: 1px solid var(--line);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .searchWrap {
+        flex: 1 1 auto;
+        max-width: 380px;
+        position: relative;
+      }
+      .search {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--sunk);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        padding: 0 10px;
+        height: 30px;
+      }
+      .search input {
+        border: 0;
+        background: transparent;
+        color: var(--ink);
+        font-size: var(--t-1);
+        width: 100%;
+        outline: none;
+      }
+      .search kbd {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        padding: 1px 5px;
+      }
+      .hdrEnd {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      /* ─── Buttons & Controls ─── */
+      .btn {
+        height: 30px;
+        padding: 0 12px;
+        border-radius: var(--r2);
+        font-size: var(--t-1);
+        font-weight: 600;
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--ink);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition:
+          background 0.12s,
+          border-color 0.12s;
+      }
+      .btn:hover {
+        background: var(--sunk);
+      }
+      .btn.primary {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+      }
+      .btn.primary:hover {
+        opacity: 0.92;
+      }
+
+      /* ─── Main Workspace ─── */
+      .workspace {
+        padding: 18px 24px 36px;
+        display: grid;
+        gap: 18px;
+      }
+
+      /* ─── Patient Banner ─── */
+      .patientBanner {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r3);
+        box-shadow: var(--lift);
+        padding: 16px 20px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 16px;
+        align-items: center;
+      }
+      .ptProfile {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .ptUrm {
+        font-family: var(--mono);
+        font-size: var(--t-4);
+        font-weight: 700;
+        background: var(--sunk);
+        border: 1px solid var(--line-strong);
+        padding: 4px 10px;
+        border-radius: var(--r2);
+        color: var(--accent-ink);
+      }
+      .ptNameGroup {
+        display: grid;
+        gap: 2px;
+      }
+      .ptName {
+        font-size: var(--t-5);
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+      }
+      .ptMeta {
+        font-size: var(--t-1);
+        color: var(--muted);
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 8px;
+        border-radius: var(--pill);
+        font-size: var(--t-0);
+        font-weight: 600;
+        border: 1px solid transparent;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .badge[data-tone="danger"] {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border-color: var(--danger);
+      }
+      .badge[data-tone="warn"] {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border-color: var(--warn);
+      }
+      .badge[data-tone="good"] {
+        background: var(--good-soft);
+        color: var(--good);
+        border-color: var(--good);
+      }
+
+      /* ─── 2-Column Clinical Layout ─── */
+      .clinicalGrid {
+        display: grid;
+        grid-template-columns: 280px minmax(0, 1fr);
+        gap: 18px;
+        align-items: start;
+      }
+
+      /* ─── Panels ─── */
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r3);
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .ph {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface-2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .ph h2 {
+        margin: 0;
+        font-size: var(--t-2);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ink-soft);
+      }
+      .pb {
+        padding: 16px;
+        display: grid;
+        gap: 14px;
+      }
+
+      /* ─── Clinical Journey Stepper ─── */
+      .timeline {
+        list-style: none;
+        margin: 0;
+        padding: 0 0 0 16px;
+        position: relative;
+      }
+      .timeline::before {
+        content: "";
+        position: absolute;
+        left: 21px;
+        top: 10px;
+        bottom: 20px;
+        width: 2px;
+        background: var(--line-strong);
+      }
+      .tItem {
+        position: relative;
+        padding-left: 24px;
+        padding-bottom: 18px;
+      }
+      .tItem::before {
+        content: "";
+        position: absolute;
+        left: -1px;
+        top: 4px;
+        width: 10px;
+        height: 10px;
+        border-radius: var(--pill);
+        background: var(--surface);
+        border: 2px solid var(--accent);
+        z-index: 2;
+      }
+      .tItem[data-status="active"]::before {
+        background: var(--gilt);
+        border-color: var(--gilt);
+        box-shadow: 0 0 0 3px var(--gilt-soft);
+      }
+      .tItem[data-status="done"]::before {
+        background: var(--accent);
+      }
+      .tItem[data-status="declined"]::before {
+        background: var(--warn);
+        border-color: var(--warn);
+      }
+      .tHeader {
+        display: flex;
+        justify-content: space-between;
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+      .tHeader time {
+        font-family: var(--mono);
+      }
+      .tTitle {
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink);
+        margin: 2px 0 0;
+      }
+      .tDesc {
+        font-size: var(--t-0);
+        color: var(--ink-soft);
+        margin: 2px 0 0;
+        line-height: 1.4;
+      }
+
+      /* ─── Tabs Navigation ─── */
+      .tabbar {
+        display: flex;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface-2);
+        padding: 0 12px;
+      }
+      .tabBtn {
+        padding: 10px 14px;
+        border: 0;
+        background: transparent;
+        color: var(--ink-soft);
+        font-size: var(--t-1);
+        font-weight: 500;
+        cursor: pointer;
+        position: relative;
+      }
+      .tabBtn:hover {
+        color: var(--ink);
+      }
+      .tabBtn[aria-selected="true"] {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .tabBtn[aria-selected="true"]::after {
+        content: "";
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--gilt);
+      }
+
+      /* ─── Table Structure ─── */
+      .tableWrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        background: var(--surface);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--t-1);
+      }
+      th {
+        text-align: left;
+        padding: 9px 12px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+      }
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink);
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      .mono {
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+      }
+      .zero {
+        color: var(--muted);
+      }
+
+      /* ─── Action Modal ─── */
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: var(--scrim);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+      }
+      .modal.open {
+        display: flex;
+      }
+      .modalDialog {
+        width: min(92vw, 480px);
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r3);
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .modalHead {
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface-2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .modalHead h3 {
+        margin: 0;
+        font-size: var(--t-3);
+        font-weight: 600;
+      }
+      .modalBody {
+        padding: 18px;
+        display: grid;
+        gap: 14px;
+      }
+      .modalFoot {
+        padding: 12px 18px;
+        border-top: 1px solid var(--line);
+        background: var(--surface-2);
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      @media (max-width: 1000px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+        .rail {
+          display: none;
+        }
+        .clinicalGrid {
+          grid-template-columns: 1fr;
+        }
+        .patientBanner {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- Sovereign Navigation Rail -->
+      <nav class="rail" aria-label="Sections">
+        <div class="brand"><b>Ward Flow</b><span>WA</span></div>
+        <div class="railScroll">
+          <div class="railGroup">
+            <p class="railEyebrow">Clinical Operations</p>
+            <button class="railLink" type="button" onclick="location.href = 'command-third-edition.html'">
+              Command Center
+            </button>
+            <button class="railLink" type="button" onclick="location.href = 'movement-third-edition.html'">
+              Movement Board
+            </button>
+            <button class="railLink" type="button" aria-current="page">Patient Trajectory</button>
+            <button class="railLink" type="button" onclick="location.href = 'capacity-third-edition.html'">
+              Capacity
+            </button>
+          </div>
+          <div class="railGroup">
+            <p class="railEyebrow">Patient Logistics</p>
+            <button class="railLink" type="button" onclick="location.href = 'add-a-patient-third-edition.html'">
+              Add a Patient
+            </button>
+            <button class="railLink" type="button" onclick="location.href = 'discharges-third-edition.html'">
+              Discharges & Egress
+            </button>
+            <button class="railLink" type="button" onclick="location.href = 'out-of-area-third-edition.html'">
+              Out-of-Area Ledger
+            </button>
+            <button class="railLink" type="button" onclick="location.href = 'transport-officer-third-edition.html'">
+              Transport Officer
+            </button>
+          </div>
+        </div>
+        <div class="railFoot">
+          <div>User: <b>Sarah Jenkins (Bed Desk)</b></div>
+          <div>Shift: <b>Day Shift · Handover 14:00</b></div>
+        </div>
+      </nav>
+
+      <!-- Main Workspace -->
+      <div class="frame">
+        <header class="hdr1">
+          <div class="hdrTitle">
+            <span>Patient Trajectory</span>
+            <span class="chip mark">Synthetic clinical prototype</span>
+          </div>
+          <div class="searchWrap">
+            <label class="search">
+              <input type="search" id="q" placeholder="Search patient, URM, or ward (/)" />
+              <kbd>/</kbd>
+            </label>
+          </div>
+          <div class="hdrEnd">
+            <button class="btn" id="themeToggle" type="button">Dark Theme</button>
+            <button class="btn primary" id="openDecisionModal" type="button">+ Record Decision</button>
+          </div>
+        </header>
+
+        <main class="workspace">
+          <!-- Patient Identity Banner -->
+          <section class="patientBanner">
+            <div class="ptProfile">
+              <span class="ptUrm">WF-009</span>
+              <div class="ptNameGroup">
+                <h1 class="ptName">Wren, Tobias (Toby)</h1>
+                <div class="ptMeta">
+                  <span>DOB: <b class="mono">14/03/1988</b> (38y)</span>
+                  <span>&bull;</span>
+                  <span>Sex: <b>Male</b></span>
+                  <span>&bull;</span>
+                  <span>Home: <b>Peel Catchment (South Metro)</b></span>
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap">
+              <span class="badge" data-tone="danger">Form 3A Involuntary</span>
+              <span class="badge" data-tone="warn">Tier 1 Acuity</span>
+              <span class="badge" data-tone="warn">1:1 Specialling</span>
+              <span class="badge mono" data-tone="danger">Wait: 6h 42m</span>
+            </div>
+          </section>
+
+          <!-- 2-Column Workspace -->
+          <div class="clinicalGrid">
+            <!-- Left Column: Stepper -->
+            <section class="panel">
+              <div class="ph">
+                <h2>Trajectory Stepper</h2>
+                <span class="badge" data-tone="warn">Escalated</span>
+              </div>
+              <div class="pb" style="padding-top: 20px">
+                <ol class="timeline">
+                  <li class="tItem" data-status="done">
+                    <div class="tHeader"><time>04:00</time><span>PEEL ED</span></div>
+                    <div class="tTitle">ED Presentation</div>
+                    <div class="tDesc">Triaged Category 2. Severe acute agitation.</div>
+                  </li>
+                  <li class="tItem" data-status="done">
+                    <div class="tHeader"><time>05:15</time><span>Dr. M. Rowe</span></div>
+                    <div class="tTitle">Form 1A Executed</div>
+                    <div class="tDesc">Referral for examination under MHA 2014.</div>
+                  </li>
+                  <li class="tItem" data-status="done">
+                    <div class="tHeader"><time>08:15</time><span>Consultant Psych</span></div>
+                    <div class="tTitle">Form 3A Involuntary Order</div>
+                    <div class="tDesc">Inpatient order signed. Locked bed required.</div>
+                  </li>
+                  <li class="tItem" data-status="declined">
+                    <div class="tHeader"><time>09:31</time><span>Graylands</span></div>
+                    <div class="tTitle">Adult Secure: Declined</div>
+                    <div class="tDesc">Bed pulled for earlier priority referral.</div>
+                  </li>
+                  <li class="tItem" data-status="declined">
+                    <div class="tHeader"><time>09:48</time><span>BTY Secure</span></div>
+                    <div class="tTitle">Adult Secure: Declined</div>
+                    <div class="tDesc">High-dependency acuity limit reached.</div>
+                  </li>
+                  <li class="tItem" data-status="active">
+                    <div class="tHeader"><time>10:04</time><span>Desk</span></div>
+                    <div class="tTitle">State Desk Escalation</div>
+                    <div class="tDesc">Active cross-catchment bed search in progress.</div>
+                  </li>
+                </ol>
+              </div>
+            </section>
+
+            <!-- Right Column: Tabs & Clinical Record -->
+            <section class="panel">
+              <div class="tabbar" role="tablist">
+                <button class="tabBtn" type="button" role="tab" aria-selected="true" data-tab="placement">
+                  Placement & Matches
+                </button>
+                <button class="tabBtn" type="button" role="tab" aria-selected="false" data-tab="orders">
+                  Legal Forms & Authority
+                </button>
+                <button class="tabBtn" type="button" role="tab" aria-selected="false" data-tab="clinical">
+                  Clinical Presentation
+                </button>
+              </div>
+
+              <!-- Tab 1: Placement & Matches -->
+              <div class="pb tabPane" id="pane-placement">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+                  <div
+                    style="
+                      background: var(--sunk);
+                      border: 1px solid var(--line);
+                      border-radius: var(--r2);
+                      padding: 12px;
+                    "
+                  >
+                    <div
+                      style="font-size: var(--t-0); font-weight: 600; text-transform: uppercase; color: var(--muted)"
+                    >
+                      Current Location
+                    </div>
+                    <div style="font-size: var(--t-3); font-weight: 600; margin-top: 4px">Peel Health Campus ED</div>
+                    <div style="font-size: var(--t-1); color: var(--ink-soft); margin-top: 2px">
+                      Cubicle 4 &bull; Nurse: 1:1 Specialling Active
+                    </div>
+                  </div>
+                  <div
+                    style="
+                      background: var(--sunk);
+                      border: 1px solid var(--line);
+                      border-radius: var(--r2);
+                      padding: 12px;
+                    "
+                  >
+                    <div
+                      style="font-size: var(--t-0); font-weight: 600; text-transform: uppercase; color: var(--muted)"
+                    >
+                      Required Resource
+                    </div>
+                    <div style="font-size: var(--t-3); font-weight: 600; margin-top: 4px">
+                      Adult Secure Unit (Locked)
+                    </div>
+                    <div style="font-size: var(--t-1); color: var(--ink-soft); margin-top: 2px">
+                      Special Needs: Physical health clear
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3
+                    style="
+                      margin: 14px 0 8px;
+                      font-size: var(--t-1);
+                      text-transform: uppercase;
+                      letter-spacing: 0.08em;
+                      color: var(--muted);
+                    "
+                  >
+                    Network Ward Enquiries
+                  </h3>
+                  <div class="tableWrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Hospital / Unit</th>
+                          <th>Beds Free</th>
+                          <th>Suitability</th>
+                          <th>Status</th>
+                          <th>Response Time</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td><b>Graylands</b> Adult Secure</td>
+                          <td class="mono">1</td>
+                          <td>Locked, High Acuity</td>
+                          <td><span class="badge" data-tone="warn">Declined</span> Bed reallocated</td>
+                          <td class="mono">09:31</td>
+                        </tr>
+                        <tr>
+                          <td><b>BTY</b> Adult Secure</td>
+                          <td class="mono">4</td>
+                          <td>Locked, High Acuity</td>
+                          <td><span class="badge" data-tone="warn">Declined</span> Acuity limit</td>
+                          <td class="mono">09:48</td>
+                        </tr>
+                        <tr>
+                          <td><b>FSH</b> Adult Secure</td>
+                          <td class="mono">3</td>
+                          <td>Locked, High Acuity</td>
+                          <td><span class="badge" data-tone="danger">Under Review</span> Liaison paged</td>
+                          <td class="mono">10:15</td>
+                        </tr>
+                        <tr>
+                          <td><b>RPH</b> Adult Secure</td>
+                          <td class="mono">2</td>
+                          <td>Locked, High Acuity</td>
+                          <td><span class="badge" data-tone="good">Evaluating</span> RPH Psych Registrar</td>
+                          <td class="mono">10:22</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab 2: Orders -->
+              <div class="pb tabPane" id="pane-orders" style="display: none">
+                <div class="tableWrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Form Code</th>
+                        <th>Legal Order Description</th>
+                        <th>Authorising Clinician</th>
+                        <th>Expiry</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="mono">Form 1A</td>
+                        <td>Section 34 &mdash; Referral for Examination</td>
+                        <td>Dr. M. Rowe (Peel ED)</td>
+                        <td class="mono">16/08 05:15</td>
+                        <td><span class="badge" data-tone="good">Completed</span></td>
+                      </tr>
+                      <tr>
+                        <td class="mono">Form 3A</td>
+                        <td>Section 58 &mdash; Involuntary Inpatient Order</td>
+                        <td>Dr. C. Vance (Psychiatrist)</td>
+                        <td class="mono">21/08 08:15</td>
+                        <td><span class="badge" data-tone="danger">Active Order</span></td>
+                      </tr>
+                      <tr>
+                        <td class="mono">Form 4A</td>
+                        <td>Section 61 &mdash; Transport Order</td>
+                        <td>Dr. C. Vance (Psychiatrist)</td>
+                        <td class="mono">17/08 08:15</td>
+                        <td><span class="badge" data-tone="warn">Pending Dispatch</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Tab 3: Clinical Presentation -->
+              <div class="pb tabPane" id="pane-clinical" style="display: none">
+                <div
+                  style="
+                    background: var(--sunk);
+                    border: 1px solid var(--line);
+                    border-radius: var(--r2);
+                    padding: 14px;
+                    font-size: var(--t-1);
+                    line-height: 1.5;
+                  "
+                >
+                  <h4 style="margin: 0 0 6px">Triage & Presenting Summary</h4>
+                  <p style="margin: 0 0 10px; color: var(--ink-soft)">
+                    Patient brought to Peel ED via St John Ambulance accompanied by WA Police under Form 1A. Acute
+                    persecutory delusions, disorganized behavior, and severe psychomotor agitation. Refusing oral
+                    medication. Required physical and chemical restraint in ED resuscitation bay.
+                  </p>
+                  <div
+                    style="
+                      display: grid;
+                      grid-template-columns: repeat(3, 1fr);
+                      gap: 8px;
+                      border-top: 1px solid var(--line);
+                      padding-top: 10px;
+                    "
+                  >
+                    <div><b>Physical Health:</b> Cleared</div>
+                    <div><b>Tox Screen:</b> Negative</div>
+                    <div><b>Infection Control:</b> Standard</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Decision Modal -->
+    <div class="modal" id="decisionModal">
+      <div class="modalDialog">
+        <div class="modalHead">
+          <h3>Record Bed Placement Decision</h3>
+          <button type="button" class="btn" id="closeDecisionModal">Cancel</button>
+        </div>
+        <div class="modalBody">
+          <div>
+            <label style="font-size: var(--t-0); font-weight: 600; text-transform: uppercase; color: var(--muted)"
+              >Selected Action</label
+            >
+            <select
+              style="
+                width: 100%;
+                height: 34px;
+                margin-top: 4px;
+                border-radius: var(--r2);
+                border: 1px solid var(--line-strong);
+                background: var(--surface);
+                color: var(--ink);
+                padding: 0 8px;
+              "
+            >
+              <option>Allocate Bed at FSH Adult Secure</option>
+              <option>Allocate Bed at RPH Adult Secure</option>
+              <option>Escalate to Executive On-Call</option>
+              <option>Request Catchment Governance Override</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: var(--t-0); font-weight: 600; text-transform: uppercase; color: var(--muted)"
+              >Rationale & Governance Notes</label
+            >
+            <textarea
+              style="
+                width: 100%;
+                height: 80px;
+                margin-top: 4px;
+                border-radius: var(--r2);
+                border: 1px solid var(--line-strong);
+                background: var(--surface);
+                color: var(--ink);
+                padding: 8px;
+                font-family: var(--body);
+                font-size: var(--t-1);
+              "
+              placeholder="Record reasons for cross-catchment allocation or override..."
+            ></textarea>
+          </div>
+        </div>
+        <div class="modalFoot">
+          <button type="button" class="btn" id="cancelModalBtn">Cancel</button>
+          <button
+            type="button"
+            class="btn primary"
+            onclick="
+              alert('Decision recorded successfully.');
+              document.getElementById('decisionModal').classList.remove('open');
+            "
+          >
+            Confirm Decision
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Tab switching
+      document.querySelectorAll(".tabBtn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".tabBtn").forEach((b) => b.setAttribute("aria-selected", "false"));
+          document.querySelectorAll(".tabPane").forEach((p) => (p.style.display = "none"));
+          btn.setAttribute("aria-selected", "true");
+          document.getElementById(`pane-${btn.dataset.tab}`).style.display = "grid";
+        });
+      });
+
+      // Modal wiring
+      const modal = document.getElementById("decisionModal");
+      document.getElementById("openDecisionModal").addEventListener("click", () => modal.classList.add("open"));
+      document.getElementById("closeDecisionModal").addEventListener("click", () => modal.classList.remove("open"));
+      document.getElementById("cancelModalBtn").addEventListener("click", () => modal.classList.remove("open"));
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") modal.classList.remove("open");
+      });
+
+      // Keyboard shortcut / for search
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "/" && document.activeElement.tagName !== "INPUT") {
+          e.preventDefault();
+          document.getElementById("q").focus();
+        }
+      });
+
+      // Theme toggle
+      const themeBtn = document.getElementById("themeToggle");
+      themeBtn.addEventListener("click", () => {
+        const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+        document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
+        themeBtn.textContent = isDark ? "Dark Theme" : "Light Theme";
+      });
+    </script>
+
+    <!-- Visual QA Sentinel -->
+    <script id="qa-sentinel">
+      (function () {
+        function runQA() {
+          const issues = [];
+          if (document.documentElement.scrollWidth > window.innerWidth + 1) {
+            issues.push(
+              `Horizontal overflow detected (${document.documentElement.scrollWidth}px > ${window.innerWidth}px)`,
+            );
+          }
+          if (!document.querySelector("meta[charset]")) issues.push("Missing <meta charset='utf-8'>");
+          if (!document.querySelector('meta[name="viewport"]')) issues.push("Missing responsive viewport meta");
+          const allEls = document.querySelectorAll("*");
+          for (let el of allEls) {
+            const style = el.getAttribute("style") || "";
+            if (/#[0-9a-fA-F]{3,8}/.test(style)) {
+              issues.push(`Raw hex in style on <${el.tagName.toLowerCase()}>`);
+              break;
+            }
+          }
+          const badge = document.createElement("div");
+          badge.id = "qa-badge";
+          badge.style.cssText =
+            "position:fixed;bottom:12px;right:12px;padding:6px 10px;font:11px/1.2 var(--mono);background:var(--surface);border:1px solid var(--line-strong);border-radius:4px;box-shadow:var(--lift);z-index:99999;pointer-events:none;display:flex;align-items:center;gap:6px;";
+          if (issues.length === 0) {
+            badge.innerHTML =
+              '<span style="width:7px;height:7px;border-radius:50%;background:var(--good)"></span><span style="color:var(--good);font-weight:600">QA 100/100: PERFECTED</span>';
+          } else {
+            badge.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:var(--danger)"></span><span style="color:var(--danger);font-weight:600">QA ISSUES: ${issues.length}</span>`;
+          }
+          document.body.appendChild(badge);
+        }
+        if (document.readyState === "loading") {
+          window.addEventListener("DOMContentLoaded", runQA);
+        } else {
+          runQA();
+        }
+      })();
+    </script>
+  </body>
+</html>

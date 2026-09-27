@@ -1,0 +1,1326 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow · Statewide On-Call Roster &amp; Escalation Desk</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --display: "Geist", system-ui, -apple-system, sans-serif;
+        --body: "Geist", system-ui, -apple-system, sans-serif;
+        --mono: "Geist Mono", ui-monospace, monospace;
+
+        --t-0: 12px;
+        --t-1: 13px;
+        --t-2: 13.5px;
+        --t-3: 14px;
+        --t-4: 16px;
+        --t-5: 20px;
+        --t-6: 26px;
+
+        --r1: 10px;
+        --r1i: 9px;
+        --r2: 6px;
+        --pill: 9999px;
+
+        --railw: 240px;
+      }
+
+      :root,
+      :root[data-theme="light"] {
+        --ground-hi: #ecf0f4;
+        --ground: #e6eaef;
+        --ground-2: #e1e6ec;
+        --surface: #fdfdfe;
+        --surface-2: #f2f5f8;
+        --surface-3: #e8ecf2;
+        --sunk: #e9edf2;
+        --ink: #14161a;
+        --ink-soft: #384250;
+        --muted: #5b6470;
+        --accent: #2f4c66;
+        --accent-ink: #1e354a;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+        --gilt: #7d612a;
+        --gilt-soft: #f1ebdf;
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --warn: #825d10;
+        --warn-soft: #f6eeda;
+        --danger: #b03b2e;
+        --danger-soft: #f8e6e2;
+        --danger-ink: #973121;
+        --line: rgba(22, 30, 40, 0.11);
+        --line-strong: rgba(22, 30, 40, 0.22);
+        --lift: 0 4px 20px -2px rgba(32, 44, 58, 0.08), 0 1px 3px rgba(32, 44, 58, 0.04);
+        --scrim: rgba(15, 20, 26, 0.45);
+      }
+
+      :root[data-theme="dark"] {
+        --ground-hi: #14181d;
+        --ground: #0f1216;
+        --ground-2: #0c0f12;
+        --surface: #171b21;
+        --surface-2: #1f242c;
+        --surface-3: #262c36;
+        --sunk: #13161b;
+        --ink: #e8ebef;
+        --ink-soft: #b0b8c4;
+        --muted: #7e8998;
+        --accent: #a7bcd2;
+        --accent-ink: #c8d8e8;
+        --accent-soft: #232c37;
+        --on-accent: #0f1216;
+        --stripe: #a7bcd2;
+        --gilt: #d3b77e;
+        --gilt-soft: #2a2418;
+        --good: #6fd39b;
+        --good-soft: #172820;
+        --warn: #d4a34b;
+        --warn-soft: #2b2314;
+        --danger: #ff8b76;
+        --danger-soft: #321915;
+        --danger-ink: #ffb4a6;
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.18);
+        --lift: 0 6px 24px -4px rgba(0, 0, 0, 0.45);
+        --scrim: rgba(0, 0, 0, 0.7);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: var(--body);
+        font-size: var(--t-2);
+        color: var(--ink);
+        background:
+          linear-gradient(180deg, var(--ground-hi) 0%, var(--ground) 55%, var(--ground-2) 100%) fixed,
+          var(--ground);
+        -webkit-font-smoothing: antialiased;
+        font-variant-numeric: tabular-nums;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 50;
+        pointer-events: none;
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: var(--railw) minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      /* Sovereign Rail */
+      .rail {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        height: 100vh;
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        z-index: 30;
+        overflow-y: auto;
+      }
+      .brand {
+        padding: 14px 16px 12px;
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        border-bottom: 1px solid var(--line);
+        flex-shrink: 0;
+      }
+      .brand b {
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .brand span {
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--gilt);
+        letter-spacing: 0.1em;
+      }
+      .railScroll {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 12px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .railGroup {
+        display: grid;
+        gap: 2px;
+      }
+      .railEyebrow {
+        margin: 0 0 4px 8px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+      .railLink {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 10px;
+        border-radius: var(--r2);
+        border: 0;
+        background: transparent;
+        color: var(--ink-soft);
+        font-size: var(--t-1);
+        font-weight: 500;
+        cursor: pointer;
+        text-align: left;
+        width: 100%;
+        text-decoration: none;
+      }
+      .railLink:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .railLink[aria-current="page"] {
+        background: var(--surface-2);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: inset 1px 0 0 var(--gilt);
+      }
+      .railFoot {
+        padding: 10px 14px;
+        border-top: 1px solid var(--line);
+        background: var(--surface-2);
+        font-size: var(--t-0);
+        color: var(--muted);
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        flex-shrink: 0;
+      }
+
+      /* Header */
+      .frame {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .hdr {
+        height: 48px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        gap: 16px;
+        position: sticky;
+        top: 0;
+        z-index: 25;
+        justify-content: space-between;
+      }
+      .hdrTitle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: var(--t-3);
+        font-weight: 600;
+      }
+      .chip {
+        font-size: var(--t-0);
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        background: var(--sunk);
+        color: var(--muted);
+        border: 1px solid var(--line);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .hdrEnd {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* Buttons */
+      .btn {
+        height: 32px;
+        padding: 0 12px;
+        border-radius: var(--r2);
+        font-size: var(--t-1);
+        font-weight: 600;
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--ink);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
+      }
+      .btn:hover {
+        background: var(--sunk);
+      }
+      .btn.primary {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+      }
+      .btn.danger {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border-color: var(--danger);
+      }
+      .btn.danger:hover {
+        background: var(--danger);
+        color: #fff;
+      }
+      .btn.sm {
+        height: 26px;
+        padding: 0 8px;
+        font-size: var(--t-0);
+      }
+
+      /* Workspace */
+      .workspace {
+        padding: 16px 20px 48px;
+        display: grid;
+        gap: 16px;
+        max-width: 1440px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      /* KPI Summary Strip */
+      .kpiStrip {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+      .kpiCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-bottom-color: var(--line-strong);
+        border-radius: var(--r2);
+        box-shadow: none;
+        padding: 12px 14px;
+        display: grid;
+        gap: 3px;
+      }
+      .kpiCard[data-tone="accent"] .kpiVal {
+        color: var(--accent-ink);
+      }
+      .kpiCard[data-tone="good"] .kpiVal {
+        color: var(--good);
+      }
+      .kpiCard[data-tone="warn"] .kpiVal {
+        color: var(--warn);
+      }
+      .kpiLabel {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+      .kpiVal {
+        font-family: var(--mono);
+        font-size: var(--t-5);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .kpiSub {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+
+      /* Panels */
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-bottom-color: var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .ph {
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--line);
+        border-top-left-radius: var(--r1i);
+        border-top-right-radius: var(--r1i);
+        background: var(--surface-2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .ph h2 {
+        margin: 0;
+        font-size: var(--t-2);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ink-soft);
+      }
+      .filterBar {
+        display: flex;
+        gap: 6px;
+        padding: 8px 16px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        flex-wrap: wrap;
+      }
+      .filterBtn {
+        padding: 4px 10px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--ink-soft);
+        cursor: pointer;
+      }
+      .filterBtn.active {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+      }
+
+      .tableWrap {
+        overflow-x: auto;
+        background: var(--surface);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--t-1);
+        text-align: left;
+      }
+      th {
+        padding: 9px 12px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+      }
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink);
+        vertical-align: middle;
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      tr:hover td {
+        background: var(--surface-2);
+      }
+      .mono {
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: var(--pill);
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+      .badge[data-tone="good"] {
+        background: var(--good-soft);
+        color: var(--good);
+        border: 1px solid var(--good);
+      }
+      .badge[data-tone="warn"] {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid var(--warn);
+      }
+      .badge[data-tone="danger"] {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border: 1px solid var(--danger);
+      }
+      .badge[data-tone="accent"] {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border: 1px solid var(--accent);
+      }
+
+      /* Modals */
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: var(--scrim);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        padding: 16px;
+      }
+      .modal.open {
+        display: flex;
+      }
+      .modalDialog {
+        width: min(94vw, 540px);
+        max-height: 90vh;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .modalHead {
+        padding: 12px 18px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        border-top-left-radius: var(--r1i);
+        border-top-right-radius: var(--r1i);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .modalHead h3 {
+        margin: 0;
+        font-size: var(--t-3);
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .modalBody {
+        padding: 16px 18px;
+        overflow-y: auto;
+        display: grid;
+        gap: 14px;
+      }
+      .modalFoot {
+        padding: 12px 18px;
+        background: var(--surface-2);
+        border-top: 1px solid var(--line);
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      .formGroup {
+        display: grid;
+        gap: 4px;
+      }
+      .formLabel {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+      }
+      .formInput,
+      .formSelect,
+      .formTextarea {
+        height: 34px;
+        padding: 0 10px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--ink);
+        font-family: inherit;
+        font-size: var(--t-2);
+        width: 100%;
+      }
+      .formTextarea {
+        height: 72px;
+        padding: 8px 10px;
+        resize: vertical;
+      }
+
+      /* Toast */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: var(--surface);
+        border: 1px solid var(--good);
+        color: var(--good);
+        box-shadow: var(--lift);
+        padding: 10px 18px;
+        border-radius: var(--pill);
+        font-weight: 600;
+        font-size: var(--t-1);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 1000;
+        transition:
+          transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+          opacity 0.25s ease;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .toast.show {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+
+      @media (max-width: 1000px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+        .rail {
+          position: sticky;
+          top: 0;
+          z-index: 40;
+          height: auto;
+          flex-direction: row;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 14px;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+          background: var(--surface);
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        .brand {
+          padding: 0 10px 0 0;
+          margin-right: 4px;
+          flex: 0 0 auto;
+        }
+        .railScroll {
+          flex-direction: row;
+          gap: 6px;
+          padding: 0;
+          overflow-x: auto;
+        }
+        .railGroup {
+          display: flex;
+          flex-direction: row;
+          gap: 4px;
+          padding: 0;
+        }
+        .railEyebrow,
+        .railFoot {
+          display: none;
+        }
+        .railLink {
+          width: auto;
+          flex: 0 0 auto;
+          padding: 6px 10px;
+          font-size: var(--t-1);
+          white-space: nowrap;
+          box-shadow: none;
+        }
+        .railLink[aria-current="page"] {
+          box-shadow: inset 0 -1px 0 var(--gilt);
+          background: var(--surface-2);
+          color: var(--ink);
+        }
+        .kpiStrip {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .workspace {
+          padding: 16px;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .kpiStrip {
+          grid-template-columns: 1fr;
+        }
+        .workspace {
+          padding: 12px;
+          gap: 14px;
+        }
+        .hdr1 {
+          padding: 0 12px;
+        }
+        .hdrTitle {
+          font-size: var(--t-2);
+        }
+        .btn {
+          height: 36px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- Sovereign 13-Screen Navigation Rail -->
+      <nav class="rail" id="rail" aria-label="Primary Navigation">
+        <div class="brand"><b>Ward Flow</b><span>WA</span></div>
+        <div class="railScroll">
+          <div class="railGroup">
+            <p class="railEyebrow">Clinical Operations</p>
+            <a class="railLink" href="command-third-edition.html">Command Center</a>
+            <a class="railLink" href="movement-third-edition.html">Movement Board</a>
+            <a class="railLink" href="patient-now-third-edition.html">Patient Trajectory</a>
+            <a class="railLink" href="capacity-third-edition.html">Capacity &amp; Demand</a>
+            <a class="railLink" href="wards-third-edition.html">23-Ward Directory</a>
+          </div>
+          <div class="railGroup">
+            <p class="railEyebrow">Coordination &amp; Logistics</p>
+            <a class="railLink" href="add-a-patient-third-edition.html">Add a Patient</a>
+            <a class="railLink" href="ward-answer-third-edition.html">Ward Bed Answer</a>
+            <a class="railLink" href="discharges-third-edition.html">Discharges &amp; Egress</a>
+            <a class="railLink" href="out-of-area-third-edition.html">Out-of-Area Ledger</a>
+            <a class="railLink" href="transport-officer-third-edition.html">Transport Officer MDT</a>
+            <a class="railLink" href="on-call-third-edition.html" aria-current="page">On-Call Directory</a>
+          </div>
+          <div class="railGroup">
+            <p class="railEyebrow">Legal &amp; Governance</p>
+            <a class="railLink" href="legal-forms-third-edition.html">Legal Forms (MHA)</a>
+            <a class="railLink" href="governance-third-edition.html">Governance Overrides</a>
+            <a class="railLink" href="alerts-third-edition.html">Alerts Center</a>
+            <a class="railLink" href="settings-third-edition.html">System Settings</a>
+          </div>
+        </div>
+        <div
+          class="railFoot"
+          title="Every ward state, movement, referral, clock and figure on this screen is invented."
+        >
+          <div>State Roster: <b>Active 24/7</b></div>
+          <div>Escalation Desk: <b>Operational</b></div>
+          <div id="railCheck" class="mono" style="font-size: var(--t-0); margin-top: 4px">
+            Invented figures, reconciled with each other, as at 08:00
+          </div>
+        </div>
+      </nav>
+
+      <!-- Main Container -->
+      <div class="frame">
+        <header class="hdr">
+          <div class="hdrTitle">
+            <span>Statewide Specialist On-Call Roster &amp; Escalation Desk</span>
+            <span
+              class="chip mark"
+              title="Every figure and name on this screen is invented. Not a medical device and not clinical decision support."
+              >Active Duty Matrix</span
+            >
+          </div>
+          <div class="hdrEnd">
+            <button class="btn" id="themeToggle" type="button">Dark Theme</button>
+            <button class="btn danger" type="button" onclick="openEscalationModal()">
+              ! Trigger Tier 3 Escalation
+            </button>
+          </div>
+        </header>
+
+        <main class="workspace">
+          <!-- Roster KPI Strip -->
+          <div class="kpiStrip">
+            <div class="kpiCard" data-tone="accent">
+              <span class="kpiLabel">State Bed Desk Lead</span>
+              <span class="kpiVal">Active on Duty</span>
+              <span class="kpiSub">Shift 07:00 · 19:30 · ext 01</span>
+            </div>
+            <div class="kpiCard" data-tone="good">
+              <span class="kpiLabel">Forensic Consultant</span>
+              <span class="kpiVal">Frankland Centre</span>
+              <span class="kpiSub">Clinical Director · ext 02</span>
+            </div>
+            <div class="kpiCard" data-tone="warn">
+              <span class="kpiLabel">Executive Director Duty</span>
+              <span class="kpiVal">North Metro Lead</span>
+              <span class="kpiSub">Standing by for Tier 3 Overrides</span>
+            </div>
+            <div class="kpiCard" data-tone="good">
+              <span class="kpiLabel">ED Liaison Coverage</span>
+              <span class="kpiVal">8 Desks Active</span>
+              <span class="kpiSub">100% Rostered Across WA Hubs</span>
+            </div>
+          </div>
+
+          <!-- Specialist Medical & Operational On-Call Roster -->
+          <section class="panel">
+            <div class="ph">
+              <h2>Statewide Specialist Medical &amp; Operational On-Call Roster</h2>
+              <span class="mono" style="font-size: var(--t-0); color: var(--muted)"
+                >Current Active Window · Contact details are placeholders</span
+              >
+            </div>
+            <div class="filterBar">
+              <button class="filterBtn active" type="button" onclick="filterRoster('all', this)">
+                All Health Services (8)
+              </button>
+              <button class="filterBtn" type="button" onclick="filterRoster('North', this)">North Metro (2)</button>
+              <button class="filterBtn" type="button" onclick="filterRoster('South', this)">South Metro (2)</button>
+              <button class="filterBtn" type="button" onclick="filterRoster('East', this)">East Metro (2)</button>
+              <button class="filterBtn" type="button" onclick="filterRoster('WACHS', this)">
+                WA Country Health (2)
+              </button>
+            </div>
+            <div class="tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Health Service</th>
+                    <th>Clinical Role / Specialty</th>
+                    <th>Primary Facility Base</th>
+                    <th>Current Roster Holder</th>
+                    <th>Shift Window</th>
+                    <th>Status</th>
+                    <th>Direct Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="rosterTbody">
+                  <tr data-service="North">
+                    <td><b>North Metro (NMHS)</b></td>
+                    <td>Duty Adult Consultant Psychiatrist</td>
+                    <td>Sir Charles Gairdner / Graylands</td>
+                    <td>On-Call Consultant</td>
+                    <td class="mono">17:00 · 08:30</td>
+                    <td><span class="badge" data-tone="good">Active On-Call</span></td>
+                    <td>
+                      <button
+                        class="btn sm"
+                        type="button"
+                        onclick="
+                          openCallModal('On-Call Consultant', 'Duty Adult Consultant', 'SCGH / Graylands', 'ext 01')
+                        "
+                      >
+                        📞 Call
+                      </button>
+                    </td>
+                  </tr>
+                  <tr data-service="North">
+                    <td><b>North Metro (NMHS)</b></td>
+                    <td>Adolescent Consultant Psychiatrist</td>
+                    <td>Perth Children&rsquo;s Hospital (PCH)</td>
+                    <td>Senior Registrar</td>
+                    <td class="mono">08:00 · 20:00</td>
+                    <td><span class="badge" data-tone="good">Available</span></td>
+                    <td>
+                      <button
+                        class="btn sm"
+                        type="button"
+                        onclick="
+                          openCallModal(
+                            'Senior Registrar',
+                            'Adolescent Consultant',
+                            'Perth Children\'s Hospital',
+                            'ext 02',
+                          )
+                        "
+                      >
+                        📞 Call
+                      </button>
+                    </td>
+                  </tr>
+                  <tr data-service="South">
+                    <td><b>South Metro (SMHS)</b></td>
+                    <td>Duty Adult Consultant Psychiatrist</td>
+                    <td>Fiona Stanley Hospital / Fremantle</td>
+                    <td>On-Call Consultant</td>
+                    <td class="mono">17:00 · 08:30</td>
+                    <td><span class="badge" data-tone="good">Active On-Call</span></td>
+                    <td>
+                      <button
+                        class="btn sm"
+                        type="button"
+                        onclick="
+                          openCallModal(
+                            'On-Call Consultant',
+                            'Duty Adult Consultant',
+                            'Fiona Stanley Hospital',
+                            'ext 03',
+                          )
+                        "
+                      >
+                        📞 Call
+                      </button>
+                    </td>
+                  </tr>
+                  <tr data-service="South">
+                    <td><b>South Metro (SMHS)</b></td>
+                    <td>Older Adult Consultant Psychiatrist</td>
+                    <td>Fremantle Hospital (W Ward)</td>
+                    <td>Senior Registrar</td>
+                    <td class="mono">08:30 · 17:00</td>
+                    <td><span class="badge" data-tone="warn">Standby</span></td>
+                    <td>
+                      <button
+                        class="btn sm"
+                        type="button"
+                        onclick="
+                          openCallModal('Senior Registrar', 'Older Adult Consultant', 'Fremantle Hospital', 'ext 04')
+                        "
+                      >
+                        📞 Call
+                      </button>
+                    </td>
+                  </tr>
+                  <tr data-service="East">
+                    <td><b>East Metro (EMHS)</b></td>
+                    <td>Duty Adult Consultant Psychiatrist</td>
+                    <td>Royal Perth Hospital / Bentley</td>
+                    <td>On-Call Consultant</td>
+                    <td class="mono">17:00 · 08:30</td>
+                    <td><span class="badge" data-tone="good">Active On-Call</span></td>
+                    <td>
+                      <button
+                        class="btn sm"
+                        type="button"
+                        onclick="
+                          openCallModal('On-Call Consultant', 'Duty Adult Consultant', 'Royal Perth Hospital', 'ext 05')
+                        "
+                      >
+                        📞 Call
+                      </button>
+                    </td>
+                  </tr>
+                  <tr data-service="East">
+                    <td><b>East Metro (EMHS)</b></td>
+                    <td>Forensic Consultant Psychiatrist</td>
+                    <td>Frankland Centre (Statewide)</td>
+                    <td>Clinical Director</td>
+                    <td class="mono">24 Hours (Rotating)</td>
+                    <td><span class="badge" data-tone="good">Active On-Call</span></td>
+                    <td>
+                      <button
+                        class="btn sm"
+                        type="button"
+                        onclick="
+                          openCallModal('Clinical Director', 'Forensic Consultant', 'Frankland Centre', 'ext 06')
+                        "
+                      >
+                        📞 Call
+                      </button>
+                    </td>
+                  </tr>
+                  <tr data-service="WACHS">
+                    <td><b>WA Country (WACHS)</b></td>
+                    <td>Regional Duty Psychiatrist (South West)</td>
+                    <td>Bunbury Regional Hospital</td>
+                    <td>Senior Registrar</td>
+                    <td class="mono">18:00 · 08:00</td>
+                    <td><span class="badge" data-tone="good">Active On-Call</span></td>
+                    <td>
+                      <button
+                        class="btn sm"
+                        type="button"
+                        onclick="
+                          openCallModal(
+                            'Senior Registrar',
+                            'Regional Duty Psychiatrist',
+                            'Bunbury Regional Hospital',
+                            'ext 07',
+                          )
+                        "
+                      >
+                        📞 Call
+                      </button>
+                    </td>
+                  </tr>
+                  <tr data-service="WACHS">
+                    <td><b>WA Country (WACHS)</b></td>
+                    <td>Regional Duty Psychiatrist (Great Southern)</td>
+                    <td>Albany Hospital</td>
+                    <td>On-Call Consultant</td>
+                    <td class="mono">18:00 · 08:00</td>
+                    <td><span class="badge" data-tone="warn">Telehealth</span></td>
+                    <td>
+                      <button
+                        class="btn sm"
+                        type="button"
+                        onclick="
+                          openCallModal('On-Call Consultant', 'Regional Duty Psychiatrist', 'Albany Hospital', 'ext 08')
+                        "
+                      >
+                        📞 Call
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Emergency Department Mental Health Liaison Desks -->
+          <section class="panel">
+            <div class="ph">
+              <h2>Emergency Department Mental Health Liaison Direct Desks</h2>
+              <span class="mono" style="font-size: var(--t-0); color: var(--muted)"
+                >8 Hospital Coordination Desks · Contact details are placeholders</span
+              >
+            </div>
+            <div class="tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Emergency Department</th>
+                    <th>Health Service</th>
+                    <th>Liaison Coordinator</th>
+                    <th>Dedicated Direct Extension</th>
+                    <th>Handover Roster</th>
+                    <th>Direct Connect</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><b>Sir Charles Gairdner ED</b></td>
+                    <td>North Metro</td>
+                    <td>Liaison Nurse Specialist</td>
+                    <td class="mono">ext 01</td>
+                    <td class="mono">07:00 / 15:00 / 23:00</td>
+                    <td>
+                      <button
+                        class="btn sm primary"
+                        type="button"
+                        onclick="connectLiaison('SCGH ED Liaison', 'Liaison Nurse Specialist', 'ext 01')"
+                      >
+                        Direct Connect
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><b>Fiona Stanley ED</b></td>
+                    <td>South Metro</td>
+                    <td>Liaison Nurse Specialist</td>
+                    <td class="mono">ext 02</td>
+                    <td class="mono">07:00 / 15:00 / 23:00</td>
+                    <td>
+                      <button
+                        class="btn sm primary"
+                        type="button"
+                        onclick="connectLiaison('FSH ED Liaison', 'Liaison Nurse Specialist', 'ext 02')"
+                      >
+                        Direct Connect
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><b>Royal Perth ED</b></td>
+                    <td>East Metro</td>
+                    <td>Clinical Coordinator</td>
+                    <td class="mono">ext 03</td>
+                    <td class="mono">07:00 / 15:00 / 23:00</td>
+                    <td>
+                      <button
+                        class="btn sm primary"
+                        type="button"
+                        onclick="connectLiaison('RPH ED Liaison', 'Clinical Coordinator', 'ext 03')"
+                      >
+                        Direct Connect
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><b>Joondalup Health Campus ED</b></td>
+                    <td>North Metro</td>
+                    <td>Liaison Clinical Nurse</td>
+                    <td class="mono">ext 04</td>
+                    <td class="mono">07:00 / 15:30 / 23:00</td>
+                    <td>
+                      <button
+                        class="btn sm primary"
+                        type="button"
+                        onclick="connectLiaison('Joondalup ED Liaison', 'Liaison Clinical Nurse', 'ext 04')"
+                      >
+                        Direct Connect
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><b>Rockingham General ED</b></td>
+                    <td>South Metro</td>
+                    <td>Liaison Registered Nurse</td>
+                    <td class="mono">ext 05</td>
+                    <td class="mono">07:00 / 15:00 / 23:00</td>
+                    <td>
+                      <button
+                        class="btn sm primary"
+                        type="button"
+                        onclick="connectLiaison('Rockingham ED Liaison', 'Liaison Registered Nurse', 'ext 05')"
+                      >
+                        Direct Connect
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><b>Armadale Health Service ED</b></td>
+                    <td>East Metro</td>
+                    <td>Liaison Clinical Nurse</td>
+                    <td class="mono">ext 06</td>
+                    <td class="mono">07:00 / 15:00 / 23:00</td>
+                    <td>
+                      <button
+                        class="btn sm primary"
+                        type="button"
+                        onclick="connectLiaison('Armadale ED Liaison', 'Liaison Clinical Nurse', 'ext 06')"
+                      >
+                        Direct Connect
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><b>St John of God Midland ED</b></td>
+                    <td>East Metro</td>
+                    <td>Liaison Coordinator</td>
+                    <td class="mono">ext 07</td>
+                    <td class="mono">07:00 / 15:00 / 23:00</td>
+                    <td>
+                      <button
+                        class="btn sm primary"
+                        type="button"
+                        onclick="connectLiaison('Midland ED Liaison', 'Liaison Coordinator', 'ext 07')"
+                      >
+                        Direct Connect
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><b>Bunbury Regional ED</b></td>
+                    <td>WA Country</td>
+                    <td>Regional Liaison Lead</td>
+                    <td class="mono">ext 08</td>
+                    <td class="mono">08:00 / 16:00 / 00:00</td>
+                    <td>
+                      <button
+                        class="btn sm primary"
+                        type="button"
+                        onclick="connectLiaison('Bunbury ED Liaison', 'Regional Liaison Lead', 'ext 08')"
+                      >
+                        Direct Connect
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- Direct Connect / Call Modal -->
+    <div class="modal" id="callModal">
+      <div class="modalDialog">
+        <div class="modalHead">
+          <h3 id="callModalTitle">Clinical Telephone Bridge</h3>
+          <button type="button" class="btn sm" onclick="closeModal('callModal')">✕</button>
+        </div>
+        <div class="modalBody">
+          <div
+            style="
+              background: var(--surface-2);
+              border: 1px solid var(--line);
+              border-radius: var(--r2);
+              padding: 14px;
+              display: grid;
+              gap: 8px;
+            "
+          >
+            <div style="font-size: var(--t-3); font-weight: 700; color: var(--accent)" id="callRecipient">
+              On-Call Consultant
+            </div>
+            <div style="font-size: var(--t-1); color: var(--ink-soft)" id="callRole">
+              Duty Adult Consultant Psychiatrist
+            </div>
+            <div style="font-size: var(--t-0); color: var(--muted)" id="callFacility">
+              Base: Sir Charles Gairdner Hospital
+            </div>
+            <div
+              style="
+                font-family: var(--mono);
+                font-size: var(--t-4);
+                font-weight: 700;
+                color: var(--ink);
+                margin-top: 6px;
+              "
+              id="callNumber"
+            >
+              Contact: ext 01
+            </div>
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Dispatch Urgent Priority Alert</label>
+            <input
+              type="text"
+              class="formInput"
+              id="pagerMessage"
+              placeholder="Type brief alert message (max 140 chars)..."
+              value="Urgent bed placement query: Tobias Wren WF-009 awaiting transfer."
+            />
+          </div>
+        </div>
+        <div class="modalFoot">
+          <button type="button" class="btn" onclick="sendPagerAlert()">Transmit Alert</button>
+          <button type="button" class="btn primary" onclick="simulateCall()">Simulate Call</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tier 3 Escalation Modal -->
+    <div class="modal" id="escalationModal">
+      <div class="modalDialog">
+        <div class="modalHead">
+          <h3>Trigger Tier 3 Executive Escalation</h3>
+          <button type="button" class="btn sm" onclick="closeModal('escalationModal')">✕</button>
+        </div>
+        <div class="modalBody">
+          <div
+            style="
+              background: var(--danger-soft);
+              border: 1px solid var(--danger);
+              border-radius: var(--r2);
+              padding: 10px 12px;
+              font-size: var(--t-1);
+              color: var(--danger-ink);
+            "
+          >
+            <b>Clinical Governance Authority:</b> Tier 3 escalations notify the Executive Director on Call. Not wired in
+            this prototype.
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Target Health Service Cluster</label>
+            <select class="formSelect">
+              <option>North Metropolitan Health Service (NMHS)</option>
+              <option>South Metropolitan Health Service (SMHS)</option>
+              <option>East Metropolitan Health Service (EMHS)</option>
+              <option>WA Country Health Service (WACHS)</option>
+              <option selected>Statewide Bed Coordination Desk (Executive On-Call)</option>
+            </select>
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Escalation Category</label>
+            <select class="formSelect">
+              <option>Critical Bed Exhaustion / Gridlock (Zero Secure Beds)</option>
+              <option selected>ED Stay Exceeding 24h with High Acuity / Aggression</option>
+              <option>Cross-Catchment Repatriation Stalemate (&gt;7 Days)</option>
+              <option>Statutory Form 4A Custody Handover Breach</option>
+            </select>
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Patient Reference</label>
+            <input type="text" class="formInput mono" value="WF-009 Tobias Wren (Peel ED)" />
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Justification &amp; Action Requested</label>
+            <textarea class="formTextarea">
+Authorisation requested for out-of-catchment override to allocate Selby Older Adult bed or declare network surge bed.</textarea>
+          </div>
+        </div>
+        <div class="modalFoot">
+          <button type="button" class="btn" onclick="closeModal('escalationModal')">Cancel</button>
+          <button type="button" class="btn danger" onclick="transmitEscalation()">Transmit Tier 3 Escalation</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="actionToast">
+      <span>✓</span>
+      <span id="toastMsg">Action executed successfully.</span>
+    </div>
+
+    <script>
+      // Theme toggle
+      const themeBtn = document.getElementById("themeToggle");
+      themeBtn.addEventListener("click", () => {
+        const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+        document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
+        themeBtn.textContent = isDark ? "Dark Theme" : "Light Theme";
+      });
+
+      // Toast
+      function showToast(msg) {
+        const toast = document.getElementById("actionToast");
+        document.getElementById("toastMsg").textContent = msg;
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 3200);
+      }
+
+      // Modals
+      function openModal(id) {
+        document.getElementById(id).classList.add("open");
+      }
+      function closeModal(id) {
+        document.getElementById(id).classList.remove("open");
+      }
+
+      function openEscalationModal() {
+        openModal("escalationModal");
+      }
+
+      function transmitEscalation() {
+        closeModal("escalationModal");
+        showToast("Tier 3 Executive Escalation transmitted · Not wired in this prototype.");
+      }
+
+      function openCallModal(name, role, facility, contact) {
+        document.getElementById("callRecipient").textContent = name;
+        document.getElementById("callRole").textContent = role;
+        document.getElementById("callFacility").textContent = `Base: ${facility}`;
+        document.getElementById("callNumber").textContent = `Contact: ${contact}`;
+        openModal("callModal");
+      }
+
+      function connectLiaison(deskName, contact, ext) {
+        openCallModal(deskName, `Coordinator: ${contact}`, "Hospital Emergency Hub", ext);
+      }
+
+      function simulateCall() {
+        closeModal("callModal");
+        showToast("Connecting clinical telephone channel · Not wired in this prototype.");
+      }
+
+      function sendPagerAlert() {
+        closeModal("callModal");
+        showToast("Priority alert transmitted · Not wired in this prototype.");
+      }
+
+      // Filter roster
+      function filterRoster(service, btn) {
+        const buttons = document.querySelectorAll(".filterBtn");
+        buttons.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        const rows = document.querySelectorAll("#rosterTbody tr");
+        rows.forEach((r) => {
+          if (service === "all" || r.getAttribute("data-service") === service) {
+            r.style.display = "";
+          } else {
+            r.style.display = "none";
+          }
+        });
+        showToast(service === "all" ? "Displaying all health services" : `Filtered to ${service} service`);
+      }
+    </script>
+  </body>
+</html>

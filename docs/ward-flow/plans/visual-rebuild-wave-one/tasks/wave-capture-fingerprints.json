@@ -1,0 +1,366 @@
+{
+  "date": "2026-09-13",
+  "scope": "Statistics, Command, Delays, Community, Board final matrices and supplemental images; Hub and shared shell fingerprints remain in their accepted pilot reports; final inspected Hub/Delays delta and shared-rail closure images appended",
+  "captures": [
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/board-phone-detail-r4.png",
+      "sha256": "dbfd08a2f8b452021f838d4b43ebbcc130d8be8a558c074b87ca96b8a2133d6c"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/board-r4-app-390-dark.png",
+      "sha256": "7950693927295cfcc1bb60e524aa1901828065f0810e341976dada8726f09e18"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/board-r4-app-390-light.png",
+      "sha256": "7919131359865bc4ba824e76c1c917098118fcdc7ae3500e9e05aea5199fb04e"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/board-r4-app-820-dark.png",
+      "sha256": "24a0552a1e8e479f0600371161f831b384df9d5b506e8c485aa4c25b4b382d67"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/board-r4-app-820-light.png",
+      "sha256": "9140c7eaa8d60f7f9cf792b598929d884c8935465e6c79acefdc5143cdda7c58"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/board-r4-mockup-1440-dark.png",
+      "sha256": "627bad112fd857ec656620ec72c093ea5c5823a0921b6452e3b5350f7b28db9f"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/board-r4-mockup-1440-light.png",
+      "sha256": "9188f781b76f447050daf0efb27de8aec0d839824ccb0495def6c8718ccdc051"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/board-r4-mockup-390-dark.png",
+      "sha256": "e61df02c4b6f3d8bb4537c9e8f3ef4e98cbcc39bd3eaecfdf8eecbbbf22cac52"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/board-r4-mockup-390-light.png",
+      "sha256": "9bc78c9cbde05a27e0ddbdcceca2ea600d2d03e74507f1ea1ea6de21f1d82eb4"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/board-r4-mockup-820-dark.png",
+      "sha256": "6d3f161b69c11511550546f75868cbecb6a5916ff87038b6ebfec73b268fd20f"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/board-r4-mockup-820-light.png",
+      "sha256": "b198da9bf29d359b98219fb6983309ec963e4d9e279170ace279c170216bcfcf"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/board-r5-app-1440-dark.png",
+      "sha256": "28fc02f7e79072afcd38b646cb1264ed9ca7a769b097da148569d27fea00150a"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/board-r5-app-1440-light.png",
+      "sha256": "2199650c5da8341073576c372ccffc64581ea7c58ce6142a658dead53a121085"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/board-r5-app-390-dark.png",
+      "sha256": "ca65c6dd610dde2c2fb11fd09319d599fdacfa5ee365269dbc71849a8b83601e"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/board-r5-app-820-dark.png",
+      "sha256": "077650fa8d207baf5342daea5c428e1701b3702be537b0032ca651ff22292d8b"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/command-r4-app-1440-dark.png",
+      "sha256": "295dc4fa552ea310994d1cee62baf723af2c4395d9d71c2b458c5d07705f48cb"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/command-r4-app-1440-light.png",
+      "sha256": "df3e7af8dcd89569ad7f58c0965b05a2db059e4d2fe10dae4e1657de7f0eb5aa"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/command-r4-app-390-dark.png",
+      "sha256": "df5e8b40be8b8989029485cafe613d448adb18d15fa952a8e59ce0df859a7344"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/command-r4-app-390-light.png",
+      "sha256": "88473b86ac3624194510a4e519c5703c7fea61993de2b21308a56ccff9e49d09"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/command-r4-app-820-dark.png",
+      "sha256": "b79b66d87ced9956c09ff3a331f67a08122a52aa6e322201a9b7b9118c02bb35"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/command-r4-app-820-light.png",
+      "sha256": "4ecb291a23d9f651e1e6875e7a58b8effcbeabdd7f769f91efe90e1115dd984c"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/command-r4-mockup-1440-dark.png",
+      "sha256": "d64de6a7bfa987ced2ed86576ba28ba0f7ead6305cad26a68b095de2212d8f68"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/command-r4-mockup-1440-light.png",
+      "sha256": "ab9cf1d8053b1989ee5ce307107cc42bcce15e54a75930e5d5aaf1b362947e6e"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/command-r4-mockup-390-dark.png",
+      "sha256": "c056d9f02a52cc4ee767e95db05525b5f08a7df493be22290a24959ee509c9a4"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/command-r4-mockup-390-light.png",
+      "sha256": "ba529f9744ef96c045dcb0a6730551a681f4f24dc7d9bbfb0e80b56bf818980b"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/command-r4-mockup-820-dark.png",
+      "sha256": "c975ab9e6b365f7e7bc194fac4dd65cce4b84752bb9a49bdc2b312a55d2554d9"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/command-r4-mockup-820-light.png",
+      "sha256": "37688660358ecbc0f7ebe26618d2bbbcd5f0ae238823c985c41db92cc88c34cb"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/community-phone-table-r4.png",
+      "sha256": "bbe95b79bdc3d5db85bc57d8afe729e1b33415432b7636ed918721ffcde07b82"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/community-r4-app-1440-dark.png",
+      "sha256": "c7cb1731e0e0628261deed676922a7789f385a3d2df4179b220c1e3ff27aeca7"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/community-r4-app-1440-light.png",
+      "sha256": "bd35709ac1e9a830a540f5b6318af87f7a1b63cbaf216bf5167a9f07d0e69f6f"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/community-r4-app-390-dark.png",
+      "sha256": "3f91543bc13e5fb126779676f7cf18bd89c05c3f6b37eb14e7b16e24e4048741"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/community-r4-app-390-light.png",
+      "sha256": "ed1c5bc26ae267fa849d3a349e249a491dc594e49768698df66d95302c63d1ec"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/community-r4-app-820-dark.png",
+      "sha256": "8ba18a42055b6527cf7f39c9827eb2af9bbc08d07d28fab1136653232acc5b02"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/community-r4-app-820-light.png",
+      "sha256": "6bce26712e2d74cce44b40672c645ab4c06e88fbebaff02edb3de2774f39cf60"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/community-r4-mockup-1440-dark.png",
+      "sha256": "eeb8fa315b3db07aa9837333def4ae7a4054c65de87e2b095963c42b3d9aa815"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/community-r4-mockup-1440-light.png",
+      "sha256": "5344374a9698cd066a6034cb775690c2907119d816520797d71ad4bc33552405"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/community-r4-mockup-390-dark.png",
+      "sha256": "d4d033a208f8033c438f7f8c57a53d791207382f4bc93af94fc45d9ca4c10711"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/community-r4-mockup-390-light.png",
+      "sha256": "ed2485283c0f7c36be50de741338520c4f8f767df3bab6287c3b1c7c38b110cb"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/community-r4-mockup-820-dark.png",
+      "sha256": "94959d91c5ca9fc6cf39d8c272e24f545b039c058a6d73fc5d5eff5ad387b497"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/community-r4-mockup-820-light.png",
+      "sha256": "1e4d79b46942ad8c38c16c6d020c4be330c032e3411d7df1ec491644d1a2ee76"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/delays-phone-owner-end-r4.png",
+      "sha256": "aacc40c69f008636a7b5c1a83328d4ab56dfe464d88cab0a0159e61bfd4f39ff"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/delays-r4-app-1440-dark.png",
+      "sha256": "c3fd5ca7ec09ae921ac99cdf1ec61bd65481004e9ecac79a231ca1cc0179f760"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/delays-r4-app-1440-light.png",
+      "sha256": "ef6502fb2441a03e77ed694445f0676b362bface6f705e7ccc231af19779e126"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/delays-r4-app-390-dark.png",
+      "sha256": "95340ff980386308d2f63261a7f7d2e7b630ae076c3d61e58080fe34fa480353"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/delays-r4-app-390-light.png",
+      "sha256": "0851a0a727d8fa9d2b9c9f32674143207a871d5a3a12455ddacf846ff56154f0"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/delays-r4-app-820-dark.png",
+      "sha256": "029a87f1888b3ef7e7f9e0d6eb5688f977b7e9956ea5fb65865faa40fd3f7f48"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/delays-r4-app-820-light.png",
+      "sha256": "a73e6977ffcfdcdcc130fbea8cf1bef71993350ff0f493179d61556471eda5c2"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/delays-r4-mockup-1440-dark.png",
+      "sha256": "116ad1bc011b82645a095ed679e6187500c98c10e43b7cbd79d5a1b390d44591"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/delays-r4-mockup-1440-light.png",
+      "sha256": "f32a18783f1ab59679d2815df429e27d29055b946340b2a00eaec1b09fc35882"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/delays-r4-mockup-390-dark.png",
+      "sha256": "b880951db830df2ee65d1c005c9e4fffc88822759cc49ce91a3b586cde5ac9a0"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/delays-r4-mockup-390-light.png",
+      "sha256": "6726b72ac20e6a28a77f81969bf5c97320be80afb2686ad37fd271e8882d6205"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/delays-r4-mockup-820-dark.png",
+      "sha256": "991cfdb1b79de4dfe0db7465556fdc76211bffedf96f8278376680532c331ba7"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/delays-r4-mockup-820-light.png",
+      "sha256": "5145af365d4fefd495427e462e67849e401197fe7271cad16ab740232d7e766f"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-compare-r4-app-1440-dark.png",
+      "sha256": "b38105ffdbba7b1dd7fd4878a5c7923688f4aed2d3eecb69cf169a2d19f68789"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-compare-r4-app-1440-light.png",
+      "sha256": "f04f2aad3f04a6526e8659a247250357c3a286f9c31e419c18165a6977efcc91"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-compare-r4-app-390-dark.png",
+      "sha256": "b8c6d5fad15fa2adb5854856ac2588480145da70301879705db0d40c87a7f394"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-compare-r4-app-390-light.png",
+      "sha256": "43142a4ae8c6dbd2bcf4a60a9d188a628d557a873beec515e2a98af908346344"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-compare-r4-app-820-dark.png",
+      "sha256": "2cac3b358c4a2eeca76e7507e88407b7fb9fea49ca466f3e3322f981a3fb7469"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-compare-r4-app-820-light.png",
+      "sha256": "6e49b80cd99274fd27d447f13425b94b6eab2e3dd85232c062dcecd7b7c1c619"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-compare-r4-mockup-1440-dark.png",
+      "sha256": "f35299815e4e89a3a8c24a7c0291f881d7b784768b37718b546592c576887927"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-compare-r4-mockup-1440-light.png",
+      "sha256": "0eefd73644b8f368201cb18d8bf179b3f43ed096f6340028ff3c7a8ad9b90163"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-compare-r4-mockup-390-dark.png",
+      "sha256": "b45ba1728a1a02f2e18b741b6cf1bf002b0b0a2a015b429f83b513d846ffafbf"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-compare-r4-mockup-390-light.png",
+      "sha256": "d5449f610aa3211cee7951356e017d02fd90ffbdd067cd531a20693c2d40228b"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-compare-r4-mockup-820-dark.png",
+      "sha256": "e7df1535f62b4c8e09411e28e88b5a04ffcc35c429a1e1645738f34422f18ad2"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-compare-r4-mockup-820-light.png",
+      "sha256": "23d771ae71c05e59d221609075b66c67728a1dda3562062bb9a33b60f6a628c0"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-legacy-r1-app-1440-dark.png",
+      "sha256": "c57a065a336fb33573e12522644570f3a407c43a8acebc608dc36b3e1e0cbe88"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-legacy-r1-app-1440-light.png",
+      "sha256": "c35fad5bacabe7f6ac5beb8daadb7be5b7cc2d9f84ae5ae6d1a8dc050ba2a115"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-legacy-r1-app-390-dark.png",
+      "sha256": "03758062b14b4dae3ca6a394cfca3d67e5e0dd290b5fd6a0e04d064fafa9303a"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-legacy-r1-app-390-light.png",
+      "sha256": "237e6d56c91a15d352d53f9d8b531bcb1f1965bbc20c6f6be47fa0c52ee1413c"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-overview-r4-app-1440-dark.png",
+      "sha256": "6258cbbfdaff4aee85e858ff090262060b56947a2a73365e4d3f2a0cf06a87e6"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-overview-r4-app-1440-light.png",
+      "sha256": "92232309cd27982dc8a919c943b43bb3e71b2ee17e29ba4f889dd9a3811dc5fa"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-overview-r4-app-390-dark.png",
+      "sha256": "12808c2e5e9a5ccf0844c3a1c74c82c9a9d4b41ce5570ada77ab28dccb36f59f"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-overview-r4-app-390-light.png",
+      "sha256": "787c7d2e87760c36c1f44e6153c0629985fa4117ddb9b531fb133df0f5930120"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-overview-r4-app-820-dark.png",
+      "sha256": "c78e2b3725bda6a9fd89bc687216df3e22c11cbd3b803c185ec88e8b492f9ab9"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-overview-r4-app-820-light.png",
+      "sha256": "6385008ab49f2a4ed4157efb3e16eb250a682ea647543c1f16d09455c8945ec6"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-overview-r4-mockup-1440-dark.png",
+      "sha256": "cbde6c18987179f7244b8e47cd0d5172fb5e6114d38f5468e7c73eb35cd1c730"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-overview-r4-mockup-1440-light.png",
+      "sha256": "57557b790121d39ad91d11b2f1c85c37748100597da009f290959d4fc6f66dcf"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-overview-r4-mockup-390-dark.png",
+      "sha256": "c7881dcda4c48f6638395ede93bee87c7698549e5acceb821dfa41b24b90f2fe"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-overview-r4-mockup-390-light.png",
+      "sha256": "06c4557312a7370038ea4af898a44250b155e646a6f747940a817ff4880bfc53"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-overview-r4-mockup-820-dark.png",
+      "sha256": "e74b7d701b1957830df783f496a4c869c06f812fcf2d689cfed11fde53855a28"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/stats-overview-r4-mockup-820-light.png",
+      "sha256": "ab8755e41f88bbb6e54e33f0cb0859de287cd107e5047624e02ba1490e4a8da7"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/hub-r6-app-1440-light.png",
+      "sha256": "d821614b0aae991a7a0457c9b37ba206e7da2483e8b313741493a8dfff0a61ff"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/hub-r6-app-390-dark-table.png",
+      "sha256": "73a37afc2445cd7ee27d9ee1eba605b3583d15669d3dbf3c09be5e4dffb316cb"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/delays-r5-app-1440-dark.png",
+      "sha256": "bf9c3de3182e8c27b6e40f0a3e739fbf8c3275fc41da97aada2cad6e4a13c9d1"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/delays-r5-app-390-light.png",
+      "sha256": "59bcc4ebfd21c02120952ea6e0365deb0fdcef12a956798cef76447463b562eb"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/shell-card-r3-app-1440-light.png",
+      "sha256": "9ae28dad71b274cfacae3c0f0fff6a1a03e7786e927abb8cf6994bb3ad49113e"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/shell-card-r3-app-1440-dark.png",
+      "sha256": "1e6e30e14597f7840cb19bd6dc5b0baf20a23b344c0e19dc9437745943088937"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/shell-card-r1-mockup-1440-light.png",
+      "sha256": "5d404fe9b0c165ae2b42e211a38788e765cf3d02300dc16793c8b93b0fc9ac7f"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/shell-card-r1-mockup-1440-dark.png",
+      "sha256": "777bc7e10cea0948ab37b09662a36fa64b36d66a78f44e1a76b36bdab795566d"
+    },
+    {
+      "path": ".superpowers/sdd/2026-09-12-visual-rebuild-wave-one/shell-card-r3-app-390-light.png",
+      "sha256": "0240c59498d63594c3894be633e0e04ff9b2659303cd8574bd8ba41253283a5d"
+    }
+  ]
+}

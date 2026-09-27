@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "id": "463c6f11-b408-424e-b642-d2b7ce8def86",
+  "createdOn": "2026-09-12",
+  "action": "add",
+  "payload": {
+    "pri": "P2",
+    "type": "task",
+    "summary": "Ward Flow: about ten absence sentences have never been rendered by any instrument, and only a seed change can reach them",
+    "detail": "Three instruments have now checked whether Ward Flow's checked-empty screens name what they searched, and all three returned zero non-compliant: a 36-route render census, a blind 22-site source enumeration, and an action-reachable sweep (4 states walked, VOID rather than falsified because the action-reachable population is under twelve). A controlled default-render census over nine routes found 14 of 18 candidate sentences absent from the default render, but only about four are reachable by any action. The remaining ~10 are DATA-conditional - No ward in the network reports a ready bed right now, No referrals awaiting a decision, No movement is in this group right now - and cannot be produced by using the screen at all. Reaching them needs deliberate, reversible seed perturbation, the technique used once on 2026-09-11 for the community-statistics contradiction (forced, rendered, restored, restoration proved three ways). Estimated a few hours. OWNER DEFERRED this on 2026-09-12. RE-RAISE ON ANY OF: (1) the seed is replaced with real figures; (2) any of the ~10 sentences is edited for any reason, since nobody has ever seen one render; (3) BEFORE Ward Flow is put in front of a real bed coordinator. The state of this population is nobody has looked, NOT it is clean - those read identically in a status list, which is why it is spelled out.",
+    "source": "docs/ward-flow/action-reachable-absence-2026-09-12.md and docs/ward-flow/owner-decisions-2026-09-12-four-answers.md (D-3b)",
+    "issueUlid": "01M29RBS92QEJXAVXB1R8CTX2R"
+  }
+}

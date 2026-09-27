@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  id="WardFlow_PatientJourney"
+                  targetNamespace="http://wardflow.local/patient-journey">
+  <bpmn:collaboration id="Collab_1">
+    <bpmn:participant id="Participant_1" name="The patient's journey through Ward Flow" processRef="Process_journey" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_journey" name="Ward Flow — the patient's journey" isExecutable="false">
+    <bpmn:startEvent id="Start_referral" name="A referral is raised" />
+    <bpmn:task id="Task_address" name="Address it to up to three places at once" />
+    <bpmn:exclusiveGateway id="Gw_answer" name="How does each place answer?" />
+    <bpmn:endEvent id="End_declined" name="Declined everywhere — the person stops moving" />
+    <bpmn:endEvent id="End_withdrawn" name="The referrer withdraws" />
+    <bpmn:task id="Task_accepted" name="A ward accepts" />
+    <bpmn:task id="Task_movement" name="A movement is created — this is what moves" />
+    <bpmn:task id="Task_askWards" name="Ask one or more wards" />
+    <bpmn:exclusiveGateway id="Gw_ward" name="Does a ward take the patient?" />
+    <bpmn:task id="Task_declined" name="A ward declines — seven reasons" />
+    <bpmn:endEvent id="End_abandoned" name="Bed search abandoned — did not proceed" />
+    <bpmn:task id="Task_community" name="Sent to a community team instead" />
+    <bpmn:task id="Task_inPrinciple" name="A ward accepts in principle" />
+    <bpmn:task id="Task_pull" name="Pull and hold a named bed" />
+    <bpmn:task id="Task_releasePull" name="Give the held bed back — four reasons" />
+    <bpmn:exclusiveGateway id="Gw_transport" name="Is transport needed?" />
+    <bpmn:task id="Task_book" name="Book transport — five answers, none defaulted" />
+    <bpmn:task id="Task_cancel" name="Cancel before collection — four reasons" />
+    <bpmn:task id="Task_handover" name="Handover ready" />
+    <bpmn:task id="Task_enroute" name="The crew accepts and sets off" />
+    <bpmn:task id="Task_collect" name="The patient is collected" />
+    <bpmn:task id="Task_stop" name="Stop the journey — say where they now are" />
+    <bpmn:endEvent id="End_heldBed" name="Movement closed, bed still held" />
+    <bpmn:task id="Task_arrive" name="The ward confirms they have arrived" />
+    <bpmn:task id="Task_onWard" name="On the ward" />
+    <bpmn:task id="Task_away" name="Away at an ED, or on leave — bed kept" />
+    <bpmn:task id="Task_ready" name="Clinically ready to leave" />
+    <bpmn:parallelGateway id="Gw_split" name="Two tracks, joined by nothing" />
+    <bpmn:task id="Task_leaves" name="The person leaves — eight recorded ways" />
+    <bpmn:task id="Task_bedFree" name="The bed is released — expected, confirmed, discharged" />
+    <bpmn:endEvent id="End_gone" name="Gone" />
+    <bpmn:endEvent id="End_bedFree" name="Bed counted as available" />
+    <bpmn:endEvent id="End_absconds" name="Nothing can record this" />
+    <bpmn:boundaryEvent id="Bnd_revoked" name="Legal authority revoked — collection refused while a bed is held" attachedToRef="Task_enroute" cancelActivity="true">
+      <bpmn:errorEventDefinition id="Bnd_revoked_def" />
+    </bpmn:boundaryEvent>
+    <bpmn:boundaryEvent id="Bnd_absconds" name="The patient absconds — NO RECORD EXISTS" attachedToRef="Task_onWard" cancelActivity="true">
+      <bpmn:errorEventDefinition id="Bnd_absconds_def" />
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_referral" targetRef="Task_address" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_address" targetRef="Gw_answer" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Gw_answer" targetRef="End_declined" name="Declined by all" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Gw_answer" targetRef="End_withdrawn" name="Referrer withdraws" />
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="Gw_answer" targetRef="Task_accepted" name="A ward says yes" />
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="Task_accepted" targetRef="Task_movement" />
+    <bpmn:sequenceFlow id="Flow_7" sourceRef="Task_movement" targetRef="Task_askWards" />
+    <bpmn:sequenceFlow id="Flow_8" sourceRef="Task_askWards" targetRef="Gw_ward" />
+    <bpmn:sequenceFlow id="Flow_9" sourceRef="Gw_ward" targetRef="Task_declined" name="No" />
+    <bpmn:sequenceFlow id="Flow_10" sourceRef="Task_declined" targetRef="Task_askWards" name="ask another" />
+    <bpmn:sequenceFlow id="Flow_11" sourceRef="Gw_ward" targetRef="End_abandoned" name="Search abandoned" />
+    <bpmn:sequenceFlow id="Flow_12" sourceRef="Gw_ward" targetRef="Task_inPrinciple" name="Yes" />
+    <bpmn:sequenceFlow id="Flow_13" sourceRef="Task_askWards" targetRef="Task_community" name="Community instead" />
+    <bpmn:sequenceFlow id="Flow_14" sourceRef="Task_community" targetRef="End_abandoned" />
+    <bpmn:sequenceFlow id="Flow_15" sourceRef="Task_inPrinciple" targetRef="Task_pull" />
+    <bpmn:sequenceFlow id="Flow_16" sourceRef="Task_pull" targetRef="Task_releasePull" name="Given back" />
+    <bpmn:sequenceFlow id="Flow_17" sourceRef="Task_releasePull" targetRef="Task_inPrinciple" name="back to awaiting a bed" />
+    <bpmn:sequenceFlow id="Flow_18" sourceRef="Task_pull" targetRef="Gw_transport" />
+    <bpmn:sequenceFlow id="Flow_19" sourceRef="Gw_transport" targetRef="Task_arrive" name="None needed" />
+    <bpmn:sequenceFlow id="Flow_20" sourceRef="Gw_transport" targetRef="Task_book" name="Yes" />
+    <bpmn:sequenceFlow id="Flow_21" sourceRef="Task_book" targetRef="Task_cancel" name="Cancelled" />
+    <bpmn:sequenceFlow id="Flow_22" sourceRef="Task_cancel" targetRef="Task_pull" name="bed still held" />
+    <bpmn:sequenceFlow id="Flow_23" sourceRef="Task_book" targetRef="Task_handover" />
+    <bpmn:sequenceFlow id="Flow_24" sourceRef="Task_handover" targetRef="Task_enroute" />
+    <bpmn:sequenceFlow id="Flow_25" sourceRef="Task_enroute" targetRef="Task_collect" />
+    <bpmn:sequenceFlow id="Flow_26" sourceRef="Task_collect" targetRef="Task_arrive" />
+    <bpmn:sequenceFlow id="Flow_27" sourceRef="Task_stop" targetRef="End_heldBed" />
+    <bpmn:sequenceFlow id="Flow_28" sourceRef="Task_arrive" targetRef="Task_onWard" />
+    <bpmn:sequenceFlow id="Flow_29" sourceRef="Task_onWard" targetRef="Task_away" name="Temporarily" />
+    <bpmn:sequenceFlow id="Flow_30" sourceRef="Task_away" targetRef="Task_onWard" name="returns" />
+    <bpmn:sequenceFlow id="Flow_31" sourceRef="Task_onWard" targetRef="Task_ready" />
+    <bpmn:sequenceFlow id="Flow_32" sourceRef="Task_ready" targetRef="Gw_split" />
+    <bpmn:sequenceFlow id="Flow_33" sourceRef="Gw_split" targetRef="Task_leaves" />
+    <bpmn:sequenceFlow id="Flow_34" sourceRef="Gw_split" targetRef="Task_bedFree" />
+    <bpmn:sequenceFlow id="Flow_35" sourceRef="Task_leaves" targetRef="End_gone" />
+    <bpmn:sequenceFlow id="Flow_36" sourceRef="Task_bedFree" targetRef="End_bedFree" />
+    <bpmn:sequenceFlow id="Flow_b1" sourceRef="Bnd_revoked" targetRef="Task_stop" />
+    <bpmn:sequenceFlow id="Flow_b2" sourceRef="Bnd_absconds" targetRef="End_absconds" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_1">
+    <bpmndi:BPMNPlane id="Plane_1" bpmnElement="Process_journey">
+      <bpmndi:BPMNShape id="Start_referral_di" bpmnElement="Start_referral" isMarkerVisible="true">
+        <dc:Bounds x="642" y="60" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="582" y="102" width="156" height="40" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_address_di" bpmnElement="Task_address">
+        <dc:Bounds x="560" y="150" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_answer_di" bpmnElement="Gw_answer" isMarkerVisible="true">
+        <dc:Bounds x="635" y="280" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="575" y="336" width="170" height="40" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_declined_di" bpmnElement="End_declined" isMarkerVisible="true">
+        <dc:Bounds x="202" y="283" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="142" y="325" width="156" height="40" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_withdrawn_di" bpmnElement="End_withdrawn" isMarkerVisible="true">
+        <dc:Bounds x="202" y="380" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="142" y="422" width="156" height="40" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_accepted_di" bpmnElement="Task_accepted">
+        <dc:Bounds x="560" y="380" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_movement_di" bpmnElement="Task_movement">
+        <dc:Bounds x="560" y="500" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_askWards_di" bpmnElement="Task_askWards">
+        <dc:Bounds x="560" y="620" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_ward_di" bpmnElement="Gw_ward" isMarkerVisible="true">
+        <dc:Bounds x="635" y="750" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="575" y="806" width="170" height="40" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_declined_di" bpmnElement="Task_declined">
+        <dc:Bounds x="120" y="725" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_abandoned_di" bpmnElement="End_abandoned" isMarkerVisible="true">
+        <dc:Bounds x="1092" y="758" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1032" y="800" width="156" height="40" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_community_di" bpmnElement="Task_community">
+        <dc:Bounds x="1010" y="620" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_inPrinciple_di" bpmnElement="Task_inPrinciple">
+        <dc:Bounds x="560" y="850" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_pull_di" bpmnElement="Task_pull">
+        <dc:Bounds x="560" y="970" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_releasePull_di" bpmnElement="Task_releasePull">
+        <dc:Bounds x="120" y="970" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_transport_di" bpmnElement="Gw_transport" isMarkerVisible="true">
+        <dc:Bounds x="635" y="1100" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="575" y="1156" width="170" height="40" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_book_di" bpmnElement="Task_book">
+        <dc:Bounds x="560" y="1190" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_cancel_di" bpmnElement="Task_cancel">
+        <dc:Bounds x="120" y="1190" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_handover_di" bpmnElement="Task_handover">
+        <dc:Bounds x="560" y="1310" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_enroute_di" bpmnElement="Task_enroute">
+        <dc:Bounds x="560" y="1430" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_collect_di" bpmnElement="Task_collect">
+        <dc:Bounds x="560" y="1550" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_stop_di" bpmnElement="Task_stop">
+        <dc:Bounds x="120" y="1550" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_heldBed_di" bpmnElement="End_heldBed" isMarkerVisible="true">
+        <dc:Bounds x="202" y="1683" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="142" y="1725" width="156" height="40" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_arrive_di" bpmnElement="Task_arrive">
+        <dc:Bounds x="560" y="1670" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_onWard_di" bpmnElement="Task_onWard">
+        <dc:Bounds x="560" y="1790" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_away_di" bpmnElement="Task_away">
+        <dc:Bounds x="1010" y="1790" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ready_di" bpmnElement="Task_ready">
+        <dc:Bounds x="560" y="1910" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_split_di" bpmnElement="Gw_split" isMarkerVisible="true">
+        <dc:Bounds x="635" y="2040" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="575" y="2096" width="170" height="40" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_leaves_di" bpmnElement="Task_leaves">
+        <dc:Bounds x="240" y="2130" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_bedFree_di" bpmnElement="Task_bedFree">
+        <dc:Bounds x="890" y="2130" width="200" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_gone_di" bpmnElement="End_gone" isMarkerVisible="true">
+        <dc:Bounds x="322" y="2263" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="262" y="2305" width="156" height="40" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_bedFree_di" bpmnElement="End_bedFree" isMarkerVisible="true">
+        <dc:Bounds x="972" y="2263" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="912" y="2305" width="156" height="40" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_absconds_di" bpmnElement="End_absconds" isMarkerVisible="true">
+        <dc:Bounds x="322" y="1923" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="262" y="1965" width="156" height="40" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Bnd_revoked_di" bpmnElement="Bnd_revoked">
+        <dc:Bounds x="742" y="1492" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="662" y="1534" width="200" height="40" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Bnd_absconds_di" bpmnElement="Bnd_absconds">
+        <dc:Bounds x="542" y="1852" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="462" y="1894" width="200" height="40" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="660" y="78" />
+        <di:waypoint x="660" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="660" y="190" />
+        <di:waypoint x="660" y="305" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="660" y="305" />
+        <di:waypoint x="660" y="301" />
+        <di:waypoint x="220" y="301" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4">
+        <di:waypoint x="660" y="305" />
+        <di:waypoint x="660" y="398" />
+        <di:waypoint x="220" y="398" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_5_di" bpmnElement="Flow_5">
+        <di:waypoint x="660" y="305" />
+        <di:waypoint x="660" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_6_di" bpmnElement="Flow_6">
+        <di:waypoint x="660" y="420" />
+        <di:waypoint x="660" y="540" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_7_di" bpmnElement="Flow_7">
+        <di:waypoint x="660" y="540" />
+        <di:waypoint x="660" y="660" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_8_di" bpmnElement="Flow_8">
+        <di:waypoint x="660" y="660" />
+        <di:waypoint x="660" y="775" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_9_di" bpmnElement="Flow_9">
+        <di:waypoint x="660" y="775" />
+        <di:waypoint x="660" y="765" />
+        <di:waypoint x="220" y="765" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_10_di" bpmnElement="Flow_10">
+        <di:waypoint x="220" y="765" />
+        <di:waypoint x="220" y="660" />
+        <di:waypoint x="660" y="660" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_11_di" bpmnElement="Flow_11">
+        <di:waypoint x="660" y="775" />
+        <di:waypoint x="660" y="776" />
+        <di:waypoint x="1110" y="776" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_12_di" bpmnElement="Flow_12">
+        <di:waypoint x="660" y="775" />
+        <di:waypoint x="660" y="890" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_13_di" bpmnElement="Flow_13">
+        <di:waypoint x="660" y="660" />
+        <di:waypoint x="1110" y="660" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_14_di" bpmnElement="Flow_14">
+        <di:waypoint x="1110" y="660" />
+        <di:waypoint x="1110" y="776" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_15_di" bpmnElement="Flow_15">
+        <di:waypoint x="660" y="890" />
+        <di:waypoint x="660" y="1010" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_16_di" bpmnElement="Flow_16">
+        <di:waypoint x="660" y="1010" />
+        <di:waypoint x="220" y="1010" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_17_di" bpmnElement="Flow_17">
+        <di:waypoint x="220" y="1010" />
+        <di:waypoint x="220" y="890" />
+        <di:waypoint x="660" y="890" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_18_di" bpmnElement="Flow_18">
+        <di:waypoint x="660" y="1010" />
+        <di:waypoint x="660" y="1125" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_19_di" bpmnElement="Flow_19">
+        <di:waypoint x="660" y="1125" />
+        <di:waypoint x="660" y="1710" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_20_di" bpmnElement="Flow_20">
+        <di:waypoint x="660" y="1125" />
+        <di:waypoint x="660" y="1230" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_21_di" bpmnElement="Flow_21">
+        <di:waypoint x="660" y="1230" />
+        <di:waypoint x="220" y="1230" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_22_di" bpmnElement="Flow_22">
+        <di:waypoint x="220" y="1230" />
+        <di:waypoint x="220" y="1010" />
+        <di:waypoint x="660" y="1010" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_23_di" bpmnElement="Flow_23">
+        <di:waypoint x="660" y="1230" />
+        <di:waypoint x="660" y="1350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_24_di" bpmnElement="Flow_24">
+        <di:waypoint x="660" y="1350" />
+        <di:waypoint x="660" y="1470" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_25_di" bpmnElement="Flow_25">
+        <di:waypoint x="660" y="1470" />
+        <di:waypoint x="660" y="1590" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_26_di" bpmnElement="Flow_26">
+        <di:waypoint x="660" y="1590" />
+        <di:waypoint x="660" y="1710" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_27_di" bpmnElement="Flow_27">
+        <di:waypoint x="220" y="1590" />
+        <di:waypoint x="220" y="1701" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_28_di" bpmnElement="Flow_28">
+        <di:waypoint x="660" y="1710" />
+        <di:waypoint x="660" y="1830" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_29_di" bpmnElement="Flow_29">
+        <di:waypoint x="660" y="1830" />
+        <di:waypoint x="1110" y="1830" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_30_di" bpmnElement="Flow_30">
+        <di:waypoint x="1110" y="1830" />
+        <di:waypoint x="660" y="1830" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_31_di" bpmnElement="Flow_31">
+        <di:waypoint x="660" y="1830" />
+        <di:waypoint x="660" y="1950" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_32_di" bpmnElement="Flow_32">
+        <di:waypoint x="660" y="1950" />
+        <di:waypoint x="660" y="2065" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_33_di" bpmnElement="Flow_33">
+        <di:waypoint x="660" y="2065" />
+        <di:waypoint x="660" y="2170" />
+        <di:waypoint x="340" y="2170" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_34_di" bpmnElement="Flow_34">
+        <di:waypoint x="660" y="2065" />
+        <di:waypoint x="660" y="2170" />
+        <di:waypoint x="990" y="2170" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_35_di" bpmnElement="Flow_35">
+        <di:waypoint x="340" y="2170" />
+        <di:waypoint x="340" y="2281" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_36_di" bpmnElement="Flow_36">
+        <di:waypoint x="990" y="2170" />
+        <di:waypoint x="990" y="2281" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_b1_di" bpmnElement="Flow_b1">
+        <di:waypoint x="760" y="1510" />
+        <di:waypoint x="760" y="1590" />
+        <di:waypoint x="220" y="1590" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_b2_di" bpmnElement="Flow_b2">
+        <di:waypoint x="560" y="1870" />
+        <di:waypoint x="560" y="1941" />
+        <di:waypoint x="340" y="1941" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

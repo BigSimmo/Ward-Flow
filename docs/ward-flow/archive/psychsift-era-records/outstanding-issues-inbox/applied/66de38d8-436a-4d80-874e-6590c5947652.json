@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "id": "66de38d8-436a-4d80-874e-6590c5947652",
+  "createdOn": "2026-09-09",
+  "action": "add",
+  "payload": {
+    "pri": "P2",
+    "type": "issue",
+    "summary": "Ward Flow: the design standard says twenty-three wards across seventeen sites, and its own reference build carries sixteen across nine",
+    "detail": "VERIFIED 2026-09-09. Section 8.3 of docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md (line 731 at commit c12f32aab5) states there are twenty-three wards across seventeen sites and that a page reads the collection rather than carrying a hard-coded figure. The Command third edition's UNITS array holds sixteen wards across nine sites (SCGH, RPH, FSH, BTY, SJGM, RGH, GRY, FRE, ARM, PEEL, JHC by site code, some with one ward) and no WA Country ward at all, although WACHS is one of the four services with a hue of its own. The standard's page also types '23 wards, 17 sites' and '3 of 23 wards' into its component demonstrations (design-system-third-edition.html around lines 9356, 10594 and 11915), so the standard asserts a figure its own reference build contradicts, and section 12 repeats 'twenty-three wards read from the collection'. Anyone building the next mockup takes twenty-three from the prose and finds sixteen in the data. NEXT ACTION: either extend Command's UNITS to the full network from the repository's own ward tables (then the demonstrations' typed figures become derived), or restate 8.3 and section 12 as the network's real size with a sentence that Command carries a subset and says so on its page. The WACHS absence is already handled by the 'WA Country states its absences' rule; only the counts need settling.",
+    "source": "Ward Flow design review, 2026-09-09: the reviewing Codex chat's findings F1 to F4, each re-verified against the code by the design-review chat; the owner approved recording them the same day",
+    "issueUlid": "01M232N13SZS6N3C706JJZ4WP8"
+  }
+}

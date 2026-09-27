@@ -1,0 +1,24 @@
+PRE-REGISTRATION — written BEFORE the three-control run, per Ward Lead's addition ①.
+Ward Verifier, 2026-09-11.
+
+PREDICTED SHAPE, and the reason for each:
+
+  AGREE       MOST of them. Reason: this codebase has a documented idiom — a disabled
+              control carries an sr-only reason AND a title tooltip with the same
+              sentence. I measured 14 such pairs across 4 routes in the refinement pass.
+
+  ONE SILENT  EXACTLY 1 — ", reconciliation not available" on the Activity button.
+              Reason: it is the known specimen, and it was the only candidate that
+              survived the idiom refinement.
+
+  DISAGREE    0. Reason: I know of no mechanism in this codebase that writes a visible
+              string contradicting an sr-only one.
+              🔴 BUT THIS PREDICTION IS UNINFORMATIVE UNTIL THE SYNTHETIC DISAGREE
+              CONTROL PASSES. A zero from an arm never shown able to return non-zero
+              is not a measurement. If the synthetic control FAILS, I report the
+              DISAGREE arm as UNMEASURED, not as zero.
+
+FALSIFIERS, stated now:
+  - If AGREE comes back 0 again, the probe is wrong, not the codebase.
+  - If ONE SILENT is > 1, I have found something new and must inspect every one.
+  - If the synthetic DISAGREE is not detected, the whole DISAGREE result is void.

@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "id": "07fe22b0-2203-41be-a4aa-d53c93779874",
+  "createdOn": "2026-09-09",
+  "action": "add",
+  "payload": {
+    "pri": "P2",
+    "type": "issue",
+    "summary": "Ward Flow: four screens have no drawing anyone can open — two of them are being built right now against references that return 'not found'",
+    "detail": "SCREENS AND THEIR MISSING REFERENCES. (1) COMMAND — docs/ward-flow/ward-builder-three-handover-2026-09-07.md section 3a records an owner ruling that the coordinator screen be rebuilt to match the Command mockup at https://claude.ai/code/artifact/e7895c28-4664-4af6-8bf0-d0001489d1c6, drafted from scratchpad/v13-command/index.html. The artifact returns 'artifact not found — it may have been deleted, or it has not been shared with you'; the scratchpad folder still exists on this machine and is EMPTY. (2) PATIENT 'NOW' — approved to build by the owner on 2026-09-08 (docs/ward-flow/owner-decisions-2026-09-08.md), mockup at https://claude.ai/code/artifact/bbd7c4c2-d2e0-40fb-8450-171813375743. Same 'not found'; that decision record already notes Ward Lead could not open it either, and says anyone auditing the build must open the drawing rather than the record. (3) SEARCH HUB — hub-screen.tsx names its own source in a comment: 'Built from the owner-approved mockup (scratchpad/fix-hub/fixhub_master_search.html)', chosen over two alternatives and refined twice. Never committed; that scratchpad folder also exists and is EMPTY. (4) DELAYS — commit fe117b11a3 states the board was built 'as the mockup drew it' and that the owner called the first build 'significantly worse' than his locked drawing. That drawing is in no branch of this repository. SEARCH PERFORMED, so nobody repeats it: every branch with a correct pathspec (git log --all --diff-merges=separate), every Claude session temp scratchpad on this machine, and the user's Downloads, Desktop, Documents and Backups. Nothing. LIKELIEST EXPLANATION, and it is not deletion: the artifact listing available to these sessions shows 13 artifacts whose newest is 2026-09-05, a four-day gap covering exactly the period when both missing artifacts were created — so the listing is probably incomplete rather than the artifacts gone. NEXT ACTION: the owner opens the two links himself; if they open they need sharing, and all four drawings should then be saved into docs/ward-flow/design/prototypes/ beside the other 49. PRECEDENT: that folder's own README records that the first ten drawings lived in a session temp directory — 'the one place work in this project genuinely cannot survive' — until somebody committed them. Four more are in exactly that state now, and two have live builds pointing at them.",
+    "source": "Ward Verifier session 2026-09-09; mockup currency audit across every branch, plus artifact listing and direct reads; owner asked for these to be parked rather than chased",
+    "issueUlid": "01M236R3YE7811DYSKA6QDA6P0"
+  }
+}

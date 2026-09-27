@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "id": "ea9138f6-c977-46a4-ba7e-4bbcd46b0364",
+  "createdOn": "2026-09-09",
+  "action": "add",
+  "payload": {
+    "pri": "P2",
+    "type": "task",
+    "summary": "Ward Flow: the community-team statistics page is drawn and approved but never built, and partial work sits uncommitted in another worktree",
+    "detail": "statistics/ holds compare, ed, overview, service and ward — there is no community/. Verified by listing the folder at 05792e7a3f, not inferred. The approved fourth-edition drawing already exists: docs/ward-flow/design/prototypes/mockup-statistics-cmht-v4.html ('Armadale CMHT Flow'), committed in 42f15a4fa0 — the SAME commit that built the other four screens. That commit drew five statistics screens and built four; this is the one left out, so it completes a set rather than opening a design question. NEXT ACTION: (1) recover or discard the partial work — as of 2026-09-09 D:/Worktrees/Database/ward-builder-four held an uncommitted edit to statistics-sections.ts (+34-1, a STATISTICS_COMMUNITY_CHOOSER_ID/_HREF pair and a fifth StatisticsSectionId) plus an untracked src/app/mockups/ward-flow/statistics/community/[teamId]/; (2) settle the ONE open design decision, which is the owner's and was deliberately left unanswered — where the link belongs: wards and EDs hang off statistics-compare-screen.tsx, health services off the statistics hub statistics-screen.tsx, and a community team is arguably either. TRAP: the detail-route href helper must be written as a FULL LITERAL in statistics-sections.ts, never composed from STATISTICS_HOME_HREF — tests/ward-nav.test.ts proves reachability by scanning SOURCE TEXT, so a composed path is invisible to it and the route reads as reachable by nothing while being linked from everywhere. Any trend chart must go through statistics-demonstration-chart.tsx's wrapper (owner ruling: labelling is structural, not editorial); do not read .points and plot by hand, a reviewer already found and closed that hole. CLAIM: statistics/** carried a 2026-09-07 work-claims row owned by a Ward Builder Two chat that no longer exists; the live Ward Builder Two session confirmed it is not that chat and will not touch statistics.",
+    "source": "Ward Verifier session 2026-09-09; owner asked for the page and named Ward Builder Four to build it; Four declined pending direct owner instruction and the claim collision",
+    "issueUlid": "01M236BSQVFTYDJ47R4M92X3CR"
+  }
+}

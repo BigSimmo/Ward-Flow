@@ -1,0 +1,68 @@
+/*
+ * The closed state of the global tasks panel: one control that says how much is waiting.
+ *
+ * Only the OPENER lives here. Everything visible once the panel is open belongs to
+ * `ward-tasks-drawer.module.css`, so the drawer stays renderable on its own and this file cannot
+ * quietly become a second place where the drawer is styled.
+ */
+
+.opener {
+  composes: wardTokens from "./ward-tokens.module.css";
+
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+
+  /* 48px, the production tap target. Do NOT reduce this to 44px for a generic WCAG minimum —
+     that change reintroduces a known `ui-smoke` flake and has been reverted before. */
+  min-height: var(--spacing-tap);
+  padding: 0 var(--ward-space-12);
+
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-md);
+  background: var(--ward-chrome);
+  color: var(--ward-heading);
+
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: var(--ward-leading-tight);
+  cursor: pointer;
+}
+
+.count {
+  font-size: var(--text-sm);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--ward-heading);
+}
+
+/*
+ * ⚠️ **THE WORDS ARE NOT DECORATION.** A number alone beside a label reads as a notification badge,
+ * and a badge is read as "new since you last looked". Every row behind this control is a standing
+ * clinical or legal fact that leaves when the fact resolves, never when somebody looks at it — so
+ * the control says what the number MEANS rather than leaving a reader to assume the usual thing.
+ */
+.openerNote {
+  color: var(--ward-muted);
+  font-size: var(--text-xs);
+  font-weight: 400;
+}
+
+/*
+ * Narrow screens keep the count and drop the sentence: at 375px the opener competes with the page
+ * title, and a count with no explanation is still honest — it is only the badge READING that the
+ * sentence exists to prevent, and that reading needs room to be worth spending.
+ */
+@media (max-width: 30rem) {
+  .openerNote {
+    display: none;
+  }
+}
+
+@media (forced-colors: active) {
+  /* Colour is replaced in this mode and geometry is not, so the control keeps a drawn edge rather
+     than relying on its background to separate it from the chrome behind it. */
+  .opener {
+    border-color: ButtonBorder;
+  }
+}

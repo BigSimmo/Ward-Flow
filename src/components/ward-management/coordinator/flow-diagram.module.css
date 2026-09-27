@@ -1,0 +1,336 @@
+.scroll {
+  min-height: 31rem;
+  max-height: 42rem;
+  padding: 0.625rem 0.75rem 0.875rem;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--line) 34%, transparent) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, var(--line) 34%, transparent) 1px, transparent 1px), var(--surface);
+  background-size: 1.5rem 1.5rem;
+  scrollbar-width: thin;
+}
+
+.canvas {
+  min-width: 60rem;
+  min-height: 34rem;
+}
+
+.nodes {
+  grid-template-columns: 7.5rem 8rem minmax(40rem, 1fr);
+  gap: 1rem;
+}
+
+.departments {
+  grid-column: 1;
+  align-self: start;
+  margin-top: 3rem;
+}
+
+.hub {
+  grid-column: 2;
+  align-self: start;
+  margin-top: 12rem;
+  align-content: center;
+  min-height: 5.5rem;
+  border-color: var(--line-strong);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--surface) 94%, var(--accent-soft));
+  padding: 0.75rem;
+  box-shadow: none;
+}
+
+.units {
+  grid-column: 3;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(19rem, 1fr));
+  align-items: start;
+  gap: 0.75rem;
+}
+
+.units > .columnHeading {
+  grid-column: 1 / -1;
+}
+
+.columnHeading {
+  margin: 0 0 0.25rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.departmentList {
+  gap: 0.5rem;
+}
+
+.edNode {
+  grid-template-columns: 1fr;
+  gap: 0.125rem 0.5rem;
+  min-height: 2.5rem;
+  align-items: baseline;
+  border-radius: 0.625rem;
+  padding: 0.5rem 0.625rem;
+  box-shadow: none;
+}
+
+.edCode {
+  grid-row: auto;
+  align-self: center;
+  font-family: var(--mono);
+  font-size: var(--t-2);
+}
+
+.edName {
+  display: none;
+}
+
+.edStats {
+  font-weight: 650;
+}
+
+.serviceGroup {
+  gap: 0.375rem;
+  margin: 0;
+  border: 0.0625rem solid var(--line);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--surface) 97%, var(--sunk));
+  padding: 0.5rem;
+}
+
+.serviceHeading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-bottom: 0.0625rem solid var(--line);
+  padding: 0.125rem 0.25rem 0.375rem;
+}
+
+.serviceHeading small {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.unitGrid {
+  grid-template-columns: 1fr;
+  gap: 0.375rem;
+}
+
+.unitNode {
+  gap: 0.1875rem;
+  min-height: 4.5rem;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  box-shadow: none;
+}
+
+.unitName {
+  line-height: 1.2;
+}
+
+.unitCapability {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bedRow {
+  gap: 0.25rem 0.5rem;
+}
+
+.capacityMark {
+  gap: 0.25rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.capacityMark > i,
+.legendItem > i,
+.advancedKeyItems i:not([data-line]) {
+  width: 0.45rem;
+  height: 0.45rem;
+  flex: 0 0 auto;
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: 0.125rem;
+  background: var(--sunk);
+}
+
+.capacityMark[data-state="available"] > i,
+.legendItem > i[data-state="available"] {
+  border-color: var(--good);
+  background: var(--good);
+}
+
+.capacityMark[data-state="held"] > i,
+.legendItem > i[data-state="held"] {
+  border-color: var(--warn);
+  background: var(--warn);
+}
+
+.capacityMark[data-state="blocked"] > i,
+.legendItem > i[data-state="blocked"] {
+  border-color: var(--danger);
+  background: var(--danger);
+}
+
+.capacityMark[data-state="occupied"] > i,
+.legendItem > i[data-state="occupied"] {
+  background: var(--sunk);
+}
+
+.capacityMark[data-state="confirmed"] > i,
+.capacityMark[data-state="expected"] > i,
+.legendItem > i[data-state="confirmed"],
+.legendItem > i[data-state="expected"] {
+  border-color: var(--accent-ink);
+  border-style: dashed;
+  background: transparent;
+}
+
+.connectors {
+  opacity: 0.94;
+}
+
+.connector {
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke-width: 0.09375rem;
+}
+
+.connector[data-connector-kind="route"][data-eligible="false"] {
+  stroke-dasharray: 0.3rem 0.25rem;
+}
+
+.connector[data-connector-kind="destination"] {
+  stroke-width: 0.15625rem;
+}
+
+.scrollNote {
+  margin: 0;
+  border-top: 0.0625rem solid var(--line);
+  background: var(--surface-2);
+  padding: 0.375rem 0.75rem 0;
+  font-size: var(--t-0);
+}
+
+.legend {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.75rem;
+  border-top: 0.0625rem solid var(--line);
+  background: var(--surface-2);
+  padding: 0.5rem 1rem;
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+}
+
+.legendTitle {
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.legendItem,
+.advancedKeyItems span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.advancedKey {
+  flex: 0 0 auto;
+}
+
+.advancedKey[open] {
+  flex: 1 0 100%;
+}
+
+.advancedKey summary {
+  min-height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  border: 0.0625rem solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  padding: 0 0.625rem;
+  color: var(--ink);
+  font-weight: 650;
+  cursor: pointer;
+  list-style: none;
+}
+
+.advancedKey summary::-webkit-details-marker {
+  display: none;
+}
+
+.advancedKeyItems {
+  display: flex;
+  flex: 1 0 100%;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  border-top: 0.0625rem solid var(--line);
+  margin-top: 0.625rem;
+  padding-top: 0.625rem;
+}
+
+.advancedKeyItems i[data-line] {
+  width: 1.2rem;
+  height: 0;
+  border-top: 0.125rem solid var(--accent-ink);
+}
+
+.advancedKeyItems i[data-line="ineligible"] {
+  border-top-color: var(--danger);
+  border-top-style: dashed;
+}
+
+.advancedKeyItems i[data-line="recorded"] {
+  border-top-color: var(--good);
+  border-top-width: 0.1875rem;
+}
+
+.schematic {
+  margin-left: auto;
+  color: var(--muted);
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (min-width: 87.5rem) {
+  .scroll {
+    min-height: 30rem;
+    max-height: none;
+  }
+}
+
+@media (max-width: 63.99rem) {
+  .canvas {
+    min-width: 62rem;
+  }
+
+  .nodes {
+    grid-template-columns: 8.5rem 8.75rem minmax(40rem, 1fr);
+  }
+}
+
+@media (forced-colors: active) {
+  .capacityMark > i,
+  .legendItem > i {
+    forced-color-adjust: none;
+  }
+
+  .unitNode[data-routed="true"] {
+    outline-width: 0.1875rem;
+  }
+}

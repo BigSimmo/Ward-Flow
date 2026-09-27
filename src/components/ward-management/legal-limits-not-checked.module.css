@@ -1,0 +1,22 @@
+.notice {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+  font-size: var(--t-1);
+  line-height: 1.4;
+}
+
+.tag {
+  color: var(--text-muted);
+  font-size: var(--t-1);
+  white-space: nowrap;
+}
+
+/* Print: the themed muted colour must not survive onto paper un-inked (tests/ward-management-print-coverage).
+   This is the "not legally checked" notice, so it has to stay readable in print. */
+@media print {
+  .notice,
+  .tag {
+    color: CanvasText !important;
+    background-color: Canvas !important;
+  }
+}

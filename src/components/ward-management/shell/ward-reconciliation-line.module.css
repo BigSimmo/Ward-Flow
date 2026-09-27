@@ -1,0 +1,90 @@
+/*
+ * The rail foot's reconciliation line — `ward-reconciliation-line.tsx`. Composes the third-edition
+ * token layer directly (see `../../../app/ward-flow-shell-tokens.module.css`'s own header comment) so it renders
+ * correctly wherever it is mounted.
+ */
+
+.line {
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--body);
+  font-size: var(--t-0);
+  line-height: 1.4;
+}
+
+/* Word first, dot second (standard §8.1: "State is a word first. A colour... only ever repeats a
+ * word that is already on the screen"). The dot is `aria-hidden` — the sentence itself already
+ * says "reconciled" or names the count that does not, so nothing is lost to a screen reader. */
+.dot {
+  position: relative;
+  flex-shrink: 0;
+  align-self: center;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot[data-tone="good"] {
+  background: var(--good);
+}
+
+.dot[data-tone="good"]::after {
+  content: "";
+  position: absolute;
+  inset: -0.125rem;
+  border-radius: 50%;
+  pointer-events: none;
+  border: 1px solid var(--good);
+  box-shadow: 0 0 0.375rem var(--good);
+  opacity: 0;
+  animation: wardRailMetroPulse 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes wardRailMetroPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot[data-tone="good"]::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+.dot[data-tone="danger"] {
+  background: var(--danger);
+}
+
+/* An empty check array is not a green all-clear — it is nothing having been reconciled. Muted,
+ * matching `ward-bar.module.css`'s own neutral dot byte for byte, so the two shell surfaces
+ * cannot drift into showing one fact two ways. Never `--good`, never `--danger`. */
+.dot[data-tone="neutral"] {
+  background: var(--muted);
+}
+
+@media (forced-colors: active) {
+  .dot {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+  .dot[data-tone="good"]::after {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+}

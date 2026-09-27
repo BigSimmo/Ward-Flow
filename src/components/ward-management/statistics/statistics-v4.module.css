@@ -1,0 +1,904 @@
+/* src/components/ward-management/statistics/statistics-v4.module.css
+ *
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * THE FOURTH-EDITION STATISTICS LANGUAGE, PORTED — PRIMITIVES ONLY.
+ *
+ * Reference: `docs/ward-flow/design/prototypes/statistics-language-v4.css` (the owner-approved
+ * mockup stylesheet). PORTED, NOT COPIED: every colour, spacing, radius and type value below
+ * resolves through this app's own token layer (`ward-tokens.module.css`, `ckb-v2-tokens.css`,
+ * `globals.css`) rather than through the mockup's own standalone `:root` block, which this file
+ * never imports and never references.
+ *
+ * ⚠️ RULING 3 — THIS MODULE IS ADDITIVE. It sits ALONGSIDE `statistics.module.css` and
+ * `statistics-sections.module.css`, which are untouched. No screen is migrated here — that is
+ * four separate, later tasks. This file produces primitives nobody has wired into a screen yet.
+ *
+ * ⚠️ NO BAR CHARTS. The owner asked for lines and arcs — a trend is a line, a proportion is an
+ * arc, a single value against a target is a ring. This file declares no primitive that draws a
+ * bar, and none should be added to it.
+ *
+ * ═══ WHY EVERY COLOUR IS A TOKEN, NOT A NEW ONE ═══
+ *
+ * `eslint-rules/no-hardcoded-hex.mjs` only reads Tailwind `bg-[#…]`-shaped literals in `.ts`/
+ * `.tsx`, so it cannot see a raw hex written directly in a `.module.css` file. The guard that DOES
+ * see it is `tests/ward-raw-colour.test.ts`, which walks every stylesheet under
+ * `src/components/ward-management/` (this file included) and fails on any hex/`rgb()`/`hsl()`
+ * outside a comment. `tests/statistics-v4-primitives-tokens.test.ts` (added alongside this file)
+ * additionally resolves every `var(--…)` this file declares against the token layer, so a typo'd
+ * or invented custom property is caught even though it would not render as a literal colour.
+ *
+ * ═══ THE SELF-CONTAINED-TOKENS CONVENTION, APPLIED AS A PRIMITIVE LIBRARY WOULD ═══
+ *
+ * `statistics.module.css` composes `wardTokens` exactly once, on its own screen root (`.screen`),
+ * because every other class in that file is guaranteed to render as its descendant. This file has
+ * no screen root — it is a shared primitive library, the same shape as `ward-panel.module.css`,
+ * `ward-figure.module.css` and `ward-table.module.css` — so it follows THEIR convention instead:
+ * every class that is a plausible independent mounting point (`.band`, `.panel`, `.dtable`,
+ * `.reveal`, `.kv`, `.figs`, `.delta`, `.chart`, `.legend`) composes `wardTokens` on itself. A
+ * class that is always rendered as a DESCENDANT of one of those (`.bandItem`, `.panelHeader`,
+ * `.figureValue`, `.revealBody`, `.cLine`, …) does not repeat the composition — the custom
+ * properties it needs already cascade down from its ancestor, exactly as `.figure`/`.tallyList`
+ * rely on `.screen` in the sibling file. Composing the same source class from several rules in one
+ * file is ordinary CSS Modules practice and costs nothing: it adds a class token to whichever
+ * elements use those rules, never duplicates a declaration.
+ *
+ * ⚠️ THIS IS ALSO WHY THE PRINT SECTION AT THE FOOT OF THIS FILE CARRIES ITS OWN EXPLICIT RESET
+ * RATHER THAN RELYING ON `ward-tokens.module.css`'s SHARED ONE. `tests/ward-management-print-
+ * coverage.test.ts`'s `composes:`-resolver only grants a `composes: wardTokens` edge "ROOT" status
+ * — the status that blanket-covers a whole file — when it is the ONLY edge in the file composing
+ * that (class, target-file) pair. Nine independent mounting points each composing `wardTokens`
+ * fails that condition for every one of them (the same non-root outcome the guard's own comment
+ * documents for `ward-management.module.css`, which composes it twice), so this file supplies its
+ * own belt-and-braces `.class, .class *` resets, one pair per real independent root, matching the
+ * convention `ward-panel.module.css`/`ward-figure.module.css` already use.
+ *
+ * ═══ THE MANDATORY SPACING MAPPING (Controller's ruling — do not add a second ladder) ═══
+ *
+ * The mockup declares its own `--s1 … --s8` scale. `ward-tokens.module.css`'s `--ward-space-N`
+ * (N in pixels) is the one home for that fact, so every `--sN` below is replaced with its ward
+ * step, never re-declared:
+ *
+ *     --s1 (0.25rem/4px)  -> --ward-space-4     --s2 (0.5rem/8px)   -> --ward-space-8
+ *     --s3 (0.75rem/12px) -> --ward-space-12    --s4 (1rem/16px)    -> --ward-space-16
+ *     --s6 (1.5rem/24px)  -> --ward-space-24    --s7 (2rem/32px)    -> --ward-space-32
+ *
+ * `--s5` (1.125rem/18px) and `--s8` (2.5rem/40px) have NO exact step on the 4px ward ladder — its
+ * top rung is `--ward-space-32` (32px). Per the Controller's instruction, the nearest existing
+ * step is used rather than inventing a ninth/tenth rung for one file: `--s5` -> `--ward-space-20`
+ * (1.25rem/20px, +2px) and `--s8` -> `--ward-space-32` (2rem/32px, -8px, the ladder's own
+ * ceiling). Both approximations are noted here rather than at each call site.
+ *
+ * A handful of the mockup's raw rem/px values also round to the nearest ward step where the fit
+ * is close (`0.45rem` legend-item gap -> `--ward-space-7`); the smallest deviations are noted
+ * inline. Sizes that are not spacing GAPS — a min-width threshold, an SVG stroke-width, a border
+ * thickness, a decorative glyph's own dimensions — stay raw literals, matching the existing
+ * convention in `ward-table.module.css`
+ * (`--ward-table-min-width` observed values `30rem`/`44rem`, never ladder-mapped) and
+ * `ward-panel.module.css`/`ward-figure.module.css` (`border: 1px solid …`, never
+ * `var(--ward-space-4)`).
+ *
+ * ═══ THREE BUGS FOUND WHILE PORTING, AND HOW THEY ARE ROUTED AROUND ═══
+ *
+ * The reference file's own "fourth-edition additions" section (below its own dividing banner)
+ * carries three authoring defects that this port does NOT carry across:
+ *
+ *   1. `.reveal { border-radius: var(--r2); }` — `--r2` is never declared anywhere in the
+ *      reference file's `:root` block (which declares `--radius-xs/sm/md/lg/xl/2xl/pill`), so it
+ *      resolves to nothing and the mockup's disclosure renders with NO radius at all. The evident
+ *      intent, reading the property name against the declared scale, is a mid-weight nested-box
+ *      radius; this file uses `--radius-lg` (0.75rem), one step under the outer panel/band radius
+ *      (`--radius-xl`, 1rem), so a disclosure nested inside a panel reads as smaller than its host.
+ *   2. `.reveal > summary`, `.reveal-body`, `.kv > dt`, `.kv > dd` all read `var(--t-sm)` and
+ *      `.delta` reads `var(--t-xs)` — again never declared (the scale is `--text-2xs/xs/sm/body/
+ *      md/lg/xl/hero`). This file uses `--text-sm` and `--text-xs` respectively, the plain reading
+ *      of the abbreviated property names against the real scale.
+ *   3. `.reveal-body { color: var(--text-body); }` — `--text-body` is a FONT-SIZE token
+ *      (0.9375rem), not a colour; a browser discards a length passed to `color` and the rule is
+ *      silently a no-op, so the reference disclosure body inherits whatever ink surrounds it by
+ *      accident rather than by design. This file uses `--text` (the ordinary body-ink colour) for
+ *      `.revealBody` instead.
+ *
+ * Font-weight and letter-spacing are also "type values" and are mapped onto this app's own named
+ * scales rather than the mockup's raw numerals, which is the design system's post-2026-09-06
+ * convention (see `ckb-v2-tokens.css`'s `--font-weight-*`/`--tracking-*`): `--font-weight-heading`
+ * (600) for titles/labels-that-head-a-section, `--font-weight-value` (650) for numeral/data
+ * emphasis, `--font-weight-label` (500) for secondary/muted annotation, and the nearest of
+ * `--tracking-display` (-0.02em) / `--tracking-normal` (0) / `--tracking-label` (0.06em) for
+ * letter-spacing. Each mockup value used 600-660 for weight and -0.03em..0.07em for tracking; the
+ * roundings are all within 30 (weight) or 0.01em (tracking) of the source value.
+ *
+ * SVG chart micro-labels (axis ticks, ring centre/sub-label) are also sized from the named type
+ * scale rather than left as raw px, because `--text-3xs` (10px) is documented in `globals.css` as
+ * this design system's ABSOLUTE FLOOR — "the old 8px text-4xs step is retired" — so the mockup's
+ * 8px `.c-ring-sub` is rounded UP to the floor rather than reintroducing a retired size, and its
+ * 9px `.c-axis` rounds to the same floor. `.c-ring-centre`'s 15px is an exact match for
+ * `--text-body` (0.9375rem) and needs no rounding.
+ *
+ * ═══ THE BAND'S BREAKPOINTS REUSE THE ESTATE'S OWN SCALE, NOT THE MOCKUP'S OWN NUMBERS ═══
+ *
+ * The mockup's figure band steps up at `48rem`/`78rem`. `tests/ward-primitives-shared.test.ts`
+ * pins every breakpoint already in use across `src/components/ward-management/**` and fails on a
+ * new, unlisted one — and `ward-figure.module.css`'s `.figureStrip` (the pre-existing "a strip of
+ * figures reflows its column count" primitive, functionally the closest sibling this band has) is
+ * already pinned at `52rem` (2-up -> 3-up) and `76rem` (3-up -> 5-up). Rather than adding two new
+ * pinned values for what is the same reflow decision one primitive over, `.band` below reuses
+ * those exact two breakpoints. This is the mockup's own arbitrary layout threshold, not a colour/
+ * spacing/radius/type value the Controller's mapping table governs, so reusing the nearest
+ * existing rung is a judgement call rather than a ruling — recorded here in case a later screen
+ * task expects the mockup's literal `48rem`/`78rem` and needs to know why it differs.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* ═══ THE FIGURE BAND — one continuous strip, hairline-divided columns ═══════════════════════
+ *
+ * ⚠️ NOT A ROW OF BOXES. The owner rejected that shape explicitly ("not blocky and tacky"). The
+ * band itself draws ONE outer edge (`--border` + `--e1`, the same "hairline + lift" pairing
+ * `ward-panel.module.css` adopted on 2026-09-05 for exactly this reason — SPEC §4.7, "in-flow
+ * cards use border + shadow"). Individual columns carry NO border, NO shadow and NO fill of their
+ * own; they are divided from each other by a rule drawn on the item itself
+ * (`border-top`/`border-left`), coloured with `--ward-border` — the ward layer's own "a rule
+ * INSIDE a panel should be barely there [but not invisible]" divider weight, not the very light
+ * global `--border` a plain hairline-with-nothing-else-helping-it was measured unreadable at
+ * (1.11-1.20:1) in that same file's own header comment.
+ *
+ * Equal columns, symmetrical at every breakpoint: 2-up on a phone, 3-up from 52rem, and an
+ * opt-in 4-up/5-up from 76rem via `data-cols` — reusing `ward-figure.module.css`'s own breakpoint
+ * scale rather than the mockup's `48rem`/`78rem` (see the file header). A trailing odd column
+ * spans the full width at the two-column step so a lone tile never reads as dropped.
+ */
+.band {
+  composes: wardTokens from "../ward-tokens.module.css";
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  background: var(--ward-canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--e1);
+  overflow: hidden;
+}
+
+.bandItem {
+  border-top: 1px solid var(--ward-border);
+  border-left: 1px solid var(--ward-border);
+  padding: var(--ward-space-16) var(--ward-space-16) var(--ward-space-12);
+  display: grid;
+  gap: var(--ward-space-4);
+  align-content: start;
+  min-width: 0;
+}
+.band > .bandItem:nth-child(-n + 2) {
+  border-top: 0;
+}
+.band > .bandItem:nth-child(2n + 1) {
+  border-left: 0;
+}
+.band > .bandItem:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+@media (min-width: 52rem) {
+  .band {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .band > .bandItem {
+    border-top: 1px solid var(--ward-border);
+    border-left: 1px solid var(--ward-border);
+  }
+  .band > .bandItem:nth-child(-n + 3) {
+    border-top: 0;
+  }
+  .band > .bandItem:nth-child(2n + 1) {
+    border-left: 1px solid var(--ward-border);
+  }
+  .band > .bandItem:nth-child(3n + 1) {
+    border-left: 0;
+  }
+  .band > .bandItem:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+}
+@media (min-width: 76rem) {
+  .band[data-cols="4"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .band[data-cols="4"] > .bandItem:nth-child(-n + 4) {
+    border-top: 0;
+  }
+  .band[data-cols="4"] > .bandItem:nth-child(3n + 1) {
+    border-left: 1px solid var(--ward-border);
+  }
+  .band[data-cols="4"] > .bandItem:nth-child(4n + 1) {
+    border-left: 0;
+  }
+  .band[data-cols="5"] {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  .band[data-cols="5"] > .bandItem:nth-child(-n + 5) {
+    border-top: 0;
+  }
+  .band[data-cols="5"] > .bandItem:nth-child(3n + 1) {
+    border-left: 1px solid var(--ward-border);
+  }
+  .band[data-cols="5"] > .bandItem:nth-child(5n + 1) {
+    border-left: 0;
+  }
+}
+
+/* The figure inside a band column (also reused by `.figItem` below — one value/label treatment
+   for both places a bare figure appears). */
+.figureValue {
+  margin: 0;
+  font-size: var(--text-3xl-minus);
+  font-weight: var(--font-weight-value);
+  letter-spacing: var(--tracking-display);
+  /* Mockup line-height 1.05 has no ward step that close; `--ward-leading-tight` (1.15) is what
+     `statistics.module.css`'s own `.headlineValue` already uses for "a display figure, not body
+     text" — the identical semantic role, matched rather than independently re-approximated. */
+  line-height: var(--ward-leading-tight);
+  color: var(--text-heading);
+  font-variant-numeric: tabular-nums;
+}
+.figureValue[data-tone="good"] {
+  color: var(--ward-success);
+}
+.figureValue[data-tone="warn"] {
+  color: var(--ward-warning);
+}
+.figureValue[data-tone="crit"] {
+  color: var(--ward-danger);
+}
+.figureValue[data-tone="accent"] {
+  color: var(--ward-blue);
+}
+.figureUnit {
+  font-size: var(--text-md);
+  font-weight: var(--font-weight-label);
+  letter-spacing: var(--tracking-normal);
+  color: var(--text-muted);
+  margin-left: var(--ward-space-2);
+}
+/* A word beside a figure, for a column whose value is a name rather than a number — used INSTEAD
+   of `.figureValue`, not combined with it. */
+.figureValueWord {
+  margin: 0;
+  font-size: var(--text-lg);
+  letter-spacing: var(--tracking-display);
+  line-height: var(--ward-leading-dense);
+  color: var(--text-heading);
+}
+.figureLabel {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-label);
+  color: var(--text-muted);
+  line-height: var(--ward-leading-copy);
+}
+.figureNote {
+  margin: 0;
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+  line-height: var(--ward-leading-relaxed);
+}
+/* A sparkline mount: sizing only. The line itself is drawn with the chart primitives below. */
+.spark {
+  display: block;
+  width: 100%;
+  height: 1.75rem;
+  margin-top: var(--ward-space-8);
+  overflow: visible;
+}
+
+/* ═══ PANEL — one radius, one hairline, one shadow rung ═══════════════════════════════════════
+ *
+ * Deliberately its own primitive rather than `WardPanel` (`../ward-panel.module.css`): that
+ * primitive's title is an uppercase eyebrow at 0.085em tracking, correct for a short label like
+ * "PEOPLE" and wrong for the sentence-length headings this design language uses. The two are not
+ * duplicates of one fact — they are two different, both-legitimate panel treatments, the same
+ * distinction `statistics.module.css` already draws for its own `.figure` heading (see that
+ * file's header comment).
+ */
+.panel {
+  composes: wardTokens from "../ward-tokens.module.css";
+  background: var(--ward-canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--e1);
+  overflow: hidden;
+}
+.panelHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ward-space-12);
+  flex-wrap: wrap;
+  padding: var(--ward-space-16) var(--ward-space-20);
+  border-bottom: 1px solid var(--ward-border);
+}
+.panelTitle {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-heading);
+  letter-spacing: var(--tracking-display);
+  color: var(--text-heading);
+}
+.panelSub {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.panelBody {
+  padding: var(--ward-space-16);
+  display: grid;
+  gap: var(--ward-space-16);
+}
+
+/* ═══ DATA TABLE — tabular figures, right-aligned numeral columns, a severity stripe with WIDTH ═
+ *
+ * ⚠️ SITS ON `WardTable`, NEVER REDECLARES IT — the exact discipline `statistics.module.css`'s own
+ * `.dtable` already documents for this same problem (see that file's header comment: "a treatment
+ * that sits ON `WardTable` rather than replacing it"). `ward-table.module.css`'s `.table` is "the
+ * one home" for cell padding, border-bottom, base text-align/vertical-align and the last-row
+ * border reset — `tests/ward-table-single-source.test.ts` fails on ANY OTHER selector shaped like
+ * `.[…]table[…] th`/`td` that declares padding or a border, precisely to stop that fact growing a
+ * second home. So `.dtable` below `composes: table` directly (a consumer needs only ONE class, not
+ * two) and declares NOTHING that class already provides — only what it does not: a sticky
+ * uppercase header, right-aligned tabular figures, a hover wash, a totals row and the width-based
+ * severity stripe. The cost is that this table's cell padding/border-bottom are `WardTable`'s
+ * canonical values, not the fourth-edition mockup's own `0.6rem`/`--s5` — a deliberate trade for
+ * "one home per fact" (Global Constraint 1) over literal mockup fidelity on a value the brief's own
+ * primitive list does not name.
+ *
+ * ⚠️ NO MONOSPACE FACE. The reference language's own header comment records why: "the second
+ * edition switched to JetBrains Mono for every number, which made figures read as code on a
+ * clinical page" — `font-variant-numeric: tabular-nums` alone is the fix, in the ordinary body
+ * face. `ward-panel.module.css` reached the identical conclusion for `.panelCount` independently
+ * on 2026-09-06, so this is not a one-off choice for this file.
+ *
+ * `.n` is scoped as `.dtable td.n` / `.dtable th.n`, never a bare `.n` — `ward-table.module.css`'s
+ * own header comment records a real defect from exactly that mistake: a bare class (specificity
+ * 0,1,0) silently loses to the compound `.table th, .table td` base rule (0,1,1) it is meant to
+ * override, and the miss is invisible in the stylesheet and in jsdom alike.
+ */
+.tableScroll {
+  overflow-x: auto;
+  position: relative;
+}
+.dtable {
+  composes: table from "../ward-table/ward-table.module.css";
+  composes: wardTokens from "../ward-tokens.module.css";
+}
+.dtable thead th {
+  position: sticky;
+  top: 0;
+  background: var(--ward-subtle);
+  font-size: var(--text-2xs);
+  font-weight: var(--font-weight-heading);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.dtable tbody th {
+  font-weight: var(--font-weight-heading);
+  color: var(--text-heading);
+  white-space: nowrap;
+}
+/* `.table td`'s own `color: var(--text)` and the last-row border reset already cover this table —
+   `WardTable` declares both, so neither is repeated here (see the section header above). */
+.dtable td.n,
+.dtable th.n {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.dtable tbody tr:hover th,
+.dtable tbody tr:hover td {
+  background: var(--ward-subtle);
+}
+.dtable tfoot th,
+.dtable tfoot td {
+  border-top: 1px solid var(--ward-border-strong);
+  border-bottom: 0;
+  font-weight: var(--font-weight-value);
+  color: var(--text-heading);
+  background: var(--ward-subtle);
+}
+
+/* THE SEVERITY STRIPE.
+   🔴 THIS COMMENT PREVIOUSLY CLAIMED "width, not hue alone, so it survives greyscale and colour
+   vision deficiency" — and then, one sentence later, said the tone overlay is "of the identical
+   width and position". The header was written wider than the rules below it deliver, and it
+   contradicted itself inside its own comment. What is actually true:
+     PRESENT vs ABSENT   survives greyscale — a toned row has a 3px stripe, an untoned row has none
+     crit vs warn vs good  DOES NOT — all three are 3px and differ only in hue
+   ⚠️ AND NO ROW USES THIS RULE. The only `data-tone` in the statistics tree is on an SVG <circle>;
+   the mechanism that actually flags rows is `data-level` in statistics.module.css. Do not conclude
+   from that this rule should be "fixed" so the widths differ: the live table it would govern is
+   correct as it stands, because its row prints the value the colour is derived from.
+   tests/ward-row-severity-not-colour-alone.test.ts holds the property that matters — a status
+   colour must reinforce something the row already says in words — and it is the thing to satisfy
+   when this rule finally selects an element. */
+.dtable tbody tr[data-tone] > :first-child {
+  box-shadow: inset 3px 0 0 0 var(--ward-border-strong);
+}
+.dtable tbody tr[data-tone="crit"] > :first-child {
+  box-shadow: inset 3px 0 0 0 var(--ward-danger);
+}
+.dtable tbody tr[data-tone="warn"] > :first-child {
+  box-shadow: inset 3px 0 0 0 var(--ward-warning);
+}
+.dtable tbody tr[data-tone="good"] > :first-child {
+  box-shadow: inset 3px 0 0 0 var(--ward-success);
+}
+
+/* ═══ ED WAIT TABLE — phone pass, Task 7 ═══════════════════════════════════════════════════════
+ *
+ * The one table `statistics-ed-screen.tsx` mounts. That screen composes this class alongside
+ * `statistics.module.css`'s own `.dtable` (`className={`${chartStyles.dtable} ${v4.edWaitTable}`}`)
+ * rather than gaining a second, competing `.dtable` of its own. It lands in THIS file, the
+ * fourth-edition primitive library, rather than in `statistics.module.css` itself, because this
+ * task's edit scope is `statistics-v4.module.css` and `statistics-service-screen.module.css` only.
+ *
+ * 🔴 **THE FIRST VERSION OF THIS RULE SET A `--ward-table-min-width` THRESHOLD PLUS A STICKY FIRST
+ * COLUMN, AND SCROLLING IT PROVED THE STICKY COLUMN HID DATA IT WAS BUILT TO PROTECT.** Scrolled to
+ * the end at a 375px viewport, the sticky `Movement` cell's own rendered column width (measured
+ * ~82px, stretched by the artificial 22rem floor) was WIDER than the total scrollable distance
+ * (~51px) — so the `Elapsed wait` column it was meant to let a reader keep attributing sat
+ * PARTIALLY UNDER the opaque sticky cell at every scroll position, never fully clearing it. A
+ * sticky column only works when its own width is smaller than the overflow it is pinned across
+ * (`statistics-sections.module.css`'s sticky column satisfies this: capped at 11rem against ~16rem
+ * of overflow); this table's proportions do not, and forcing the pattern anyway hid a real figure
+ * behind an opaque cell — worse than the unpinned column it replaced, which was merely inconvenient
+ * to read while scrolling rather than actively wrong.
+ *
+ * MEASURED on the running page, 2026-09-06, default font/zoom, 375px viewport, across every
+ * emergency department this screen can resolve (`rph-ed`, `scgh-ed`, `fsh-ed`, `arm-ed`,
+ * `sjgm-ed`): with NO artificial `min-width` at all, the table's natural width is 327px against a
+ * 301px scroller (only ~26px real overflow), because three of the four columns are short, fixed-
+ * format content (`WF-###`, a duration, Yes/No) that never varies. Releasing `white-space: nowrap`
+ * on just the last column — `Ward status`, whose only two members are "Accepted" and "Awaiting a
+ * ward" — lets it wrap at the existing space in "Awaiting a ward" and brings the table to exactly
+ * the scroller's own width, so it needs no horizontal scroll at all: no threshold, no sticky
+ * column, and nothing left to hide behind either. The queue table's own ruling already named this
+ * trade for a table shaped like this one: "a tall table on a phone beats a sideways-scrolling one."
+ *
+ * `overflow-wrap: normal` overrides `WardTable`'s own `.table td { overflow-wrap: anywhere }`,
+ * which — left in place — broke "Accepted" (one word, no space to wrap at) MID-WORD into
+ * "Accepte"/"d" the instant the column narrowed even slightly, the exact ugly, illegible artefact
+ * `overflow-wrap: anywhere` exists to allow when a break is truly unavoidable and there is nothing
+ * here it is needed for. Matches `th`/`td` (`:last-child`, not `[scope="row"]`) because it is the
+ * VALUE column that needs to wrap here, not the identity column — the ED table's identity column
+ * (`WF-###`) never varies in width and was never the problem.
+ */
+.edWaitTable th:last-child,
+.edWaitTable td:last-child {
+  white-space: normal;
+  overflow-wrap: normal;
+}
+
+/* ═══ DISCLOSURE (`.reveal`) — detail one click away, no JavaScript ═══════════════════════════
+ *
+ * A native `details`/`summary` works with a keyboard, survives printing (forced open below), and
+ * cannot break. `.reveal > summary` carries a 48px (`--spacing-tap`) minimum — the design system's
+ * ONE tap knob — and it is never reduced. `--spacing-tap` is 3rem/48px; `min-h-11` (44px, a
+ * generic WCAG minimum) is NOT a substitute here — it is the exact value that reintroduced a known
+ * `ui-smoke` flake elsewhere in this repository.
+ */
+.reveal {
+  composes: wardTokens from "../ward-tokens.module.css";
+  border: 1px solid var(--ward-border);
+  border-radius: var(--radius-lg);
+  background: var(--ward-canvas);
+  overflow: hidden;
+}
+.reveal + .reveal {
+  margin-top: var(--ward-space-12);
+}
+.reveal > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-12);
+  min-height: var(--spacing-tap);
+  padding: var(--ward-space-8) var(--ward-space-16);
+  cursor: pointer;
+  list-style: none;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-heading);
+  color: var(--text-heading);
+  background: var(--ward-subtle);
+}
+.reveal > summary::-webkit-details-marker {
+  display: none;
+}
+.reveal > summary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+.reveal > summary::after {
+  content: "";
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  transform: rotate(45deg) translate(-2px, -2px);
+  /* ⚠️ `var(--duration-fast)`, NOT a literal 120ms, and the two are NOT equivalent even though the
+   * token's value IS 120ms. `ckb-v2-tokens.css` redefines it to `0ms` under
+   * `prefers-reduced-motion`, so the literal animated this chevron for a reader who had asked the
+   * operating system for no animation — silently, because the declaration looked correct and the
+   * value was right. The repository-wide `check:design-system-contract` gate counts raw motion
+   * durations for exactly this reason, and it had gone from 26 to 27 on this line, blocking every
+   * commit in the repository rather than only this file's. */
+  transition: transform var(--duration-fast) ease;
+}
+.reveal[open] > summary::after {
+  transform: rotate(-135deg) translate(-2px, -2px);
+}
+.reveal[open] > summary {
+  border-bottom: 1px solid var(--ward-border);
+}
+.revealBody {
+  padding: var(--ward-space-12) var(--ward-space-16);
+  font-size: var(--text-sm);
+  line-height: var(--ward-leading-relaxed);
+  color: var(--text);
+}
+.revealBody > * + * {
+  margin-top: var(--ward-space-12);
+}
+.revealCount {
+  font-weight: var(--font-weight-label);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══ KEY/VALUE LIST — a table when a table would only be two columns ═════════════════════════ */
+.kv {
+  composes: wardTokens from "../ward-tokens.module.css";
+  display: grid;
+  grid-template-columns: 1fr auto;
+  margin: 0;
+}
+.kv > dt {
+  padding: var(--ward-space-8) 0;
+  font-size: var(--text-sm);
+  color: var(--text);
+  border-bottom: 1px solid var(--ward-border);
+}
+.kv > dd {
+  margin: 0;
+  padding: var(--ward-space-8) 0 var(--ward-space-8) var(--ward-space-16);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-heading);
+  text-align: right;
+  color: var(--text-heading);
+  font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid var(--ward-border);
+}
+
+/* ═══ A FIGURE ROW INSIDE A PANEL — `.band` draws its own edge; this does not ═════════════════
+ *
+ * Two separate builders needed a borderless figure row INSIDE a panel and each invented a name
+ * for it — that is what a missing primitive looks like, per the reference language's own header
+ * comment. Reuses `.figureValue`/`.figureValueWord`/`.figureUnit`/`.figureLabel` above rather than
+ * declaring a second value/label treatment for the same content shape.
+ */
+.figs {
+  composes: wardTokens from "../ward-tokens.module.css";
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ward-space-20);
+}
+.figItem {
+  min-width: 6rem;
+  display: grid;
+  gap: var(--ward-space-4);
+}
+
+/* ═══ DELTA — a direction paired with a WORD, because an arrow alone cannot say which way is good
+ *
+ * "Up" is good on one row (admissions cleared) and bad on the next (breaches). The word beside
+ * the arrow is what carries the meaning; colour only ever reinforces a word already there.
+ */
+.delta {
+  composes: wardTokens from "../ward-tokens.module.css";
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--ward-space-4);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-heading);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+.delta[data-dir="up"] {
+  color: var(--ward-danger);
+}
+.delta[data-dir="down"] {
+  color: var(--ward-success);
+}
+.delta[data-dir="flat"] {
+  color: var(--text-muted);
+}
+.deltaWord {
+  font-weight: var(--font-weight-label);
+  color: var(--text-muted);
+}
+
+/* ═══ CHARTS — LINES AND ARCS ONLY. NO BAR PRIMITIVE IN THIS FILE. ════════════════════════════
+ *
+ * A trend is a line; a proportion is an arc; a single value against a target is a ring. Every
+ * chart mounted with `.chart` must carry `role="img"` with a real label AND a `.chartCaption`
+ * stating the same numbers in words — colour and a thin stroke are never the only carrier, so a
+ * greyscale printout and a reader with no colour perception both still get the reading. That is a
+ * markup/JSX responsibility for the four screens that consume this file; this file supplies the
+ * primitives, not the accessible name.
+ *
+ * The ring is drawn with `pathLength="100"` on its value arc (a markup convention for consumers of
+ * this primitive, not a CSS declaration) so a dash-offset can be written as a plain percentage.
+ */
+.chart {
+  composes: wardTokens from "../ward-tokens.module.css";
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.chartCaption {
+  margin-top: var(--ward-space-8);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--ward-leading-prose);
+}
+.chartCaption b {
+  font-weight: var(--font-weight-value);
+  color: var(--text-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Grid/axis scaffolding — decoration, not a meaningful boundary, so it stays at the very light
+   global `--border` rather than the heavier `--ward-border` a real divider needs. */
+.cGrid {
+  stroke: var(--border);
+  stroke-width: 1;
+  fill: none;
+}
+.cAxis {
+  fill: var(--text-muted);
+  /* Mockup 9px rounds to this scale's absolute floor, `--text-3xs` (10px) — see file header. */
+  font-size: var(--text-3xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The line. `data-series="b"` is a second series on the same chart, distinguished by a dash
+   rather than by hue alone. `data-tone` recolours a single-series line to a status colour. */
+.cLine {
+  fill: none;
+  stroke: var(--ward-blue);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cLine[data-series="b"] {
+  stroke: var(--text-muted);
+  stroke-dasharray: 4 3;
+}
+.cLine[data-tone="good"] {
+  stroke: var(--ward-success);
+}
+.cLine[data-tone="warn"] {
+  stroke: var(--ward-warning);
+}
+.cLine[data-tone="crit"] {
+  stroke: var(--ward-danger);
+}
+.cArea {
+  fill: var(--ward-blue-soft);
+  stroke: none;
+}
+.cDot {
+  fill: var(--ward-canvas);
+  stroke: var(--ward-blue);
+  stroke-width: 2;
+}
+.cDot[data-tone="crit"] {
+  stroke: var(--ward-danger);
+}
+.cDot[data-tone="good"] {
+  stroke: var(--ward-success);
+}
+.cDotSolid {
+  fill: var(--ward-blue);
+  stroke: none;
+}
+.cThreshold {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  fill: none;
+}
+.cLabel {
+  fill: var(--text-heading);
+  font-size: var(--text-3xs);
+  font-weight: var(--font-weight-heading);
+}
+.cLabelQuiet {
+  fill: var(--text-muted);
+  font-weight: var(--font-weight-label);
+}
+
+/* The ring: one value against its whole, drawn as an arc — replaces every "N of M" bar. */
+.cRingTrack {
+  fill: none;
+  stroke: var(--surface-inset);
+  stroke-width: 10;
+}
+.cRingValue {
+  fill: none;
+  stroke: var(--ward-blue);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+.cRingValue[data-tone="good"] {
+  stroke: var(--ward-success);
+}
+.cRingValue[data-tone="warn"] {
+  stroke: var(--ward-warning);
+}
+.cRingValue[data-tone="crit"] {
+  stroke: var(--ward-danger);
+}
+.cRingCentre {
+  fill: var(--text-heading);
+  /* Mockup 15px is an exact match for `--text-body` (0.9375rem) — no rounding needed. */
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-value);
+  font-variant-numeric: tabular-nums;
+  text-anchor: middle;
+}
+.cRingSub {
+  fill: var(--text-muted);
+  /* Mockup 8px is this scale's RETIRED step ("the old 8px text-4xs step is retired" —
+     globals.css). Rounded up to the floor, `--text-3xs` (10px), rather than reintroducing it. */
+  font-size: var(--text-3xs);
+  text-anchor: middle;
+}
+
+.legend {
+  composes: wardTokens from "../ward-tokens.module.css";
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ward-space-8) var(--ward-space-20);
+}
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  /* Mockup 0.45rem (7.2px) rounds to the nearest ward step, `--ward-space-7` (7px). */
+  gap: var(--ward-space-7);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.legendKey {
+  width: 1.1rem;
+  height: 0;
+  border-top: 2px solid var(--ward-blue);
+  flex: none;
+}
+.legendKey[data-series="b"] {
+  border-top-style: dashed;
+  border-top-color: var(--text-muted);
+}
+.legendKey[data-tone="good"] {
+  border-top-color: var(--ward-success);
+}
+.legendKey[data-tone="warn"] {
+  border-top-color: var(--ward-warning);
+}
+.legendKey[data-tone="crit"] {
+  border-top-color: var(--ward-danger);
+}
+.legendValue {
+  font-weight: var(--font-weight-value);
+  color: var(--text-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * ═══ FORCED COLOURS ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Most of this file's colour roles already survive forced-colors with no override here at all:
+ * `.band`/`.panel`'s outer `--border`+`--e1` edge is re-pointed by `ckb-v2-tokens.css`'s own
+ * `.ckb-v2` block (every ward screen sits inside it), and every `--ward-*` role this file uses
+ * (`--ward-border`, `--ward-canvas`, `--ward-subtle`, `--ward-blue`, `--ward-success`,
+ * `--ward-warning`, `--ward-danger`) is one of the eleven `ward-tokens.module.css` itself already
+ * documents as inheriting high-contrast handling by aliasing a v2 token that block re-points.
+ *
+ * What is left is structural, not colour: a stroke's DASH pattern is the only thing distinguishing
+ * two lines once every hue collapses, so it must not be adjusted away; and a `box-shadow` stripe
+ * can be stripped outright under forced colours in a way a real `border` is not (the same reason
+ * `ward-table.module.css`'s own scroll-hint cue is a border rather than a gradient).
+ */
+@media (forced-colors: active) {
+  .cLine,
+  .cRingValue,
+  .cRingTrack,
+  .cThreshold,
+  .cDot {
+    forced-color-adjust: none;
+  }
+  .dtable tbody tr[data-tone] > :first-child {
+    box-shadow: none;
+    border-left: 3px solid CanvasText;
+  }
+  .reveal,
+  .reveal[open] > summary {
+    border-color: CanvasText;
+  }
+}
+
+/*
+ * ═══ PRINT ════════════════════════════════════════════════════════════════════════════════════
+ *
+ * ⚠️ EXPLICIT, LOCAL RESETS — NOT LEFT TO `ward-tokens.module.css`'s SHARED ONE. Every independent
+ * mounting point in this file composes `wardTokens`, and in the common case (a SINGLE such edge
+ * per file) `tests/ward-management-print-coverage.test.ts` would recognise that as blanket
+ * coverage automatically. This file has NINE such edges (one per real root — `.band`, `.panel`,
+ * `.dtable`, `.reveal`, `.kv`, `.figs`, `.delta`, `.chart`, `.legend` — because none of the nine is
+ * a descendant of another), so none qualifies as that guard's "ROOT" case (see the file header
+ * above) and each root instead needs its own `.class, .class *` reset here — the same
+ * belt-and-braces convention `ward-panel.module.css`/`ward-figure.module.css` already use, and for
+ * the identical reason: a primitive should not depend on an assumption about which screen renders
+ * it, or in this file's case, about how many independent roots the guard's simpler heuristic can
+ * follow at once.
+ *
+ * What is left beyond colour is structural: a closed disclosure prints as nothing at all, which
+ * loses the working on a page whose whole purpose is showing it, so it is forced open; a sticky
+ * table header has nothing to stick to on paper.
+ */
+@media print {
+  .band,
+  .band *,
+  .panel,
+  .panel *,
+  .dtable,
+  .dtable *,
+  .reveal,
+  .reveal *,
+  .kv,
+  .kv *,
+  .figs,
+  .figs *,
+  .delta,
+  .delta *,
+  .chart,
+  .chart *,
+  .legend,
+  .legend * {
+    color: CanvasText !important;
+    background-color: Canvas !important;
+  }
+  .reveal {
+    break-inside: avoid;
+  }
+  .reveal > summary::after {
+    display: none;
+  }
+  .revealBody {
+    display: block !important;
+  }
+  .band,
+  .panel {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+  .dtable thead th {
+    position: static;
+  }
+  .dtable tr {
+    break-inside: avoid;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal > summary::after {
+    transition: none;
+  }
+}

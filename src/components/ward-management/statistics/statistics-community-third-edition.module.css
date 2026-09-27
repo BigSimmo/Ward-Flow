@@ -1,0 +1,314 @@
+.pageGrid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas:
+    "identity discharges"
+    "figures followup"
+    "referrals firstContact"
+    "sources contacts"
+    "hospital hospital"
+    "comparison comparison"
+    "provenance provenance"
+    "limits limits";
+  gap: 0.875rem;
+  align-items: start;
+}
+
+.pageGrid > :global([data-testid="ward-statistics-community-identity"]),
+.pageGrid > :global([data-testid="ward-statistics-community-provenance"]),
+.pageGrid > :global([data-testid="ward-statistics-community-unresolved"]) {
+  grid-column: 1 / -1;
+}
+
+@media print {
+  .pageGrid {
+    display: block;
+  }
+
+  .pageGrid > * {
+    margin-bottom: 0.75rem;
+  }
+}
+
+/* Third-edition drawing flow: identity and the primary measured panels lead. */
+.pageGrid > :global([data-testid="ward-statistics-community-identity"]) {
+  grid-column: auto;
+  order: 1;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-hospital-discharges"]) {
+  order: 2;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-followup"]) {
+  order: 3;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-figures"]) {
+  order: 4;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-referrals"]) {
+  order: 5;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-referral-sources"]) {
+  order: 6;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-first-contact"]) {
+  order: 7;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-contacts"]) {
+  order: 8;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-in-hospital"]) {
+  order: 9;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-comparison"]) {
+  order: 10;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-provenance"]) {
+  order: 11;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-limits"]) {
+  order: 12;
+}
+
+.kpiBand {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-bottom: 1px solid var(--line);
+}
+
+.kpi {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.875rem 0.75rem;
+  border-right: 1px solid var(--line);
+}
+
+.kpi:last-child {
+  border-right: 0;
+}
+.kpiLabel {
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.kpiValue {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-6);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.figureDetails {
+  margin-top: 0.75rem;
+}
+.figureDetails > summary {
+  min-height: 3rem;
+  padding: 0.75rem;
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 700;
+}
+.figureDetails > summary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.figureDetailsBody {
+  overflow-x: auto;
+}
+
+.nestedMeasure {
+  margin-top: 0.875rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.875rem;
+}
+
+.nestedMeasure h3 {
+  margin: 0 0 0.5rem;
+  color: var(--ink);
+  font-size: var(--t-2);
+  font-weight: 600;
+}
+
+.nestedMeasure p {
+  margin-bottom: 0;
+}
+
+@media (max-width: 48rem) {
+  .kpiBand {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .kpi:nth-child(2) {
+    border-right: 0;
+  }
+  .kpi:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--line);
+  }
+}
+
+/* Explicit tracks preserve the drawing's left/right reading order. */
+.pageGrid > :global([data-testid="ward-statistics-community-identity"]) {
+  grid-area: identity;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-figures"]) {
+  grid-area: figures;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-followup"]) {
+  grid-area: followup;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-referrals"]) {
+  grid-area: referrals;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-referral-sources"]) {
+  grid-area: sources;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-hospital-discharges"]) {
+  grid-area: discharges;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-firstContact"]) {
+  grid-area: firstContact;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-contacts"]) {
+  grid-area: contacts;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-in-hospital"]) {
+  grid-area: hospital;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-comparison"]) {
+  grid-area: comparison;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-provenance"]) {
+  grid-area: provenance;
+}
+.pageGrid > :global([data-testid="ward-statistics-community-limits"]) {
+  grid-area: limits;
+}
+@media (max-width: 62.5rem) {
+  .pageGrid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "identity" "discharges" "followup" "figures" "referrals" "sources" "firstContact" "contacts" "hospital" "comparison" "provenance" "limits";
+  }
+}
+
+@media (min-width: 62.5625rem) {
+  .pageGrid {
+    align-items: start;
+  }
+
+  .pageGrid > :global([data-ward-primitive="panel"]) {
+    display: flex;
+    height: auto;
+    max-height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .pageGrid > :global([data-testid="ward-statistics-community-identity"]),
+  .pageGrid > :global([data-testid="ward-statistics-community-provenance"]),
+  .pageGrid > :global([data-testid="ward-statistics-community-limits"]),
+  .pageGrid > :global([data-testid="ward-statistics-community-figures"]),
+  .pageGrid > :global([data-testid="ward-statistics-community-followup"]),
+  .pageGrid > :global([data-testid="ward-statistics-community-referral-sources"]) {
+    display: block;
+    height: auto;
+    max-height: none;
+  }
+}
+
+@media print {
+  .pageGrid > :global([data-ward-primitive="panel"]) {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+/* ─── Community Screen Diagram Styles ─── */
+.chartContainer {
+  position: relative;
+  width: 100%;
+  padding: 14px 16px;
+  overflow: hidden;
+}
+.chartSvg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.chartTooltipCard {
+  position: absolute;
+  pointer-events: none;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  padding: 8px 12px;
+  font-size: 12px;
+  font-family: var(--body);
+  box-shadow: 0 4px 18px rgb(var(--ward-shadow-rgb) / 0.16);
+  z-index: 100;
+  max-width: 260px;
+  line-height: 1.4;
+}
+:global([data-theme="dark"]) .chartTooltipCard {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+  box-shadow: 0 6px 22px rgb(var(--ward-shadow-rgb) / 0.55);
+}
+.gaugeWrap {
+  text-align: center;
+  padding: 14px 16px;
+}
+.timelineTrack {
+  height: 8px;
+  background: var(--sunk);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+.timelineFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+.actionToast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  max-width: 400px;
+  padding: 12px 18px;
+  background: var(--ink);
+  color: var(--surface);
+  border-radius: var(--r2);
+  font-size: var(--t-1);
+  font-family: var(--body);
+  box-shadow: 0 6px 24px rgb(var(--ward-shadow-rgb) / 0.3);
+  z-index: 99999;
+  border-left: 4px solid var(--gilt);
+}
+
+.actionBtn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: var(--body);
+  font-weight: 500;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.actionBtn:hover {
+  background: var(--sunk);
+  border-color: var(--line-strong);
+}
+.actionBtn:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+

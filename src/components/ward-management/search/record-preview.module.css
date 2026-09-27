@@ -1,0 +1,703 @@
+/*
+ * The preview pane's own inner content. `WardPanel` (ward-panel.module.css) supplies the border,
+ * radius, elevation and header — this file styles only what sits inside that panel's body, the same
+ * division `ward-figure.module.css` and `ward-chip.module.css` keep from the primitives they sit
+ * beside. `composes: wardTokens` is declared here anyway, on the first rule, matching the same
+ * belt-and-braces convention `ward-panel.module.css` and `ward-chip.module.css` already use — the
+ * custom properties are already inherited from `.screen` (search.module.css) at runtime regardless,
+ * but composing here is what lets `tests/ward-design-language-contract.test.ts` discover this file
+ * as a token consumer and validate every `--ward-*` name it uses actually exists.
+ *
+ * ⚠️ `.idle` IS DELIBERATELY THE FIRST RULE IN THIS FILE, NOT `.close`. The "ground is not merely
+ * painted" contract test (`tests/ward-design-language-contract.test.ts`) reads a stylesheet's FIRST
+ * declared rule as its "screen root" and flags it if that rule paints an opaque surface over the
+ * shell's ground. `.close` legitimately paints `--surface-subtle` — it is a small button, not a
+ * page root — and a stylesheet's rule ORDER, not its content, is all that check looks at. Putting a
+ * rule with no background first keeps this component-level file correctly OUTSIDE that check's
+ * remit, the same way `ward-chip.module.css`'s first rule (`.chip`) paints no background either.
+ */
+.idle {
+  composes: wardTokens from "../ward-tokens.module.css";
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-style: italic;
+}
+
+.body {
+  padding: var(--ward-space-16);
+  min-width: 0;
+}
+
+.close {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--spacing-tap);
+  margin-bottom: var(--ward-space-8);
+  border: 1px solid var(--ward-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-subtle);
+  padding: 0 var(--ward-space-12);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.close:hover,
+.close:focus-visible {
+  border-color: var(--clinical-accent);
+  color: var(--clinical-accent);
+}
+
+.facts {
+  margin: 0 0 var(--ward-space-8);
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.subjectName {
+  margin: 0 0 var(--ward-space-4);
+  color: var(--ink, var(--text-heading));
+  font-family: var(--display, inherit);
+  font-size: var(--t-5, var(--text-lg));
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.dossierActions {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-12);
+  margin-bottom: var(--ward-space-16);
+  flex-wrap: wrap;
+}
+
+.openLink {
+  display: inline-flex;
+  align-items: center;
+  color: var(--accent);
+  font-size: var(--t-1);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.referLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--r2);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--t-1);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.12s;
+}
+
+.referLink:hover {
+  background: var(--accent-press);
+}
+
+/*
+ * ONE TIE SECTION PER LINKED RECORD — a person's referral, a person's movement, a movement's
+ * referral, a movement's person. Deliberately `<h3>`, never `<h2>`: `WardPanel` already renders this
+ * whole preview under its own `<h2>` (the selected record's own name), and a second `<h2>` inside it
+ * would be a sibling heading rather than a subsection, which is exactly the "second top-level
+ * heading" shape `tests/ward-landmarks.test.ts` and `tests/ward-patient-search.dom.test.tsx`'s own
+ * "owns exactly one search composer" sibling suite both watch for on this route.
+ */
+.tieSection {
+  border-top: 1px solid var(--ward-divider);
+  padding-top: var(--ward-space-8);
+  margin-top: var(--ward-space-8);
+}
+
+.tieHeading {
+  margin: 0 0 var(--ward-space-4);
+  color: var(--text-muted);
+  font-size: var(--text-3xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.tieBody {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--text-xs);
+  line-height: var(--ward-leading-prose);
+}
+
+.tieEmpty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-style: italic;
+}
+
+/* ─── Sovereign Clinical Dossier Styles ───────────────────────────────── */
+.presenceBannerCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-10);
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--r2);
+  font-size: var(--t-1);
+  margin-bottom: var(--ward-space-12);
+  border: 1px solid var(--line);
+}
+
+.presenceBannerCard.live {
+  background: var(--good-soft);
+  border-color: var(--good);
+  color: var(--good);
+}
+
+.presenceBannerCard.community {
+  background: var(--accent-soft);
+  border-color: var(--svc-south);
+  color: var(--svc-south);
+}
+
+.presenceBannerCard.scheduled {
+  background: var(--warn-soft);
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.presenceBannerCard.past {
+  background: var(--sunk);
+  border-color: var(--line-strong);
+  color: var(--muted);
+}
+
+.presenceBannerLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+}
+
+.presenceSettingTag {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+}
+
+.presenceDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.presenceDot.live {
+  background: var(--good);
+  box-shadow: 0 0 0 1.5px var(--good-soft);
+}
+
+.presenceDot.community {
+  background: var(--svc-south);
+}
+
+.presenceDot.scheduled {
+  background: var(--warn);
+}
+
+.presenceDot.past {
+  background: var(--muted);
+}
+
+/* Dossier Identity Header */
+.dossierHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-6);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: var(--ward-space-12);
+  margin-bottom: var(--ward-space-12);
+}
+
+.dossierTitleRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ward-space-10);
+}
+
+.dossierName {
+  font-size: var(--t-5);
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+.dossierUrm {
+  font-family: var(--mono);
+  font-size: var(--t-3);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+
+.dossierMetaRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+  flex-wrap: wrap;
+}
+
+.metaDemographics {
+  font-size: var(--t-2);
+  color: var(--muted);
+}
+
+.atsiPill {
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--gilt);
+  background: var(--surface-2);
+  border: 1px solid var(--gilt);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.dossierStatusStrip {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-6);
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.tierBadge {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tierBadge.tier1 {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.tierBadge.tier2 {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+}
+
+.tierBadge.tier3 {
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  border: 1px solid var(--line-strong);
+}
+
+.tierBadge.discharged {
+  background: var(--sunk);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.statusPill {
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+.statusPill.form1a {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border: 1px solid var(--danger);
+}
+
+.statusPill.form4a {
+  background: var(--accent-soft);
+  color: var(--svc-north);
+  border: 1px solid var(--svc-north);
+}
+
+.statusPill.form5a {
+  background: var(--accent-soft);
+  color: var(--svc-south);
+  border: 1px solid var(--svc-south);
+}
+
+.statusPill.voluntary {
+  background: var(--sunk);
+  color: var(--ink-soft);
+  border: 1px solid var(--line-strong);
+}
+
+.dispositionBadge {
+  font-size: var(--t-0);
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent);
+}
+
+/* Statutory Legal Authority Card */
+.statutoryCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r2);
+  padding: var(--ward-space-10) var(--ward-space-12);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-6);
+  margin-bottom: var(--ward-space-12);
+}
+
+.statutoryCard.breachAlert {
+  border-left-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.statutoryHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-8);
+}
+
+.statutoryTitle {
+  font-size: var(--t-2);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.statutoryCountdown {
+  font-family: var(--mono);
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--danger-ink);
+  background: var(--surface);
+  padding: 1px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--line-strong);
+}
+
+.statutoryDetailsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ward-space-6);
+  font-size: var(--t-1);
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.statItemLabel {
+  font-size: var(--t-0);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.statItemValue {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* Placement & Trajectory Section */
+.dossierSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-6);
+  margin-bottom: var(--ward-space-12);
+}
+
+.sectionTitle {
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.trajectoryGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ward-space-8);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: var(--ward-space-10) var(--ward-space-12);
+}
+
+.trajBox {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trajLabel {
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.trajValue {
+  font-size: var(--t-2);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.trajValue.strong {
+  font-weight: 600;
+  color: var(--accent-ink);
+}
+
+/* Clinical Presentation Card */
+.clinicalNoteCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: var(--ward-space-10) var(--ward-space-12);
+  font-size: var(--t-2);
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+/* Previous Presentations & History (Image 4) */
+.historyCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: var(--ward-space-10) var(--ward-space-12);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-6);
+}
+
+.historyGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ward-space-8);
+  font-size: var(--t-1);
+}
+
+.historyItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.historyLabel {
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.historyVal {
+  font-size: var(--t-2);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Connected Vertical Timeline for Audit Milestones (Image 4) */
+.milestoneTimeline {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding-left: var(--ward-space-20);
+  gap: var(--ward-space-12);
+  margin: var(--ward-space-6) 0;
+}
+
+.milestoneTimeline::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: var(--line-strong);
+}
+
+.timelineNode {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.timelineNodeBullet {
+  position: absolute;
+  left: calc(0rem - var(--ward-space-20));
+  top: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0 2px var(--surface);
+  box-sizing: border-box;
+}
+
+.timelineTimeRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-6);
+}
+
+.timelineMonoTime {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--accent-ink);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--ward-leading-none);
+}
+
+.timelineEventText {
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+  line-height: var(--ward-leading-ui);
+}
+
+/* Audit Milestones Timeline */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-8);
+  position: relative;
+  padding-left: var(--ward-space-16);
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: var(--line-strong);
+}
+
+.timelineItem {
+  position: relative;
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+  line-height: 1.35;
+}
+
+.timelineItem::before {
+  content: "";
+  position: absolute;
+  left: calc(0rem - var(--ward-space-16));
+  top: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.timelineItem strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Coordinator Action Bar */
+.dossierActionBar {
+  display: flex;
+  gap: var(--ward-space-8);
+  padding-top: var(--ward-space-10);
+  border-top: 1px solid var(--line);
+  margin-top: auto;
+  flex-wrap: wrap;
+}
+
+.btnPrimary {
+  padding: 7px 12px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--t-2);
+  font-weight: 600;
+  border-radius: var(--r2);
+  transition: background 0.12s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+
+.btnPrimary:hover {
+  background: var(--accent-press);
+}
+
+.btnSecondary {
+  padding: 7px 12px;
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  font-size: var(--t-2);
+  font-weight: 500;
+  border-radius: var(--r2);
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+  cursor: pointer;
+}
+
+.btnSecondary:hover {
+  background: var(--sunk);
+  border-color: var(--ink-soft);
+}
+
+.d4Notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-8);
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r1);
+  font-size: var(--t-1);
+  color: var(--ink);
+  margin-top: var(--ward-space-8);
+  margin-bottom: var(--ward-space-8);
+}
+
+.d4NoticeDismiss {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--t-0);
+  border-radius: var(--r1);
+  padding: 2px 6px;
+  cursor: pointer;
+  min-height: 24px;
+}
+
+.d4NoticeDismiss:hover {
+  color: var(--ink);
+  border-color: var(--ink-soft);
+}

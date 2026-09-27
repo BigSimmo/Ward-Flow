@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "id": "af1cc99d-4847-4298-ae62-d6b640a5761f",
+  "createdOn": "2026-09-09",
+  "action": "add",
+  "payload": {
+    "pri": "P3",
+    "type": "task",
+    "summary": "Ward Flow: the ED hub has two rival locked-looking drawings and nothing in the repo says which one is the spec",
+    "detail": "docs/ward-flow/design/prototypes/ contains BOTH mockup-ed-hub-v2.html ('Emergency Department Hub — v2 design system') and mockup-front-doors-v5.html — which is itself titled 'Ward Flow ED Hub'. Two older ED drawings sit underneath them (mockup-ed-hub.html, mockup-ed-hub-desktop.html). Committed minutes apart in the same batch, so commit order does not separate them. PARTIAL ANSWER, and it is why this is P3 rather than P2: docs/ward-flow/design/FRONT-DOOR-BOARDS-DECISION.md records an owner decision of 2026-09-05 locking mockup-front-doors-v5.html for three boards — the ward patient board, the emergency-department board and the community-team board. What is NOT recorded anywhere is what mockup-ed-hub-v2.html then is: superseded, a parallel exploration, or the newer intent. NEXT ACTION: an owner or design ruling naming one file as the ED hub spec and marking the other, written into the prototypes README or the decision record. TRAP FOR WHOEVER CHECKS: file dates do not settle this. Five prototypes including both of these were touched on 2026-09-07 in eef64e3aab, but that commit only ADDED 12-16 lines of CSS custom-property declarations so the drawings resolve correctly when opened standalone — no design changed. Currency here comes from the written decisions and the version numbers, never the commit date. The folder's own README is also stale: it describes ten files plus three later ones, and there are 49.",
+    "source": "Ward Verifier session 2026-09-09; mockup currency audited across every branch in the repository — no branch holds a prototype this line lacks, and none holds a newer version of any",
+    "issueUlid": "01M236EHBKF8H1RYBAM33SY7JY"
+  }
+}

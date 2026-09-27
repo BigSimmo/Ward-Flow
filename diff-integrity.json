@@ -1,0 +1,365 @@
+{
+  "maxRemovedFraction": 0.25,
+  "minRemovedCases": 3,
+  "perFileMaxRemovedFraction": 0.5,
+  "perFileMinRemovedCases": 3,
+  "approvedReductions": [
+    {
+      "path": "tests/ward-pull-vocabulary.dom.test.tsx",
+      "before": 16,
+      "after": 15,
+      "reason": "Deliberate retirement of the one case rendering <WardModeWorkspace mode=\"exceptions\" />, a mode MERGE 01 turned into a redirect. Its two halves went different ways and both were checked before the case was dropped. The vocabulary rule itself (\"Bed pull expired\", never \"Bed hold expired\") was carried onto the live DelaysScreen in 43c56d6c5, with a control proving the mutation fails that one test by name; re-asserting it here would be a second copy of a live pin. The other half asserted the action label \"Reconfirm or release bed pull\", and DelaysScreen offers no per-item action at all by design - its own footer reads \"Nothing on this screen decides anything\" - so there is no control whose wording could be wrong, and pinning the absence of one would fight the next redesign. Whether that lost capability should return is an owner question, flagged to Ward Lead rather than settled by choosing an assertion. NOTE: 1 case of 16 is below this file's own perFileMinRemovedCases floor of 3, so check:diff-integrity would never have demanded this entry - it is recorded because a retirement that leaves no trace is indistinguishable from a deletion nobody noticed, which is the failure this array exists to prevent.",
+      "approvedOn": "2026-09-05"
+    },
+    {
+      "path": "tests/ward-capacity-view.dom.test.tsx",
+      "before": 7,
+      "after": 4,
+      "reason": "7 -> 4 as the gate measures it against the merge base; 13 -> 4 across the whole programme, which is the history the rest of this reason tells. NOTE: the previous version of this entry said before=13, and isApproved() matches on EXACT before AND after - so it matched nothing and the gate was passing on the per-file threshold (3 of 7 removed = 0.43, under the 0.5 ceiling) while appearing to be approved. Corrected 2026-09-06 after reading the gate rather than trusting its OK line. AND THE CORRECTION DOES NOT MAKE THIS ENTRY LOAD-BEARING - measured, not assumed: with the entry deliberately mismatched (after=99) and the ceiling untouched, check:diff-integrity prints the same 'OK  7 -> 4' and the same PASS. At 3 removed of 7 the reduction is under the per-file ceiling, so the gate never demands an approval here at all. This entry is a RECORD, exactly as the ward-pull-vocabulary entry above says of itself - a retirement that leaves no trace is indistinguishable from a deletion nobody noticed, which is the failure this array exists to prevent. The numbers are made exact so that it WOULD carry the file if the ceiling were ever crossed, and so no reader is told this was gate-approved when it was merely under threshold. 13 -> 5, across three commits on 2026-09-05 and 2026-09-06. Every retirement was justified by a mutation or by an owner ruling, never by the subject having merely moved. RETIRED, subject moved to ward-screen.tsx at /ward/[unitId] and proved guarded there by mutation: the Confirmed/Expected breakdown replacing the old Potential lump (Confirmed chip reading the Expected field turns 3 ward-screen cases red); the reconciliation identity and its floor (Held chip pointed at capacity.blocked turns 2 red) - note this narrows coverage, since the retired case looped every unit on one board while WardScreen is one ward per route over five rendered units, accepted because no board can check them all at once any more; and a leave bed never folded into Ready plus its fixture assumption (Ready as available+leaveUsable turns 2 red, and the one usable leave bed is on a rendered unit so the mutation was live not inert). RETIRED because the property is now obeyed and guarded on the live capacity screen: the two zero-as-words cases, since capacity-screen.tsx renders a zero ready count as the word and ward-capacity-screen.dom.test.tsx asserts that claim for every row including both directions on the absence. RETIRED ON THE OWNER'S OWN RULING: the six-figure headline that never shows a sum - he was given the recommendation to leave the strip out and took it; the guard protected a structure that no longer exists, and its reasoning is preserved in the file for whoever ever brings a summary strip back. RE-POINTED rather than retired: 'a expected release must never soften Available now' moved to ward-bed-release.dom.test.tsx, and it was a live hole - rendering Ready as available minus expectedToday left 714 tests green across all 41 files that could catch it while two rendered wards genuinely changed from Ready 2 to Ready 1. The five that remain are four live cases against CapacityScreen (Mental Health Act authorisation on the network view, the coordinator's capacity-refresh control, the excluded-beyond-horizon count, and the split fixture assumption) and ONE STILL POINTED AT THE DEAD MODE ON PURPOSE, so the reachability guard keeps reporting this file: a ward's sex mix and specialling headroom as FIGURES on a network view. The sex-mix SIGNAL is built and guarded separately - the screen now says a ward's records are mid-update when its recorded total and occupancy disagree - but whether the underlying figures belong on a network view is a question the owner has not been asked, and building it would answer it on his behalf. Source hashes d86f1549 (ward-screen.tsx), 9e27492d and 83d3160e (capacity-derivations.ts) and 3e379533 (capacity-screen.tsx) before and after the mutations cited. NOTE ON THE PAIR: 13 -> 5 is the CUMULATIVE reduction across three commits, which is what a reviewer needs to see; any single diff the gate computes matches neither end, and all three steps are under the 50% per-file ceiling so it consults no approval at all. This entry is a record, not a gate condition. RETIRED 2026-09-06, the LAST case in the repository rendering a dead WardModeWorkspace mode: \"shows sex mix and specialling capacity per unit row - both directions\". Two things justify it and neither is that the guard was inconvenient. (1) The sex-mix half stopped being an open question: Ward Lead ruled this screen carries the sex-mix SIGNAL and never the FIGURE - RELEASE_BED raises occupancy without being able to say which sex left, so the honest statement is \"this ward's bed records are mid-update\" - and that ruling is BUILT at b98103167 with ward-capacity-sexmix-release.dom.test.tsx guarding the OPPOSITE of what this case demanded, that no sex-mix figure reaches the screen. A case cannot be re-pointed into a screen a ruling has just cleared. (2) Both underlying clinical properties were proved guarded by MUTATION rather than by grep, because a file list containing the word is not evidence: disabling the specialling gate in ward-flow-reducer.ts (if (false && movement.specialling && ...)) turns 5 cases red across 4 files, among them \"refuses the second one-to-one pull, and names specialling rather than 'no bed'\", source hash cf9a0868 identical either side; blinding the sex-mix occupancy in ward-eligibility.ts (sameSexOccupants = 0) turns a long list red across the eligibility and reducer suites, source hash 10a42eda identical either side. The reachability guard itself was then proved still able to fail: reintroducing a dead-mode render turns it red naming exactly that entry, source hash 000ab6ec identical either side. WHAT THIS COSTS, STATED RATHER THAN GLOSSED: a red case forces a question to be answered and a JSON entry does not. Whether a coordinator should see specialling headroom as a NETWORK FIGURE is still an open product question nobody has ruled on, and retiring this removes the thing that kept asking it. It is recorded here, in the test file's retirement note, and in the message that carried it to Ward Lead - three places, because the guard that used to ask is gone. Retired anyway because a permanently red gate is the worse hazard: it stood over a screen no coordinator can open, so it protected nothing, and a gate everybody knows is red is a gate nobody reads when it goes red for a new reason.",
+      "approvedOn": "2026-09-06"
+    },
+    {
+      "path": "tests/sources-mode.dom.test.tsx",
+      "before": 28,
+      "after": 24,
+      "reason": "The four `Sources home` cases rendered SourcesHomeClient, the component this change deletes: /sources joined consolidatedModeHomePaths, so its bare path now forwards to the shared home at /?mode=sources instead of rendering a four-card home of its own. Coverage was RE-POINTED, not dropped, and each of the four was checked to a live pin before it was removed. (1) The hero-copy case asserted the title and subtitle, which came from sharedHomePresentation.sources and are asserted against that same source by tests/shared-home-empty-state.dom.test.tsx and tests/ui-copy.test.ts; the shared home renders them for Sources through the identical lookup. (2) The composer-slot case is obsolete rather than moved: it existed because /sources was registered in standaloneModeHomePaths with a hero placement while rendering the catalogue, which mounts no slot, so the shell portalled its search field at a host that did not exist. This change removes /sources from that list, so no hero slot is claimed at that path and there is nothing left to assert. (3) The four-destination case is pinned better than it was: the same four hrefs are the Sources entry of modeSecondaryNavigationRegistry, walked by tests/route-reachability.test.ts's builderTargets and by the mode-nav contract, so they are now proved reachable from the registry that actually renders them rather than from a card list that duplicated it. (4) The suggested-search case moved into the retargeted /sources describe in tests/consolidated-mode-home-redirect.test.ts, which asserts appModeHomeHref('sources', {query, run}) resolves to /sources/search and that the bare path never renders. The user-visible route into the catalogue that the cards used to provide is now the shared home's ShowAllChip, pinned by a new case in tests/ui-sources.spec.ts. NOTE: 4 of 28 is 14%, well under this file's 50% per-file ceiling and the 25% aggregate, so check:diff-integrity would never have demanded this entry — measured, not assumed: the gate prints `OK  tests/sources-mode.dom.test.tsx  28 -> 24` and PASS with or without it. It is a record, on the convention the two entries above set for themselves: a retirement that leaves no trace is indistinguishable from a deletion nobody noticed, which is the failure this array exists to prevent. The numbers are exact so it would carry the file if the ceiling were ever crossed, and so no reader is told this was gate-approved when it was merely under threshold.",
+      "approvedOn": "2026-09-06"
+    },
+    {
+      "path": "tests/document-cover-route.test.ts",
+      "before": 6,
+      "after": 0,
+      "reason": "Deliberate retirement of /api/documents/[id]/cover test suite under #HDAP8N. The answer source drawer stopped rendering a front-page thumbnail, leaving useDocumentCoverImageId and this route without product consumers. Both the route and client hook were pruned along with this test suite.",
+      "approvedOn": "2026-09-06"
+    },
+    {
+      "path": "tests/use-document-cover.dom.test.tsx",
+      "before": 9,
+      "after": 0,
+      "reason": "Deliberate retirement of useDocumentCoverImageId hook test suite under #HDAP8N. The answer source drawer stopped rendering a front-page thumbnail, leaving useDocumentCoverImageId without product consumers. Hook, route, and DOM tests were retired together.",
+      "approvedOn": "2026-09-06"
+    },
+    {
+      "path": "tests/ui-ward-morning.spec.ts",
+      "before": 2,
+      "after": 1,
+      "reason": "MERGE 02 (owner-approved 2026-09-05) folded the morning bed-state board into CapacityScreen and turned /mockups/ward-flow/morning into a real HTTP redirect to /capacity, removing the rail's 'Morning bed state' entry at the same time. RETARGETED, not dropped: the render-and-rail test now proves the redirect lands on the real Capacity page and that the rail can leave and return to it, in place of a headline and a link label that no longer exist. RETIRED: the print test, because CapacityScreen carries no print media rule and no per-site print testid at all - capacity.module.css has none - so there is no real print output left to assert against; inventing print assertions for a screen that renders none would fabricate coverage rather than describe it. The underlying MorningPage component and its print CSS are not left unguarded: tests/ward-morning-page.dom.test.tsx still renders MorningPage directly (not via a route) and covers its print label/note and per-site figure grids at the component level (named in morning-page.tsx's own doc comment as still passing all 20 cases), and tests/ward-morning-print.test.ts still guards the CSS text. Only the real-Chromium, real-PDF-page-count proof this browser test gave (page.pdf() measured with pdf-parse) is lost, because no route can mount the component that behaviour belongs to any more. NOTE: 1 of 2 is exactly this file's own perFileMaxRemovedFraction ceiling of 0.5, and the file's case count is below its perFileMinRemovedCases floor of 3, so check:diff-integrity would never have demanded this entry on the per-file rule either - it is recorded on the same convention the entries above set for themselves: a retirement that leaves no trace is indistinguishable from a deletion nobody noticed.",
+      "approvedOn": "2026-09-06"
+    },
+    {
+      "path": "tests/ward-ed-legal-clock.dom.test.tsx",
+      "before": 4,
+      "after": 1,
+      "reason": "Task T1 (docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md), on owner answer 1, 17 September 2026, quoted verbatim in docs/ward-flow/owner-answers-2026-09-17.md: 'the timer that starts when a patient arrives is separate to forms. One records time in ED and the other is a forms category.' The four cases this file carried all pinned isCommunityFormed/legalClockReference, ed-screen.tsx dating a form clock from formedAt when earlier than openedAt and from openedAt (the department's own arrival clock) otherwise, published as data-community-formed and data-minutes-legal-clock. Both functions and both attributes are deleted by this task, not repaired, because the merge itself is the defect the owner's note names. Nothing here could be corrected forward: the render this file asserted about no longer exists. REPLACED, not silently dropped: the surviving case proves the negative side of the same separation, across every department's board, that neither deleted attribute has quietly come back. The positive side - that the form-expiry line reads only legalForm.dueAt and the access-target line reads only openedAt, each blind to the other's input - is proved instead in the new tests/ward-ed-form-expiry.dom.test.tsx, which this task also adds, plus the re-pointed assertions in tests/ward-legal-clock-needs-written-time.dom.test.tsx (same count, 6 -> 6, behaviour re-pointed at the same property) and tests/ui-ward-roles.spec.ts:429-508 (edited, not run, per this task's own constraints).",
+      "approvedOn": "2026-09-17"
+    },
+    {
+      "path": "tests/ward-morning-page.dom.test.tsx",
+      "before": 20,
+      "after": 0,
+      "reason": "Item 41 (owner answer 41, 17 September 2026): the owner approved retiring the Morning screen outright, not merely redirecting it as MERGE 02 (owner-approved 2026-09-05) had done. Commit f530bcd4e4 deletes src/app/mockups/ward-flow/morning/page.tsx, all of src/components/ward-management/morning/ (morning-page.tsx, morning-tour.tsx and both .module.css files) and this suite's four sibling test files together, as one deliberately-red commit whose coupled test/nav edits follow in the next commit on this branch. This file's 20 cases rendered MorningPage directly at the component level - print label/note assertions and per-site figure grids - which is exactly the coverage the 2026-09-06 ui-ward-morning.spec.ts diff-integrity entry above named as 'still passing all 20 cases' and relied on as the reason a browser-level retirement was safe. That component no longer exists on disk at all, so there is nothing left for any test to render, and no replacement was asked for: the owner's ruling is that the screen is gone, not moved. Recorded together with the other three morning-family deletions and the ward-override-surfaces.test.ts reduction below because check:diff-integrity's aggregate rule excuses a drop only when every shrunk file in the diff is individually approved here.",
+      "approvedOn": "2026-09-17"
+    },
+    {
+      "path": "tests/ward-morning-tour.dom.test.tsx",
+      "before": 7,
+      "after": 0,
+      "reason": "Item 41 (owner answer 41, 17 September 2026), same commit and same ruling as the tests/ward-morning-page.dom.test.tsx entry above: the guided tour of the Morning screen is retired with the screen it toured, not repointed. This file's 7 cases rendered MorningTour (src/components/ward-management/morning/morning-tour.tsx) directly; that module is deleted in f530bcd4e4 along with morning-tour.module.css, and no route or surface mounts a replacement tour. The tour was already PAUSED by owner instruction 2026-08-30 and reachable from nowhere under src/ before this deletion (see the now-removed 'paused morning-tour entry stays unreachable' guard in tests/ward-override-surfaces.test.ts), so nothing about this retirement narrows live coverage of a screen a coordinator could still open.",
+      "approvedOn": "2026-09-17"
+    },
+    {
+      "path": "tests/ward-morning-tour-paused.dom.test.tsx",
+      "before": 2,
+      "after": 0,
+      "reason": "Item 41 (owner answer 41, 17 September 2026), same commit and same ruling as the two entries above: these 2 cases asserted the tour's own paused-by-default behaviour (morning-tour.tsx's PAUSED switch, owner instruction 2026-08-30). The component under test is deleted in f530bcd4e4, so the pause behaviour it pinned no longer exists to be paused or unpaused. Nothing replaces it because nothing renders MorningTour any more.",
+      "approvedOn": "2026-09-17"
+    },
+    {
+      "path": "tests/ward-morning-print.test.ts",
+      "before": 8,
+      "after": 0,
+      "reason": "Item 41 (owner answer 41, 17 September 2026), same commit and same ruling as the three entries above: these 8 cases read morning.module.css's own @media print block directly, as CSS source text (the same pattern tests/ward-handover-print.test.ts and tests/ward-referrals-print.test.ts use for their own stylesheets), guarding the print output tests/ui-ward-morning.spec.ts's 2026-09-06 diff-integrity entry above named as still covered ('tests/ward-morning-print.test.ts still guards the CSS text') after that file's own browser-level print case was retired. morning.module.css is deleted in f530bcd4e4 along with the component it styles, so there is no stylesheet left on disk to read and no print output left to assert against - the same reasoning that entry already gave for retiring the browser-level print case, now completing for the component-level one. The coupled tests/ui-ward-capacity-morning-moved.spec.ts (renamed from ui-ward-morning.spec.ts) drops its WARD-COVERAGE-POINTER to this file in the same change, so no comment is left claiming coverage that no longer exists.",
+      "approvedOn": "2026-09-17"
+    },
+    {
+      "path": "tests/ward-override-surfaces.test.ts",
+      "before": 19,
+      "after": 15,
+      "reason": "Item 41 (owner answer 41, 17 September 2026): four cases in the trailing describe block 'ward override-surface guard: the paused morning-tour entry stays unreachable from src/' are removed because the file it read no longer exists to be read. That block existed to catch morning-tour.tsx becoming reachable again after being PAUSED by owner instruction 2026-08-30 - it derived MorningTour's exported name from morning-tour.tsx's own AST and asserted zero src/ importers of it, by design a liveness check over a real file on disk. f530bcd4e4 deletes that file outright, so the surface it watched for revival is gone rather than merely still paused, and a guard reading a path that no longer exists would fail by construction, not by finding anything. The morning-tour.tsx entries in ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON and DISPATCH_CALLS_WITHOUT_A_LITERAL_TYPE are removed in the same change for the identical reason: each named a construction site or dispatch call inside a file that is no longer on disk for the AST scan to find. NOTE: 4 of 19 is 21%, under this file's own 50% per-file ceiling, so check:diff-integrity would never have demanded this entry on the per-file rule - it is recorded on the convention the entries above already set for themselves, and because it is one of the files the aggregate rule below requires to be individually approved.",
+      "approvedOn": "2026-09-17"
+    },
+    {
+      "path": "tests/ward-cancel-transport-no-bed-held.test.ts",
+      "before": 6,
+      "after": 6,
+      "reason": "T1 (docs/ward-flow/plans/2026-09-17-build-plan-referrals-transport.md), owner answer 30, 2026-09-17: 'Cancelling transport while a bed is held: no automatic rebooking; a person books again.' No case was removed — the file still carries 6 — but the 'control' test (previously named 'cancelling at pulled (no release) still creates the replacement exactly as before') pinned the OLD bed-held behaviour by name: CANCEL_TRANSPORT installing a fresh `-replacement-N` job and both notices containing the word 'replacement'. That behaviour is exactly what owner answer 30 removes, so the test is rewritten deliberately (not silently) to assert the new one: transport becomes undefined, the new STAGE_TRANSITION_BLOCKERS.transportCancelled blocker is set, and neither notice mentions a replacement. Recorded per this file's own task-rule 'record every rewritten test in diff-integrity.json', matching the convention the entries above already set for themselves: a rewrite that leaves no trace is indistinguishable from a test that quietly stopped meaning what it says. before=after so check:diff-integrity's count-based gate would never have demanded this entry on its own.",
+      "approvedOn": "2026-09-17"
+    },
+    {
+      "path": "tests/ward-flow-reducer.test.ts",
+      "before": 68,
+      "after": 68,
+      "reason": "T1 (docs/ward-flow/plans/2026-09-17-build-plan-referrals-transport.md), owner answer 30, 2026-09-17. No case removed. 'cancels a transport job without closing the movement' pinned the OLD bed-held CANCEL_TRANSPORT behaviour: it accepted whatever id the reducer wrote for `updated.transport` (which used to be a fresh `-replacement-1` job) and then dispatched TRANSPORT_ACCEPTED directly against it, expecting that to succeed outright with no booking step in between. Owner answer 30 removes the replacement job, so `updated.transport` is now undefined and a bare TRANSPORT_ACCEPTED correctly refuses (`cannot accept transport at the movement's current stage`, the exact rejection this task's own test run first surfaced). Rewritten deliberately to assert the new state (transport undefined, the new STAGE_TRANSITION_BLOCKERS.transportCancelled blocker) and to insert the BOOK_TRANSPORT step item 30 now requires before TRANSPORT_ACCEPTED can succeed again, proving the same widened-to-handover_ready booking path tests/ward-transport-cancel-no-rebook.test.ts covers, from the seeded fixture rather than a hand-built one.",
+      "approvedOn": "2026-09-17"
+    },
+    {
+      "path": "tests/ward-audit-engine-fixes-2026-09-16.test.ts",
+      "before": 16,
+      "after": 16,
+      "reason": "T1 (docs/ward-flow/plans/2026-09-17-build-plan-referrals-transport.md), owner answer 30, 2026-09-17. No case removed. 'Fix 7: CANCEL_TRANSPORT copies bookedBy onto the replacement job' tested a 2026-09-16 fix whose entire premise — a replacement job existing for `bookedBy` to be copied onto — owner answer 30 removes outright (no branch of CANCEL_TRANSPORT installs a replacement any more). The identity check Fix 7 actually protected (a ward may cancel a job it booked, checked against `transport.bookedBy`) is untouched by owner answer 30 and stays covered by the first cancel in the rewritten test; the second cancel, which used to succeed against the replacement job, now correctly refuses with 'has no transport job to cancel', matching the no-bed-held branch's own long-standing 'refuses a second cancel' case in tests/ward-cancel-transport-no-bed-held.test.ts. Describe block title and 'Fix 7' numbering kept unchanged, matching this file's own header rule that its describe blocks number the 2026-09-16 audit brief exactly; a SUPERSEDED comment above the rewritten case records why its assertions changed.",
+      "approvedOn": "2026-09-17"
+    },
+    {
+      "path": "tests/ward-route-component-binding.test.ts",
+      "before": 41,
+      "after": 40,
+      "reason": "Item 41 (owner answer 41, 17 September 2026), found on the fix line after the z13 fold (ceb663ff72): PINNED carried a `morning: \"redirect:/mockups/ward-flow/capacity\"` row from the 2026-09-05 MERGE 02 fold, when /mockups/ward-flow/morning was still on disk as a redirect()-only stub. Item 41 deleted that route's page.tsx outright rather than leaving it as a redirect, so routeFiles()/componentRenderedBy() no longer find any morning entry in `found` at all - the row had become a pin watching nothing, which is exactly the second half of this file's own 'has a pinned row for every route on disk, and no row for a route that is gone' assertion. The it.each-generated case 'route morning renders redirect:/mockups/ward-flow/capacity' is not repaired or re-pointed, because there is no route left for any assertion to be true or false about; it is dropped, and the PINNED row it read is removed with it. Nothing about this narrows coverage of a live screen: /mockups/ward-flow/morning does not exist for a coordinator to reach, so no binding is left unguarded. NOTE: 1 of 41 is 2%, far under this file's own perFileMaxRemovedFraction ceiling of 0.5 and perFileMinRemovedCases floor of 3, so check:diff-integrity would never have demanded this entry - it is recorded on the convention the entries above already set for themselves: a retirement that leaves no trace is indistinguishable from a deletion nobody noticed.",
+      "approvedOn": "2026-09-17"
+    },
+    {
+      "path": "tests/playwright-pr-shards.test.ts",
+      "before": 9,
+      "after": 0,
+      "reason": "PsychSift retirement batch 1 (docs/ward-flow/plans/2026-09-25-psychsift-retirement.md), owner instruction 25 Sep 2026 to remove the code left over from PsychSift. This PsychSift test only exercised a PsychSift design-study page or component retired in the same batch; nothing Ward Flow keeps loads, names or visits it. Recover from git history if PsychSift is ever needed again.",
+      "approvedOn": "2026-09-25"
+    },
+    {
+      "path": "tests/ui-accessible-table-mockup.spec.ts",
+      "before": 1,
+      "after": 0,
+      "reason": "PsychSift retirement batch 1 (docs/ward-flow/plans/2026-09-25-psychsift-retirement.md), owner instruction 25 Sep 2026 to remove the code left over from PsychSift. This PsychSift test only exercised a PsychSift design-study page or component retired in the same batch; nothing Ward Flow keeps loads, names or visits it. Recover from git history if PsychSift is ever needed again.",
+      "approvedOn": "2026-09-25"
+    },
+    {
+      "path": "tests/ui-document-image-status-mockup.spec.ts",
+      "before": 1,
+      "after": 0,
+      "reason": "PsychSift retirement batch 1 (docs/ward-flow/plans/2026-09-25-psychsift-retirement.md), owner instruction 25 Sep 2026 to remove the code left over from PsychSift. This PsychSift test only exercised a PsychSift design-study page or component retired in the same batch; nothing Ward Flow keeps loads, names or visits it. Recover from git history if PsychSift is ever needed again.",
+      "approvedOn": "2026-09-25"
+    },
+    {
+      "path": "tests/ui-v2-answer-safety.dom.test.tsx",
+      "before": 73,
+      "after": 0,
+      "reason": "PsychSift retirement batch 1 (docs/ward-flow/plans/2026-09-25-psychsift-retirement.md), owner instruction 25 Sep 2026 to remove the code left over from PsychSift. This PsychSift test only exercised a PsychSift design-study page or component retired in the same batch; nothing Ward Flow keeps loads, names or visits it. Recover from git history if PsychSift is ever needed again.",
+      "approvedOn": "2026-09-25"
+    },
+    {
+      "path": "tests/ci-audit-contracts.test.ts",
+      "before": 24,
+      "after": 0,
+      "reason": "PsychSift retirement batch 2 (docs/ward-flow/plans/2026-09-25-psychsift-retirement.md), owner instruction 25 Sep 2026 that Railway should not be connected to this local project. This PsychSift test only checked the Railway deploy settings or the Railway webhook retired in the same batch; nothing Ward Flow keeps loads, names or visits it. Recover from git history if PsychSift is ever needed again.",
+      "approvedOn": "2026-09-25"
+    },
+    {
+      "path": "tests/railway-config.test.ts",
+      "before": 9,
+      "after": 0,
+      "reason": "PsychSift retirement batch 2 (docs/ward-flow/plans/2026-09-25-psychsift-retirement.md), owner instruction 25 Sep 2026 that Railway should not be connected to this local project. This PsychSift test only checked the Railway deploy settings or the Railway webhook retired in the same batch; nothing Ward Flow keeps loads, names or visits it. Recover from git history if PsychSift is ever needed again.",
+      "approvedOn": "2026-09-25"
+    },
+    {
+      "path": "tests/webhooks-railway-route.test.ts",
+      "before": 4,
+      "after": 0,
+      "reason": "PsychSift retirement batch 2 (docs/ward-flow/plans/2026-09-25-psychsift-retirement.md), owner instruction 25 Sep 2026 that Railway should not be connected to this local project. This PsychSift test only checked the Railway deploy settings or the Railway webhook retired in the same batch; nothing Ward Flow keeps loads, names or visits it. Recover from git history if PsychSift is ever needed again.",
+      "approvedOn": "2026-09-25"
+    },
+    {
+      "path": "tests/ward-morning-rollup.test.ts",
+      "before": 23,
+      "after": 11,
+      "reason": "1b1c5bb2ba (22 Sept) replaced this file with reducer tests for CONFIRM_MORNING_ROLLUP and SEND_WARD_BUZZ. The ward-morning-rollup.ts derivation tests it deleted were restored unchanged on 2026-09-25 as tests/ward-morning-rollup-rules.test.ts, so no coverage is lost; this entry records the move.",
+      "approvedOn": "2026-09-25"
+    },
+    {
+      "path": "tests/ui-ward-forced-colors.spec.ts",
+      "before": 8,
+      "after": 7,
+      "reason": "Josh chose \"Retire\" (decision card, project chat, 25 Sept 2026 16:39 UTC) for the check \"does repointing --ward-border under forced colours change what is painted?\". Since 5 Sept a shared token layer sets --ward-border and --ward-divider to the same value on every Ward Flow screen (measured 26 Sept on 662eca1656: both rgba(22,30,40,0.11) normally and both CanvasText under forced colours on search, handover and discharges), so the check could only report \"identical\" and measured nothing; since 22 Sept the search screen also paints no visible --ward-divider border for it to find. Archived word for word with the reason and measurement in docs/ward-flow/archive/retired-tests/2026-09-26-forced-colours-ward-border-probe.md.",
+      "approvedOn": "2026-09-26"
+    },
+    {
+      "path": "tests/document-flow-routes.test.ts",
+      "before": 4,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted with src/lib/document-flow-routes.ts (dead DOCUMENT_SEARCH_ROUTE/DOCUMENT_READER_ROUTE href builders for the no-longer-existing document search modes); its only real importers were app-modes.ts (retired in the same batch) and this test.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/search-navigation-context.test.ts",
+      "before": 7,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted with src/lib/search-navigation-context.ts, part of the dead app-modes/tools-catalog/search chain; its only real importer chain was app-modes.ts/document-flow-routes.ts, both retired in the same batch.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/search-scope.test.ts",
+      "before": 15,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted with src/lib/search-scope.ts, part of the dead app-modes/tools-catalog/search chain; its only real importer was search-navigation-context.ts, retired in the same batch.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/owner-scope.test.ts",
+      "before": 8,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted with src/lib/owner-scope.ts. owner-scope.ts was the only real caller of env.ts's isDemoMode()/isLocalNoAuthMode() anywhere in src/ (confirmed by rg), so its retirement is what made src/lib/env.ts itself (S-D2) safe to delete in the same batch.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/catalog-search.test.ts",
+      "before": 17,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted with src/lib/catalog-search.ts (ranking/normalising helpers for the dead Tools catalogue search); its only real importer was tools-catalog.ts, retired in the same batch.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/catalog-search-drug-name-regression.test.ts",
+      "before": 2,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted alongside src/lib/catalog-search.ts, which it exclusively covers a drug-name regression for.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/result-filter-url.test.ts",
+      "before": 8,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted with src/lib/result-filter-url.ts, whose only real importer was this, its own dedicated test; orphaned PsychSift search-result code, not reached by any surviving route.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/result-sort.test.ts",
+      "before": 3,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted with src/lib/result-sort.ts, whose only real importer was this, its own dedicated test; orphaned PsychSift search-result code, not reached by any surviving route.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/copy-button.dom.test.tsx",
+      "before": 4,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted with src/components/ui/copy-button.tsx, whose only real importer was this test; copy-button.tsx was also the sole real importer of the dead src/lib/ui-copy.ts copyButton export, retired in the same batch.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/ward-flow-sandbox.test.ts",
+      "before": 4,
+      "after": 2,
+      "reason": "Two separate reductions since the merge base, both intentional. 4 -> 3 predates this batch (an earlier commit already dropped \"the developer-hub panel says what it is\" case, leaving 3 cases in the working tree before this batch touched the file). 3 -> 2 is this batch: PsychSift leftover retired (Josh, full permission 26 Sept 2026) removed the \"has no clinical tools-catalogue entry\" case and its toolCatalogRecords import, because src/lib/tools-catalog.ts — the only thing that case exercised — was retired in the same batch (S-B1). The two surviving cases (developer-gated prefix list membership; old ward-management route directory is gone) are untouched.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/design-token-contract.test.ts",
+      "before": 35,
+      "after": 33,
+      "reason": "Two separate reductions since the merge base, both intentional. 35 -> 34 predates this batch (an earlier, 26 Sept commit already dropped the factsheet categoryTheme case, per this file's own \"went with PsychSift's factsheets\" comment). 34 -> 33 is this batch: PsychSift leftover retired (Josh, full permission 26 Sept 2026) removed \"declares no semantic member on the CategoryAccent union\", which read src/lib/category-identity.ts by path — that file was retired in the same batch (S-B1), zero real importers of any export (confirmed by rg). The surviving case in this describe block ([data-category-accent] rules in globals.css) does not reference category-identity.ts and is untouched.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/source-badges-off-vocab.dom.test.tsx",
+      "before": 4,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted with src/components/primitive-recipes/clinical.tsx (SourceDesignationBadge/SourceStatusBadge/SourceProvenance/StatusDotMarker and the sourceCard/sourceCapsule* recipes), whose only real importer was this test; ui-primitives.tsx's `export * from \"./primitive-recipes/clinical\"` line was dropped in the same commit.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/source-metadata.test.ts",
+      "before": 12,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted with src/lib/source-metadata.ts (clinical source designation/tier classification), whose only real importers were clinical.tsx and source-authority-registry.ts, both retired in the same batch.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/source-metadata-browser-safety.test.ts",
+      "before": 5,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted with src/lib/source-metadata.ts, alongside its sibling tests/source-metadata.test.ts.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/env-demo-mode.test.ts",
+      "before": 6,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted with src/lib/env.ts. env.ts's isDemoMode()/isLocalNoAuthMode() had zero real callers left in src/ once owner-scope.ts (S-B1) was retired in the same batch; src/app/mockups/layout.tsx already carries its own inline mockupsEnabled() and says by its own comment that env.ts's full server contract \"belonged to PsychSift and went with it\".",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/env-mockups-gate.test.ts",
+      "before": 4,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted with src/lib/env.ts, for the same reason as tests/env-demo-mode.test.ts.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/env-sentry.test.ts",
+      "before": 5,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted with src/lib/env.ts; requireSentryEnv() had zero application callers, only this dedicated unit test.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/env-query-hash-secret.test.ts",
+      "before": 2,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted with src/lib/env.ts; requireQueryHashSecret() had zero application callers, only this dedicated unit test.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/env-answer-feedback-warning.test.ts",
+      "before": 3,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted with src/lib/env.ts; warnAnswerFeedbackDisabled() had zero application callers, only this dedicated unit test.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/supabase-project.test.ts",
+      "before": 9,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted with src/lib/supabase/project.ts (checkSupabaseProjectConfig/assertExpectedSupabaseProjectConfig), whose only real application caller was src/lib/env.ts, retired in the same batch.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/upload-ingress-limits.test.ts",
+      "before": 1,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted with src/lib/upload-limits.ts (MAX_UPLOAD_MB_CEILING), whose only real importer was env.ts's dead MAX_UPLOAD_MB field, retired in the same batch; next.config.ts's proxyClientMaxBodySize is a literal \"151mb\" and was left unchanged per instruction.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/tsx-server-only-runner.test.ts",
+      "before": 4,
+      "after": 3,
+      "reason": "This reduction since the merge base predates this batch and is recorded here only because this batch's edit touches the same file: an earlier, 25 Sept commit already removed the \"boots the worker image from the server-only-safe esbuild bundle\" case (per this file's own comment, worker/**/Dockerfile.worker/build-worker.mjs went with PsychSift that day), leaving 3 cases before this batch started. This batch's own edit does not change the case count: PsychSift leftover retired (Josh, full permission 26 Sept 2026) dropped only the env.ts `import \"server-only\"` assertion inside the surviving \"keeps the Next server-only marker\" case (src/lib/env.ts was the only file in src/ with that import, and it was retired in the same batch), keeping that case's other assertion on scripts/register-server-only.mjs intact.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/repo-hygiene.test.ts",
+      "before": 57,
+      "after": 0,
+      "reason": "PsychSift leftover retired (Josh, full permission 26 Sept 2026). Whole file deleted with scripts/check-env-parity.mjs and the check:env-parity npm script; this file is entirely env-parity cases (imports only from check-env-parity.mjs) and the script is pinned to the live Railway project and PsychSift's GitHub secrets, and reconciles the env.ts schema retired in the same batch (S-D2).",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/safe-bold.test.ts",
+      "before": 3,
+      "after": 0,
+      "reason": "Owner-approved PsychSift retirement: exact fourteen-file list approved in the acting Codex chat on 27 September 2026. Dedicated tests retire with their unused implementation; no remaining Ward runtime or test consumer was found. Backup: backup/20260927-psychsift-orphans.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/bounded-ttl-cache.test.ts",
+      "before": 3,
+      "after": 0,
+      "reason": "Owner-approved PsychSift retirement: exact fourteen-file list approved in the acting Codex chat on 27 September 2026. Dedicated tests retire with their unused implementation; no remaining Ward runtime or test consumer was found. Backup: backup/20260927-psychsift-orphans.",
+      "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/restore-focus-unless-moved.dom.test.tsx",
+      "before": 3,
+      "after": 0,
+      "reason": "Owner-approved PsychSift retirement: exact fourteen-file list approved in the acting Codex chat on 27 September 2026. Dedicated tests retire with their unused implementation; no remaining Ward runtime or test consumer was found. Backup: backup/20260927-psychsift-orphans.",
+      "approvedOn": "2026-09-27"
+    }
+  ]
+}

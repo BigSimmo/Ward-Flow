@@ -1,0 +1,2505 @@
+<title>Ward Flow Digest</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+/>
+
+<style>
+  /* ─────────────────────────────────────────────────────────────────────
+     WARD FLOW DIGEST.
+
+     A condensed, machine-readable brief on two large Ward Flow artifacts:
+     the Command reference build and the third-edition design system.
+
+     It is built from the third edition's own tokens and three faces, so the
+     brief looks like the thing it describes. It carries no script at all:
+     everything a reader needs is in the markup, so a model reads it whole
+     and nothing is hidden behind a control. It is therefore NOT a mockup
+     built to the standard, and section 10's definition of done does not
+     apply to it. The one rule it does keep is the standard's own: every
+     figure below is either taken from the two artifacts or from the
+     repository, and nothing is invented.
+     ───────────────────────────────────────────────────────────────────── */
+
+  :root {
+    color-scheme: light;
+
+    --ground-hi: #ecf0f4;
+    --ground: #e6eaef;
+    --ground-2: #e1e6ec;
+
+    --surface: #fdfdfe;
+    --surface-2: #f4f7fa;
+    --sunk: #eef2f6;
+
+    --ink: #161a20;
+    --ink-soft: #414953;
+    --muted: #5f6873;
+
+    --line: rgba(22, 30, 40, 0.11);
+    --line-strong: rgba(22, 30, 40, 0.26);
+
+    --accent: #2f4c66;
+    --accent-ink: #27405a;
+    --accent-soft: #dfe7f0;
+    --on-accent: #ffffff;
+    --stripe: #2f4c66;
+
+    --gilt: #7d612a;
+    --gilt-soft: #f1ebdf;
+
+    --good: #227550;
+    --good-soft: #e2f0e8;
+    --warn: #825d10;
+    --warn-soft: #f6eeda;
+
+    --danger: #b03b2e;
+    --danger-soft: #f8e6e2;
+    --danger-ink: #973121;
+
+    --svc-east: #2f4c66;
+    --svc-north: #685a94;
+    --svc-south: #356a70;
+    --svc-wachs: #8c5a3c;
+
+    --lift: 0 1px 1px rgba(30, 48, 66, 0.05), 0 14px 30px -22px rgba(30, 48, 66, 0.45);
+    --hl: rgba(255, 255, 255, 0.9);
+
+    --r1: 10px;
+    --r1i: 9px;
+    --r2: 6px;
+
+    --t-0: 12px;
+    --t-1: 13px;
+    --t-2: 13.5px;
+    --t-3: 14px;
+    --t-4: 16px;
+    --t-5: 20px;
+    --t-6: 26px;
+
+    --display: "Geist", "Segoe UI", system-ui, sans-serif;
+    --body: "Geist", "Segoe UI", system-ui, sans-serif;
+    --mono: "Geist Mono", ui-monospace, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --ground-hi: #14181d;
+      --ground: #0f1216;
+      --ground-2: #0c0f12;
+      --surface: #171b21;
+      --surface-2: #1b2026;
+      --sunk: #13171c;
+      --ink: #e8ecf1;
+      --ink-soft: #b2bac5;
+      --muted: #8a929d;
+      --line: rgba(255, 255, 255, 0.09);
+      --line-strong: rgba(255, 255, 255, 0.21);
+      --accent: #a7bcd2;
+      --accent-ink: #bfd0e2;
+      --accent-soft: #1f2a36;
+      --on-accent: #0f1216;
+      --stripe: #3a5a78;
+      --gilt: #d3b77e;
+      --gilt-soft: #2a251b;
+      --good: #6fd39b;
+      --good-soft: #15291f;
+      --warn: #e3bc5e;
+      --warn-soft: #2b2415;
+      --danger: #ff8b76;
+      --danger-soft: #33201b;
+      --danger-ink: #ffa08e;
+      --svc-east: #a7bcd2;
+      --svc-north: #b1a2d6;
+      --svc-south: #7fb2b8;
+      --svc-wachs: #d89a78;
+      --lift: 0 1px 1px rgba(0, 0, 0, 0.4), 0 16px 34px -22px rgba(0, 0, 0, 0.95);
+      --hl: rgba(255, 255, 255, 0.06);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ground-hi: #14181d;
+    --ground: #0f1216;
+    --ground-2: #0c0f12;
+    --surface: #171b21;
+    --surface-2: #1b2026;
+    --sunk: #13171c;
+    --ink: #e8ecf1;
+    --ink-soft: #b2bac5;
+    --muted: #8a929d;
+    --line: rgba(255, 255, 255, 0.09);
+    --line-strong: rgba(255, 255, 255, 0.21);
+    --accent: #a7bcd2;
+    --accent-ink: #bfd0e2;
+    --accent-soft: #1f2a36;
+    --on-accent: #0f1216;
+    --stripe: #3a5a78;
+    --gilt: #d3b77e;
+    --gilt-soft: #2a251b;
+    --good: #6fd39b;
+    --good-soft: #15291f;
+    --warn: #e3bc5e;
+    --warn-soft: #2b2415;
+    --danger: #ff8b76;
+    --danger-soft: #33201b;
+    --danger-ink: #ffa08e;
+    --svc-east: #a7bcd2;
+    --svc-north: #b1a2d6;
+    --svc-south: #7fb2b8;
+    --svc-wachs: #d89a78;
+    --lift: 0 1px 1px rgba(0, 0, 0, 0.4), 0 16px 34px -22px rgba(0, 0, 0, 0.95);
+    --hl: rgba(255, 255, 255, 0.06);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+  html {
+    background: var(--ground);
+  }
+  body {
+    margin: 0;
+    background:
+      linear-gradient(180deg, var(--ground-hi) 0%, var(--ground) 55%, var(--ground-2) 100%) fixed,
+      var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: var(--t-3);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--stripe);
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  .wrap {
+    max-width: 62rem;
+    margin: 0 auto;
+    padding: 26px 20px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  p,
+  ul,
+  ol,
+  dl,
+  dd,
+  dt,
+  figure {
+    margin: 0;
+  }
+  ul,
+  ol {
+    padding-left: 1.15rem;
+  }
+  li + li {
+    margin-top: 5px;
+  }
+
+  .mast {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 6px 2px 4px;
+  }
+  .mast h1 {
+    font-family: var(--display);
+    font-size: var(--t-6);
+    font-weight: 600;
+    letter-spacing: -0.014em;
+    color: var(--accent-ink);
+    text-wrap: balance;
+  }
+  .mast .sub {
+    font-size: var(--t-4);
+    color: var(--ink-soft);
+    max-width: 62ch;
+    text-wrap: pretty;
+  }
+  .marks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: var(--t-0);
+    color: var(--ink-soft);
+    background: var(--surface);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding-right: calc(10px - 0.08em);
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-bottom-color: var(--line-strong);
+    border-radius: var(--r1);
+    box-shadow: var(--lift);
+  }
+  .ph {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 11px 18px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface-2);
+    border-radius: var(--r1i) var(--r1i) 0 0;
+  }
+  .ph h2 {
+    font-family: var(--display);
+    font-size: var(--t-4);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--accent-ink);
+  }
+  .ph .num {
+    font-family: var(--mono);
+    font-size: var(--t-0);
+    font-weight: 600;
+    color: var(--gilt);
+  }
+  .ph .lede {
+    margin-left: auto;
+    font-size: var(--t-1);
+    color: var(--muted);
+    max-width: 40ch;
+    text-wrap: pretty;
+  }
+  .pb {
+    padding: 16px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .pb p,
+  .pb li {
+    max-width: 74ch;
+    text-wrap: pretty;
+  }
+
+  h3 {
+    font-family: var(--body);
+    font-size: var(--t-3);
+    font-weight: 600;
+    letter-spacing: -0.008em;
+    color: var(--ink);
+    margin-top: 4px;
+  }
+  .eyebrow {
+    font-size: var(--t-0);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-right: -0.12em;
+  }
+
+  code,
+  .mono {
+    font-family: var(--mono);
+    font-size: 0.92em;
+  }
+  code {
+    background: var(--sunk);
+    padding: 1px 5px;
+    border-radius: 4px;
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  pre {
+    margin: 0;
+    background: var(--sunk);
+    border: 1px solid var(--line);
+    border-radius: var(--r2);
+    padding: 12px 14px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: var(--t-1);
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+  pre code {
+    background: none;
+    box-shadow: none;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  .tableWrap {
+    min-width: 0;
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--r2);
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--t-1);
+  }
+  th,
+  td {
+    text-align: left;
+    vertical-align: top;
+    padding: 7px 11px;
+    border-bottom: 1px solid var(--line);
+  }
+  thead th {
+    background: var(--surface-2);
+    font-size: var(--t-0);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+  td.num,
+  th.num {
+    font-family: var(--mono);
+    text-align: right;
+    white-space: nowrap;
+  }
+  td.k {
+    font-family: var(--mono);
+    white-space: nowrap;
+    color: var(--ink);
+  }
+
+  .swatch {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    border-radius: 3px;
+    border: 1px solid var(--line-strong);
+    vertical-align: -1px;
+    margin-right: 6px;
+  }
+
+  .rule {
+    display: grid;
+    grid-template-columns: 1.6rem minmax(0, 1fr);
+    gap: 4px 10px;
+    padding: 11px 0;
+    border-top: 1px solid var(--line);
+  }
+  .rule:first-of-type {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .rule .n {
+    font-family: var(--mono);
+    font-size: var(--t-2);
+    font-weight: 600;
+    color: var(--gilt);
+  }
+  .rule h3 {
+    margin: 0;
+  }
+  .rule p {
+    grid-column: 2;
+    font-size: var(--t-2);
+    color: var(--ink-soft);
+  }
+
+  .find {
+    border: 1px solid var(--line);
+    border-radius: var(--r2);
+    padding: 12px 14px;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .find .top {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    flex-wrap: wrap;
+  }
+  .find .top b {
+    font-size: var(--t-3);
+    font-weight: 600;
+    letter-spacing: -0.008em;
+  }
+  .find .sev {
+    font-size: var(--t-0);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-right: -0.08em;
+    white-space: nowrap;
+  }
+  .find[data-sev="high"] .sev {
+    color: var(--danger);
+  }
+  .find[data-sev="med"] .sev {
+    color: var(--warn);
+  }
+  .find[data-sev="low"] .sev {
+    color: var(--accent-ink);
+  }
+  .find[data-sev="good"] .sev {
+    color: var(--good);
+  }
+  .find .id {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: var(--t-0);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .find p {
+    font-size: var(--t-2);
+    color: var(--ink-soft);
+  }
+  .find .fix {
+    font-size: var(--t-2);
+    color: var(--ink);
+  }
+  .find .fix b {
+    font-weight: 600;
+  }
+
+  .facts {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 5px 16px;
+    font-size: var(--t-2);
+  }
+  .facts dt {
+    font-size: var(--t-0);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-top: 2px;
+    margin-right: -0.12em;
+  }
+  .facts dd {
+    color: var(--ink);
+  }
+
+  .toc {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: 3px 16px;
+    font-size: var(--t-2);
+  }
+  .toc a {
+    color: var(--accent-ink);
+    text-decoration: none;
+    display: flex;
+    gap: 8px;
+    padding: 3px 0;
+    border-radius: 4px;
+  }
+  .toc a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .toc a .n {
+    font-family: var(--mono);
+    color: var(--muted);
+    min-width: 1.5rem;
+  }
+
+  a {
+    color: var(--accent-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  .foot {
+    font-size: var(--t-1);
+    color: var(--muted);
+    padding: 4px 2px 0;
+    max-width: 74ch;
+    text-wrap: pretty;
+  }
+
+  @media print {
+    :root,
+    :root[data-theme="dark"],
+    :root:not([data-theme="light"]) {
+      color-scheme: light;
+      --ground-hi: #ecf0f4;
+      --ground: #e6eaef;
+      --ground-2: #e1e6ec;
+      --surface: #fdfdfe;
+      --surface-2: #f4f7fa;
+      --sunk: #eef2f6;
+      --ink: #161a20;
+      --ink-soft: #414953;
+      --muted: #5f6873;
+      --line: rgba(22, 30, 40, 0.11);
+      --line-strong: rgba(22, 30, 40, 0.26);
+      --accent-ink: #27405a;
+    }
+    .panel {
+      box-shadow: none;
+      border-radius: 0;
+      break-inside: avoid;
+    }
+    body::before {
+      display: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+</style>
+
+<div class="wrap">
+  <div class="mast">
+    <h1>Ward Flow Digest</h1>
+    <p class="sub">
+      A working brief on the two Ward Flow artifacts: the Command reference build and the third-edition design system.
+      It carries the review, the rules, the tokens, the domain model and the placement gates in one file small enough to
+      read end to end. Written to be handed to Claude at the start of a session instead of the two artifacts themselves.
+    </p>
+    <div class="marks">
+      <span class="chip">Synthetic prototype</span>
+      <span class="chip">Third edition v3.0</span>
+      <span class="chip">Reviewed 9 Sep 2026</span>
+    </div>
+  </div>
+
+  <section class="panel">
+    <div class="ph">
+      <span class="num">00</span>
+      <h2>Contents</h2>
+    </div>
+    <div class="pb">
+      <nav class="toc">
+        <a href="#s1"><span class="n">01</span>What the two artifacts are</a>
+        <a href="#s2"><span class="n">02</span>Review and findings</a>
+        <a href="#s3"><span class="n">03</span>The ten rules</a>
+        <a href="#s4"><span class="n">04</span>Tokens</a>
+        <a href="#s5"><span class="n">05</span>Type</a>
+        <a href="#s6"><span class="n">06</span>Material and layout</a>
+        <a href="#s7"><span class="n">07</span>Components</a>
+        <a href="#s8"><span class="n">08</span>Behaviour</a>
+        <a href="#s9"><span class="n">09</span>Wording and data honesty</a>
+        <a href="#s10"><span class="n">10</span>Accessibility floor</a>
+        <a href="#s11"><span class="n">11</span>Definition of done</a>
+        <a href="#s12"><span class="n">12</span>New mockup recipe, and Never</a>
+        <a href="#s13"><span class="n">13</span>Command domain model</a>
+        <a href="#s14"><span class="n">14</span>Placement gates</a>
+        <a href="#s15"><span class="n">15</span>Self-checks</a>
+        <a href="#s16"><span class="n">16</span>Adoption plan</a>
+        <a href="#s17"><span class="n">17</span>Screens index</a>
+        <a href="#s18"><span class="n">18</span>Open decisions</a>
+        <a href="#s19"><span class="n">19</span>Using this file</a>
+      </nav>
+    </div>
+  </section>
+
+  <section class="panel" id="s1">
+    <div class="ph">
+      <span class="num">01</span>
+      <h2>What the two artifacts are</h2>
+      <p class="lede">One is the reference build. One is the standard it is the reference for.</p>
+    </div>
+    <div class="pb">
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Artifact</th>
+              <th>What it is</th>
+              <th class="num">Size</th>
+              <th class="num">Lines</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Ward Flow Command</b><br /><span class="mono">d821a155</span></td>
+              <td>
+                The coordinator home screen, built and interactive. A statewide view of every open psychiatric bed
+                movement, worst first, with a flow map, an explainable shortlist and four registers. The whole dataset
+                is invented. It is the reference build the standard points at.
+              </td>
+              <td class="num">376 KB</td>
+              <td class="num">11,401</td>
+            </tr>
+            <tr>
+              <td><b>Ward Flow Design System</b><br /><span class="mono">e7f7b6f2</span></td>
+              <td>
+                The third-edition standard every Ward Flow mockup is built to: ten rules, tokens, type, material,
+                components rendered live from Command's own stylesheet, behaviour, wording, an accessibility floor, a
+                definition of done, a recipe, the migration plan for eighteen mockups and an index of twelve screens.
+              </td>
+              <td class="num">649 KB</td>
+              <td class="num">16,162</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The lineage matters when reading either one. The first edition was <b>Platinum Raised Cool</b> and supplied the
+        identity: cool platinum neutrals, deep slate brand, brass secondary, three faces, a fall of light. The second
+        was the <b>Live edition</b> and supplied the content, behaviour and rigour: derived figures, route words, the
+        diagram fill rule, the three-state appearance control, the type floor, the contrast table and the definition of
+        done. The third edition is the second's substance in the first's material, and where the two disagreed the
+        stricter rule won.
+      </p>
+      <p>
+        Both are design intent, not app code. The application resolves colour by role through its own token layer, so a
+        hex from either artifact must never be pasted into <code>src/</code>. Ward Flow does exist as real code in this
+        repository, under <code>src/components/ward-management/</code> and <code>src/app/mockups/ward-flow/</code>, and
+        section 02 records where the mockup's rules and the shipped engine's rules disagree.
+      </p>
+    </div>
+  </section>
+
+  <section class="panel" id="s2">
+    <div class="ph">
+      <span class="num">02</span>
+      <h2>Review and findings</h2>
+      <p class="lede">
+        Eight findings, worst first. Two are safety questions for the owner, not defects to fix quietly.
+      </p>
+    </div>
+    <div class="pb">
+      <p>
+        Judged as a design standard, this is unusually strong work. The rules are written as things a script can check
+        rather than as taste, the contrast figures were computed and printed rather than eyeballed, and the hardest
+        clinical rule in the build, the split between what a recorded reason can get past and what it cannot, is written
+        as a fail-closed list so a gate nobody has classified cannot become overridable by omission. The findings below
+        are about the seams: between the standard and its own reference build, and between the mockup and the engine
+        that ships.
+      </p>
+
+      <div class="find" data-sev="high">
+        <div class="top">
+          <span class="sev">Contradiction</span><b>The mockup and the shipped engine disagree about a prior decline</b>
+          <span class="id">F1</span>
+        </div>
+        <p>
+          Command treats <code>prior_decline</code> as absolute. Its sentence is fixed:
+          <i>"A recorded reason does not undo a ward's decline."</i> The shipped reducer deliberately does the opposite.
+          It leaves <code>prior_decline</code> out of both the world-fact group and <code>SUITABILITY_GATES</code>, on
+          the reasoning that a ward which declined ninety minutes ago because it had no bed is the commonest thing in
+          bed management, beds free up, and none of the five approved override reasons names a mismatch that exists. The
+          comment records that enforcing it broke 23 tests across 7 files.
+        </p>
+        <p class="fix">
+          <b>Why it matters:</b> a coordinator taught by the prototype believes a declined ward is closed to that
+          patient. The engine believes re-approaching it is routine and needs no reason at all. That is not a styling
+          difference, it is two different accounts of what the coordinator may do next. <b>Fix:</b> one of the two has
+          to move, and the reducer already records the question as open for you. Decide it, then write the decision into
+          section 8.4 of the standard so the next mockup inherits it.
+        </p>
+      </div>
+
+      <div class="find" data-sev="high">
+        <div class="top">
+          <span class="sev">Safety question</span><b>Mental Health Act authorisation is overridable in both</b>
+          <span class="id">F2</span>
+        </div>
+        <p>
+          The standard's own test is clean:
+          <i
+            >"A judgement about the patient is overridable by a named coordinator with a recorded reason. A fact about
+            the world is not."</i
+          >
+          Command classifies <code>authorisation</code> as overridable, and so does the engine, where it sits in
+          <code>SUITABILITY_GATES</code> alongside cohort and security as a clinical judgement.
+        </p>
+        <p class="fix">
+          <b>Why it matters:</b> whether a ward is an authorised hospital under the Mental Health Act 2014 (WA) is a
+          fact about the ward's legal status, not a judgement about the patient. A recorded reason cannot make the
+          detention of an involuntary patient at an unauthorised ward lawful, in the same way it cannot create a bed. By
+          the standard's own test the gate belongs beside <code>allocatable_bed</code>. The same reading applies to
+          <code>security</code>, where whether a locked bed exists is also a fact rather than a judgement.
+          <b>Fix:</b> this is your ruling to make, not mine, and it may already have been made somewhere I have not
+          read. Either move it, or write the reasoning for leaving it where it is into section 8.4, because at the
+          moment the classification and the stated test do not agree and nothing on the page explains why.
+        </p>
+      </div>
+
+      <div class="find" data-sev="med">
+        <div class="top">
+          <span class="sev">Divergence</span><b>Ten gates in the mockup, twelve in the engine</b>
+          <span class="id">F3</span>
+        </div>
+        <p>
+          Command emits <code>allocatable_bed</code>, <code>capability</code>, <code>security</code>,
+          <code>sex_mix</code>, <code>acuity</code>, <code>specialling</code>, <code>authorisation</code>,
+          <code>catchment</code>, <code>prior_decline</code> and <code>freshness</code>. The engine's
+          <code>ELIGIBILITY_GATES</code> adds <code>age</code>, <code>forensic</code> and <code>legal_status</code>,
+          splits <code>sex_designation</code> out from <code>sex_mix</code>, and carries no <code>acuity</code> or
+          <code>catchment</code> gate at all.
+        </p>
+        <p class="fix">
+          <b>Why it matters:</b> the standard governs colour, type and wording in detail and says nothing about the rule
+          model, so there is no mechanism keeping the two lists together. They have already drifted. <b>Fix:</b> a short
+          subsection in section 8 naming the engine as the source of truth for gates, and a line in the definition of
+          done requiring a mockup's gate list to be a subset of <code>ELIGIBILITY_GATES</code>.
+        </p>
+      </div>
+
+      <div class="find" data-sev="med">
+        <div class="top">
+          <span class="sev">Defect</span
+          ><b>The standard's ward and site counts are not true of its own reference build</b>
+          <span class="id">F4</span>
+        </div>
+        <p>
+          Section 8.3 states there are twenty-three wards across seventeen sites, and that a page reads the collection
+          rather than carrying a hard-coded number. Command carries sixteen wards across nine sites, and no WA Country
+          ward at all, although WACHS is one of the services and has a hue of its own.
+        </p>
+        <p class="fix">
+          <b>Why it matters:</b> section 6 of the standard renders its components from Command, so the standard is
+          asserting a figure its own reference build contradicts. Anyone building the next mockup will take twenty-three
+          from the prose and find sixteen in the data. <b>Fix:</b> either extend Command's <code>UNITS</code> to the
+          full network, or restate 8.3 as the network's real size with a note that Command carries a subset and says so.
+          The WACHS absence is already handled well by the "WA Country states its absences" rule, so only the counts
+          need settling.
+        </p>
+      </div>
+
+      <div class="find" data-sev="med">
+        <div class="top">
+          <span class="sev">Gap</span><b>Sex and gender are one binary field, and the reconciler enforces the binary</b>
+          <span class="id">F5</span>
+        </div>
+        <p>
+          A movement carries <code>sex: "Male" | "Female"</code>. A ward carries <code>sexDesignation</code> and
+          <code>sexMix: { Female, Male }</code>. That one field drives bed matching, and the page's own reconciliation
+          check fails unless <code>sexMix.Female + sexMix.Male</code> equals <code>occupied</code>. A patient who is
+          intersex or non-binary cannot be represented in the data model at all, and there is no rule about it anywhere
+          in the standard.
+        </p>
+        <p class="fix">
+          <b>Why it matters:</b> this is a real clinical and ethical exposure rather than a modelling nicety, and it is
+          already open in this repository as a P1 (<code>#BAY1TY</code>). Bed allocation, ward designation and a
+          person's gender identity are three different facts and the model has one field for all three. <b>Fix:</b> out
+          of scope for a styling pass, but the standard should say so explicitly, name who owns the question, and stop
+          new mockups copying the binary field forward in the meantime.
+        </p>
+      </div>
+
+      <div class="find" data-sev="med">
+        <div class="top">
+          <span class="sev">Gap</span><b>Nothing anywhere addresses Aboriginal cultural safety</b>
+          <span class="id">F6</span>
+        </div>
+        <p>
+          Neither artifact contains a rule, a field, a gate or a note on Aboriginal and Torres Strait Islander cultural
+          safety. For a statewide WA mental health bed placement tool covering WACHS, that absence is conspicuous. It is
+          open in this repository as a P1 (<code>#G4YPNE</code>), recorded as work this team cannot do alone.
+        </p>
+        <p class="fix">
+          <b>Fix:</b> the standard is the right place to record that the gap is known, deliberate and owned elsewhere,
+          rather than leaving each mockup to notice it independently. A page that says nothing reads as a page that
+          decided nothing.
+        </p>
+      </div>
+
+      <div class="find" data-sev="low">
+        <div class="top">
+          <span class="sev">Unstated</span><b>The shortlist orders wards, and the standard never admits it</b>
+          <span class="id">F7</span>
+        </div>
+        <p>
+          <code>shortlistFor()</code> sorts candidate wards by availability class and then by ready beds descending.
+          That is an ordering, and an ordering at the top of a screen reads as a recommendation. The standard is
+          scrupulous that no verdict is ever drawn about a person, and silent about whether the ward ordering is a
+          suggestion. The same question is open in this repository as <code>#6DT5K7</code>, recorded there as a rule
+          that may be reversed and is written down nowhere.
+        </p>
+        <p class="fix">
+          <b>Fix:</b> one sentence in section 8.4 settling it. Either the order is a suggestion and the page says so
+          plainly, or it is not and the page says what the order actually means, which on the evidence is
+          <i>eligible first, then most ready beds</i>. Both are defensible. Neither being written down is not.
+        </p>
+      </div>
+
+      <div class="find" data-sev="low">
+        <div class="top">
+          <span class="sev">Practical</span><b>Both artifacts are now too large to be read whole</b>
+          <span class="id">F8</span>
+        </div>
+        <p>
+          376 KB and 649 KB, of which the great majority is the stylesheet, the engine and the live component demos. The
+          stylesheet appears in full in both, twice in the design system. Reading either one costs a large share of a
+          session's context before any work begins.
+        </p>
+        <p class="fix">
+          <b>Fix:</b> this file. Keep the two artifacts as the built truth and hand this brief to a model instead.
+        </p>
+      </div>
+
+      <div class="find" data-sev="good">
+        <div class="top">
+          <span class="sev">Worth keeping</span><b>What the build gets right, and should not be traded away</b>
+          <span class="id">F9</span>
+        </div>
+        <p>
+          The absolute-gate list is written as the absolute side, so an unclassified gate fails closed rather than
+          becoming overridable by omission, and a check at the foot of the file fails if a gate named there has no
+          sentence of its own. <code>reconcile()</code> refuses to let a movement be pointed at a ward with an unmet
+          absolute gate, so the invented data cannot quietly contradict the rules. Refusals are sentences rather than
+          empty lists. Absence is stated everywhere, zero reads <i>none</i>, and direction is a word rather than an
+          arrow, which survives a copy into a progress note. The recorded history of two earlier wordings that were
+          wrong in opposite directions is kept in the source so neither returns by accident. That last habit is worth
+          more than any of the visual rules.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="s3">
+    <div class="ph">
+      <span class="num">03</span>
+      <h2>The ten rules</h2>
+      <p class="lede">In the order they matter. Everything else in the standard is a consequence of one of them.</p>
+    </div>
+    <div class="pb">
+      <div class="rule">
+        <span class="n">1</span>
+        <h3>State is a word first, and a colour second.</h3>
+        <p>
+          A colour, bar or tint only repeats a word already on the screen, so a reader with no colour perception loses
+          nothing and neither does a greyscale printout. Red means breach, amber means look here, green means clear. The
+          brand slate and the brass never carry a status.
+        </p>
+      </div>
+      <div class="rule">
+        <span class="n">2</span>
+        **Figures are Geist Mono and tabular.**
+        <p>
+          Every identifier, wait, count, time and code, so anything compared down a column lines up and a digit never
+          jitters. Zero reads <i>none</i>: a nought is a measurement and none is a state.
+        </p>
+      </div>
+      <div class="rule">
+        <span class="n">3</span>
+        <h3>Absence is stated, never blank.</h3>
+        <p>
+          "Not tracked here" and "No destination yet" are the models. An empty panel says why it is empty and what the
+          emptiness means. A count of zero shows in italic without a pill rather than hiding. A panel that is merely
+          empty reads as a bug.
+        </p>
+      </div>
+      <div class="rule">
+        <span class="n">4</span>
+        <h3>Nothing below 12px, and seven steps in the scale.</h3>
+        <p>
+          Uppercase labels carry 0.08 to 0.12em of tracking, headings a little negative tracking. Only loaded weights
+          are asked for. No small capitals. The wordmark is t-5 at 600, not a size of its own.
+        </p>
+      </div>
+      <div class="rule">
+        <span class="n">5</span>
+        <h3>One elevation step, and only one.</h3>
+        <p>
+          Light falls from the top. A panel is lifted by an alpha hairline heavier along its bottom edge, and one low
+          brand-tinted shadow. No highlight along its top, and no coloured bar along any edge of a row, a candidate or a
+          card, since 9 September 2026. Nothing inside a panel is lifted again. Radii step inward: 10px panels, 9px
+          strips, 6px controls, a pill for chips. Hairlines are solid, never dashed. Sideways overflow shows a soft
+          shade and a sentence, never a frame. A list that continues past its window fades into that edge, measured on
+          every render, scroll and resize.
+        </p>
+      </div>
+      <div class="rule">
+        <span class="n">6</span>
+        <h3>Colour has four jobs and they never share a hue.</h3>
+        <p>
+          Slate accent means brand and interactive. Brass means "you are here" and is a bar, never a fill: the active
+          nav item, the live tab, the current stage, the two letters beside the wordmark, nothing else. Green, amber and
+          red mean status only. The health services have hues of their own, except East Metropolitan, which keeps the
+          brand slate as a recorded exception because no fifth hue stays apart from plum, teal and rust. On a map only
+          an eligible or recorded ward carries a fill and every other verdict is an outline and a word.
+        </p>
+      </div>
+      <div class="rule">
+        <span class="n">7</span>
+        <h3>Every text pairing is measured in both themes at a floor of 4.5:1.</h3>
+        <p>
+          Sixty-nine pairs, computed by the build script rather than typed, and recomputed by the page from its own
+          tokens on every load. A pair that falls short is printed, marked and reported, never hidden.
+        </p>
+      </div>
+      <div class="rule">
+        <span class="n">8</span>
+        <h3>Both themes are tokens only.</h3>
+        <p>
+          The bare root is the complete light palette. Dark is redefined under the machine's preference, guarded so an
+          explicit light choice wins, and again under the page's own control so that wins the other way. For print every
+          token takes its light value on all three roots. Never a colour whose only definition sits inside a theme
+          block, never a hex in a component, never pure black or pure white as a surface or an ink.
+        </p>
+      </div>
+      <div class="rule">
+        <span class="n">9</span>
+        <h3>Every figure is invented and the page says so twice.</h3>
+        <p>
+          Once in the bar, where the prototype mark carries the disclaimer as its tooltip, and once in the rail foot
+          beside the reconciliation line. Every count on the rail, the bar and in the drawers is derived from the data
+          on the page, never typed.
+        </p>
+      </div>
+      <div class="rule">
+        <span class="n">10</span>
+        <h3>Optical, not arithmetic.</h3>
+        <p>
+          A tracked uppercase label ending a line carries its trailing tracking as a negative margin. An inner corner is
+          one pixel tighter than its panel. Every control draws rest, hover, pressed and focus, a disabled control says
+          why and does not light on hover, and nothing brightens on hover. Selection never hides status. Every change of
+          subject is spoken to a screen reader as a sentence.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="s4">
+    <div class="ph">
+      <span class="num">04</span>
+      <h2>Tokens</h2>
+      <p class="lede">
+        Copy the three roots verbatim. Do not add a token, and never give a colour its only definition inside a theme
+        block.
+      </p>
+    </div>
+    <div class="pb">
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Token</th>
+              <th>Light</th>
+              <th>Dark</th>
+              <th>Job</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="k">--ground-hi</td>
+              <td class="k"><span class="swatch" style="background: #ecf0f4"></span>#ecf0f4</td>
+              <td class="k">#14181d</td>
+              <td>Canvas at the top of the window</td>
+            </tr>
+            <tr>
+              <td class="k">--ground</td>
+              <td class="k"><span class="swatch" style="background: #e6eaef"></span>#e6eaef</td>
+              <td class="k">#0f1216</td>
+              <td>Canvas, middle</td>
+            </tr>
+            <tr>
+              <td class="k">--ground-2</td>
+              <td class="k"><span class="swatch" style="background: #e1e6ec"></span>#e1e6ec</td>
+              <td class="k">#0c0f12</td>
+              <td>Canvas at the bottom</td>
+            </tr>
+            <tr>
+              <td class="k">--surface</td>
+              <td class="k"><span class="swatch" style="background: #fdfdfe"></span>#fdfdfe</td>
+              <td class="k">#171b21</td>
+              <td>Panel body</td>
+            </tr>
+            <tr>
+              <td class="k">--surface-2</td>
+              <td class="k"><span class="swatch" style="background: #f4f7fa"></span>#f4f7fa</td>
+              <td class="k">#1b2026</td>
+              <td>Header strips, tab bars, diagram feet</td>
+            </tr>
+            <tr>
+              <td class="k">--sunk</td>
+              <td class="k"><span class="swatch" style="background: #eef2f6"></span>#eef2f6</td>
+              <td class="k">#13171c</td>
+              <td>The well: hover, pills, gates</td>
+            </tr>
+            <tr>
+              <td class="k">--ink</td>
+              <td class="k"><span class="swatch" style="background: #161a20"></span>#161a20</td>
+              <td class="k">#e8ecf1</td>
+              <td>Primary text</td>
+            </tr>
+            <tr>
+              <td class="k">--ink-soft</td>
+              <td class="k"><span class="swatch" style="background: #414953"></span>#414953</td>
+              <td class="k">#b2bac5</td>
+              <td>Secondary text</td>
+            </tr>
+            <tr>
+              <td class="k">--muted</td>
+              <td class="k"><span class="swatch" style="background: #5f6873"></span>#5f6873</td>
+              <td class="k">#8a929d</td>
+              <td>Labels, notes, counts</td>
+            </tr>
+            <tr>
+              <td class="k">--line</td>
+              <td class="k">rgba(22,30,40,.11)</td>
+              <td class="k">rgba(255,255,255,.09)</td>
+              <td>Hairline</td>
+            </tr>
+            <tr>
+              <td class="k">--line-strong</td>
+              <td class="k">rgba(22,30,40,.26)</td>
+              <td class="k">rgba(255,255,255,.21)</td>
+              <td>Heavier hairline, bottom edges</td>
+            </tr>
+            <tr>
+              <td class="k">--accent</td>
+              <td class="k"><span class="swatch" style="background: #2f4c66"></span>#2f4c66</td>
+              <td class="k">#a7bcd2</td>
+              <td>Brand and interactive</td>
+            </tr>
+            <tr>
+              <td class="k">--accent-ink</td>
+              <td class="k"><span class="swatch" style="background: #27405a"></span>#27405a</td>
+              <td class="k">#bfd0e2</td>
+              <td>Titles, text on accent-soft</td>
+            </tr>
+            <tr>
+              <td class="k">--accent-soft</td>
+              <td class="k"><span class="swatch" style="background: #dfe7f0"></span>#dfe7f0</td>
+              <td class="k">#1f2a36</td>
+              <td>Selection fill</td>
+            </tr>
+            <tr>
+              <td class="k">--on-accent</td>
+              <td class="k">#ffffff</td>
+              <td class="k">#0f1216</td>
+              <td>The one white: text on the slate control</td>
+            </tr>
+            <tr>
+              <td class="k">--stripe</td>
+              <td class="k"><span class="swatch" style="background: #2f4c66"></span>#2f4c66</td>
+              <td class="k">#3a5a78</td>
+              <td>3px brand stripe at the window's top edge</td>
+            </tr>
+            <tr>
+              <td class="k">--gilt</td>
+              <td class="k"><span class="swatch" style="background: #7d612a"></span>#7d612a</td>
+              <td class="k">#d3b77e</td>
+              <td>Brass. "You are here", as a bar, never a fill</td>
+            </tr>
+            <tr>
+              <td class="k">--gilt-soft</td>
+              <td class="k"><span class="swatch" style="background: #f1ebdf"></span>#f1ebdf</td>
+              <td class="k">#2a251b</td>
+              <td>Brass wash, never behind text</td>
+            </tr>
+            <tr>
+              <td class="k">--good</td>
+              <td class="k"><span class="swatch" style="background: #227550"></span>#227550</td>
+              <td class="k">#6fd39b</td>
+              <td>Clear, eligible, accepted, reconciled</td>
+            </tr>
+            <tr>
+              <td class="k">--good-soft</td>
+              <td class="k"><span class="swatch" style="background: #e2f0e8"></span>#e2f0e8</td>
+              <td class="k">#15291f</td>
+              <td>Chosen destination fill</td>
+            </tr>
+            <tr>
+              <td class="k">--warn</td>
+              <td class="k"><span class="swatch" style="background: #825d10"></span>#825d10</td>
+              <td class="k">#e3bc5e</td>
+              <td>Look here. At most two tiles per screen</td>
+            </tr>
+            <tr>
+              <td class="k">--warn-soft</td>
+              <td class="k"><span class="swatch" style="background: #f6eeda"></span>#f6eeda</td>
+              <td class="k">#2b2415</td>
+              <td>Overridden gate fill</td>
+            </tr>
+            <tr>
+              <td class="k">--danger</td>
+              <td class="k"><span class="swatch" style="background: #b03b2e"></span>#b03b2e</td>
+              <td class="k">#ff8b76</td>
+              <td>Breach, and nothing else</td>
+            </tr>
+            <tr>
+              <td class="k">--danger-soft</td>
+              <td class="k"><span class="swatch" style="background: #f8e6e2"></span>#f8e6e2</td>
+              <td class="k">#33201b</td>
+              <td>Failed gate fill</td>
+            </tr>
+            <tr>
+              <td class="k">--danger-ink</td>
+              <td class="k"><span class="swatch" style="background: #973121"></span>#973121</td>
+              <td class="k">#ffa08e</td>
+              <td>Text on danger-soft</td>
+            </tr>
+            <tr>
+              <td class="k">--svc-east</td>
+              <td class="k"><span class="swatch" style="background: #2f4c66"></span>#2f4c66</td>
+              <td class="k">#a7bcd2</td>
+              <td>East Metropolitan</td>
+            </tr>
+            <tr>
+              <td class="k">--svc-north</td>
+              <td class="k"><span class="swatch" style="background: #685a94"></span>#685a94</td>
+              <td class="k">#b1a2d6</td>
+              <td>North Metropolitan</td>
+            </tr>
+            <tr>
+              <td class="k">--svc-south</td>
+              <td class="k"><span class="swatch" style="background: #356a70"></span>#356a70</td>
+              <td class="k">#7fb2b8</td>
+              <td>South Metropolitan</td>
+            </tr>
+            <tr>
+              <td class="k">--svc-wachs</td>
+              <td class="k"><span class="swatch" style="background: #8c5a3c"></span>#8c5a3c</td>
+              <td class="k">#d89a78</td>
+              <td>WA Country Health Service</td>
+            </tr>
+            <tr>
+              <td class="k">--scrim</td>
+              <td class="k">rgba(30,48,66,.32)</td>
+              <td class="k">rgba(0,0,0,.6)</td>
+              <td>Drawer backdrop, over the rail too</td>
+            </tr>
+            <tr>
+              <td class="k">--edge-shade</td>
+              <td class="k">rgba(30,48,66,.16)</td>
+              <td class="k">rgba(0,0,0,.55)</td>
+              <td>Shade at a sideways-scrolling edge</td>
+            </tr>
+            <tr>
+              <td class="k">--hl</td>
+              <td class="k">rgba(255,255,255,.9)</td>
+              <td class="k">rgba(255,255,255,.06)</td>
+              <td>
+                Retired. Drew the one pixel highlight on a panel's top edge until 9 September 2026. No rule reads it
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Three tokens were darkened after the round one review measured them below the floor: <code>--svc-south</code> to
+        #356A70, <code>--svc-north</code> to #685A94 and <code>--warn</code> to #825D10. Each was darkened the least
+        that clears 4.5:1 on every fill it sits on. Reverse them and those pairs fall to between 3.9 and 4.4:1.
+      </p>
+      <p>
+        Five aliases exist so the rendering script never carries a hex: <code>--ward</code> is svc-east,
+        <code>--ward-soft</code> is accent-soft, <code>--ed</code> is danger, <code>--comm</code> is svc-south,
+        <code>--coord</code> is svc-north. Geometry tokens are <code>--r1: 10px</code>, <code>--r1i: 9px</code>,
+        <code>--r2: 6px</code> and <code>--gap: 14px</code>.
+      </p>
+      <pre><code>/* The shape of the three roots. Every token above appears in the bare root first. */
+:root { color-scheme: light; /* complete light palette */ }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { color-scheme: dark; /* dark palette */ }
+}
+
+:root[data-theme="dark"] { color-scheme: dark; /* dark palette again */ }
+
+@media print { /* every token takes its light value, on all three roots */ }</code></pre>
+    </div>
+  </section>
+
+  <section class="panel" id="s5">
+    <div class="ph">
+      <span class="num">05</span>
+      <h2>Type</h2>
+      <p class="lede">Three faces, seven steps, nothing in between.</p>
+    </div>
+    <div class="pb">
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Role</th>
+              <th>Face</th>
+              <th>Weights</th>
+              <th>Used for</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Display</td>
+              <td class="k">Geist</td>
+              <td class="k">600, 700</td>
+              <td>
+                The names of things only: the wordmark, the page title, panel titles, site codes, diagram headings
+              </td>
+            </tr>
+            <tr>
+              <td>Body</td>
+              <td class="k">Geist</td>
+              <td class="k">400 to 700</td>
+              <td>Everything else</td>
+            </tr>
+            <tr>
+              <td>Figures</td>
+              <td class="k">Geist Mono</td>
+              <td class="k">400 to 600</td>
+              <td>Every identifier, wait, count, time and code, tabular</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Step</th>
+              <th class="num">Size</th>
+              <th>Where</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="k">--t-0</td>
+              <td class="num">12px</td>
+              <td>Tracked uppercase labels, counts, legends. The floor</td>
+            </tr>
+            <tr>
+              <td class="k">--t-1</td>
+              <td class="num">13px</td>
+              <td>Notes, metadata, gate detail</td>
+            </tr>
+            <tr>
+              <td class="k">--t-2</td>
+              <td class="num">13.5px</td>
+              <td>Controls, facts, identifiers in rows</td>
+            </tr>
+            <tr>
+              <td class="k">--t-3</td>
+              <td class="num">14px</td>
+              <td>Body default, panel titles, candidate names</td>
+            </tr>
+            <tr>
+              <td class="k">--t-4</td>
+              <td class="num">16px</td>
+              <td>Section headings</td>
+            </tr>
+            <tr>
+              <td class="k">--t-5</td>
+              <td class="num">20px</td>
+              <td>The wordmark, the shortlist identifier</td>
+            </tr>
+            <tr>
+              <td class="k">--t-6</td>
+              <td class="num">26px</td>
+              <td>Page title</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        One font link, three families, no other faces and no weight asked for that is not loaded. Every face declares a
+        real fallback stack. No small capitals anywhere.
+      </p>
+    </div>
+  </section>
+
+  <section class="panel" id="s6">
+    <div class="ph">
+      <span class="num">06</span>
+      <h2>Material and layout</h2>
+      <p class="lede">One shadow, one fall of light, radii that step inward.</p>
+    </div>
+    <div class="pb">
+      <ul>
+        <li>
+          <b>The canvas</b> is a fixed vertical gradient from <code>--ground-hi</code> through <code>--ground</code> to
+          <code>--ground-2</code>, so light falls from the top of the window. A 3px <code>--stripe</code> sits fixed at
+          the top edge above everything including the drawers, with pointer events off.
+        </li>
+        <li>
+          <b>A panel</b> is <code>--surface</code>, an alpha hairline all round with <code>--line-strong</code> along
+          the bottom, radius 10px, and one shadow: <code>0 1px 1px</code> plus a long low
+          <code>0 14px 30px -22px</code> tinted with the brand, and no highlight on top. Nothing inside a panel gets a
+          second shadow.
+        </li>
+        <li>
+          <b>Header strips, tab bars and diagram feet</b> sit on <code>--surface-2</code> and take the 9px inner radius
+          where they meet a panel corner.
+        </li>
+        <li>
+          <b>The shell</b> is a skip link, one rail at 236px in two states, one row of bar with search, service
+          selector, three drawers and one primary action, one polite live region, and a scrolling column of panels.
+          Command's body is a three-column grid: 15rem, flexible, 25rem.
+        </li>
+        <li>
+          <b>Panel bodies</b> are one of five things and those five cover every screen so far: a list of rows, a strip
+          of cards, a diagram with a foot and a legend, tabs, or sections with headings.
+        </li>
+        <li>
+          <b>Widths proved:</b> the bar has no overflow at 1920, 1600, 1440, 1280 and 1100, and search never falls below
+          10rem. The rail has no sideways overflow in either state and no state line truncates at 236px. Below 1000px
+          the rail renders open as a wrapping row and its control hides.
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="panel" id="s7">
+    <div class="ph">
+      <span class="num">07</span>
+      <h2>Components</h2>
+      <p class="lede">The contracts, not the markup. Build from these rather than re-deriving.</p>
+    </div>
+    <div class="pb">
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Component</th>
+              <th>Contract</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Rail</b></td>
+              <td>
+                One nav, two shapes, state on the root as <code>data-rail</code> stamped before first paint from
+                <code>ward-flow-rail</code>. Wordmark at t-5 in Geist 600 with two brass letters beside it. Grouped
+                links with state lines, a shift block, pinned rows, a foot with the invented-figures note and the
+                reconciliation line. Brass bar marks the current item. No switcher, no number keys, no second nav.
+              </td>
+            </tr>
+            <tr>
+              <td><b>Bar</b></td>
+              <td>
+                One row: page title, prototype chip carrying the disclaimer as its tooltip, universal search, service
+                selector, Activity, Tasks and Tools drawers, one primary action. The chip is neutral, not brass.
+              </td>
+            </tr>
+            <tr>
+              <td><b>Queue row</b></td>
+              <td>
+                Mono identifier, tier pill, name, wait right-aligned in mono, a route line in words rather than arrows
+                ("in RPH ED, to FSH Adult Secure, accepted"), a breach line where a deadline has passed. Selected takes
+                accent-soft, with no bar.
+              </td>
+            </tr>
+            <tr>
+              <td><b>Pressure card</b></td>
+              <td>
+                Status is the pressure word and the meter's colour, never a fill and never a bar. Site code at 600,
+                department name in tracked uppercase, longest wait, a meter measured against the longest wait in the
+                network, a breach line. Pressed adds a slate ring and keeps the word and the meter.
+              </td>
+            </tr>
+            <tr>
+              <td><b>Candidate row</b></td>
+              <td>
+                Ward name, service in tracked uppercase, bed counts in mono, a verdict word with its detail, a
+                contention block naming who else is pointed at this ward, specialling and travel band lines. The verdict
+                word carries its own colour: green eligible, amber overridable or declined. A ward nobody can offer sits
+                on surface-2. No bar along the edge.
+              </td>
+            </tr>
+            <tr>
+              <td><b>Gate</b></td>
+              <td>
+                A tick or cross, a label, a detail sentence. Pass sits on the well, fail on danger-soft, overridden on
+                warn-soft. Every gate prints its sentence whether it passed or not.
+              </td>
+            </tr>
+            <tr>
+              <td><b>Bed chip</b></td>
+              <td>Four states with their own ring colour: available, confirmed, held, blocked. Figure in mono.</td>
+            </tr>
+            <tr>
+              <td><b>Stepper</b></td>
+              <td>
+                One bar per stage, accent for done, gilt for now, line-strong for to do, with the current stage named in
+                words beside it in brass.
+              </td>
+            </tr>
+            <tr>
+              <td><b>Tier pill</b></td>
+              <td>Mono, 1px border in its own colour: tier 1 danger, tier 2 warn, tier 3 ward slate.</td>
+            </tr>
+            <tr>
+              <td><b>Tab</b></td>
+              <td>
+                Tracked uppercase with a mono count pill. The live tab is the only brass bar in the strip. A zero count
+                loses its pill and shows italic in the body face.
+              </td>
+            </tr>
+            <tr>
+              <td><b>Flow map</b></td>
+              <td>
+                Schematic, not geographic, and the caveat stays whether or not the legend is open. Only an eligible or a
+                recorded ward carries a fill; every other verdict is an outline and a word. Nodes are buttons. Hover
+                thickens the outline rather than recolouring it. The legend is a disclosure, open by default only at
+                1600 by 1100 and wider, and the reader's choice wins after that.
+              </td>
+            </tr>
+            <tr>
+              <td><b>Registers</b></td>
+              <td>
+                Four tabs: Exceptions, Declines, Overrides, Refused. Exceptions leads because it is the one that says
+                what is wrong across the whole network, and it covers every open movement, not only the selected one.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="s8">
+    <div class="ph">
+      <span class="num">08</span>
+      <h2>Behaviour</h2>
+      <p class="lede">Six states, measured affordances, and one sentence per change of subject.</p>
+    </div>
+    <div class="pb">
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>State</th>
+              <th>Looks like</th>
+              <th>Rule</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Rest</b></td>
+              <td>Surface, hairline, ink-soft text</td>
+              <td>Every control draws it explicitly</td>
+            </tr>
+            <tr>
+              <td><b>Hover</b></td>
+              <td>The well, ink-soft border on a control, thicker outline on the map</td>
+              <td>Never recolours a status, never lifts, never brightens, never on a disabled control</td>
+            </tr>
+            <tr>
+              <td><b>Pressed</b></td>
+              <td>The same as hover, so a click has a felt end point</td>
+              <td>Distinct from selected</td>
+            </tr>
+            <tr>
+              <td><b>Focus</b></td>
+              <td>2px accent outline, out on controls, in on rows and lists, 2.5px ink on a map node</td>
+              <td>focus-visible only. Everything focusable has a 12px scroll margin</td>
+            </tr>
+            <tr>
+              <td><b>Selected</b></td>
+              <td>Accent-soft fill, accent-ink text, a brass bar under a tab, a slate ring on a card</td>
+              <td>Never hides status. Announced</td>
+            </tr>
+            <tr>
+              <td><b>Chosen</b></td>
+              <td>Good-soft fill on the candidate that is now the destination</td>
+              <td>Distinct from showing. A candidate can be showing without being chosen</td>
+            </tr>
+            <tr>
+              <td><b>Disabled</b></td>
+              <td>Half opacity, not-allowed cursor, no shadow, nothing changes on hover</td>
+              <td>Uses aria-disabled so it stays focusable and the reason stays reachable</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Measured, never declared</h3>
+      <p>
+        List fades come from scrollHeight, clientHeight and scrollTop on every render, scroll and resize. Sideways
+        overflow comes from scrollWidth against clientWidth, and the shade and the sentence appear and disappear
+        together. Every count in the rail, the bar, the drawers, the tab strip and every panel header is derived from
+        the data, and the reconciliation line compares them.
+      </p>
+      <h3>Keyboard</h3>
+      <ul>
+        <li>Tab reaches the skip link first, then the rail, the bar, then each panel in reading order.</li>
+        <li>
+          Tab lists take arrow keys with a roving tabindex, Home and End to the ends. Rows, cards and map nodes are
+          buttons and take Enter and Space.
+        </li>
+        <li>
+          <code>/</code> focuses the search and selects its text. <code>[</code> flips the rail and remembers it.
+          Neither fires inside a field or while a modifier is held.
+        </li>
+        <li>
+          Escape clears exactly one thing per press, from the top: an open pop out, the search results, the search text,
+          the ward selection, the referral subject, the department filter, then the task filter. Escape never clears the
+          service: a further press says so and names it. Each step is announced and the shell owns the order.
+        </li>
+        <li>Every scrolling region is itself focusable so its contents can be scrolled from the keyboard.</li>
+      </ul>
+      <h3>Announcements</h3>
+      <p>
+        One sentence to the live region per change of subject, never a fragment and never a colour name. A repeated
+        sentence gets a zero width space so it is read again. Models:
+        <i>"WF-014 selected. Shortlist shows three candidates."</i>
+        <i>"Showing 4 of 23 waiting, from Joondalup Health Campus ED."</i>
+        <i>"Service set to South Metropolitan. Showing 7 of 23."</i> <i>"The rail, closed."</i>
+      </p>
+      <h3>Themes, motion, print, forced colours</h3>
+      <p>
+        Appearance has three states. Auto stamps nothing and follows the machine; light and dark stamp
+        <code>data-theme</code> and are remembered under a key named for the page. Motion is a 120ms transition on
+        colour, background, border, a chevron's turn and a node's outline weight, and nothing else; nothing moves on
+        load; reduced motion removes all of it. Print is a record: the rail, stripe and controls go, scrolling regions
+        open out, tabs and disclosures open, panels lose shadow and radius, every token takes its light value and status
+        colours print exact. Forced colours keep every boundary as CanvasText on Canvas.
+      </p>
+      <h3>Pop outs and drawers</h3>
+      <p>
+        One open at a time. Each is a <code>details.menu</code>. Opening one closes the others and the search results. A
+        click outside or on the backdrop closes it, Escape closes it and returns focus to its summary, the first
+        focusable thing inside takes focus on open, the panel is a dialog with aria-modal, everything outside it is
+        inert and Tab wraps inside it. Opening is announced with the drawer's count in the sentence; closing announces
+        <i>"Closed."</i>
+      </p>
+    </div>
+  </section>
+
+  <section class="panel" id="s9">
+    <div class="ph">
+      <span class="num">09</span>
+      <h2>Wording and data honesty</h2>
+      <p class="lede">The Board language's rules, kept. This is the section that carries the clinical safety weight.</p>
+    </div>
+    <div class="pb">
+      <h3>About persons</h3>
+      <ul>
+        <li>No verdict about a person is ever drawn. Verdicts are about wards, beds, checks and movements.</li>
+        <li>A referral's written history is never given a green state, because a history is not an outcome.</li>
+        <li>
+          Search refuses a risk or acuity score, a best match, and closed or arrived movements, and says so as a
+          sentence in a refused-action row rather than returning nothing.
+        </li>
+        <li>Nobody's move is not nobody's problem: a movement with no owner still carries its severity.</li>
+        <li>
+          A judgement about the patient is overridable by a named coordinator with a recorded reason. A fact about the
+          world is not. A check nobody has classified is not overridable.
+        </li>
+      </ul>
+      <h3>Copy style</h3>
+      <ul>
+        <li>Sentence case everywhere. Uppercase only as a tracked label at t-0 or t-1. Australian spelling.</li>
+        <li>
+          No semicolons, no dashes as punctuation, no arrows, no symbol a digital medical record would not carry. A
+          middle dot separates facts on one line and never joins two sentences. Where the line is prose, a comma serves.
+        </li>
+        <li>Direction is a word: from and to, up and down, in and out.</li>
+        <li>Times as 10:42 with AWST beside the date. Dates as Sat 15 Aug in a tile, in full when read aloud.</li>
+        <li>A wait reads 25h 10m, in the compact form, everywhere, from one formatter.</li>
+        <li>
+          A deadline reads "Legal deadline passed 1h 10m ago", or "Deadline in 1h 35m", or "No deadline recorded".
+        </li>
+        <li>A control that is drawn and not wired says so: "Not wired in this prototype."</li>
+      </ul>
+      <h3>Invented and real</h3>
+      <ul>
+        <li>
+          Hospital sites, health services and community team names are real WA names from the repository's tables and
+          may be used. Their phone numbers, addresses and contact details are never invented.
+        </li>
+        <li>
+          Never invent a record number, a UMRN, a phone number, an address, or a person's name that could be mistaken
+          for real. Names are an uncommon given name with a plant, bird or stone family name: Kestrel Wenna, Hawthorn
+          Dermot, Slate Margery.
+        </li>
+        <li>
+          Contact tables use placeholders in the shape of the real thing, ext 01 onward for wards and ext 11 onward for
+          departments, addresses ending in example.invalid, and say so twice.
+        </li>
+        <li>
+          Identifier namespaces are separate on purpose so a click never lands on the wrong object: WF-0xx on Command,
+          WF-1xx on Movement, WF-2xx on Capacity, RF-0xx for referrals.
+        </li>
+      </ul>
+      <h3>Fixed sentences</h3>
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Situation</th>
+              <th>The sentence</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Disclaimer, as the prototype mark's tooltip</td>
+              <td>
+                Every figure and name on this screen is invented. Not a medical device and not clinical decision
+                support.
+              </td>
+            </tr>
+            <tr>
+              <td>Search asked for a score or a best match</td>
+              <td>
+                Search does not return a risk or acuity score or a best match. Search by name, identifier, department,
+                ward or owner.
+              </td>
+            </tr>
+            <tr>
+              <td>Search asked for a closed movement</td>
+              <td>Closed and arrived movements are not searchable here. They are in the Movement screen's register.</td>
+            </tr>
+            <tr>
+              <td>Nothing found</td>
+              <td>
+                Nothing matches "x". Search finds patients by name or identifier, movements, departments, wards, owners
+                and tools.
+              </td>
+            </tr>
+            <tr>
+              <td>Under every result list</td>
+              <td>Names are invented. Search never returns a risk score, an acuity score or a best match.</td>
+            </tr>
+            <tr>
+              <td>The map, always</td>
+              <td>Schematic, not geographic</td>
+            </tr>
+            <tr>
+              <td>Diagram foot while a service is chosen</td>
+              <td>Showing the whole network. The queue is scoped to South Metropolitan.</td>
+            </tr>
+            <tr>
+              <td>An empty declines panel</td>
+              <td>Absence here means every ward asked has answered, not that nobody was asked.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="s10">
+    <div class="ph">
+      <span class="num">10</span>
+      <h2>Accessibility floor</h2>
+      <p class="lede">Not negotiable, and mostly machine-checked.</p>
+    </div>
+    <div class="pb">
+      <ul>
+        <li>
+          Text contrast 4.5:1 for every pairing in both themes, computed per pair and printed. Non-text marks at 3:1.
+        </li>
+        <li>No colour is the only carrier of any state. Every state has a word on the screen.</li>
+        <li>
+          Every interactive thing is a button or a link with an accessible name. Icons are aria-hidden with their word
+          beside them.
+        </li>
+        <li>
+          Tab lists use tablist, tab and tabpanel roles with aria-selected, aria-controls and a roving tabindex. Toggles
+          use aria-pressed, disclosures aria-expanded.
+        </li>
+        <li>
+          Focus is visible on every control, inset inside scrolling regions, with a scroll margin so nothing hides under
+          a header.
+        </li>
+        <li>
+          A skip link is the first focusable element, and one polite live region receives every change of subject.
+        </li>
+        <li>
+          A disabled control says why, in its title and a described-by line, and stays focusable through aria-disabled.
+        </li>
+        <li>Every chart has role img, an aria-label stating the numbers and a written caption stating them again.</li>
+        <li>
+          Tap targets are 3rem where the pointer is coarse or the width is a phone's, and are never reduced to 44px to
+          satisfy a generic rule.
+        </li>
+        <li>
+          Nothing below 12px in HTML, and nothing on the map below 10.5px. The page holds at 200% zoom without loss and
+          never scrolls sideways.
+        </li>
+        <li>Both themes read as well as each other. Dark is designed, not inverted.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="panel" id="s11">
+    <div class="ph">
+      <span class="num">11</span>
+      <h2>Definition of done</h2>
+      <p class="lede">A claim without its output is not a pass.</p>
+    </div>
+    <div class="pb">
+      <p>
+        A mockup is done when every line is true and has been looked at once, in a real browser, in both themes. The
+        proof is the look and the page's own checks, not a claim. The load-bearing lines:
+      </p>
+      <ul>
+        <li>
+          The stylesheet is copied verbatim. Screen rules sit below it under a comment naming the screen. No raw hex
+          below the block.
+        </li>
+        <li>
+          Every size is one of the seven steps in HTML, and one of the map's stated sizes in SVG. Nothing below 12px in
+          HTML and nothing below 10.5px on the map.
+        </li>
+        <li>
+          Every colour has one of the four jobs. Brass is a bar and marks only where the reader is. Red appears only on
+          a breach. At most two tiles are amber.
+        </li>
+        <li>Every state has a word, every absence is stated, every zero reads none, every direction is a word.</li>
+        <li>
+          Every contrast pair the page uses appears in the contrast table, or has been computed and added there first.
+        </li>
+        <li>Lists fade and strips shade by measurement. Every legend is a disclosure. Disclosures open for print.</li>
+        <li>Every change of subject is announced. Escape clears the innermost thing. The skip link is first.</li>
+        <li>
+          No phone number, address, record number or real-seeming name is invented. Real WA names are the repository's.
+        </li>
+        <li>No verdict about a person. A referral's history is never green.</li>
+        <li>Rendered once at 1600 and once at 1200, in light and in dark. Console clean. Reconciliation line green.</li>
+        <li>
+          Committed to the repository's mockup folder, formatted, and the artifact republished at its existing URL with
+          a version label.
+        </li>
+      </ul>
+      <h3>The harness</h3>
+      <p>
+        <code>third-edition-kit/check.mjs</code> proves in one run, in both themes: the two typefaces load, no unloaded
+        weight is asked for, the console is clean, the page's own reconcile check is empty, there is no sideways
+        overflow at 1920, 1440, 1280, 1200 and 390, nothing is below 12px in HTML or 10.5px in SVG, every visible text
+        element reaches 4.5:1 against the fill it sits on, the diagram region is at least 260px tall at 1440 by 900, the
+        first appearance click from a dark machine switches the page to light, and the third Tab stop shows a focus
+        ring. <code>check-standard.mjs</code> proves the standard itself, including recomputing the contrast table.
+        <code>check-shell.mjs</code> drives Command's shell in a browser and proves the behaviours a screenshot cannot
+        show.
+      </p>
+      <p>
+        Three lines are not yet gated and are checked by hand: the rendered text carries no em dash, no semicolon as
+        punctuation and no arrow; every control at a true 390px layout is at least 48px tall; and in print the ink and
+        hairline tokens take their light values.
+      </p>
+    </div>
+  </section>
+
+  <section class="panel" id="s12">
+    <div class="ph">
+      <span class="num">12</span>
+      <h2>New mockup recipe, and the Never list</h2>
+      <p class="lede">Build by copying, not by re-deriving. A gap is reported, never invented.</p>
+    </div>
+    <div class="pb">
+      <h3>The recipe</h3>
+      <ol>
+        <li>
+          Copy the head: title tag first, two preconnects, the one font link, the language and appearance script before
+          the stylesheet.
+        </li>
+        <li>Copy the three roots verbatim, plus the print block and the reduced-motion block.</li>
+        <li>
+          Copy the whole stylesheet unchanged. Add only what the screen needs, below it, under a comment naming the
+          screen.
+        </li>
+        <li>
+          Copy the appearance script and change the page name in the storage key. Then copy the measurement helpers the
+          page uses.
+        </li>
+        <li>
+          Keep the shell: skip link, one rail in two states, one row of bar, one live region, a scrolling column of
+          panels. Mark the current rail link with aria-current.
+        </li>
+        <li>
+          Map data to primitives. A thing with a status gets a card or row whose title or verdict word carries it. A
+          count gets a pill. A category gets a tier pill. A sequence gets the stepper. A label and value pair gets the
+          facts list. One primary action per panel at most.
+        </li>
+        <li>
+          Before adding a colour, name its meaning in one word. If the word is not breach, look here, clear, a health
+          service, the brand or you are here, the colour is wrong.
+        </li>
+        <li>
+          State every absence, derive every count, then run the harness and work the definition of done line by line.
+        </li>
+      </ol>
+      <h3>Never</h3>
+      <ul>
+        <li>A second shadow inside a panel. A shadow on a button, chip, card or row.</li>
+        <li>
+          A coloured bar along any edge of a row, a candidate or a card, brass included. A highlight along the top of a
+          panel or a control. The owner removed both on 9 September 2026.
+        </li>
+        <li>A brass fill. A status colour on a title, border, tab or a button that is not itself a status action.</li>
+        <li>A hex value in a component. A new grey. A solid grey used as a line.</li>
+        <li>Small capitals. A weight that is not loaded. A size that is not on the scale.</li>
+        <li>A panel without a header strip. A header strip with controls beyond one small disclosure.</li>
+        <li>A layout that hides a count behind an unopened tab.</li>
+        <li>
+          A second navigation bar, a second rail, or a second scope control. One rail, one bar, one stripe, one
+          composer.
+        </li>
+        <li>A selected state that covers a status word. A hover that brightens.</li>
+        <li>An arrow, a dash as punctuation, a symbol a digital record would not carry.</li>
+        <li>A verdict about a person. An invented phone number, address, record number or real-seeming name.</li>
+      </ul>
+      <p>
+        <b>The one question that settles an element:</b> does this tell a coordinator something they would otherwise
+        have to work out? If yes, it earns its place and takes the primitive that already exists for that kind of fact.
+        If no, it comes off the page.
+      </p>
+    </div>
+  </section>
+
+  <section class="panel" id="s13">
+    <div class="ph">
+      <span class="num">13</span>
+      <h2>Command domain model</h2>
+      <p class="lede">Every figure invented. The sites and services are real WA names.</p>
+    </div>
+    <div class="pb">
+      <dl class="facts">
+        <dt>Clock</dt>
+        <dd>A single integer <code>NOW = 642</code>, minutes past midnight, which is 10:42 AWST</dd>
+        <dt>Services</dt>
+        <dd>East Metro, North Metro, South Metro, WACHS</dd>
+        <dt>Wards</dt>
+        <dd>16, across 9 sites, none in WACHS</dd>
+        <dt>Departments</dt>
+        <dd>8. Joondalup Health Campus and Peel Health Campus have no inpatient ward</dd>
+        <dt>Movements</dt>
+        <dd>14, identifiers WF-0xx</dd>
+        <dt>Referrals</dt>
+        <dd>5, identifiers RF-0xx</dd>
+        <dt>Overrides</dt>
+        <dd>6 recorded for governance review</dd>
+        <dt>Refusals</dt>
+        <dd>2 actions the system would not carry out</dd>
+      </dl>
+
+      <h3>Ward (UNIT)</h3>
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="k">id, name, site, service</td>
+              <td>string</td>
+              <td>Real WA site and service names</td>
+            </tr>
+            <tr>
+              <td class="k">cohort</td>
+              <td>Adult | Older adult | Youth</td>
+              <td>Matched against the movement's cohort</td>
+            </tr>
+            <tr>
+              <td class="k">beds, locked</td>
+              <td>number</td>
+              <td>Total, and how many are lockable for a secure requirement</td>
+            </tr>
+            <tr>
+              <td class="k">ready, held, blocked, occupied</td>
+              <td>number</td>
+              <td>Must sum exactly to <code>beds</code></td>
+            </tr>
+            <tr>
+              <td class="k">sexDesignation</td>
+              <td>Undesignated | Female only | Male only</td>
+              <td>Drives the sex mix gate</td>
+            </tr>
+            <tr>
+              <td class="k">sexMix</td>
+              <td>{ Female, Male }</td>
+              <td>Must sum exactly to <code>occupied</code>. See finding F5</td>
+            </tr>
+            <tr>
+              <td class="k">speciallingFree</td>
+              <td>number</td>
+              <td>One-to-one nursing shifts available</td>
+            </tr>
+            <tr>
+              <td class="k">acuityInUse, acuityCeiling</td>
+              <td>number</td>
+              <td>High-acuity places</td>
+            </tr>
+            <tr>
+              <td class="k">confirmedMinAgo, staleAfter</td>
+              <td>number</td>
+              <td>Minutes. Drives the freshness gate</td>
+            </tr>
+            <tr>
+              <td class="k">authorised</td>
+              <td>boolean</td>
+              <td>Authorised to receive an involuntary admission</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Movement</h3>
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="k">id</td>
+              <td>WF-0xx</td>
+              <td>Mono, and its own namespace</td>
+            </tr>
+            <tr>
+              <td class="k">given, family</td>
+              <td>string</td>
+              <td>Invented. Family name is a plant, bird or stone</td>
+            </tr>
+            <tr>
+              <td class="k">owner</td>
+              <td>Bed coordinator | Coordinator on call | null</td>
+              <td>A role, never a person. Null reads "no owner"</td>
+            </tr>
+            <tr>
+              <td class="k">urgency</td>
+              <td>1 | 2 | 3</td>
+              <td>Rendered as Tier 1, Tier 2, Tier 3</td>
+            </tr>
+            <tr>
+              <td class="k">stage</td>
+              <td>see below</td>
+              <td>Position in the seven-stage sequence</td>
+            </tr>
+            <tr>
+              <td class="k">legalStatus</td>
+              <td>string</td>
+              <td>Voluntary, Involuntary inpatient, Referred for psychiatric examination</td>
+            </tr>
+            <tr>
+              <td class="k">legalForm, legalDue</td>
+              <td>string, minutes | null</td>
+              <td>Form 1A, Form 4A transport authority. Null reads "no deadline recorded"</td>
+            </tr>
+            <tr>
+              <td class="k">ed, suburb, homeService</td>
+              <td>string</td>
+              <td>Where they are now, and the catchment they belong to</td>
+            </tr>
+            <tr>
+              <td class="k">cohort, security, sex, ageBand</td>
+              <td>string</td>
+              <td>Matched against ward fields</td>
+            </tr>
+            <tr>
+              <td class="k">waited</td>
+              <td>number</td>
+              <td>Minutes. Rendered as 25h 10m by one formatter</td>
+            </tr>
+            <tr>
+              <td class="k">highAcuity, specialling</td>
+              <td>boolean, number</td>
+              <td>Nursing requirements</td>
+            </tr>
+            <tr>
+              <td class="k">dx</td>
+              <td>organic | substance | psychotic | mood</td>
+              <td>ICD-10 blocks F00–F09, F10–F19, F20–F29, F30–F39</td>
+            </tr>
+            <tr>
+              <td class="k">referred, accepted</td>
+              <td>unit ids</td>
+              <td>At most three parallel referrals</td>
+            </tr>
+            <tr>
+              <td class="k">declines</td>
+              <td>[{ unit, reason, at }]</td>
+              <td>Reasons come from a fixed list</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>The seven stages</h3>
+      <p class="mono">
+        placement_requested &nbsp; destination_review &nbsp; accepted_awaiting_bed &nbsp; pulled &nbsp; handover_ready
+        &nbsp; moving &nbsp; arrived
+      </p>
+
+      <h3>Travel</h3>
+      <p>
+        Travel time is a fact about a ward <b>and</b> a patient, so it lives on Command rather than Capacity: the
+        selected movement supplies the origin, which is the department the person is actually in. Change the selection
+        and every band re-derives. Only the band shows, never the minutes, because a minute-precise figure for a
+        transfer nobody has booked is false precision dressed as a fact. Bands are <i>under 20 minutes</i>,
+        <i>20 to 40 minutes</i> and <i>40 minutes or more</i>.
+      </p>
+    </div>
+  </section>
+
+  <section class="panel" id="s14">
+    <div class="ph">
+      <span class="num">14</span>
+      <h2>Placement gates</h2>
+      <p class="lede">
+        Ten checks on one axis: can a named coordinator place this person here by recording a reason, or can they not.
+      </p>
+    </div>
+    <div class="pb">
+      <p>
+        The split is written down in exactly one place, and it is written as the <b>absolute</b> side, so a gate nobody
+        has classified cannot become overridable by omission. A check at the foot of the file fails if any gate named as
+        absolute lacks its own sentence.
+      </p>
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Gate</th>
+              <th>Passes when</th>
+              <th>Class</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="k">allocatable_bed</td>
+              <td><code>ready &gt; 0</code></td>
+              <td><b>Absolute.</b> "No reason typed into a form creates a bed."</td>
+            </tr>
+            <tr>
+              <td class="k">specialling</td>
+              <td><code>movement.specialling &lt;= unit.speciallingFree</code></td>
+              <td><b>Absolute.</b> A recorded reason cannot create one-to-one nursing that does not exist</td>
+            </tr>
+            <tr>
+              <td class="k">prior_decline</td>
+              <td>This ward has not declined this movement</td>
+              <td><b>Absolute.</b> "A recorded reason does not undo a ward's decline." See finding F1</td>
+            </tr>
+            <tr>
+              <td class="k">capability</td>
+              <td>Ward cohort matches movement cohort</td>
+              <td>Overridable</td>
+            </tr>
+            <tr>
+              <td class="k">security</td>
+              <td>Open requirement, or the ward has a locked bed</td>
+              <td>Overridable. See finding F2</td>
+            </tr>
+            <tr>
+              <td class="k">sex_mix</td>
+              <td>Designation accepts this sex, and either a same-sex occupant exists or more than one bed is ready</td>
+              <td>Overridable. See finding F5</td>
+            </tr>
+            <tr>
+              <td class="k">acuity</td>
+              <td>Not high acuity, or <code>acuityInUse &lt; acuityCeiling</code></td>
+              <td>Overridable</td>
+            </tr>
+            <tr>
+              <td class="k">authorisation</td>
+              <td>Voluntary, or the ward is authorised under the Mental Health Act</td>
+              <td>Overridable. See finding F2</td>
+            </tr>
+            <tr>
+              <td class="k">catchment</td>
+              <td>Ward service matches the person's home service</td>
+              <td>Overridable</td>
+            </tr>
+            <tr>
+              <td class="k">freshness</td>
+              <td><code>confirmedMinAgo &lt;= staleAfter</code></td>
+              <td>Overridable. Matches the engine's owner ruling of 2 Sep 2026</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>The five verdicts, and the order they sort in</h3>
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="num">Order</th>
+              <th>Verdict</th>
+              <th>Means</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="num">0</td>
+              <td class="k">eligible</td>
+              <td>Every gate passes. Carries a fill on the map</td>
+            </tr>
+            <tr>
+              <td class="num">1</td>
+              <td class="k">overridable</td>
+              <td>Only judgement gates fail. A named coordinator can place with a recorded reason</td>
+            </tr>
+            <tr>
+              <td class="num">2</td>
+              <td class="k">declined</td>
+              <td>This ward has declined. Absolute</td>
+            </tr>
+            <tr>
+              <td class="num">3</td>
+              <td class="k">no_specialling</td>
+              <td>The one-to-one nursing is not there. Absolute</td>
+            </tr>
+            <tr>
+              <td class="num">4</td>
+              <td class="k">no_bed</td>
+              <td>There is no bed. Absolute</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        When more than one absolute gate fails, they are reported in a fixed order so the same pair always reads the
+        same way, and the bed comes first because it settles the rest: <code>allocatable_bed</code>, then
+        <code>specialling</code>, then <code>prior_decline</code>.
+      </p>
+
+      <h3>Two wordings recorded so they never return</h3>
+      <p>
+        The source keeps both earlier versions that were wrong in opposite directions. The first printed
+        <i>"Cannot take this person"</i> beside a live override button: the refusal was not the error, the live button
+        was, and the words were, because they phrased a fact about a <b>ward</b> as a verdict about a <b>person</b>. The
+        second used a major and minor weight axis with every gate overridable, which put specialling on the minor side,
+        so a recorded reason appeared to place a person into one-to-one nursing that does not exist.
+      </p>
+    </div>
+  </section>
+
+  <section class="panel" id="s15">
+    <div class="ph">
+      <span class="num">15</span>
+      <h2>Self-checks</h2>
+      <p class="lede">The page derives its own reconciliation line and says out loud whether it holds.</p>
+    </div>
+    <div class="pb">
+      <p>
+        The rail foot shows a green dot and a sentence when the figures reconcile, and a red dot with a count of
+        disagreements when they do not. There is one check array on the page and the shell appends to it rather than
+        creating its own. What is checked:
+      </p>
+      <ul>
+        <li>Every ward: <code>ready + held + blocked + occupied</code> equals <code>beds</code>.</li>
+        <li>Every ward: <code>sexMix.Female + sexMix.Male</code> equals <code>occupied</code>.</li>
+        <li>Every ward: locked beds do not exceed total beds.</li>
+        <li>No duplicate movement identifier, and every origin department exists.</li>
+        <li>No movement carries more than three parallel referrals.</li>
+        <li>Every unit a movement points at, and every unit that declined it, exists.</li>
+        <li>Each ward's contention count agrees with the movement list that produced it.</li>
+        <li>
+          <b>The strongest one:</b> a movement may only be pointed at a ward the system would have let it be pointed at.
+          Never one with an absolute gate unmet, and never one needing a recorded reason without that reason on the
+          register.
+        </li>
+      </ul>
+      <p>
+        That last check is what stops the invented dataset from quietly contradicting the rules the screen teaches.
+        Anything built on this standard should keep it.
+      </p>
+    </div>
+  </section>
+
+  <section class="panel" id="s16">
+    <div class="ph">
+      <span class="num">16</span>
+      <h2>Adoption plan</h2>
+      <p class="lede">Eighteen mockups in six visual languages, moved in five waves grouped by shared shell.</p>
+    </div>
+    <div class="pb">
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Wave</th>
+              <th>Pages</th>
+              <th>What the wave is</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="k">0</td>
+              <td>Command</td>
+              <td>The reference build. Done</td>
+            </tr>
+            <tr>
+              <td class="k">1</td>
+              <td>Header, Rail, Movements, Capacity, Delays</td>
+              <td>
+                The operations family, on Command's shell and data. Header and Rail stop being pages of their own and
+                become sections 6.1 and 6.2 of the standard
+              </td>
+            </tr>
+            <tr>
+              <td class="k">2</td>
+              <td>Ward, Ward board, Patient search, Community index</td>
+              <td>The working screens, currently on the Board edition. Fonts and tokens swap by role</td>
+            </tr>
+            <tr>
+              <td class="k">3</td>
+              <td>Statistics main, ward, ED and community team, ED waits</td>
+              <td>
+                The reporting family. Tables take the table contract, at most three charts per page, each with a role of
+                img, a label and a caption stating the numbers
+              </td>
+            </tr>
+            <tr>
+              <td class="k">4</td>
+              <td>Emergency department, Search hub, Patient record, Community team, New referral</td>
+              <td>The app-token and one-off pages. App tokens are not a source for a mockup</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Every page keeps its URL and is republished in place with a version label, and a copy is committed to the
+        repository's mockup folder. The move for each page is the same six steps: read the page and list what it says
+        that the standard does not, keeping any ruling, refusal or wording and adding it to section 8 first; copy the
+        block and the shell rules; rebuild each region from the components; apply the wording, behaviour and
+        accessibility rules; render at 1600 and 1200 in both themes; work the definition of done line by line.
+      </p>
+      <p>
+        Two are gated on you rather than on work: <b>Delays</b> needs you to confirm which of three artifacts is the
+        working one, and <b>New referral</b> is a locked design that needs unlocking for the visual migration only, with
+        its flow, field order and wording staying locked.
+      </p>
+    </div>
+  </section>
+
+  <section class="panel" id="s17">
+    <div class="ph">
+      <span class="num">17</span>
+      <h2>Screens index</h2>
+      <p class="lede">Twelve screens, three groups. Command is the only body built; the other eleven are drawn.</p>
+    </div>
+    <div class="pb">
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="num">No.</th>
+              <th>Screen</th>
+              <th>Group</th>
+              <th>Purpose</th>
+              <th>Primary action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="num">1</td>
+              <td><b>Command</b></td>
+              <td>Operations</td>
+              <td>Every open movement across the network, worst first, with what is wrong beside it</td>
+              <td>New referral</td>
+            </tr>
+            <tr>
+              <td class="num">2</td>
+              <td>Movement</td>
+              <td>Operations</td>
+              <td>One person's movement from referral to bed, with every event, decline and decision on it</td>
+              <td>Record a decision</td>
+            </tr>
+            <tr>
+              <td class="num">3</td>
+              <td>Capacity</td>
+              <td>Operations</td>
+              <td>Beds by site and by ward, what is held, and where the pressure is</td>
+              <td>Hold a bed</td>
+            </tr>
+            <tr>
+              <td class="num">4</td>
+              <td>Wards</td>
+              <td>Network</td>
+              <td>Every ward in the network, what it takes, and how it has answered</td>
+              <td>Ask a ward</td>
+            </tr>
+            <tr>
+              <td class="num">5</td>
+              <td>Emergency departments</td>
+              <td>Network</td>
+              <td>Each department's waiting, longest and breached, and the liaison it works through</td>
+              <td>Open the department</td>
+            </tr>
+            <tr>
+              <td class="num">6</td>
+              <td>Community teams</td>
+              <td>Network</td>
+              <td>The community teams by service, their catchments, and the referrals they send</td>
+              <td>Contact a team</td>
+            </tr>
+            <tr>
+              <td class="num">7</td>
+              <td>Patient search</td>
+              <td>Records</td>
+              <td>Find a person by name or identifier and open their movement, with the refusals stated</td>
+              <td>Open the movement</td>
+            </tr>
+            <tr>
+              <td class="num">8</td>
+              <td>Referrals</td>
+              <td>Records</td>
+              <td>Every referral awaiting triage, oldest first, and the decision on each</td>
+              <td>Triage</td>
+            </tr>
+            <tr>
+              <td class="num">9</td>
+              <td>Handover</td>
+              <td>Records</td>
+              <td>The state of the network as a record for the incoming coordinator, and the sign off</td>
+              <td>Sign off the handover</td>
+            </tr>
+            <tr>
+              <td class="num">10</td>
+              <td>Statistics</td>
+              <td>Records</td>
+              <td>Waits, breaches and flows over a period, with stated scales and nothing extrapolated</td>
+              <td>Export</td>
+            </tr>
+            <tr>
+              <td class="num">11</td>
+              <td>Governance</td>
+              <td>Records</td>
+              <td>The override and decline registers as a governance record</td>
+              <td>Review</td>
+            </tr>
+            <tr>
+              <td class="num">12</td>
+              <td>New referral</td>
+              <td>Flow</td>
+              <td>Raise a referral, from a department or a community team</td>
+              <td>Submit</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Every screen is the same shell with its own panels and its own four core figures in the live tally. Each panel
+        opens with its heading, one sentence and a count, and an empty panel says why it is empty and what the emptiness
+        means.
+      </p>
+    </div>
+  </section>
+
+  <section class="panel" id="s18">
+    <div class="ph">
+      <span class="num">18</span>
+      <h2>Open decisions</h2>
+      <p class="lede">Recorded in the standard as yours to make, plus the ones this review adds.</p>
+    </div>
+    <div class="pb">
+      <h3>Already recorded in the standard</h3>
+      <ul>
+        <li><b>Delays.</b> Confirm which of three artifacts is the working one. The plan assumes 24f6ef55.</li>
+        <li>
+          <b>Legend default.</b> Open only at 1600 by 1100 and wider, closed elsewhere, reader's choice thereafter.
+          Accept or change.
+        </li>
+        <li>
+          <b>New referral.</b> Unlock for the visual migration only, keeping flow, field order and wording locked.
+        </li>
+        <li><b>Ward Home, Daily Return.</b> Say whether it is a mockup to migrate or a closed study.</li>
+        <li>
+          <b>Pinning from a queue row.</b> Wired from the shortlist header today. Say whether a queue row should also
+          pin.
+        </li>
+        <li>
+          <b>Which events are notices.</b> A bed pulled, an override recorded, and a deadline passed within the hour are
+          the three named. A bed pulled has no time in the data, so it is recorded as a kind and not drawn.
+        </li>
+        <li>
+          <b>Export the queue, and sign out.</b> Drawn in Tools, not wired, each saying so. Say whether either is
+          wanted.
+        </li>
+        <li>
+          <b>Five things kept out of the rail</b> and recorded as considered: two lines of purpose per screen, the
+          current screen's own sections, bed pressure meters, the on call roster, a search box. Confirm each stays out.
+        </li>
+      </ul>
+      <h3>Added by this review</h3>
+      <ul>
+        <li>
+          <b>F1.</b> Does a recorded reason get past a prior decline? The mockup says no, the engine does not enforce it
+          at all. Pick one.
+        </li>
+        <li>
+          <b>F2.</b> Is Mental Health Act authorisation a fact about the ward or a judgement about the patient? Both
+          artifacts treat it as a judgement, and the standard's own test suggests otherwise.
+        </li>
+        <li>
+          <b>F3.</b> Name the engine as the source of truth for the gate list, and gate it in the definition of done.
+        </li>
+        <li><b>F4.</b> Settle the ward and site counts: extend Command's data, or restate section 8.3.</li>
+        <li>
+          <b>F5.</b> Say who owns the sex and gender modelling question, and stop new mockups copying the binary field
+          forward.
+        </li>
+        <li><b>F6.</b> Record that Aboriginal cultural safety is a known gap owned outside this team.</li>
+        <li><b>F7.</b> Say in one sentence what the candidate ordering means, and whether it is a suggestion.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="panel" id="s19">
+    <div class="ph">
+      <span class="num">19</span>
+      <h2>Using this file</h2>
+      <p class="lede">What it replaces, and what it does not.</p>
+    </div>
+    <div class="pb">
+      <p>
+        Hand this to Claude at the start of a Ward Flow session instead of the two artifacts. It carries every rule,
+        token, contract, field and gate needed to reason about the system, to review a new mockup, or to plan a
+        migration, at roughly a twentieth of the reading cost.
+      </p>
+      <p>
+        Go back to the artifacts themselves when the exact CSS matters. This brief states the contracts, not the
+        declarations, so anything that must be copied verbatim, the stylesheet, the measurement helpers, the diagram
+        renderer, comes from Ward Flow Command. This file is a reader's brief, not a source of truth: where it and the
+        artifacts disagree, the artifacts win and this file is the thing to correct.
+      </p>
+      <p>
+        It carries no script, so nothing here is hidden behind a control and nothing needs to run for the content to be
+        readable. That also means it is not itself a mockup built to the standard, and section 11's definition of done
+        does not apply to it.
+      </p>
+      <p class="foot">
+        Sources: Ward Flow Command (artifact d821a155, 11,401 lines) and Ward Flow Design System (artifact e7f7b6f2,
+        16,162 lines), both read in full for their structure, prose, data layer and placement engine, plus
+        <code>src/components/ward-management/ward-eligibility.ts</code> and <code>ward-flow-reducer.ts</code> in this
+        repository for the findings that compare the mockup with the shipped engine. Every clinical figure in the two
+        artifacts is invented. The hospital sites and health services are real WA names. Not a medical device and not
+        clinical decision support.
+      </p>
+    </div>
+  </section>
+</div>

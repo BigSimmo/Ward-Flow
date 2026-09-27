@@ -1,0 +1,1245 @@
+/*
+ * Add a patient — Third Edition front-door intake form.
+ * Full multi-panel workflow:
+ * 1. Identity & Demographics
+ * 2. Triage Urgency (ATS 1 to ATS 5 pills)
+ * 3. Statutory Legal Status buttons (Voluntary, Form 1A, Form 3B, Form 4A - never render Mental Health Act section numbers!)
+ * 4. Clinical Presenting Complaint & Notes
+ * 5. Live duplicate detection candidate card panel with match score
+ *
+ * Adheres strictly to Third Edition design tokens, dark/light theme fidelity, min 48px touch targets,
+ * zero horizontal overflow, and repository contract tests.
+ */
+
+.screen {
+  composes: wardTokens from "../ward-tokens.module.css";
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  --wf-border: var(--line);
+  --ap-space-4: 0.25rem;
+  --ap-space-8: 0.5rem;
+  --ap-space-10: 0.625rem;
+  --ap-space-12: 0.75rem;
+  --ap-space-14: 0.875rem;
+  --ap-space-16: 1rem;
+  --ap-space-20: 1.25rem;
+  --ap-space-24: 1.5rem;
+  --ap-space-48: 3rem;
+  --ap-leading-body: 1.5;
+
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--t-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
+  gap: var(--ap-space-14);
+  padding: var(--ap-space-12) var(--ap-space-16) var(--ap-space-24);
+  overflow-x: clip;
+}
+
+/* Governance banner */
+.governanceBanner {
+  display: flex;
+  min-height: var(--ap-space-48);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ap-space-12);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  padding: var(--ap-space-8) var(--ap-space-14);
+}
+
+.governanceBanner p {
+  min-width: 0;
+  flex: 1 1 12rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ap-leading-body);
+}
+
+.prototypeBadge {
+  flex-shrink: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--sunk);
+  padding: var(--ap-space-4) var(--ap-space-8);
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Breadcrumb & Navigation */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  min-height: var(--ap-space-48);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ap-space-48);
+  padding: 0 var(--ap-space-4);
+  color: var(--accent-ink);
+  font-size: var(--t-2);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--r2);
+  transition: color 0.12s;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
+.backLink:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Page Header */
+.pageHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ap-space-8);
+  padding-bottom: var(--ap-space-8);
+  border-bottom: 1px solid var(--line);
+}
+
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ap-space-12);
+}
+
+.titleGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ap-space-10);
+}
+
+.pageTitle {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: var(--t-5);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.chipMark {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ap-space-8);
+}
+
+.headerBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--ap-space-48);
+  padding: 0 var(--ap-space-14);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: var(--t-2);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+
+.headerBtn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.headerBtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.pageSubtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-2);
+  line-height: var(--ap-leading-body);
+}
+
+/* Owner Rule D4 alert banner */
+.d4Alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ap-space-12);
+  min-height: var(--ap-space-48);
+  padding: var(--ap-space-8) var(--ap-space-14);
+  border-radius: var(--r2);
+  background: var(--sunk);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  font-size: var(--t-2);
+  font-weight: 600;
+}
+
+.d4Close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--ap-space-48);
+  min-width: var(--ap-space-48);
+  background: none;
+  border: none;
+  font-size: var(--t-4);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.d4Close:hover {
+  color: var(--ink);
+}
+
+/* Workspace layout */
+.apWork {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+  gap: var(--ap-space-16);
+  align-items: start;
+  width: 100%;
+  max-width: 100%;
+}
+
+.apMainCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ap-space-16);
+  min-width: 0;
+}
+
+.apSideCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ap-space-16);
+  min-width: 0;
+}
+
+/* Form structure */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ap-space-16);
+  width: 100%;
+}
+
+/* Panels */
+.panelCard {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: var(--lift);
+  overflow: hidden;
+}
+
+.identityPanel,
+.triagePanel,
+.legalPanel,
+.clinicalPanel,
+.dupCandidatePanel,
+.nextPanel,
+.boardPanel,
+.reconciliationPanel {
+  min-width: 0;
+}
+
+.panelHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ap-space-4);
+  padding: var(--ap-space-12) var(--ap-space-16);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.panelTitleWithCount {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ap-space-8);
+}
+
+.panelHeading {
+  margin: 0;
+  color: var(--accent-ink);
+  font-family: var(--display);
+  font-size: var(--t-3);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.panelSubhead {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: var(--ap-leading-body);
+}
+
+.panelBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ap-space-14);
+  padding: var(--ap-space-16);
+}
+
+.demonstrationBoundary {
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.7fr) minmax(0, 1.3fr);
+  gap: var(--ap-space-12) var(--ap-space-20);
+  align-items: center;
+  border: 1px solid var(--warn);
+  border-radius: var(--r1);
+  background: var(--warn-soft);
+  padding: var(--ap-space-14) var(--ap-space-16);
+  color: var(--ink);
+}
+
+.demonstrationBoundary h2,
+.demonstrationBoundary p {
+  margin: 0;
+}
+
+.demonstrationBoundary h2 {
+  font-family: var(--display);
+  font-size: var(--t-3);
+  line-height: 1.3;
+}
+
+.demonstrationBoundary > p {
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  line-height: var(--ap-leading-body);
+}
+
+.demonstrationEyebrow {
+  margin-bottom: var(--ap-space-4) !important;
+  color: var(--warn);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Grid layout for form fields */
+.apGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ap-space-14);
+}
+
+.apField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.apSpan2 {
+  grid-column: 1 / -1;
+}
+
+.fieldLegend {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ap-space-8);
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.requiredMarker {
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.optionalMarker {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.input,
+.select {
+  min-height: var(--ap-space-48);
+  width: 100%;
+  padding: 0 var(--ap-space-12);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--t-3);
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  box-sizing: border-box;
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s;
+}
+
+.input[type="date"] {
+  min-height: var(--ap-space-48);
+  line-height: var(--ap-space-48);
+}
+
+.input::placeholder {
+  color: var(--muted);
+}
+
+.input:hover,
+.select:hover {
+  border-color: var(--ink-soft);
+}
+
+.input:focus-visible,
+.select:focus-visible,
+.textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.textarea {
+  min-height: 5rem;
+  width: 100%;
+  padding: var(--ap-space-10) var(--ap-space-12);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--t-3);
+  line-height: var(--ap-leading-body);
+  resize: vertical;
+  outline: none;
+}
+
+.textarea::placeholder {
+  color: var(--muted);
+}
+
+.fieldNote {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ap-leading-body);
+}
+
+/* Gender control */
+.genderControlGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ap-space-8);
+}
+
+.segmentedGroup {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--sunk);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+}
+
+.segBtn {
+  flex: 1 1 0;
+  min-height: var(--ap-space-48);
+  padding: 0 var(--ap-space-10);
+  border: 1px solid transparent;
+  border-radius: var(--r2);
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    color 0.12s,
+    border-color 0.12s;
+}
+
+.segBtn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.segBtn[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line-strong);
+  box-shadow: var(--lift);
+}
+
+.segBtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Triage urgency pills */
+.triagePillGroup {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: var(--ap-space-8);
+}
+
+.triagePill {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: var(--ap-space-48);
+  padding: var(--ap-space-8) var(--ap-space-10);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
+}
+
+.triagePill:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.triagePill[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--ink);
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.triagePill:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.triageCode {
+  font-family: var(--mono);
+  font-size: var(--t-1);
+  font-weight: 700;
+}
+
+.triageDesc {
+  font-size: var(--t-0);
+  font-weight: 500;
+}
+
+.triageTime {
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.triagePill[aria-pressed="true"] .triageTime {
+  color: var(--accent-ink);
+}
+
+/* Statutory legal status buttons */
+.legalButtonGroup {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--ap-space-8);
+}
+
+.legalBtn {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: var(--ap-space-48);
+  padding: var(--ap-space-8) var(--ap-space-12);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
+}
+
+.legalBtn:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.legalBtn[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--ink);
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.legalBtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.legalBtnTitle {
+  font-size: var(--t-2);
+  font-weight: 700;
+}
+
+.legalBtnSubtitle {
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+.legalBtn[aria-pressed="true"] .legalBtnSubtitle {
+  color: var(--accent-ink);
+}
+
+/* Clinical presentation stack */
+.clinicalStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ap-space-14);
+}
+
+/* Submission action row */
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ap-space-12);
+  margin-top: var(--ap-space-8);
+}
+
+.submit {
+  display: inline-flex;
+  min-height: var(--ap-space-48);
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--ap-space-24);
+  border: 1px solid var(--accent);
+  border-radius: var(--r2);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--body);
+  font-size: var(--t-2);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+
+.submit:hover {
+  background: var(--accent-ink);
+  border-color: var(--accent-ink);
+}
+
+.submit:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.submit[aria-disabled="true"] {
+  border-color: var(--line-strong);
+  background: var(--sunk);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.secondaryActionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--ap-space-48);
+  padding: 0 var(--ap-space-16);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: var(--t-2);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+
+.secondaryActionBtn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.secondaryActionBtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Unavailable reason banner */
+.unavailableReason {
+  margin: 0;
+  border: 1px solid var(--warn);
+  border-radius: var(--r2);
+  background: var(--warn-soft);
+  padding: var(--ap-space-10) var(--ap-space-14);
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 500;
+  line-height: var(--ap-leading-body);
+}
+
+.rejection {
+  margin: 0;
+  border: 1px solid var(--danger);
+  border-radius: var(--r2);
+  background: var(--danger-soft);
+  padding: var(--ap-space-10) var(--ap-space-14);
+  color: var(--danger);
+  font-size: var(--t-1);
+  font-weight: 600;
+  line-height: var(--ap-leading-body);
+}
+
+/* Carried search section */
+.carriedSearch {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  padding: var(--ap-space-12);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ap-space-4);
+}
+
+.carriedSearch h3 {
+  margin: 0;
+  color: var(--accent-ink);
+  font-size: var(--t-2);
+  font-weight: 600;
+}
+
+.carriedValue {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-3);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.carriedNote {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.prefillActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ap-space-8);
+  margin-top: var(--ap-space-4);
+}
+
+.prefillActions button {
+  min-height: var(--ap-space-48);
+  padding: 0 var(--ap-space-12);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  color: var(--accent-ink);
+  background: var(--surface);
+  font: inherit;
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+
+.prefillActions button:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.prefillActions button:disabled {
+  color: var(--muted);
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.prefillActions button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ═══════════════ Duplicate Check Panel ═══════════════ */
+.duplicateNotice {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: var(--lift);
+  overflow: hidden;
+}
+
+.duplicateHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ap-space-8);
+  padding: var(--ap-space-12) var(--ap-space-16);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.duplicateScopeTag {
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--sunk);
+  padding: 2px 8px;
+  border-radius: var(--r2);
+  border: 1px solid var(--line);
+}
+
+.infoHeading {
+  margin: 0;
+  color: var(--accent-ink);
+  font-family: var(--display);
+  font-size: var(--t-3);
+  font-weight: 600;
+}
+
+.checkScope {
+  margin: 0;
+  padding: var(--ap-space-8) var(--ap-space-16) 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+.duplicateIdle {
+  margin: 0;
+  padding: var(--ap-space-12) var(--ap-space-16);
+  color: var(--muted);
+  font-size: var(--t-2);
+  line-height: var(--ap-leading-body);
+}
+
+.duplicateResultsGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ap-space-10);
+  padding: var(--ap-space-12) var(--ap-space-16);
+}
+
+.duplicateLead {
+  margin: 0;
+  padding: var(--ap-space-8) var(--ap-space-10);
+  border-radius: var(--r2);
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+  line-height: var(--ap-leading-body);
+}
+
+.duplicateList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ap-space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Rich Candidate Cards */
+.duplicateCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ap-space-4);
+  padding: var(--ap-space-10) var(--ap-space-12);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  transition: border-color 0.12s;
+}
+
+.duplicateCard:hover {
+  border-color: var(--accent);
+}
+
+.cardHeaderRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ap-space-8);
+}
+
+.cardPatientName {
+  font-size: var(--t-2);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.matchScorePill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--r2);
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 600;
+}
+
+.matchScorePillNear {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--r2);
+  background: var(--sunk);
+  border: 1px solid var(--line-strong);
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  font-weight: 600;
+}
+
+.cardMetaRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ap-space-4);
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+}
+
+.metaPid {
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.metaDob {
+  font-family: var(--mono);
+}
+
+.cardFootRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ap-space-8);
+  font-size: var(--t-0);
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  padding-top: var(--ap-space-4);
+  margin-top: 2px;
+}
+
+.cardFootId {
+  font-family: var(--mono);
+}
+
+.cardFootStatus {
+  font-weight: 500;
+}
+
+/* Side context panels */
+.sideNote {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: var(--ap-leading-body);
+}
+
+.boardCountBadge {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--sunk);
+  padding: 2px 8px;
+  border-radius: var(--r2);
+  border: 1px solid var(--line);
+}
+
+.boardList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--line);
+  border-radius: var(--r2);
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+.boardRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ap-space-8);
+  padding: var(--ap-space-8) var(--ap-space-12);
+  background: var(--surface);
+  font-size: var(--t-1);
+}
+
+.boardRowName {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.boardRowLoc {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.boardRowId {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+/* Breakpoints adhering strictly to tests/ward-primitives-shared.test.ts (48.0625 and 64) */
+@media (max-width: 48rem) {
+  .apGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .apGrid > * {
+    grid-column: 1;
+  }
+
+  .main {
+    padding: var(--ap-space-8);
+  }
+
+  .triagePillGroup {
+    grid-template-columns: 1fr;
+  }
+
+  .legalButtonGroup {
+    grid-template-columns: 1fr;
+  }
+
+  .input,
+  .select {
+    font-size: var(--t-4);
+  }
+
+  .actionRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .submit,
+  .secondaryActionBtn {
+    width: 100%;
+  }
+}
+
+@media (min-width: 48.0625rem) {
+  .apGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 63.9375rem) {
+  .apWork {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ap-space-16);
+  }
+
+  .apMainCol,
+  .form,
+  .apSideCol {
+    display: contents;
+  }
+
+  .carriedSearch {
+    order: 1;
+  }
+
+  .identityPanel {
+    order: 2;
+  }
+
+  /* Duplicate collision alerts (.dupCandidatePanel / warning callouts) repositioned directly
+     beneath active identity input fields on single-column viewports (< 64rem), ahead of subsequent sections */
+  .dupCandidatePanel {
+    order: 3;
+    margin-top: 0;
+  }
+
+  .dupCandidatePanel .duplicateLead {
+    border-left: 0.25rem solid var(--ward-warning, var(--warn));
+  }
+
+  .demonstrationBoundary {
+    order: 4;
+    grid-template-columns: 1fr;
+  }
+
+  .triagePanel {
+    order: 5;
+  }
+
+  .legalPanel {
+    order: 6;
+  }
+
+  .clinicalPanel {
+    order: 7;
+  }
+
+  .rejection {
+    order: 8;
+  }
+
+  .actionRow {
+    order: 9;
+  }
+
+  .unavailableReason {
+    order: 10;
+  }
+
+  .nextPanel {
+    order: 11;
+  }
+
+  .boardPanel {
+    order: 12;
+  }
+
+  .reconciliationPanel {
+    order: 13;
+  }
+}
+
+@media (min-width: 64rem) {
+  .apWork {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+    gap: var(--ap-space-16);
+    align-items: start;
+  }
+
+  .apMainCol {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ap-space-16);
+    min-width: 0;
+  }
+
+  .apSideCol {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ap-space-16);
+    min-width: 0;
+  }
+
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ap-space-16);
+    width: 100%;
+  }
+
+  .carriedSearch,
+  .identityPanel,
+  .dupCandidatePanel,
+  .triagePanel,
+  .legalPanel,
+  .clinicalPanel,
+  .rejection,
+  .actionRow,
+  .unavailableReason,
+  .nextPanel,
+  .boardPanel,
+  .reconciliationPanel {
+    order: 0;
+  }
+}
+
+@media print {
+  .screen,
+  .screen * {
+    color: CanvasText !important;
+    background-color: Canvas !important;
+  }
+
+  .headerActions,
+  .prefillActions,
+  .actionRow,
+  .breadcrumb {
+    display: none !important;
+  }
+
+  .main {
+    display: block;
+    padding: 0;
+  }
+}

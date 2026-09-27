@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "id": "f7d773dc-b6eb-4c63-9799-e63eed616b3e",
+  "createdOn": "2026-09-09",
+  "action": "add",
+  "payload": {
+    "pri": "P2",
+    "type": "issue",
+    "summary": "Ward Flow chrome header: tests/ui-ward-chrome-header.spec.ts covers 3 of the 8 audited faults, and the other 5 have no browser coverage",
+    "detail": "The 2026-09-07 audit measured EIGHT faults in WardChromeHeader. tests/ui-ward-chrome-header.spec.ts was written against three of them — the clipped/unclickable search popup, the search box overlapping the Figures and Tasks buttons below ~1024px, and the primary action pushed off-screen at 375px — plus a tap-target floor and the phone-bar overlap. The remaining five have no browser coverage at all. NEXT ACTION: extend that spec, following its own established pattern of REAL CLICKS rather than DOM-presence assertions — the standing lesson from this header is that expect(el).toBeInTheDocument() passed throughout the entire defect, because presence is compatible with an element nobody can reach; the popup case had 12 results present and 0 reachable. VERIFIED GREEN 2026-09-09 at 41ceaf4b3e on a repaired install (npm ci; installed-lock-parity clean): 11 declared, 11 run, 11 passed, chromium-mockups, including the phone-bar test that was red before the padding-top fix in 05792e7a3f. WHY IT MATTERS: before this spec existed, a grep for any ward-chrome testid across all eleven ui-ward-*.spec.ts files returned ZERO matches, so nothing had ever been watching this header — three of the eight faults made controls genuinely unusable.",
+    "source": "Ward Verifier session 2026-09-09; spec re-run on correct dependencies after a lockfile skew was found and fixed",
+    "issueUlid": "01M236CD6HPK48KNSW1MEYS5SX"
+  }
+}

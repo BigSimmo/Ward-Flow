@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "id": "9ec65f78-bf59-4518-a744-4fd046cd9728",
+  "createdOn": "2026-09-12",
+  "action": "cancel",
+  "payload": {
+    "requestId": "7235af08-d774-4657-9e90-1a57072a3c0e",
+    "reason": "Superseded by 297e9dcf-26ef-48b7-94fc-f50158fac22d, which records the same single run of the ward mockups suite on 2026-09-10 and is the latest of four ULID-ordered restatements of it. THIS RECORD CARRIES A FALSE COUNT AND ITS SUCCESSOR SAYS SO IN ITS OWN TEXT: \"two earlier versions of this row (7235af08, 03f090b7) said the guard permits one such entry and found four. BOTH HALVES ARE FALSE. The assertion is .toEqual([]) - it permits ZERO. The received array holds TWO entries, not four: - Expected - 1 / + Received + 4 are counts of DIFF LINES.\" Applying it would create a second issue for one event, stating a figure already retracted. Its three ward defects are fixed (b04e796a25 the queued-table overflow affordance; SEEDED_QUEUED_IDS corrected from four to six; the peel-ed empty-inbox assertion rewritten). Cancelled by Ward Verifier 2026-09-12 after triaging the whole inbox against the ward line at 57ca0ed793."
+  }
+}

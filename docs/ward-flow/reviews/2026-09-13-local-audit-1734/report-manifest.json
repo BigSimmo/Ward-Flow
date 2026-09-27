@@ -1,0 +1,31 @@
+{
+  "writtenAt": "2026-09-13T10:47:07.358Z",
+  "target": "D:\\Worktrees\\Database\\ward-lead\\docs\\ward-flow\\reviews\\2026-09-13-local-audit-1734",
+  "files": [
+    {
+      "name": "review-evidence.json",
+      "bytes": 10820,
+      "sha256": "e353138bb416e5b701cc640ae24ac4577c3dbea2bc222e3df1915b3e8d2a9a20"
+    },
+    {
+      "name": "test-failure-comparison.json",
+      "bytes": 15165,
+      "sha256": "5f1a28ae1f50f8f4f6f6db3100ac2a2558977a2b0331f74ca952a7f8e8600f94"
+    },
+    {
+      "name": "WardFlow_Local_Final_Audit.md",
+      "bytes": 88382,
+      "sha256": "eb138b4a37f3cf2af87c12f76b5977b32b0812071738324f9ea31dc85c467da9"
+    },
+    {
+      "name": "WardFlow_Local_Issue_Register.csv",
+      "bytes": 19634,
+      "sha256": "2cd746f7cad13fec0f9322166b3f3c01d76cd776c141f46a53a8c02d993a50d1"
+    },
+    {
+      "name": "WardFlow_Local_Issue_Register.json",
+      "bytes": 38587,
+      "sha256": "8a972a8492231be7b412f77836b20919c25dca1126228ba954a0e2606582c37b"
+    }
+  ]
+}

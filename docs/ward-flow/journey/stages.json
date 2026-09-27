@@ -1,0 +1,4739 @@
+{
+ "width": 2880,
+ "height": 4832,
+ "spineX": 910,
+ "nodes": [
+  {
+   "id": "srcCommunity",
+   "lane": "expected",
+   "x": 60,
+   "y": 66,
+   "w": 236,
+   "h": 62,
+   "label": "A community team",
+   "phase": "front"
+  },
+  {
+   "id": "srcCrisis",
+   "lane": "expected",
+   "x": 312,
+   "y": 66,
+   "w": 236,
+   "h": 62,
+   "label": "A crisis service",
+   "phase": "front"
+  },
+  {
+   "id": "srcPolice",
+   "lane": "expected",
+   "x": 564,
+   "y": 66,
+   "w": 236,
+   "h": 62,
+   "label": "Police",
+   "phase": "front"
+  },
+  {
+   "id": "srcAmbulance",
+   "lane": "expected",
+   "x": 816,
+   "y": 66,
+   "w": 236,
+   "h": 62,
+   "label": "Ambulance",
+   "phase": "front"
+  },
+  {
+   "id": "srcHospital",
+   "lane": "expected",
+   "x": 1068,
+   "y": 66,
+   "w": 236,
+   "h": 62,
+   "label": "Another hospital",
+   "phase": "front"
+  },
+  {
+   "id": "srcEd",
+   "lane": "expected",
+   "x": 1320,
+   "y": 66,
+   "w": 236,
+   "h": 62,
+   "label": "A doctor in an ED",
+   "phase": "front"
+  },
+  {
+   "id": "srcGp",
+   "lane": "expected",
+   "x": 1572,
+   "y": 66,
+   "w": 236,
+   "h": 62,
+   "label": "A GP",
+   "phase": "front"
+  },
+  {
+   "id": "hdr-src",
+   "lane": "heading",
+   "x": 60,
+   "y": 14,
+   "w": 700,
+   "h": 40,
+   "label": "Who raises it  ·  seven",
+   "sub": "A doctor in an ED may only raise it as an ED referral — they cannot claim another source.",
+   "phase": "front"
+  },
+  {
+   "id": "raised",
+   "lane": "expected",
+   "x": 700,
+   "y": 200,
+   "w": 420,
+   "h": 80,
+   "label": "A referral is raised",
+   "sub": "Somebody has decided this person needs to go somewhere.",
+   "patient": "Wherever they already were.",
+   "bed": "Nothing yet.",
+   "phase": "front"
+  },
+  {
+   "id": "addressed",
+   "lane": "expected",
+   "x": 700,
+   "y": 320,
+   "w": 420,
+   "h": 86,
+   "label": "Addressed to up to three places at once",
+   "sub": "Never two of the same kind. Each answers on its own, and cannot see the others.",
+   "patient": "Still where they were.",
+   "bed": "Nothing yet.",
+   "phase": "front"
+  },
+  {
+   "id": "armCommunity",
+   "lane": "expected",
+   "x": 60,
+   "y": 460,
+   "w": 460,
+   "h": 90,
+   "label": "①  Sent to a community team",
+   "sub": "Named as free text — there is no register of teams to choose from.",
+   "patient": "At home, or wherever they were.",
+   "bed": "Nothing. This arm never involves one.",
+   "phase": "front"
+  },
+  {
+   "id": "armWard",
+   "lane": "expected",
+   "x": 700,
+   "y": 460,
+   "w": 420,
+   "h": 90,
+   "label": "②  Sent to a psychiatric ward",
+   "sub": "Carries what the bed must be: sex, gender, secure, involuntary, high-acuity nursing.",
+   "patient": "Still waiting.",
+   "bed": "Nothing reserved.",
+   "phase": "front"
+  },
+  {
+   "id": "armEd",
+   "lane": "expected",
+   "x": 1300,
+   "y": 460,
+   "w": 500,
+   "h": 90,
+   "label": "③  Sent to an emergency department",
+   "sub": "Must say what it is FOR: a bed, a psychiatric review, or a medical assessment.",
+   "patient": "On their way to, or already in, that department.",
+   "bed": "Nothing.",
+   "phase": "front"
+  },
+  {
+   "id": "cmhtAnswers",
+   "lane": "expected",
+   "x": 60,
+   "y": 600,
+   "w": 460,
+   "h": 70,
+   "label": "The team answers",
+   "phase": "front"
+  },
+  {
+   "id": "cmhtAccepted",
+   "lane": "end",
+   "x": 60,
+   "y": 720,
+   "w": 460,
+   "h": 90,
+   "label": "Accepted — community follow-up",
+   "sub": "The arm ends here. It never becomes a bed search.",
+   "phase": "front"
+  },
+  {
+   "id": "cmhtDeclined",
+   "lane": "end",
+   "x": 60,
+   "y": 860,
+   "w": 460,
+   "h": 112,
+   "label": "Declined — four reasons",
+   "sub": "Outside the team's catchment · needs inpatient care, not community follow-up · the client declined or could not be contacted · already open to another team.",
+   "phase": "front"
+  },
+  {
+   "id": "cmhtNothing",
+   "lane": "stall",
+   "x": 60,
+   "y": 1012,
+   "w": 460,
+   "h": 104,
+   "label": "No answer at all — and nothing can close it",
+   "sub": "No acceptance anywhere cancels a queued community arm, so unlike the other two it can only end by the team answering or the referrer taking this arm back. Nothing escalates, and there is no clock.",
+   "finding": "Nothing anywhere can close a queued community arm except the team answering or the referrer.",
+   "phase": "front"
+  },
+  {
+   "id": "cmhtWithdrawn",
+   "lane": "stall",
+   "x": 60,
+   "y": 1152,
+   "w": 460,
+   "h": 110,
+   "label": "The referrer withdraws just this arm",
+   "sub": "A narrow exception added 17 September 2026, and only while the arm is still queued — a team that has already answered keeps its answer. The bed request stands.",
+   "phase": "front"
+  },
+  {
+   "id": "cmhtFromSearch",
+   "lane": "diversion",
+   "x": 60,
+   "y": 1298,
+   "w": 460,
+   "h": 110,
+   "label": "It can also begin part-way through a bed search",
+   "sub": "Redirecting a bed search to a community team raises a real referral of this kind — or reuses a queued arm already asking that same team, rather than asking twice. So this arm does not only start at the front door.",
+   "phase": "front"
+  },
+  {
+   "id": "cmhtExempt",
+   "lane": "note",
+   "x": 60,
+   "y": 1444,
+   "w": 460,
+   "h": 100,
+   "label": "This arm is exempt from the automatic cancellation",
+   "sub": "In both directions. A ward accepting does not close it, and it accepting does not close the bed search. It is the only arm that behaves this way.",
+   "phase": "front"
+  },
+  {
+   "id": "wardAnswers",
+   "lane": "expected",
+   "x": 700,
+   "y": 600,
+   "w": 420,
+   "h": 70,
+   "label": "The ward answers",
+   "phase": "front"
+  },
+  {
+   "id": "wardAccepted",
+   "lane": "expected",
+   "x": 700,
+   "y": 720,
+   "w": 420,
+   "h": 90,
+   "label": "Accepted",
+   "sub": "The only answer anywhere that starts something.",
+   "patient": "Still waiting.",
+   "bed": "Still nothing — accepting reserves no bed.",
+   "phase": "front"
+  },
+  {
+   "id": "wardDeclined",
+   "lane": "end",
+   "x": 700,
+   "y": 860,
+   "w": 420,
+   "h": 112,
+   "label": "Declined — seven reasons",
+   "sub": "No suitable bed · age band not provided here · no bed of that designation · no secure bed · belongs to another service · referred elsewhere · another reason.",
+   "phase": "front"
+  },
+  {
+   "id": "wardNothing",
+   "lane": "stall",
+   "x": 700,
+   "y": 1022,
+   "w": 420,
+   "h": 96,
+   "label": "No answer at all",
+   "sub": "It simply stays waiting. Nothing escalates on its own, and there is no clock on it.",
+   "phase": "front"
+  },
+  {
+   "id": "othersCancelled",
+   "lane": "diversion",
+   "x": 700,
+   "y": 1168,
+   "w": 420,
+   "h": 100,
+   "label": "Every other waiting arm is cancelled",
+   "sub": "Automatically, the moment a ward OR a department accepts — except the community arm, which is exempt in both directions. The referrer is neither asked nor told.",
+   "phase": "front"
+  },
+  {
+   "id": "wardWithdrawn",
+   "lane": "diversion",
+   "x": 700,
+   "y": 1310,
+   "w": 420,
+   "h": 130,
+   "label": "The referrer takes the WHOLE referral back",
+   "sub": "The default, and the opposite of the community arm's one-arm exception: every still-queued destination goes at once. If a bed search is already running it releases the held bed and cancels the transport, and closes as 'did not proceed'. Refused once transport has collected the patient — that needs a coordinator, not an automatic withdrawal.",
+   "phase": "front"
+  },
+  {
+   "id": "wardBlocked",
+   "lane": "stall",
+   "x": 700,
+   "y": 1470,
+   "w": 420,
+   "h": 116,
+   "label": "A ward cannot accept while a department's bed search is live",
+   "sub": "One referral, two arms: if the emergency department already raised the bed search, the ward arm is refused until that movement closes or arrives. Neither arm's screen shows the other.",
+   "phase": "front"
+  },
+  {
+   "id": "edBoard",
+   "lane": "expected",
+   "x": 1300,
+   "y": 600,
+   "w": 500,
+   "h": 90,
+   "label": "It lands on that department's board",
+   "sub": "And the referrer can see their patient sitting there.",
+   "phase": "front"
+  },
+  {
+   "id": "edExpected",
+   "lane": "expected",
+   "x": 1300,
+   "y": 740,
+   "w": 500,
+   "h": 90,
+   "label": "Expected to arrive",
+   "sub": "Triaged, and not here yet. It sits on a separate list from the referrals.",
+   "patient": "Not here yet.",
+   "bed": "Nothing.",
+   "phase": "front"
+  },
+  {
+   "id": "edNeverArrives",
+   "lane": "stall",
+   "x": 1300,
+   "y": 880,
+   "w": 500,
+   "h": 120,
+   "label": "Expected, and never arrives",
+   "sub": "A queued ED arm can be declined or withdrawn before arrival, removing this expectation. Otherwise it stays until arrival; past 72 hours the screen adds a reminder but changes no record.",
+   "finding": "A queued ED arm can be declined or withdrawn before arrival; the expectation then disappears without an arrival stamp.",
+   "phase": "front"
+  },
+  {
+   "id": "edArrived",
+   "lane": "expected",
+   "x": 1300,
+   "y": 1040,
+   "w": 500,
+   "h": 86,
+   "label": "Marked present",
+   "sub": "The only door between the two lists. Stamped once; a repeat keeps the earliest time.",
+   "patient": "Physically in the department.",
+   "bed": "Nothing.",
+   "phase": "front"
+  },
+  {
+   "id": "edAnswers",
+   "lane": "expected",
+   "x": 1300,
+   "y": 1176,
+   "w": 500,
+   "h": 70,
+   "label": "The department answers, or acts",
+   "phase": "front"
+  },
+  {
+   "id": "edAccepted",
+   "lane": "expected",
+   "x": 1300,
+   "y": 1296,
+   "w": 500,
+   "h": 104,
+   "label": "Accepted — the department takes them",
+   "sub": "And every other destination still waiting is cancelled on the spot, including the ward request sent alongside it. The referrer is not asked.",
+   "patient": "In the department.",
+   "bed": "Nothing — accepting reserves none.",
+   "phase": "front"
+  },
+  {
+   "id": "edDeclined",
+   "lane": "end",
+   "x": 1300,
+   "y": 1450,
+   "w": 500,
+   "h": 104,
+   "label": "Declined — three reasons only",
+   "sub": "Belongs to another service · referred elsewhere · another reason. The four bed-shaped reasons are withheld on purpose: an ED is not being asked for a bed.",
+   "phase": "front"
+  },
+  {
+   "id": "edRaise",
+   "lane": "expected",
+   "x": 1300,
+   "y": 1604,
+   "w": 500,
+   "h": 104,
+   "label": "A doctor raises a bed search from here",
+   "sub": "This is what creates the record that moves. It can be linked back to the referral that sent them, or raised for somebody nobody referred.",
+   "patient": "In the department.",
+   "bed": "Nothing yet.",
+   "phase": "front"
+  },
+  {
+   "id": "edOutcome",
+   "lane": "end",
+   "x": 1300,
+   "y": 1758,
+   "w": 500,
+   "h": 112,
+   "label": "The department decides no bed is needed",
+   "sub": "Two labels, one behaviour: 'for community follow-up' raises no referral and tells no team — only the separate action below does that. Unwinds a held bed, an uncollected transport job and every live ward request. Refused once transport has collected them.",
+   "phase": "bed"
+  },
+  {
+   "id": "edToCommunity",
+   "lane": "diversion",
+   "x": 1300,
+   "y": 1920,
+   "w": 500,
+   "h": 124,
+   "label": "Referred straight to a community team instead",
+   "sub": "Ends the bed search and creates or reuses a real community referral. Available from the moment the bed search exists until the patient is collected — not only from a department. Refused once they are collected, and while a legal form has no conclusive examination outcome.",
+   "phase": "bed"
+  },
+  {
+   "id": "edLeft",
+   "lane": "end",
+   "x": 1300,
+   "y": 2084,
+   "w": 500,
+   "h": 90,
+   "label": "Left the department",
+   "sub": "Only recordable after an outcome has been recorded first.",
+   "phase": "bed"
+  },
+  {
+   "id": "seam",
+   "lane": "seam",
+   "x": 700,
+   "y": 1700,
+   "w": 420,
+   "h": 100,
+   "label": "A movement now exists",
+   "sub": "Accepting a referral starts nothing by itself. This second record is the one that moves.",
+   "patient": "Unchanged.",
+   "bed": "Still nothing.",
+   "phase": "bed"
+  },
+  {
+   "id": "placement",
+   "lane": "expected",
+   "x": 700,
+   "y": 1854,
+   "w": 420,
+   "h": 60,
+   "label": "Placement requested",
+   "patient": "Waiting, wherever they are.",
+   "bed": "Nothing yet.",
+   "phase": "bed"
+  },
+  {
+   "id": "asked",
+   "lane": "expected",
+   "x": 700,
+   "y": 1968,
+   "w": 420,
+   "h": 76,
+   "label": "Wards are asked",
+   "sub": "One at a time, or several at once, up to three.",
+   "patient": "Still waiting.",
+   "bed": "Nothing yet.",
+   "phase": "bed"
+  },
+  {
+   "id": "inPrinciple",
+   "lane": "expected",
+   "x": 700,
+   "y": 2098,
+   "w": 420,
+   "h": 76,
+   "label": "A ward accepts in principle",
+   "sub": "Still no bed set aside.",
+   "patient": "Still waiting.",
+   "bed": "Promised, not reserved.",
+   "phase": "bed"
+  },
+  {
+   "id": "pulled",
+   "lane": "expected",
+   "x": 700,
+   "y": 2228,
+   "w": 420,
+   "h": 90,
+   "label": "A bed is pulled and held",
+   "sub": "Empty, offered to nobody else. Four hours is the default, not a rule — a coordinator can set the hold anywhere between thirty minutes and four hours. The admission this creates now names the movement it came from — a join added by owner ruling on 21 September, and the first pointer of any kind between the patient's track and the bed's; it is empty for the beds seeded as already occupied, so anything reading it has to cope with nothing being there.",
+   "patient": "Still where they were.",
+   "bed": "Held.",
+   "phase": "bed"
+  },
+  {
+   "id": "booked",
+   "lane": "expected",
+   "x": 700,
+   "y": 2372,
+   "w": 420,
+   "h": 76,
+   "label": "Transport is booked",
+   "sub": "Five answers, none defaulted — provider, escort, CAD number, voluntary or involuntary, estimated time.",
+   "patient": "Waiting, with a journey arranged.",
+   "bed": "Held.",
+   "phase": "bed"
+  },
+  {
+   "id": "handover",
+   "lane": "expected",
+   "x": 700,
+   "y": 2502,
+   "w": 420,
+   "h": 60,
+   "label": "Handover ready",
+   "patient": "Ready to be collected.",
+   "bed": "Held.",
+   "phase": "bed"
+  },
+  {
+   "id": "enroute",
+   "lane": "expected",
+   "x": 700,
+   "y": 2616,
+   "w": 420,
+   "h": 70,
+   "label": "The crew accepts, and sets off",
+   "patient": "Still where they were.",
+   "bed": "Held.",
+   "phase": "bed"
+  },
+  {
+   "id": "collected",
+   "lane": "expected",
+   "x": 700,
+   "y": 2740,
+   "w": 420,
+   "h": 76,
+   "label": "The patient is collected",
+   "sub": "After this point, everything changes.",
+   "patient": "In a vehicle, between two places.",
+   "bed": "Held.",
+   "phase": "bed"
+  },
+  {
+   "id": "arrived",
+   "lane": "expected",
+   "x": 700,
+   "y": 2870,
+   "w": 420,
+   "h": 76,
+   "label": "The ward says they have arrived",
+   "sub": "The one step that can never be undone.",
+   "patient": "On the ward.",
+   "bed": "Occupied.",
+   "phase": "ward"
+  },
+  {
+   "id": "occupied",
+   "lane": "expected",
+   "x": 700,
+   "y": 3000,
+   "w": 420,
+   "h": 60,
+   "label": "Occupied — on the ward",
+   "patient": "Being treated.",
+   "bed": "Theirs, through leave and absence.",
+   "phase": "ward"
+  },
+  {
+   "id": "ready",
+   "lane": "expected",
+   "x": 700,
+   "y": 3114,
+   "w": 420,
+   "h": 86,
+   "label": "Clinically ready to leave",
+   "sub": "The patient's departure and the named bed-release record proceed on two tracks.",
+   "patient": "Finished with hospital, possibly still in the bed.",
+   "bed": "Occupied.",
+   "phase": "ward"
+  },
+  {
+   "id": "sWardDecline",
+   "lane": "stall",
+   "x": 60,
+   "y": 1968,
+   "w": 460,
+   "h": 96,
+   "label": "A ward declines — seven reasons",
+   "sub": "No bed · sex mix · no specialling · acuity mix · capability mismatch · bed pulled for an earlier referral · out of catchment.",
+   "phase": "bed"
+  },
+  {
+   "id": "sWithdrawWard",
+   "lane": "stall",
+   "x": 60,
+   "y": 2104,
+   "w": 460,
+   "h": 96,
+   "label": "One ward's request is taken back",
+   "sub": "Seven reasons. The other wards asked carry on considering.",
+   "phase": "bed"
+  },
+  {
+   "id": "sAcceptWithdrawn",
+   "lane": "stall",
+   "x": 60,
+   "y": 2240,
+   "w": 460,
+   "h": 96,
+   "label": "The acceptance is withdrawn",
+   "sub": "Four reasons — recorded in error · the decision changed · the patient's situation changed · the bed was lost. A stepped-back pull still holds its bed, so withdrawal is refused until the pull is restored and released.",
+   "phase": "bed"
+  },
+  {
+   "id": "sAbandoned",
+   "lane": "end",
+   "x": 60,
+   "y": 2376,
+   "w": 460,
+   "h": 96,
+   "label": "The bed search is abandoned",
+   "sub": "Pulled from every ward still considering it, or — once a ward has accepted — the acceptance revoked and any held bed given back. It closes as 'did not proceed'. This is also where an examination outcome of a community order, or a revocation, lands while no bed is held yet.",
+   "phase": "bed"
+  },
+  {
+   "id": "sPullReleased",
+   "lane": "stall",
+   "x": 60,
+   "y": 2512,
+   "w": 460,
+   "h": 96,
+   "label": "The held bed is given back — four reasons",
+   "sub": "NINE different actions delete that admission, not one — releasing the pull (four reasons of its own), releasing a held bed after transport was stopped, abandoning the bed search, the referrer withdrawing it, the department deciding no bed is needed, sending them to a community team instead, an examination outcome that ends it, releasing the bed a diverted journey held, and releasing the bed while reopening the search. Whichever it was, the admission record is deleted outright: nobody was ever in this bed.",
+   "phase": "bed"
+  },
+  {
+   "id": "sCancelTransport",
+   "lane": "stall",
+   "x": 60,
+   "y": 2648,
+   "w": 460,
+   "h": 96,
+   "label": "Transport cancelled before collection",
+   "sub": "Four reasons. The job is deleted and nothing is rebooked. Whether the bed is still held depends on how far the record has got — and the notice works that out from the stage, not from the bed.",
+   "finding": "Two of its refusals can never run. Both describe a job already cancelled or a patient already arrived — and every way either happens also closes the movement, which a check above them catches first.",
+   "phase": "bed"
+  },
+  {
+   "id": "sStopTransport",
+   "lane": "diversion",
+   "x": 60,
+   "y": 2784,
+   "w": 460,
+   "h": 96,
+   "label": "The journey is stopped after collection",
+   "sub": "Three reasons, and somebody must say where the patient now is. The movement closes and the bed stays held.",
+   "finding": "Two of its refusals can never run either, for the same reason. Nobody is less safe; the sentence they would have been given simply names the closure instead of what they just tried to do.",
+   "phase": "bed"
+  },
+  {
+   "id": "sAbscond",
+   "lane": "absent",
+   "x": 60,
+   "y": 3000,
+   "w": 460,
+   "h": 96,
+   "label": "The patient absconds",
+   "sub": "No state exists for this. They are still admitted, the bed is still theirs, and nothing anywhere can say they are missing.",
+   "phase": "ward"
+  },
+  {
+   "id": "dForced",
+   "lane": "forced",
+   "x": 1300,
+   "y": 2284,
+   "w": 500,
+   "h": 100,
+   "label": "A coordinator places them anyway",
+   "sub": "Eight of the bed checks can be passed by recording one of five reasons — the receiving team has agreed despite the mismatch · clinical urgency outweighs it · the bed information is known to be out of date · continuity with an earlier admission here · closer to home or family. Running out of one-to-one nursing or of high-acuity capacity can be passed the same way, and passing the acuity one also demands that the nurse unit manager was consulted.",
+   "phase": "bed"
+  },
+  {
+   "id": "dGenderHard",
+   "lane": "stall",
+   "x": 1300,
+   "y": 2424,
+   "w": 500,
+   "h": 100,
+   "label": "The one refusal nothing can override",
+   "sub": "If the ward is designated for one gender and the patient's recorded gender is the other, no reason passes it and the app will not even offer the list. Non-binary, Different term, and not-recorded genders can use the coordinator-reviewed exception. Every other bed check here can be forced; this one cannot.",
+   "phase": "bed"
+  },
+  {
+   "id": "dNonBinary",
+   "lane": "forced",
+   "x": 1300,
+   "y": 2564,
+   "w": 500,
+   "h": 100,
+   "label": "A patient with a non-binary, Different term, or unrecorded gender onto a single-gender ward",
+   "sub": "Only a coordinator, and only with one of six recorded reasons — a single room is available · the patient's stated preference, agreed with the ward · no single room is free and the ward agreed a plan for privacy · the only suitable ready bed, agreed with the ward · they know this ward from an earlier stay · closer to home or supports.",
+   "phase": "bed"
+  },
+  {
+   "id": "dStatutory",
+   "lane": "absent",
+   "x": 1300,
+   "y": 2704,
+   "w": 500,
+   "h": 100,
+   "label": "Starting a new legal form from the legal forms screen",
+   "sub": "A form is issued when the emergency department raises the bed search, and the legal forms screen records when it was written or received and its expiry. Only a form started there is lost: 'Record a form' opens the whole form, and its save button is disabled, so it records nothing.",
+   "phase": "bed"
+  },
+  {
+   "id": "dNoTransport",
+   "lane": "diversion",
+   "x": 1300,
+   "y": 2844,
+   "w": 500,
+   "h": 100,
+   "label": "No transport needed",
+   "sub": "Marked arrived straight from the held bed, with no journey recorded at all.",
+   "phase": "bed"
+  },
+  {
+   "id": "dRepull",
+   "lane": "diversion",
+   "x": 1300,
+   "y": 2984,
+   "w": 500,
+   "h": 100,
+   "label": "Pulling again when the bed is already held",
+   "sub": "Restores the record to 'pulled' and returns before any capacity, specialling, acuity or eligibility check runs. Deliberate — the held bed is one of the things those checks count — but it means a second pull is not a second decision.",
+   "finding": "Pulling a held bed again skips every capacity and eligibility check.",
+   "phase": "ward"
+  },
+  {
+   "id": "dNoLongerSuits",
+   "lane": "stall",
+   "x": 1300,
+   "y": 3124,
+   "w": 500,
+   "h": 100,
+   "label": "The bed stops suiting them, part-way",
+   "sub": "Checked again at four separate steps while the bed is held — pulling it, handover ready, the crew accepting, and collection. The refusal says to withdraw the acceptance and refer again — but withdrawing is itself refused while a bed is held, and THAT refusal names the real route: pull it again to restore it, release the pull, then withdraw. Three steps, and only the second message tells you them.",
+   "finding": "The refusal names a way out that is itself refused; only a second message names the real three steps.",
+   "phase": "ward"
+  },
+  {
+   "id": "dCancelLie",
+   "lane": "breach",
+   "x": 1300,
+   "y": 3264,
+   "w": 500,
+   "h": 100,
+   "label": "The cancellation can state the wrong thing",
+   "sub": "Whether a bed is still held is worked out from how far the record has got, not from the bed. A record stepped backwards still holds its bed, and the cancellation then tells everyone no bed is held.",
+   "finding": "The cancellation notice works out whether a bed is held from the stage, not from the bed.",
+   "phase": "ward"
+  },
+  {
+   "id": "dRevoked",
+   "lane": "breach",
+   "x": 1300,
+   "y": 3404,
+   "w": 500,
+   "h": 100,
+   "label": "The legal authority is revoked before pick-up",
+   "sub": "Sending the crew is still allowed; collecting the patient is refused while the bed is held. A crew can be sent to a door it will be turned away from.",
+   "phase": "ward"
+  },
+  {
+   "id": "dAway",
+   "lane": "diversion",
+   "x": 1300,
+   "y": 3544,
+   "w": 500,
+   "h": 100,
+   "label": "Away at an ED, or on leave",
+   "sub": "Two unlike things in one place. Away at an emergency department is recorded against the PATIENT and paired with their return. A leave bed is recorded against the WARD and names the one stay it belongs to (owner ruling, 25 September), but it still carries no reason and no destination.",
+   "phase": "ward"
+  },
+  {
+   "id": "dClosedRecord",
+   "lane": "stall",
+   "x": 1300,
+   "y": 3684,
+   "w": 500,
+   "h": 100,
+   "label": "Once the record closes, nothing can be added to it",
+   "sub": "Arriving closes it, and so does every other ending. More than thirty checks across the engine then refuse. Three of those matter: the Mental Health Act status, the sex or gender recorded for bed matching, and whether a legal form arrived or when it expires. If any of those is wrong at the moment the record closes, it can never be corrected there, and the refusals name no other route.",
+   "finding": "Once a record closes, the legal status, the recorded sex or gender, and the legal form can never be corrected on it.",
+   "phase": "ward"
+  },
+  {
+   "id": "dRepat",
+   "lane": "diversion",
+   "x": 1300,
+   "y": 3824,
+   "w": 500,
+   "h": 100,
+   "label": "Sending a country patient home",
+   "sub": "Logged against the admission once it has been arranged off the system: home hospital, whether its ward agreed, road or flight, provider and tracking number. It books nothing. Only when the home ward agreed does it also open a new movement asking for a bed at home.",
+   "phase": "ward"
+  },
+  {
+   "id": "personLeaves",
+   "lane": "expected",
+   "x": 400,
+   "y": 4044,
+   "w": 440,
+   "h": 96,
+   "label": "Track one — the person leaves",
+   "sub": "Eight recorded ways out, and one of them frees no bed at all.",
+   "patient": "Gone.",
+   "bed": "Both counts move here: empty and allocatable, and a pending release for this person completes.",
+   "phase": "leaving"
+  },
+  {
+   "id": "bedReleased",
+   "lane": "expected",
+   "x": 920,
+   "y": 4044,
+   "w": 440,
+   "h": 96,
+   "label": "Track two — the bed is released",
+   "sub": "Expected, then confirmed, then discharged — but confirming can be skipped, and expected straight to discharged is allowed on purpose. The last step happens when the named patient is recorded leaving, and moves TWO counts: the beds a ward may allocate, and the beds it has empty.",
+   "patient": "Names the stay it belongs to, and nothing else about them.",
+   "bed": "Counted as available again, at the last step only.",
+   "phase": "leaving"
+  },
+  {
+   "id": "bedStuck",
+   "lane": "stall",
+   "x": 1440,
+   "y": 4044,
+   "w": 400,
+   "h": 96,
+   "label": "Stuck, or waiting on something",
+   "sub": "Seven things it can wait on, nine reasons it can be stuck. Neither is a stage.",
+   "phase": "leaving"
+  },
+  {
+   "id": "end0",
+   "lane": "end",
+   "x": 60,
+   "y": 4274,
+   "w": 230,
+   "h": 112,
+   "label": "Discharged to the community",
+   "sub": "Frees a bed.",
+   "phase": "leaving"
+  },
+  {
+   "id": "end1",
+   "lane": "diversion",
+   "x": 312,
+   "y": 4274,
+   "w": 230,
+   "h": 112,
+   "label": "Transferred to another psychiatric ward",
+   "sub": "Frees THIS ward's bed and gains the state nothing — the only one that is not a release.",
+   "phase": "leaving"
+  },
+  {
+   "id": "end2",
+   "lane": "end",
+   "x": 564,
+   "y": 4274,
+   "w": 230,
+   "h": 112,
+   "label": "Transferred to a general hospital",
+   "sub": "Frees a bed.",
+   "phase": "leaving"
+  },
+  {
+   "id": "end3",
+   "lane": "end",
+   "x": 816,
+   "y": 4274,
+   "w": 230,
+   "h": 112,
+   "label": "Moved to residential care",
+   "sub": "Frees a bed.",
+   "phase": "leaving"
+  },
+  {
+   "id": "end4",
+   "lane": "end",
+   "x": 1068,
+   "y": 4274,
+   "w": 230,
+   "h": 112,
+   "label": "Left against advice",
+   "sub": "Frees a bed.",
+   "phase": "leaving"
+  },
+  {
+   "id": "end5",
+   "lane": "end",
+   "x": 1320,
+   "y": 4274,
+   "w": 230,
+   "h": 112,
+   "label": "Died on the ward",
+   "sub": "Frees a bed.",
+   "phase": "leaving"
+  },
+  {
+   "id": "end6",
+   "lane": "end",
+   "x": 1572,
+   "y": 4274,
+   "w": 230,
+   "h": 112,
+   "label": "Transferred to police or prison custody",
+   "sub": "Frees a bed.",
+   "phase": "leaving"
+  },
+  {
+   "id": "end7",
+   "lane": "end",
+   "x": 1824,
+   "y": 4274,
+   "w": 230,
+   "h": 112,
+   "label": "Did not return",
+   "sub": "Frees a bed.",
+   "phase": "leaving"
+  },
+  {
+   "id": "rkDuplicate",
+   "lane": "record",
+   "x": 2400,
+   "y": 460,
+   "w": 420,
+   "h": 104,
+   "label": "Is this the same person already?",
+   "sub": "Four warnings when somebody is added — the record number already exists · same name and same date of birth · same name where the date of birth does not confirm it · a name one keystroke away from an existing one. All four are warnings. None of them refuses.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkIntakeLost",
+   "lane": "absent",
+   "x": 2400,
+   "y": 588,
+   "w": 420,
+   "h": 104,
+   "label": "What the form asks for and then discards",
+   "sub": "Triage category, statutory legal status, Aboriginal and Torres Strait Islander status, address, presenting facility, health service, presenting complaint and clinical intake notes are all collected when a patient is added. Six fields are kept: record number, given name, family name, date of birth, gender, and suburb if one was typed. The model has nowhere to put the rest, so it goes on submit with nothing said. 'Save draft' and 'Print' on the same screen record nothing either.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkClearance",
+   "lane": "record",
+   "x": 2400,
+   "y": 1031,
+   "w": 420,
+   "h": 104,
+   "label": "Is the patient medically cleared?",
+   "sub": "Three answers, not two — unrecorded, cleared, and explicitly not cleared.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkClock",
+   "lane": "absent",
+   "x": 2400,
+   "y": 1832,
+   "w": 420,
+   "h": 104,
+   "label": "Nothing on this map expires on its own",
+   "sub": "The clock only moves when somebody advances it, and advancing it changes one number and nothing else — no hold lapses, no request is cancelled, nothing escalates. Every deadline, every countdown and every 'overdue' on any screen is worked out fresh each time the screen is read.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkSettings",
+   "lane": "record",
+   "x": 2400,
+   "y": 1960,
+   "w": 420,
+   "h": 104,
+   "label": "Six settings change what is allowed",
+   "sub": "How long a pulled bed is held (thirty minutes to four hours, default four). How many places one referral may be sent to at once (one to three — a coordinator can only turn this DOWN from three, never up). The department's access target (twelve to thirty-six hours). The morning count deadline, and the two 'due soon' warning times. Saving them replaces all six at once or is refused outright.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkQueue",
+   "lane": "record",
+   "x": 2400,
+   "y": 2088,
+   "w": 420,
+   "h": 104,
+   "label": "Where they sit in the queue",
+   "sub": "Flagged urgent first, then the urgency tier, then whoever has waited longest, then the record's own id as a tie-break. Nothing else moves anybody up.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkClash",
+   "lane": "record",
+   "x": 2400,
+   "y": 2216,
+   "w": 420,
+   "h": 104,
+   "label": "Two patients wanting the same bed",
+   "sub": "A function can work out which movements are competing for one bed, but no screen calls it, so no clash is shown anywhere today. If it were used it would only name the clash: it never ranks the patients and never arranges an outcome.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkUrgent",
+   "lane": "record",
+   "x": 2400,
+   "y": 2344,
+   "w": 420,
+   "h": 104,
+   "label": "Flagged urgent",
+   "sub": "Ten reasons. Lifts the patient above every urgency level, and re-sorts nothing on its own.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkEscalate",
+   "lane": "record",
+   "x": 2400,
+   "y": 2472,
+   "w": 420,
+   "h": 104,
+   "label": "Escalated",
+   "sub": "Which wards were tried and who was rung. Six people it can be escalated to.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkCapacity",
+   "lane": "record",
+   "x": 2400,
+   "y": 2600,
+   "w": 420,
+   "h": 104,
+   "label": "A ward states how many beds it can allocate",
+   "sub": "Set outright rather than counted up, and refused if it claims more beds than the ward physically has. Asking a ward to refresh it records that somebody asked, and moves no number at all.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkLegalStatus",
+   "lane": "record",
+   "x": 2400,
+   "y": 2728,
+   "w": 420,
+   "h": 104,
+   "label": "The legal status changes",
+   "sub": "Four values. Changing it triggers nothing — even if it makes the accepted ward unlawful.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkForm",
+   "lane": "record",
+   "x": 2400,
+   "y": 2856,
+   "w": 420,
+   "h": 104,
+   "label": "The legal paperwork arrives",
+   "sub": "Nine forms can be recorded as received — 1A, 3A, 3C, 3D, 5A, 5B, 6A, 6B, 6C. Receipt can be undone and recorded again; every expiry is a time a clinician typed.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkExam",
+   "lane": "record",
+   "x": 2400,
+   "y": 2984,
+   "w": 420,
+   "h": 104,
+   "label": "An examination is recorded",
+   "sub": "Four outcomes. Only “a further examination is ordered” allows a second one.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkLegalWritten",
+   "lane": "record",
+   "x": 2400,
+   "y": 3112,
+   "w": 420,
+   "h": 104,
+   "label": "The paperwork is written, continued, or attached",
+   "sub": "Written and continued forms store clinician-typed start and expiry times and clear the old legal clock. A 3C after arrival on a 3D is refused. A file can be attached by name. The country-extension event is always refused; use the typed-expiry event instead.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkLegalMismatch",
+   "lane": "record",
+   "x": 2400,
+   "y": 3240,
+   "w": 420,
+   "h": 104,
+   "label": "The ward's authority does not match the person's status",
+   "sub": "Two shapes, both named: an involuntary patient on a voluntary ward, and a voluntary patient on a locked one. It can be flagged, and it cannot be overridden: ward authority for an involuntary patient is never overridable (owner ruling, 25 September).",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkNotice",
+   "lane": "record",
+   "x": 2400,
+   "y": 3368,
+   "w": 420,
+   "h": 104,
+   "label": "Somebody is told",
+   "sub": "Twenty-three kinds of notice. Written once, never rewritten, never deleted, never expiring.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkDiversion",
+   "lane": "record",
+   "x": 2400,
+   "y": 3496,
+   "w": 420,
+   "h": 104,
+   "label": "The journey is diverted while it is under way",
+   "sub": "Only once the patient is actually in the vehicle — it is refused before collection, after arrival, and a second time on a movement already diverted. It records a reason and where they were taken instead. The held bed does not come back on its own: giving it back is a separate act, and refused unless this movement was in fact diverted.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkExpiryShut",
+   "lane": "stall",
+   "x": 2400,
+   "y": 3624,
+   "w": 420,
+   "h": 104,
+   "label": "After they arrive, the form's expiry cannot be recorded",
+   "sub": "Arriving closes the record that moves, and adding an expiry to a closed record is refused. So a patient on the ward under a legal form is past the point where this route can record or extend its expiry, and the refusal names no other way.",
+   "finding": "Arriving closes the record, so the legal form's expiry can no longer be recorded for exactly the people it is for.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkExpectFlag",
+   "lane": "record",
+   "x": 2400,
+   "y": 3752,
+   "w": 420,
+   "h": 104,
+   "label": "A clock somebody starts by hand",
+   "sub": "Two kinds, forty-eight hours and seven days, raised against a movement and cleared again. Only one can be open at a time — raising a second is refused, and so is clearing one that was never raised. Nothing starts it automatically and nothing expires it; it is a note about time, not a timer.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkAwayRule",
+   "lane": "absent",
+   "x": 2400,
+   "y": 3880,
+   "w": 420,
+   "h": 104,
+   "label": "The rule for a bed kept during a medical trip",
+   "sub": "A threshold exists for how long a general-hospital trip must be expected to last before the ward bed is given up, and a function decides from it. Nothing in the app calls that function, so the rule is neither applied nor shown anywhere. The threshold is set to 24 hours, while the note beside it still describes the owner's figure as 48.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkInbox",
+   "lane": "record",
+   "x": 2400,
+   "y": 4008,
+   "w": 420,
+   "h": 104,
+   "label": "A row appears in the coordinator's inbox",
+   "sub": "Five live fact categories are acknowledged rather than completed. The engine refuses completion of their real rows, but a fabricated commitment-prefixed ID can be completed because it is not checked against the inbox.",
+   "finding": "Real fact rows cannot be completed, but a fabricated commitment-prefixed ID can pass the completion guard without a matching inbox row.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkDischargePlan",
+   "lane": "record",
+   "x": 2400,
+   "y": 4136,
+   "w": 420,
+   "h": 104,
+   "label": "Step-down, and what is holding the discharge up",
+   "sub": "Two settings on a known admission: step-down candidacy and one discharge barrier. The acting ward must match; a substantive barrier is refused for a stay under seven days. Neither moves a bed figure.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkDischarge",
+   "lane": "record",
+   "x": 2400,
+   "y": 4264,
+   "w": 420,
+   "h": 104,
+   "label": "A discharge recorded the other way",
+   "sub": "A second event does exactly what recording a departure does, but only for a patient whose identity is linked, and only against the revision number the screen last read. Same result, different door.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkPrep",
+   "lane": "record",
+   "x": 2400,
+   "y": 4392,
+   "w": 420,
+   "h": 104,
+   "label": "The bed is being prepared",
+   "sub": "Being cleaned · awaiting maintenance or repair. Since the owner's ruling of 1 September it counts: a bed still being made ready is not open, and a pull is refused when every free bed at the ward is still being made ready.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkOwnership",
+   "lane": "record",
+   "x": 2400,
+   "y": 4520,
+   "w": 420,
+   "h": 104,
+   "label": "Only the ward it belongs to may touch it",
+   "sub": "Confirming a release, reversing it, flagging it stuck, clearing that flag, marking the bed being cleaned, and finally freeing it are each refused to any other ward. It is what stops one ward's freed bed landing in another ward's figures.",
+   "phase": "alongside"
+  },
+  {
+   "id": "rkWardDay",
+   "lane": "record",
+   "x": 2400,
+   "y": 4648,
+   "w": 420,
+   "h": 104,
+   "label": "The ward's own day, beside the patient's",
+   "sub": "A morning count a ward confirms, a message it can be sent, and a sweep that works out which beds on leave are worth warning about. None of them belongs to any one patient, which is why they sit off the journey rather than on it.",
+   "phase": "alongside"
+  },
+  {
+   "id": "hdr-rec",
+   "lane": "heading",
+   "x": 2400,
+   "y": 380,
+   "w": 420,
+   "h": 60,
+   "label": "Recorded alongside  ·",
+   "sub": "Happens at some point without moving the journey.",
+   "phase": "alongside"
+  },
+  {
+   "id": "hdr-left",
+   "lane": "heading",
+   "x": 60,
+   "y": 1892,
+   "w": 460,
+   "h": 56,
+   "label": "←  Stalls, undos and endings",
+   "sub": "Grey goes back into the route. Teal does not.",
+   "phase": "bed"
+  },
+  {
+   "id": "hdr-spine",
+   "lane": "heading",
+   "x": 700,
+   "y": 1614,
+   "w": 420,
+   "h": 56,
+   "label": "Read down the middle  ↓",
+   "sub": "Read straight down.",
+   "phase": "front"
+  },
+  {
+   "id": "hdr-right",
+   "lane": "heading",
+   "x": 1300,
+   "y": 2208,
+   "w": 500,
+   "h": 56,
+   "label": "Diversions  →",
+   "sub": "It carries on, somewhere other than expected.",
+   "phase": "bed"
+  }
+ ],
+ "edges": [
+  {
+   "from": "srcCommunity",
+   "to": "raised",
+   "d": "M 178 128 L 178 152 Q 178 164 190 164 L 898 164 Q 910 164 910 176 L 910 200",
+   "p": [
+    [
+     178,
+     128
+    ],
+    [
+     178,
+     164
+    ],
+    [
+     910,
+     164
+    ],
+    [
+     910,
+     200
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "srcCrisis",
+   "to": "raised",
+   "d": "M 430 128 L 430 152 Q 430 164 442 164 L 898 164 Q 910 164 910 176 L 910 200",
+   "p": [
+    [
+     430,
+     128
+    ],
+    [
+     430,
+     164
+    ],
+    [
+     910,
+     164
+    ],
+    [
+     910,
+     200
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "srcPolice",
+   "to": "raised",
+   "d": "M 682 128 L 682 152 Q 682 164 694 164 L 898 164 Q 910 164 910 176 L 910 200",
+   "p": [
+    [
+     682,
+     128
+    ],
+    [
+     682,
+     164
+    ],
+    [
+     910,
+     164
+    ],
+    [
+     910,
+     200
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "srcAmbulance",
+   "to": "raised",
+   "d": "M 934 128 L 934 152 Q 934 164 922 164 L 922 164 Q 910 164 910 176 L 910 200",
+   "p": [
+    [
+     934,
+     128
+    ],
+    [
+     934,
+     164
+    ],
+    [
+     910,
+     164
+    ],
+    [
+     910,
+     200
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "srcHospital",
+   "to": "raised",
+   "d": "M 1186 128 L 1186 152 Q 1186 164 1174 164 L 922 164 Q 910 164 910 176 L 910 200",
+   "p": [
+    [
+     1186,
+     128
+    ],
+    [
+     1186,
+     164
+    ],
+    [
+     910,
+     164
+    ],
+    [
+     910,
+     200
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "srcEd",
+   "to": "raised",
+   "d": "M 1438 128 L 1438 152 Q 1438 164 1426 164 L 922 164 Q 910 164 910 176 L 910 200",
+   "p": [
+    [
+     1438,
+     128
+    ],
+    [
+     1438,
+     164
+    ],
+    [
+     910,
+     164
+    ],
+    [
+     910,
+     200
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "srcGp",
+   "to": "raised",
+   "d": "M 1690 128 L 1690 152 Q 1690 164 1678 164 L 922 164 Q 910 164 910 176 L 910 200",
+   "p": [
+    [
+     1690,
+     128
+    ],
+    [
+     1690,
+     164
+    ],
+    [
+     910,
+     164
+    ],
+    [
+     910,
+     200
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "raised",
+   "to": "addressed",
+   "d": "M 910 280 L 910 320",
+   "p": [
+    [
+     910,
+     280
+    ],
+    [
+     910,
+     320
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "addressed",
+   "to": "armCommunity",
+   "d": "M 910 406 L 910 421 Q 910 433 898 433 L 302 433 Q 290 433 290 445 L 290 460",
+   "p": [
+    [
+     910,
+     406
+    ],
+    [
+     910,
+     433
+    ],
+    [
+     290,
+     433
+    ],
+    [
+     290,
+     460
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "addressed",
+   "to": "armWard",
+   "d": "M 910 406 L 910 460",
+   "p": [
+    [
+     910,
+     406
+    ],
+    [
+     910,
+     460
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "addressed",
+   "to": "armEd",
+   "d": "M 910 406 L 910 421 Q 910 433 922 433 L 1538 433 Q 1550 433 1550 445 L 1550 460",
+   "p": [
+    [
+     910,
+     406
+    ],
+    [
+     910,
+     433
+    ],
+    [
+     1550,
+     433
+    ],
+    [
+     1550,
+     460
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "armCommunity",
+   "to": "cmhtAnswers",
+   "d": "M 290 550 L 290 600",
+   "p": [
+    [
+     290,
+     550
+    ],
+    [
+     290,
+     600
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "cmhtAnswers",
+   "to": "cmhtAccepted",
+   "d": "M 290 670 L 290 720",
+   "p": [
+    [
+     290,
+     670
+    ],
+    [
+     290,
+     720
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "cmhtAnswers",
+   "to": "cmhtDeclined",
+   "d": "M 290 670 L 290 681 Q 290 692 301 692 L 544 692 Q 556 692 556 704 L 556 826 Q 556 838 544 838 L 301 838 Q 290 838 290 849 L 290 860",
+   "p": [
+    [
+     290,
+     670
+    ],
+    [
+     290,
+     692
+    ],
+    [
+     556,
+     692
+    ],
+    [
+     556,
+     838
+    ],
+    [
+     290,
+     838
+    ],
+    [
+     290,
+     860
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "cmhtAnswers",
+   "to": "cmhtNothing",
+   "d": "M 290 670 L 290 681 Q 290 692 279 692 L 36 692 Q 24 692 24 704 L 24 978 Q 24 990 36 990 L 279 990 Q 290 990 290 1001 L 290 1012",
+   "p": [
+    [
+     290,
+     670
+    ],
+    [
+     290,
+     692
+    ],
+    [
+     24,
+     692
+    ],
+    [
+     24,
+     990
+    ],
+    [
+     290,
+     990
+    ],
+    [
+     290,
+     1012
+    ]
+   ],
+   "lane": "stall"
+  },
+  {
+   "from": "cmhtAnswers",
+   "to": "cmhtWithdrawn",
+   "d": "M 290 670 L 290 681 Q 290 692 301 692 L 566 692 Q 578 692 578 704 L 578 1118 Q 578 1130 566 1130 L 301 1130 Q 290 1130 290 1141 L 290 1152",
+   "p": [
+    [
+     290,
+     670
+    ],
+    [
+     290,
+     692
+    ],
+    [
+     578,
+     692
+    ],
+    [
+     578,
+     1130
+    ],
+    [
+     290,
+     1130
+    ],
+    [
+     290,
+     1152
+    ]
+   ],
+   "lane": "stall"
+  },
+  {
+   "from": "cmhtFromSearch",
+   "to": "cmhtAnswers",
+   "d": "M 290 1298 L 290 1287 Q 290 1276 301 1276 L 588 1276 Q 600 1276 600 1264 L 600 704 Q 600 692 588 692 L 301 692 Q 290 692 290 681 L 290 670",
+   "p": [
+    [
+     290,
+     1298
+    ],
+    [
+     290,
+     1276
+    ],
+    [
+     600,
+     1276
+    ],
+    [
+     600,
+     692
+    ],
+    [
+     290,
+     692
+    ],
+    [
+     290,
+     670
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "armWard",
+   "to": "wardAnswers",
+   "d": "M 910 550 L 910 600",
+   "p": [
+    [
+     910,
+     550
+    ],
+    [
+     910,
+     600
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "wardAnswers",
+   "to": "wardWithdrawn",
+   "d": "M 910 670 L 910 681 Q 910 692 921 692 L 1144 692 Q 1156 692 1156 704 L 1156 1276 Q 1156 1288 1144 1288 L 921 1288 Q 910 1288 910 1299 L 910 1310",
+   "p": [
+    [
+     910,
+     670
+    ],
+    [
+     910,
+     692
+    ],
+    [
+     1156,
+     692
+    ],
+    [
+     1156,
+     1288
+    ],
+    [
+     910,
+     1288
+    ],
+    [
+     910,
+     1310
+    ]
+   ],
+   "lane": "diversion"
+  },
+  {
+   "from": "wardAnswers",
+   "to": "wardBlocked",
+   "d": "M 910 670 L 910 681 Q 910 692 899 692 L 676 692 Q 664 692 664 704 L 664 1436 Q 664 1448 676 1448 L 899 1448 Q 910 1448 910 1459 L 910 1470",
+   "p": [
+    [
+     910,
+     670
+    ],
+    [
+     910,
+     692
+    ],
+    [
+     664,
+     692
+    ],
+    [
+     664,
+     1448
+    ],
+    [
+     910,
+     1448
+    ],
+    [
+     910,
+     1470
+    ]
+   ],
+   "lane": "stall"
+  },
+  {
+   "from": "wardAnswers",
+   "to": "wardAccepted",
+   "d": "M 910 670 L 910 720",
+   "p": [
+    [
+     910,
+     670
+    ],
+    [
+     910,
+     720
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "wardAnswers",
+   "to": "wardDeclined",
+   "d": "M 910 670 L 910 681 Q 910 692 921 692 L 1166 692 Q 1178 692 1178 704 L 1178 826 Q 1178 838 1166 838 L 921 838 Q 910 838 910 849 L 910 860",
+   "p": [
+    [
+     910,
+     670
+    ],
+    [
+     910,
+     692
+    ],
+    [
+     1178,
+     692
+    ],
+    [
+     1178,
+     838
+    ],
+    [
+     910,
+     838
+    ],
+    [
+     910,
+     860
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "wardAnswers",
+   "to": "wardNothing",
+   "d": "M 910 670 L 910 681 Q 910 692 899 692 L 654 692 Q 642 692 642 704 L 642 988 Q 642 1000 654 1000 L 899 1000 Q 910 1000 910 1011 L 910 1022",
+   "p": [
+    [
+     910,
+     670
+    ],
+    [
+     910,
+     692
+    ],
+    [
+     642,
+     692
+    ],
+    [
+     642,
+     1000
+    ],
+    [
+     910,
+     1000
+    ],
+    [
+     910,
+     1022
+    ]
+   ],
+   "lane": "stall"
+  },
+  {
+   "from": "wardAccepted",
+   "to": "othersCancelled",
+   "d": "M 910 810 L 910 821 Q 910 832 921 832 L 1188 832 Q 1200 832 1200 844 L 1200 1134 Q 1200 1146 1188 1146 L 921 1146 Q 910 1146 910 1157 L 910 1168",
+   "p": [
+    [
+     910,
+     810
+    ],
+    [
+     910,
+     832
+    ],
+    [
+     1200,
+     832
+    ],
+    [
+     1200,
+     1146
+    ],
+    [
+     910,
+     1146
+    ],
+    [
+     910,
+     1168
+    ]
+   ],
+   "lane": "diversion",
+   "auto": true
+  },
+  {
+   "from": "armEd",
+   "to": "edBoard",
+   "d": "M 1550 550 L 1550 600",
+   "p": [
+    [
+     1550,
+     550
+    ],
+    [
+     1550,
+     600
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "edBoard",
+   "to": "edExpected",
+   "d": "M 1550 690 L 1550 740",
+   "p": [
+    [
+     1550,
+     690
+    ],
+    [
+     1550,
+     740
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "edExpected",
+   "to": "edArrived",
+   "d": "M 1550 830 L 1550 841 Q 1550 852 1561 852 L 1824 852 Q 1836 852 1836 864 L 1836 1006 Q 1836 1018 1824 1018 L 1561 1018 Q 1550 1018 1550 1029 L 1550 1040",
+   "p": [
+    [
+     1550,
+     830
+    ],
+    [
+     1550,
+     852
+    ],
+    [
+     1836,
+     852
+    ],
+    [
+     1836,
+     1018
+    ],
+    [
+     1550,
+     1018
+    ],
+    [
+     1550,
+     1040
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "edExpected",
+   "to": "edNeverArrives",
+   "d": "M 1550 830 L 1550 880",
+   "p": [
+    [
+     1550,
+     830
+    ],
+    [
+     1550,
+     880
+    ]
+   ],
+   "lane": "stall"
+  },
+  {
+   "from": "edArrived",
+   "to": "edAnswers",
+   "d": "M 1550 1126 L 1550 1176",
+   "p": [
+    [
+     1550,
+     1126
+    ],
+    [
+     1550,
+     1176
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "edAnswers",
+   "to": "edAccepted",
+   "d": "M 1550 1246 L 1550 1296",
+   "p": [
+    [
+     1550,
+     1246
+    ],
+    [
+     1550,
+     1296
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "edAnswers",
+   "to": "edDeclined",
+   "d": "M 1550 1246 L 1550 1257 Q 1550 1268 1561 1268 L 1824 1268 Q 1836 1268 1836 1280 L 1836 1416 Q 1836 1428 1824 1428 L 1561 1428 Q 1550 1428 1550 1439 L 1550 1450",
+   "p": [
+    [
+     1550,
+     1246
+    ],
+    [
+     1550,
+     1268
+    ],
+    [
+     1836,
+     1268
+    ],
+    [
+     1836,
+     1428
+    ],
+    [
+     1550,
+     1428
+    ],
+    [
+     1550,
+     1450
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "edAccepted",
+   "to": "edRaise",
+   "d": "M 1550 1400 L 1550 1411 Q 1550 1422 1539 1422 L 1276 1422 Q 1264 1422 1264 1434 L 1264 1570 Q 1264 1582 1276 1582 L 1539 1582 Q 1550 1582 1550 1593 L 1550 1604",
+   "p": [
+    [
+     1550,
+     1400
+    ],
+    [
+     1550,
+     1422
+    ],
+    [
+     1264,
+     1422
+    ],
+    [
+     1264,
+     1582
+    ],
+    [
+     1550,
+     1582
+    ],
+    [
+     1550,
+     1604
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "edAccepted",
+   "to": "othersCancelled",
+   "d": "M 1300 1348 L 1120 1218",
+   "p": [
+    [
+     1300,
+     1348
+    ],
+    [
+     1120,
+     1218
+    ]
+   ],
+   "lane": "diversion",
+   "auto": true
+  },
+  {
+   "from": "edRaise",
+   "to": "edOutcome",
+   "d": "M 1550 1708 L 1550 1758",
+   "p": [
+    [
+     1550,
+     1708
+    ],
+    [
+     1550,
+     1758
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "edRaise",
+   "to": "edToCommunity",
+   "d": "M 1550 1708 L 1550 1719 Q 1550 1730 1561 1730 L 1824 1730 Q 1836 1730 1836 1742 L 1836 1886 Q 1836 1898 1824 1898 L 1561 1898 Q 1550 1898 1550 1909 L 1550 1920",
+   "p": [
+    [
+     1550,
+     1708
+    ],
+    [
+     1550,
+     1730
+    ],
+    [
+     1836,
+     1730
+    ],
+    [
+     1836,
+     1898
+    ],
+    [
+     1550,
+     1898
+    ],
+    [
+     1550,
+     1920
+    ]
+   ],
+   "lane": "diversion"
+  },
+  {
+   "from": "edOutcome",
+   "to": "edLeft",
+   "d": "M 1550 1870 L 1550 1881 Q 1550 1892 1539 1892 L 1276 1892 Q 1264 1892 1264 1904 L 1264 2050 Q 1264 2062 1276 2062 L 1539 2062 Q 1550 2062 1550 2073 L 1550 2084",
+   "p": [
+    [
+     1550,
+     1870
+    ],
+    [
+     1550,
+     1892
+    ],
+    [
+     1264,
+     1892
+    ],
+    [
+     1264,
+     2062
+    ],
+    [
+     1550,
+     2062
+    ],
+    [
+     1550,
+     2084
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "seam",
+   "to": "placement",
+   "d": "M 910 1800 L 910 1854",
+   "p": [
+    [
+     910,
+     1800
+    ],
+    [
+     910,
+     1854
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "placement",
+   "to": "asked",
+   "d": "M 910 1914 L 910 1968",
+   "p": [
+    [
+     910,
+     1914
+    ],
+    [
+     910,
+     1968
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "asked",
+   "to": "inPrinciple",
+   "d": "M 910 2044 L 910 2098",
+   "p": [
+    [
+     910,
+     2044
+    ],
+    [
+     910,
+     2098
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "inPrinciple",
+   "to": "pulled",
+   "d": "M 910 2174 L 910 2228",
+   "p": [
+    [
+     910,
+     2174
+    ],
+    [
+     910,
+     2228
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "pulled",
+   "to": "booked",
+   "d": "M 910 2318 L 910 2372",
+   "p": [
+    [
+     910,
+     2318
+    ],
+    [
+     910,
+     2372
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "booked",
+   "to": "handover",
+   "d": "M 910 2448 L 910 2502",
+   "p": [
+    [
+     910,
+     2448
+    ],
+    [
+     910,
+     2502
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "handover",
+   "to": "enroute",
+   "d": "M 910 2562 L 910 2616",
+   "p": [
+    [
+     910,
+     2562
+    ],
+    [
+     910,
+     2616
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "enroute",
+   "to": "collected",
+   "d": "M 910 2686 L 910 2740",
+   "p": [
+    [
+     910,
+     2686
+    ],
+    [
+     910,
+     2740
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "collected",
+   "to": "arrived",
+   "d": "M 910 2816 L 910 2870",
+   "p": [
+    [
+     910,
+     2816
+    ],
+    [
+     910,
+     2870
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "arrived",
+   "to": "occupied",
+   "d": "M 910 2946 L 910 3000",
+   "p": [
+    [
+     910,
+     2946
+    ],
+    [
+     910,
+     3000
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "occupied",
+   "to": "ready",
+   "d": "M 910 3060 L 910 3114",
+   "p": [
+    [
+     910,
+     3060
+    ],
+    [
+     910,
+     3114
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "wardAccepted",
+   "to": "seam",
+   "d": "M 910 810 L 910 824 Q 910 836 898 836 L 672 836 Q 660 836 660 848 L 660 1738 Q 660 1750 672 1750 L 700 1750",
+   "p": [
+    [
+     910,
+     810
+    ],
+    [
+     910,
+     836
+    ],
+    [
+     660,
+     836
+    ],
+    [
+     660,
+     1750
+    ],
+    [
+     700,
+     1750
+    ]
+   ],
+   "lane": "seam"
+  },
+  {
+   "from": "edRaise",
+   "to": "placement",
+   "d": "M 1550 1708 L 1550 1722 Q 1550 1734 1538 1734 L 1252 1734 Q 1240 1734 1240 1746 L 1240 1872 Q 1240 1884 1228 1884 L 1120 1884",
+   "p": [
+    [
+     1550,
+     1708
+    ],
+    [
+     1550,
+     1734
+    ],
+    [
+     1240,
+     1734
+    ],
+    [
+     1240,
+     1884
+    ],
+    [
+     1120,
+     1884
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "asked",
+   "to": "sWardDecline",
+   "d": "M 700 2006 L 585 2006 Q 580 2006 580 2011 L 580 2011 Q 580 2016 575 2016 L 520 2016",
+   "p": [
+    [
+     700,
+     2006
+    ],
+    [
+     580,
+     2006
+    ],
+    [
+     580,
+     2016
+    ],
+    [
+     520,
+     2016
+    ]
+   ],
+   "lane": "stall",
+   "both": true
+  },
+  {
+   "from": "asked",
+   "to": "sWithdrawWard",
+   "d": "M 700 2006 L 592 2006 Q 580 2006 580 2018 L 580 2140 Q 580 2152 568 2152 L 520 2152",
+   "p": [
+    [
+     700,
+     2006
+    ],
+    [
+     580,
+     2006
+    ],
+    [
+     580,
+     2152
+    ],
+    [
+     520,
+     2152
+    ]
+   ],
+   "lane": "stall",
+   "both": true
+  },
+  {
+   "from": "inPrinciple",
+   "to": "sAcceptWithdrawn",
+   "d": "M 700 2136 L 592 2136 Q 580 2136 580 2148 L 580 2276 Q 580 2288 568 2288 L 520 2288",
+   "p": [
+    [
+     700,
+     2136
+    ],
+    [
+     580,
+     2136
+    ],
+    [
+     580,
+     2288
+    ],
+    [
+     520,
+     2288
+    ]
+   ],
+   "lane": "stall",
+   "both": true
+  },
+  {
+   "from": "inPrinciple",
+   "to": "sAbandoned",
+   "d": "M 700 2136 L 592 2136 Q 580 2136 580 2148 L 580 2412 Q 580 2424 568 2424 L 520 2424",
+   "p": [
+    [
+     700,
+     2136
+    ],
+    [
+     580,
+     2136
+    ],
+    [
+     580,
+     2424
+    ],
+    [
+     520,
+     2424
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "pulled",
+   "to": "sPullReleased",
+   "d": "M 700 2273 L 592 2273 Q 580 2273 580 2285 L 580 2548 Q 580 2560 568 2560 L 520 2560",
+   "p": [
+    [
+     700,
+     2273
+    ],
+    [
+     580,
+     2273
+    ],
+    [
+     580,
+     2560
+    ],
+    [
+     520,
+     2560
+    ]
+   ],
+   "lane": "stall",
+   "both": true
+  },
+  {
+   "from": "booked",
+   "to": "sCancelTransport",
+   "d": "M 700 2410 L 592 2410 Q 580 2410 580 2422 L 580 2684 Q 580 2696 568 2696 L 520 2696",
+   "p": [
+    [
+     700,
+     2410
+    ],
+    [
+     580,
+     2410
+    ],
+    [
+     580,
+     2696
+    ],
+    [
+     520,
+     2696
+    ]
+   ],
+   "lane": "stall",
+   "both": true
+  },
+  {
+   "from": "collected",
+   "to": "sStopTransport",
+   "d": "M 700 2778 L 592 2778 Q 580 2778 580 2790 L 580 2820 Q 580 2832 568 2832 L 520 2832",
+   "p": [
+    [
+     700,
+     2778
+    ],
+    [
+     580,
+     2778
+    ],
+    [
+     580,
+     2832
+    ],
+    [
+     520,
+     2832
+    ]
+   ],
+   "lane": "diversion"
+  },
+  {
+   "from": "occupied",
+   "to": "sAbscond",
+   "d": "M 700 3030 L 589 3030 Q 580 3030 580 3039 L 580 3039 Q 580 3048 571 3048 L 520 3048",
+   "p": [
+    [
+     700,
+     3030
+    ],
+    [
+     580,
+     3030
+    ],
+    [
+     580,
+     3048
+    ],
+    [
+     520,
+     3048
+    ]
+   ],
+   "lane": "absent",
+   "terminal": true
+  },
+  {
+   "from": "asked",
+   "to": "dForced",
+   "d": "M 1120 2006 L 1168 2006 Q 1180 2006 1180 2018 L 1180 2322 Q 1180 2334 1192 2334 L 1300 2334",
+   "p": [
+    [
+     1120,
+     2006
+    ],
+    [
+     1180,
+     2006
+    ],
+    [
+     1180,
+     2334
+    ],
+    [
+     1300,
+     2334
+    ]
+   ],
+   "lane": "forced"
+  },
+  {
+   "from": "dForced",
+   "to": "dForced",
+   "d": "M 1300 2334 L 1262 2334",
+   "p": [
+    [
+     1300,
+     2334
+    ],
+    [
+     1262,
+     2334
+    ]
+   ],
+   "lane": "forced",
+   "terminal": true
+  },
+  {
+   "from": "asked",
+   "to": "dGenderHard",
+   "d": "M 1120 2006 L 1168 2006 Q 1180 2006 1180 2018 L 1180 2462 Q 1180 2474 1192 2474 L 1300 2474",
+   "p": [
+    [
+     1120,
+     2006
+    ],
+    [
+     1180,
+     2006
+    ],
+    [
+     1180,
+     2474
+    ],
+    [
+     1300,
+     2474
+    ]
+   ],
+   "lane": "stall"
+  },
+  {
+   "from": "dGenderHard",
+   "to": "dGenderHard",
+   "d": "M 1300 2474 L 1262 2474",
+   "p": [
+    [
+     1300,
+     2474
+    ],
+    [
+     1262,
+     2474
+    ]
+   ],
+   "lane": "stall",
+   "terminal": true
+  },
+  {
+   "from": "inPrinciple",
+   "to": "dNonBinary",
+   "d": "M 1120 2136 L 1168 2136 Q 1180 2136 1180 2148 L 1180 2602 Q 1180 2614 1192 2614 L 1300 2614",
+   "p": [
+    [
+     1120,
+     2136
+    ],
+    [
+     1180,
+     2136
+    ],
+    [
+     1180,
+     2614
+    ],
+    [
+     1300,
+     2614
+    ]
+   ],
+   "lane": "forced"
+  },
+  {
+   "from": "dNonBinary",
+   "to": "dNonBinary",
+   "d": "M 1300 2614 L 1262 2614",
+   "p": [
+    [
+     1300,
+     2614
+    ],
+    [
+     1262,
+     2614
+    ]
+   ],
+   "lane": "forced",
+   "terminal": true
+  },
+  {
+   "from": "inPrinciple",
+   "to": "dStatutory",
+   "d": "M 1120 2136 L 1168 2136 Q 1180 2136 1180 2148 L 1180 2742 Q 1180 2754 1192 2754 L 1300 2754",
+   "p": [
+    [
+     1120,
+     2136
+    ],
+    [
+     1180,
+     2136
+    ],
+    [
+     1180,
+     2754
+    ],
+    [
+     1300,
+     2754
+    ]
+   ],
+   "lane": "absent",
+   "terminal": true
+  },
+  {
+   "from": "dStatutory",
+   "to": "dStatutory",
+   "d": "M 1300 2754 L 1262 2754",
+   "p": [
+    [
+     1300,
+     2754
+    ],
+    [
+     1262,
+     2754
+    ]
+   ],
+   "lane": "absent",
+   "terminal": true
+  },
+  {
+   "from": "pulled",
+   "to": "dNoTransport",
+   "d": "M 1120 2273 L 1168 2273 Q 1180 2273 1180 2285 L 1180 2882 Q 1180 2894 1192 2894 L 1300 2894",
+   "p": [
+    [
+     1120,
+     2273
+    ],
+    [
+     1180,
+     2273
+    ],
+    [
+     1180,
+     2894
+    ],
+    [
+     1300,
+     2894
+    ]
+   ],
+   "lane": "diversion"
+  },
+  {
+   "from": "dNoTransport",
+   "to": "arrived",
+   "d": "M 1550 2944 L 1550 2958 Q 1550 2970 1562 2970 L 1848 2970 Q 1860 2970 1860 2958 L 1860 2920 Q 1860 2908 1848 2908 L 1120 2908",
+   "p": [
+    [
+     1550,
+     2944
+    ],
+    [
+     1550,
+     2970
+    ],
+    [
+     1860,
+     2970
+    ],
+    [
+     1860,
+     2908
+    ],
+    [
+     1120,
+     2908
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "pulled",
+   "to": "dRepull",
+   "d": "M 1120 2273 L 1168 2273 Q 1180 2273 1180 2285 L 1180 3022 Q 1180 3034 1192 3034 L 1300 3034",
+   "p": [
+    [
+     1120,
+     2273
+    ],
+    [
+     1180,
+     2273
+    ],
+    [
+     1180,
+     3034
+    ],
+    [
+     1300,
+     3034
+    ]
+   ],
+   "lane": "diversion",
+   "both": true
+  },
+  {
+   "from": "handover",
+   "to": "dNoLongerSuits",
+   "d": "M 1120 2532 L 1168 2532 Q 1180 2532 1180 2544 L 1180 3162 Q 1180 3174 1192 3174 L 1300 3174",
+   "p": [
+    [
+     1120,
+     2532
+    ],
+    [
+     1180,
+     2532
+    ],
+    [
+     1180,
+     3174
+    ],
+    [
+     1300,
+     3174
+    ]
+   ],
+   "lane": "stall"
+  },
+  {
+   "from": "dNoLongerSuits",
+   "to": "dNoLongerSuits",
+   "d": "M 1300 3174 L 1262 3174",
+   "p": [
+    [
+     1300,
+     3174
+    ],
+    [
+     1262,
+     3174
+    ]
+   ],
+   "lane": "stall",
+   "terminal": true
+  },
+  {
+   "from": "booked",
+   "to": "dCancelLie",
+   "d": "M 1120 2410 L 1168 2410 Q 1180 2410 1180 2422 L 1180 3302 Q 1180 3314 1192 3314 L 1300 3314",
+   "p": [
+    [
+     1120,
+     2410
+    ],
+    [
+     1180,
+     2410
+    ],
+    [
+     1180,
+     3314
+    ],
+    [
+     1300,
+     3314
+    ]
+   ],
+   "lane": "breach"
+  },
+  {
+   "from": "dCancelLie",
+   "to": "dCancelLie",
+   "d": "M 1300 3314 L 1262 3314",
+   "p": [
+    [
+     1300,
+     3314
+    ],
+    [
+     1262,
+     3314
+    ]
+   ],
+   "lane": "breach",
+   "terminal": true
+  },
+  {
+   "from": "enroute",
+   "to": "dRevoked",
+   "d": "M 1120 2651 L 1168 2651 Q 1180 2651 1180 2663 L 1180 3442 Q 1180 3454 1192 3454 L 1300 3454",
+   "p": [
+    [
+     1120,
+     2651
+    ],
+    [
+     1180,
+     2651
+    ],
+    [
+     1180,
+     3454
+    ],
+    [
+     1300,
+     3454
+    ]
+   ],
+   "lane": "breach"
+  },
+  {
+   "from": "dRevoked",
+   "to": "dRevoked",
+   "d": "M 1300 3454 L 1262 3454",
+   "p": [
+    [
+     1300,
+     3454
+    ],
+    [
+     1262,
+     3454
+    ]
+   ],
+   "lane": "breach",
+   "terminal": true
+  },
+  {
+   "from": "occupied",
+   "to": "dAway",
+   "d": "M 1120 3030 L 1168 3030 Q 1180 3030 1180 3042 L 1180 3582 Q 1180 3594 1192 3594 L 1300 3594",
+   "p": [
+    [
+     1120,
+     3030
+    ],
+    [
+     1180,
+     3030
+    ],
+    [
+     1180,
+     3594
+    ],
+    [
+     1300,
+     3594
+    ]
+   ],
+   "lane": "diversion",
+   "both": true
+  },
+  {
+   "from": "arrived",
+   "to": "dClosedRecord",
+   "d": "M 1120 2908 L 1168 2908 Q 1180 2908 1180 2920 L 1180 3722 Q 1180 3734 1192 3734 L 1300 3734",
+   "p": [
+    [
+     1120,
+     2908
+    ],
+    [
+     1180,
+     2908
+    ],
+    [
+     1180,
+     3734
+    ],
+    [
+     1300,
+     3734
+    ]
+   ],
+   "lane": "stall"
+  },
+  {
+   "from": "dClosedRecord",
+   "to": "dClosedRecord",
+   "d": "M 1300 3734 L 1262 3734",
+   "p": [
+    [
+     1300,
+     3734
+    ],
+    [
+     1262,
+     3734
+    ]
+   ],
+   "lane": "stall",
+   "terminal": true
+  },
+  {
+   "from": "ready",
+   "to": "dRepat",
+   "d": "M 1120 3157 L 1168 3157 Q 1180 3157 1180 3169 L 1180 3862 Q 1180 3874 1192 3874 L 1300 3874",
+   "p": [
+    [
+     1120,
+     3157
+    ],
+    [
+     1180,
+     3157
+    ],
+    [
+     1180,
+     3874
+    ],
+    [
+     1300,
+     3874
+    ]
+   ],
+   "lane": "diversion"
+  },
+  {
+   "from": "dRepat",
+   "to": "dRepat",
+   "d": "M 1300 3874 L 1262 3874",
+   "p": [
+    [
+     1300,
+     3874
+    ],
+    [
+     1262,
+     3874
+    ]
+   ],
+   "lane": "diversion",
+   "terminal": true
+  },
+  {
+   "from": "ready",
+   "to": "personLeaves",
+   "d": "M 910 3200 L 910 3610 Q 910 3622 898 3622 L 632 3622 Q 620 3622 620 3634 L 620 4044",
+   "p": [
+    [
+     910,
+     3200
+    ],
+    [
+     910,
+     3622
+    ],
+    [
+     620,
+     3622
+    ],
+    [
+     620,
+     4044
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "ready",
+   "to": "bedReleased",
+   "d": "M 910 3200 L 910 3610 Q 910 3622 922 3622 L 1128 3622 Q 1140 3622 1140 3634 L 1140 4044",
+   "p": [
+    [
+     910,
+     3200
+    ],
+    [
+     910,
+     3622
+    ],
+    [
+     1140,
+     3622
+    ],
+    [
+     1140,
+     4044
+    ]
+   ],
+   "lane": "expected"
+  },
+  {
+   "from": "bedReleased",
+   "to": "bedStuck",
+   "d": "M 1360 4092 L 1440 4092",
+   "p": [
+    [
+     1360,
+     4092
+    ],
+    [
+     1440,
+     4092
+    ]
+   ],
+   "lane": "stall",
+   "both": true
+  },
+  {
+   "from": "personLeaves",
+   "to": "end0",
+   "d": "M 620 4140 L 620 4195 Q 620 4207 608 4207 L 187 4207 Q 175 4207 175 4219 L 175 4274",
+   "p": [
+    [
+     620,
+     4140
+    ],
+    [
+     620,
+     4207
+    ],
+    [
+     175,
+     4207
+    ],
+    [
+     175,
+     4274
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "personLeaves",
+   "to": "end1",
+   "d": "M 620 4140 L 620 4195 Q 620 4207 608 4207 L 439 4207 Q 427 4207 427 4219 L 427 4274",
+   "p": [
+    [
+     620,
+     4140
+    ],
+    [
+     620,
+     4207
+    ],
+    [
+     427,
+     4207
+    ],
+    [
+     427,
+     4274
+    ]
+   ],
+   "lane": "diversion"
+  },
+  {
+   "from": "personLeaves",
+   "to": "end2",
+   "d": "M 620 4140 L 620 4195 Q 620 4207 632 4207 L 667 4207 Q 679 4207 679 4219 L 679 4274",
+   "p": [
+    [
+     620,
+     4140
+    ],
+    [
+     620,
+     4207
+    ],
+    [
+     679,
+     4207
+    ],
+    [
+     679,
+     4274
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "personLeaves",
+   "to": "end3",
+   "d": "M 620 4140 L 620 4195 Q 620 4207 632 4207 L 919 4207 Q 931 4207 931 4219 L 931 4274",
+   "p": [
+    [
+     620,
+     4140
+    ],
+    [
+     620,
+     4207
+    ],
+    [
+     931,
+     4207
+    ],
+    [
+     931,
+     4274
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "personLeaves",
+   "to": "end4",
+   "d": "M 620 4140 L 620 4195 Q 620 4207 632 4207 L 1171 4207 Q 1183 4207 1183 4219 L 1183 4274",
+   "p": [
+    [
+     620,
+     4140
+    ],
+    [
+     620,
+     4207
+    ],
+    [
+     1183,
+     4207
+    ],
+    [
+     1183,
+     4274
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "personLeaves",
+   "to": "end5",
+   "d": "M 620 4140 L 620 4195 Q 620 4207 632 4207 L 1423 4207 Q 1435 4207 1435 4219 L 1435 4274",
+   "p": [
+    [
+     620,
+     4140
+    ],
+    [
+     620,
+     4207
+    ],
+    [
+     1435,
+     4207
+    ],
+    [
+     1435,
+     4274
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "personLeaves",
+   "to": "end6",
+   "d": "M 620 4140 L 620 4195 Q 620 4207 632 4207 L 1675 4207 Q 1687 4207 1687 4219 L 1687 4274",
+   "p": [
+    [
+     620,
+     4140
+    ],
+    [
+     620,
+     4207
+    ],
+    [
+     1687,
+     4207
+    ],
+    [
+     1687,
+     4274
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "personLeaves",
+   "to": "end7",
+   "d": "M 620 4140 L 620 4195 Q 620 4207 632 4207 L 1927 4207 Q 1939 4207 1939 4219 L 1939 4274",
+   "p": [
+    [
+     620,
+     4140
+    ],
+    [
+     620,
+     4207
+    ],
+    [
+     1939,
+     4207
+    ],
+    [
+     1939,
+     4274
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "raised",
+   "to": "rkDuplicate",
+   "d": "M 1120 240 L 2342 240 Q 2354 240 2354 252 L 2354 500 Q 2354 512 2366 512 L 2400 512",
+   "p": [
+    [
+     1120,
+     240
+    ],
+    [
+     2354,
+     240
+    ],
+    [
+     2354,
+     512
+    ],
+    [
+     2400,
+     512
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "raised",
+   "to": "rkIntakeLost",
+   "d": "M 1120 240 L 2342 240 Q 2354 240 2354 252 L 2354 628 Q 2354 640 2366 640 L 2400 640",
+   "p": [
+    [
+     1120,
+     240
+    ],
+    [
+     2354,
+     240
+    ],
+    [
+     2354,
+     640
+    ],
+    [
+     2400,
+     640
+    ]
+   ],
+   "lane": "absent",
+   "terminal": true,
+   "dashed": true
+  },
+  {
+   "from": "edArrived",
+   "to": "rkClearance",
+   "d": "M 1800 1083 L 2354 1083 L 2354 1083 L 2400 1083",
+   "p": [
+    [
+     1800,
+     1083
+    ],
+    [
+     2354,
+     1083
+    ],
+    [
+     2354,
+     1083
+    ],
+    [
+     2400,
+     1083
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "placement",
+   "to": "rkClock",
+   "d": "M 1120 1884 L 2354 1884 L 2354 1884 L 2400 1884",
+   "p": [
+    [
+     1120,
+     1884
+    ],
+    [
+     2354,
+     1884
+    ],
+    [
+     2354,
+     1884
+    ],
+    [
+     2400,
+     1884
+    ]
+   ],
+   "lane": "absent",
+   "terminal": true,
+   "dashed": true
+  },
+  {
+   "from": "placement",
+   "to": "rkSettings",
+   "d": "M 1120 1884 L 2342 1884 Q 2354 1884 2354 1896 L 2354 2000 Q 2354 2012 2366 2012 L 2400 2012",
+   "p": [
+    [
+     1120,
+     1884
+    ],
+    [
+     2354,
+     1884
+    ],
+    [
+     2354,
+     2012
+    ],
+    [
+     2400,
+     2012
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "asked",
+   "to": "rkQueue",
+   "d": "M 1120 2006 L 2342 2006 Q 2354 2006 2354 2018 L 2354 2128 Q 2354 2140 2366 2140 L 2400 2140",
+   "p": [
+    [
+     1120,
+     2006
+    ],
+    [
+     2354,
+     2006
+    ],
+    [
+     2354,
+     2140
+    ],
+    [
+     2400,
+     2140
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "asked",
+   "to": "rkClash",
+   "d": "M 1120 2006 L 2342 2006 Q 2354 2006 2354 2018 L 2354 2256 Q 2354 2268 2366 2268 L 2400 2268",
+   "p": [
+    [
+     1120,
+     2006
+    ],
+    [
+     2354,
+     2006
+    ],
+    [
+     2354,
+     2268
+    ],
+    [
+     2400,
+     2268
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "asked",
+   "to": "rkUrgent",
+   "d": "M 1120 2006 L 2342 2006 Q 2354 2006 2354 2018 L 2354 2384 Q 2354 2396 2366 2396 L 2400 2396",
+   "p": [
+    [
+     1120,
+     2006
+    ],
+    [
+     2354,
+     2006
+    ],
+    [
+     2354,
+     2396
+    ],
+    [
+     2400,
+     2396
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "asked",
+   "to": "rkEscalate",
+   "d": "M 1120 2006 L 2342 2006 Q 2354 2006 2354 2018 L 2354 2512 Q 2354 2524 2366 2524 L 2400 2524",
+   "p": [
+    [
+     1120,
+     2006
+    ],
+    [
+     2354,
+     2006
+    ],
+    [
+     2354,
+     2524
+    ],
+    [
+     2400,
+     2524
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "asked",
+   "to": "rkCapacity",
+   "d": "M 1120 2006 L 2342 2006 Q 2354 2006 2354 2018 L 2354 2640 Q 2354 2652 2366 2652 L 2400 2652",
+   "p": [
+    [
+     1120,
+     2006
+    ],
+    [
+     2354,
+     2006
+    ],
+    [
+     2354,
+     2652
+    ],
+    [
+     2400,
+     2652
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "inPrinciple",
+   "to": "rkLegalStatus",
+   "d": "M 1120 2136 L 2342 2136 Q 2354 2136 2354 2148 L 2354 2768 Q 2354 2780 2366 2780 L 2400 2780",
+   "p": [
+    [
+     1120,
+     2136
+    ],
+    [
+     2354,
+     2136
+    ],
+    [
+     2354,
+     2780
+    ],
+    [
+     2400,
+     2780
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "pulled",
+   "to": "rkForm",
+   "d": "M 1120 2273 L 2342 2273 Q 2354 2273 2354 2285 L 2354 2896 Q 2354 2908 2366 2908 L 2400 2908",
+   "p": [
+    [
+     1120,
+     2273
+    ],
+    [
+     2354,
+     2273
+    ],
+    [
+     2354,
+     2908
+    ],
+    [
+     2400,
+     2908
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "pulled",
+   "to": "rkExam",
+   "d": "M 1120 2273 L 2342 2273 Q 2354 2273 2354 2285 L 2354 3024 Q 2354 3036 2366 3036 L 2400 3036",
+   "p": [
+    [
+     1120,
+     2273
+    ],
+    [
+     2354,
+     2273
+    ],
+    [
+     2354,
+     3036
+    ],
+    [
+     2400,
+     3036
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "pulled",
+   "to": "rkLegalWritten",
+   "d": "M 1120 2273 L 2342 2273 Q 2354 2273 2354 2285 L 2354 3152 Q 2354 3164 2366 3164 L 2400 3164",
+   "p": [
+    [
+     1120,
+     2273
+    ],
+    [
+     2354,
+     2273
+    ],
+    [
+     2354,
+     3164
+    ],
+    [
+     2400,
+     3164
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "pulled",
+   "to": "rkLegalMismatch",
+   "d": "M 1120 2273 L 2342 2273 Q 2354 2273 2354 2285 L 2354 3280 Q 2354 3292 2366 3292 L 2400 3292",
+   "p": [
+    [
+     1120,
+     2273
+    ],
+    [
+     2354,
+     2273
+    ],
+    [
+     2354,
+     3292
+    ],
+    [
+     2400,
+     3292
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "collected",
+   "to": "rkNotice",
+   "d": "M 1120 2778 L 2342 2778 Q 2354 2778 2354 2790 L 2354 3408 Q 2354 3420 2366 3420 L 2400 3420",
+   "p": [
+    [
+     1120,
+     2778
+    ],
+    [
+     2354,
+     2778
+    ],
+    [
+     2354,
+     3420
+    ],
+    [
+     2400,
+     3420
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "collected",
+   "to": "rkDiversion",
+   "d": "M 1120 2778 L 2342 2778 Q 2354 2778 2354 2790 L 2354 3536 Q 2354 3548 2366 3548 L 2400 3548",
+   "p": [
+    [
+     1120,
+     2778
+    ],
+    [
+     2354,
+     2778
+    ],
+    [
+     2354,
+     3548
+    ],
+    [
+     2400,
+     3548
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "arrived",
+   "to": "rkExpiryShut",
+   "d": "M 1120 2908 L 2342 2908 Q 2354 2908 2354 2920 L 2354 3664 Q 2354 3676 2366 3676 L 2400 3676",
+   "p": [
+    [
+     1120,
+     2908
+    ],
+    [
+     2354,
+     2908
+    ],
+    [
+     2354,
+     3676
+    ],
+    [
+     2400,
+     3676
+    ]
+   ],
+   "lane": "stall",
+   "dashed": true
+  },
+  {
+   "from": "arrived",
+   "to": "rkExpectFlag",
+   "d": "M 1120 2908 L 2342 2908 Q 2354 2908 2354 2920 L 2354 3792 Q 2354 3804 2366 3804 L 2400 3804",
+   "p": [
+    [
+     1120,
+     2908
+    ],
+    [
+     2354,
+     2908
+    ],
+    [
+     2354,
+     3804
+    ],
+    [
+     2400,
+     3804
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "occupied",
+   "to": "rkAwayRule",
+   "d": "M 1120 3030 L 2342 3030 Q 2354 3030 2354 3042 L 2354 3920 Q 2354 3932 2366 3932 L 2400 3932",
+   "p": [
+    [
+     1120,
+     3030
+    ],
+    [
+     2354,
+     3030
+    ],
+    [
+     2354,
+     3932
+    ],
+    [
+     2400,
+     3932
+    ]
+   ],
+   "lane": "absent",
+   "terminal": true,
+   "dashed": true
+  },
+  {
+   "from": "occupied",
+   "to": "rkInbox",
+   "d": "M 1120 3030 L 2342 3030 Q 2354 3030 2354 3042 L 2354 4048 Q 2354 4060 2366 4060 L 2400 4060",
+   "p": [
+    [
+     1120,
+     3030
+    ],
+    [
+     2354,
+     3030
+    ],
+    [
+     2354,
+     4060
+    ],
+    [
+     2400,
+     4060
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "occupied",
+   "to": "rkDischargePlan",
+   "d": "M 1120 3030 L 2342 3030 Q 2354 3030 2354 3042 L 2354 4176 Q 2354 4188 2366 4188 L 2400 4188",
+   "p": [
+    [
+     1120,
+     3030
+    ],
+    [
+     2354,
+     3030
+    ],
+    [
+     2354,
+     4188
+    ],
+    [
+     2400,
+     4188
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "ready",
+   "to": "rkDischarge",
+   "d": "M 1120 3157 L 2342 3157 Q 2354 3157 2354 3169 L 2354 4304 Q 2354 4316 2366 4316 L 2400 4316",
+   "p": [
+    [
+     1120,
+     3157
+    ],
+    [
+     2354,
+     3157
+    ],
+    [
+     2354,
+     4316
+    ],
+    [
+     2400,
+     4316
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "bedReleased",
+   "to": "rkPrep",
+   "d": "M 1360 4092 L 2342 4092 Q 2354 4092 2354 4104 L 2354 4432 Q 2354 4444 2366 4444 L 2400 4444",
+   "p": [
+    [
+     1360,
+     4092
+    ],
+    [
+     2354,
+     4092
+    ],
+    [
+     2354,
+     4444
+    ],
+    [
+     2400,
+     4444
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "bedReleased",
+   "to": "rkOwnership",
+   "d": "M 1360 4092 L 2342 4092 Q 2354 4092 2354 4104 L 2354 4560 Q 2354 4572 2366 4572 L 2400 4572",
+   "p": [
+    [
+     1360,
+     4092
+    ],
+    [
+     2354,
+     4092
+    ],
+    [
+     2354,
+     4572
+    ],
+    [
+     2400,
+     4572
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "bedReleased",
+   "to": "rkWardDay",
+   "d": "M 1360 4092 L 2342 4092 Q 2354 4092 2354 4104 L 2354 4688 Q 2354 4700 2366 4700 L 2400 4700",
+   "p": [
+    [
+     1360,
+     4092
+    ],
+    [
+     2354,
+     4092
+    ],
+    [
+     2354,
+     4700
+    ],
+    [
+     2400,
+     4700
+    ]
+   ],
+   "lane": "record",
+   "dashed": true
+  },
+  {
+   "from": "cmhtAccepted",
+   "to": "cmhtAccepted",
+   "d": "M 60 765 L 22 765",
+   "p": [
+    [
+     60,
+     765
+    ],
+    [
+     22,
+     765
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "cmhtDeclined",
+   "to": "cmhtDeclined",
+   "d": "M 60 916 L 22 916",
+   "p": [
+    [
+     60,
+     916
+    ],
+    [
+     22,
+     916
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "cmhtNothing",
+   "to": "cmhtNothing",
+   "d": "M 60 1064 L 22 1064",
+   "p": [
+    [
+     60,
+     1064
+    ],
+    [
+     22,
+     1064
+    ]
+   ],
+   "lane": "stall",
+   "terminal": true
+  },
+  {
+   "from": "cmhtWithdrawn",
+   "to": "cmhtWithdrawn",
+   "d": "M 60 1207 L 22 1207",
+   "p": [
+    [
+     60,
+     1207
+    ],
+    [
+     22,
+     1207
+    ]
+   ],
+   "lane": "stall",
+   "terminal": true
+  },
+  {
+   "from": "wardDeclined",
+   "to": "wardDeclined",
+   "d": "M 700 916 L 662 916",
+   "p": [
+    [
+     700,
+     916
+    ],
+    [
+     662,
+     916
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "wardNothing",
+   "to": "wardNothing",
+   "d": "M 700 1070 L 662 1070",
+   "p": [
+    [
+     700,
+     1070
+    ],
+    [
+     662,
+     1070
+    ]
+   ],
+   "lane": "stall",
+   "terminal": true
+  },
+  {
+   "from": "othersCancelled",
+   "to": "othersCancelled",
+   "d": "M 700 1218 L 662 1218",
+   "p": [
+    [
+     700,
+     1218
+    ],
+    [
+     662,
+     1218
+    ]
+   ],
+   "lane": "diversion",
+   "terminal": true
+  },
+  {
+   "from": "wardWithdrawn",
+   "to": "wardWithdrawn",
+   "d": "M 700 1375 L 662 1375",
+   "p": [
+    [
+     700,
+     1375
+    ],
+    [
+     662,
+     1375
+    ]
+   ],
+   "lane": "diversion",
+   "terminal": true
+  },
+  {
+   "from": "wardBlocked",
+   "to": "wardBlocked",
+   "d": "M 700 1528 L 662 1528",
+   "p": [
+    [
+     700,
+     1528
+    ],
+    [
+     662,
+     1528
+    ]
+   ],
+   "lane": "stall",
+   "terminal": true
+  },
+  {
+   "from": "edNeverArrives",
+   "to": "edNeverArrives",
+   "d": "M 1300 940 L 1262 940",
+   "p": [
+    [
+     1300,
+     940
+    ],
+    [
+     1262,
+     940
+    ]
+   ],
+   "lane": "stall",
+   "terminal": true
+  },
+  {
+   "from": "edDeclined",
+   "to": "edDeclined",
+   "d": "M 1300 1502 L 1262 1502",
+   "p": [
+    [
+     1300,
+     1502
+    ],
+    [
+     1262,
+     1502
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "edToCommunity",
+   "to": "edToCommunity",
+   "d": "M 1300 1982 L 1262 1982",
+   "p": [
+    [
+     1300,
+     1982
+    ],
+    [
+     1262,
+     1982
+    ]
+   ],
+   "lane": "diversion",
+   "terminal": true
+  },
+  {
+   "from": "edLeft",
+   "to": "edLeft",
+   "d": "M 1300 2129 L 1262 2129",
+   "p": [
+    [
+     1300,
+     2129
+    ],
+    [
+     1262,
+     2129
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "sWardDecline",
+   "to": "sWardDecline",
+   "d": "M 60 2016 L 22 2016",
+   "p": [
+    [
+     60,
+     2016
+    ],
+    [
+     22,
+     2016
+    ]
+   ],
+   "lane": "stall",
+   "terminal": true
+  },
+  {
+   "from": "sWithdrawWard",
+   "to": "sWithdrawWard",
+   "d": "M 60 2152 L 22 2152",
+   "p": [
+    [
+     60,
+     2152
+    ],
+    [
+     22,
+     2152
+    ]
+   ],
+   "lane": "stall",
+   "terminal": true
+  },
+  {
+   "from": "sAcceptWithdrawn",
+   "to": "sAcceptWithdrawn",
+   "d": "M 60 2288 L 22 2288",
+   "p": [
+    [
+     60,
+     2288
+    ],
+    [
+     22,
+     2288
+    ]
+   ],
+   "lane": "stall",
+   "terminal": true
+  },
+  {
+   "from": "sAbandoned",
+   "to": "sAbandoned",
+   "d": "M 60 2424 L 22 2424",
+   "p": [
+    [
+     60,
+     2424
+    ],
+    [
+     22,
+     2424
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "sPullReleased",
+   "to": "sPullReleased",
+   "d": "M 60 2560 L 22 2560",
+   "p": [
+    [
+     60,
+     2560
+    ],
+    [
+     22,
+     2560
+    ]
+   ],
+   "lane": "stall",
+   "terminal": true
+  },
+  {
+   "from": "sCancelTransport",
+   "to": "sCancelTransport",
+   "d": "M 60 2696 L 22 2696",
+   "p": [
+    [
+     60,
+     2696
+    ],
+    [
+     22,
+     2696
+    ]
+   ],
+   "lane": "stall",
+   "terminal": true
+  },
+  {
+   "from": "sStopTransport",
+   "to": "sStopTransport",
+   "d": "M 60 2832 L 22 2832",
+   "p": [
+    [
+     60,
+     2832
+    ],
+    [
+     22,
+     2832
+    ]
+   ],
+   "lane": "diversion",
+   "terminal": true
+  },
+  {
+   "from": "sAbscond",
+   "to": "sAbscond",
+   "d": "M 60 3048 L 22 3048",
+   "p": [
+    [
+     60,
+     3048
+    ],
+    [
+     22,
+     3048
+    ]
+   ],
+   "lane": "absent",
+   "terminal": true
+  },
+  {
+   "from": "dForced",
+   "to": "dForced",
+   "d": "M 1300 2334 L 1262 2334",
+   "p": [
+    [
+     1300,
+     2334
+    ],
+    [
+     1262,
+     2334
+    ]
+   ],
+   "lane": "forced",
+   "terminal": true
+  },
+  {
+   "from": "dGenderHard",
+   "to": "dGenderHard",
+   "d": "M 1300 2474 L 1262 2474",
+   "p": [
+    [
+     1300,
+     2474
+    ],
+    [
+     1262,
+     2474
+    ]
+   ],
+   "lane": "stall",
+   "terminal": true
+  },
+  {
+   "from": "dNonBinary",
+   "to": "dNonBinary",
+   "d": "M 1300 2614 L 1262 2614",
+   "p": [
+    [
+     1300,
+     2614
+    ],
+    [
+     1262,
+     2614
+    ]
+   ],
+   "lane": "forced",
+   "terminal": true
+  },
+  {
+   "from": "dStatutory",
+   "to": "dStatutory",
+   "d": "M 1300 2754 L 1262 2754",
+   "p": [
+    [
+     1300,
+     2754
+    ],
+    [
+     1262,
+     2754
+    ]
+   ],
+   "lane": "absent",
+   "terminal": true
+  },
+  {
+   "from": "dRepull",
+   "to": "dRepull",
+   "d": "M 1300 3034 L 1262 3034",
+   "p": [
+    [
+     1300,
+     3034
+    ],
+    [
+     1262,
+     3034
+    ]
+   ],
+   "lane": "diversion",
+   "terminal": true
+  },
+  {
+   "from": "dNoLongerSuits",
+   "to": "dNoLongerSuits",
+   "d": "M 1300 3174 L 1262 3174",
+   "p": [
+    [
+     1300,
+     3174
+    ],
+    [
+     1262,
+     3174
+    ]
+   ],
+   "lane": "stall",
+   "terminal": true
+  },
+  {
+   "from": "dCancelLie",
+   "to": "dCancelLie",
+   "d": "M 1300 3314 L 1262 3314",
+   "p": [
+    [
+     1300,
+     3314
+    ],
+    [
+     1262,
+     3314
+    ]
+   ],
+   "lane": "breach",
+   "terminal": true
+  },
+  {
+   "from": "dRevoked",
+   "to": "dRevoked",
+   "d": "M 1300 3454 L 1262 3454",
+   "p": [
+    [
+     1300,
+     3454
+    ],
+    [
+     1262,
+     3454
+    ]
+   ],
+   "lane": "breach",
+   "terminal": true
+  },
+  {
+   "from": "dAway",
+   "to": "dAway",
+   "d": "M 1300 3594 L 1262 3594",
+   "p": [
+    [
+     1300,
+     3594
+    ],
+    [
+     1262,
+     3594
+    ]
+   ],
+   "lane": "diversion",
+   "terminal": true
+  },
+  {
+   "from": "dClosedRecord",
+   "to": "dClosedRecord",
+   "d": "M 1300 3734 L 1262 3734",
+   "p": [
+    [
+     1300,
+     3734
+    ],
+    [
+     1262,
+     3734
+    ]
+   ],
+   "lane": "stall",
+   "terminal": true
+  },
+  {
+   "from": "dRepat",
+   "to": "dRepat",
+   "d": "M 1300 3874 L 1262 3874",
+   "p": [
+    [
+     1300,
+     3874
+    ],
+    [
+     1262,
+     3874
+    ]
+   ],
+   "lane": "diversion",
+   "terminal": true
+  },
+  {
+   "from": "bedStuck",
+   "to": "bedStuck",
+   "d": "M 1440 4092 L 1402 4092",
+   "p": [
+    [
+     1440,
+     4092
+    ],
+    [
+     1402,
+     4092
+    ]
+   ],
+   "lane": "stall",
+   "terminal": true
+  },
+  {
+   "from": "end0",
+   "to": "end0",
+   "d": "M 60 4330 L 22 4330",
+   "p": [
+    [
+     60,
+     4330
+    ],
+    [
+     22,
+     4330
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "end1",
+   "to": "end1",
+   "d": "M 427 4386 L 427 4424",
+   "p": [
+    [
+     427,
+     4386
+    ],
+    [
+     427,
+     4424
+    ]
+   ],
+   "lane": "diversion",
+   "terminal": true
+  },
+  {
+   "from": "end2",
+   "to": "end2",
+   "d": "M 679 4386 L 679 4424",
+   "p": [
+    [
+     679,
+     4386
+    ],
+    [
+     679,
+     4424
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "end3",
+   "to": "end3",
+   "d": "M 931 4386 L 931 4424",
+   "p": [
+    [
+     931,
+     4386
+    ],
+    [
+     931,
+     4424
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "end4",
+   "to": "end4",
+   "d": "M 1183 4386 L 1183 4424",
+   "p": [
+    [
+     1183,
+     4386
+    ],
+    [
+     1183,
+     4424
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "end5",
+   "to": "end5",
+   "d": "M 1435 4386 L 1435 4424",
+   "p": [
+    [
+     1435,
+     4386
+    ],
+    [
+     1435,
+     4424
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "end6",
+   "to": "end6",
+   "d": "M 1687 4386 L 1687 4424",
+   "p": [
+    [
+     1687,
+     4386
+    ],
+    [
+     1687,
+     4424
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "end7",
+   "to": "end7",
+   "d": "M 2054 4330 L 2092 4330",
+   "p": [
+    [
+     2054,
+     4330
+    ],
+    [
+     2092,
+     4330
+    ]
+   ],
+   "lane": "end",
+   "terminal": true
+  },
+  {
+   "from": "rkIntakeLost",
+   "to": "rkIntakeLost",
+   "d": "M 2400 640 L 2362 640",
+   "p": [
+    [
+     2400,
+     640
+    ],
+    [
+     2362,
+     640
+    ]
+   ],
+   "lane": "absent",
+   "terminal": true
+  },
+  {
+   "from": "rkClock",
+   "to": "rkClock",
+   "d": "M 2400 1884 L 2362 1884",
+   "p": [
+    [
+     2400,
+     1884
+    ],
+    [
+     2362,
+     1884
+    ]
+   ],
+   "lane": "absent",
+   "terminal": true
+  },
+  {
+   "from": "rkExpiryShut",
+   "to": "rkExpiryShut",
+   "d": "M 2400 3676 L 2362 3676",
+   "p": [
+    [
+     2400,
+     3676
+    ],
+    [
+     2362,
+     3676
+    ]
+   ],
+   "lane": "stall",
+   "terminal": true
+  },
+  {
+   "from": "rkAwayRule",
+   "to": "rkAwayRule",
+   "d": "M 2400 3932 L 2362 3932",
+   "p": [
+    [
+     2400,
+     3932
+    ],
+    [
+     2362,
+     3932
+    ]
+   ],
+   "lane": "absent",
+   "terminal": true
+  }
+ ]
+}

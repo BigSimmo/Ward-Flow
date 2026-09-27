@@ -1,0 +1,78 @@
+ACTION-REACHABLE ABSENCE SWEEP — PRE-REGISTRATION
+Ward Verifier, 2026-09-12. Written and committed BEFORE any measurement.
+Tree: f7b18de815c861273fccf4e594fd51f957266a4f  (merge of 76f7293805)
+
+WHY THIS EXISTS
+  Two instruments have now examined absence wording in this module. A RENDER census walked
+  36 routes in their DEFAULT state. A blind SOURCE enumeration re-derived 22 sites. Both
+  returned zero non-compliant. NEITHER walks a state reached only by an ACTION.
+  The enumeration behind the U sweep counted ~340 absence strings across ~75 files; the
+  render saw 52 occurrences of 16 distinct strings. The difference is UNWALKED, not clean.
+
+THE POPULATION
+  A user-visible sentence, reachable ONLY after an interaction, that states something is
+  absent, empty, unavailable, refused or not applicable. Reached by acting on the page:
+  typing a query, applying a filter, submitting, declining, clearing, selecting.
+  NOT in scope: anything present in the default render of a route (already measured).
+
+THE PROPERTY BEING TESTED
+  For a state that is empty BECAUSE SOMETHING WAS CHECKED, the sentence must name what was
+  searched. A site is NON-COMPLIANT if it reports emptiness without naming the population
+  it searched, OR names it from a hand-written list that can drift from the code defining
+  that population.
+  NOT non-compliant: a plain count where nought is a measured zero; an unreachable branch;
+  a set that cannot be empty; a site governed by an existing ruling; a genuine
+  checked-empty state that already names its population.
+
+PREDICTION — stated as a number, before any measurement
+  Among the FIRST TWELVE action-reachable absence states walked, AT LEAST ONE is
+  NON-COMPLIANT.
+  Reasoning, stated so it can be held against me: the default-render and source populations
+  each came back 100% compliant, but the one documented historical failure of this exact
+  class in this module (2026-09-04, ward-management-modes.tsx) WAS an empty state, and no
+  instrument has ever walked this population.
+
+FALSIFIER — at the first detectable case, not the extreme one
+  Every state is classified and TALLIED AS IT IS WALKED, in order, and the running count
+  is written down before the next state is opened. The prediction is FALSIFIED if twelve
+  states are walked and the non-compliant count is zero.
+  It is CONFIRMED at the first non-compliant site, at whatever n that occurs — including
+  n = 1. I am not permitted to keep walking to improve the ratio after that.
+  If fewer than twelve action-reachable states exist at all, the population is reported as
+  smaller than expected and the prediction is VOID rather than falsified — an undersized
+  population is not evidence either way.
+
+CONTROLS — one per class, not one overall
+  Class A, an empty result set (search/filter returning nothing):
+    positive: the SAME control returning rows. Proves the probe distinguishes empty
+              from non-empty rather than reading a disabled or unmounted panel.
+    negative: the absence string is confirmed ABSENT before the action.
+  Class B, a refusal (a submit or action that declines):
+    positive: the same control SUCCEEDING at least once.
+    negative: the refusal string confirmed absent before the action.
+  Class C, a list emptied by an action (clear, remove, withdraw):
+    positive: the populated list before the action.
+    negative: the absence string confirmed absent before the action.
+  INSTRUMENT CONTROL, run before any number is read: the probe must detect a designated
+  known specimen in a state I have already produced by hand. If it does not, the run is
+  reported as RESULTS VOID and no count is quoted. A clean zero from a probe never shown
+  to produce a positive is worth nothing.
+
+PROVENANCE
+  Every row records DERIVED (I opened the code or the rendered DOM myself) or INHERITED
+  (came from a brief, a document or another chat). INHERITED rows are VOID and excluded
+  from the tally. No brief used here names a family, a ruling, an expected class, or asks
+  anyone to find a pattern.
+
+CONTENTION — recorded, not claimed away
+  No tool in this repository can make this machine quiet: run-playwright.mjs takes the
+  heavy lock and run-ward-tests.mjs takes none, so the two heavy runners are blind to each
+  other. Ten build agents were running in isolated worktrees when this was written.
+  Node-process count and free physical memory recorded at start, worst and end.
+
+WHAT THIS SWEEP WILL NOT ESTABLISH, written now rather than after
+  - One viewport unless a state is width-conditional.
+  - Nothing about screen readers; DOM and computed style only.
+  - It cannot prove a state is unreachable — only that I did not reach it.
+  - A zero means "no non-compliant site among the states I REACHED". The unreached
+    remainder is unwalked, not clean, exactly as the two prior instruments were.

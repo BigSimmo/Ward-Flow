@@ -1,0 +1,733 @@
+/*
+ * Screen-local content for the opted-in Statistics overview and compare pair. The frame and
+ * primitives own their own third-edition branches; this file supplies only the arrangements and
+ * descendant treatments unique to these two screens. Untouched statistics routes keep their
+ * legacy modules.
+ */
+
+.overviewGrid,
+.overviewColumn,
+.compareRegion,
+.panelBody {
+  display: grid;
+  min-width: 0;
+}
+
+.overviewGrid,
+.overviewColumn {
+  gap: 0.875rem;
+}
+
+.overviewColumn {
+  align-content: start;
+}
+
+.panelBody {
+  gap: 0.75rem;
+  padding: 0.875rem 1rem 1rem;
+}
+
+.body,
+.note,
+.emptyNote {
+  margin: 0;
+  font-family: var(--body);
+  line-height: 1.5;
+}
+
+.body {
+  color: var(--ink-soft);
+  font-size: var(--t-2);
+}
+
+.note,
+.emptyNote {
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+.emptyNote {
+  font-style: italic;
+}
+
+.panelBody > :global([data-ward-primitive="table"]) {
+  width: auto;
+  margin-inline: -1rem;
+}
+
+.panelBody > :global([data-ward-primitive="table"][data-ward-scroll-hint="true"]) {
+  border: 0;
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0 -1rem;
+  border-block: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.kvItem {
+  display: grid;
+  min-width: 0;
+  grid-template-rows: auto auto 1fr;
+  align-content: start;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem 0.875rem;
+}
+
+.kvItem:not(:last-child) {
+  border-right: 1px solid var(--line);
+}
+
+.kvItem > dt,
+.kvItem > dd {
+  min-width: 0;
+  margin: 0;
+}
+
+.kvItem > dt {
+  color: var(--muted);
+  font-family: var(--body);
+  font-size: var(--t-0);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.kvValue {
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: var(--t-6);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.kvCaption {
+  color: var(--ink-soft);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  line-height: 1.45;
+}
+
+.reveal {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+}
+
+.reveal + .reveal {
+  margin-top: 0.75rem;
+}
+
+.reveal > summary {
+  display: flex;
+  min-height: var(--spacing-tap);
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  list-style: none;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  font-weight: 600;
+}
+
+.reveal > summary::-webkit-details-marker {
+  display: none;
+}
+
+.reveal > summary::after {
+  width: 0.45rem;
+  height: 0.45rem;
+  flex: none;
+  border-right: 1px solid var(--muted);
+  border-bottom: 1px solid var(--muted);
+  content: "";
+  transform: rotate(45deg) translate(-1px, -1px);
+  transition: transform var(--duration-fast) ease;
+}
+
+.reveal > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.reveal[open] > summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.reveal[open] > summary::after {
+  transform: rotate(-135deg) translate(-1px, -1px);
+}
+
+.revealBody {
+  padding: 0.875rem 1rem;
+  color: var(--ink-soft);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  line-height: 1.5;
+}
+
+.revealBody > * {
+  margin-block: 0;
+}
+
+.revealBody > * + * {
+  margin-top: 0.75rem;
+}
+
+.dtable {
+  --ward-table-min-width: 0;
+}
+
+.dtable tbody th {
+  color: var(--ink);
+  font-weight: 600;
+  white-space: normal;
+}
+
+.n,
+.dtable td.n,
+.dtable th.n {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.dtable tbody tr:hover th,
+.dtable tbody tr:hover td {
+  background: var(--sunk);
+}
+
+.dtable tfoot th,
+.dtable tfoot td {
+  background: var(--surface-2);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.subHeading {
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--body);
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.unitList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.unitItem {
+  display: flex;
+  min-width: 0;
+}
+
+.unitLink {
+  display: flex;
+  min-width: 0;
+  min-height: var(--spacing-tap);
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  padding: 0.625rem 0.75rem;
+  color: var(--ink-soft);
+  font-family: var(--body);
+  text-decoration: none;
+}
+
+.unitLink:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+
+.unitLink:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.unitName {
+  color: var(--ink);
+  font-size: var(--t-2);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.unitKind {
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.4;
+}
+
+/*
+ * RE-MEASURED 2026-09-17 (`tests/ui-ward-table-thresholds.spec.ts`, 1440x900, `clearedMinWidth` =
+ * 0px, sentinel 1234px): min-content 679px, max-content 744px — both risen again since the
+ * 2026-09-12 re-tuning this class's sibling copy in `statistics-sections.module.css` documents
+ * (which set 40rem 7px clear of a then-633px max-content; this screen has since grown past that
+ * margin, most likely from the third-edition visual upgrade's wider unit-name/badge treatment on
+ * this same table). 40rem (640px) had gone INERT — at or below the table's own 679px min-content,
+ * so it could never force a scroll — the same failure class that comment names for the pre-2026-
+ * 09-12 value. Raised to 47.5rem (760px), 16px clear of today's 744px max-content, following that
+ * same design intent: pinned just above max-content so the table never compresses at all, with a
+ * margin for a longer ward name moving this width right in real data. `statistics-third-edition
+ * .module.css` — NOT `statistics-sections.module.css` — is the copy `statistics-compare-screen
+ * .tsx` actually imports; only this one needs to track the live table's shape.
+ */
+.compareWardTable {
+  --ward-table-min-width: 47.5rem;
+}
+
+/*
+ * RE-MEASURED 2026-09-17, same run: min-content 498px, max-content 555px, both risen past the
+ * 27.5rem (440px) pin's own min-content — inert for the identical reason `.compareWardTable`
+ * above documents. Raised to 36rem (576px), 21px clear of today's max-content.
+ */
+.compareEdTable {
+  --ward-table-min-width: 36rem;
+}
+
+.compareWardTable thead th:first-child,
+.compareEdTable thead th:first-child,
+.compareWardTable th[scope="row"],
+.compareEdTable th[scope="row"] {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  max-width: 11rem;
+  background: var(--surface-2);
+  white-space: normal;
+}
+
+.compareWardTable td.num,
+.compareEdTable td.num {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.unmeasured {
+  color: var(--muted);
+  font-family: var(--body);
+  font-variant-numeric: normal;
+  font-style: italic;
+}
+
+@media (min-width: 62.5rem) {
+  .overviewGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 62.5625rem) {
+  .compareRegion > :global([data-ward-primitive="panel"]) {
+    display: flex;
+    min-height: 0;
+    max-height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .compareRegion > :global([data-ward-primitive="panel"]) > :global([data-ward-primitive="panel-header"]) {
+    flex: none;
+  }
+
+  .compareRegion > :global([data-ward-primitive="panel"]) > .panelBody {
+    min-height: 0;
+    flex: 1 1 auto;
+    align-content: start;
+    grid-auto-rows: max-content;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .overviewGrid {
+    align-items: start;
+  }
+
+  .overviewColumn {
+    align-content: start;
+  }
+
+  .overviewColumn > :global([data-ward-primitive="panel"]) {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .overviewColumn .panelBody {
+    min-height: 0;
+    max-height: none;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .overviewColumn > :global([data-testid="ward-statistics-overview-capacity"]),
+  .overviewColumn > :global([data-testid="ward-statistics-overview-worklist"]) {
+    max-height: var(--ward-compact-height, clamp(22rem, calc(100dvh - 18rem), 34rem));
+  }
+
+  .overviewColumn > :global([data-testid="ward-statistics-overview-stages"]),
+  .overviewColumn > :global([data-testid="ward-statistics-overview-declines"]) {
+    max-height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
+  }
+}
+
+@media (max-width: 40rem) {
+  .panelBody {
+    padding-inline: 0.875rem;
+  }
+
+  .panelBody > :global([data-ward-primitive="table"]) {
+    margin-inline: -0.875rem;
+  }
+
+  .panelBody > :global([data-ward-primitive="table"][data-ward-scroll-hint="true"]) {
+    border: 0.125rem solid var(--line-strong);
+  }
+
+  .kv {
+    grid-template-columns: minmax(0, 1fr);
+    margin-inline: -0.875rem;
+  }
+
+  .kvItem:not(:last-child) {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+}
+
+@media (forced-colors: active) {
+  .reveal,
+  .unitLink,
+  .kv {
+    border-color: CanvasText;
+  }
+}
+
+@media print {
+  .compareRegion > :global([data-ward-primitive="panel"]) {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .compareRegion > :global([data-ward-primitive="panel"]) > .panelBody {
+    overflow: visible;
+  }
+
+  .overviewGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .overviewColumn {
+    height: auto;
+  }
+
+  .overviewColumn .panelBody {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .reveal {
+    break-inside: avoid;
+  }
+
+  .reveal > summary::after {
+    display: none;
+  }
+
+  .revealBody {
+    display: block !important;
+  }
+
+  .dtable thead th,
+  .compareWardTable thead th:first-child,
+  .compareEdTable thead th:first-child,
+  .compareWardTable th[scope="row"],
+  .compareEdTable th[scope="row"] {
+    position: static;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal > summary::after {
+    transition: none;
+  }
+}
+
+/* Comparative Ward ALOS and ED Waiting Charts */
+.chartCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  padding: 1rem;
+  margin-bottom: 0.875rem;
+  box-shadow: var(--lift);
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.chartTitle {
+  margin: 0;
+  font-size: var(--t-2);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.chartCount {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.chartSubtitle {
+  margin: 0 0 0.75rem;
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+
+.barChartBox {
+  position: relative;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.compareTooltip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  box-shadow: 0 4px 16px rgb(var(--ward-shadow-rgb) / 0.16);
+  padding: 0.5rem 0.75rem;
+  font-size: var(--t-0);
+  z-index: 25;
+  min-width: 150px;
+}
+
+.chartBarInteractive {
+  cursor: pointer;
+  transition: filter 0.15s ease, opacity 0.15s ease;
+}
+
+.chartBarInteractive:hover {
+  filter: brightness(1.15);
+}
+
+.statusPill,
+.overviewGrid :global(.chip),
+.overviewGrid :global(.badge),
+.compareRegion :global(.chip),
+.compareRegion :global(.badge) {
+  white-space: nowrap !important;
+  flex-shrink: 0;
+}
+
+/* Gauge Grid & Cards */
+.gaugeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 0.875rem;
+  margin-bottom: 0.875rem;
+}
+
+.gaugeCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-shadow: var(--lift);
+}
+
+.gaugeCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.gaugeTitle {
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.gaugeBadge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.gaugeHospitals {
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.gaugeRadialWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 0.5rem 0 0.25rem;
+}
+
+.gaugeRadialSvg {
+  width: 140px;
+  height: 82px;
+  overflow: visible;
+}
+
+.gaugeRadialText {
+  position: absolute;
+  bottom: 4px;
+  text-align: center;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.gaugeRadialPct {
+  font-size: var(--t-4);
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.gaugeRadialBeds {
+  font-size: var(--t-0);
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.gaugeFoot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.gaugeFoot strong {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* Interactive Bed Lifecycle Pipeline */
+.lifecyclePipeline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr));
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.pipelineStep {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 0.625rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  user-select: none;
+}
+
+.pipelineStep:hover {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+
+.pipelineStepSelected {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px var(--accent-soft);
+  background: var(--surface-2);
+}
+
+.stepHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: var(--t-0);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.stepBadge {
+  font-size: 12px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  align-self: flex-start;
+  font-weight: 600;
+  white-space: nowrap !important;
+  flex-shrink: 0;
+}
+
+.stepCount {
+  font-family: var(--mono);
+  font-size: var(--t-3);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.stepDwell {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.pipelineDetailCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 0.75rem 1rem;
+  margin-top: 0.5rem;
+}
+
+.pipelineDetailText {
+  margin: 0;
+  font-size: var(--t-0);
+  color: var(--ink);
+  line-height: 1.45;
+}
+

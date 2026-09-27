@@ -1,0 +1,26 @@
+# Q004 Task 6 — Search and patient family
+
+Source boundary: 2026-09-13, local `D:/Worktrees/Database/ward-lead`. No Git, domain, store, access, provider, shared-shell or route changes. Source is frozen for controller review.
+
+Changed files (under `src/components/ward-management/`):
+
+- `hub/hub-screen.tsx`, `hub/hub.module.css`: compact search/header/provenance and phone rows; independent desktop lists and all live figures, filters, pins and destination links retained.
+- `search/patient-search.tsx`, `search/search.module.css`: existing controlled typeahead and submission form moved before results; top Add patient link; empty-result link carries `?search=` unassigned. One query owner still feeds all three result populations. Refusals, stage/department rules, ordering and session access recording unchanged. Bounded results and preview remain independent.
+- `patients/add-patient.tsx`, `patients/add-patient.module.css`: identity form beside live duplicate check; removed source narration, next-step panel and unrelated alphabetical patient sampler. Raw carried search requires an explicit given-name/record-number choice into a blank field, never splits a name or submits. Legacy `?name=` one-time prefill preserved. Four required fields, optional gender, duplicate tiers, reducer dispatch and successful patient navigation unchanged.
+- `patients/person-screen.tsx`, `patients/person.module.css`: persistent identity heading, compact referral action and absence notes, bounded Details list; full clinical/demographic facts retain their existing order and sensitive-field separation. Inactive tab panels explicitly hidden. No current-movement/history/eligibility feature added.
+
+Snapshots: `.superpowers/sdd/2026-09-13-product-refinement/task-6-before/` preserves the eight source inputs and three test inputs before edits.
+
+Focused tests authored/adapted; controller rerun passed 90/90 across all three files:
+
+- `tests/ward-add-patient.dom.test.tsx`: top/empty search route expectations; raw query starts in no identity field; explicit assignment leaves other fields blank and dispatches nothing; record-number assignment invokes existing duplicate check; typed identity cannot be replaced; legacy name prefill checks retained. Four obsolete informational/sampler tests became four registration behavior tests.
+- `tests/ward-patient-search.dom.test.tsx`: single control occurs before results; top/empty Add patient links carry its exact query; typing alone adds no access row; updated concise scope/session captions.
+- `tests/ward-person-screen.dom.test.tsx`: linked referral route contains only patientId; no-history wording updated; existing age, identity, destination-access and tab semantics checks retained.
+
+Checks executed: installed Prettier on all eight source files and three test files; TypeScript parser on four TSX source files and three test files, zero parse diagnostics. No test, server, browser, provider or heavy command run by worker. Controller report `C:/Users/joshs/AppData/Local/Temp/ward-tests-FCeh0h/report-0.json`: 3 files handed in / 3 ran, 90 collected / 90 passed. Earlier 86/90 run exposed test mock-history isolation, two retired-copy assertions and an unsafe URL literal in the source-scan test; corrected without changing guards. The synthetic label was also deduplicated in the person banner.
+
+Visual evidence inspected in `screens/` (actual served reference light / live before dark, 1440): `hub-task6-{reference,before}-1440.png`, `search-task6-{reference,before}-1440.png`, `patient-now-task6-{reference,before}-1440.png`, `add-patient-task6-{reference,before}-1440.png`. Parent supplied captures because this worker has no browser surface. Worker additionally inspected Search light 1440 and Addpatient light 390 / dark 820 after captures. These exposed a gap above Access record, phone duplicate-before-form order and a stale two-column root on stacked tablet; scoped CSS corrections are applied and need after-state confirmation. Controller exercised actual search-to-add navigation and explicit given-name assignment: fields started blank and only the chosen field filled. Remaining light/dark and 390/820 cells stay pending controller acceptance; no scores or visual-complete claim.
+
+Intentional deviations: current engine ordering retained instead of drawing's invented priority order; Patient cannot show drawn movement/verdict/history panels under current access contract; registration retains four supported required fields and optional gender, without a new sex field. Addpatient sampler removal is the owner-authorised redesign. New Search navigation uses unassigned `?search=`; old explicit-name URLs remain supported.
+
+High-yield controller cases: Search empty/known/no-match/refused, Enter access entry, top and empty Add links; Add `?search=UM100002` explicit number assignment plus duplicate warning, multiword given-name choice and no-overwrite, legacy `?name=Halowin`, full submit to new patient; Patient Now/Details/Documents plus referral URL; Hub selected ward + filters/pin/keyboard. Capture desktop both themes for four routes, phone Search/Addpatient, tablet Addpatient, and complex Patient Details/Hub preview as needed. Shared-shell title/search behaviour is outside this worker's ownership.

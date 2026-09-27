@@ -1,0 +1,2845 @@
+/*
+ * Ward Flow's third-edition rail — `ward-rail.tsx`. Composes the third-edition token layer
+ * directly (`../../../app/ward-flow-shell-tokens.module.css`'s own header comment explains why: nothing is mounted
+ * yet, so no ancestor can be assumed to already provide these tokens).
+ *
+ * Tokens only — no hex, no `color-mix`. **The rail is flat, a hairline only — no shadow.**
+ * (round-1 review, Important 8: the drawing's own `nav.rail`, `command-third-edition.html:592-
+ * 603`, sets `background` and `border-right` and never a `box-shadow`; `--lift` is the ONE
+ * elevation step the standard reserves for something that floats OVER the page — a popover, a
+ * drawer panel — never the rail itself, which is part of the page's own furniture.) No coloured
+ * bar on any edge and no top highlight (owner ruling, `docs/ward-flow/owner-
+ * decisions-2026-09-1x.md`) — the active rail item is drawn with the standard's "selection is a
+ * ring" treatment (§7.1) instead of the drawing's brass `::before` bar; see `ward-rail.tsx`'s own
+ * header comment for the full reasoning, including why `.svcStripe` is also absent.
+ */
+
+.rail {
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  /* Shell tokens do not define --ward-tap; alias the repo tap floor so min-height: var(--ward-tap) does not collapse. */
+  --ward-tap: var(--spacing-tap, 3rem);
+  --railw: 16.5rem;
+  display: flex;
+  flex-direction: column;
+  width: var(--railw, 16.5rem);
+  min-width: 0;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 35;
+  align-self: flex-start;
+  height: 100dvh;
+  background: var(--surface);
+  border-right: 0.0625rem solid var(--line);
+  font-family: var(--body);
+  color: var(--ink);
+  /* O-7: the one GENUINE token substitution the stylesheet enumeration found — 0.18s and
+     --duration-base are both 180ms, so this is identical in the default case. Verified
+     reachable: --duration-base is declared on :root in globals.css and again on
+     .ckb-v2.ckb-v2, which src/app/layout.tsx puts on <html>, so it resolves here.
+     ⚠️ The v2 sheet also zeroes it under `@media (prefers-reduced-motion: reduce)`,
+     scoped `html:not([data-motion="full"])` so an in-app opt-in keeps the animation.
+     That zero never decides anything here, because the `.rail { transition: none }`
+     block below fires on the same media query and wins. Which exposes something this
+     substitution did not create and does not fix: THAT block keys on the media query
+     alone, so it overrides the in-app "full motion" opt-in the tokens deliberately
+     honour. Recorded, not repaired — it is a behaviour decision, not a token move. */
+  transition: width var(--duration-base) var(--ease, ease);
+}
+
+.rail[data-rail="closed"] {
+  width: var(--railw-closed);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail,
+  .roleDisclosureChevron {
+    transition: none;
+  }
+}
+
+/* Standard §7.7: "Below 1000px the rail renders in the open shape as a wrapping row whatever is
+ * stored, and the control is hidden." The block that implements this now lives further down this
+ * file, right before `@media (forced-colors: active)` — see that block's own header comment for
+ * why the position moved in round 3. */
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem 0.875rem 0.625rem;
+  border-bottom: 0.0625rem solid var(--line);
+  background: var(--surface);
+  flex-shrink: 0;
+  min-height: 3.375rem;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+/* Wave-2 chrome (#22): Ward Flow home link — full production tap floor, never a text-only row. */
+.brandLink {
+  display: flex;
+  align-items: center;
+  gap: 0.5625rem;
+  text-decoration: none;
+  color: var(--ink);
+  min-width: 0;
+  min-height: var(--ward-tap, var(--spacing-tap, 3rem));
+  padding: 0.25rem 0.25rem 0.25rem 0;
+  box-sizing: border-box;
+}
+
+.brandEmblem {
+  width: var(--ward-tap, var(--spacing-tap, 3rem));
+  height: var(--ward-tap, var(--spacing-tap, 3rem));
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r2);
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+
+.brandEmblem:hover {
+  transform: scale(1.05);
+}
+
+.brandTitle {
+  font-family: var(--display);
+  font-size: var(--t-3);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  white-space: nowrap !important;
+}
+
+.brandTitle b {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.brandStateText {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--gilt);
+  letter-spacing: 0.08em;
+  margin-left: 0.25rem;
+}
+
+.brandBadge {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  padding: 0.0625rem 0.375rem;
+  border-radius: var(--pill);
+  background: var(--surface-2);
+  color: var(--gilt);
+  border: 0.0625rem solid var(--line);
+  letter-spacing: 0.04em;
+  white-space: nowrap !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 26 Sept 2026: in the open desktop rail (about 263px) the emblem, "Ward Flow WA", this badge and the
+ * collapse button need about 275px, so the badge sat on top of the name ("Ward Flo"). Where the row is
+ * too narrow the badge steps aside, as it already does on phones (below); the version still shows in
+ * the rail's footer ("Policy 2026.3"). The name keeps its full width either way. */
+.brand {
+  container: ward-brand / inline-size;
+}
+
+.brandLink {
+  flex-shrink: 0;
+}
+
+@container ward-brand (max-width: 18rem) {
+  .brandBadge {
+    display: none;
+  }
+}
+
+.brandShort {
+  display: none;
+}
+
+/* Item 52 — the chosen service, a dot next to a WORD, never a bar (`ward-rail.tsx`'s own header
+ * comment carries the full reasoning, including why the drawing's `.svcStripe` stays omitted).
+ * Sits directly under the brand, in the same position `.svcStripe` would have painted, but as
+ * legible text rather than a colour-only signal. Not present at all under All services — the
+ * component renders no element here in that case, so there is no rule to hide. */
+.serviceLine {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+  margin: 0 1.25rem 0.875rem;
+  padding: 0;
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.serviceDot {
+  flex-shrink: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  /* Private's base colour — build plan §3 "Rail (52)": "Private uses `var(--muted)`." There is no
+   * `--svc-private` token (§1 "Item 52" notes the gap); Private is simply the one service with no
+   * override rule below, rather than a fifth token invented to fill it. */
+  background: var(--muted);
+}
+
+.serviceDot[data-service="north"] {
+  background: var(--svc-north);
+}
+
+.serviceDot[data-service="south"] {
+  background: var(--svc-south);
+}
+
+.serviceDot[data-service="east"] {
+  background: var(--svc-east);
+}
+
+.serviceDot[data-service="wachs"] {
+  background: var(--svc-wachs);
+}
+
+/* Task 8, 2026-09-11: holds two lists now, not one — the six core views (their own
+   `aria-label="Ward Flow views"` nav, `ward-rail.tsx`'s own header explains why) and the
+   remaining WARD_NAV entries as a second, unlabelled list. `display: flex` with the same `gap`
+   `.railList` uses between its own items keeps the two lists reading as one continuous rail
+   rather than opening a visible seam where the split falls. */
+.railScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.railScroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.railScroll::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: var(--pill);
+}
+
+.railList {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.625rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.railLink {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--r2);
+  text-decoration: none;
+  color: var(--ink-soft);
+  border: 0.0625rem solid transparent;
+}
+
+.railTooltipTrigger {
+  display: flex;
+  width: 100%;
+}
+
+.railTooltipTrigger > .railLink {
+  width: 100%;
+  min-width: 0;
+}
+
+.railFlyCard {
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  --surface-raised: var(--surface);
+  --text: var(--ink);
+  --shadow-hover: var(--lift);
+  --border-lux: var(--line);
+
+  width: 15.5rem;
+  padding: 0.625rem 0.75rem 0.6875rem;
+  border: 0.0625rem solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: var(--lift);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--t-2);
+  font-weight: 600;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+.railFlyCard::before {
+  content: "";
+  position: absolute;
+  top: 1rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--surface);
+  transform: rotate(45deg);
+}
+
+.railFlyCard[data-placement="right"]::before {
+  left: -0.3125rem;
+  border-left: 0.0625rem solid var(--line);
+  border-bottom: 0.0625rem solid var(--line);
+}
+
+.railFlyCard[data-placement="left"]::before {
+  right: -0.3125rem;
+  border-right: 0.0625rem solid var(--line);
+  border-top: 0.0625rem solid var(--line);
+}
+
+.railLink:hover {
+  background: var(--sunk);
+  border-color: var(--line);
+}
+
+.railLink:active {
+  background: var(--sunk);
+  border-color: var(--line);
+}
+
+.railLink:focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: 0.125rem;
+}
+
+/* Selected — a fill and a ring, never a bar (standard §7.1's Selected row, and the owner's
+ * no-edge-bars ruling this file's header explains). */
+.railLink[data-active="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  box-shadow: inset 0 0 0 0.0625rem var(--accent);
+}
+
+.railGlyph {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+}
+
+.railText {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  flex: 1 1 auto;
+  align-items: center;
+  column-gap: 0.5rem;
+  row-gap: 0.0625rem;
+  font-size: var(--t-3);
+  line-height: 1.4;
+  min-width: 0;
+}
+
+.railText > span:first-child {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.railState {
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 400;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compactLabel {
+  display: none;
+}
+
+.tag {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.125rem;
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  background: var(--sunk);
+  border-radius: var(--radius-pill, 9999px);
+  padding: 0 0.375rem;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.eyebrow {
+  margin: 0;
+  padding: 0 1.25rem 0.375rem;
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.workSummary {
+  margin: 0 0.625rem 0.875rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+}
+
+.workSummary .eyebrow {
+  padding: 0;
+}
+.workSummary p {
+  margin: 0.375rem 0 0;
+  font-size: var(--t-1);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.workSummary b {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.railUtility {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.25rem 0.625rem 0.875rem;
+  padding: 0.75rem;
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+}
+
+.roleCard {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  color: var(--ink);
+}
+
+.roleDisclosure {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+}
+
+.roleDisclosureChevron {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  margin-left: auto;
+  transition: transform var(--duration-base) var(--ease, ease);
+}
+
+.roleDisclosureChevron[data-open="true"] {
+  transform: rotate(90deg);
+}
+
+.roleCard > svg,
+.utilityLink > svg,
+.appearanceReveal > svg {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+}
+
+.roleCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.roleCopy small {
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.roleCopy b {
+  overflow: hidden;
+  font-size: var(--t-1);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roleCounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.625rem;
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+}
+
+.accountControls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.utilityLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  width: 100%;
+}
+
+.utilityLink {
+  display: flex;
+  min-height: var(--spacing-tap, 2.5rem);
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.375rem 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: var(--r1);
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: var(--t-1);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.utilityLink:hover,
+.utilityLink:active,
+.appearanceReveal:hover,
+.appearanceReveal:active {
+  background: var(--sunk);
+}
+
+.utilityLink:focus-visible,
+.appearanceGroup button:focus-visible,
+.appearanceReveal:focus-visible,
+.roleDisclosure:focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: 0.125rem;
+}
+
+.appearanceWrap {
+  position: relative;
+  width: 100%;
+}
+
+.appearancePopover {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 0.375rem);
+  left: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem;
+  background: var(--surface);
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--r2);
+  box-shadow: var(--lift);
+  z-index: 50;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.appearancePopover[data-open="true"] {
+  display: flex;
+}
+
+.appearancePopoverHead {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: var(--t-0);
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.appearancePopoverIcon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.appearancePills {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.1875rem;
+  padding: 0.125rem;
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--pill);
+  background: var(--surface-2);
+}
+
+.appearancePillBtn,
+.appearanceBtn {
+  min-height: 1.75rem;
+  padding: 0 0.375rem;
+  border: 0;
+  border-radius: var(--pill);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--t-0);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.appearancePillBtn:hover,
+.appearanceBtn:hover {
+  color: var(--ink);
+}
+
+.appearancePillBtn[aria-pressed="true"],
+.appearanceBtn[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-weight: 700;
+  box-shadow: 0 1px 2px var(--line);
+}
+
+@media (min-width: 1001px) {
+  .rail[data-rail="open"] .compactExtra {
+    display: none;
+  }
+
+  .rail[data-rail="open"] .mobileMore {
+    display: block;
+    padding: 0 0.625rem 0.75rem;
+  }
+
+  .rail[data-rail="open"] .moreTrigger {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .rail[data-rail="closed"] .brandFull {
+    display: none;
+  }
+  .rail[data-rail="closed"] .brandShort {
+    display: inline;
+  }
+  .rail[data-rail="closed"] .brandTitle,
+  .rail[data-rail="closed"] .brandBadge,
+  .rail[data-rail="closed"] .toggleText,
+  .rail[data-rail="closed"] .toggleKey,
+  .rail[data-rail="closed"] .shiftMeta,
+  .rail[data-rail="closed"] .shiftTimerBar,
+  .rail[data-rail="closed"] .shiftTimerLink,
+  .rail[data-rail="closed"] .shiftLiveClockRow,
+  .rail[data-rail="closed"] .capacityPulseStrip,
+  .rail[data-rail="closed"] .pinnedWatchlist,
+  .rail[data-rail="closed"] .railActionBox,
+  .rail[data-rail="closed"] .userMeta,
+  .rail[data-rail="closed"] .userChevron,
+  .rail[data-rail="closed"] .railPolicyFoot {
+    display: none !important;
+  }
+
+  .rail[data-rail="closed"] .brand {
+    position: relative;
+    padding: 0.75rem 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 3.375rem;
+  }
+
+  .rail[data-rail="closed"] .brandLink {
+    margin: 0 auto;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .rail[data-rail="closed"] .railToggle {
+    position: absolute;
+    right: 0.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.5rem;
+    height: 1.5rem;
+    min-width: 1.5rem;
+    min-height: 1.5rem;
+    border: 1px solid var(--line);
+    border-radius: var(--pill);
+    background: var(--surface-2);
+    color: var(--muted);
+    opacity: 0;
+    pointer-events: none;
+    padding: 0;
+    box-sizing: border-box;
+    transition:
+      opacity 0.2s ease,
+      background-color 0.2s ease,
+      color 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  .rail[data-rail="closed"] .brand:hover .railToggle,
+  .rail[data-rail="closed"] .railToggle:hover,
+  .rail[data-rail="closed"] .railToggle:focus-visible {
+    opacity: 1;
+    pointer-events: auto;
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--lift);
+    transform: translateY(-50%) scale(1.05);
+  }
+
+  .rail[data-rail="closed"] .toggleIcon {
+    width: 0.75rem;
+    height: 0.75rem;
+    stroke-width: 2.25;
+  }
+
+  .rail[data-rail="closed"] .shiftCockpit {
+    padding: 0.25rem 0;
+    margin: 0.375rem auto 0;
+    border: 0;
+    background: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .rail[data-rail="closed"] .alertsContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin: 0.25rem auto 0;
+    position: relative;
+  }
+
+  .rail[data-rail="closed"] .capacityAlertsDropdown {
+    position: fixed;
+    left: calc(var(--railw-closed, 4.5rem) + 0.375rem);
+    top: 5rem;
+    width: 18.5rem;
+    max-height: calc(100dvh - 6rem);
+    z-index: 100;
+  }
+
+  .rail[data-rail="closed"] .userProfileCard,
+  .rail[data-rail="closed"] .userProfileCardBtn {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    justify-content: center;
+  }
+
+  .rail[data-rail="closed"] .railSearchBox {
+    display: none !important;
+  }
+
+  .rail[data-rail="closed"] .railSearchInputWrap,
+  .rail[data-rail="closed"] .railSearchPop,
+  .rail[data-rail="closed"] .railSearchCompactBtn {
+    display: none !important;
+  }
+
+  .rail[data-rail="closed"] .userCardWrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-top: 0.25rem;
+    padding-top: 0.25rem;
+    border-top: 0;
+  }
+
+  .rail[data-rail="closed"] .userAvatar {
+    width: 2rem;
+    height: 2rem;
+    font-size: var(--t-1);
+    margin: 0 auto;
+  }
+
+  .rail[data-rail="closed"] .roleSwitcherPopover {
+    left: calc(var(--railw-closed, 4.5rem) + 0.25rem);
+    bottom: 0;
+    right: auto;
+    width: 13.75rem;
+  }
+
+  .rail[data-rail="closed"] .appearancePopover {
+    left: calc(var(--railw-closed, 4.5rem) + 0.375rem);
+    bottom: 0.25rem;
+    right: auto;
+    width: 13.5rem;
+    z-index: 70;
+  }
+
+  .rail[data-rail="closed"] .railCheck {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.375rem 0;
+    width: 100%;
+  }
+
+  .rail[data-rail="closed"] .expandedLabel,
+  .rail[data-rail="closed"] .eyebrow,
+  .rail[data-rail="closed"] .workSummary {
+    display: none;
+  }
+
+  /* Closed at this width still shows the short service form (build plan §3: "the swatch plus
+   * North, East, South, WACHS or Private") — unlike `.workSummary` above, `.serviceLine` is never
+   * hidden here. It only recentres to fit `--railw-closed`'s 84px strip. */
+  .rail[data-rail="closed"] .serviceLine {
+    justify-content: center;
+    margin-inline: 0.25rem;
+    font-size: var(--t-0);
+  }
+
+  .rail[data-rail="closed"] .railUtility {
+    align-items: center;
+    margin-inline: 0.25rem;
+    padding-inline: 0.25rem;
+  }
+
+  .rail[data-rail="closed"] .roleCard {
+    justify-content: center;
+    min-height: var(--ward-tap, var(--spacing-tap, 3rem));
+  }
+
+  .rail[data-rail="closed"] .roleCopy,
+  .rail[data-rail="closed"] .roleCounts,
+  .rail[data-rail="closed"] .utilityLink > span,
+  .rail[data-rail="closed"] .appearanceRevealText,
+  .rail[data-rail="closed"] .appearanceGroup {
+    display: none !important;
+  }
+
+  .rail[data-rail="closed"] .appearanceControl {
+    display: flex;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    background: transparent;
+    width: 100%;
+  }
+
+  .rail[data-rail="closed"] .utilityLinks {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin: 0.25rem 0 0;
+    gap: 0.25rem;
+  }
+
+  .rail[data-rail="closed"] .appearanceWrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    position: relative;
+  }
+
+  .rail[data-rail="closed"] .accountControls {
+    width: 100%;
+  }
+
+  .rail[data-rail="closed"] .appearanceReveal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin: 0 auto;
+    padding: 0;
+    border: none;
+    border-radius: var(--r2);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .rail[data-rail="closed"] .appearanceReveal:hover {
+    background: var(--sunk);
+    color: var(--ink);
+    transform: scale(1.05);
+  }
+
+  .rail[data-rail="closed"] .appearanceReveal > span {
+    display: none;
+  }
+
+  .rail[data-rail="closed"] .appearanceReveal > svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    stroke-width: 1.9;
+  }
+
+  .rail[data-rail="closed"] .utilityLink {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    margin: 0 auto;
+    padding: 0;
+    border-radius: var(--r2);
+    color: var(--muted);
+    position: relative;
+    transition: all 0.15s ease;
+  }
+
+  .rail[data-rail="closed"] .utilityLink:hover {
+    background: var(--sunk);
+    color: var(--ink);
+    transform: scale(1.05);
+  }
+
+  .rail[data-rail="closed"] .utilityLink > span {
+    display: none !important;
+  }
+
+  .rail[data-rail="closed"] .utilityLink > svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    stroke-width: 1.9;
+  }
+
+  .rail[data-rail="closed"] .railScroll {
+    overflow-x: hidden !important;
+    padding-inline: 0;
+    scrollbar-width: none;
+  }
+
+  .rail[data-rail="closed"] .railScroll::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  .rail[data-rail="closed"] .railList {
+    padding-inline: 0.25rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .rail[data-rail="closed"] .railLink {
+    position: relative;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.4375rem 0.1875rem 0.375rem;
+    min-height: 3.25rem;
+    border-radius: var(--r2);
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .rail[data-rail="closed"] .railText {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: 0.125rem;
+    font-size: var(--t-0);
+    line-height: 1.15;
+    text-align: center;
+    letter-spacing: -0.01em;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .rail[data-rail="closed"] .railState {
+    display: none;
+  }
+
+  .rail[data-rail="closed"] .railText > span:first-child {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .rail[data-rail="closed"] .compactLabel {
+    display: inline;
+  }
+
+  .rail[data-rail="closed"] .railGlyph {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-basis: 1.25rem;
+    stroke-width: 1.9;
+    flex-shrink: 0;
+    transition:
+      transform 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .rail[data-rail="closed"] .railLink:hover .railGlyph {
+    transform: scale(1.08);
+    color: var(--ink);
+  }
+
+  .rail[data-rail="closed"] .railLink[data-active="true"] .railGlyph {
+    color: var(--accent);
+  }
+
+  .rail[data-rail="closed"] .tag {
+    position: absolute;
+    top: 0.1875rem;
+    right: 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.125rem;
+    height: 1.125rem;
+    padding: 0 0.25rem;
+    font-size: var(--t-0);
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    border-radius: var(--radius-pill, 9999px);
+    background: var(--surface-2);
+    box-shadow: 0 0 0 1px var(--line);
+  }
+}
+
+.railLink[data-active="true"] .tag {
+  color: var(--accent-ink);
+}
+
+/* Round-3 review, Critical A: the reconciliation sentence's own wrapper — a sibling of
+ * `.railFoot` in the markup (`ward-rail.tsx`'s own comment explains why), never a child of it, so
+ * the media query below (which puts `.railFoot` away below 1000px) has no selector that reaches
+ * this element and cannot take the sentence with it. No `display` rule for `.railCheck` exists
+ * anywhere in this file, at any width, on purpose. Horizontal padding matches `.railFoot`'s own so
+ * the two keep reading as one visual unit above 1000px, where both are visible. */
+.railCheck {
+  flex-shrink: 0;
+  padding: 0.375rem 1.125rem;
+}
+
+.railFoot {
+  flex-shrink: 0;
+  border-top: 0.0625rem solid var(--line);
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: var(--surface);
+}
+
+.shiftCockpit {
+  padding: 0.625rem 0.5rem;
+  margin: 0.5rem 0.5rem 0;
+  width: calc(100% - 1rem);
+  box-sizing: border-box;
+  border-radius: var(--r1);
+  background: var(--surface-2);
+  border: 0.0625rem solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.shiftCockpit:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--lift);
+}
+
+.shiftCockpitTop {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.shiftRingWrap {
+  position: relative;
+  width: 2.125rem;
+  height: 2.125rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.shiftRingWrap:hover {
+  transform: scale(1.06);
+}
+
+.shiftRingSvg {
+  transform: rotate(-90deg);
+  width: 2.125rem;
+  height: 2.125rem;
+  display: block;
+}
+
+.shiftRingBg {
+  fill: var(--surface-2);
+  stroke-width: 2.5;
+  stroke: var(--sunk);
+}
+
+.shiftRingVal {
+  fill: none;
+  stroke-width: 2.5;
+  stroke: var(--good);
+  stroke-dasharray: 81.68;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.4s ease;
+}
+
+.shiftRingIcon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  user-select: none;
+  pointer-events: none;
+}
+
+.shiftMeta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  line-height: 1.25;
+}
+
+.shiftTitle {
+  font-size: var(--t-1);
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.shiftSub {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.shiftLiveClockRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.375rem;
+  padding: 0.25rem 0.375rem;
+  border-radius: var(--r1);
+  background: var(--surface);
+  border: 0.0625rem solid var(--line);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.shiftLiveClockLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.liveClockDot {
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  background: var(--good);
+  box-shadow: 0 0 0 0 var(--good-soft);
+  animation: pulse 2s infinite;
+}
+
+.shiftLiveClockTime {
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.shiftLiveTz {
+  font-size: var(--t-0);
+  font-weight: 500;
+  color: var(--muted);
+  margin-left: 0.125rem;
+}
+
+.shiftTimerLink,
+.shiftTimerBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.375rem;
+  min-height: var(--ward-tap, var(--spacing-tap, 3rem));
+  padding: 0.375rem 0.25rem;
+  box-sizing: border-box;
+  border-top: 0.0625rem solid var(--line);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  text-decoration: none;
+  border-radius: var(--r1);
+  transition: color 0.12s;
+}
+
+.shiftTimerLink:hover {
+  color: var(--accent);
+}
+
+.shiftTimerLabel {
+  font-weight: 500;
+}
+
+.shiftClockIcon {
+  width: 0.75rem;
+  height: 0.75rem;
+  flex-shrink: 0;
+}
+
+.shiftTimeBadge {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 600;
+  color: var(--good);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.alertsContainer {
+  position: relative;
+  width: calc(100% - 1rem);
+  margin: 0.5rem 0.5rem 0;
+  flex-shrink: 0;
+}
+
+.capacityPulseStrip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.375rem;
+  width: 100%;
+  padding: 0.3125rem 0.5rem;
+  box-sizing: border-box;
+  border-radius: var(--r2);
+  background: var(--warn-soft);
+  border: 0.0625rem solid var(--warn);
+  color: var(--warn);
+  font-family: var(--body);
+  font-size: var(--t-0);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.capacityPulseStrip:hover {
+  filter: brightness(0.97);
+}
+
+.capacityPulseStrip:focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: 0.125rem;
+}
+
+.capacityPulseStrip[data-code="red"] {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+  color: var(--danger-ink);
+}
+
+.capacityPulseStrip[data-code="yellow"] {
+  background: var(--warn-soft);
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.capacityPulseStrip[data-code="black"] {
+  background: var(--sunk);
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.capacityPulseLeft {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.capacityPulseLabel {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.capacityPulseTag {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--t-0);
+  font-weight: 700;
+  font-family: var(--mono);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  padding: 0.0625rem 0.375rem;
+  border-radius: var(--pill);
+  background: var(--warn);
+  color: var(--surface);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.capacityPulseTag[data-code="red"] {
+  background: var(--danger);
+  color: var(--surface);
+}
+
+.capacityPulseTag[data-code="yellow"] {
+  background: var(--warn);
+  color: var(--surface);
+}
+
+.capacityPulseTag[data-code="black"] {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.capacityChevron {
+  width: 0.8125rem;
+  height: 0.8125rem;
+  stroke-width: 2.2;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+  opacity: 0.75;
+}
+
+.capacityChevron[data-open="true"] {
+  transform: rotate(180deg);
+}
+
+.capacityAlertsDropdown {
+  position: absolute;
+  top: calc(100% + 0.375rem);
+  left: 0;
+  width: 17.5rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+  z-index: 60;
+  padding: 0.625rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.alertsDropdownHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 0.0625rem solid var(--line);
+}
+
+.alertsDropdownTitle {
+  display: block;
+  font-size: var(--t-1);
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.alertsDropdownSub {
+  display: block;
+  margin: 0.125rem 0 0;
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.2;
+}
+
+.alertsTotalBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--pill);
+  background: var(--surface-2);
+  border: 0.0625rem solid var(--line);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.alertsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4375rem;
+}
+
+.alertCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.4375rem 0.5rem;
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  border: 0.0625rem solid var(--line);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.alertCard:hover {
+  background: var(--sunk);
+}
+
+.alertCard[data-code="red"] {
+  border-left: 0.25rem solid var(--danger);
+  background: var(--danger-soft);
+}
+
+.alertCard[data-code="yellow"] {
+  border-left: 0.25rem solid var(--warn);
+  background: var(--warn-soft);
+}
+
+.alertCard[data-code="black"] {
+  border-left: 0.25rem solid var(--ink);
+  background: var(--sunk);
+}
+
+.alertCard[data-code="green"] {
+  border-left: 0.25rem solid var(--good);
+}
+
+.alertCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.375rem;
+}
+
+.alertServiceName {
+  display: block;
+  font-size: var(--t-1);
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.alertFacilities {
+  display: block;
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.25;
+  margin-top: 0.0625rem;
+}
+
+.alertCodeBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.0625rem 0.375rem;
+  border-radius: var(--pill);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  white-space: nowrap;
+  background: var(--line-strong);
+  color: var(--ink);
+}
+
+.alertCodeBadge[data-code="red"] {
+  background: var(--danger);
+  color: var(--surface);
+}
+
+.alertCodeBadge[data-code="yellow"] {
+  background: var(--warn);
+  color: var(--surface);
+}
+
+.alertCodeBadge[data-code="black"] {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.alertCodeBadge[data-code="green"] {
+  background: var(--good);
+  color: var(--surface);
+}
+
+.alertMetrics {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: var(--t-0);
+  font-family: var(--mono);
+  color: var(--ink-soft);
+  margin-top: 0.125rem;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.alertOccupancy strong {
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.alertBeds {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.alertEscalation {
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.25;
+  font-style: italic;
+  padding-top: 0.1875rem;
+  border-top: 0.0625rem dashed var(--line);
+}
+
+.alertServiceNameRow {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.alertHospitalCodes {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.alertRemainingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  font-size: var(--t-0);
+  margin-top: 0.0625rem;
+}
+
+.alertRemainingText {
+  font-family: var(--mono);
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.alertRemainingText strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.alertEdTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.0625rem 0.3125rem;
+  border-radius: var(--pill);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  background: var(--surface);
+  border: 0.0625rem solid var(--line);
+  color: var(--ink);
+}
+
+.alertEdTag[data-code="yellow"] {
+  background: var(--warn-soft);
+  border-color: var(--warn);
+  color: var(--ink);
+}
+
+.alertEdTag[data-code="red"] {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+  color: var(--ink);
+}
+
+.alertEdTag[data-code="black"] {
+  background: var(--sunk);
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+/* Antigravity compactAlertPip — closed-rail only (2664b44ea9). Open rail keeps capacityPulseStrip. */
+.compactAlertPip {
+  display: none;
+  margin: 0.375rem auto 0.25rem;
+  width: auto;
+  min-width: 3.25rem;
+  height: 1.625rem;
+  box-sizing: border-box;
+  padding: 0 0.5rem;
+  border-radius: var(--pill);
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  color: var(--warn);
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3125rem;
+  cursor: pointer;
+  position: relative;
+  box-shadow: var(--lift);
+  transition:
+    transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.compactAlertPip::before {
+  content: "";
+  position: absolute;
+  inset: -11px -6px;
+  min-height: var(--ward-tap, 3rem);
+  pointer-events: auto;
+}
+
+.compactAlertPip:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--lift);
+  background: var(--surface);
+}
+
+.compactAlertPip:focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: 0.125rem;
+}
+
+.compactAlertPip[data-code="red"] {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+  color: var(--danger-ink);
+  box-shadow: var(--lift);
+}
+
+.compactAlertPip[data-code="red"]:hover {
+  border-color: var(--danger);
+  box-shadow: var(--lift);
+  background: var(--surface);
+}
+
+.compactAlertPip[data-code="yellow"] {
+  background: var(--warn-soft);
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.compactAlertPip[data-code="black"] {
+  background: var(--sunk);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.compactAlertPip[data-code="green"] {
+  background: var(--good-soft);
+  border-color: var(--good);
+  color: var(--good);
+}
+
+.compactAlertVal {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: 0.03em;
+}
+
+.rail[data-rail="closed"] .compactAlertPip {
+  display: inline-flex;
+}
+
+.capacityToast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  z-index: 80;
+  max-width: min(36rem, calc(100vw - 2rem));
+  padding: 0.75rem 1rem;
+  border-radius: var(--r2);
+  background: var(--ink);
+  color: var(--surface);
+  font-size: var(--t-1);
+  font-weight: 600;
+  line-height: 1.35;
+  box-shadow: var(--lift);
+  pointer-events: none;
+}
+
+.pulseDot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: var(--warn);
+  animation: pulseAlert 1.8s infinite;
+  flex-shrink: 0;
+}
+
+.pulseDot[data-code="red"] {
+  background: var(--danger);
+  box-shadow: 0 0 0 1.5px var(--danger-soft);
+}
+
+.pulseDot[data-code="yellow"] {
+  background: var(--warn);
+}
+
+.pulseDot[data-code="black"] {
+  background: var(--ink);
+}
+
+.pulseDot[data-code="green"] {
+  background: var(--good);
+}
+
+@keyframes pulseAlert {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.pinnedWatchlist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin: 0.25rem 0.5rem;
+}
+
+.pinnedItem {
+  position: relative;
+  background: var(--surface-2);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--r2);
+  padding: 0.4375rem 0.5rem 0.4375rem 0.625rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.15s;
+}
+
+.pinnedItem:hover {
+  border-color: var(--line-strong);
+  background: var(--sunk);
+}
+
+.pinnedItemBar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0.1875rem;
+  border-top-left-radius: var(--r2);
+  border-bottom-left-radius: var(--r2);
+}
+
+.pinnedItemBarBreach {
+  background: var(--danger);
+}
+
+.pinnedItemBarTransit {
+  background: var(--warn);
+}
+
+.pinnedInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.pinnedRow1 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.pinnedRow2 {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.pinnedName {
+  font-size: var(--t-0);
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pinnedTag {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  padding: 0.0625rem 0.3125rem;
+  border-radius: var(--pill);
+  white-space: nowrap !important;
+  flex-shrink: 0;
+}
+
+.pinnedTagBreach {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border: 0.0625rem solid var(--danger);
+}
+
+.pinnedTagTransit {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 0.0625rem solid var(--warn);
+}
+
+.pinnedSub {
+  font-size: var(--t-0);
+  color: var(--muted);
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.railActionBox {
+  padding: 0.125rem 0.5rem 0.25rem;
+  margin-top: 0.125rem;
+}
+
+/*
+ * Wave-2 chrome (#4 / A4): Raise Referral must resolve to the production tap floor (~48px).
+ * Pin both min-height and height so a later padding/line-height override cannot collapse the
+ * computed box back to ~36px while `min-height: var(--ward-tap)` still appears in the source.
+ */
+.btnRailReferral {
+  width: 100%;
+  min-height: var(--ward-tap, var(--spacing-tap, 3rem));
+  height: auto;
+  min-width: var(--ward-tap, var(--spacing-tap, 3rem));
+  padding: 0.4375rem 0.75rem;
+  box-sizing: border-box;
+  border-radius: var(--r2);
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 0.0625rem solid var(--accent);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4375rem;
+  white-space: nowrap !important;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+
+.btnRailReferral:hover {
+  background: var(--accent-press);
+  border-color: var(--accent-press);
+}
+
+.btnRailReferralIcon {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+}
+
+.appearanceGroup {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  border: 0.0625rem solid var(--line);
+}
+
+.appearanceBtn {
+  padding: 0.25rem 0.375rem;
+  border-radius: var(--r2);
+  border: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--body);
+  font-size: var(--t-0);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s;
+  text-align: center;
+}
+
+.appearanceBtn:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.appearanceBtn[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--accent);
+  font-weight: 600;
+  border: 0.0625rem solid var(--line);
+}
+
+.utilityLinks {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.utilityLink {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex: 1;
+  padding: 0.375rem 0.5rem;
+  border-radius: var(--r2);
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-size: var(--t-0);
+  font-weight: 500;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+
+.utilityLink:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.utilityLink svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.userProfileCard {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.375rem 0.5rem;
+  border-radius: var(--r1);
+  border: 0.0625rem solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.userAvatar {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.userAvatar::after {
+  content: "";
+  position: absolute;
+  bottom: -0.0625rem;
+  right: -0.0625rem;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  background: var(--good);
+  box-shadow: 0 0 0 0.09375rem var(--surface);
+}
+
+.userMeta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  line-height: 1.25;
+}
+
+.userName {
+  font-size: var(--t-0);
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userRole {
+  font-size: var(--t-0);
+  color: var(--muted);
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.railPolicyFoot {
+  font-size: var(--t-0);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  opacity: 0.75;
+  text-align: center;
+  line-height: 1.2;
+  margin: 0.25rem 0 0.125rem;
+  padding: 0.125rem 0.25rem;
+}
+
+.railPolicyLink {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: var(--t-0);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  transition:
+    color 120ms ease,
+    opacity 120ms ease;
+}
+
+.railPolicyLink:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2.5px;
+  opacity: 1;
+}
+
+.railToggle {
+  background: var(--surface);
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--r2);
+  width: var(--ward-tap, var(--spacing-tap, 3rem));
+  height: var(--ward-tap, var(--spacing-tap, 3rem));
+  min-width: var(--ward-tap, var(--spacing-tap, 3rem));
+  min-height: var(--ward-tap, var(--spacing-tap, 3rem));
+  padding: 0;
+  box-sizing: border-box;
+  cursor: pointer;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.railToggle:hover,
+.railToggle:active {
+  background: var(--sunk);
+  color: var(--ink);
+  border-color: var(--ink-soft);
+}
+
+.toggleIcon {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+}
+
+.toggleText,
+.toggleKey {
+  display: none;
+}
+
+.railToggle:focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: 0.125rem;
+}
+
+/* The open rail and narrow navigation keep the drawing's core destinations in flow and move the
+ * rest into the established Sheet overlay. The active destination always joins the core set. */
+.mobileMore {
+  display: none;
+}
+
+.rail .mobileMenu {
+  display: none;
+}
+
+.menuContext {
+  padding: 0.5rem 0.625rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+.menuContext p {
+  margin: 0;
+}
+
+.menuContext a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--spacing-tap, 3rem);
+  color: var(--accent-ink);
+}
+
+.moreTrigger {
+  display: inline-flex;
+  min-height: var(--spacing-tap, 3rem);
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: var(--t-3);
+  cursor: pointer;
+}
+
+.moreTrigger:hover,
+.moreTrigger:active {
+  background: var(--sunk);
+}
+
+.moreTrigger:focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: 0.125rem;
+}
+
+.moreSheet {
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  --border: var(--line);
+  --border-lux: var(--line-strong);
+  --surface-raised: var(--surface);
+  --text: var(--ink);
+  --text-heading: var(--ink);
+  --text-muted: var(--muted);
+
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--body);
+}
+
+.moreSheetBody {
+  padding: 0.5rem;
+}
+
+.moreSheet .eyebrow {
+  display: block;
+  margin: 0.75rem 0.625rem 0.375rem;
+  padding: 0;
+}
+
+.moreSheetBody > section + section {
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.25rem;
+}
+
+.moreList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Standard §7.7: "Below 1000px the rail renders in the open shape as a wrapping row whatever is
+ * stored, and the control is hidden."
+ *
+ * (round-1 review, Critical 1: this block previously set `.railScroll { display: none }`, which
+ * hid every rail link below 1000px regardless of the stored preference — the opposite of the
+ * drawing, whose own rule at this breakpoint is `.railScroll { display: contents }` so the links
+ * flow as a row, plus `.rail.open .railFoot { display: none }` so the disclaimer and the
+ * reconciliation line are put away instead (`command-third-edition.html:4247-4261`). Fixed to
+ * match: `railScroll`, the semantic group wrappers and their lists unwrap via `display: contents`
+ * so every retained entry participates in one wrapping stream, while `.railFoot` is what
+ * disappears here, not the navigation.
+ *
+ * (round-3 review, Critical A: this block used to sit right after the reduced-motion query near
+ * the top of this file, BEFORE every bare rule below it for `.railFoot` and `.railList` — so at
+ * the same specificity, CSS's own "later wins" rule let those later bare rules silently defeat
+ * this block's `display: none` on `.railFoot` and `flex-direction: row` on `.railList`. Measured
+ * in a real browser, not read off the rules: `task-4-findings-round3.md`'s own CSSOM dump showed
+ * `.railFoot` rendering `display: flex` at every width, never `none`. Moved to AFTER every bare
+ * rule it needs to win against — `.railScroll` and `.railToggle` never had this problem because
+ * neither one's own bare rule sets `display` at all, which is why they were left alone. See
+ * assertion 8 in `tests/ward-shell-third-edition.dom.test.tsx` for the static guard that now
+ * checks this ordering for `display` specifically, across all three of this shell's stylesheets.
+ * `.railCheck`, the reconciliation sentence's own sibling wrapper (added the same round, see its
+ * own comment above `.railFoot`), is deliberately untouched by this block or any other — the
+ * sentence must survive at every width, and now does so structurally rather than by CSS luck.) */
+/* D1 #2917: collapse at ~1000px is intentional (Standard §7.7). Toggle keeps
+ * min-width/min-height: var(--ward-tap) above — do not shrink it when touching this block. */
+@media (max-width: 1000px) {
+  .rail,
+  .rail[data-rail="closed"] {
+    position: static;
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    box-shadow: none;
+    border-right: none;
+    border-bottom: 0.0625rem solid var(--line);
+    padding: 0.25rem 0.5rem;
+    gap: 0.25rem;
+  }
+
+  .brand {
+    position: static;
+    top: auto;
+    padding: 0.375rem 0.75rem;
+    order: 1;
+  }
+
+  .railLink {
+    order: 2;
+    min-height: var(--spacing-tap, 3rem);
+    padding: 0.25rem 0.5rem;
+    gap: 0.375rem;
+  }
+
+  .moreTrigger {
+    order: 3;
+    min-height: var(--spacing-tap, 3rem);
+    padding: 0.25rem 0.625rem;
+  }
+
+  .railScroll {
+    display: contents;
+  }
+
+  .railScroll > nav,
+  .railGroup,
+  .railList {
+    display: contents;
+  }
+
+  .railText {
+    display: flex;
+  }
+
+  .railState {
+    display: none;
+  }
+
+  .eyebrow,
+  .workSummary {
+    display: none;
+  }
+
+  .compactExtra {
+    display: none;
+  }
+
+  .mobileMore {
+    display: contents;
+  }
+
+  .railCheck {
+    order: 10;
+    flex-basis: 100%;
+  }
+
+  .railFoot {
+    display: none;
+  }
+
+  .railToggle {
+    display: none;
+  }
+
+  .railUtility {
+    order: 4;
+    flex: 0 1 auto;
+    max-width: calc(100% - 1rem);
+    gap: 0;
+    margin: 0.25rem 0.5rem 0.25rem auto;
+    padding: 0;
+  }
+
+  .railUtility:has(.accountControls[data-open="true"]) {
+    flex-basis: 100%;
+  }
+
+  .roleCopy small {
+    display: none;
+  }
+
+  .roleDisclosure {
+    min-height: var(--spacing-tap, 3rem);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--r2);
+    cursor: pointer;
+  }
+
+  .roleDisclosure:hover,
+  .roleDisclosure:active {
+    background: var(--sunk);
+  }
+
+  .accountControls {
+    display: none;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem 0.75rem;
+    border-top: 0.0625rem solid var(--line);
+  }
+
+  .accountControls[data-open="true"] {
+    display: flex;
+  }
+
+  .utilityLinks {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .utilityLink {
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+@media (forced-colors: active) {
+  .rail {
+    border-right-color: CanvasText;
+    box-shadow: none;
+  }
+
+  .railLink[data-active="true"] {
+    box-shadow: inset 0 0 0 0.125rem CanvasText;
+  }
+
+  .railToggle {
+    border-color: CanvasText;
+  }
+
+  .railUtility,
+  .appearanceGroup {
+    border-color: CanvasText;
+  }
+
+  .moreTrigger,
+  .moreSheet,
+  .railFlyCard {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+
+  .railFlyCard {
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .railFlyCard::before {
+    border-color: CanvasText;
+    background: Canvas;
+  }
+}
+
+/* ══════════════════ SOVEREIGN RAIL: SEARCH & ROLE SWITCHER ══════════════════ */
+
+.railSearchBox {
+  margin: 0.625rem 0.625rem 0.25rem;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.railSearchInputWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--surface-2);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--r2);
+  padding: 0 0.625rem;
+  min-height: var(--ward-tap, var(--spacing-tap, 3rem));
+  height: auto;
+  box-sizing: border-box;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    background 0.15s;
+}
+
+.railSearchInputWrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 0.125rem var(--accent-soft);
+  background: var(--surface);
+}
+
+.railSearchIcon {
+  color: var(--muted);
+  flex-shrink: 0;
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.railSearchInput {
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--t-1);
+  width: 100%;
+  outline: none;
+  padding: 0;
+}
+
+.railSearchInput::placeholder {
+  color: var(--muted);
+}
+
+.railSearchKbd {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface);
+  border: 0.0625rem solid var(--line);
+  border-radius: 0.25rem;
+  padding: 0.0625rem 0.3125rem;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+
+.railSearchCompactBtn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--ward-tap, var(--spacing-tap, 3rem));
+  height: var(--ward-tap, var(--spacing-tap, 3rem));
+  min-width: var(--ward-tap, var(--spacing-tap, 3rem));
+  min-height: var(--ward-tap, var(--spacing-tap, 3rem));
+  padding: 0;
+  box-sizing: border-box;
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.railSearchPop {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+  padding: 0.25rem;
+  display: none;
+  flex-direction: column;
+  gap: 0.125rem;
+  z-index: 45;
+  max-height: 17.5rem;
+  overflow-y: auto;
+}
+
+.railSearchPop[data-show="true"] {
+  display: flex;
+}
+
+.railSearchPopHead {
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  padding: 0.25rem 0.5rem;
+  border-bottom: 0.0625rem solid var(--line);
+  margin-bottom: 0.125rem;
+}
+
+.qHit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: var(--r2);
+  color: var(--ink);
+  text-decoration: none;
+  transition: background 0.12s;
+  cursor: pointer;
+}
+
+.qHit:hover {
+  background: var(--sunk);
+}
+
+.qHitTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: var(--t-1);
+  font-weight: 600;
+}
+
+.qHitMeta {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* User Card and Persona Switcher */
+.userCardWrap {
+  position: relative;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding-top: 0.25rem;
+  border-top: 0.0625rem solid var(--line);
+}
+
+.userProfileCardBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5625rem;
+  width: 100%;
+  padding: 0.375rem 0.5rem;
+  border-radius: var(--r1);
+  border: 0.0625rem solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.userProfileCardBtn:hover {
+  background: var(--sunk);
+  border-color: var(--line-strong);
+  box-shadow: var(--lift);
+}
+
+.userMeta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  line-height: 1.25;
+}
+
+.userName {
+  font-size: var(--t-1);
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userRole {
+  font-size: var(--t-0);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.userChevron {
+  color: var(--muted);
+  flex-shrink: 0;
+  transition: transform 0.15s;
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.userProfileCardBtn[aria-expanded="true"] .userChevron {
+  transform: rotate(180deg);
+}
+
+.roleSwitcherPopover {
+  position: absolute;
+  bottom: calc(100% + 0.375rem);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+  padding: 0.375rem;
+  display: none;
+  flex-direction: column;
+  gap: 0.125rem;
+  z-index: 50;
+  min-width: 13.75rem;
+}
+
+.roleSwitcherPopover[data-show="true"] {
+  display: flex;
+}
+
+.roleOption {
+  display: flex;
+  align-items: center;
+  gap: 0.5625rem;
+  padding: 0.4375rem 0.5rem;
+  border-radius: var(--r2);
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.12s;
+  width: 100%;
+  text-align: left;
+}
+
+.roleOption:hover {
+  background: var(--sunk);
+}
+
+.roleOption[aria-selected="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.roleOptAvatar {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--sunk);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.roleOptInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  line-height: 1.25;
+}
+
+.roleOptName {
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: inherit;
+}
+
+.roleOptTitle {
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.roleOptCheck {
+  color: var(--accent);
+  flex-shrink: 0;
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+@media (max-width: 1000px) {
+  .rail .mobileMenu {
+    display: inline-flex;
+  }
+}
+
+/* The phone starts with the task. Full navigation and shift context remain in Menu. */
+@media (max-width: 40rem) {
+  .rail,
+  .rail[data-rail="closed"] {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0.25rem 0.75rem;
+  }
+
+  .rail .brand {
+    order: 0;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    box-sizing: border-box;
+  }
+
+  .brandLink {
+    gap: 0.375rem;
+  }
+
+  .brandEmblem {
+    width: 2rem;
+  }
+
+  .brandTitle {
+    font-size: var(--t-3);
+  }
+
+  .rail .brandBadge,
+  .rail .brandStateText,
+  .rail .railSearchBox,
+  .rail .shiftCockpit,
+  .rail .railScroll,
+  .rail > .serviceLine,
+  .rail > .railCheck {
+    display: none;
+  }
+
+  .rail .alertsContainer {
+    width: 100%;
+    margin: 0;
+    order: 1;
+  }
+
+  .capacityPulseStrip {
+    min-height: var(--spacing-tap, 3rem);
+    margin: 0;
+  }
+
+  .rail .capacityAlertsDropdown {
+    left: 0;
+    right: 0;
+    width: auto;
+    max-width: 100%;
+    max-height: 65dvh;
+    overflow-y: auto;
+  }
+}
+
+@media print {
+  /* More pages portals outside the ward shell, so it needs its own paper reset. */
+  .moreSheet,
+  .moreSheet * {
+    color: CanvasText !important;
+    background-color: Canvas !important;
+  }
+
+  .railFlyCard {
+    display: none !important;
+  }
+
+  .rail {
+    display: none;
+  }
+}

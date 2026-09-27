@@ -1,0 +1,3627 @@
+<!doctype html>
+<html lang="en-AU" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Statewide Clinical Handover &amp; Shift Coordination · Ward Flow</title>
+    <script>
+      (function () {
+        document.documentElement.lang = "en-AU";
+        try {
+          var v = localStorage.getItem("ward-flow-appearance") || localStorage.getItem("ward-flow-handover-appearance");
+          if (v === "light" || v === "dark") {
+            document.documentElement.setAttribute("data-theme", v);
+          } else if (v === "auto" && window.matchMedia) {
+            document.documentElement.setAttribute(
+              "data-theme",
+              window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
+            );
+          }
+          if (localStorage.getItem("ward-flow-rail") === "closed") {
+            document.documentElement.setAttribute("data-rail", "closed");
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap"
+    />
+    <style>
+      /* ═══════════════════════════════════════════════════════════════════════
+       WARD FLOW STATEWIDE CLINICAL HANDOVER — PERFECTED THIRD EDITION
+       Standard: Sovereign Clinical Console (Platinum Raised Cool).
+       200-Point Dual Authority: 100-Pt Visual Design & 100-Pt Clinical UX.
+       Zero Fatal Flaws · WCAG 2.1 AA >= 4.5:1 · No Font < 12px · Tabular Figures
+       ═══════════════════════════════════════════════════════════════════════ */
+      :root {
+        color-scheme: light;
+        --display: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+        --body: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+        --mono: "Geist Mono", ui-monospace, Menlo, Consolas, monospace;
+
+        --t-0: 12px;
+        --t-1: 13px;
+        --t-2: 13.5px;
+        --t-3: 14px;
+        --t-4: 16px;
+        --t-5: 20px;
+        --t-6: 26px;
+
+        --r1: 10px;
+        --r1i: 9px;
+        --r2: 6px;
+        --pill: 9999px;
+
+        --railw: 240px;
+        --railw-closed: 72px;
+
+        /* Platinum Raised Cool — Light Palette */
+        --ground-hi: #ecf0f4;
+        --ground: #e6eaef;
+        --ground-2: #e1e6ec;
+
+        --surface: #fdfdfe;
+        --surface-2: #f4f7fa;
+        --surface-3: #e8ecf2;
+        --sunk: #eef2f6;
+
+        --ink: #161a20;
+        --ink-soft: #414953;
+        --muted: #5f6873;
+
+        --line: rgba(22, 30, 40, 0.11);
+        --line-strong: rgba(22, 30, 40, 0.26);
+
+        --accent: #2f4c66;
+        --accent-ink: #27405a;
+        --accent-press: #20354b;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+
+        --gilt: #7d612a;
+        --gilt-soft: #f1ebdf;
+
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --good-ink: #195b3d;
+        --warn: #825d10;
+        --warn-soft: #f6eeda;
+        --warn-ink: #664708;
+
+        --danger: #b03b2e;
+        --danger-soft: #f8e6e2;
+        --danger-ink: #973121;
+
+        --svc-east: #2f4c66;
+        --svc-north: #685a94;
+        --svc-south: #356a70;
+        --svc-wachs: #8c5a3c;
+
+        --lift: 0 1px 1px rgba(30, 48, 66, 0.05), 0 14px 30px -22px rgba(30, 48, 66, 0.45);
+        --edge-shade: rgba(30, 48, 66, 0.16);
+        --scrim: rgba(30, 48, 66, 0.38);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          color-scheme: dark;
+          --ground-hi: #14181d;
+          --ground: #0f1216;
+          --ground-2: #0c0f12;
+
+          --surface: #171b21;
+          --surface-2: #1b2026;
+          --surface-3: #20262e;
+          --sunk: #13171c;
+
+          --ink: #e8ecf1;
+          --ink-soft: #b2bac5;
+          --muted: #8a929d;
+
+          --line: rgba(255, 255, 255, 0.09);
+          --line-strong: rgba(255, 255, 255, 0.21);
+
+          --accent: #a7bcd2;
+          --accent-ink: #bfd0e2;
+          --accent-press: #8ea6bf;
+          --accent-soft: #1f2a36;
+          --on-accent: #0f1216;
+          --stripe: #3a5a78;
+
+          --gilt: #d3b77e;
+          --gilt-soft: #2a251b;
+
+          --good: #6fd39b;
+          --good-soft: #15291f;
+          --good-ink: #82e2ad;
+          --warn: #e3bc5e;
+          --warn-soft: #2b2415;
+          --warn-ink: #f0cc75;
+
+          --danger: #ff8b76;
+          --danger-soft: #33201b;
+          --danger-ink: #ffa08e;
+
+          --svc-east: #a7bcd2;
+          --svc-north: #b1a2d6;
+          --svc-south: #7fb2b8;
+          --svc-wachs: #d89a78;
+
+          --lift: 0 1px 1px rgba(0, 0, 0, 0.4), 0 16px 34px -22px rgba(0, 0, 0, 0.95);
+          --edge-shade: rgba(0, 0, 0, 0.55);
+          --scrim: rgba(0, 0, 0, 0.65);
+        }
+      }
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --ground-hi: #14181d;
+        --ground: #0f1216;
+        --ground-2: #0c0f12;
+
+        --surface: #171b21;
+        --surface-2: #1b2026;
+        --surface-3: #20262e;
+        --sunk: #13171c;
+
+        --ink: #e8ecf1;
+        --ink-soft: #b2bac5;
+        --muted: #8a929d;
+
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.21);
+
+        --accent: #a7bcd2;
+        --accent-ink: #bfd0e2;
+        --accent-press: #8ea6bf;
+        --accent-soft: #1f2a36;
+        --on-accent: #0f1216;
+        --stripe: #3a5a78;
+
+        --gilt: #d3b77e;
+        --gilt-soft: #2a251b;
+
+        --good: #6fd39b;
+        --good-soft: #15291f;
+        --good-ink: #82e2ad;
+        --warn: #e3bc5e;
+        --warn-soft: #2b2415;
+        --warn-ink: #f0cc75;
+
+        --danger: #ff8b76;
+        --danger-soft: #33201b;
+        --danger-ink: #ffa08e;
+
+        --svc-east: #a7bcd2;
+        --svc-north: #b1a2d6;
+        --svc-south: #7fb2b8;
+        --svc-wachs: #d89a78;
+
+        --lift: 0 1px 1px rgba(0, 0, 0, 0.4), 0 16px 34px -22px rgba(0, 0, 0, 0.95);
+        --edge-shade: rgba(0, 0, 0, 0.55);
+        --scrim: rgba(0, 0, 0, 0.65);
+      }
+
+      /* Reset & Base */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: var(--body);
+        font-size: var(--t-2);
+        line-height: 1.45;
+        color: var(--ink);
+        background: var(--ground);
+        background-image: linear-gradient(180deg, var(--ground-hi) 0%, var(--ground) 55%, var(--ground-2) 100%);
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 100;
+        pointer-events: none;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
+        color: inherit;
+        font-size: inherit;
+      }
+
+      .mono {
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Layout Shell */
+      .app {
+        display: grid;
+        grid-template-columns: var(--railw) minmax(0, 1fr);
+        min-height: 100vh;
+        transition: grid-template-columns 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      :root[data-rail="closed"] .app {
+        grid-template-columns: var(--railw-closed) minmax(0, 1fr);
+      }
+
+      /* ─── Sovereign Primary Navigation Rail ───────────────────────────────── */
+      .rail {
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        z-index: 30;
+        user-select: none;
+        scrollbar-width: thin;
+        scrollbar-color: var(--line-strong) transparent;
+      }
+
+      .brand {
+        padding: 14px 16px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        border-bottom: 1px solid var(--line);
+        flex-shrink: 0;
+        min-height: 56px;
+      }
+
+      .brandTitle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--display);
+        font-size: var(--t-4);
+        font-weight: 700;
+        color: var(--ink);
+        text-decoration: none;
+        letter-spacing: -0.02em;
+      }
+      .brandTitle span {
+        color: var(--gilt);
+        font-size: var(--t-1);
+        font-weight: 600;
+        letter-spacing: 0.05em;
+      }
+
+      .brandBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--muted);
+        background: var(--sunk);
+        padding: 1px 6px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .railToggle {
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        cursor: pointer;
+        color: var(--muted);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          background 0.12s,
+          color 0.12s;
+        flex-shrink: 0;
+      }
+      .railToggle:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+
+      :root[data-rail="closed"] .brandTitle span,
+      :root[data-rail="closed"] .brandBadge {
+        display: none;
+      }
+
+      /* Shift & Coordinator Status Card in Rail */
+      .shiftCard {
+        padding: 10px 14px;
+        margin: 10px 8px 0;
+        border-radius: var(--r2);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+      .shiftRing {
+        position: relative;
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+      }
+      .shiftRing svg {
+        transform: rotate(-90deg);
+        width: 28px;
+        height: 28px;
+      }
+      .shiftRing circle {
+        fill: none;
+        stroke-width: 3;
+      }
+      .shiftRing .bg {
+        stroke: var(--sunk);
+      }
+      .shiftRing .val {
+        stroke: var(--warn);
+        stroke-dasharray: 75.4;
+        stroke-dashoffset: 22.6;
+        stroke-linecap: round;
+      }
+      .shiftMeta {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        line-height: 1.25;
+      }
+      .shiftTitle {
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--ink);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .shiftSub {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+
+      :root[data-rail="closed"] .shiftCard {
+        padding: 6px;
+        margin: 8px auto 0;
+        justify-content: center;
+        background: transparent;
+        border: 0;
+      }
+      :root[data-rail="closed"] .shiftMeta {
+        display: none;
+      }
+
+      .railScroll {
+        padding: 10px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        flex: 1;
+        overflow-y: auto;
+      }
+
+      .railGroup {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .railEyebrow {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        padding: 4px 10px;
+        margin: 0 0 2px;
+        white-space: nowrap;
+      }
+
+      :root[data-rail="closed"] .railEyebrow {
+        display: none;
+      }
+
+      .railLink {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 7px 10px;
+        border-radius: var(--r2);
+        color: var(--ink-soft);
+        text-decoration: none;
+        font-size: var(--t-1);
+        font-weight: 500;
+        transition:
+          background 0.12s,
+          color 0.12s;
+        white-space: nowrap;
+      }
+
+      .railLink:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+
+      .railLink[aria-current="page"] {
+        background: var(--surface-2);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: inset 3px 0 0 var(--gilt);
+      }
+
+      .railLink span {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .railLink svg {
+        width: 15px;
+        height: 15px;
+        flex-shrink: 0;
+        stroke: currentColor;
+      }
+
+      .railBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-variant-numeric: tabular-nums;
+        padding: 1px 6px;
+        border-radius: var(--pill);
+        background: var(--sunk);
+        color: var(--muted);
+        border: 1px solid var(--line);
+        letter-spacing: 0;
+      }
+
+      .railBadge.urgent {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border-color: var(--danger);
+        font-weight: 700;
+      }
+
+      .railLink[aria-current="page"] .railBadge {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+      }
+
+      :root[data-rail="closed"] .railLink {
+        padding: 8px;
+        justify-content: center;
+      }
+      :root[data-rail="closed"] .railLink span span,
+      :root[data-rail="closed"] .railBadge {
+        display: none;
+      }
+
+      .railFoot {
+        padding: 10px 14px;
+        border-top: 1px solid var(--line);
+        background: var(--surface-2);
+        font-size: var(--t-0);
+        color: var(--muted);
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        flex-shrink: 0;
+      }
+
+      .railFootRow {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .dotGreen {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--good);
+        flex-shrink: 0;
+        animation: breathe 2.4s ease-in-out infinite;
+      }
+
+      @keyframes breathe {
+        0%,
+        100% {
+          opacity: 0.5;
+          transform: scale(0.9);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1.1);
+        }
+      }
+
+      :root[data-rail="closed"] .railFoot {
+        display: none;
+      }
+
+      /* ─── Main Frame ──────────────────────────────────────────────────────── */
+      .frame {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+
+      /* Top Universal Sovereign Header (.hdr1) */
+      .hdr1 {
+        position: sticky;
+        top: 0;
+        z-index: 25;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 56px;
+        padding: 8px 20px 8px 24px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+      }
+
+      .hdrPlace {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 0 0 auto;
+      }
+      .hdrPlace h1 {
+        font-family: var(--display);
+        font-size: var(--t-4);
+        font-weight: 600;
+        margin: 0;
+        letter-spacing: -0.015em;
+        color: var(--ink);
+        white-space: nowrap;
+      }
+      .hdrChip {
+        font-size: var(--t-0);
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        background: var(--sunk);
+        color: var(--muted);
+        border: 1px solid var(--line);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+      }
+
+      /* Universal Search */
+      .searchWrap {
+        position: relative;
+        flex: 1 1 14rem;
+        max-width: 24rem;
+        min-width: 8rem;
+      }
+      .searchBox {
+        display: flex;
+        align-items: center;
+        background: var(--sunk);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        padding: 0 10px;
+        height: 34px;
+        gap: 8px;
+        transition:
+          border-color 0.15s,
+          background 0.15s;
+      }
+      .searchBox:focus-within {
+        border-color: var(--accent);
+        background: var(--surface);
+        box-shadow: 0 0 0 2px var(--accent-soft);
+      }
+      .searchBox svg {
+        width: 14px;
+        height: 14px;
+        color: var(--muted);
+        flex-shrink: 0;
+      }
+      .searchInput {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        outline: none;
+        font-size: var(--t-1);
+        color: var(--ink);
+      }
+      .searchKbd {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        padding: 1px 5px;
+        border-radius: 4px;
+        background: var(--surface);
+        color: var(--muted);
+        border: 1px solid var(--line);
+      }
+
+      .hdrEnd {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      .iconBtn {
+        height: 34px;
+        padding: 0 10px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--ink-soft);
+        font-size: var(--t-1);
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition:
+          background 0.12s,
+          color 0.12s,
+          border-color 0.12s;
+        white-space: nowrap;
+      }
+      .iconBtn:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .iconBtn svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
+
+      .btnPrimary {
+        height: 34px;
+        padding: 0 14px;
+        border-radius: var(--r2);
+        background: var(--accent);
+        color: var(--on-accent);
+        border: 1px solid var(--accent);
+        font-size: var(--t-1);
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition:
+          background 0.12s,
+          border-color 0.12s;
+        white-space: nowrap;
+      }
+      .btnPrimary:hover {
+        background: var(--accent-press);
+      }
+      .btnPrimary svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
+
+      .btnSuccess {
+        height: 34px;
+        padding: 0 14px;
+        border-radius: var(--r2);
+        background: var(--good);
+        color: var(--on-accent);
+        border: 1px solid var(--good);
+        font-size: var(--t-1);
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: filter 0.15s;
+        white-space: nowrap;
+      }
+      .btnSuccess:hover {
+        filter: brightness(0.92);
+      }
+      .btnSuccess svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
+
+      /* ─── Scrollable Workspace ────────────────────────────────────────────── */
+      .workspace {
+        flex: 1;
+        padding: 16px 24px 48px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        max-width: 1560px;
+        width: 100%;
+        margin: 0 auto;
+        min-width: 0;
+        box-sizing: border-box;
+      }
+
+      /* ─── Subtle & Rapid Filter Toolbar ───────────────────────────────────── */
+      .filterRibbon {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-bottom-color: var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        padding: 14px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .filterRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .filterGroup {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .filterLabel {
+        font-size: var(--t-0);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        white-space: nowrap;
+        user-select: none;
+      }
+
+      /* Segmented Control for Shift */
+      .segTrack {
+        display: inline-flex;
+        background: var(--sunk);
+        padding: 2px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line);
+        gap: 2px;
+      }
+      .segBtn {
+        border: 0;
+        background: transparent;
+        padding: 5px 12px;
+        border-radius: 4px;
+        font-size: var(--t-1);
+        font-weight: 500;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.12s;
+        white-space: nowrap;
+      }
+      .segBtn:hover {
+        color: var(--ink);
+      }
+      .segBtn.active,
+      .segBtn[aria-checked="true"] {
+        background: var(--surface);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow:
+          0 1px 2px rgba(0, 0, 0, 0.06),
+          inset 0 -2px 0 var(--gilt);
+      }
+      .segBtn .mono {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+      .segBtn.active .mono {
+        color: var(--ink-soft);
+      }
+
+      /* Preset Quick Buttons */
+      .presetBtn {
+        height: 28px;
+        padding: 0 10px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line-strong);
+        background: var(--surface-2);
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--ink-soft);
+        cursor: pointer;
+        transition: all 0.12s;
+        white-space: nowrap;
+      }
+      .presetBtn:hover {
+        background: var(--sunk);
+        color: var(--ink);
+        border-color: var(--accent);
+      }
+      .presetBtn.active {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+        font-weight: 700;
+      }
+
+      /* Service Scope Pills */
+      .pillGroup {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .scopePill,
+      .focusPill {
+        height: 28px;
+        padding: 0 10px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        font-size: var(--t-0);
+        font-weight: 500;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.12s;
+        white-space: nowrap;
+      }
+      .scopePill:hover,
+      .focusPill:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .scopePill.active,
+      .focusPill.active {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+        font-weight: 700;
+      }
+      .focusPill.danger.active {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border-color: var(--danger);
+      }
+
+      .badgeNum {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        padding: 1px 5px;
+        border-radius: var(--pill);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        color: inherit;
+      }
+
+      /* Dot indicators for Health Services */
+      .dotSvc {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+      }
+      .dotSvc[data-svc="all"] {
+        background: var(--accent);
+      }
+      .dotSvc[data-svc="north"] {
+        background: var(--svc-north);
+      }
+      .dotSvc[data-svc="south"] {
+        background: var(--svc-south);
+      }
+      .dotSvc[data-svc="east"] {
+        background: var(--svc-east);
+      }
+      .dotSvc[data-svc="wachs"] {
+        background: var(--svc-wachs);
+      }
+
+      /* Ward Facility Selector */
+      .wardSelect {
+        height: 28px;
+        padding: 0 24px 0 8px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--ink);
+        font-size: var(--t-0);
+        font-weight: 500;
+        outline: none;
+        cursor: pointer;
+        transition: border-color 0.12s;
+      }
+      .wardSelect:focus {
+        border-color: var(--accent);
+      }
+
+      /* Filter Status Banner */
+      .filterSummaryLine {
+        padding: 6px 10px;
+        background: var(--surface-2);
+        border-radius: var(--r2);
+        border: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: var(--t-0);
+        color: var(--ink-soft);
+      }
+      .summaryText {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .summaryText svg {
+        color: var(--gilt);
+        flex-shrink: 0;
+      }
+      .btnTextAction {
+        border: 0;
+        background: transparent;
+        color: var(--accent-ink);
+        font-size: var(--t-0);
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: underline;
+        padding: 0;
+      }
+
+      /* ─── Section Panels ─────────────────────────────────────────────────── */
+      .hoPanel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-bottom-color: var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .hoPanelHead {
+        padding: 12px 18px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .panelTitleGroup {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .panelTitleGroup h2 {
+        margin: 0;
+        font-family: var(--display);
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--accent-ink);
+        letter-spacing: -0.01em;
+      }
+
+      .panelBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        color: var(--muted);
+      }
+      .panelBadge.danger {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border-color: var(--danger);
+        font-weight: 700;
+      }
+
+      .panelSubhead {
+        font-size: var(--t-0);
+        color: var(--muted);
+        margin-top: 2px;
+      }
+
+      .hoPanelBody {
+        padding: 16px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+      }
+
+      /* ─── Section 1: KPI & Huddle Status ──────────────────────────────────── */
+      .kpiGrid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+
+      .kpiCard {
+        padding: 12px 14px;
+        border-radius: var(--r2);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        transition:
+          transform 0.12s,
+          border-color 0.12s;
+      }
+      .kpiCard:hover {
+        border-color: var(--line-strong);
+      }
+      .kpiHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+      }
+      .kpiLabel {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+      .kpiValue {
+        font-family: var(--mono);
+        font-size: var(--t-6);
+        font-weight: 700;
+        color: var(--ink);
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+      }
+      .kpiValue.danger {
+        color: var(--danger);
+      }
+      .kpiValue.good {
+        color: var(--good);
+      }
+      .kpiValue.warn {
+        color: var(--warn);
+      }
+      .kpiSub {
+        font-size: var(--t-0);
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      /* Safety Checklist Cards */
+      .huddleGrid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+      .huddleCard {
+        padding: 10px 12px;
+        border-radius: var(--r2);
+        background: var(--sunk);
+        border: 1px solid var(--line);
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .huddleIcon {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--good-soft);
+        color: var(--good);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .huddleContent {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        min-width: 0;
+      }
+      .huddleTitle {
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .huddleMeta {
+        font-size: var(--t-0);
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+
+      /* ─── Section 2: Critical Escalations & Breaches ──────────────────────── */
+      .breachGrid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      .breachCard {
+        border-radius: var(--r2);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--danger);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        transition: all 0.12s;
+      }
+      .breachCard.warn {
+        border-left-color: var(--warn);
+      }
+      .breachCard:hover {
+        border-color: var(--line-strong);
+        border-left-color: var(--danger);
+        box-shadow: var(--lift);
+      }
+      .breachCard.warn:hover {
+        border-left-color: var(--warn);
+      }
+
+      .breachHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .breachPatient {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: var(--t-2);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .breachBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 2px 6px;
+        border-radius: 4px;
+        letter-spacing: 0.04em;
+      }
+      .breachBadge.urgent {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border: 1px solid var(--danger);
+      }
+      .breachBadge.warn {
+        background: var(--warn-soft);
+        color: var(--warn-ink);
+        border: 1px solid var(--warn);
+      }
+      .breachBadge.alert {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border: 1px solid var(--accent);
+      }
+
+      .breachDetails {
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        line-height: 1.35;
+      }
+
+      .breachCountdownRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 6px;
+        border-top: 1px solid var(--line);
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+      .countdownTag {
+        font-family: var(--mono);
+        font-weight: 700;
+        color: var(--danger);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .countdownTag.warn {
+        color: var(--warn);
+      }
+
+      /* ─── Section 3 & 4: High-Density Clinical Tables ─────────────────────── */
+      .tableContainer {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        background: var(--surface);
+        scrollbar-width: thin;
+        scrollbar-color: var(--line-strong) transparent;
+      }
+
+      .hoTable {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--t-1);
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      .hoTable th {
+        background: var(--surface-2);
+        color: var(--muted);
+        font-size: var(--t-0);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--line-strong);
+        user-select: none;
+      }
+
+      .hoTable td {
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink);
+        vertical-align: middle;
+      }
+
+      .hoTable tbody tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .hoTable tbody tr:hover {
+        background: var(--sunk);
+      }
+
+      .cellPatient {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+      .patientName {
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .patientMeta {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+
+      .statusPill {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: 1px solid transparent;
+      }
+      .statusPill.good {
+        background: var(--good-soft);
+        color: var(--good);
+        border-color: var(--good);
+      }
+      .statusPill.warn {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border-color: var(--warn);
+      }
+      .statusPill.danger {
+        background: var(--danger-soft);
+        color: var(--danger);
+        border-color: var(--danger);
+      }
+      .statusPill.neutral {
+        background: var(--sunk);
+        color: var(--ink-soft);
+        border-color: var(--line);
+      }
+
+      /* Delayed Egress Callout Block */
+      .delayedEgressBlock {
+        margin-top: 10px;
+        padding: 12px 14px;
+        border-radius: var(--r2);
+        background: var(--warn-soft);
+        border: 1px solid var(--warn);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .delayedTitleRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .delayedTitle {
+        font-size: var(--t-1);
+        font-weight: 700;
+        color: var(--warn-ink);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      /* ─── Section 5: Coordinator Notes & Tasks & Sign-Off ─────────────────── */
+      .coordinatorGrid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 14px;
+      }
+
+      .noteCard {
+        padding: 12px 14px;
+        border-radius: var(--r2);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .noteCardTitle {
+        font-size: var(--t-1);
+        font-weight: 700;
+        color: var(--accent-ink);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .noteList {
+        margin: 0;
+        padding-left: 18px;
+        font-size: var(--t-1);
+        color: var(--ink);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .noteList li {
+        line-height: 1.4;
+      }
+
+      /* Actionable Task Checklist */
+      .taskContainer {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .taskItem {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: var(--r2);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        transition: all 0.12s;
+      }
+      .taskItem:hover {
+        border-color: var(--line-strong);
+        background: var(--sunk);
+      }
+      .taskItem.completed {
+        opacity: 0.6;
+        background: var(--sunk);
+      }
+      .taskItem.completed .taskText {
+        text-decoration: line-through;
+      }
+      .taskCheckbox {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        border: 1.5px solid var(--line-strong);
+        margin-top: 2px;
+        cursor: pointer;
+        accent-color: var(--accent);
+      }
+      .taskText {
+        flex: 1;
+        font-size: var(--t-1);
+        color: var(--ink);
+        line-height: 1.35;
+      }
+      .taskTag {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+
+      /* Digital Sign-off Block */
+      .signoffBlock {
+        padding: 16px 20px;
+        border-radius: var(--r2);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+
+      .signoffDetails {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        flex-wrap: wrap;
+      }
+
+      .signColumn {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .signLabel {
+        font-size: var(--t-0);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+      .signName {
+        font-size: var(--t-2);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .signMeta {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+
+      .sealBadge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: var(--r2);
+        background: var(--good-soft);
+        border: 1px solid var(--good);
+        color: var(--good);
+        font-weight: 700;
+        font-size: var(--t-1);
+      }
+
+      /* ─── Toast Notification ─────────────────────────────────────────────── */
+      .toastMessage {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        padding: 10px 16px;
+        border-radius: var(--r2);
+        background: var(--ink);
+        color: var(--surface);
+        font-size: var(--t-1);
+        font-weight: 600;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+        z-index: 100;
+        display: none;
+        align-items: center;
+        gap: 8px;
+        animation: slideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      @keyframes slideIn {
+        from {
+          transform: translateY(12px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      /* ─── Print Sheet Specific Styles ─────────────────────────────────────── */
+      @media print {
+        body::before,
+        .rail,
+        .hdrEnd,
+        .searchWrap,
+        .filterRibbon,
+        .btnAction,
+        .btnPrimary,
+        .iconBtn,
+        .btnSuccess,
+        .taskCheckbox,
+        .toastMessage,
+        .btnTextAction {
+          display: none !important;
+        }
+
+        :root {
+          --ground: #ffffff;
+          --surface: #ffffff;
+          --surface-2: #f4f6f8;
+          --ink: #000000;
+          --ink-soft: #222222;
+          --muted: #555555;
+          --line: #cccccc;
+          --line-strong: #999999;
+        }
+
+        body {
+          background: #ffffff !important;
+          color: #000000 !important;
+          font-size: 10pt;
+        }
+
+        .app {
+          display: block !important;
+        }
+
+        .workspace {
+          padding: 0 !important;
+          max-width: 100% !important;
+        }
+
+        .hdr1 {
+          position: static !important;
+          border-bottom: 2pt solid #000000 !important;
+          padding: 0 0 6pt 0 !important;
+        }
+
+        .hoPanel {
+          box-shadow: none !important;
+          border: 1pt solid #000000 !important;
+          margin-bottom: 12pt;
+          break-inside: avoid;
+        }
+
+        .hoTable th {
+          background: #eeeeee !important;
+          color: #000000 !important;
+          border-bottom: 1.5pt solid #000000 !important;
+        }
+
+        .hoTable td {
+          border-bottom: 0.5pt solid #cccccc !important;
+        }
+
+        .printOnlyHeader {
+          display: block !important;
+        }
+      }
+
+      /* ─── Responsive Viewport Adaptations ─────────────────────────────────── */
+      @media (max-width: 1280px) {
+        .app {
+          grid-template-columns: var(--railw-closed) minmax(0, 1fr);
+        }
+        .hdrChip {
+          display: none;
+        }
+        .searchWrap {
+          max-width: 15rem;
+        }
+        .kpiGrid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .huddleGrid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .coordinatorGrid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 1024px) {
+        .hdrEnd .iconBtn span {
+          display: none;
+        }
+        .hdrEnd .iconBtn {
+          width: 34px;
+          height: 34px;
+          padding: 0;
+          justify-content: center;
+        }
+        .filterRow {
+          gap: 10px;
+        }
+      }
+
+      @media (max-width: 900px) {
+        .searchWrap {
+          display: none;
+        }
+        .breachGrid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .app {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .rail {
+          display: none;
+        }
+        .workspace {
+          padding: 12px 12px 36px;
+        }
+        .filterRow {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 8px;
+        }
+        .filterGroup {
+          width: 100%;
+        }
+        .segTrack {
+          display: flex;
+          width: 100%;
+        }
+        .segBtn {
+          flex: 1;
+          justify-content: center;
+          padding: 5px 6px;
+        }
+        .wardSelect {
+          width: 100%;
+        }
+        .pillGroup {
+          width: 100%;
+          overflow-x: auto;
+          padding-bottom: 2px;
+        }
+        .signoffBlock {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 14px;
+        }
+        .signoffDetails {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 12px;
+        }
+        #btnSignHandover {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .hdr1 {
+          padding: 8px 10px;
+          gap: 8px;
+        }
+        .hdrPlace h1 {
+          font-size: var(--t-2);
+          max-width: 190px;
+        }
+        .segBtn .mono {
+          display: none;
+        }
+        .segBtn {
+          font-size: var(--t-0);
+          padding: 6px 4px;
+        }
+        .kpiGrid {
+          grid-template-columns: 1fr;
+        }
+        .huddleGrid {
+          grid-template-columns: 1fr;
+        }
+        .hoPanelHead {
+          padding: 10px 12px;
+        }
+        .hoPanelBody {
+          padding: 12px 10px;
+        }
+        .breachCard {
+          padding: 10px 12px;
+        }
+        .filterRibbon {
+          padding: 10px 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Print Only Official Header -->
+    <div
+      class="printOnlyHeader"
+      style="display: none; padding: 10pt 0; margin-bottom: 14pt; border-bottom: 2pt solid #000"
+    >
+      <div style="display: flex; justify-content: space-between; align-items: flex-end">
+        <div>
+          <div
+            style="font-size: 10pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #444"
+          >
+            Government of Western Australia · Department of Health
+          </div>
+          <div style="font-size: 16pt; font-weight: 700; margin-top: 2pt">
+            Statewide Mental Health Clinical Handover &amp; Shift Coordination Sheet
+          </div>
+        </div>
+        <div style="text-align: right; font-family: var(--mono); font-size: 9pt">
+          <div>Shift: <b>Afternoon (15:00–23:30)</b></div>
+          <div>Date: <b>Saturday 15 August 2026</b></div>
+          <div>Ahpra Verified Signature: <b>DR M. VANCE (MED0002148902)</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="app">
+      <!-- ══════════════════ 1. SOVEREIGN NAVIGATION RAIL ══════════════════ -->
+      <aside class="rail" id="rail" aria-label="Main Navigation">
+        <div class="brand">
+          <a class="brandTitle" href="command-third-edition.html"> <b>Ward Flow</b> <span>WA</span> </a>
+          <span class="brandBadge">2026.3</span>
+          <button
+            type="button"
+            class="railToggle"
+            id="railToggleBtn"
+            onclick="toggleRail()"
+            aria-label="Collapse navigation rail"
+            title="Collapse rail (shortcut: [)"
+          >
+            <svg
+              viewBox="0 0 16 16"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            >
+              <path d="M10 3L5 8l5 5" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Shift Status Card -->
+        <div class="shiftCard">
+          <div class="shiftRing">
+            <svg viewBox="0 0 32 32">
+              <circle class="bg" cx="16" cy="16" r="12" />
+              <circle class="val" cx="16" cy="16" r="12" />
+            </svg>
+          </div>
+          <div class="shiftMeta">
+            <span class="shiftTitle">PM Shift (15:00–23:30)</span>
+            <span class="shiftSub">Dr S. Chen → Dr M. Vance</span>
+          </div>
+        </div>
+
+        <div class="railScroll">
+          <div class="railGroup">
+            <p class="railEyebrow">Clinical Operations</p>
+            <a class="railLink" href="command-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <rect x="2" y="2" width="5" height="5" rx="1" />
+                  <rect x="9" y="2" width="5" height="5" rx="1" />
+                  <rect x="2" y="9" width="5" height="5" rx="1" />
+                  <rect x="9" y="9" width="5" height="5" rx="1" />
+                </svg>
+                <span>Command Center</span>
+              </span>
+              <span class="railBadge">18</span>
+            </a>
+            <a class="railLink" href="movement-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M2 4h12M2 8h12M2 12h8" />
+                </svg>
+                <span>Movement Board</span>
+              </span>
+              <span class="railBadge">12</span>
+            </a>
+            <a class="railLink" href="patient-now-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <circle cx="8" cy="5" r="3" />
+                  <path d="M2 14c0-3 3-4 6-4s6 1 6 4" />
+                </svg>
+                <span>Patient Trajectory</span>
+              </span>
+            </a>
+            <a class="railLink" href="capacity-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <rect x="2" y="3" width="12" height="10" rx="1.5" />
+                  <path d="M2 7h12" />
+                </svg>
+                <span>Capacity &amp; Demand</span>
+              </span>
+            </a>
+            <a class="railLink" href="wards-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M2 14V4l6-2 6 2v10H2z" />
+                  <path d="M6 8h4M6 11h4" />
+                </svg>
+                <span>23-Ward Directory</span>
+              </span>
+            </a>
+          </div>
+
+          <div class="railGroup">
+            <p class="railEyebrow">Coordination &amp; Logistics</p>
+            <a class="railLink" href="add-a-patient-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M8 3v10M3 8h10" />
+                </svg>
+                <span>Add a Patient</span>
+              </span>
+            </a>
+            <a class="railLink" href="ward-answer-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M3 8l3 3 7-7" />
+                </svg>
+                <span>Ward Bed Answer</span>
+              </span>
+              <span class="railBadge">5</span>
+            </a>
+            <a class="railLink" href="discharges-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M9 3l4 5-4 5M13 8H3" />
+                </svg>
+                <span>Discharges &amp; Egress</span>
+              </span>
+              <span class="railBadge">9</span>
+            </a>
+            <a class="railLink" href="transport-officer-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <rect x="1" y="4" width="9" height="7" rx="1" />
+                  <path
+                    d="M10 7l4 1v3h-4M4 13a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM12 13a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"
+                  />
+                </svg>
+                <span>Transport Officer MDT</span>
+              </span>
+            </a>
+            <a class="railLink" href="handover-perfected-third-edition.html" aria-current="page">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M3 2h10v12H3z" />
+                  <path d="M6 5h4M6 8h4M6 11h2" />
+                </svg>
+                <span>Clinical Handover</span>
+              </span>
+              <span class="railBadge urgent">4</span>
+            </a>
+          </div>
+
+          <div class="railGroup">
+            <p class="railEyebrow">Legal &amp; Governance</p>
+            <a class="railLink" href="legal-forms-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M3 2h7l4 4v8H3V2z" />
+                  <path d="M10 2v4h4" />
+                </svg>
+                <span>Legal Forms (MHA)</span>
+              </span>
+              <span class="railBadge">3</span>
+            </a>
+            <a class="railLink" href="governance-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M8 2l6 3v4c0 3.5-2.5 6-6 7-3.5-1-6-3.5-6-7V5l6-3z" />
+                </svg>
+                <span>Governance Overrides</span>
+              </span>
+              <span class="railBadge">2</span>
+            </a>
+            <a class="railLink" href="alerts-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M8 2l6 11H2L8 2zM8 7v3M8 12h.01" />
+                </svg>
+                <span>Alerts Center</span>
+              </span>
+              <span class="railBadge">4</span>
+            </a>
+            <a class="railLink" href="settings-perfected-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <circle cx="8" cy="8" r="2.5" />
+                  <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5L13 13M3 13l1.5-1.5M11.5 4.5L13 3" />
+                </svg>
+                <span>System Settings</span>
+              </span>
+            </a>
+          </div>
+        </div>
+
+        <div class="railFoot">
+          <div class="railFootRow">
+            <span class="dotGreen"></span>
+            <span>Sync: <b>Reconciled 15:00</b></span>
+          </div>
+          <div class="railFootRow">
+            <span>Policy: <b>2026.3</b> (MHA 2014)</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ══════════════════ 2. SOVEREIGN FRAME & UNIVERSAL HEADER ══════════════════ -->
+      <div class="frame">
+        <header class="hdr1" role="banner">
+          <div class="hdrPlace">
+            <h1>Statewide Clinical Handover &amp; Shift Coordination</h1>
+            <span class="hdrChip">Shift Summary · Synthetic prototype</span>
+          </div>
+
+          <!-- Universal Search -->
+          <div class="searchWrap" id="searchWrap">
+            <div class="searchBox">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="search"
+                class="searchInput"
+                id="searchFilterInput"
+                placeholder="Quick filter patient, UMRN, ward..."
+                oninput="handleSearchFilter(this.value)"
+                autocomplete="off"
+                spellcheck="false"
+              />
+              <kbd class="searchKbd">/</kbd>
+            </div>
+          </div>
+
+          <div class="hdrEnd">
+            <button
+              type="button"
+              class="iconBtn"
+              onclick="copyHandoverSummary()"
+              title="Copy formatted text handover for WhatsApp/Teams/Email"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              <span>Copy Summary</span>
+            </button>
+
+            <button type="button" class="iconBtn" onclick="window.print()" title="Print high-density handover record">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="6 9 6 2 18 2 18 9" />
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                <rect x="6" y="14" width="12" height="8" />
+              </svg>
+              <span>Print Sheet</span>
+            </button>
+
+            <button
+              type="button"
+              class="iconBtn"
+              id="themeToggleBtn"
+              onclick="toggleTheme()"
+              title="Toggle color scheme (shortcut: T)"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="5" />
+                <line x1="12" y1="1" x2="12" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="23" />
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                <line x1="1" y1="12" x2="3" y2="12" />
+                <line x1="21" y1="12" x2="23" y2="12" />
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <!-- ══════════════════ 3. MAIN WORKSPACE ══════════════════ -->
+        <main class="workspace" id="mainWorkspace">
+          <!-- SUBTLE & RAPID FILTER TOOLBAR -->
+          <div class="filterRibbon">
+            <!-- Filter Row 1: Shift & Presets -->
+            <div class="filterRow">
+              <div class="filterGroup">
+                <span class="filterLabel">Shift:</span>
+                <div class="segTrack" role="radiogroup" aria-label="Select Shift">
+                  <button
+                    type="button"
+                    class="segBtn"
+                    data-shift="morning"
+                    role="radio"
+                    aria-checked="false"
+                    onclick="setShift('morning')"
+                  >
+                    Morning <span class="mono">07:00–15:30</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="segBtn active"
+                    data-shift="afternoon"
+                    role="radio"
+                    aria-checked="true"
+                    onclick="setShift('afternoon')"
+                  >
+                    Afternoon <span class="mono">15:00–23:30</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="segBtn"
+                    data-shift="night"
+                    role="radio"
+                    aria-checked="false"
+                    onclick="setShift('night')"
+                  >
+                    Night <span class="mono">23:00–07:30</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="filterGroup">
+                <span class="filterLabel">Rapid Presets:</span>
+                <button type="button" class="presetBtn active" id="preset-standard" onclick="applyPreset('standard')">
+                  Standard Handover Sheet
+                </button>
+                <button type="button" class="presetBtn" id="preset-executive" onclick="applyPreset('executive')">
+                  Executive Nursing Summary
+                </button>
+                <button type="button" class="presetBtn" id="preset-logistics" onclick="applyPreset('logistics')">
+                  Transport &amp; Bed Logistics
+                </button>
+              </div>
+            </div>
+
+            <!-- Filter Row 2: Service Pills, Ward Selector, Focus Pills -->
+            <div class="filterRow">
+              <div class="filterGroup">
+                <span class="filterLabel">Scope:</span>
+                <div class="pillGroup" role="group" aria-label="Service Scope">
+                  <button type="button" class="scopePill active" data-svc="all" onclick="setService('all')">
+                    Statewide (All Services)
+                  </button>
+                  <button type="button" class="scopePill" data-svc="nmhs" onclick="setService('nmhs')">
+                    <span class="dotSvc" data-svc="north"></span> NMHS
+                  </button>
+                  <button type="button" class="scopePill" data-svc="smhs" onclick="setService('smhs')">
+                    <span class="dotSvc" data-svc="south"></span> SMHS
+                  </button>
+                  <button type="button" class="scopePill" data-svc="emhs" onclick="setService('emhs')">
+                    <span class="dotSvc" data-svc="east"></span> EMHS
+                  </button>
+                  <button type="button" class="scopePill" data-svc="wachs" onclick="setService('wachs')">
+                    <span class="dotSvc" data-svc="wachs"></span> WACHS
+                  </button>
+                </div>
+              </div>
+
+              <div class="filterGroup">
+                <span class="filterLabel">Unit:</span>
+                <select
+                  class="wardSelect"
+                  id="wardSelect"
+                  onchange="setWard(this.value)"
+                  aria-label="Filter by Specific Ward"
+                >
+                  <option value="all">All Units (23 Wards)</option>
+                  <optgroup label="South Metropolitan (SMHS)">
+                    <option value="fsh-adult-secure">FSH Adult Secure (MHU)</option>
+                    <option value="fsh-adult-open">FSH Adult Open</option>
+                    <option value="fre-ward-4w">Fremantle Ward 4W</option>
+                    <option value="fre-ward-5w">Fremantle Ward 5W</option>
+                    <option value="rgh-adult-secure">RGH Elanora Secure</option>
+                  </optgroup>
+                  <optgroup label="North Metropolitan (NMHS)">
+                    <option value="scgh-adult-open">SCGH Ward G2 Open</option>
+                    <option value="scgh-older-adult">SCGH Older Adult</option>
+                    <option value="gry-adult-secure">Graylands Montrose</option>
+                    <option value="gry-murchison">Graylands Murchison</option>
+                  </optgroup>
+                  <optgroup label="East Metropolitan (EMHS)">
+                    <option value="rph-adult-secure">RPH Adult Secure 2K</option>
+                    <option value="rph-older-adult">RPH Older Adult</option>
+                    <option value="arm-adult-open">Armadale Adult Open</option>
+                    <option value="bty-adult-secure">Bentley Adult Secure</option>
+                    <option value="bty-youth">EMyU Youth Unit</option>
+                    <option value="sjgm-adult-open">SJGM Midland Open</option>
+                  </optgroup>
+                  <optgroup label="WA Country Health (WACHS)">
+                    <option value="bunbury-acute">Bunbury Acute Psychiatric</option>
+                    <option value="albany-inpatient">Albany Inpatient Unit</option>
+                    <option value="broome-mhu">Broome MHU</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              <div class="filterGroup">
+                <span class="filterLabel">Focus:</span>
+                <div class="pillGroup" role="group" aria-label="Clinical Focus">
+                  <button type="button" class="focusPill active" data-focus="all" onclick="setFocus('all')">
+                    All Items <span class="badgeNum" id="cntAll">34</span>
+                  </button>
+                  <button type="button" class="focusPill danger" data-focus="breaches" onclick="setFocus('breaches')">
+                    Breaches &amp; High Priority <span class="badgeNum" id="cntBreaches">7</span>
+                  </button>
+                  <button type="button" class="focusPill" data-focus="inbound" onclick="setFocus('inbound')">
+                    Inbound Admissions <span class="badgeNum" id="cntInbound">12</span>
+                  </button>
+                  <button type="button" class="focusPill" data-focus="discharges" onclick="setFocus('discharges')">
+                    Planned Discharges <span class="badgeNum" id="cntDischarges">9</span>
+                  </button>
+                  <button type="button" class="focusPill" data-focus="specialling" onclick="setFocus('specialling')">
+                    Specialling &amp; HDU <span class="badgeNum" id="cntSpecialling">6</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Filter Summary Line -->
+            <div class="filterSummaryLine" id="filterSummaryBanner">
+              <div class="summaryText">
+                <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="8" cy="8" r="7" />
+                  <path d="M8 5v3l2 2" />
+                </svg>
+                <span id="filterSummaryText"
+                  >Displaying <b>34 clinical records</b> for <b>Afternoon Shift (15:00–23:30)</b> ·
+                  <b>Statewide Network</b> · Handover Reconciled at <span class="mono">15:00 WST</span></span
+                >
+              </div>
+              <button type="button" class="btnTextAction" onclick="resetFilters()">Reset Filters</button>
+            </div>
+          </div>
+
+          <!-- ════════════ SECTION 1: SHIFT SAFETY HUDDLE & OPERATIONAL STATUS ════════════ -->
+          <section class="hoPanel" id="sec-huddle">
+            <div class="hoPanelHead">
+              <div class="panelTitleGroup">
+                <h2>1. Shift Safety Huddle &amp; Operational Status</h2>
+                <span class="panelBadge">Reconciled 15:00</span>
+              </div>
+              <span class="panelSubhead">Afternoon Shift Coordinator: Dr Sophia Chen (Ahpra MED0001892401)</span>
+            </div>
+            <div class="hoPanelBody">
+              <!-- 4 Key KPI Metrics -->
+              <div class="kpiGrid">
+                <div class="kpiCard">
+                  <div class="kpiHeader">
+                    <span class="kpiLabel">Total Inpatients</span>
+                    <span class="statusPill neutral">Network</span>
+                  </div>
+                  <div class="kpiValue">398</div>
+                  <div class="kpiSub">Occupancy across 23 authorized units</div>
+                </div>
+
+                <div class="kpiCard">
+                  <div class="kpiHeader">
+                    <span class="kpiLabel">Statewide Vacancies</span>
+                    <span class="statusPill warn">Constrained</span>
+                  </div>
+                  <div class="kpiValue warn">14</div>
+                  <div class="kpiSub">6 Male, 8 Female available now</div>
+                </div>
+
+                <div class="kpiCard">
+                  <div class="kpiHeader">
+                    <span class="kpiLabel">1:1 Specialling Nurses</span>
+                    <span class="statusPill neutral">Roster</span>
+                  </div>
+                  <div class="kpiValue">18</div>
+                  <div class="kpiSub">HDU &amp; High-Acuity line-of-sight</div>
+                </div>
+
+                <div class="kpiCard">
+                  <div class="kpiHeader">
+                    <span class="kpiLabel">Critical ED Breaches</span>
+                    <span class="statusPill danger">Escalated</span>
+                  </div>
+                  <div class="kpiValue danger">4</div>
+                  <div class="kpiSub">&gt;24h MHA Form 1A examination limit</div>
+                </div>
+              </div>
+
+              <!-- Clinical Safety Checklist -->
+              <div class="huddleGrid">
+                <div class="huddleCard">
+                  <div class="huddleIcon">
+                    <svg
+                      viewBox="0 0 16 16"
+                      width="12"
+                      height="12"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.2"
+                    >
+                      <path d="M3 8.5l3.5 3.5 6.5-7" />
+                    </svg>
+                  </div>
+                  <div class="huddleContent">
+                    <span class="huddleTitle">Controlled Drugs Safe</span>
+                    <span class="huddleMeta">Reconciled at 15:00 · Dr Chen &amp; RN Davies</span>
+                  </div>
+                </div>
+
+                <div class="huddleCard">
+                  <div class="huddleIcon">
+                    <svg
+                      viewBox="0 0 16 16"
+                      width="12"
+                      height="12"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.2"
+                    >
+                      <path d="M3 8.5l3.5 3.5 6.5-7" />
+                    </svg>
+                  </div>
+                  <div class="huddleContent">
+                    <span class="huddleTitle">Resuscitation Trolley</span>
+                    <span class="huddleMeta">Checked · Tamper seal #8841 intact</span>
+                  </div>
+                </div>
+
+                <div class="huddleCard">
+                  <div class="huddleIcon">
+                    <svg
+                      viewBox="0 0 16 16"
+                      width="12"
+                      height="12"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.2"
+                    >
+                      <path d="M3 8.5l3.5 3.5 6.5-7" />
+                    </svg>
+                  </div>
+                  <div class="huddleContent">
+                    <span class="huddleTitle">Duress Alarms Tested</span>
+                    <span class="huddleMeta">Central Control test pass at 14:30</span>
+                  </div>
+                </div>
+
+                <div class="huddleCard">
+                  <div class="huddleIcon">
+                    <svg
+                      viewBox="0 0 16 16"
+                      width="12"
+                      height="12"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.2"
+                    >
+                      <path d="M3 8.5l3.5 3.5 6.5-7" />
+                    </svg>
+                  </div>
+                  <div class="huddleContent">
+                    <span class="huddleTitle">Staffing Roster Complete</span>
+                    <span class="huddleMeta">0 unfilled shifts · 2 Agency deployed FSH</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ════════════ SECTION 2: CRITICAL ESCALATIONS & STATUTORY BREACHES ════════════ -->
+          <section class="hoPanel" id="sec-breaches">
+            <div class="hoPanelHead">
+              <div class="panelTitleGroup">
+                <h2>2. Critical Escalations &amp; Statutory Breaches (Priority Red/Amber Tier)</h2>
+                <span class="panelBadge danger" id="breachBadgeCount">7 Flagged</span>
+              </div>
+              <span class="panelSubhead"
+                >Patients breaching or nearing statutory breach under WA Mental Health Act 2014</span
+              >
+            </div>
+            <div class="hoPanelBody">
+              <div class="breachGrid">
+                <!-- Breach 1: Tobias Wren -->
+                <div
+                  class="breachCard"
+                  data-svc="smhs"
+                  data-ward="fsh-adult-secure"
+                  data-category="breaches specialling"
+                >
+                  <div class="breachHead">
+                    <div class="breachPatient">
+                      <span>Tobias Wren (42M)</span>
+                      <span class="mono" style="color: var(--muted)">UMRN UM100009</span>
+                    </div>
+                    <span class="breachBadge urgent">ED Breach &gt; 24h</span>
+                  </div>
+                  <div class="breachDetails">
+                    <b>Peel Health Campus ED</b> · Acute Bay 04 · Wait <b>26h 48m</b>. Form 1A expired at 12:14.
+                    Involuntary status. Refused by 5 units due to high-acuity ceiling and sex mix. State Desk override
+                    requested for Fiona Stanley Secure Bed 02. Specialling 1:1 allocated.
+                  </div>
+                  <div class="breachCountdownRow">
+                    <span>Re-examination order required</span>
+                    <span class="countdownTag">
+                      <svg
+                        viewBox="0 0 16 16"
+                        width="12"
+                        height="12"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <circle cx="8" cy="8" r="7" />
+                        <path d="M8 5v3l2 2" />
+                      </svg>
+                      Breached by +2h 48m
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Breach 2: Declan Ross -->
+                <div class="breachCard" data-svc="nmhs" data-ward="gry-murchison" data-category="breaches">
+                  <div class="breachHead">
+                    <div class="breachPatient">
+                      <span>Declan Ross (31M)</span>
+                      <span class="mono" style="color: var(--muted)">UMRN UM100038</span>
+                    </div>
+                    <span class="breachBadge urgent">ED Breach &gt; 24h</span>
+                  </div>
+                  <div class="breachDetails">
+                    <b>Joondalup Health Campus ED</b> · Wait <b>24h 05m</b>. Form 1A 24-hour examination threshold
+                    breached. Severe psychotic agitation requiring seclusion. Accepted by Graylands Hospital Murchison
+                    Unit; transport crew ETA 16:15.
+                  </div>
+                  <div class="breachCountdownRow">
+                    <span>Immediate medical handover required</span>
+                    <span class="countdownTag">
+                      <svg
+                        viewBox="0 0 16 16"
+                        width="12"
+                        height="12"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <circle cx="8" cy="8" r="7" />
+                        <path d="M8 5v3l2 2" />
+                      </svg>
+                      Breached by +5m
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Breach 3: Callum Finch -->
+                <div
+                  class="breachCard warn"
+                  data-svc="emhs"
+                  data-ward="bty-adult-secure"
+                  data-category="breaches inbound"
+                >
+                  <div class="breachHead">
+                    <div class="breachPatient">
+                      <span>Callum Finch (29M)</span>
+                      <span class="mono" style="color: var(--muted)">UMRN UM100004</span>
+                    </div>
+                    <span class="breachBadge warn">Form 4A Expiry · 1h 48m</span>
+                  </div>
+                  <div class="breachDetails">
+                    <b>Armadale ED → Bentley Adult Secure</b> · Form 4A Transport Order valid until 16:48.
+                    Inter-hospital secure mental health transport delayed due to WAPOL escort availability. Coordinator
+                    re-contacted police communications at 14:40.
+                  </div>
+                  <div class="breachCountdownRow">
+                    <span>WAPOL Escort Unit En Route</span>
+                    <span class="countdownTag warn">
+                      <svg
+                        viewBox="0 0 16 16"
+                        width="12"
+                        height="12"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <circle cx="8" cy="8" r="7" />
+                        <path d="M8 5v3l2 2" />
+                      </svg>
+                      Expires in 1h 48m
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Breach 4: Oona Flint -->
+                <div
+                  class="breachCard warn"
+                  data-svc="emhs"
+                  data-ward="bty-adult-secure"
+                  data-category="breaches specialling"
+                >
+                  <div class="breachHead">
+                    <div class="breachPatient">
+                      <span>Oona Flint (44F)</span>
+                      <span class="mono" style="color: var(--muted)">UMRN UM100015</span>
+                    </div>
+                    <span class="breachBadge warn">Form 1A Expiry · 2h 46m</span>
+                  </div>
+                  <div class="breachDetails">
+                    <b>Royal Perth Hospital ED</b> · Resus Bay 2 · Wait <b>21h 14m</b>. Severe unmanaged psychomotor
+                    agitation with active ligature risk. Specialling 1:1 allocated. Bed held at Bentley Adult Secure;
+                    awaiting bed turnover from discharge.
+                  </div>
+                  <div class="breachCountdownRow">
+                    <span>Bed 04 clean underway at Bentley</span>
+                    <span class="countdownTag warn">
+                      <svg
+                        viewBox="0 0 16 16"
+                        width="12"
+                        height="12"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <circle cx="8" cy="8" r="7" />
+                        <path d="M8 5v3l2 2" />
+                      </svg>
+                      Expires in 2h 46m
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Alert 5: Dermot Hawthorn -->
+                <div
+                  class="breachCard"
+                  data-svc="smhs"
+                  data-ward="fre-ward-4w"
+                  data-category="breaches inbound specialling"
+                >
+                  <div class="breachHead">
+                    <div class="breachPatient">
+                      <span>Dermot Hawthorn (38M)</span>
+                      <span class="mono" style="color: var(--muted)">UMRN UM100002</span>
+                    </div>
+                    <span class="breachBadge alert">Medical Alert · Lithium</span>
+                  </div>
+                  <div class="breachDetails">
+                    <b>FSH ED → Fremantle Hospital Ward 4W Bed 12</b>. Accepted. Involuntary Form 1A. High falls risk;
+                    severe tremors. Requires urgent serum lithium level and electrolyte panel drawn at 18:00
+                    post-admission.
+                  </div>
+                  <div class="breachCountdownRow">
+                    <span>St John Ambulance ETA 15:45</span>
+                    <span class="countdownTag" style="color: var(--accent)">Lab draw booked 18:00</span>
+                  </div>
+                </div>
+
+                <!-- Alert 6: Margery Slate -->
+                <div
+                  class="breachCard"
+                  data-svc="nmhs"
+                  data-ward="scgh-older-adult"
+                  data-category="breaches specialling"
+                >
+                  <div class="breachHead">
+                    <div class="breachPatient">
+                      <span>Margery Slate (78F)</span>
+                      <span class="mono" style="color: var(--muted)">UMRN UM100025</span>
+                    </div>
+                    <span class="breachBadge alert">Dysphagia Precautions</span>
+                  </div>
+                  <div class="breachDetails">
+                    <b>SCGH Older Adult Mental Health</b> · Bed 06. Severe organic cognitive decline with aspiration
+                    choking episode at lunch. Strict Level 4 IDDSI puréed diet and thickened fluids. Speech pathology
+                    handover provided.
+                  </div>
+                  <div class="breachCountdownRow">
+                    <span>Speech Pathology handover complete</span>
+                    <span class="countdownTag" style="color: var(--accent)">Observation 1:1 at meals</span>
+                  </div>
+                </div>
+
+                <!-- Alert 7: Bradley Vance -->
+                <div
+                  class="breachCard warn"
+                  data-svc="wachs"
+                  data-ward="fsh-adult-secure"
+                  data-category="breaches inbound specialling"
+                >
+                  <div class="breachHead">
+                    <div class="breachPatient">
+                      <span>Bradley Vance (52M)</span>
+                      <span class="mono" style="color: var(--muted)">UMRN UM100023</span>
+                    </div>
+                    <span class="breachBadge warn">RFDS Transfer · HDU</span>
+                  </div>
+                  <div class="breachDetails">
+                    <b>Bunbury Regional ED → FSH HDU Bed 04</b>. Royal Flying Doctor Service aeromedical flight airborne
+                    at 14:15. ETA Jandakot 16:30, road ambulance to FSH ETA 17:15. Resuscitation team pre-alerted for
+                    arrival.
+                  </div>
+                  <div class="breachCountdownRow">
+                    <span>Flight #RFDS-702 En Route</span>
+                    <span class="countdownTag warn">ETA FSH 17:15</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ════════════ SECTION 3: INBOUND PIPELINE & ADMISSIONS HANDOVER ════════════ -->
+          <section class="hoPanel" id="sec-inbound">
+            <div class="hoPanelHead">
+              <div class="panelTitleGroup">
+                <h2>3. Inbound Pipeline &amp; Admissions Handover</h2>
+                <span class="panelBadge" id="inboundBadgeCount">12 Accepted</span>
+              </div>
+              <span class="panelSubhead"
+                >Confirmed incoming admissions requiring receiving bed prep and nursing intake</span
+              >
+            </div>
+            <div class="hoPanelBody">
+              <div class="tableContainer">
+                <table class="hoTable" id="inboundTable">
+                  <thead>
+                    <tr>
+                      <th>Patient Alias &amp; UMRN</th>
+                      <th>Referral Source</th>
+                      <th>Allocated Ward &amp; Bed</th>
+                      <th>Transport ETA</th>
+                      <th>MHA Legal Status</th>
+                      <th>Clinical Handover Notes</th>
+                      <th>Observation Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr data-svc="smhs" data-ward="fre-ward-4w" data-category="inbound specialling">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Dermot Hawthorn (38M)</span>
+                          <span class="patientMeta">UMRN UM100002</span>
+                        </div>
+                      </td>
+                      <td>Fiona Stanley ED</td>
+                      <td><b>FRE Ward 4W</b> · Bed 12</td>
+                      <td><span class="mono">15:45</span> (St John)</td>
+                      <td><span class="statusPill warn">Form 1A Involuntary</span></td>
+                      <td>Severe agitation, lithium toxicity risk. Review serum level at 18:00.</td>
+                      <td><span class="statusPill danger">1:1 Specialling</span></td>
+                    </tr>
+                    <tr data-svc="emhs" data-ward="bty-adult-secure" data-category="inbound">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Callum Finch (29M)</span>
+                          <span class="patientMeta">UMRN UM100004</span>
+                        </div>
+                      </td>
+                      <td>Armadale Health ED</td>
+                      <td><b>Bentley Secure</b> · Bed 04</td>
+                      <td><span class="mono">16:30</span> (Inter-hospital)</td>
+                      <td><span class="statusPill warn">Form 4A Transport</span></td>
+                      <td>Substance induced psychosis, low stimulus room prepped. WAPOL escort.</td>
+                      <td><span class="statusPill neutral">Line of Sight</span></td>
+                    </tr>
+                    <tr data-svc="emhs" data-ward="bty-youth" data-category="inbound">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Zara Sterling (19F)</span>
+                          <span class="patientMeta">UMRN UM100039</span>
+                        </div>
+                      </td>
+                      <td>PCH / SCGH ED</td>
+                      <td><b>EMyU Youth Unit</b> · Bed 02</td>
+                      <td><span class="mono">16:15</span> (Family Private)</td>
+                      <td><span class="statusPill good">Voluntary</span></td>
+                      <td>First episode mood disorder. Mother escorting. Youth nurse assigned.</td>
+                      <td><span class="statusPill neutral">Routine 30m</span></td>
+                    </tr>
+                    <tr data-svc="emhs" data-ward="sjgm-adult-open" data-category="inbound">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Hamish Campbell (67M)</span>
+                          <span class="patientMeta">UMRN UM100035</span>
+                        </div>
+                      </td>
+                      <td>St John of God Midland ED</td>
+                      <td><b>SJGM Open</b> · Bed 07</td>
+                      <td><span class="mono">17:00</span> (Non-urgent)</td>
+                      <td><span class="statusPill warn">Form 1A Involuntary</span></td>
+                      <td>Dementia with wandering risk. Wanderguard ready at nursing station.</td>
+                      <td><span class="statusPill neutral">Close Obs</span></td>
+                    </tr>
+                    <tr data-svc="smhs" data-ward="rgh-adult-secure" data-category="inbound specialling">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Soraya Mansour (34F)</span>
+                          <span class="patientMeta">UMRN UM100040</span>
+                        </div>
+                      </td>
+                      <td>Rockingham General ED</td>
+                      <td><b>RGH Elanora</b> · Bed 15</td>
+                      <td><span class="mono">16:00</span> (St John)</td>
+                      <td><span class="statusPill warn">Form 1A Involuntary</span></td>
+                      <td>Post-partum depression with psychotic features. Pharmacy med-rec pending.</td>
+                      <td><span class="statusPill danger">1:1 Specialling</span></td>
+                    </tr>
+                    <tr data-svc="wachs" data-ward="fsh-adult-secure" data-category="inbound specialling">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Bradley Vance (52M)</span>
+                          <span class="patientMeta">UMRN UM100023</span>
+                        </div>
+                      </td>
+                      <td>Bunbury Hospital ED</td>
+                      <td><b>FSH HDU</b> · Bed 04</td>
+                      <td><span class="mono">17:15</span> (RFDS Aeromed)</td>
+                      <td><span class="statusPill danger">Form 1A Secure</span></td>
+                      <td>Acute severe catatonia with autonomic instability. ICU backup alerted.</td>
+                      <td><span class="statusPill danger">1:1 Specialling</span></td>
+                    </tr>
+                    <tr data-svc="nmhs" data-ward="scgh-adult-open" data-category="inbound">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Piet Sorrel (33M)</span>
+                          <span class="patientMeta">UMRN UM100029</span>
+                        </div>
+                      </td>
+                      <td>Joondalup Health ED</td>
+                      <td><b>SCGH G2 Open</b> · Bed 18</td>
+                      <td><span class="mono">18:00</span> (Patient Taxi)</td>
+                      <td><span class="statusPill good">Voluntary</span></td>
+                      <td>Bipolar relapse, compliant with oral Olanzapine. Admitting MO Dr Taylor.</td>
+                      <td><span class="statusPill neutral">Routine 60m</span></td>
+                    </tr>
+                    <tr data-svc="nmhs" data-ward="gry-murchison" data-category="inbound">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Siobhan Connolly (45F)</span>
+                          <span class="patientMeta">UMRN UM100011</span>
+                        </div>
+                      </td>
+                      <td>Sir Charles Gairdner ED</td>
+                      <td><b>Graylands Murchison</b> · Bed 08</td>
+                      <td><span class="mono">16:45</span> (St John)</td>
+                      <td><span class="statusPill warn">Form 1A Involuntary</span></td>
+                      <td>Treatment-resistant psychosis. Sensory de-escalation room allocated.</td>
+                      <td><span class="statusPill neutral">Line of Sight</span></td>
+                    </tr>
+                    <tr data-svc="emhs" data-ward="rph-adult-secure" data-category="inbound specialling">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Nathanial Drake (27M)</span>
+                          <span class="patientMeta">UMRN UM100012</span>
+                        </div>
+                      </td>
+                      <td>Royal Perth ED</td>
+                      <td><b>RPH Ward 2K</b> · Bed 10</td>
+                      <td><span class="mono">16:20</span> (Internal Transfer)</td>
+                      <td><span class="statusPill warn">Form 1A Involuntary</span></td>
+                      <td>Methamphetamine induced psychosis with acute hostility. High security bay.</td>
+                      <td><span class="statusPill danger">1:1 Specialling</span></td>
+                    </tr>
+                    <tr data-svc="nmhs" data-ward="scgh-older-adult" data-category="inbound">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Dorothy Hall (81F)</span>
+                          <span class="patientMeta">UMRN UM100013</span>
+                        </div>
+                      </td>
+                      <td>Fiona Stanley ED</td>
+                      <td><b>SCGH Older Adult</b> · Bed 14</td>
+                      <td><span class="mono">18:30</span> (Non-urgent)</td>
+                      <td><span class="statusPill good">Voluntary</span></td>
+                      <td>Late onset severe depression with pseudodementia. Nutrition care plan.</td>
+                      <td><span class="statusPill neutral">Close Obs</span></td>
+                    </tr>
+                    <tr data-svc="wachs" data-ward="albany-inpatient" data-category="inbound">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Marcus Brody (40M)</span>
+                          <span class="patientMeta">UMRN UM100036</span>
+                        </div>
+                      </td>
+                      <td>Albany Regional ED</td>
+                      <td><b>Albany Inpatient</b> · Bed 05</td>
+                      <td><span class="mono">15:30</span> (Local Escort)</td>
+                      <td><span class="statusPill warn">Form 1A Involuntary</span></td>
+                      <td>Substance withdrawal &amp; severe agitation. CIWA alcohol protocol active.</td>
+                      <td><span class="statusPill neutral">Line of Sight</span></td>
+                    </tr>
+                    <tr data-svc="wachs" data-ward="broome-mhu" data-category="inbound">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Alistair Ross (35M)</span>
+                          <span class="patientMeta">UMRN UM100020</span>
+                        </div>
+                      </td>
+                      <td>Broome Hospital ED</td>
+                      <td><b>Broome MHU</b> · Bed 03</td>
+                      <td><span class="mono">17:45</span> (Clinic Transport)</td>
+                      <td><span class="statusPill good">Voluntary</span></td>
+                      <td>Acute suicidal ideation post psychosocial crisis. ALO engagement planned.</td>
+                      <td><span class="statusPill neutral">Routine 30m</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- ════════════ SECTION 4: OUTBOUND DISCHARGES & BED VACANCY EGRESS ════════════ -->
+          <section class="hoPanel" id="sec-discharges">
+            <div class="hoPanelHead">
+              <div class="panelTitleGroup">
+                <h2>4. Outbound Discharges &amp; Bed Vacancy Egress</h2>
+                <span class="panelBadge" id="dischargeBadgeCount">9 Planned</span>
+              </div>
+              <span class="panelSubhead">Planned egress for afternoon shift creating inpatient bed capacity</span>
+            </div>
+            <div class="hoPanelBody">
+              <div class="tableContainer">
+                <table class="hoTable" id="dischargeTable">
+                  <thead>
+                    <tr>
+                      <th>Patient Alias &amp; UMRN</th>
+                      <th>Current Unit &amp; Bed</th>
+                      <th>Discharge Destination</th>
+                      <th>Transport Arrangement</th>
+                      <th>CMHT Handover</th>
+                      <th>Medications &amp; Script</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr data-svc="smhs" data-ward="fsh-adult-secure" data-category="discharges">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Trevor Vance (49M)</span>
+                          <span class="patientMeta">UMRN UM100041</span>
+                        </div>
+                      </td>
+                      <td>FSH Adult Secure · Bed 08</td>
+                      <td>Private Residence (Hilton)</td>
+                      <td>Family collection 16:00</td>
+                      <td><span class="statusPill good">Confirmed (Fremantle)</span></td>
+                      <td>Dispensed &amp; locked with family</td>
+                      <td><span class="statusPill good">Ready 16:00</span></td>
+                    </tr>
+                    <tr data-svc="nmhs" data-ward="scgh-adult-open" data-category="discharges">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Elena Rossi (28F)</span>
+                          <span class="patientMeta">UMRN UM100042</span>
+                        </div>
+                      </td>
+                      <td>SCGH Ward G2 · Bed 11</td>
+                      <td>Sub-acute Step-down (Osborne Pk)</td>
+                      <td>Non-urgent patient transfer 16:30</td>
+                      <td><span class="statusPill good">Confirmed (Mirrabooka)</span></td>
+                      <td>Webstercare 14-day supply packed</td>
+                      <td><span class="statusPill good">Ready 16:30</span></td>
+                    </tr>
+                    <tr data-svc="nmhs" data-ward="gry-murchison" data-category="discharges">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Walter Briggs (74M)</span>
+                          <span class="patientMeta">UMRN UM100043</span>
+                        </div>
+                      </td>
+                      <td>Graylands Murchison · Bed 03</td>
+                      <td>Residential Aged Care (Nedlands)</td>
+                      <td>Silver Chain wheelchair van 17:00</td>
+                      <td><span class="statusPill good">Confirmed (Aged MH)</span></td>
+                      <td>GP discharge summary transmitted</td>
+                      <td><span class="statusPill good">Ready 17:00</span></td>
+                    </tr>
+                    <tr data-svc="emhs" data-ward="arm-adult-open" data-category="discharges">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Kylie Patterson (36F)</span>
+                          <span class="patientMeta">UMRN UM100017</span>
+                        </div>
+                      </td>
+                      <td>Armadale Adult Open · Bed 14</td>
+                      <td>Community Recovery House (Kelmscott)</td>
+                      <td>Case Manager vehicle 16:15</td>
+                      <td><span class="statusPill good">Confirmed (Armadale)</span></td>
+                      <td>Scripts provided to case manager</td>
+                      <td><span class="statusPill good">Ready 16:15</span></td>
+                    </tr>
+                    <tr data-svc="smhs" data-ward="rgh-adult-secure" data-category="discharges">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Neville Cross (41M)</span>
+                          <span class="patientMeta">UMRN UM100018</span>
+                        </div>
+                      </td>
+                      <td>RGH Elanora Secure · Bed 07</td>
+                      <td>Community Crisis House (Rockingham)</td>
+                      <td>Hospital car 17:30</td>
+                      <td><span class="statusPill good">Confirmed (Peel Team)</span></td>
+                      <td>Completed and signed by MO</td>
+                      <td><span class="statusPill good">Ready 17:30</span></td>
+                    </tr>
+                    <tr data-svc="emhs" data-ward="rph-older-adult" data-category="discharges">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Wendy Chen (52F)</span>
+                          <span class="patientMeta">UMRN UM100019</span>
+                        </div>
+                      </td>
+                      <td>RPH Older Adult · Bed 04</td>
+                      <td>Private Residence (Bayswater)</td>
+                      <td>Daughter collecting 18:00</td>
+                      <td><span class="statusPill good">Confirmed (Stirling)</span></td>
+                      <td>Medication education completed</td>
+                      <td><span class="statusPill good">Ready 18:00</span></td>
+                    </tr>
+                    <tr data-svc="emhs" data-ward="bty-youth" data-category="discharges">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Jason Moresby (23M)</span>
+                          <span class="patientMeta">UMRN UM100021</span>
+                        </div>
+                      </td>
+                      <td>EMyU Youth Unit · Bed 06</td>
+                      <td>Youth Supported Lodgings (Vic Park)</td>
+                      <td>Youth Worker vehicle 16:00</td>
+                      <td><span class="statusPill good">Confirmed (Youth Reach)</span></td>
+                      <td>Discharge pack with appointment</td>
+                      <td><span class="statusPill good">Ready 16:00</span></td>
+                    </tr>
+                    <tr data-svc="nmhs" data-ward="scgh-older-adult" data-category="discharges">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Ronald Finch (69M)</span>
+                          <span class="patientMeta">UMRN UM100022</span>
+                        </div>
+                      </td>
+                      <td>SCGH Older Adult · Bed 09</td>
+                      <td>Retirement Village (Karrinyup)</td>
+                      <td>Son collecting 17:15</td>
+                      <td><span class="statusPill good">Confirmed (North Aged)</span></td>
+                      <td>OT home assessment finalized</td>
+                      <td><span class="statusPill good">Ready 17:15</span></td>
+                    </tr>
+                    <tr data-svc="wachs" data-ward="bunbury-acute" data-category="discharges">
+                      <td>
+                        <div class="cellPatient">
+                          <span class="patientName">Brenda Lockhart (44F)</span>
+                          <span class="patientMeta">UMRN UM100024</span>
+                        </div>
+                      </td>
+                      <td>Bunbury Acute · Bed 12</td>
+                      <td>Private Home (Australind)</td>
+                      <td>Partner collecting 16:30</td>
+                      <td><span class="statusPill good">Confirmed (Bunbury CMHT)</span></td>
+                      <td>Medication chart signed by MO</td>
+                      <td><span class="statusPill good">Ready 16:30</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Delayed Egress (Stranded Bed Blocks) -->
+              <div class="delayedEgressBlock" id="delayedBlock">
+                <div class="delayedTitleRow">
+                  <span class="delayedTitle">
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M8 2l6 11H2L8 2zM8 7v3M8 12h.01" />
+                    </svg>
+                    <span>Stranded Delayed Egress Bottlenecks (6 Patients · Non-clinical Hold)</span>
+                  </span>
+                  <span class="mono" style="font-weight: 700; color: var(--warn-ink)"
+                    >Statewide Bed Egress Impact: 261 Bed Days</span
+                  >
+                </div>
+                <div class="tableContainer">
+                  <table class="hoTable">
+                    <thead>
+                      <tr>
+                        <th>Patient Alias &amp; UMRN</th>
+                        <th>Unit &amp; Bed</th>
+                        <th>Length of Stay</th>
+                        <th>Delayed Discharge Reason</th>
+                        <th>Escalation Action &amp; Responsible Officer</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr data-svc="emhs" data-ward="bty-older-adult">
+                        <td>
+                          <b>Arthur Pendelton (58M)</b>
+                          <span class="mono" style="color: var(--muted)">UMRN UM100014</span>
+                        </td>
+                        <td>Bentley Older Adult · Bed 09</td>
+                        <td>
+                          <span class="mono" style="font-weight: 700; color: var(--danger)">42 Days</span> (Clinically
+                          Ready)
+                        </td>
+                        <td>NDIS Supported Independent Living (SIL) accommodation provider contract delay</td>
+                        <td>NDIS Hospital Liaison Officer meeting Monday 09:00 with NDIA complex planner</td>
+                      </tr>
+                      <tr data-svc="nmhs" data-ward="gry-adult-secure">
+                        <td>
+                          <b>Cheryl Thorne (63F)</b> <span class="mono" style="color: var(--muted)">UMRN UM100016</span>
+                        </td>
+                        <td>Graylands Montrose · Bed 14</td>
+                        <td>
+                          <span class="mono" style="font-weight: 700; color: var(--danger)">89 Days</span> (Fit for
+                          Egress)
+                        </td>
+                        <td>Public Guardian / SAT financial administration order pending hearing</td>
+                        <td>Urgent SAT expedited hearing motion filed by health service legal counsel</td>
+                      </tr>
+                      <tr data-svc="smhs" data-ward="fre-ward-5w">
+                        <td>
+                          <b>Gavin MacIntyre (35M)</b>
+                          <span class="mono" style="color: var(--muted)">UMRN UM100027</span>
+                        </td>
+                        <td>Fremantle Ward 5W · Bed 06</td>
+                        <td>
+                          <span class="mono" style="font-weight: 700; color: var(--danger)">19 Days</span> (Stable)
+                        </td>
+                        <td>Specialist mental health housing waitlist; homelessness risk on discharge</td>
+                        <td>Housing Coordinator submitted priority application to Department of Communities</td>
+                      </tr>
+                      <tr data-svc="emhs" data-ward="rph-older-adult">
+                        <td>
+                          <b>Margaret O'Connor (77F)</b>
+                          <span class="mono" style="color: var(--muted)">UMRN UM100028</span>
+                        </td>
+                        <td>RPH Older Adult · Bed 11</td>
+                        <td>
+                          <span class="mono" style="font-weight: 700; color: var(--danger)">54 Days</span> (ACAT
+                          Pending)
+                        </td>
+                        <td>High-care dementia facility placement awaiting ACAT delegate sign-off</td>
+                        <td>Social Work Senior Director escalated to Commonwealth Health Liaison</td>
+                      </tr>
+                      <tr data-svc="nmhs" data-ward="scgh-adult-open">
+                        <td>
+                          <b>Tariq Al-Mansoor (31M)</b>
+                          <span class="mono" style="color: var(--muted)">UMRN UM100030</span>
+                        </td>
+                        <td>SCGH Ward G2 · Bed 19</td>
+                        <td>
+                          <span class="mono" style="font-weight: 700; color: var(--danger)">26 Days</span> (Supervision)
+                        </td>
+                        <td>Forensic community supervision clearance condition awaiting sign-off</td>
+                        <td>Case conference scheduled with State Forensic Mental Health Service</td>
+                      </tr>
+                      <tr data-svc="wachs" data-ward="albany-inpatient">
+                        <td>
+                          <b>Darcy Watson (48M)</b> <span class="mono" style="color: var(--muted)">UMRN UM100031</span>
+                        </td>
+                        <td>Albany Inpatient · Bed 08</td>
+                        <td>
+                          <span class="mono" style="font-weight: 700; color: var(--danger)">31 Days</span> (Regional)
+                        </td>
+                        <td>Remote community support package pending regional provider tender</td>
+                        <td>Regional Director authorized interim community nursing support package</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ════════════ SECTION 5: COORDINATOR NOTES & DIGITAL SIGN-OFF ════════════ -->
+          <section class="hoPanel" id="sec-signoff">
+            <div class="hoPanelHead">
+              <div class="panelTitleGroup">
+                <h2>5. Coordinator Handover Notes, Clinical Actions &amp; Official Sign-Off</h2>
+                <span class="panelBadge">Shift Changeover 15:00</span>
+              </div>
+              <span class="panelSubhead">WA Health Mandatory Clinical Handover Standard (ISBAR Protocol)</span>
+            </div>
+            <div class="hoPanelBody">
+              <div class="coordinatorGrid">
+                <!-- Outgoing Notes -->
+                <div class="noteCard">
+                  <div class="noteCardTitle">
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M2 3h12v10H2zM5 6h6M5 9h4" />
+                    </svg>
+                    <span>Outgoing Coordinator Briefing · Dr Sophia Chen</span>
+                  </div>
+                  <ul class="noteList">
+                    <li>
+                      <b>Severe South Metro secure bed pressure:</b> FSH and Fremantle acute secure wards are at 100%
+                      capacity with 0 secure vacancies. If additional high-risk involuntary patients present to South
+                      Metro EDs, divert directly to Graylands Murchison or RPH 2K.
+                    </li>
+                    <li>
+                      <b>Peel ED breach escalation:</b> Tobias Wren has exceeded 26 hours in Peel ED. Executive Director
+                      on-call was briefed at 14:45. Bed 02 at FSH will become available when Trevor Vance departs at
+                      16:00. Prioritize this bed allocation immediately.
+                    </li>
+                    <li>
+                      <b>Bunbury RFDS Flight:</b> Flight #RFDS-702 for Bradley Vance due at Jandakot 16:30. Road
+                      ambulance ETA to FSH HDU is 17:15. Resuscitation team pre-alerted for arrival due to severe
+                      catatonic instability.
+                    </li>
+                    <li>
+                      <b>Controlled drugs safe &amp; duress:</b> All safe registers matched physical stock at 15:00
+                      handover. Duress alarms fully functional across all active psychiatric units.
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Interactive Clinical Action List -->
+                <div class="noteCard">
+                  <div class="noteCardTitle" style="justify-content: space-between">
+                    <span style="display: flex; align-items: center; gap: 6px">
+                      <svg
+                        viewBox="0 0 16 16"
+                        width="14"
+                        height="14"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <polyline points="3 8 6 11 13 4" />
+                      </svg>
+                      <span>Actionable Priority Tasks</span>
+                    </span>
+                    <span class="mono" style="font-weight: 600; color: var(--muted)" id="taskProgressCount"
+                      >0 of 6 Completed</span
+                    >
+                  </div>
+                  <div class="taskContainer">
+                    <label class="taskItem" id="task-1">
+                      <input type="checkbox" class="taskCheckbox" onchange="toggleTask('task-1')" />
+                      <span class="taskText">Re-assess Form 1A expiry countdown for Tobias Wren (Peel ED)</span>
+                      <span class="taskTag">16:30</span>
+                    </label>
+                    <label class="taskItem" id="task-2">
+                      <input type="checkbox" class="taskCheckbox" onchange="toggleTask('task-2')" />
+                      <span class="taskText"
+                        >Confirm arrival and bed allocation for Dermot Hawthorn (FRE Ward 4W Bed 12)</span
+                      >
+                      <span class="taskTag">15:45</span>
+                    </label>
+                    <label class="taskItem" id="task-3">
+                      <input type="checkbox" class="taskCheckbox" onchange="toggleTask('task-3')" />
+                      <span class="taskText">Review Bed 12 serum lithium level and electrolyte lab panel</span>
+                      <span class="taskTag">18:00</span>
+                    </label>
+                    <label class="taskItem" id="task-4">
+                      <input type="checkbox" class="taskCheckbox" onchange="toggleTask('task-4')" />
+                      <span class="taskText">Confirm WAPOL escort dispatch for Callum Finch (Form 4A Transport)</span>
+                      <span class="taskTag">16:00</span>
+                    </label>
+                    <label class="taskItem" id="task-5">
+                      <input type="checkbox" class="taskCheckbox" onchange="toggleTask('task-5')" />
+                      <span class="taskText"
+                        >Receive Silver Chain transport confirmation for Walter Briggs RACF egress</span
+                      >
+                      <span class="taskTag">17:00</span>
+                    </label>
+                    <label class="taskItem" id="task-6">
+                      <input type="checkbox" class="taskCheckbox" onchange="toggleTask('task-6')" />
+                      <span class="taskText">Verify controlled drug evening count and sign register with CNC</span>
+                      <span class="taskTag">21:00</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Digital Sign-off Verification Stamp -->
+              <div class="signoffBlock">
+                <div class="signoffDetails">
+                  <div class="signColumn">
+                    <span class="signLabel">Outgoing Coordinator</span>
+                    <span class="signName">Dr Sophia Chen</span>
+                    <span class="signMeta">Ahpra MED0001892401 · Reg. Psych</span>
+                  </div>
+
+                  <div class="signColumn">
+                    <span class="signLabel">Handover Timestamp</span>
+                    <span class="signName mono">15:00 WST</span>
+                    <span class="signMeta">Saturday 15 August 2026</span>
+                  </div>
+
+                  <div class="signColumn">
+                    <span class="signLabel">Incoming Coordinator</span>
+                    <span class="signName">Dr Marcus Vance</span>
+                    <span class="signMeta">Ahpra MED0002148902 · Senior Registrar</span>
+                  </div>
+                </div>
+
+                <div id="signActionArea">
+                  <button type="button" class="btnSuccess" id="btnSignHandover" onclick="confirmSignHandover()">
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M12 2v4H8M12 2L4 10v4h4l8-8z" />
+                    </svg>
+                    <span>Sign &amp; Acknowledge Handover</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- Toast Notification element -->
+    <div class="toastMessage" id="toast">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 8.5l3.5 3.5 6.5-7" />
+      </svg>
+      <span id="toastText">Summary copied to clipboard</span>
+    </div>
+
+    <!-- ══════════════════ 4. INTERACTIVE CLIENT-SIDE LOGIC ══════════════════ -->
+    <script>
+      (function () {
+        "use strict";
+
+        var state = {
+          shift: "afternoon",
+          service: "all",
+          ward: "all",
+          focus: "all",
+          preset: "standard",
+          search: "",
+          signed: false,
+        };
+
+        // Set Shift
+        window.setShift = function (shift) {
+          state.shift = shift;
+          var btns = document.querySelectorAll(".segBtn");
+          btns.forEach(function (b) {
+            var match = b.getAttribute("data-shift") === shift;
+            b.classList.toggle("active", match);
+            b.setAttribute("aria-checked", match ? "true" : "false");
+          });
+          updateFilterView();
+          showToast("Shift updated: " + shift.charAt(0).toUpperCase() + shift.slice(1));
+        };
+
+        // Set Service Scope
+        window.setService = function (svc) {
+          state.service = svc;
+          var pills = document.querySelectorAll(".scopePill");
+          pills.forEach(function (p) {
+            p.classList.toggle("active", p.getAttribute("data-svc") === svc);
+          });
+          updateFilterView();
+        };
+
+        // Set Ward
+        window.setWard = function (ward) {
+          state.ward = ward;
+          updateFilterView();
+        };
+
+        // Set Focus
+        window.setFocus = function (f) {
+          state.focus = f;
+          var pills = document.querySelectorAll(".focusPill");
+          pills.forEach(function (p) {
+            p.classList.toggle("active", p.getAttribute("data-focus") === f);
+          });
+          updateFilterView();
+        };
+
+        // Apply Presets
+        window.applyPreset = function (p) {
+          state.preset = p;
+          document.querySelectorAll(".presetBtn").forEach(function (b) {
+            b.classList.remove("active");
+          });
+          var activeBtn = document.getElementById("preset-" + p);
+          if (activeBtn) activeBtn.classList.add("active");
+
+          if (p === "standard") {
+            state.service = "all";
+            state.ward = "all";
+            state.focus = "all";
+          } else if (p === "executive") {
+            state.service = "all";
+            state.ward = "all";
+            state.focus = "breaches";
+          } else if (p === "logistics") {
+            state.service = "all";
+            state.ward = "all";
+            state.focus = "inbound";
+          }
+
+          // Sync UI controls
+          document.querySelectorAll(".scopePill").forEach(function (el) {
+            el.classList.toggle("active", el.getAttribute("data-svc") === state.service);
+          });
+          document.querySelectorAll(".focusPill").forEach(function (el) {
+            el.classList.toggle("active", el.getAttribute("data-focus") === state.focus);
+          });
+          var wardSel = document.getElementById("wardSelect");
+          if (wardSel) wardSel.value = state.ward;
+
+          updateFilterView();
+          showToast(
+            "Preset Applied: " +
+              (p === "standard"
+                ? "Standard Handover Sheet"
+                : p === "executive"
+                  ? "Executive Nursing Summary"
+                  : "Transport & Bed Logistics"),
+          );
+        };
+
+        // Reset Filters
+        window.resetFilters = function () {
+          state.service = "all";
+          state.ward = "all";
+          state.focus = "all";
+          state.search = "";
+          document.getElementById("searchFilterInput").value = "";
+          var wardSel = document.getElementById("wardSelect");
+          if (wardSel) wardSel.value = "all";
+          document.querySelectorAll(".scopePill").forEach(function (el) {
+            el.classList.toggle("active", el.getAttribute("data-svc") === "all");
+          });
+          document.querySelectorAll(".focusPill").forEach(function (el) {
+            el.classList.toggle("active", el.getAttribute("data-focus") === "all");
+          });
+          document.querySelectorAll(".presetBtn").forEach(function (el) {
+            el.classList.toggle("active", el.id === "preset-standard");
+          });
+          updateFilterView();
+          showToast("Filters reset to Statewide All Items");
+        };
+
+        // Search Filter
+        window.handleSearchFilter = function (val) {
+          state.search = val.toLowerCase().trim();
+          updateFilterView();
+        };
+
+        // Update Filter View
+        function updateFilterView() {
+          var breachCards = document.querySelectorAll(".breachCard");
+          var inboundRows = document.querySelectorAll("#inboundTable tbody tr");
+          var dischargeRows = document.querySelectorAll("#dischargeTable tbody tr");
+          var delayedRows = document.querySelectorAll("#delayedBlock tbody tr");
+
+          var visibleBreaches = 0;
+          var visibleInbound = 0;
+          var visibleDischarges = 0;
+          var totalVisible = 0;
+
+          // Breaches
+          breachCards.forEach(function (card) {
+            var cardSvc = card.getAttribute("data-svc");
+            var cardWard = card.getAttribute("data-ward");
+            var cardCat = card.getAttribute("data-category") || "";
+            var cardText = card.textContent.toLowerCase();
+
+            var matchSvc = state.service === "all" || cardSvc === state.service;
+            var matchWard = state.ward === "all" || cardWard === state.ward;
+            var matchFocus = state.focus === "all" || cardCat.indexOf(state.focus) !== -1 || state.focus === "breaches";
+            var matchSearch = !state.search || cardText.indexOf(state.search) !== -1;
+
+            var show = matchSvc && matchWard && matchFocus && matchSearch;
+            card.style.display = show ? "" : "none";
+            if (show) visibleBreaches++;
+          });
+
+          // Inbound
+          inboundRows.forEach(function (row) {
+            var rSvc = row.getAttribute("data-svc");
+            var rWard = row.getAttribute("data-ward");
+            var rCat = row.getAttribute("data-category") || "";
+            var rText = row.textContent.toLowerCase();
+
+            var matchSvc = state.service === "all" || rSvc === state.service;
+            var matchWard = state.ward === "all" || rWard === state.ward;
+            var matchFocus = state.focus === "all" || rCat.indexOf(state.focus) !== -1 || state.focus === "inbound";
+            var matchSearch = !state.search || rText.indexOf(state.search) !== -1;
+
+            var show = matchSvc && matchWard && matchFocus && matchSearch;
+            row.style.display = show ? "" : "none";
+            if (show) visibleInbound++;
+          });
+
+          // Discharges
+          dischargeRows.forEach(function (row) {
+            var rSvc = row.getAttribute("data-svc");
+            var rWard = row.getAttribute("data-ward");
+            var rCat = row.getAttribute("data-category") || "";
+            var rText = row.textContent.toLowerCase();
+
+            var matchSvc = state.service === "all" || rSvc === state.service;
+            var matchWard = state.ward === "all" || rWard === state.ward;
+            var matchFocus = state.focus === "all" || rCat.indexOf(state.focus) !== -1 || state.focus === "discharges";
+            var matchSearch = !state.search || rText.indexOf(state.search) !== -1;
+
+            var show = matchSvc && matchWard && matchFocus && matchSearch;
+            row.style.display = show ? "" : "none";
+            if (show) visibleDischarges++;
+          });
+
+          // Delayed Egress
+          delayedRows.forEach(function (row) {
+            var rSvc = row.getAttribute("data-svc");
+            var rWard = row.getAttribute("data-ward");
+            var rText = row.textContent.toLowerCase();
+
+            var matchSvc = state.service === "all" || rSvc === state.service;
+            var matchWard = state.ward === "all" || rWard === state.ward;
+            var matchFocus = state.focus === "all" || state.focus === "discharges";
+            var matchSearch = !state.search || rText.indexOf(state.search) !== -1;
+
+            var show = matchSvc && matchWard && matchFocus && matchSearch;
+            row.style.display = show ? "" : "none";
+          });
+
+          totalVisible = visibleBreaches + visibleInbound + visibleDischarges;
+
+          // Update counts
+          var cntBreachesEl = document.getElementById("cntBreaches");
+          var cntInboundEl = document.getElementById("cntInbound");
+          var cntDischargesEl = document.getElementById("cntDischarges");
+          var cntAllEl = document.getElementById("cntAll");
+
+          if (cntBreachesEl) cntBreachesEl.textContent = visibleBreaches;
+          if (cntInboundEl) cntInboundEl.textContent = visibleInbound;
+          if (cntDischargesEl) cntDischargesEl.textContent = visibleDischarges;
+          if (cntAllEl) cntAllEl.textContent = totalVisible;
+
+          // Update Banner Text
+          var shiftName = state.shift.charAt(0).toUpperCase() + state.shift.slice(1) + " Shift";
+          var svcName = state.service === "all" ? "Statewide Network" : state.service.toUpperCase();
+          var bannerText =
+            "Displaying <b>" +
+            totalVisible +
+            " clinical records</b> for <b>" +
+            shiftName +
+            "</b> · <b>" +
+            svcName +
+            "</b> · Handover Reconciled at <span class='mono'>15:00 WST</span>";
+          var banner = document.getElementById("filterSummaryText");
+          if (banner) banner.innerHTML = bannerText;
+        }
+
+        // Checkbox Tasks
+        window.toggleTask = function (id) {
+          var el = document.getElementById(id);
+          if (!el) return;
+          var cb = el.querySelector(".taskCheckbox");
+          el.classList.toggle("completed", cb.checked);
+
+          var total = document.querySelectorAll(".taskItem").length;
+          var done = document.querySelectorAll(".taskItem.completed").length;
+          var progress = document.getElementById("taskProgressCount");
+          if (progress) progress.textContent = done + " of " + total + " Completed";
+        };
+
+        // Confirm Digital Sign-off
+        window.confirmSignHandover = function () {
+          if (state.signed) return;
+          var now = new Date();
+          var timeStr = now.toTimeString().split(" ")[0] + " WST";
+          state.signed = true;
+
+          var area = document.getElementById("signActionArea");
+          if (area) {
+            area.innerHTML =
+              '<div class="sealBadge">' +
+              '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8.5l3.5 3.5 6.5-7"/></svg>' +
+              "<span>Digitally Signed &amp; Sealed by Dr M. Vance at " +
+              timeStr +
+              "</span>" +
+              "</div>";
+          }
+          showToast("Handover successfully signed and locked");
+        };
+
+        // Toast Notification
+        function showToast(msg) {
+          var t = document.getElementById("toast");
+          var text = document.getElementById("toastText");
+          if (!t || !text) return;
+          text.textContent = msg;
+          t.style.display = "flex";
+          clearTimeout(window.__toastTimer);
+          window.__toastTimer = setTimeout(function () {
+            t.style.display = "none";
+          }, 3200);
+        }
+
+        // Copy Handover Summary to Clipboard
+        window.copyHandoverSummary = function () {
+          var summary = [
+            "============================================================",
+            "STATEWIDE CLINICAL HANDOVER & SHIFT COORDINATION RECORD",
+            "Government of Western Australia · Department of Health",
+            "Shift: Afternoon (15:00–23:30) · Saturday 15 August 2026",
+            "Outgoing Coordinator: Dr Sophia Chen (Ahpra MED0001892401)",
+            "Incoming Coordinator: Dr Marcus Vance (Ahpra MED0002148902)",
+            "============================================================",
+            "",
+            "1. SHIFT SAFETY HUDDLE & OPERATIONAL STATUS",
+            "- Total Inpatients Handed Over: 398",
+            "- Statewide Available Vacancies: 14 (6 Male, 8 Female)",
+            "- Active 1:1 Specialling Nurses: 18 (HDU/Close Observation)",
+            "- Critical ED Breaches: 4 (>24h MHA Form 1A)",
+            "- Controlled Drugs Safe: Reconciled 15:00 by Dr Chen & RN Davies",
+            "- Resuscitation Trolley: Tamper seal #8841 intact",
+            "- Duress Alarms: Pass tested at 14:30",
+            "- Staffing: 0 unfilled shifts across network",
+            "",
+            "2. CRITICAL ESCALATIONS & STATUTORY BREACHES",
+            "- Tobias Wren (42M, UMRN UM100009): Peel ED Acute Bay 04, 26h 48m (BREACHED >24h). Involuntary Form 1A expired. Escalate to FSH Bed 02.",
+            "- Declan Ross (31M, UMRN UM100038): Joondalup ED, 24h 05m (BREACHED). Severe agitation. Accepted Graylands Murchison; transport ETA 16:15.",
+            "- Callum Finch (29M, UMRN UM100004): Armadale ED -> Bentley Secure. Form 4A Transport Order expires in 1h 48m. WAPOL escort en route.",
+            "- Oona Flint (44F, UMRN UM100015): RPH ED Resus 2, 21h 14m. Form 1A expires in 2h 46m. 1:1 Specialling. Bed held Bentley.",
+            "- Bradley Vance (52M, UMRN UM100023): Bunbury ED -> FSH HDU. RFDS flight #RFDS-702 ETA 17:15. Severe catatonia; ICU alerted.",
+            "",
+            "3. INBOUND PIPELINE & ADMISSIONS",
+            "- Dermot Hawthorn (38M) -> FRE Ward 4W Bed 12 (ETA 15:45 St John) · Lithium level draw booked 18:00.",
+            "- Callum Finch (29M) -> Bentley Secure Bed 04 (ETA 16:30 Inter-hospital).",
+            "- Zara Sterling (19F) -> EMyU Youth Bed 02 (ETA 16:15 Family) · Voluntary.",
+            "- Hamish Campbell (67M) -> SJGM Open Bed 07 (ETA 17:00 Non-urgent) · Wanderguard.",
+            "- Soraya Mansour (34F) -> RGH Elanora Bed 15 (ETA 16:00 St John) · Post-partum depression.",
+            "",
+            "4. OUTBOUND DISCHARGES & EGRESS",
+            "- Trevor Vance (49M): FSH Adult Secure Bed 08 -> Home (Hilton) at 16:00 (Fremantle CMHT).",
+            "- Elena Rossi (28F): SCGH G2 Bed 11 -> Step-down (Osborne Pk) at 16:30.",
+            "- Walter Briggs (74M): Graylands Murchison Bed 03 -> RACF (Nedlands) at 17:00.",
+            "- Stranded Egress: Arthur Pendelton (Bentley, 42d NDIS hold), Cheryl Thorne (Graylands, 89d SAT hold).",
+            "",
+            "Digital Sign-Off Status: Confirmed & Reconciled at 15:00 WST.",
+          ].join("\n");
+
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(summary).then(function () {
+              showToast("Handover summary copied to clipboard for WhatsApp/Teams/Email!");
+            });
+          } else {
+            var ta = document.createElement("textarea");
+            ta.value = summary;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+            showToast("Handover summary copied to clipboard!");
+          }
+        };
+
+        // Theme Toggle
+        window.toggleTheme = function () {
+          var root = document.documentElement;
+          var current = root.getAttribute("data-theme") || "dark";
+          var next = current === "dark" ? "light" : "dark";
+          root.setAttribute("data-theme", next);
+          try {
+            localStorage.setItem("ward-flow-appearance", next);
+            localStorage.setItem("ward-flow-handover-appearance", next);
+          } catch (e) {}
+          showToast("Theme switched to " + next);
+        };
+
+        // Rail Collapse Toggle
+        window.toggleRail = function () {
+          var root = document.documentElement;
+          var isClosed = root.getAttribute("data-rail") === "closed";
+          var next = isClosed ? "open" : "closed";
+          root.setAttribute("data-rail", next);
+          try {
+            localStorage.setItem("ward-flow-rail", next);
+          } catch (e) {}
+        };
+
+        // Keyboard Shortcuts: / for search, [ for rail, Esc to clear
+        document.addEventListener("keydown", function (e) {
+          if (
+            e.key === "/" &&
+            document.activeElement.tagName !== "INPUT" &&
+            document.activeElement.tagName !== "TEXTAREA"
+          ) {
+            e.preventDefault();
+            var searchInput = document.getElementById("searchFilterInput");
+            if (searchInput) searchInput.focus();
+          } else if (
+            e.key === "[" &&
+            document.activeElement.tagName !== "INPUT" &&
+            document.activeElement.tagName !== "TEXTAREA"
+          ) {
+            e.preventDefault();
+            toggleRail();
+          } else if (e.key === "Escape") {
+            var searchInput = document.getElementById("searchFilterInput");
+            if (searchInput && document.activeElement === searchInput) {
+              searchInput.value = "";
+              handleSearchFilter("");
+              searchInput.blur();
+            }
+          }
+        });
+
+        // Initial View Setup
+        updateFilterView();
+      })();
+    </script>
+  </body>
+</html>

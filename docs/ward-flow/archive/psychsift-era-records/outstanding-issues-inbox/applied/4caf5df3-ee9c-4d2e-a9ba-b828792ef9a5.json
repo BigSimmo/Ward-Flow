@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "id": "4caf5df3-ee9c-4d2e-a9ba-b828792ef9a5",
+  "createdOn": "2026-09-10",
+  "action": "cancel",
+  "payload": {
+    "requestId": "03f090b7-60ef-4824-b4fc-b82c676c37da",
+    "reason": "SUPERSEDED A SECOND TIME - this request states the measurement itself wrongly. It says the guard 'permits one such entry and found four'. The assertion is .toEqual([]) (spec line 1096), which permits ZERO, and the received array holds TWO entries, not four - the '- Expected - 1 / + Received + 4' figures it was read from are counts of diff lines. The two entries are one column reported twice (heading 'Home region' plus its first data cell 'Perth Metropolitan', identical geometry), because the guard collects thead th together with tbody tr:first-child td. It also omits that the test aborts at the first failing width, so 700, 760 and 820 were never measured. Replaced by a request carrying the corrected count, the corrected guard threshold, and that scope limit. The earlier retraction of the false causal claim stands and is carried forward."
+  }
+}

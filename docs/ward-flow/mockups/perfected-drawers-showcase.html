@@ -1,0 +1,1993 @@
+<!doctype html>
+<html lang="en-AU" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow — 4 Perfected Elevated Shell Panels & Drawers</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --display: "Geist", system-ui, -apple-system, sans-serif;
+        --body: "Geist", system-ui, -apple-system, sans-serif;
+        --mono: "Geist Mono", ui-monospace, monospace;
+
+        --t-0: 11px;
+        --t-1: 12.5px;
+        --t-2: 13.5px;
+        --t-3: 15px;
+        --t-4: 17px;
+        --t-5: 20px;
+        --t-6: 24px;
+
+        --r1: 4px;
+        --r2: 8px;
+        --r3: 12px;
+        --r4: 16px;
+        --r-card: 13px;
+        --pill: 9999px;
+      }
+
+      :root,
+      :root[data-theme="light"] {
+        --ground: #eef2f6;
+        --ground-deep: #e2e8f0;
+        --surface: #ffffff;
+        --surface-2: #f8fafc;
+        --sunk: #edf2f7;
+        --sunk-hover: #e2e8f0;
+        --ink: #0f172a;
+        --ink-soft: #334155;
+        --muted: #64748b;
+        --accent: #233d54;
+        --accent-ink: #162a3b;
+        --accent-soft: #e2ecf5;
+        --accent-glow: rgba(35, 61, 84, 0.12);
+        --on-accent: #ffffff;
+        --stripe: #233d54;
+        --gilt: #856427;
+        --gilt-soft: #fbf5ea;
+        --good: #1b6c47;
+        --good-soft: #e3f5ec;
+        --warn: #92540c;
+        --warn-soft: #fef4e5;
+        --danger: #b42b1f;
+        --danger-soft: #fdeee9;
+        --danger-ink: #8e1f15;
+        --line: rgba(15, 23, 42, 0.08);
+        --line-strong: rgba(15, 23, 42, 0.16);
+        --lift: 0 4px 20px -2px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.04);
+        --lift-elevated: 0 16px 36px -6px rgba(15, 23, 42, 0.16), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
+        --lift-card: 0 2px 6px -1px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
+        --scrim: rgba(15, 23, 42, 0.45);
+
+        /* WA Health Services */
+        --svc-east: #233d54;
+        --svc-north: #723b72;
+        --svc-south: #146b6b;
+        --svc-wachs: #8d451b;
+        --svc-private: #535d6e;
+      }
+
+      :root[data-theme="dark"] {
+        --ground: #0a0d12;
+        --ground-deep: #05070a;
+        --surface: #12171f;
+        --surface-2: #161d27;
+        --sunk: #18202b;
+        --sunk-hover: #1f2a38;
+        --ink: #f1f5f9;
+        --ink-soft: #cbd5e1;
+        --muted: #8292a4;
+        --accent: #93b5d5;
+        --accent-ink: #c2d8ee;
+        --accent-soft: #182635;
+        --accent-glow: rgba(147, 181, 213, 0.16);
+        --on-accent: #0b1118;
+        --stripe: #3b5a7a;
+        --gilt: #d6b87d;
+        --gilt-soft: #2d261b;
+        --good: #62d295;
+        --good-soft: #123022;
+        --warn: #e7b657;
+        --warn-soft: #382c16;
+        --danger: #ef6f64;
+        --danger-soft: #3c1c1a;
+        --danger-ink: #f5968d;
+        --line: rgba(255, 255, 255, 0.08);
+        --line-strong: rgba(255, 255, 255, 0.18);
+        --lift: 0 6px 24px -2px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+        --lift-elevated: 0 20px 48px -8px rgba(0, 0, 0, 0.65), 0 6px 16px rgba(0, 0, 0, 0.4);
+        --lift-card: 0 2px 8px rgba(0, 0, 0, 0.3);
+        --scrim: rgba(0, 0, 0, 0.7);
+
+        --svc-east: #93b5d5;
+        --svc-north: #c88fc8;
+        --svc-south: #4db3b3;
+        --svc-wachs: #d98859;
+        --svc-private: #9ba6b7;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: var(--body);
+        font-size: var(--t-2);
+        line-height: 1.45;
+        color: var(--ink);
+        background: var(--ground);
+        min-height: 100vh;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* Master Top Bar */
+      .master-bar {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 56px;
+        padding: 0 24px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        gap: 16px;
+      }
+      .brand-cluster {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .brand-title {
+        font-weight: 700;
+        font-size: var(--t-3);
+        letter-spacing: -0.02em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .brand-badge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: var(--pill);
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        letter-spacing: 0.02em;
+      }
+      .nav-tabs {
+        display: flex;
+        background: var(--sunk);
+        padding: 3px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line);
+        gap: 2px;
+      }
+      .nav-tab {
+        padding: 6px 14px;
+        font-size: var(--t-1);
+        font-weight: 500;
+        color: var(--muted);
+        border: none;
+        background: transparent;
+        border-radius: var(--pill);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .nav-tab:hover {
+        color: var(--ink);
+      }
+      .nav-tab.active {
+        background: var(--surface);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      }
+      .theme-toggle-group {
+        display: flex;
+        background: var(--sunk);
+        padding: 3px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line);
+      }
+      .theme-btn {
+        padding: 4px 10px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        border: none;
+        background: transparent;
+        border-radius: var(--pill);
+        color: var(--muted);
+        cursor: pointer;
+      }
+      .theme-btn.active {
+        background: var(--surface);
+        color: var(--ink);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+
+      /* Showcase Layout */
+      .showcase-viewport {
+        padding: 32px 24px;
+        max-width: 1760px;
+        margin: 0 auto;
+      }
+      .hero-banner {
+        margin-bottom: 24px;
+        padding: 16px 20px;
+        background: var(--surface);
+        border-radius: var(--r3);
+        border: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: var(--lift-card);
+      }
+      .hero-text h1 {
+        font-size: var(--t-4);
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 2px;
+      }
+      .hero-text p {
+        font-size: var(--t-1);
+        color: var(--muted);
+      }
+      .hero-pills {
+        display: flex;
+        gap: 8px;
+      }
+      .hero-pill {
+        font-size: var(--t-0);
+        font-weight: 500;
+        padding: 4px 10px;
+        border-radius: var(--pill);
+        background: var(--sunk);
+        color: var(--ink-soft);
+        border: 1px solid var(--line);
+      }
+
+      /* Grid for 4-up mode */
+      .grid-4up {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        align-items: start;
+      }
+      @media (max-width: 1540px) {
+        .grid-4up {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 900px) {
+        .grid-4up {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Mockup Frame / Card Container */
+      .mockup-card {
+        background: var(--surface);
+        border-radius: var(--r4);
+        border: 1px solid var(--line);
+        box-shadow: var(--lift);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 840px;
+        position: relative;
+        transition:
+          box-shadow 0.2s ease,
+          border-color 0.2s ease;
+      }
+      .mockup-card:hover {
+        border-color: var(--line-strong);
+        box-shadow: var(--lift-elevated);
+      }
+      .mockup-badge-bar {
+        padding: 10px 16px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: var(--t-0);
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .mockup-num {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--accent-ink);
+      }
+      .mockup-tag {
+        padding: 2px 8px;
+        border-radius: var(--pill);
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        font-family: var(--mono);
+      }
+
+      /* ==========================================================================
+       PANEL 1: THE PERFECTED ACTIVITY DRAWER
+       ========================================================================== */
+      .panel-activity {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        background: var(--surface);
+      }
+      .drawer-header {
+        padding: 16px 20px 12px;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface);
+      }
+      .drawer-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+      .drawer-title {
+        font-size: var(--t-4);
+        font-weight: 700;
+        color: var(--ink);
+        letter-spacing: -0.01em;
+      }
+      .close-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.15s ease;
+      }
+      .close-btn:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .freshness-tag {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--t-0);
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+      .live-pulse-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--good);
+        box-shadow: 0 0 0 2px var(--good-soft);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(27, 108, 71, 0.4);
+        }
+        70% {
+          box-shadow: 0 0 0 5px rgba(27, 108, 71, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(27, 108, 71, 0);
+        }
+      }
+
+      /* THE HERO CONDENSED CURVED SWITCHER */
+      .hero-switcher-wrap {
+        padding: 12px 18px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+      }
+      .curved-switcher {
+        display: flex;
+        background: var(--sunk);
+        padding: 3px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line);
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+        position: relative;
+      }
+      .curved-tab {
+        flex: 1;
+        height: 34px;
+        border: none;
+        background: transparent;
+        border-radius: var(--pill);
+        font-family: var(--body);
+        font-size: var(--t-1);
+        font-weight: 500;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        cursor: pointer;
+        transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+        z-index: 1;
+      }
+      .curved-tab:hover {
+        color: var(--ink);
+      }
+      .curved-tab.active {
+        background: var(--surface);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow:
+          0 2px 6px -1px rgba(15, 23, 42, 0.08),
+          0 1px 2px rgba(15, 23, 42, 0.04);
+        border: 0.5px solid var(--line-strong);
+      }
+      .curved-tab-badge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 1px 7px;
+        border-radius: var(--pill);
+        background: var(--sunk);
+        color: var(--ink-soft);
+      }
+      .curved-tab.active .curved-tab-badge {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+      }
+      .curved-tab-sub {
+        font-size: 10.5px;
+        font-weight: 500;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+
+      /* Filter Chips under Switcher */
+      .feed-filter-row {
+        display: flex;
+        gap: 6px;
+        margin-top: 10px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+        scrollbar-width: none;
+      }
+      .feed-filter-row::-webkit-scrollbar {
+        display: none;
+      }
+      .filter-chip {
+        font-size: 11px;
+        font-weight: 500;
+        padding: 3px 9px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        color: var(--muted);
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.12s ease;
+      }
+      .filter-chip:hover {
+        border-color: var(--line-strong);
+        color: var(--ink);
+      }
+      .filter-chip.active {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+
+      /* Activity Feed List */
+      .activity-feed-scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px 18px;
+      }
+      .feed-header-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: var(--t-0);
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 12px;
+        padding: 0 4px;
+      }
+      .feed-timeline {
+        position: relative;
+        list-style: none;
+      }
+      .feed-timeline::before {
+        content: "";
+        position: absolute;
+        top: 10px;
+        bottom: 10px;
+        left: 45px;
+        width: 1px;
+        background: var(--line);
+      }
+      .feed-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 8px 6px;
+        border-radius: var(--r2);
+        transition: background 0.12s ease;
+        position: relative;
+      }
+      .feed-item:hover {
+        background: var(--surface-2);
+      }
+      .feed-time {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+        width: 38px;
+        flex-shrink: 0;
+        padding-top: 2px;
+        text-align: right;
+      }
+      .feed-dot-slot {
+        width: 14px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 2;
+      }
+      .feed-status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--muted);
+      }
+      .feed-status-dot.warn {
+        background: var(--warn);
+        box-shadow: 0 0 0 2px var(--warn-soft);
+      }
+      .feed-status-dot.good {
+        background: var(--good);
+        box-shadow: 0 0 0 2px var(--good-soft);
+      }
+      .feed-status-dot.danger {
+        background: var(--danger);
+        box-shadow: 0 0 0 2px var(--danger-soft);
+      }
+      .feed-status-dot.info {
+        background: var(--accent);
+        box-shadow: 0 0 0 2px var(--accent-soft);
+      }
+
+      .feed-body {
+        flex: 1;
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        line-height: 1.4;
+      }
+      .feed-chip {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: 4px;
+        background: var(--sunk);
+        color: var(--ink);
+        border: 1px solid var(--line);
+        margin-right: 4px;
+        display: inline-block;
+      }
+      .feed-body strong {
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      /* Accordion in Footer */
+      .drawer-accordion {
+        margin: 12px 0 6px;
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        overflow: hidden;
+        background: var(--surface-2);
+      }
+      .accordion-summary {
+        padding: 8px 12px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        user-select: none;
+      }
+      .accordion-body {
+        padding: 8px 12px 10px;
+        font-size: var(--t-0);
+        color: var(--muted);
+        border-top: 1px solid var(--line);
+        display: grid;
+        gap: 6px;
+      }
+      .key-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .key-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+      }
+
+      .drawer-footer-disclaimer {
+        padding: 10px 18px;
+        background: var(--surface-2);
+        border-top: 1px solid var(--line);
+        font-size: var(--t-0);
+        color: var(--muted);
+        text-align: center;
+      }
+
+      /* ==========================================================================
+       PANEL 2: THE PERFECTED OUTSTANDING WORK DRAWER
+       ========================================================================== */
+      .panel-tasks {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        background: var(--surface);
+      }
+      .tasks-filter-bar {
+        padding: 10px 18px;
+        display: flex;
+        gap: 6px;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface-2);
+      }
+      .tasks-list-scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding: 14px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .task-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r-card);
+        padding: 12px 14px;
+        box-shadow: var(--lift-card);
+        transition: all 0.15s ease;
+        position: relative;
+      }
+      .task-card:hover {
+        border-color: var(--line-strong);
+        box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.08);
+      }
+      .task-card.acknowledged {
+        opacity: 0.55;
+        background: var(--surface-2);
+        border-style: dashed;
+      }
+      .task-card-top {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+      .task-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-weight: 700;
+        font-size: var(--t-1);
+        flex-shrink: 0;
+      }
+      .task-avatar.critical {
+        background: var(--danger-soft);
+        color: var(--danger);
+        border: 1px solid rgba(180, 43, 31, 0.2);
+      }
+      .task-avatar.review {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid rgba(146, 84, 12, 0.2);
+      }
+      .task-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .task-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 2px;
+      }
+      .task-title {
+        font-size: var(--t-2);
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .urgency-badge {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+      }
+      .urgency-badge.critical {
+        background: var(--danger-soft);
+        color: var(--danger);
+        border: 1px solid rgba(180, 43, 31, 0.3);
+      }
+      .urgency-badge.review {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid rgba(146, 84, 12, 0.3);
+      }
+      .task-meta {
+        font-size: var(--t-0);
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--mono);
+      }
+      .task-meta-tag {
+        color: var(--ink-soft);
+        font-weight: 600;
+      }
+      .task-actions-row {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--line);
+      }
+      .btn-ack {
+        height: 28px;
+        padding: 0 12px;
+        border-radius: 6px;
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--danger-ink);
+        font-size: var(--t-0);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+        transition: all 0.12s ease;
+      }
+      .btn-ack:hover {
+        background: var(--danger-soft);
+        border-color: var(--danger);
+      }
+      .btn-movement {
+        height: 28px;
+        padding: 0 12px;
+        border-radius: 6px;
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        color: var(--ink-soft);
+        font-size: var(--t-0);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+        transition: all 0.12s ease;
+      }
+      .btn-movement:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .tasks-sticky-footer {
+        padding: 12px 18px;
+        background: var(--surface-2);
+        border-top: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .tasks-foot-stat {
+        font-size: var(--t-0);
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+      .btn-ack-all {
+        height: 32px;
+        padding: 0 14px;
+        border-radius: var(--pill);
+        border: none;
+        background: var(--danger-soft);
+        color: var(--danger);
+        font-weight: 600;
+        font-size: var(--t-1);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s ease;
+      }
+      .btn-ack-all:hover {
+        background: var(--danger);
+        color: #fff;
+      }
+
+      /* ==========================================================================
+       PANEL 3: THE PERFECTED TOOLS DRAWER
+       ========================================================================== */
+      .panel-tools {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        background: var(--surface);
+      }
+      .tools-scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+      .tools-section-title {
+        font-size: var(--t-0);
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .theme-seg-track {
+        display: flex;
+        background: var(--sunk);
+        padding: 3px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line);
+      }
+      .theme-seg-btn {
+        flex: 1;
+        height: 30px;
+        border: none;
+        background: transparent;
+        border-radius: var(--pill);
+        font-size: var(--t-0);
+        font-weight: 500;
+        color: var(--muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        transition: all 0.15s ease;
+      }
+      .theme-seg-btn.active {
+        background: var(--surface);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+
+      /* Action Tiles Grid */
+      .action-tiles-grid {
+        display: grid;
+        gap: 8px;
+      }
+      .action-tile {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: var(--r-card);
+        border: 1px solid var(--line);
+        background: var(--surface);
+        box-shadow: var(--lift-card);
+        cursor: pointer;
+        transition: all 0.12s ease;
+        text-decoration: none;
+      }
+      .action-tile:hover {
+        background: var(--surface-2);
+        border-color: var(--line-strong);
+        transform: translateY(-1px);
+      }
+      .action-tile-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+      .action-tile-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .action-tile-name {
+        font-size: var(--t-2);
+        font-weight: 600;
+        color: var(--ink);
+        line-height: 1.2;
+      }
+      .action-tile-desc {
+        font-size: var(--t-0);
+        color: var(--muted);
+        line-height: 1.3;
+      }
+      .action-tile-arrow {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      /* Clinical Hotline Card */
+      .hotline-card {
+        background: linear-gradient(135deg, var(--surface-2), var(--surface));
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--accent);
+        border-radius: var(--r-card);
+        padding: 12px 14px;
+        box-shadow: var(--lift-card);
+      }
+      .hotline-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+      .hotline-title {
+        font-size: var(--t-1);
+        font-weight: 700;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .hotline-badge {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: var(--pill);
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+      }
+      .hotline-list {
+        display: grid;
+        gap: 6px;
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+      }
+      .hotline-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .hotline-row b {
+        font-family: var(--mono);
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      /* Contacts Directory List */
+      .contact-filter-input {
+        width: 100%;
+        height: 32px;
+        padding: 0 10px;
+        border-radius: 6px;
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        color: var(--ink);
+        font-size: var(--t-1);
+        margin-bottom: 8px;
+      }
+      .contact-list {
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        overflow: hidden;
+        max-height: 180px;
+        overflow-y: auto;
+      }
+      .contact-row {
+        padding: 7px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: var(--t-1);
+        border-bottom: 1px solid var(--line);
+        background: var(--surface);
+      }
+      .contact-row:last-child {
+        border-bottom: none;
+      }
+      .contact-row:hover {
+        background: var(--surface-2);
+      }
+      .contact-muted {
+        font-size: var(--t-0);
+        color: var(--muted);
+        font-style: italic;
+      }
+
+      /* ==========================================================================
+       PANEL 4: THE PERFECTED SERVICE SCOPE POPOVER
+       ========================================================================== */
+      .panel-service {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        background: var(--ground);
+        padding: 20px;
+        align-items: center;
+        justify-content: center;
+      }
+      .service-popover-shell {
+        width: 320px;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r4);
+        box-shadow: var(--lift-elevated);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .service-popover-head {
+        padding: 12px 16px 10px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+      .service-popover-title {
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--ink);
+        letter-spacing: -0.01em;
+      }
+      .service-popover-hint {
+        font-size: var(--t-0);
+        color: var(--muted);
+        font-weight: 400;
+      }
+      .service-total-pill {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+      }
+      .service-options-list {
+        padding: 8px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .service-option-btn {
+        width: 100%;
+        height: 40px;
+        padding: 0 12px;
+        border-radius: var(--r2);
+        border: 1px solid transparent;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        transition: all 0.12s ease;
+        font-family: var(--body);
+        text-align: left;
+      }
+      .service-option-btn:hover {
+        background: var(--sunk);
+      }
+      .service-option-btn.active {
+        background: var(--accent-soft);
+        border-color: rgba(35, 61, 84, 0.16);
+      }
+      .service-option-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .service-swatch-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .service-option-label {
+        font-size: var(--t-2);
+        font-weight: 500;
+        color: var(--ink);
+      }
+      .service-option-btn.active .service-option-label {
+        font-weight: 700;
+        color: var(--accent-ink);
+      }
+      .service-option-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .service-count-pill {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .service-option-btn.active .service-count-pill {
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
+      .service-check-icon {
+        width: 16px;
+        height: 16px;
+        color: var(--accent);
+        opacity: 0;
+        transition: opacity 0.12s ease;
+      }
+      .service-option-btn.active .service-check-icon {
+        opacity: 1;
+      }
+      .service-popover-callout {
+        padding: 10px 14px;
+        background: var(--surface-2);
+        border-top: 1px solid var(--line);
+        font-size: 11.5px;
+        color: var(--muted);
+        line-height: 1.4;
+        display: flex;
+        gap: 8px;
+      }
+      .service-info-icon {
+        flex-shrink: 0;
+        font-size: 13px;
+        color: var(--accent);
+      }
+
+      /* Comparison Notes Drawer */
+      .comparison-strip {
+        margin-top: 24px;
+        background: var(--surface);
+        border-radius: var(--r3);
+        border: 1px solid var(--line);
+        padding: 20px 24px;
+        box-shadow: var(--lift);
+      }
+      .comparison-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-top: 14px;
+      }
+      @media (max-width: 1200px) {
+        .comparison-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      .comp-col h3 {
+        font-size: var(--t-2);
+        font-weight: 700;
+        color: var(--ink);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .comp-col ul {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+      }
+      .comp-col li {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+      }
+      .comp-col li::before {
+        content: "✓";
+        color: var(--good);
+        font-weight: 700;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- MASTER TOP BAR -->
+    <header class="master-bar">
+      <div class="brand-cluster">
+        <div class="brand-title">Ward Flow <span class="brand-badge">Shell Redesign · 4 Mockups</span></div>
+      </div>
+
+      <!-- VIEW MODE SELECTOR -->
+      <div class="nav-tabs" role="tablist">
+        <button class="nav-tab active" onclick="setViewMode('all')">
+          <span>⊞ 4-Up Comparative</span>
+        </button>
+        <button class="nav-tab" onclick="setViewMode('activity')">
+          <span>1. Activity Drawer</span>
+        </button>
+        <button class="nav-tab" onclick="setViewMode('tasks')">
+          <span>2. Outstanding Work</span>
+        </button>
+        <button class="nav-tab" onclick="setViewMode('tools')">
+          <span>3. Tools Drawer</span>
+        </button>
+        <button class="nav-tab" onclick="setViewMode('service')">
+          <span>4. Service Popover</span>
+        </button>
+      </div>
+
+      <!-- THEME SWITCHER -->
+      <div class="theme-toggle-group">
+        <button class="theme-btn active" id="btn-light" onclick="setTheme('light')">Light</button>
+        <button class="theme-btn" id="btn-dark" onclick="setTheme('dark')">Dark</button>
+      </div>
+    </header>
+
+    <!-- VIEWPORT -->
+    <main class="showcase-viewport">
+      <!-- HERO HEADER -->
+      <section class="hero-banner">
+        <div class="hero-text">
+          <h1>High-Precision Shell Elevation · 4 Redesigned Modules</h1>
+          <p>Ultra-polished, mature, condensed, and modern layouts with perfected switcher, cards, and popovers.</p>
+        </div>
+        <div class="hero-pills">
+          <span class="hero-pill">Geist &amp; Geist Mono</span>
+          <span class="hero-pill">WCAG 2.1 AA Compliant</span>
+          <span class="hero-pill">Real Interactive Tabs</span>
+        </div>
+      </section>
+
+      <!-- 4-UP DISPLAY GRID -->
+      <div class="grid-4up" id="gridContainer">
+        <!-- ====================================================================
+           MOCKUP 1: THE PERFECTED ACTIVITY DRAWER
+           ==================================================================== -->
+        <div class="mockup-card" id="card-activity">
+          <div class="mockup-badge-bar">
+            <div class="mockup-num"><span>●</span> <strong>Mockup 1: Activity Drawer</strong></div>
+            <span class="mockup-tag">Image 1 Rebuilt</span>
+          </div>
+
+          <div class="panel-activity">
+            <!-- Drawer Header -->
+            <div class="drawer-header">
+              <div class="drawer-header-row">
+                <span class="drawer-title">Activity</span>
+                <button class="close-btn" title="Close (Esc)">✕</button>
+              </div>
+              <div class="freshness-tag">
+                <span class="live-pulse-dot"></span>
+                <span>Synthetic state · demo 13:58 · last event 13:52</span>
+              </div>
+            </div>
+
+            <!-- USER MANDATE: Modern, Mature, Condensed, Curved Switcher -->
+            <div class="hero-switcher-wrap">
+              <div class="curved-switcher" role="tablist" aria-label="Activity Switcher">
+                <button class="curved-tab active" id="act-tab-events" onclick="toggleActivityTab('events')">
+                  <span>Activity</span>
+                  <span class="curved-tab-badge">20</span>
+                </button>
+                <button class="curved-tab" id="act-tab-tally" onclick="toggleActivityTab('tally')">
+                  <span>Live tally</span>
+                  <span class="curved-tab-sub">Command</span>
+                </button>
+              </div>
+
+              <!-- Quick Filter Chips -->
+              <div class="feed-filter-row" id="feedFilters">
+                <button class="filter-chip active" onclick="filterFeed('all', this)">All 20</button>
+                <button class="filter-chip" onclick="filterFeed('escalation', this)">Escalations 2</button>
+                <button class="filter-chip" onclick="filterFeed('decline', this)">Declines 4</button>
+                <button class="filter-chip" onclick="filterFeed('referral', this)">Referrals 8</button>
+                <button class="filter-chip" onclick="filterFeed('ed', this)">ED Arrivals 6</button>
+              </div>
+            </div>
+
+            <!-- Activity Scroll Body -->
+            <div class="activity-feed-scroll" id="activityFeedContainer">
+              <div class="feed-header-line">
+                <span>Recent Changes</span>
+                <span>20 Events</span>
+              </div>
+
+              <ol class="feed-timeline">
+                <li class="feed-item" data-type="escalation">
+                  <time class="feed-time">13:52</time>
+                  <div class="feed-dot-slot"><span class="feed-status-dot warn"></span></div>
+                  <div class="feed-body">
+                    <span class="feed-chip">WF-009</span> escalated to <strong>State bed coordination desk</strong>.
+                  </div>
+                </li>
+                <li class="feed-item" data-type="decline">
+                  <time class="feed-time">13:50</time>
+                  <div class="feed-dot-slot"><span class="feed-status-dot danger"></span></div>
+                  <div class="feed-body">
+                    <strong>RGH Adult Secure</strong> declined <span class="feed-chip">WF-009</span> · capability
+                    mismatch.
+                  </div>
+                </li>
+                <li class="feed-item" data-type="escalation">
+                  <time class="feed-time">13:50</time>
+                  <div class="feed-dot-slot"><span class="feed-status-dot warn"></span></div>
+                  <div class="feed-body">
+                    <span class="feed-chip">WF-022</span> escalated to <strong>State bed coordination desk</strong>.
+                  </div>
+                </li>
+                <li class="feed-item" data-type="decline">
+                  <time class="feed-time">13:40</time>
+                  <div class="feed-dot-slot"><span class="feed-status-dot danger"></span></div>
+                  <div class="feed-body">
+                    <strong>FSH Adult Secure</strong> declined <span class="feed-chip">WF-009</span> · specialling
+                    unavailable.
+                  </div>
+                </li>
+                <li class="feed-item" data-type="referral">
+                  <time class="feed-time">13:35</time>
+                  <div class="feed-dot-slot"><span class="feed-status-dot good"></span></div>
+                  <div class="feed-body">
+                    <span class="feed-chip">RF-005</span> referral raised · Older adult, Perth Metro.
+                  </div>
+                </li>
+                <li class="feed-item" data-type="decline">
+                  <time class="feed-time">13:25</time>
+                  <div class="feed-dot-slot"><span class="feed-status-dot danger"></span></div>
+                  <div class="feed-body">
+                    <strong>BTY Adult Secure</strong> declined <span class="feed-chip">WF-009</span> · bed pulled for
+                    earlier referral.
+                  </div>
+                </li>
+                <li class="feed-item" data-type="referral">
+                  <time class="feed-time">13:25</time>
+                  <div class="feed-dot-slot"><span class="feed-status-dot good"></span></div>
+                  <div class="feed-body"><span class="feed-chip">RF-003</span> triaged.</div>
+                </li>
+                <li class="feed-item" data-type="referral">
+                  <time class="feed-time">13:25</time>
+                  <div class="feed-dot-slot"><span class="feed-status-dot good"></span></div>
+                  <div class="feed-body"><span class="feed-chip">RF-007</span> referral raised · Youth, Mid West.</div>
+                </li>
+                <li class="feed-item" data-type="referral">
+                  <time class="feed-time">13:20</time>
+                  <div class="feed-dot-slot"><span class="feed-status-dot good"></span></div>
+                  <div class="feed-body">
+                    <span class="feed-chip">RF-009</span> referral raised · Adult, Perth Metro.
+                  </div>
+                </li>
+                <li class="feed-item" data-type="ed">
+                  <time class="feed-time">13:15</time>
+                  <div class="feed-dot-slot"><span class="feed-status-dot info"></span></div>
+                  <div class="feed-body">
+                    <span class="feed-chip">WF-018</span> opened at <strong>Sir Charles Gairdner Hospital ED</strong>,
+                    Tier 3.
+                  </div>
+                </li>
+              </ol>
+
+              <details class="drawer-accordion">
+                <summary class="accordion-summary">▸ Event Key &amp; Severity</summary>
+                <div class="accordion-body">
+                  <div class="key-item">
+                    <span class="key-dot" style="background: var(--accent)"></span> Recorded update / ED arrival
+                  </div>
+                  <div class="key-item">
+                    <span class="key-dot" style="background: var(--warn)"></span> Needs attention / State desk
+                    escalation
+                  </div>
+                  <div class="key-item">
+                    <span class="key-dot" style="background: var(--danger)"></span> Deadline breached or destination
+                    decline
+                  </div>
+                </div>
+              </details>
+            </div>
+
+            <div class="drawer-footer-disclaimer">
+              Synthetic events derived from current demo records · Newest first
+            </div>
+          </div>
+        </div>
+
+        <!-- ====================================================================
+           MOCKUP 2: THE PERFECTED OUTSTANDING WORK DRAWER
+           ==================================================================== -->
+        <div class="mockup-card" id="card-tasks">
+          <div class="mockup-badge-bar">
+            <div class="mockup-num"><span>●</span> <strong>Mockup 2: Outstanding Work</strong></div>
+            <span class="mockup-tag">Image 2 Rebuilt</span>
+          </div>
+
+          <div class="panel-tasks">
+            <!-- Drawer Header -->
+            <div class="drawer-header">
+              <div class="drawer-header-row">
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <span class="drawer-title">Outstanding work</span>
+                  <span class="urgency-badge critical" id="tasksBadgePending">7 Pending</span>
+                </div>
+                <button class="close-btn" title="Close">✕</button>
+              </div>
+            </div>
+
+            <!-- Sub-filters -->
+            <div class="tasks-filter-bar">
+              <button class="filter-chip active">All 7</button>
+              <button class="filter-chip">Critical Breaches 2</button>
+              <button class="filter-chip">Review Due 5</button>
+            </div>
+
+            <!-- Cards Scroll -->
+            <div class="tasks-list-scroll">
+              <!-- Card 1: Critical Bed Pull Expired -->
+              <div class="task-card" id="task-1">
+                <div class="task-card-top">
+                  <div class="task-avatar critical">BE</div>
+                  <div class="task-info">
+                    <div class="task-title-row">
+                      <span class="task-title">Bed pull expired</span>
+                      <span class="urgency-badge critical">ED Breach / Critical</span>
+                    </div>
+                    <div class="task-meta">
+                      <span class="task-meta-tag">WF-004</span> · <strong>14m overdue</strong> · Flow coordinator
+                    </div>
+                  </div>
+                </div>
+                <div class="task-actions-row">
+                  <button class="btn-ack" onclick="ackTask('task-1')">✓ Acknowledge</button>
+                  <button class="btn-movement">Open movement →</button>
+                </div>
+              </div>
+
+              <!-- Card 2: Critical Multiple Declines -->
+              <div class="task-card" id="task-2">
+                <div class="task-card-top">
+                  <div class="task-avatar critical">MD</div>
+                  <div class="task-info">
+                    <div class="task-title-row">
+                      <span class="task-title">Multiple destinations declined</span>
+                      <span class="urgency-badge critical">ED Breach / Critical</span>
+                    </div>
+                    <div class="task-meta">
+                      <span class="task-meta-tag">WF-009</span> · 5 destinations declined · Flow coordinator
+                    </div>
+                  </div>
+                </div>
+                <div class="task-actions-row">
+                  <button class="btn-ack" onclick="ackTask('task-2')">✓ Acknowledge</button>
+                  <button class="btn-movement">Open movement →</button>
+                </div>
+              </div>
+
+              <!-- Card 3: Transport awaiting departure -->
+              <div class="task-card" id="task-3">
+                <div class="task-card-top">
+                  <div class="task-avatar review">TD</div>
+                  <div class="task-info">
+                    <div class="task-title-row">
+                      <span class="task-title">Transport awaiting departure</span>
+                      <span class="urgency-badge review">Review Due</span>
+                    </div>
+                    <div class="task-meta">
+                      <span class="task-meta-tag">WF-005</span> · accepted 13:25 · ED mental health team
+                    </div>
+                  </div>
+                </div>
+                <div class="task-actions-row">
+                  <button class="btn-ack" onclick="ackTask('task-3')">✓ Acknowledge</button>
+                  <button class="btn-movement">Open movement →</button>
+                </div>
+              </div>
+
+              <!-- Card 4: Transport awaiting departure -->
+              <div class="task-card" id="task-4">
+                <div class="task-card-top">
+                  <div class="task-avatar review">TD</div>
+                  <div class="task-info">
+                    <div class="task-title-row">
+                      <span class="task-title">Transport awaiting departure</span>
+                      <span class="urgency-badge review">Review Due</span>
+                    </div>
+                    <div class="task-meta">
+                      <span class="task-meta-tag">WF-015</span> · accepted 13:40 · Ward nurse in charge
+                    </div>
+                  </div>
+                </div>
+                <div class="task-actions-row">
+                  <button class="btn-ack" onclick="ackTask('task-4')">✓ Acknowledge</button>
+                  <button class="btn-movement">Open movement →</button>
+                </div>
+              </div>
+
+              <!-- Card 5: Transport awaiting departure -->
+              <div class="task-card" id="task-5">
+                <div class="task-card-top">
+                  <div class="task-avatar review">TD</div>
+                  <div class="task-info">
+                    <div class="task-title-row">
+                      <span class="task-title">Transport awaiting departure</span>
+                      <span class="urgency-badge review">Review Due</span>
+                    </div>
+                    <div class="task-meta">
+                      <span class="task-meta-tag">WF-021</span> · accepted 13:35 · Ward nurse in charge
+                    </div>
+                  </div>
+                </div>
+                <div class="task-actions-row">
+                  <button class="btn-ack" onclick="ackTask('task-5')">✓ Acknowledge</button>
+                  <button class="btn-movement">Open movement →</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sticky Footer -->
+            <div class="tasks-sticky-footer">
+              <span class="tasks-foot-stat">7 Facts · 0 Commitments</span>
+              <button class="btn-ack-all" onclick="ackAllTasks()">✓ Acknowledge All Facts</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====================================================================
+           MOCKUP 3: THE PERFECTED TOOLS DRAWER
+           ==================================================================== -->
+        <div class="mockup-card" id="card-tools">
+          <div class="mockup-badge-bar">
+            <div class="mockup-num"><span>●</span> <strong>Mockup 3: Tools Drawer</strong></div>
+            <span class="mockup-tag">Image 3 Rebuilt</span>
+          </div>
+
+          <div class="panel-tools">
+            <div class="drawer-header">
+              <div class="drawer-header-row">
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <span class="drawer-title">Tools</span>
+                  <span class="brand-badge">Whole network</span>
+                </div>
+                <button class="close-btn" title="Close">✕</button>
+              </div>
+            </div>
+
+            <div class="tools-scroll">
+              <!-- Appearance Theme -->
+              <div>
+                <div class="tools-section-title">Appearance Theme</div>
+                <div class="theme-seg-track">
+                  <button class="theme-seg-btn" onclick="setTheme('dark')">🌙 Dark</button>
+                  <button class="theme-seg-btn active" onclick="setTheme('light')">☀️ Light</button>
+                  <button class="theme-seg-btn" onclick="setTheme('light')">💻 System</button>
+                </div>
+              </div>
+
+              <!-- Quick Actions (DO) -->
+              <div>
+                <div class="tools-section-title">Quick Actions</div>
+                <div class="action-tiles-grid">
+                  <div class="action-tile">
+                    <div class="action-tile-icon">📄</div>
+                    <div class="action-tile-body">
+                      <div class="action-tile-name">Handover sheet</div>
+                      <div class="action-tile-desc">Open current handover and print controls</div>
+                    </div>
+                    <span class="action-tile-arrow">›</span>
+                  </div>
+                  <div class="action-tile">
+                    <div class="action-tile-icon">➕</div>
+                    <div class="action-tile-body">
+                      <div class="action-tile-name">Raise a referral</div>
+                      <div class="action-tile-desc">Choose source and enter referral details</div>
+                    </div>
+                    <span class="action-tile-arrow">›</span>
+                  </div>
+                  <div class="action-tile">
+                    <div class="action-tile-icon">⚙️</div>
+                    <div class="action-tile-body">
+                      <div class="action-tile-name">Settings</div>
+                      <div class="action-tile-desc">System configuration and preferences</div>
+                    </div>
+                    <span class="action-tile-arrow">›</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Hotlines Card -->
+              <div class="hotline-card">
+                <div class="hotline-head">
+                  <span class="hotline-title">State Desk Hotlines</span>
+                  <span class="hotline-badge">WA Health Internal</span>
+                </div>
+                <div class="hotline-list">
+                  <div class="hotline-row">
+                    <span>State Bed Desk</span>
+                    <b>ext 8492 · (08) 6457 8492</b>
+                  </div>
+                  <div class="hotline-row">
+                    <span>Mental Health Transport</span>
+                    <b>ext 7210</b>
+                  </div>
+                  <div class="hotline-row">
+                    <span>Chief Psychiatrist Liaison</span>
+                    <b>ext 1102</b>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Ward Directory -->
+              <div>
+                <div class="tools-section-title">Ward Directory (23 Units)</div>
+                <input type="text" class="contact-filter-input" placeholder="Search ward or hospital..." />
+                <div class="contact-list">
+                  <div class="contact-row">
+                    <span><strong>Ward 2K</strong> · Adult Acute</span>
+                    <span class="contact-muted">Contact not held</span>
+                  </div>
+                  <div class="contact-row">
+                    <span><strong>RPH Older Adult</strong> · Mental Health</span>
+                    <span class="contact-muted">Contact not held</span>
+                  </div>
+                  <div class="contact-row">
+                    <span><strong>FSH Adult Secure</strong> · High Acuity</span>
+                    <span class="contact-muted">Contact not held</span>
+                  </div>
+                  <div class="contact-row">
+                    <span><strong>Moodjar</strong> · Rockingham</span>
+                    <span class="contact-muted">Contact not held</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="drawer-footer-disclaimer">Demo tools · Not part of official clinical record</div>
+          </div>
+        </div>
+
+        <!-- ====================================================================
+           MOCKUP 4: THE PERFECTED SERVICE SCOPE POPOVER
+           ==================================================================== -->
+        <div class="mockup-card" id="card-service">
+          <div class="mockup-badge-bar">
+            <div class="mockup-num"><span>●</span> <strong>Mockup 4: Service Scope</strong></div>
+            <span class="mockup-tag">Image 4 Rebuilt</span>
+          </div>
+
+          <div class="panel-service">
+            <!-- Popover Container -->
+            <div class="service-popover-shell">
+              <div class="service-popover-head">
+                <div>
+                  <span class="service-popover-title">Service</span>
+                  <span class="service-popover-hint"> · scopes the lists</span>
+                </div>
+                <span class="service-total-pill">69 Total Open</span>
+              </div>
+
+              <div class="service-options-list" id="serviceOptions">
+                <!-- All Services -->
+                <button class="service-option-btn active" onclick="selectServiceOption(this)">
+                  <div class="service-option-left">
+                    <span class="service-swatch-dot" style="background: var(--muted)"></span>
+                    <span class="service-option-label">All services</span>
+                  </div>
+                  <div class="service-option-right">
+                    <span class="service-count-pill">69 open</span>
+                    <span class="service-check-icon">✓</span>
+                  </div>
+                </button>
+
+                <!-- North Metro -->
+                <button class="service-option-btn" onclick="selectServiceOption(this)">
+                  <div class="service-option-left">
+                    <span class="service-swatch-dot" style="background: var(--svc-north)"></span>
+                    <span class="service-option-label">North Metro</span>
+                  </div>
+                  <div class="service-option-right">
+                    <span class="service-count-pill">14 open</span>
+                    <span class="service-check-icon">✓</span>
+                  </div>
+                </button>
+
+                <!-- South Metro -->
+                <button class="service-option-btn" onclick="selectServiceOption(this)">
+                  <div class="service-option-left">
+                    <span class="service-swatch-dot" style="background: var(--svc-south)"></span>
+                    <span class="service-option-label">South Metro</span>
+                  </div>
+                  <div class="service-option-right">
+                    <span class="service-count-pill">25 open</span>
+                    <span class="service-check-icon">✓</span>
+                  </div>
+                </button>
+
+                <!-- East Metro -->
+                <button class="service-option-btn" onclick="selectServiceOption(this)">
+                  <div class="service-option-left">
+                    <span class="service-swatch-dot" style="background: var(--svc-east)"></span>
+                    <span class="service-option-label">East Metro</span>
+                  </div>
+                  <div class="service-option-right">
+                    <span class="service-count-pill">26 open</span>
+                    <span class="service-check-icon">✓</span>
+                  </div>
+                </button>
+
+                <!-- WACHS -->
+                <button class="service-option-btn" onclick="selectServiceOption(this)">
+                  <div class="service-option-left">
+                    <span class="service-swatch-dot" style="background: var(--svc-wachs)"></span>
+                    <span class="service-option-label">WACHS</span>
+                  </div>
+                  <div class="service-option-right">
+                    <span class="service-count-pill">9 open</span>
+                    <span class="service-check-icon">✓</span>
+                  </div>
+                </button>
+
+                <!-- Private -->
+                <button class="service-option-btn" onclick="selectServiceOption(this)">
+                  <div class="service-option-left">
+                    <span class="service-swatch-dot" style="background: var(--svc-private)"></span>
+                    <span class="service-option-label">Private</span>
+                  </div>
+                  <div class="service-option-right">
+                    <span class="service-count-pill">5 open</span>
+                    <span class="service-check-icon">✓</span>
+                  </div>
+                </button>
+              </div>
+
+              <div class="service-popover-callout">
+                <span class="service-info-icon">ⓘ</span>
+                <span
+                  >One service, or all of them. Capacity, Delays and Movements narrow their lists to it. The bed
+                  shortlist and drawers do not.</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPARISON & ELEVATION AUDIT NOTES -->
+      <section class="comparison-strip">
+        <h2 style="font-size: var(--t-4); font-weight: 700; color: var(--ink)">
+          Key Architecture &amp; UI Upgrades Over Original Images
+        </h2>
+        <div class="comparison-grid">
+          <div class="comp-col">
+            <h3>Mockup 1: Activity Switcher</h3>
+            <ul>
+              <li><strong>Capsule Curvature:</strong> Replaced boxy square borders with 9999px pill geometry.</li>
+              <li><strong>Condensed Height:</strong> Slimmed from 48px to a crisp 34px-38px profile.</li>
+              <li><strong>Elevated Segment:</strong> Floating card effect with micro-drop shadow on active tab.</li>
+              <li><strong>Interactive Tally:</strong> Seamlessly toggle between timeline and live metric tally.</li>
+              <li>
+                <strong>Quick Filter Strip:</strong> One-click filter chips for Escalations, Declines, and Referrals.
+              </li>
+            </ul>
+          </div>
+          <div class="comp-col">
+            <h3>Mockup 2: Outstanding Work</h3>
+            <ul>
+              <li>
+                <strong>Card Architecture:</strong> 12px squircle cards with subtle elevation instead of flat strips.
+              </li>
+              <li><strong>Tonal Avatars:</strong> Red and amber tinted badges (BE, MD, TD) for instant triage.</li>
+              <li><strong>Action Ergonomics:</strong> Modern tactile "Acknowledge" &amp; "Open movement" buttons.</li>
+              <li><strong>Urgency Micro-badging:</strong> Monospace overdue countdown tags.</li>
+              <li><strong>Batch Action:</strong> Prominent sticky bottom bar for "Acknowledge All Facts".</li>
+            </ul>
+          </div>
+          <div class="comp-col">
+            <h3>Mockup 3: Tools Drawer</h3>
+            <ul>
+              <li><strong>Modern Theme Segment:</strong> Floating 3-way toggle (Dark / Light / System).</li>
+              <li>
+                <strong>Interactive Action Tiles:</strong> Rich cards with icons and chevrons instead of plain links.
+              </li>
+              <li><strong>WA Health Hotline:</strong> Authoritative verified clinical callout card with speed-dial.</li>
+              <li><strong>Filtered Directory:</strong> Searchable directory with service pills.</li>
+            </ul>
+          </div>
+          <div class="comp-col">
+            <h3>Mockup 4: Service Scope</h3>
+            <ul>
+              <li><strong>16px Floating Shell:</strong> High-end floating popover with dual-layer diffusion shadow.</li>
+              <li><strong>Service Swatches:</strong> Distinctive plum, teal, slate, rust, and pewter indicators.</li>
+              <li>
+                <strong>Tabular Mono Counts:</strong> High-legibility open bed metrics aligned per health service.
+              </li>
+              <li><strong>Contextual Callout:</strong> Elevated scope disclaimer with info icon.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      // Theme Switcher
+      function setTheme(theme) {
+        document.documentElement.setAttribute("data-theme", theme);
+        document.getElementById("btn-light").classList.toggle("active", theme === "light");
+        document.getElementById("btn-dark").classList.toggle("active", theme === "dark");
+      }
+
+      // View Mode Switcher
+      function setViewMode(mode) {
+        const tabs = document.querySelectorAll(".nav-tab");
+        tabs.forEach((t) => t.classList.remove("active"));
+        event.currentTarget.classList.add("active");
+
+        const cards = {
+          activity: document.getElementById("card-activity"),
+          tasks: document.getElementById("card-tasks"),
+          tools: document.getElementById("card-tools"),
+          service: document.getElementById("card-service"),
+        };
+        const grid = document.getElementById("gridContainer");
+
+        if (mode === "all") {
+          grid.style.display = "grid";
+          grid.style.gridTemplateColumns = "repeat(4, 1fr)";
+          Object.values(cards).forEach((c) => (c.style.display = "flex"));
+        } else {
+          grid.style.display = "flex";
+          grid.style.justifyContent = "center";
+          Object.entries(cards).forEach(([key, card]) => {
+            if (key === mode) {
+              card.style.display = "flex";
+              card.style.width = "480px";
+              card.style.maxWidth = "100%";
+            } else {
+              card.style.display = "none";
+            }
+          });
+        }
+      }
+
+      // Activity Drawer Tabs
+      function toggleActivityTab(tab) {
+        const tabEvents = document.getElementById("act-tab-events");
+        const tabTally = document.getElementById("act-tab-tally");
+        const feed = document.getElementById("activityFeedContainer");
+        const filterRow = document.getElementById("feedFilters");
+
+        if (tab === "events") {
+          tabEvents.classList.add("active");
+          tabTally.classList.remove("active");
+          feed.style.display = "block";
+          filterRow.style.display = "flex";
+        } else {
+          tabEvents.classList.remove("active");
+          tabTally.classList.add("active");
+          filterRow.style.display = "none";
+          feed.innerHTML = `
+          <div style="padding:16px 4px;">
+            <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:12px;">Emergency Department Waiting Tally</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
+              <div style="padding:12px; background:var(--surface-2); border-radius:8px; border:1px solid var(--line);">
+                <div style="font-size:11px; color:var(--muted)">SCGH ED Waiting</div>
+                <div style="font-size:20px; font-weight:700; font-family:var(--mono);">8</div>
+              </div>
+              <div style="padding:12px; background:var(--surface-2); border-radius:8px; border:1px solid var(--line);">
+                <div style="font-size:11px; color:var(--muted)">RPH ED Waiting</div>
+                <div style="font-size:20px; font-weight:700; font-family:var(--mono);">12</div>
+              </div>
+              <div style="padding:12px; background:var(--surface-2); border-radius:8px; border:1px solid var(--line);">
+                <div style="font-size:11px; color:var(--muted)">FSH ED Waiting</div>
+                <div style="font-size:20px; font-weight:700; font-family:var(--mono);">6</div>
+              </div>
+              <div style="padding:12px; background:var(--surface-2); border-radius:8px; border:1px solid var(--line);">
+                <div style="font-size:11px; color:var(--muted)">Overdue Bed Pulls</div>
+                <div style="font-size:20px; font-weight:700; font-family:var(--mono); color:var(--danger);">2</div>
+              </div>
+            </div>
+          </div>
+        `;
+        }
+      }
+
+      // Activity Feed Filter
+      function filterFeed(type, el) {
+        document.querySelectorAll("#feedFilters .filter-chip").forEach((c) => c.classList.remove("active"));
+        el.classList.add("active");
+        const items = document.querySelectorAll(".feed-timeline .feed-item");
+        items.forEach((item) => {
+          if (type === "all" || item.getAttribute("data-type") === type) {
+            item.style.display = "flex";
+          } else {
+            item.style.display = "none";
+          }
+        });
+      }
+
+      // Acknowledge Individual Task
+      function ackTask(taskId) {
+        const card = document.getElementById(taskId);
+        if (card) {
+          card.classList.add("acknowledged");
+          const ackBtn = card.querySelector(".btn-ack");
+          if (ackBtn) {
+            ackBtn.innerHTML = "✓ Acknowledged";
+            ackBtn.style.color = "var(--good)";
+            ackBtn.style.borderColor = "var(--good)";
+            ackBtn.disabled = true;
+          }
+        }
+      }
+
+      // Acknowledge All Tasks
+      function ackAllTasks() {
+        document.querySelectorAll(".task-card").forEach((c) => {
+          c.classList.add("acknowledged");
+          const btn = c.querySelector(".btn-ack");
+          if (btn) {
+            btn.innerHTML = "✓ Acknowledged";
+            btn.style.color = "var(--good)";
+            btn.style.borderColor = "var(--good)";
+            btn.disabled = true;
+          }
+        });
+        const badge = document.getElementById("tasksBadgePending");
+        if (badge) {
+          badge.innerHTML = "0 Pending";
+          badge.className = "urgency-badge";
+          badge.style.background = "var(--good-soft)";
+          badge.style.color = "var(--good)";
+        }
+      }
+
+      // Select Service Option
+      function selectServiceOption(btn) {
+        document.querySelectorAll("#serviceOptions .service-option-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+      }
+    </script>
+  </body>
+</html>

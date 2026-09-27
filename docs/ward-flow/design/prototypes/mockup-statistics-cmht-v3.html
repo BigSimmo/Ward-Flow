@@ -1,0 +1,1943 @@
+<title>Community Team Statistics — Armadale CMHT</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>/* ═══════════════════════════════════════════════════════════════════════════
+   STATISTICS LANGUAGE — THIRD EDITION. THE SOURCE OF RECORD.
+
+   ⚠️ THIS FILE IS THE LANGUAGE. Every v3 statistics mockup copies this file's
+   whole content as the FIRST thing inside its <style> element, byte for byte,
+   then appends its own page rules below a marker. `tests/ward-statistics-v3-
+   language.test.ts` checks that byte-identity and will name the exact character
+   where a copy diverges. Do not hand-patch a copy: edit here and re-cut.
+
+   ═══ WHY A THIRD EDITION, AND WHAT CHANGED ═══
+
+   The owner's brief, 2026-09-06: "utilise the design system like other pages and
+   keep it crisp and white like the same database design system colour scheme …
+   fix those boxes at the top and make them more sophisticated, stylish and not
+   blocky and tacky … live diagrams that are easy to interpret simply, ideally
+   lines or circles, rather than bar charts."
+
+   THE SECOND EDITION WAS ITS OWN COLOUR SCHEME AND THAT IS THE DEFECT IT FIXES.
+   It invented `--ground: #f1f4f8`, `--surface: #ffffff`, `--ink: #0d1421` and a
+   dozen more names that existed nowhere in the product. The application's real
+   system — `src/app/ckb-v2-tokens.css`, the system of record — says
+   `--background: #ffffff` and `--surface: #ffffff`: a genuinely WHITE page, not
+   a grey ground with white cards floating on it. So a statistics screen and the
+   application it belongs to did not look like one product, and the mockup was
+   the thing engineers copy from.
+
+   EVERY VALUE BELOW IS LIFTED FROM THE LIVE SYSTEM, NOT CHOSEN HERE. Each is
+   named with the token it came from so a reader can check it rather than trust
+   it, and so the next person knows this file is a MIRROR and not an author.
+
+   ═══ WHAT THIS EDITION KEEPS FROM THE SECOND, BECAUSE IT IS CLINICAL ═══
+
+     · State is a WORD first. Colour only ever reinforces a word already there.
+     · Absence is stated, never blank.
+     · Figures are tabular. Anything compared down a column lines up.
+     · Every invented figure is listed at the foot of the page.
+     · Contrast floor 4.5:1.
+     · forced-colors and print are handled here, once, for every carrier.
+
+   ═══ WHAT IS DELIBERATELY DIFFERENT ═══
+
+     · WHITE, not a grey ground. Separation is a hairline and a shadow, never a
+       change of fill. `--surface-subtle` (#fbfcfd) is as far as a fill goes.
+     · THE FIGURE STRIP IS NOT A ROW OF BOXES. The owner called the old tiles
+       blocky and tacky, and they were: five bordered cards in a row, each with
+       its own edge, reading as five competing objects. A figure is now a column
+       in one continuous band, separated by a hairline rule rather than by a box.
+       Nothing is nested inside anything.
+     · CHARTS ARE LINES AND ARCS. No bars anywhere in this language. A trend is a
+       line; a proportion is an arc; a single value against a target is a ring.
+       Bars were the second edition's default and they are the least readable
+       shape for "is this going up or down", which is the question these screens
+       are for.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  color-scheme: light;
+
+  /* ── Surfaces. From ckb-v2-tokens.css, light block. The page is WHITE. ──── */
+  --background: #ffffff;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-subtle: #fbfcfd; /* table headers, quiet rows */
+  --surface-wash: #f8fafc; /* footers, quiet strips */
+  --surface-inset: #f4f7fa; /* recessed wells, inputs, chart grounds */
+
+  /* ── Edges. A hairline is how this system separates things. ────────────── */
+  --border: #e6ebf2;
+  --border-strong: #d3dbe5;
+  --border-lux: #dde4ee;
+
+  /* ── Ink. --text-soft is deprecated upstream and deliberately absent. ──── */
+  --text-heading: #0a1220;
+  --text: #1b2533;
+  --text-muted: #55627a;
+
+  /* ── Primary. --primary-500, and the two darker rungs for hover/hold. ──── */
+  --primary: #1d6fb8;
+  --primary-600: #1a66a8;
+  --primary-700: #185c99;
+  --primary-100: #d9e8f8;
+  --primary-soft: #f2f8fe;
+  --primary-contrast: #ffffff;
+
+  /* ── Status. Text/border/bg triples, exactly as the live system pairs them.
+        These are the ONLY hues on the page besides primary. ──────────────── */
+  --success: #0c6b41;
+  --success-bg: #ecfdf3;
+  --success-border: #abefc6;
+  --warning: #8a4d05;
+  --warning-bg: #fffcf6;
+  --warning-border: #f5d9a8;
+  --danger: #a3190f;
+  --danger-bg: #fef3f2;
+  --danger-border: #fda29b;
+
+  /* ── Elevation ladder --e0..--e4 verbatim, plus the hairline ring. ─────── */
+  --e0: none;
+  --e1: 0 1px 2px rgb(13 40 71 / 5%);
+  --e2:
+    0 1px 2px rgb(13 40 71 / 4%), 0 8px 16px -8px rgb(13 40 71 / 9%);
+  --e3:
+    0 2px 4px rgb(13 40 71 / 4%), 0 16px 28px -12px rgb(13 40 71 / 11%);
+  --e4:
+    0 4px 8px rgb(13 40 71 / 5%), 0 32px 56px -20px rgb(13 40 71 / 15%);
+  --ring-hairline: 0 0 0 1px rgb(13 40 71 / 7%);
+
+  /* ── Radius ladder from @theme in globals.css, verbatim. ──────────────── */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-pill: 9999px;
+
+  /* ── Type scale from ckb-v2-tokens.css. --text-2xs is the Chip compact
+        compatibility step; it is NOT a new step to invent against. ───────── */
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-body: 0.9375rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-hero: clamp(1.75rem, 1.2rem + 2vw, 2.25rem);
+
+  /* ── The design system's ONE tap knob (--spacing-tap). Never reduced. ──── */
+  --tap: 3rem;
+
+  /* ── Spacing, 4px grid. ───────────────────────────────────────────────── */
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1rem;
+  --s5: 1.5rem;
+  --s6: 2rem;
+  --s7: 3rem;
+  --s8: 4rem;
+}
+
+/* The dark block mirrors ckb-v2-tokens.css's own dark values. Written to
+   `:root:not([data-theme="light"])` so an explicit light choice always wins, and
+   repeated under `[data-theme="dark"]` so an explicit dark choice wins too. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --background: #0b0e11;
+    --surface: #12161a;
+    --surface-raised: #1c2126;
+    --surface-subtle: #1c2126;
+    --surface-wash: #161a1e;
+    --surface-inset: #0a0c0e;
+    --border: #333a41;
+    --border-strong: #47505a;
+    --border-lux: #3a424a;
+    --text-heading: #fbfcfd;
+    --text: #f4f6f8;
+    --text-muted: #a8b2bd;
+    --primary: #74bdf0;
+    --primary-600: #92cdf5;
+    --primary-700: #92cdf5;
+    --primary-100: #0d2b48;
+    --primary-soft: #123556;
+    --primary-contrast: #0b0e11;
+    --success: #7de0a3;
+    --success-bg: #0f2119;
+    --success-border: #1f4d35;
+    --warning: #e0a63f;
+    --warning-bg: #241c0e;
+    --warning-border: #5a4520;
+    --danger: #f0755c;
+    --danger-bg: #26130f;
+    --danger-border: #6b2a20;
+    --e1: 0 1px 2px rgb(0 0 0 / 40%);
+    --e2:
+      0 1px 2px rgb(0 0 0 / 50%), 0 8px 16px -8px rgb(0 0 0 / 55%);
+    --e3:
+      0 2px 4px rgb(0 0 0 / 50%), 0 16px 28px -12px rgb(0 0 0 / 60%);
+    --e4:
+      0 4px 8px rgb(0 0 0 / 50%), 0 32px 56px -20px rgb(0 0 0 / 65%);
+    --ring-hairline: 0 0 0 1px rgb(255 255 255 / 9%);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0b0e11;
+  --surface: #12161a;
+  --surface-raised: #1c2126;
+  --surface-subtle: #1c2126;
+  --surface-wash: #161a1e;
+  --surface-inset: #0a0c0e;
+  --border: #333a41;
+  --border-strong: #47505a;
+  --border-lux: #3a424a;
+  --text-heading: #fbfcfd;
+  --text: #f4f6f8;
+  --text-muted: #a8b2bd;
+  --primary: #74bdf0;
+  --primary-600: #92cdf5;
+  --primary-700: #92cdf5;
+  --primary-100: #0d2b48;
+  --primary-soft: #123556;
+  --primary-contrast: #0b0e11;
+  --success: #7de0a3;
+  --success-bg: #0f2119;
+  --success-border: #1f4d35;
+  --warning: #e0a63f;
+  --warning-bg: #241c0e;
+  --warning-border: #5a4520;
+  --danger: #f0755c;
+  --danger-bg: #26130f;
+  --danger-border: #6b2a20;
+  --e1: 0 1px 2px rgb(0 0 0 / 40%);
+  --e2:
+    0 1px 2px rgb(0 0 0 / 50%), 0 8px 16px -8px rgb(0 0 0 / 55%);
+  --e3:
+    0 2px 4px rgb(0 0 0 / 50%), 0 16px 28px -12px rgb(0 0 0 / 60%);
+  --e4:
+    0 4px 8px rgb(0 0 0 / 50%), 0 32px 56px -20px rgb(0 0 0 / 65%);
+  --ring-hairline: 0 0 0 1px rgb(255 255 255 / 9%);
+}
+
+/* ─── base ──────────────────────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--text);
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv02", "cv03", "cv04";
+}
+h1,
+h2,
+h3,
+h4,
+p,
+dl,
+dd,
+dt,
+ul,
+ol,
+figure {
+  margin: 0;
+}
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+a {
+  color: inherit;
+}
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.skip {
+  position: absolute;
+  left: var(--s2);
+  top: var(--s2);
+  z-index: 100;
+  padding: 0.5rem 0.85rem;
+  background: var(--primary);
+  color: var(--primary-contrast);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+.skip:focus {
+  transform: none;
+}
+/* Tabular figures everywhere a reader compares. Not a separate font family —
+   the second edition switched to JetBrains Mono for every number, which made
+   figures read as code on a clinical page. One family, tabular numerals. */
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ─── application bar ───────────────────────────────────────────────────── */
+.appbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  flex-wrap: wrap;
+  padding: var(--s3) var(--s5);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  backdrop-filter: saturate(1.4) blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 650;
+  font-size: var(--text-sm);
+  letter-spacing: -0.011em;
+  color: var(--text-heading);
+  white-space: nowrap;
+}
+.mark .dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--primary);
+  flex: none;
+}
+.appbar .spacer {
+  flex: 1 1 2rem;
+}
+
+/* ─── page frame. Symmetrical: the shell has equal gutters, and every band
+       inside it shares one inline padding. The owner asked for symmetry and the
+       second edition did not have it — panels carried their own padding and the
+       page edge moved from row to row. ──────────────────────────────────── */
+.shell {
+  --gutter: clamp(1rem, 0.4rem + 2vw, 2.5rem);
+  max-width: 96rem;
+  margin: 0 auto;
+  padding: var(--s5) var(--gutter) var(--s8);
+}
+.prototype {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.6rem;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: var(--s3);
+}
+
+.masthead {
+  display: grid;
+  gap: var(--s3);
+  padding-bottom: var(--s5);
+}
+.masthead h1 {
+  font-size: var(--text-hero);
+  font-weight: 660;
+  letter-spacing: -0.024em;
+  line-height: 1.12;
+  color: var(--text-heading);
+  text-wrap: balance;
+}
+.eyebrow {
+  font-size: var(--text-2xs);
+  font-weight: 650;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--primary-700);
+}
+.lede {
+  font-size: var(--text-body);
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 58ch;
+}
+.masthead-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s4);
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.liveness {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.pip {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: var(--radius-pill);
+  background: var(--success);
+  flex: none;
+}
+
+/* ⚠️ THE CONVENIENCE NOTICE — owner ruling 17. Every carrier states it once.
+   A rule on the left rather than a tinted card: it is a standing condition, not
+   an alert, and a coloured box would make it compete with the page's own
+   warnings. */
+.scope {
+  border-left: 2px solid var(--primary);
+  padding: var(--s1) 0 var(--s1) var(--s4);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin-bottom: var(--s5);
+}
+.scope strong {
+  color: var(--text-heading);
+  font-weight: 600;
+}
+
+/* ═══ THE FIGURE BAND — this is the "boxes at the top", rebuilt ═══════════
+   ⚠️ THE OWNER CALLED THE OLD TILES BLOCKY AND TACKY. They were five bordered
+   cards in a row, each with its own edge, its own shadow and its own padding —
+   five competing objects where there is one fact per column.
+
+   This is ONE band. Columns are divided by a hairline, not boxed. There is no
+   per-tile border, no per-tile shadow, and no per-tile fill. The figure leads,
+   the label sits under it in the quiet ink, and the trend line — where a column
+   has one — sits at the bottom as a sparkline rather than as a coloured chip.
+
+   Equal columns, so it is symmetrical at every breakpoint: 2 up on a phone,
+   then 3, then all of them. A final odd column spans the full width on the
+   two-column step, so a lone tile never reads as a dropped one. */
+.band {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--e1);
+  overflow: hidden;
+  margin-bottom: var(--s5);
+}
+.band > * {
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+  padding: var(--s5) var(--s5) var(--s4);
+  display: grid;
+  gap: var(--s1);
+  align-content: start;
+  min-width: 0;
+}
+.band > :nth-child(-n + 2) {
+  border-top: 0;
+}
+.band > :nth-child(2n + 1) {
+  border-left: 0;
+}
+.band > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+@media (min-width: 48rem) {
+  .band {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .band > * {
+    border-top: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+  }
+  .band > :nth-child(-n + 3) {
+    border-top: 0;
+  }
+  .band > :nth-child(2n + 1) {
+    border-left: 1px solid var(--border);
+  }
+  .band > :nth-child(3n + 1) {
+    border-left: 0;
+  }
+  .band > :last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+}
+@media (min-width: 78rem) {
+  .band[data-cols="4"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .band[data-cols="4"] > :nth-child(-n + 4) {
+    border-top: 0;
+  }
+  .band[data-cols="4"] > :nth-child(3n + 1) {
+    border-left: 1px solid var(--border);
+  }
+  .band[data-cols="4"] > :nth-child(4n + 1) {
+    border-left: 0;
+  }
+  .band[data-cols="5"] {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  .band[data-cols="5"] > :nth-child(-n + 5) {
+    border-top: 0;
+  }
+  .band[data-cols="5"] > :nth-child(3n + 1) {
+    border-left: 1px solid var(--border);
+  }
+  .band[data-cols="5"] > :nth-child(5n + 1) {
+    border-left: 0;
+  }
+}
+.stat-figure {
+  font-size: 2rem;
+  font-weight: 640;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--text-heading);
+  font-variant-numeric: tabular-nums;
+}
+.stat-figure .unit {
+  font-size: var(--text-md);
+  font-weight: 550;
+  letter-spacing: -0.01em;
+  color: var(--text-muted);
+  margin-left: 0.15rem;
+}
+.stat-label {
+  font-size: var(--text-xs);
+  font-weight: 550;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.stat-note {
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+/* Tone is the FIGURE, never a fill and never an edge. The label already says
+   what the column is; colour reinforces and never carries alone. */
+.stat-figure[data-tone="good"] {
+  color: var(--success);
+}
+.stat-figure[data-tone="warn"] {
+  color: var(--warning);
+}
+.stat-figure[data-tone="crit"] {
+  color: var(--danger);
+}
+.stat-figure[data-tone="primary"] {
+  color: var(--primary-700);
+}
+/* A word beside a figure, for the columns whose value is a name rather than a
+   number — "WF-013, 31h" reads as one fact, not as a truncated statistic. */
+.stat-figure--word {
+  font-size: var(--text-lg);
+  letter-spacing: -0.018em;
+  line-height: 1.25;
+}
+.spark {
+  display: block;
+  width: 100%;
+  height: 1.75rem;
+  margin-top: var(--s2);
+  overflow: visible;
+}
+
+/* ─── panels. One radius, one hairline, one shadow rung. ────────────────── */
+.grid {
+  display: grid;
+  gap: var(--s5);
+  align-items: start;
+}
+@media (min-width: 62rem) {
+  .grid[data-cols="2"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .grid[data-cols="1-2"] {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  }
+  .grid[data-cols="2-1"] {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  }
+}
+.col {
+  display: grid;
+  gap: var(--s5);
+  min-width: 0;
+}
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--e1);
+  overflow: hidden;
+}
+.panel > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+  flex-wrap: wrap;
+  padding: var(--s4) var(--s5);
+  border-bottom: 1px solid var(--border);
+}
+.panel-title {
+  font-size: var(--text-body);
+  font-weight: 620;
+  letter-spacing: -0.012em;
+  color: var(--text-heading);
+}
+.panel-sub {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.panel-body {
+  padding: var(--s5);
+  display: grid;
+  gap: var(--s4);
+}
+.panel-foot {
+  padding: var(--s3) var(--s5);
+  border-top: 1px solid var(--border);
+  background: var(--surface-wash);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.blurb {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ═══ CHARTS — LINES AND ARCS ONLY. NO BARS IN THIS LANGUAGE. ════════════
+   The owner asked for diagrams that show a trend simply and are easy to read:
+   lines and circles, not bar charts. A bar chart answers "how big is each"; a
+   line answers "which way is this going", and that is what every one of these
+   screens is for.
+
+   ⚠️ EVERY CHART CARRIES role="img" WITH A REAL LABEL AND A WRITTEN CAPTION
+   STATING THE SAME NUMBERS IN WORDS. Colour is never the only carrier: a
+   greyscale printout and a reader with no colour perception both get the
+   reading from the caption. */
+.chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.chart-caption {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.chart-caption b {
+  color: var(--text-heading);
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+}
+/* Chart primitives, so five screens draw one chart rather than five. */
+.c-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+  fill: none;
+}
+.c-axis {
+  fill: var(--text-muted);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+.c-line {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.c-line[data-series="b"] {
+  stroke: var(--text-muted);
+  stroke-dasharray: 4 3;
+}
+.c-line[data-tone="good"] {
+  stroke: var(--success);
+}
+.c-line[data-tone="warn"] {
+  stroke: var(--warning);
+}
+.c-line[data-tone="crit"] {
+  stroke: var(--danger);
+}
+.c-area {
+  fill: var(--primary-soft);
+  stroke: none;
+}
+.c-dot {
+  fill: var(--surface);
+  stroke: var(--primary);
+  stroke-width: 2;
+}
+.c-dot[data-tone="crit"] {
+  stroke: var(--danger);
+}
+.c-dot[data-tone="good"] {
+  stroke: var(--success);
+}
+.c-dot--solid {
+  fill: var(--primary);
+  stroke: none;
+}
+.c-threshold {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  fill: none;
+}
+.c-label {
+  fill: var(--text-heading);
+  font-size: 10px;
+  font-weight: 600;
+}
+.c-label--quiet {
+  fill: var(--text-muted);
+  font-weight: 500;
+}
+/* The ring: one value against its whole, drawn as an arc. Replaces every
+   "N of M" bar in the second edition. `pathLength="100"` lets a dash offset be
+   written as a percentage directly, so the markup states the number it draws. */
+.c-ring-track {
+  fill: none;
+  stroke: var(--surface-inset);
+  stroke-width: 10;
+}
+.c-ring-value {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+.c-ring-value[data-tone="good"] {
+  stroke: var(--success);
+}
+.c-ring-value[data-tone="warn"] {
+  stroke: var(--warning);
+}
+.c-ring-value[data-tone="crit"] {
+  stroke: var(--danger);
+}
+.c-ring-centre {
+  fill: var(--text-heading);
+  font-size: 15px;
+  font-weight: 640;
+  font-variant-numeric: tabular-nums;
+  text-anchor: middle;
+}
+.c-ring-sub {
+  fill: var(--text-muted);
+  font-size: 8px;
+  text-anchor: middle;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s5);
+}
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.legend .key {
+  width: 1.1rem;
+  height: 0;
+  border-top: 2px solid var(--primary);
+  flex: none;
+}
+.legend .key[data-series="b"] {
+  border-top-style: dashed;
+  border-top-color: var(--text-muted);
+}
+.legend .key[data-tone="good"] {
+  border-top-color: var(--success);
+}
+.legend .key[data-tone="warn"] {
+  border-top-color: var(--warning);
+}
+.legend .key[data-tone="crit"] {
+  border-top-color: var(--danger);
+}
+.legend b {
+  color: var(--text-heading);
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── tables. No zebra: alternating fills read as meaning on a page where
+       every other fill means something, and a printer drops them. ───────── */
+.table-wrap {
+  overflow-x: auto;
+}
+.dtable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-xs);
+}
+.dtable th,
+.dtable td {
+  padding: 0.6rem var(--s5);
+  text-align: left;
+  vertical-align: baseline;
+  border-bottom: 1px solid var(--border);
+}
+.dtable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-subtle);
+  font-size: var(--text-2xs);
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.dtable tbody th {
+  font-weight: 600;
+  color: var(--text-heading);
+  white-space: nowrap;
+}
+.dtable td {
+  color: var(--text);
+}
+.dtable .n,
+.dtable th.n {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.dtable tbody tr:last-child th,
+.dtable tbody tr:last-child td {
+  border-bottom: 0;
+}
+.dtable tbody tr:hover th,
+.dtable tbody tr:hover td {
+  background: var(--surface-subtle);
+}
+.dtable tfoot th,
+.dtable tfoot td {
+  border-top: 1px solid var(--border-strong);
+  border-bottom: 0;
+  font-weight: 650;
+  color: var(--text-heading);
+  background: var(--surface-subtle);
+}
+
+/* ─── chips. A word first; the fill only reinforces it. ─────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+  font-size: var(--text-2xs);
+  font-weight: 620;
+  letter-spacing: 0.02em;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  background: var(--surface);
+}
+.chip[data-tone="good"] {
+  color: var(--success);
+  border-color: var(--success-border);
+  background: var(--success-bg);
+}
+.chip[data-tone="warn"] {
+  color: var(--warning);
+  border-color: var(--warning-border);
+  background: var(--warning-bg);
+}
+.chip[data-tone="crit"] {
+  color: var(--danger);
+  border-color: var(--danger-border);
+  background: var(--danger-bg);
+}
+.chip[data-tone="primary"] {
+  color: var(--primary-700);
+  border-color: var(--primary-100);
+  background: var(--primary-soft);
+}
+
+/* ─── controls. Nothing stretches; the tap floor grows the box, not the type. */
+.btn {
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.8rem;
+  cursor: pointer;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-heading);
+  white-space: nowrap;
+  justify-self: start;
+  text-decoration: none;
+}
+.btn:hover {
+  background: var(--surface-subtle);
+}
+.btn--primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-contrast);
+}
+.btn--primary:hover {
+  background: var(--primary-600);
+  border-color: var(--primary-600);
+}
+.field {
+  font: inherit;
+  font-size: var(--text-sm);
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-heading);
+  min-width: 0;
+}
+@media (pointer: coarse), (max-width: 40rem) {
+  .btn,
+  .field,
+  .switcher > summary {
+    min-height: var(--tap);
+  }
+}
+
+/* ─── the switcher, for screens that pick one entity from many ──────────── */
+.switcher {
+  position: relative;
+}
+.switcher > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--e1);
+}
+.switcher > summary::-webkit-details-marker {
+  display: none;
+}
+.switcher[open] > summary {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+.sw-eyebrow {
+  font-size: var(--text-2xs);
+  font-weight: 620;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: block;
+  line-height: 1.3;
+}
+.sw-name {
+  font-size: var(--text-sm);
+  font-weight: 620;
+  color: var(--text-heading);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.sw-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  z-index: 60;
+  width: min(24rem, calc(100vw - 2rem));
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--e3);
+  overflow: hidden;
+  padding: var(--s2) 0;
+}
+.sw-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: 0.5rem var(--s4);
+  margin: 0 var(--s2);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+.sw-item:hover {
+  background: var(--surface-subtle);
+}
+.sw-item[aria-current="true"] {
+  background: var(--primary-soft);
+  color: var(--primary-700);
+  font-weight: 620;
+}
+
+/* ─── record rows and absence ───────────────────────────────────────────── */
+.rows > li {
+  padding: var(--s4) var(--s5);
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  gap: 0.3rem;
+}
+.rows > li:last-child {
+  border-bottom: 0;
+}
+.row-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  align-items: center;
+}
+.rid {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-heading);
+  font-size: var(--text-sm);
+}
+.row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.6rem;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.row-meta b {
+  color: var(--text);
+  font-weight: 600;
+}
+/* ⚠️ Absence is STATED. This is the style for the sentence that says so — it is
+   never an empty cell and never a dash. */
+.absent {
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.note {
+  font-size: var(--text-xs);
+  line-height: 1.55;
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-subtle);
+  color: var(--text);
+}
+.note[data-tone="crit"] {
+  border-color: var(--danger-border);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.note[data-tone="warn"] {
+  border-color: var(--warning-border);
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+.note[data-tone="good"] {
+  border-color: var(--success-border);
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+/* ─── footnote ──────────────────────────────────────────────────────────── */
+.footnote {
+  margin-top: var(--s7);
+  padding-top: var(--s5);
+  border-top: 1px solid var(--border);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+.footnote h2 {
+  font-size: var(--text-2xs);
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin: var(--s5) 0 var(--s2);
+}
+.footnote h2:first-child {
+  margin-top: 0;
+}
+.footnote li {
+  padding-left: 1rem;
+  position: relative;
+  margin-bottom: 0.3rem;
+}
+.footnote li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 4px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--border-strong);
+}
+.footnote b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ─── high contrast. Every semantic hue collapses to a system colour, which is
+       survivable only because every state already carries its own WORD. ──── */
+@media (forced-colors: active) {
+  :root {
+    --background: Canvas;
+    --surface: Canvas;
+    --surface-raised: Canvas;
+    --surface-subtle: Canvas;
+    --surface-wash: Canvas;
+    --surface-inset: Canvas;
+    --border: CanvasText;
+    --border-strong: CanvasText;
+    --border-lux: CanvasText;
+    --text-heading: CanvasText;
+    --text: CanvasText;
+    --text-muted: CanvasText;
+    --primary: LinkText;
+    --primary-600: LinkText;
+    --primary-700: LinkText;
+    --primary-100: Canvas;
+    --primary-soft: Canvas;
+    --primary-contrast: Canvas;
+    --success: CanvasText;
+    --success-bg: Canvas;
+    --success-border: CanvasText;
+    --warning: CanvasText;
+    --warning-bg: Canvas;
+    --warning-border: CanvasText;
+    --danger: CanvasText;
+    --danger-bg: Canvas;
+    --danger-border: CanvasText;
+    --e1: none;
+    --e2: none;
+    --e3: none;
+    --e4: none;
+  }
+  .panel,
+  .band,
+  .chip,
+  .btn,
+  .field,
+  .note,
+  .switcher > summary {
+    border: 1px solid CanvasText;
+  }
+  .btn--primary {
+    border-width: 2px;
+  }
+  /* A dashed series is the only thing distinguishing two lines once every hue
+     collapses, so the dash must survive. */
+  .c-line,
+  .c-ring-value,
+  .c-ring-track,
+  .c-threshold,
+  .c-dot {
+    forced-color-adjust: none;
+  }
+}
+
+/* ─── print. Forced to the light palette on all three root forms, because the
+       dark block is written to `:root:not([data-theme="light"])` and would
+       otherwise beat a bare `:root` for every reader who has never touched the
+       theme control — which is the default, not an edge case. ───────────── */
+@media print {
+  :root,
+  :root[data-theme="dark"],
+  :root:not([data-theme="light"]) {
+    --background: #ffffff;
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+    --surface-subtle: #ffffff;
+    --surface-wash: #ffffff;
+    --surface-inset: #ffffff;
+    --border: #999999;
+    --border-strong: #666666;
+    --border-lux: #999999;
+    --text-heading: #000000;
+    --text: #1a1a1a;
+    --text-muted: #333333;
+    --primary: #1d6fb8;
+    --primary-600: #1a66a8;
+    --primary-700: #185c99;
+    --primary-100: #d9e8f8;
+    --primary-soft: #f2f8fe;
+    --primary-contrast: #ffffff;
+    --success: #0c6b41;
+    --success-bg: #ecfdf3;
+    --success-border: #abefc6;
+    --warning: #8a4d05;
+    --warning-bg: #fffcf6;
+    --warning-border: #f5d9a8;
+    --danger: #a3190f;
+    --danger-bg: #fef3f2;
+    --danger-border: #fda29b;
+    --e1: none;
+    --e2: none;
+    --e3: none;
+    --e4: none;
+  }
+  body {
+    background: #ffffff;
+  }
+  .appbar {
+    position: static;
+    backdrop-filter: none;
+  }
+  .panel,
+  .band {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+  .table-wrap {
+    overflow-x: visible;
+  }
+  .dtable thead {
+    display: table-header-group;
+  }
+  .dtable tr {
+    break-inside: avoid;
+  }
+  .btn,
+  .switcher,
+  .skip {
+    display: none;
+  }
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   COMMUNITY TEAM STATISTICS, THIRD EDITION — everything above this marker is
+   the shared statistics-language-v3.css, byte for byte. Everything below is
+   specific to this one screen: Armadale Community Mental Health Team, kept
+   as the worked example from the second edition. Content is unchanged from
+   that edition; only how it is drawn has changed.
+
+   The two rules below have no name in the shared language and are added for
+   exactly that reason, per the brief ("add page rules only for what
+   genuinely has no name"):
+
+     · .lead-fact — the single most important sentence on the page (who is
+       waiting longest, named as a bed reference and a number of days, not a
+       distribution statistic) needs to read larger than an ordinary .blurb
+       paragraph without inventing a whole new panel type for one sentence.
+     · .ring-figure — centres a ring chart's fixed-width SVG within a panel
+       column; the language defines the ring's own drawing primitives but no
+       layout wrapper, because a ring can appear in a figure-band column or
+       centred in a panel body depending on the page.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+.lead-fact {
+  font-size: var(--text-md);
+  line-height: 1.5;
+  color: var(--text);
+}
+.lead-fact b {
+  color: var(--danger);
+  font-weight: 650;
+}
+
+.ring-figure {
+  width: 11rem;
+  margin: 0 auto;
+  display: block;
+}
+</style>
+<a class="skip" href="#stats">Skip to the figures</a>
+
+<div class="appbar">
+  <span class="mark"><span class="dot" aria-hidden="true"></span>Ward Flow</span>
+  <a class="btn" href="#" aria-label="Back to the Armadale Community Mental Health Team home"
+    ><span aria-hidden="true">&larr;</span> Armadale CMHT</a
+  >
+  <span class="spacer"></span>
+  <a class="btn btn--primary" href="#">Open the caseload list</a>
+</div>
+
+<div class="shell" role="main">
+  <p class="prototype">
+    <span>Synthetic prototype</span><span aria-hidden="true">&middot;</span><span>No real patient data</span
+    ><span aria-hidden="true">&middot;</span><span>Every invented figure listed at the foot</span>
+  </p>
+
+  <header class="masthead">
+    <span class="eyebrow">Community team statistics</span>
+    <h1>Armadale Community Mental Health Team</h1>
+    <p class="lede">
+      <b>East Metropolitan Health Service</b> &middot; covers 7 suburbs &mdash; Armadale, Kelmscott, Seville Grove,
+      Mount Nasura, Wungong, Harrisdale and Piara Waters &mdash; a fixed-term view of this team&rsquo;s own numbers,
+      not a comparison against any other team.
+    </p>
+    <div class="masthead-row">
+      <p class="blurb">Reporting window: this month so far &middot; snapshot figures as at <b>08:55</b> today.</p>
+      <span class="liveness"><span class="pip" aria-hidden="true"></span>Live &middot; confirmed 08:55</span>
+    </div>
+  </header>
+
+  <p class="scope">
+    <strong>This is Armadale Community Mental Health Team&rsquo;s own statistics page.</strong> Every count below
+    belongs to this team and to this month unless stated otherwise &mdash; never a network-wide figure and never
+    another team&rsquo;s. It is a read-only view: nothing here opens a case, accepts a referral, or books a contact.
+    <strong>This board is a convenience, not a source of truth</strong> &mdash; confirm any bed count with the ward
+    itself, by phone, before treating it as final. <strong>Every figure on this page is invented for this
+    prototype</strong> &mdash; see &ldquo;What is invented&rdquo; at the foot before reading any number as real.
+  </p>
+
+  <!-- ══════════ AT A GLANCE — CAN WE TAKE MORE, AND WHO IS WAITING ON US ══════════ -->
+  <div class="band" data-cols="5" id="stats">
+    <div>
+      <p class="stat-figure" data-tone="primary">168</p>
+      <p class="stat-label">People currently open to the team</p>
+    </div>
+    <div>
+      <p class="stat-figure" data-tone="warn">+7</p>
+      <p class="stat-label">Net change this month</p>
+      <p class="stat-note">24 opened minus 17 closed</p>
+    </div>
+    <div>
+      <p class="stat-figure" data-tone="warn">6</p>
+      <p class="stat-label">Referrals still awaiting this team&rsquo;s answer</p>
+      <p class="stat-note">3 of these hold a hospital bed</p>
+    </div>
+    <div>
+      <p class="stat-figure" data-tone="crit">3</p>
+      <p class="stat-label">Hospital beds waiting on this team to accept</p>
+      <p class="stat-note">16 bed-days owed so far, still accruing</p>
+    </div>
+    <div>
+      <p class="stat-figure stat-figure--word" data-tone="crit">HB-1 &middot; 9 days</p>
+      <p class="stat-label">Longest wait on this team&rsquo;s acceptance</p>
+      <p class="stat-note">Armadale Health Campus, Ward 2</p>
+    </div>
+  </div>
+
+  <!-- ══════════ THE SEAM: WARD BEDS WAITING ON THIS TEAM ══════════ -->
+  <section class="panel">
+    <header>
+      <h2 class="panel-title">Ward beds waiting on this team</h2>
+      <span class="panel-sub">Right now &mdash; not a monthly count</span>
+    </header>
+    <div class="panel-body">
+      <p class="lead-fact">
+        One person at Armadale Health Campus has been waiting <b>9 days</b> for this team to accept the referral
+        before their ward can release the bed they are in. This is the single longest wait on this page, and it is
+        a person&rsquo;s wait, not an average.
+      </p>
+      <div class="table-wrap">
+        <table class="dtable">
+          <caption>
+            The 3 hospital beds currently held up specifically because this team has not yet accepted the referral.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Reference</th>
+              <th scope="col">Ward</th>
+              <th scope="col" class="n">Days waiting on this team</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">HB-1 <span class="chip" data-tone="crit">Longest wait</span></th>
+              <td>Armadale Health Campus, Ward 2</td>
+              <td class="n">9</td>
+            </tr>
+            <tr>
+              <th scope="row">HB-2 <span class="chip" data-tone="warn">Stalled</span></th>
+              <td>Armadale Health Campus, Ward 2</td>
+              <td class="n">5</td>
+            </tr>
+            <tr>
+              <th scope="row">HB-3</th>
+              <td>Royal Perth Hospital PECC</td>
+              <td class="n">2</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row">Total waiting on this team</th>
+              <td></td>
+              <td class="n">3</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    <p class="panel-foot">
+      <strong>This board is a convenience, not a source of truth (owner ruling R17).</strong> Before offering or
+      re-purposing any of these three beds, the ward must be called to confirm the bed is still held on this
+      referral &mdash; a placement decision must never be made from this page alone. <b>3</b> of the <b>6</b>
+      referrals still awaiting this team&rsquo;s answer, in &ldquo;Referrals into the team&rdquo; below, are these
+      same three beds.
+    </p>
+  </section>
+
+  <!-- ══════════ THE CENTREPIECE: DEMAND VERSUS CAPACITY ══════════ -->
+  <section class="panel">
+    <header>
+      <h2 class="panel-title">Demand versus capacity, over time</h2>
+      <span class="panel-sub">Cases opened against cases closed, last 6 months</span>
+    </header>
+    <div class="panel-body">
+      <p class="blurb">
+        A team taking on more than it discharges shows up here as a widening gap, not as any single figure above.
+        The shaded band is every case this team opened beyond what it also closed that month &mdash; work added to
+        the list faster than it came off.
+      </p>
+      <svg
+        class="chart"
+        viewBox="0 0 640 232"
+        role="img"
+        aria-label="Cases opened versus cases closed, by month, March to August: opened 18, 20, 21, 23, 24, 24; closed 19, 18, 17, 18, 17, 17. The team closed slightly more than it opened in March. From April on it opened more than it closed every month, and the gap widened to 7 cases this month, shown as the shaded band."
+      >
+        <line x1="44" y1="20" x2="620" y2="20" class="c-grid" />
+        <line x1="44" y1="112" x2="620" y2="112" class="c-grid" />
+        <line x1="44" y1="204" x2="620" y2="204" class="c-grid" />
+        <text x="8" y="23" class="c-axis">24</text>
+        <text x="8" y="115" class="c-axis">12</text>
+        <text x="8" y="207" class="c-axis">0</text>
+        <text x="44" y="222" class="c-axis">Mar</text>
+        <text x="159" y="222" class="c-axis" text-anchor="middle">Apr</text>
+        <text x="274" y="222" class="c-axis" text-anchor="middle">May</text>
+        <text x="390" y="222" class="c-axis" text-anchor="middle">Jun</text>
+        <text x="505" y="222" class="c-axis" text-anchor="middle">Jul</text>
+        <text x="620" y="222" class="c-axis" text-anchor="end">Aug</text>
+
+        <!-- the gap: cases opened beyond cases closed, April to August -->
+        <path
+          class="c-area"
+          d="M 159,50.7 L 274,43 L 390,27.7 L 505,20 L 620,20 L 620,73.7 L 505,73.7 L 390,66 L 274,73.7 L 159,66 Z"
+        />
+
+        <!-- cases closed -->
+        <path
+          class="c-line"
+          data-series="b"
+          d="M 44,58.3 L 159,66 L 274,73.7 L 390,66 L 505,73.7 L 620,73.7"
+        />
+        <circle class="c-dot" data-series="b" cx="620" cy="73.7" r="4" />
+
+        <!-- cases opened -->
+        <path class="c-line" d="M 44,66 L 159,50.7 L 274,43 L 390,27.7 L 505,20 L 620,20" />
+        <circle class="c-dot" cx="620" cy="20" r="4" />
+      </svg>
+      <ul class="legend">
+        <li><span class="key" data-series="a" aria-hidden="true"></span>Cases opened &mdash; <b>24</b> this month</li>
+        <li><span class="key" data-series="b" aria-hidden="true"></span>Cases closed &mdash; <b>17</b> this month</li>
+      </ul>
+      <p class="chart-caption">
+        Cases opened each month, March to August: <b>18</b>, <b>20</b>, <b>21</b>, <b>23</b>, <b>24</b>, <b>24</b>.
+        Cases closed over the same months: <b>19</b>, <b>18</b>, <b>17</b>, <b>18</b>, <b>17</b>, <b>17</b>. The team
+        closed more than it opened only in March; every month since, it has opened more than it closed, and that
+        gap &mdash; the shaded band above &mdash; has widened to <b>7</b> cases this month.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══════════ TEAM IDENTITY: NEAR-DUPLICATE NAMES ══════════ -->
+  <section class="panel">
+    <header>
+      <h2 class="panel-title">Team identity &mdash; near-duplicate names</h2>
+      <span class="panel-sub">A live routing hazard, not a data-quality note</span>
+    </header>
+    <div class="panel-body">
+      <p class="blurb">
+        Armadale Community Mental Health Team is recorded under more than one spelling in the referral system. A
+        referral addressed to a name below that is not this team&rsquo;s canonical record does not appear anywhere
+        else on this page &mdash; the software does not decide two spellings are the same service, so nobody is
+        reading it.
+      </p>
+      <ul class="rows">
+        <li>
+          <div class="row-line">
+            <span class="rid">Armadale CMHT</span>
+            <span class="chip" data-tone="good">Canonical &mdash; this page</span>
+          </div>
+          <p class="row-meta">Every figure on this page is counted against this record and no other.</p>
+        </li>
+        <li>
+          <div class="row-line">
+            <span class="rid">Armadale Adult Mental Health Team</span>
+            <span class="chip" data-tone="crit">Not this record</span>
+          </div>
+          <p class="row-meta">
+            A retired name for the same service. <b>2</b> referrals sent here this month are not counted in
+            &ldquo;Referrals into the team&rdquo; below, and nobody has actioned them.
+          </p>
+        </li>
+        <li>
+          <div class="row-line">
+            <span class="rid">Armadale Community MH Team</span>
+            <span class="chip" data-tone="crit">Not this record</span>
+          </div>
+          <p class="row-meta">
+            A misspelling used by one referring GP clinic. <b>1</b> referral sent here this month is likewise
+            uncounted below and unactioned.
+          </p>
+        </li>
+      </ul>
+    </div>
+    <p class="panel-foot">
+      <strong><b>3</b> referrals this month are sitting under a name that is not this canonical record</strong> and
+      are known only because someone happened to notice them &mdash; others addressed to a spelling nobody has
+      flagged yet may exist unseen. Merging these automatically is not a fix this software should make quietly;
+      the referrer needs to re-send to the correct record, or a person needs to move it by hand.
+    </p>
+  </section>
+
+  <div class="grid" data-cols="2-1">
+    <div class="col">
+      <!-- ══════════ CASELOAD & CAPACITY ══════════ -->
+      <section class="panel">
+        <header>
+          <h2 class="panel-title">Caseload &amp; capacity</h2>
+          <span class="panel-sub">Open today, and this month&rsquo;s movement</span>
+        </header>
+        <div class="panel-body">
+          <p class="blurb">
+            Every case currently open to this team, and how long each one has been open. A long-open case is not,
+            by itself, evidence that anything has gone wrong &mdash; but a caseload that keeps growing, month on
+            month, is the reason the seam above keeps producing waits.
+          </p>
+          <div class="band" data-cols="2">
+            <div>
+              <p class="stat-figure" data-tone="good">24</p>
+              <p class="stat-label">New cases opened this month</p>
+              <p class="stat-note">From accepted referrals</p>
+            </div>
+            <div>
+              <p class="stat-figure">17</p>
+              <p class="stat-label">Cases closed this month</p>
+            </div>
+          </div>
+          <svg
+            class="chart"
+            viewBox="0 0 400 100"
+            role="img"
+            aria-label="Of the 168 people currently open to the team: 44 have been open under three months, 58 for three months to a year, 46 for one to three years, and 20 for over three years."
+          >
+            <line x1="30" y1="55" x2="370" y2="55" class="c-grid" />
+            <circle class="c-dot--solid" cx="60" cy="55" r="15" />
+            <circle class="c-dot--solid" cx="150" cy="55" r="18" />
+            <circle class="c-dot--solid" cx="240" cy="55" r="16" />
+            <circle class="c-dot--solid" cx="330" cy="55" r="11" />
+            <text x="60" y="18" class="c-label" text-anchor="middle">44</text>
+            <text x="150" y="18" class="c-label" text-anchor="middle">58</text>
+            <text x="240" y="18" class="c-label" text-anchor="middle">46</text>
+            <text x="330" y="18" class="c-label" text-anchor="middle">20</text>
+            <text x="60" y="85" class="c-axis" text-anchor="middle">Under 3mo</text>
+            <text x="150" y="85" class="c-axis" text-anchor="middle">3mo&ndash;1yr</text>
+            <text x="240" y="85" class="c-axis" text-anchor="middle">1&ndash;3yr</text>
+            <text x="330" y="85" class="c-axis" text-anchor="middle">Over 3yr</text>
+          </svg>
+          <p class="chart-caption">
+            Of the <b>168</b> people currently open to the team: <b>44</b> have been open under three months,
+            <b>58</b> for three months to a year, <b>46</b> for one to three years, and <b>20</b> for over three
+            years.
+          </p>
+        </div>
+      </section>
+
+      <!-- ══════════ REFERRALS INTO THE TEAM ══════════ -->
+      <section class="panel">
+        <header>
+          <h2 class="panel-title">Referrals into the team</h2>
+          <span class="panel-sub">This month</span>
+        </header>
+        <div class="panel-body">
+          <div class="band" data-cols="4">
+            <div>
+              <p class="stat-figure" data-tone="primary">36</p>
+              <p class="stat-label">Received</p>
+              <p class="stat-note">All sources &mdash; canonical record only, see identity panel above</p>
+            </div>
+            <div>
+              <p class="stat-figure" data-tone="good">24</p>
+              <p class="stat-label">Accepted</p>
+              <p class="stat-note">Also counted in this month&rsquo;s new cases opened</p>
+            </div>
+            <div>
+              <p class="stat-figure">6</p>
+              <p class="stat-label">Declined</p>
+              <p class="stat-note">Refusal recorded, never silent &mdash; split below</p>
+            </div>
+            <div>
+              <p class="stat-figure" data-tone="primary">67<span class="unit">%</span></p>
+              <p class="stat-label">Acceptance rate</p>
+              <p class="stat-note">24 of 36 &mdash; not a target, a description</p>
+            </div>
+          </div>
+          <p class="blurb">
+            <strong>Why a referral was declined is two different answers, and this page never sums them.</strong>
+            A &ldquo;no&rdquo; for want of capacity may change as soon as a case closes; a &ldquo;no&rdquo; because
+            the referral was never this team&rsquo;s to take will not change no matter how much capacity opens up.
+          </p>
+          <div class="band" data-cols="2">
+            <div>
+              <p class="stat-figure" data-tone="warn">4</p>
+              <p class="stat-label">Declined for want of capacity</p>
+              <p class="stat-note">No clinician available this month &mdash; may change next month</p>
+            </div>
+            <div>
+              <p class="stat-figure">2</p>
+              <p class="stat-label">Declined as not this team&rsquo;s catchment or cohort</p>
+              <p class="stat-note">The referral was never this team&rsquo;s to take &mdash; capacity does not change this</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="dtable">
+              <caption>
+                The 6 declined referrals this month, by reason and by which of the two answers it is.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Reason recorded</th>
+                  <th scope="col">Which answer</th>
+                  <th scope="col" class="n">Referrals</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Team at capacity &mdash; no clinician available this month</th>
+                  <td>No capacity</td>
+                  <td class="n">4</td>
+                </tr>
+                <tr>
+                  <th scope="row">Client&rsquo;s address falls outside the team&rsquo;s catchment</th>
+                  <td>Not this team&rsquo;s catchment or cohort</td>
+                  <td class="n">1</td>
+                </tr>
+                <tr>
+                  <th scope="row">Client&rsquo;s age is outside this team&rsquo;s cohort &mdash; referred to the youth team instead</th>
+                  <td>Not this team&rsquo;s catchment or cohort</td>
+                  <td class="n">1</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th scope="row">Total declined</th>
+                  <td></td>
+                  <td class="n">6</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ WHERE REFERRALS CAME FROM ══════════ -->
+      <section class="panel">
+        <header>
+          <h2 class="panel-title">Where referrals came from</h2>
+          <span class="panel-sub">By source, this month</span>
+        </header>
+        <div class="table-wrap">
+          <table class="dtable">
+            <caption>
+              All 36 referrals received this month, by source.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Source</th>
+                <th scope="col" class="n">Referrals</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Ward discharge</th>
+                <td class="n">11</td>
+              </tr>
+              <tr>
+                <th scope="row">Emergency department</th>
+                <td class="n">8</td>
+              </tr>
+              <tr>
+                <th scope="row">GP</th>
+                <td class="n">10</td>
+              </tr>
+              <tr>
+                <th scope="row">Self or family</th>
+                <td class="n">5</td>
+              </tr>
+              <tr>
+                <th scope="row">Another community team</th>
+                <td class="n">2</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row">Total received</th>
+                <td class="n">36</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <p class="panel-foot">
+          The <b>11</b> ward-discharge referrals here include the <b>3</b> currently waiting on this team&rsquo;s
+          acceptance in the seam figures at the top of this page &mdash; they are a subset of the 11, not an
+          addition to it.
+        </p>
+      </section>
+    </div>
+
+    <div class="col">
+      <!-- ══════════ TIME TO FIRST CONTACT ══════════ -->
+      <section class="panel">
+        <header>
+          <h2 class="panel-title">Time to first contact</h2>
+          <span class="panel-sub">24 new cases opened this month</span>
+        </header>
+        <div class="panel-body">
+          <p class="blurb">
+            <strong>Read the ring before the average.</strong> The average below is a single number standing in for
+            24 very different waits; the ring is the share of those 24 cases seen within a week, and is the more
+            honest answer to &ldquo;how long before someone is first seen.&rdquo;
+          </p>
+          <p class="chart-caption">The ring below reads as the share of this month&rsquo;s accepted referrals seen within 7 days.</p>
+          <svg
+            class="chart ring-figure"
+            viewBox="0 0 120 120"
+            role="img"
+            aria-label="67% of the 24 new cases opened this month were seen within 7 days of acceptance — 16 of 24. Of the 24: 5 had first contact within 2 days, 11 at 3 to 7 days, 6 at 8 to 14 days, 2 over 14 days."
+          >
+            <circle class="c-ring-track" cx="60" cy="60" r="50" pathLength="100" />
+            <circle class="c-ring-value" cx="60" cy="60" r="50" pathLength="100" stroke-dasharray="67 100" />
+            <text x="60" y="64" class="c-ring-centre">67%</text>
+            <text x="60" y="78" class="c-ring-sub">within 7 days</text>
+          </svg>
+          <p class="chart-caption">
+            <b>67%</b> of the 24 new cases opened this month &mdash; <b>16</b> of <b>24</b> &mdash; were seen within
+            7 days of acceptance. Of the 24: <b>5</b> had first contact within 2 days, <b>11</b> at 3&ndash;7 days,
+            <b>6</b> at 8&ndash;14 days, <b>2</b> over 14 days.
+          </p>
+          <div class="band" data-cols="2">
+            <div>
+              <p class="stat-figure">6.4<span class="unit">days</span></p>
+              <p class="stat-label">Average to first contact</p>
+              <p class="stat-note">Pulled upward by two long waits</p>
+            </div>
+            <div>
+              <p class="stat-figure">5<span class="unit">days</span></p>
+              <p class="stat-label">Median to first contact</p>
+              <p class="stat-note">The middle case of the 24</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ WHICH SUBURBS ROUTE HERE ══════════ -->
+      <section class="panel">
+        <header>
+          <h2 class="panel-title">Which suburbs route here</h2>
+          <span class="panel-sub">By suburb, this month</span>
+        </header>
+        <div class="table-wrap">
+          <table class="dtable">
+            <caption>
+              All 36 referrals received this month, by the client&rsquo;s suburb.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Suburb</th>
+                <th scope="col" class="n">Referrals</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Armadale</th>
+                <td class="n">14</td>
+              </tr>
+              <tr>
+                <th scope="row">Kelmscott</th>
+                <td class="n">7</td>
+              </tr>
+              <tr>
+                <th scope="row">Seville Grove</th>
+                <td class="n">6</td>
+              </tr>
+              <tr>
+                <th scope="row">Mount Nasura</th>
+                <td class="n">3</td>
+              </tr>
+              <tr>
+                <th scope="row">Wungong</th>
+                <td class="n">2</td>
+              </tr>
+              <tr>
+                <th scope="row">Harrisdale</th>
+                <td class="n">2</td>
+              </tr>
+              <tr>
+                <th scope="row">Piara Waters <span class="chip" data-tone="warn">Recently corrected</span></th>
+                <td class="n">2</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row">Total received</th>
+                <td class="n">36</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <p class="panel-foot">
+          <strong>Piara Waters&rsquo; routing was corrected on 2026-08-30.</strong> Before that date, referrals from
+          this suburb were sent to a team that does not exist in the network and are not reflected in this
+          month&rsquo;s figures. If a referrer&rsquo;s own records still show an older destination for this suburb,
+          this page &mdash; not theirs &mdash; is the corrected one.
+        </p>
+      </section>
+    </div>
+  </div>
+
+  <!-- ══════════ GOVERNANCE ══════════ -->
+  <div class="footnote">
+    <h2>What is invented</h2>
+    <ul>
+      <li>
+        This team&rsquo;s name, the health service it sits under, and the seven suburbs listed &mdash; unchanged
+        from the second edition of this page, kept as the worked example.
+      </li>
+      <li>
+        Every operational figure on this page &mdash; the 168 open cases and their four duration bands, this
+        month&rsquo;s new and closed cases, the 3 hospital beds waiting on this team and their day counts, all
+        referral counts and decline reasons, the referral-source and suburb tables, the six months of cases-opened
+        and cases-closed figures behind the centrepiece chart, the time-to-first-contact average, median and ring
+        share, and the near-duplicate-name referral counts.
+      </li>
+      <li>
+        This team&rsquo;s current time, &ldquo;confirmed 08:55,&rdquo; the reporting window, &ldquo;this month so
+        far,&rdquo; and the correction date given for Piara Waters&rsquo; routing.
+      </li>
+    </ul>
+
+    <h2>How the numbers agree with each other</h2>
+    <ul>
+      <li>
+        <b>168</b> people currently open to the team = <b>44</b> open under 3 months + <b>58</b> at 3
+        months&ndash;1 year + <b>46</b> at 1&ndash;3 years + <b>20</b> over 3 years.
+      </li>
+      <li>
+        <b>24</b> new cases opened this month minus <b>17</b> cases closed this month = a net change of <b>+7</b>,
+        the same +7 the centrepiece chart shows as August&rsquo;s gap.
+      </li>
+      <li>
+        The 3 hospital beds waiting on this team = <b>9</b> + <b>5</b> + <b>2</b> days each, waited so far, summing
+        to <b>16</b> bed-days currently owed. The longest, <b>9</b> days, is the single wait named at the top of
+        the page.
+      </li>
+      <li>
+        <b>36</b> referrals received this month = <b>24</b> accepted + <b>6</b> declined + <b>6</b> still open. The
+        <b>24</b> accepted are the same 24 counted in this month&rsquo;s <b>24</b> new cases opened. <b>3</b> of the
+        <b>6</b> still open are the 3 beds waiting on this team above.
+      </li>
+      <li>
+        The <b>6</b> declined referrals = <b>4</b> declined for want of capacity + <b>1</b> outside the catchment
+        area + <b>1</b> outside this team&rsquo;s age cohort, and the last two sum to the <b>2</b> declined as not
+        this team&rsquo;s catchment or cohort. These two totals are never added into one figure on this page.
+      </li>
+      <li>
+        The <b>36</b> referrals received, by source, = <b>11</b> ward discharge + <b>8</b> emergency department +
+        <b>10</b> GP + <b>5</b> self or family + <b>2</b> another community team.
+      </li>
+      <li>
+        The same <b>36</b> referrals, by suburb, = <b>14</b> Armadale + <b>7</b> Kelmscott + <b>6</b> Seville Grove
+        + <b>3</b> Mount Nasura + <b>2</b> Wungong + <b>2</b> Harrisdale + <b>2</b> Piara Waters.
+      </li>
+      <li>
+        The 24 new cases opened this month, by days to first contact, = <b>5</b> within 2 days + <b>11</b> at
+        3&ndash;7 days + <b>6</b> at 8&ndash;14 days + <b>2</b> over 14 days. <b>5</b> + <b>11</b> = <b>16</b> of
+        <b>24</b>, the <b>67%</b> shown by the ring.
+      </li>
+      <li>
+        The centrepiece chart&rsquo;s cases opened, March to August, = <b>18</b>, <b>20</b>, <b>21</b>, <b>23</b>,
+        <b>24</b>, <b>24</b>; cases closed over the same months = <b>19</b>, <b>18</b>, <b>17</b>, <b>18</b>,
+        <b>17</b>, <b>17</b>. August&rsquo;s pair, 24 and 17, are the same figures as this month&rsquo;s new cases
+        opened and cases closed above.
+      </li>
+      <li>Acceptance rate <b>67%</b> is 24 &divide; 36, rounded to the nearest whole per cent.</li>
+      <li>
+        The <b>3</b> referrals sitting under a non-canonical name for this team &mdash; <b>2</b> under the retired
+        name, <b>1</b> under the misspelling &mdash; are counted in neither the 36 received above nor anywhere else
+        on this page.
+      </li>
+    </ul>
+
+    <h2>What this page does not know</h2>
+    <p>
+      This team does not yet record which of its own clinicians made a first contact, so first contact cannot be
+      split by discipline on this page. That is different from a zero: a zero here means the count was taken and
+      came back none; this means the count was never possible to take.
+    </p>
+    <p>
+      The <b>3</b> referrals sitting under a non-canonical name are known only because someone happened to notice
+      them. This page cannot say whether other referrals are sitting under some other spelling nobody has flagged
+      yet &mdash; the count of <b>3</b> is a floor, not a ceiling.
+    </p>
+
+    <h2>Not a duty roster, and not a performance target</h2>
+    <ul>
+      <li>
+        The time-to-first-contact figures describe what happened, not what should happen. No target wait is drawn
+        on this page, and a shorter median next month is not, by itself, evidence that anything changed for the
+        better.
+      </li>
+      <li>
+        A zero anywhere on this page is a real, measured zero unless a caption beside it says the figure could not
+        be taken. It is never used to mean &ldquo;not tracked.&rdquo;
+      </li>
+      <li>
+        Nothing on this page places a patient in a bed or accepts a referral on the team&rsquo;s behalf. A decision
+        made from a number here without a phone call to confirm it is a decision made on a convenience, not a
+        source of truth.
+      </li>
+    </ul>
+  </div>
+</div>

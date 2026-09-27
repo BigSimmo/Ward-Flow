@@ -1,0 +1,979 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ward Flow - Header Badge Size Variations</title>
+    <style>
+      :root {
+        --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+        --bg: #f8fafc;
+        --surface: #ffffff;
+        --surface-subtle: #f8fafc;
+        --surface-inset: #f1f5f9;
+        --line: #cbd5e1;
+        --line-subtle: #e2e8f0;
+        --ink: #0f172a;
+        --ink-muted: #64748b;
+        --ink-subtle: #94a3b8;
+
+        /* WA Health Service Tokens */
+        --svc-statewide: #0071a5;
+        --svc-statewide-bg: #ecfdf5;
+        --svc-statewide-border: #a7f3d0;
+        --svc-statewide-ink: #065f46;
+
+        --svc-east: #00825e;
+        --svc-east-bg: #ecfdf5;
+        --svc-east-border: #a7f3d0;
+        --svc-east-ink: #065f46;
+
+        --svc-north: #990057;
+        --svc-north-bg: #fdf2f8;
+        --svc-north-border: #fbcfe8;
+        --svc-north-ink: #831843;
+
+        --svc-south: #5a2476;
+        --svc-south-bg: #faf5ff;
+        --svc-south-border: #e9d5ff;
+        --svc-south-ink: #581c87;
+
+        --svc-wachs: #005b94;
+        --svc-wachs-bg: #f0f9ff;
+        --svc-wachs-border: #bae6fd;
+        --svc-wachs-ink: #0369a1;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: var(--font-family);
+        background-color: var(--bg);
+        color: var(--ink);
+        padding: 32px 24px 100px;
+        line-height: 1.5;
+      }
+
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+
+      .header-banner {
+        background: var(--surface);
+        border: 1px solid var(--line-subtle);
+        border-radius: 16px;
+        padding: 24px 28px;
+        margin-bottom: 28px;
+        box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+      }
+      .badge-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 9px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 750;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+      }
+      p.lead {
+        color: var(--ink-muted);
+        font-size: 14px;
+        margin-top: 6px;
+      }
+
+      /* GLOBAL SERVICE TOGGLER FOR COMPARISON */
+      .filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--surface);
+        border: 1px solid var(--line-subtle);
+        border-radius: 12px;
+        padding: 10px 16px;
+        margin-bottom: 28px;
+        box-shadow: 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+        flex-wrap: wrap;
+      }
+      .filter-label {
+        font-size: 12px;
+        font-weight: 750;
+        color: var(--ink);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-right: 6px;
+      }
+      .svc-btn {
+        padding: 5px 12px;
+        border-radius: 9999px;
+        border: 1px solid var(--line-subtle);
+        background: var(--surface-subtle);
+        font-size: 11.5px;
+        font-weight: 650;
+        color: var(--ink-muted);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.15s ease;
+      }
+      .svc-btn:hover {
+        background: #f1f5f9;
+        color: var(--ink);
+      }
+      .svc-btn.active {
+        background: #0f172a;
+        color: #ffffff;
+        border-color: #0f172a;
+      }
+      .dot-pip {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+      }
+
+      /* CARDS GRID */
+      .variations-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+      }
+
+      .variation-card {
+        background: var(--surface);
+        border: 1px solid var(--line-subtle);
+        border-radius: 16px;
+        padding: 22px 24px;
+        box-shadow: 0 4px 14px -3px rgba(15, 23, 42, 0.04);
+        transition:
+          border-color 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+      .variation-card.recommended {
+        border: 2px solid #2563eb;
+        box-shadow: 0 8px 24px -4px rgba(37, 99, 235, 0.12);
+      }
+      .card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .card-title {
+        font-size: 16px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .rec-tag {
+        background: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+        font-size: 11px;
+        font-weight: 750;
+        padding: 2px 8px;
+        border-radius: 9999px;
+      }
+      .card-specs {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--ink-muted);
+        background: var(--surface-inset);
+        padding: 3px 8px;
+        border-radius: 6px;
+      }
+      .card-desc {
+        font-size: 13px;
+        color: #475569;
+        margin-bottom: 14px;
+      }
+
+      /* BAR PREVIEW CONTAINER */
+      .bar-preview {
+        background: #ffffff;
+        border: 1px solid var(--line-subtle);
+        border-radius: 10px;
+        padding: 8px 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+        margin-bottom: 12px;
+      }
+      .rail-btn {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--line-subtle);
+        border-radius: 8px;
+        background: #ffffff;
+        color: #475569;
+        font-size: 15px;
+        cursor: pointer;
+      }
+      .search-box {
+        background: #f8fafc;
+        border: 1px solid var(--line-subtle);
+        border-radius: 8px;
+        padding: 7px 12px;
+        font-size: 12px;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 170px;
+        height: 36px;
+      }
+      .search-kbd {
+        margin-left: auto;
+        background: #e2e8f0;
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .btn-action {
+        background: #ffffff;
+        border: 1px solid var(--line-subtle);
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        height: 36px;
+      }
+      .btn-primary {
+        background: #0f2438;
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        padding: 7px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        margin-left: auto;
+        height: 36px;
+      }
+
+      /* ========================================================
+       VERSION 1: COMPACT (22px) - RECOMMENDED
+       - Proportional reduction: 22px badge inside 36px capsule
+       - 7px uniform halo on top, bottom, and right
+       - Font: 9.5px / Dot: 5.5px / Caret: 6.5px
+       ======================================================== */
+      .capsule-v1 {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        background: #ffffff;
+        border: 1px solid var(--line-subtle);
+        border-radius: 9999px;
+        padding: 0 6px 0 13px;
+        height: 36px;
+        box-sizing: border-box;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+        flex-shrink: 0;
+      }
+      .title-v1 {
+        font-size: 15px;
+        font-weight: 750;
+        color: var(--ink);
+        letter-spacing: -0.025em;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        height: 100%;
+      }
+      .badge-v1 {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        height: 22px; /* 22px height */
+        padding: 0 7.5px 0 7px;
+        border-radius: 9999px;
+        font-size: 9.5px;
+        font-weight: 750;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        border: 1px solid transparent;
+        line-height: 1;
+        box-sizing: border-box;
+        transition: filter 0.15s ease;
+        white-space: nowrap;
+      }
+      .badge-v1:hover {
+        filter: brightness(0.96);
+      }
+      .dot-v1 {
+        width: 5.5px;
+        height: 5.5px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .caret-v1 {
+        font-size: 6.5px;
+        opacity: 0.65;
+        margin-left: -1px;
+      }
+
+      /* ========================================================
+       VERSION 2: PETITE (19px) - SLEEK MINIMAL
+       - Micro-pill: 19px badge inside 36px capsule
+       - 8.5px uniform halo on top, bottom, and right
+       - Font: 9px / Dot: 4.5px / Caret: 5.5px
+       ======================================================== */
+      .capsule-v2 {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        background: #ffffff;
+        border: 1px solid var(--line-subtle);
+        border-radius: 9999px;
+        padding: 0 7px 0 13px;
+        height: 36px;
+        box-sizing: border-box;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+        flex-shrink: 0;
+      }
+      .title-v2 {
+        font-size: 15px;
+        font-weight: 750;
+        color: var(--ink);
+        letter-spacing: -0.025em;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        height: 100%;
+      }
+      .badge-v2 {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4.5px;
+        height: 19px; /* 19px height */
+        padding: 0 6.5px 0 6px;
+        border-radius: 9999px;
+        font-size: 8.5px;
+        font-weight: 750;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        border: 1px solid transparent;
+        line-height: 1;
+        box-sizing: border-box;
+        transition: filter 0.15s ease;
+        white-space: nowrap;
+      }
+      .badge-v2:hover {
+        filter: brightness(0.96);
+      }
+      .dot-v2 {
+        width: 4.5px;
+        height: 4.5px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .caret-v2 {
+        font-size: 5.5px;
+        opacity: 0.65;
+        margin-left: -1px;
+      }
+
+      /* ========================================================
+       VERSION 3: MICRO (17px) - ULTRA-COMPACT STATUS CHIP
+       - Super-slimline: 17px badge inside 36px capsule
+       - 9.5px uniform halo on top, bottom, and right
+       - Font: 8px / Dot: 4px / Caret: 5px
+       ======================================================== */
+      .capsule-v3 {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #ffffff;
+        border: 1px solid var(--line-subtle);
+        border-radius: 9999px;
+        padding: 0 8px 0 13px;
+        height: 36px;
+        box-sizing: border-box;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+        flex-shrink: 0;
+      }
+      .title-v3 {
+        font-size: 15px;
+        font-weight: 750;
+        color: var(--ink);
+        letter-spacing: -0.025em;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        height: 100%;
+      }
+      .badge-v3 {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        height: 17px; /* 17px height */
+        padding: 0 6px 0 5.5px;
+        border-radius: 9999px;
+        font-size: 8px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        cursor: pointer;
+        border: 1px solid transparent;
+        line-height: 1;
+        box-sizing: border-box;
+        transition: filter 0.15s ease;
+        white-space: nowrap;
+      }
+      .badge-v3:hover {
+        filter: brightness(0.96);
+      }
+      .dot-v3 {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .caret-v3 {
+        font-size: 5px;
+        opacity: 0.65;
+        margin-left: -1px;
+      }
+
+      /* ========================================================
+       BASELINE FOR REFERENCE: 26px (Previous oversized one)
+       ======================================================== */
+      .capsule-baseline {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        background: #ffffff;
+        border: 1px solid var(--line-subtle);
+        border-radius: 9999px;
+        padding: 0 5px 0 13.5px;
+        height: 36px;
+        box-sizing: border-box;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+        flex-shrink: 0;
+      }
+      .title-baseline {
+        font-size: 15px;
+        font-weight: 750;
+        color: var(--ink);
+        letter-spacing: -0.025em;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        height: 100%;
+      }
+      .badge-baseline {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5.5px;
+        height: 26px; /* 26px height */
+        padding: 0 8.5px 0 8px;
+        border-radius: 9999px;
+        font-size: 10.5px;
+        font-weight: 750;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        border: 1px solid transparent;
+        line-height: 1;
+        box-sizing: border-box;
+        white-space: nowrap;
+      }
+      .dot-baseline {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .caret-baseline {
+        font-size: 7.5px;
+        opacity: 0.65;
+        margin-left: -0.5px;
+      }
+
+      /* COMPARISON TABLE */
+      .table-card {
+        background: var(--surface);
+        border: 1px solid var(--line-subtle);
+        border-radius: 14px;
+        overflow: hidden;
+        margin-top: 36px;
+        box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.03);
+      }
+      .table-title {
+        padding: 16px 20px;
+        background: var(--surface-subtle);
+        border-bottom: 1px solid var(--line-subtle);
+        font-size: 13.5px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12.5px;
+      }
+      th {
+        background: #f8fafc;
+        padding: 10px 16px;
+        font-weight: 700;
+        color: var(--ink-muted);
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid var(--line-subtle);
+        text-align: left;
+      }
+      td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+        vertical-align: middle;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      .code-pill {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        background: var(--surface-inset);
+        border: 1px solid var(--line-subtle);
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header-banner">
+        <span class="badge-tag">Aesthetic Scale Study</span>
+        <h1>Ward Flow • Header Scope Badge Size Variations</h1>
+        <p class="lead">
+          Comparing 3 smaller, more refined badge proportions against the baseline to eliminate visual heaviness and
+          achieve perfect optical balance with the page title.
+        </p>
+      </div>
+
+      <!-- GLOBAL SERVICE SWITCHER TO TEST ACROSS REGIONS -->
+      <div class="filter-bar">
+        <span class="filter-label">Test with Health Service:</span>
+        <button type="button" class="svc-btn active" onclick="switchTheme('statewide')">
+          <span class="dot-pip" style="background: #0071a5"></span> Statewide
+        </button>
+        <button type="button" class="svc-btn" onclick="switchTheme('east')">
+          <span class="dot-pip" style="background: #00825e"></span> East Metro (EMHS)
+        </button>
+        <button type="button" class="svc-btn" onclick="switchTheme('north')">
+          <span class="dot-pip" style="background: #990057"></span> North Metro (NMHS)
+        </button>
+        <button type="button" class="svc-btn" onclick="switchTheme('south')">
+          <span class="dot-pip" style="background: #5a2476"></span> South Metro (SMHS)
+        </button>
+        <button type="button" class="svc-btn" onclick="switchTheme('wachs')">
+          <span class="dot-pip" style="background: #005b94"></span> Country Health (WACHS)
+        </button>
+      </div>
+
+      <!-- THE THREE VARIATIONS -->
+      <div class="variations-stack">
+        <!-- ========================================================
+           VERSION 1: COMPACT (22px) - RECOMMENDED
+           ======================================================== -->
+        <div class="variation-card recommended">
+          <div class="card-top">
+            <div class="card-title">
+              <span>Version 1: Compact (22px Height)</span>
+              <span class="rec-tag">★ Recommended Balance</span>
+            </div>
+            <span class="card-specs">Height: 22px • Font: 9.5px • Dot: 5.5px • Halo: 7px</span>
+          </div>
+          <p class="card-desc">
+            Reduces badge height from 26px to 22px and scales the text and dot down proportionally. Gives the title
+            clear visual seniority while keeping the badge comfortable to click with a generous 7px breathing margin all
+            around.
+          </p>
+
+          <!-- Command Screen Preview -->
+          <div class="bar-preview">
+            <button class="rail-btn" type="button">☰</button>
+            <div class="capsule-v1">
+              <span class="title-v1">Command</span>
+              <button class="badge-v1 live-badge" type="button">
+                <span class="dot-v1 live-dot"></span>
+                <span class="live-label">STATEWIDE</span>
+                <span class="caret-v1">▼</span>
+              </button>
+            </div>
+            <div class="search-box"><span>🔍</span> Search <span class="search-kbd">/</span></div>
+            <div class="btn-action">Activity <span style="font-weight: 700; color: #10b981">• 14:00</span></div>
+            <div class="btn-action">
+              Tasks
+              <span
+                style="background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-size: 10px; font-weight: 700"
+                >3</span
+              >
+            </div>
+            <div class="btn-action">Tools</div>
+            <button class="btn-primary" type="button">+ Action</button>
+          </div>
+
+          <!-- Inpatient Ward 2K Preview (Locked Jurisdiction) -->
+          <div class="bar-preview">
+            <button class="rail-btn" type="button">☰</button>
+            <div class="capsule-v1">
+              <span class="title-v1">Ward 2K</span>
+              <span class="badge-v1 live-badge-locked" style="cursor: default">
+                <span class="dot-v1 live-dot-locked"></span>
+                <span class="live-label-locked">EAST METRO</span>
+              </span>
+            </div>
+            <div class="search-box"><span>🔍</span> Search <span class="search-kbd">/</span></div>
+            <div class="btn-action">Activity <span style="font-weight: 700; color: #10b981">• 14:00</span></div>
+            <div class="btn-action">
+              Tasks
+              <span
+                style="background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-size: 10px; font-weight: 700"
+                >3</span
+              >
+            </div>
+            <div class="btn-action">Tools</div>
+            <button class="btn-primary" type="button">+ Action</button>
+          </div>
+        </div>
+
+        <!-- ========================================================
+           VERSION 2: PETITE (19px) - SLEEK MINIMAL
+           ======================================================== -->
+        <div class="variation-card">
+          <div class="card-top">
+            <div class="card-title">
+              <span>Version 2: Petite (19px Height)</span>
+            </div>
+            <span class="card-specs">Height: 19px • Font: 8.5px • Dot: 4.5px • Halo: 8.5px</span>
+          </div>
+          <p class="card-desc">
+            An ultra-sleek, refined micro-pill. Gives the header a minimalist luxury software feel. The badge acts as an
+            understated status tag rather than a full button, leaving the title looking bold, prominent, and
+            uncluttered.
+          </p>
+
+          <!-- Command Screen Preview -->
+          <div class="bar-preview">
+            <button class="rail-btn" type="button">☰</button>
+            <div class="capsule-v2">
+              <span class="title-v2">Command</span>
+              <button class="badge-v2 live-badge" type="button">
+                <span class="dot-v2 live-dot"></span>
+                <span class="live-label">STATEWIDE</span>
+                <span class="caret-v2">▼</span>
+              </button>
+            </div>
+            <div class="search-box"><span>🔍</span> Search <span class="search-kbd">/</span></div>
+            <div class="btn-action">Activity <span style="font-weight: 700; color: #10b981">• 14:00</span></div>
+            <div class="btn-action">
+              Tasks
+              <span
+                style="background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-size: 10px; font-weight: 700"
+                >3</span
+              >
+            </div>
+            <div class="btn-action">Tools</div>
+            <button class="btn-primary" type="button">+ Action</button>
+          </div>
+
+          <!-- Inpatient Ward 2K Preview (Locked Jurisdiction) -->
+          <div class="bar-preview">
+            <button class="rail-btn" type="button">☰</button>
+            <div class="capsule-v2">
+              <span class="title-v2">Ward 2K</span>
+              <span class="badge-v2 live-badge-locked" style="cursor: default">
+                <span class="dot-v2 live-dot-locked"></span>
+                <span class="live-label-locked">EAST METRO</span>
+              </span>
+            </div>
+            <div class="search-box"><span>🔍</span> Search <span class="search-kbd">/</span></div>
+            <div class="btn-action">Activity <span style="font-weight: 700; color: #10b981">• 14:00</span></div>
+            <div class="btn-action">
+              Tasks
+              <span
+                style="background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-size: 10px; font-weight: 700"
+                >3</span
+              >
+            </div>
+            <div class="btn-action">Tools</div>
+            <button class="btn-primary" type="button">+ Action</button>
+          </div>
+        </div>
+
+        <!-- ========================================================
+           VERSION 3: MICRO-CHIC (17px) - DELICATE STATUS CHIP
+           ======================================================== -->
+        <div class="variation-card">
+          <div class="card-top">
+            <div class="card-title">
+              <span>Version 3: Micro-Chic (17px Height)</span>
+            </div>
+            <span class="card-specs">Height: 17px • Font: 8px • Dot: 4px • Halo: 9.5px</span>
+          </div>
+          <p class="card-desc">
+            Extreme compact footprint. The badge is trimmed down to an absolute micro status indicator. Eliminates 100%
+            of visual heaviness. Ideal if you want the regional scope to feel like whisper metadata.
+          </p>
+
+          <!-- Command Screen Preview -->
+          <div class="bar-preview">
+            <button class="rail-btn" type="button">☰</button>
+            <div class="capsule-v3">
+              <span class="title-v3">Command</span>
+              <button class="badge-v3 live-badge" type="button">
+                <span class="dot-v3 live-dot"></span>
+                <span class="live-label">STATEWIDE</span>
+                <span class="caret-v3">▼</span>
+              </button>
+            </div>
+            <div class="search-box"><span>🔍</span> Search <span class="search-kbd">/</span></div>
+            <div class="btn-action">Activity <span style="font-weight: 700; color: #10b981">• 14:00</span></div>
+            <div class="btn-action">
+              Tasks
+              <span
+                style="background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-size: 10px; font-weight: 700"
+                >3</span
+              >
+            </div>
+            <div class="btn-action">Tools</div>
+            <button class="btn-primary" type="button">+ Action</button>
+          </div>
+
+          <!-- Inpatient Ward 2K Preview (Locked Jurisdiction) -->
+          <div class="bar-preview">
+            <button class="rail-btn" type="button">☰</button>
+            <div class="capsule-v3">
+              <span class="title-v3">Ward 2K</span>
+              <span class="badge-v3 live-badge-locked" style="cursor: default">
+                <span class="dot-v3 live-dot-locked"></span>
+                <span class="live-label-locked">EAST METRO</span>
+              </span>
+            </div>
+            <div class="search-box"><span>🔍</span> Search <span class="search-kbd">/</span></div>
+            <div class="btn-action">Activity <span style="font-weight: 700; color: #10b981">• 14:00</span></div>
+            <div class="btn-action">
+              Tasks
+              <span
+                style="background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-size: 10px; font-weight: 700"
+                >3</span
+              >
+            </div>
+            <div class="btn-action">Tools</div>
+            <button class="btn-primary" type="button">+ Action</button>
+          </div>
+        </div>
+
+        <!-- ========================================================
+           BASELINE FOR REFERENCE: 26px (The one in the screenshot)
+           ======================================================== -->
+        <div class="variation-card" style="opacity: 0.85; background: #fafafa">
+          <div class="card-top">
+            <div class="card-title" style="color: #64748b">
+              <span>Baseline Reference: 26px Height (Previous Size)</span>
+            </div>
+            <span class="card-specs">Height: 26px • Font: 10.5px • Dot: 7px • Halo: 5px</span>
+          </div>
+          <p class="card-desc">
+            The previous 26px version shown in your screenshot for direct 1:1 scale comparison. You can clearly see how
+            the 22px, 19px, and 17px versions above eliminate its visual heaviness.
+          </p>
+
+          <!-- Command Screen Preview -->
+          <div class="bar-preview">
+            <button class="rail-btn" type="button">☰</button>
+            <div class="capsule-baseline">
+              <span class="title-baseline">Command</span>
+              <button class="badge-baseline live-badge" type="button">
+                <span class="dot-baseline live-dot"></span>
+                <span class="live-label">STATEWIDE</span>
+                <span class="caret-baseline">▼</span>
+              </button>
+            </div>
+            <div class="search-box"><span>🔍</span> Search <span class="search-kbd">/</span></div>
+            <div class="btn-action">Activity <span style="font-weight: 700; color: #10b981">• 14:00</span></div>
+            <div class="btn-action">
+              Tasks
+              <span
+                style="background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-size: 10px; font-weight: 700"
+                >3</span
+              >
+            </div>
+            <div class="btn-action">Tools</div>
+            <button class="btn-primary" type="button">+ Action</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- METRICS COMPARISON TABLE -->
+      <div class="table-card">
+        <div class="table-title">Exact Proportions & Geometry Breakdown</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>Badge Height</th>
+              <th>Top / Bottom Halo</th>
+              <th>Typography</th>
+              <th>Dot Diameter</th>
+              <th>Visual Character</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background: #eff6ff; font-weight: 600">
+              <td><strong>Version 1: Compact (Recommended)</strong></td>
+              <td><span class="code-pill">22px</span></td>
+              <td><span class="code-pill">7.0px</span></td>
+              <td><span class="code-pill">9.5px / 750 wt</span></td>
+              <td><span class="code-pill">5.5px</span></td>
+              <td>Optimal balance: subtle, readable, clickable</td>
+            </tr>
+            <tr>
+              <td><strong>Version 2: Petite</strong></td>
+              <td><span class="code-pill">19px</span></td>
+              <td><span class="code-pill">8.5px</span></td>
+              <td><span class="code-pill">8.5px / 750 wt</span></td>
+              <td><span class="code-pill">4.5px</span></td>
+              <td>Minimalist luxury software chip (Linear/Apple feel)</td>
+            </tr>
+            <tr>
+              <td><strong>Version 3: Micro-Chic</strong></td>
+              <td><span class="code-pill">17px</span></td>
+              <td><span class="code-pill">9.5px</span></td>
+              <td><span class="code-pill">8.0px / 800 wt</span></td>
+              <td><span class="code-pill">4.0px</span></td>
+              <td>Ultra-delicate whisper tag, 100% focus on title</td>
+            </tr>
+            <tr style="opacity: 0.65">
+              <td><em>Baseline Reference (Previous)</em></td>
+              <td><span class="code-pill">26px</span></td>
+              <td><span class="code-pill">5.0px</span></td>
+              <td><span class="code-pill">10.5px / 750 wt</span></td>
+              <td><span class="code-pill">7.0px</span></td>
+              <td>Previous oversized version (too heavy)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      const THEMES = {
+        statewide: {
+          label: "STATEWIDE",
+          bg: "var(--svc-statewide-bg)",
+          border: "var(--svc-statewide-border)",
+          ink: "var(--svc-statewide-ink)",
+          dot: "var(--svc-statewide)",
+        },
+        east: {
+          label: "EAST METRO",
+          bg: "var(--svc-east-bg)",
+          border: "var(--svc-east-border)",
+          ink: "var(--svc-east-ink)",
+          dot: "var(--svc-east)",
+        },
+        north: {
+          label: "NORTH METRO",
+          bg: "var(--svc-north-bg)",
+          border: "var(--svc-north-border)",
+          ink: "var(--svc-north-ink)",
+          dot: "var(--svc-north)",
+        },
+        south: {
+          label: "SOUTH METRO",
+          bg: "var(--svc-south-bg)",
+          border: "var(--svc-south-border)",
+          ink: "var(--svc-south-ink)",
+          dot: "var(--svc-south)",
+        },
+        wachs: {
+          label: "WACHS",
+          bg: "var(--svc-wachs-bg)",
+          border: "var(--svc-wachs-border)",
+          ink: "var(--svc-wachs-ink)",
+          dot: "var(--svc-wachs)",
+        },
+      };
+
+      function switchTheme(key) {
+        const theme = THEMES[key];
+
+        document.querySelectorAll(".svc-btn").forEach((b) => {
+          if (b.getAttribute("onclick")?.includes(`switchTheme('${key}')`)) {
+            b.classList.add("active");
+          } else {
+            b.classList.remove("active");
+          }
+        });
+
+        // Apply to all live badges
+        document.querySelectorAll(".live-badge").forEach((badge) => {
+          badge.style.backgroundColor = theme.bg;
+          badge.style.borderColor = theme.border;
+          badge.style.color = theme.ink;
+        });
+
+        document.querySelectorAll(".live-dot").forEach((dot) => {
+          dot.style.backgroundColor = theme.dot;
+        });
+
+        document.querySelectorAll(".live-label").forEach((lbl) => {
+          lbl.textContent = theme.label;
+        });
+      }
+
+      // Initialize locked badges with East Metro
+      document.querySelectorAll(".live-badge-locked").forEach((badge) => {
+        badge.style.backgroundColor = THEMES.east.bg;
+        badge.style.borderColor = THEMES.east.border;
+        badge.style.color = THEMES.east.ink;
+      });
+      document.querySelectorAll(".live-dot-locked").forEach((dot) => {
+        dot.style.backgroundColor = THEMES.east.dot;
+      });
+
+      // Initialize with statewide
+      switchTheme("statewide");
+    </script>
+  </body>
+</html>

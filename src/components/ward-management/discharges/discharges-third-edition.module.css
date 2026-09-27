@@ -1,0 +1,1033 @@
+.screen {
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  display: block;
+  min-width: 0;
+  min-height: 100%;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-variant-numeric: tabular-nums;
+  --text: var(--ink);
+  --text-heading: var(--ink);
+  --text-muted: var(--muted);
+  --surface-subtle: var(--surface);
+  --surface-raised: var(--surface);
+  --surface-chrome: var(--surface-2);
+}
+.localTitle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.main {
+  display: grid;
+  grid-column: auto;
+  min-width: 0;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem 1.5rem;
+}
+.main > * {
+  min-width: 0;
+}
+.workspaceHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.populationSwitch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  background: var(--surface-2);
+}
+.populationSwitch button,
+.statusFilters button,
+.quietButton {
+  min-height: 2.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--r1);
+  background: transparent;
+  padding: 0.4rem 0.7rem;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: var(--t-1);
+  cursor: pointer;
+}
+.populationSwitch button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+.populationSwitch button[aria-pressed="true"] {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: var(--lift);
+}
+.populationSwitch span {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+}
+.asOf {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.liveDot {
+  position: relative;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+  background: var(--good, var(--ward-success));
+}
+.liveDot::after {
+  content: "";
+  position: absolute;
+  inset: -0.125rem;
+  border-radius: 50%;
+  pointer-events: none;
+  border: 1px solid var(--good, var(--ward-success));
+  box-shadow: 0 0 0.375rem var(--good, var(--ward-success));
+  animation: metroPulse 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+@keyframes metroPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .liveDot::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+@media (forced-colors: active) {
+  .liveDot {
+    background: CanvasText;
+  }
+  .liveDot::after {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.65rem;
+}
+.filters label {
+  display: grid;
+  gap: 0.3rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+}
+.filters select {
+  min-height: 2.5rem;
+  max-width: 19rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r1);
+  padding: 0.45rem 1.8rem 0.45rem 0.65rem;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-1);
+  font-weight: 400;
+}
+.statusFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.statusFilters button {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  border-color: var(--line);
+  background: var(--surface);
+}
+.statusFilters strong {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.statusFilters button[data-status="blocked"] {
+  color: var(--warn);
+}
+.statusFilters button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.workspace {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+}
+.scrim {
+  display: none;
+}
+.register,
+.detail {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+.ph,
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  min-height: 3rem;
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  box-shadow:
+    0 4px 6px -1px color-mix(in srgb, var(--ink) 4%, transparent),
+    0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
+}
+.panelHeader h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-2);
+  font-family: var(--display);
+  font-weight: 650;
+}
+.panelHeader > span {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  white-space: nowrap;
+}
+.panelHeader .quietButton {
+  margin: -0.4rem;
+}
+.listBody {
+  min-width: 0;
+}
+.workTable {
+  composes: table from "../ward-table/ward-table.module.css";
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-1);
+  line-height: 1.45;
+}
+.workTable thead {
+  background: var(--surface-2);
+}
+.workTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-align: left;
+  letter-spacing: 0.035em;
+}
+.workTable th,
+.workTable td {
+  vertical-align: top;
+}
+.workTable th {
+  white-space: normal;
+}
+.workTable td:first-child {
+  width: 40%;
+}
+.workTable td:nth-child(2) {
+  width: 26%;
+}
+.workTable td strong {
+  font-weight: 500;
+}
+.workTable tr[data-selected="true"] td {
+  background: var(--accent-soft);
+}
+.workTable tr[data-selected="true"] td:first-child {
+  box-shadow: none;
+}
+.recordButton {
+  display: block;
+  border: 0;
+  background: transparent;
+  padding: 0.1rem 0;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 650;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+.recordButton:hover {
+  text-decoration-color: currentColor;
+}
+.secondary {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 400;
+}
+.groupRow th {
+  padding: 0.45rem 0.8rem;
+  background: var(--surface-2);
+}
+.groupRow h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  font-weight: 650;
+  text-align: left;
+}
+.groupRow h3 span {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 400;
+}
+.workTable tbody[data-testid="ward-discharge-group-blocked"][data-has-items="true"] .groupRow th {
+  border-left: 3px solid var(--warn);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  padding: 0.15rem 0.4rem;
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge[data-status="confirmed"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.badge[data-status="blocked"] {
+  border-color: var(--warn);
+  color: var(--warn);
+  background: var(--warn-soft);
+}
+.badge[data-status="departed"] {
+  color: var(--good);
+  border-color: var(--good);
+  background: var(--good-soft);
+}
+.blocker {
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--warn);
+  font-size: var(--t-1);
+  line-height: 1.4;
+}
+.emptyGroup {
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+.registerFooter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  padding: 0.6rem 0.85rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+}
+.detailBody {
+  padding: 1.25rem;
+}
+.detailBody h3 {
+  margin: 0.35rem 0;
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: var(--t-4);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.detailBody p {
+  margin: 0.4rem 0;
+  font-size: var(--t-1);
+}
+.eyebrow {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-family: var(--mono);
+}
+.mono {
+  color: var(--ink-soft);
+  font-family: var(--mono);
+}
+.detailStatus {
+  display: flex;
+  gap: 0.4rem;
+  margin: 1rem 0;
+}
+.detailBody dl {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+}
+.detailBody dt {
+  margin-top: 0.85rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+}
+.detailBody dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-1);
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+.detailBody dd.blocker {
+  color: var(--warn);
+}
+.detailFooter {
+  margin-top: auto;
+  padding: 0.85rem;
+  border-top: 1px solid var(--line);
+}
+.primaryLink {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--r1);
+  padding: 0.6rem 0.8rem;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--t-1);
+  font-weight: 600;
+  text-decoration: none;
+}
+.emptyState {
+  margin: 0;
+  padding: 1.5rem 1rem;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.6;
+}
+.detailBody .emptyState {
+  padding: 0.5rem 0;
+}
+.screen :is(button, select, a, [tabindex]):focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.listBody:focus-visible,
+.detail:focus-visible,
+.detailBody:focus-visible {
+  outline-offset: -3px;
+}
+/* Keep the exported legacy group renderer compatible for existing consumers. */
+.groupHeading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.groupHeading > * {
+  margin: 0;
+}
+.groupHeading p {
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+.groupBody {
+  min-width: 0;
+}
+@media (min-width: 62.5625rem) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr) minmax(17rem, 20rem);
+    height: max(30rem, calc(100dvh - 16rem));
+  }
+  .register,
+  .detail {
+    min-height: 0;
+  }
+  .listBody,
+  .detailBody {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    scrollbar-gutter: stable;
+    overscroll-behavior: contain;
+  }
+}
+@media (max-width: 62.5624rem) {
+  .detail {
+    max-width: none;
+  }
+  .listBody {
+    max-height: 34rem;
+    overflow: auto;
+  }
+}
+@media (max-width: 40rem) {
+  .screen {
+    padding-top: 0;
+  }
+  .main {
+    padding: 0.75rem;
+  }
+  .workspaceHeader {
+    align-items: stretch;
+  }
+  .populationSwitch {
+    width: 100%;
+  }
+  .populationSwitch button {
+    flex: 1 1 8rem;
+    justify-content: space-between;
+  }
+  .filters label {
+    flex: 1 1 8rem;
+    min-width: 0;
+  }
+  .filters select {
+    width: 100%;
+    max-width: none;
+  }
+  .statusFilters button {
+    min-height: 2.75rem;
+    flex: 0 0 auto;
+    justify-content: space-between;
+  }
+  .statusFilters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+  .workspace {
+    display: flex;
+    flex-direction: column;
+  }
+  .scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: var(--scrim);
+    backdrop-filter: blur(2px);
+    z-index: 99;
+  }
+  .detail {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 85dvh;
+    z-index: 100;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    background: var(--surface);
+    border: none;
+    border-top: 1px solid var(--line-strong);
+    border-radius: var(--r2) var(--r2) 0 0;
+    box-shadow: var(--lift);
+    padding: 1rem;
+  }
+  .detail:not(.open) {
+    display: none;
+  }
+  .listBody {
+    max-height: none;
+    overflow: visible;
+  }
+  .workTable thead {
+    display: none;
+  }
+  .workTable,
+  .workTable tbody,
+  .workTable tr,
+  .workTable td {
+    display: block;
+    width: 100%;
+  }
+  .workTable tr:not(.groupRow) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    border-bottom: 1px solid var(--line);
+    padding: 0.65rem 0.8rem;
+    gap: 0.6rem;
+  }
+  .workTable td,
+  .workTable td:first-child,
+  .workTable td:nth-child(2) {
+    width: auto;
+    border: 0;
+    padding: 0;
+  }
+  .workTable td:first-child {
+    grid-column: 1 / -1;
+  }
+  .workTable td:not(:first-child)::before {
+    display: block;
+    content: attr(data-label);
+    margin-bottom: 0.3rem;
+    color: var(--muted);
+    font-size: var(--t-0);
+  }
+  .groupRow th {
+    display: block;
+  }
+  .recordButton {
+    min-height: 2.5rem;
+  }
+  .workTable tr[data-selected="true"] {
+    background: var(--accent-soft);
+    box-shadow: none;
+  }
+  .workTable tr[data-selected="true"] td:first-child {
+    box-shadow: none;
+  }
+}
+@media (forced-colors: active) {
+  .screen :is(button, select, a),
+  .badge {
+    border-color: ButtonText;
+  }
+  .screen [aria-pressed="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}
+.printScope {
+  display: none;
+}
+@media print {
+  .printScope {
+    display: block;
+    margin-block: 0 1rem;
+  }
+  .recordButton {
+    display: inline !important;
+  }
+  .screen,
+  .screen *,
+  .screen *::before,
+  .screen *::after {
+    color-scheme: light;
+    background-color: Canvas !important;
+    color: CanvasText !important;
+    box-shadow: none !important;
+    border-color: CanvasText !important;
+  }
+  .main,
+  .workspace {
+    display: block;
+    height: auto;
+    padding: 0;
+  }
+  .register,
+  .detail {
+    height: auto;
+    overflow: visible;
+    margin-bottom: 1rem;
+  }
+  .listBody,
+  .detailBody {
+    max-height: none;
+    overflow: visible;
+  }
+  .filters,
+  .quietButton,
+  .detailFooter {
+    display: none;
+  }
+  .populationSwitch button:not([aria-pressed="true"]) {
+    display: none;
+  }
+  .workTable thead {
+    display: table-header-group;
+  }
+  .workTable thead th {
+    position: static;
+  }
+  .workTable {
+    display: table;
+  }
+  .workTable tbody {
+    display: table-row-group;
+  }
+  .workTable tr,
+  .workTable tr:not(.groupRow) {
+    display: table-row;
+  }
+  .workTable td,
+  .groupRow th {
+    display: table-cell;
+    padding: 0.4rem;
+  }
+  .workTable td::before {
+    display: none !important;
+  }
+  .workTable tr {
+    break-inside: avoid;
+  }
+  .populationSwitch {
+    border: 0;
+    padding: 0;
+  }
+  .recordButton {
+    text-decoration: none;
+  }
+}
+/* Explicit display rules must not override guarded-population hidden states. */
+.screen [hidden] {
+  display: none !important;
+}
+
+/* Third-Edition 15 Sep Restyle Elements */
+.governanceBanner {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 0.6rem 0.85rem;
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+}
+
+.kpiStrip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+.kpiCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+  padding: 0.75rem 1rem;
+  display: grid;
+  gap: 0.25rem;
+}
+.kpiCard[data-tone="danger"] .kpiVal {
+  color: var(--danger);
+}
+.kpiCard[data-tone="warn"] .kpiVal {
+  color: var(--warn);
+}
+.kpiCard[data-tone="good"] .kpiVal {
+  color: var(--good);
+}
+.kpiCard[data-tone="accent"] .kpiVal {
+  color: var(--accent);
+}
+.kpiLabel {
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.kpiVal {
+  font-family: var(--mono);
+  font-size: var(--t-5);
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.planActionBtn {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--r1);
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 1px solid var(--accent);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.planActionBtn:hover {
+  filter: brightness(1.08);
+}
+/* D4: "+ Plan departure" is not wired in this prototype (see discharge-board.tsx) — styled the
+   same way `officer.module.css`'s `.actionButton[aria-disabled="true"]` marks an unavailable
+   control, so the visual state agrees with `aria-disabled` and the visible note beside it. */
+.planActionBtn[aria-disabled="true"] {
+  cursor: not-allowed;
+  background: var(--surface-2);
+  color: var(--muted);
+  border-color: var(--line-strong);
+}
+.planActionBtn[aria-disabled="true"]:hover {
+  filter: none;
+}
+.planActionNote {
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+@media (max-width: 55rem) {
+  .kpiStrip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 35rem) {
+  .kpiStrip {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+}
+@media (max-width: 30rem) {
+  .kpiStrip {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+}
+
+.kpiSub {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.quickFilterBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+}
+
+.quickFilterTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.quickFilterPill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.25rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--pill, 9999px);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: var(--t-0);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.quickFilterPill:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.quickFilterPillActive {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.quickFilterPillActive:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.stageCluster {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.transportNote {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  font-weight: 500;
+}
+
+.destinationTag {
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
+  font-size: var(--t-0);
+  margin-top: 0.2rem;
+}
+
+.inlineIcon {
+  display: inline-block;
+  vertical-align: -0.125em;
+  flex-shrink: 0;
+}
+
+.drawerSection {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 0.5rem;
+}
+
+.drawerSubheading {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: var(--t-1);
+  font-weight: 650;
+  color: var(--ink-soft);
+}
+
+.barrierHighlight {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  border-radius: var(--r2);
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.drawerInfoText {
+  margin: 0;
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.unwiredActionRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.25rem;
+}
+
+.actionBtnDisabled {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--r1);
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--line-strong);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: not-allowed;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.actionBtnDisabled:hover {
+  filter: none;
+}
+
+/* Tap-target floor, 2026-09-16 (ward-audit-screens review): these controls sat at 2.25–2.5rem,
+   below the repository's 48px production floor (`--spacing-tap`, `globals.css`). Raised only
+   under the coarse-pointer/narrow-viewport condition `capacity.module.css` and `board.module.css`
+   already use for the same purpose, rather than unconditionally, so the desktop-pointer layout
+   keeps its tighter control height. */
+@media (max-width: 48rem), (pointer: coarse) {
+  .populationSwitch button,
+  .statusFilters button,
+  .quickFilterPill,
+  .quietButton,
+  .planActionBtn,
+  .actionBtnDisabled,
+  .recordButton,
+  .filters select {
+    min-height: var(--spacing-tap);
+  }
+}
+
+@media (max-width: 40rem) {
+  .quickFilterBar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  .quickFilterPill {
+    flex: 0 0 auto;
+  }
+}
+
+/* ─── Dark Theme High Contrast Boundaries ─── */
+:global([data-theme="dark"]) .register,
+:global([data-theme="dark"]) .detail,
+:global([data-theme="dark"]) .kpiCard,
+:global([data-theme="dark"]) .panelHeader,
+:global([data-theme="dark"]) .workTable {
+  border-color: var(--line-strong);
+}
+
+:global([data-theme="dark"]) .register,
+:global([data-theme="dark"]) .detail {
+  background: var(--surface-2);
+}

@@ -1,0 +1,1896 @@
+/* The Capacity screen — merge 02 (`capacity` + `morning`).
+ * Layout only. Every colour and every space resolves through a --ward-* token, and this screen
+ * adopts the third-edition ground and type only through the explicit screen marker. The legacy
+ * token composition stays in place for the shared primitives nested inside it. */
+.screen {
+  composes: wardTokens from "../ward-tokens.module.css";
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  display: block;
+  min-height: 100dvh;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.main {
+  grid-column: auto;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--ward-space-12);
+  overflow-x: clip;
+  overflow-y: visible;
+  padding: var(--ward-space-16) var(--ward-space-20) var(--ward-space-24);
+}
+
+.pageHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-4);
+}
+
+.pageTitle {
+  margin: 0;
+  color: var(--text-heading);
+  font-size: var(--text-lg, 1.125rem);
+  font-weight: 700;
+}
+
+.pageSubtitle {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+/*
+ * Two-column split above 64rem, one column below — design lock § layout: "panel-and-ground, not a
+ * card grid… two-column split (minmax(0,1fr) 19rem) above 64rem, one column below." 64rem is
+ * already a pinned breakpoint value elsewhere in this layer (`ward-management.module.css`,
+ * `ward-sidebar.module.css`); this file adds its own `file: value` row to
+ * `tests/ward-primitives-shared.test.ts`'s `KNOWN_BREAKPOINTS` list — outside this task's three
+ * owned files, so it is called out in the handoff report rather than edited here.
+ */
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ward-space-16);
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr) 19rem;
+  }
+}
+
+.primary {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--ward-space-12);
+}
+
+.secondary {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--ward-space-12);
+}
+
+.bar {
+  padding: var(--ward-space-16);
+}
+
+.filters {
+  padding: var(--ward-space-10) var(--ward-space-16);
+  border-bottom: 1px solid var(--ward-divider);
+}
+
+.foot {
+  margin: 0;
+  padding: var(--ward-space-10) var(--ward-space-16);
+  border-top: 1px solid var(--ward-divider);
+  font-size: var(--t-0, 0.75rem);
+  line-height: var(--ward-leading-relaxed);
+  color: var(--ward-muted);
+}
+.foot strong {
+  color: var(--ward-text);
+  font-weight: 600;
+}
+
+.absent {
+  margin: 0;
+  padding: var(--ward-space-16);
+  font-size: 0.75rem;
+  line-height: var(--ward-leading-relaxed);
+  color: var(--ward-muted);
+}
+
+.attention {
+  margin: 0;
+  padding: var(--ward-space-16);
+  display: grid;
+  gap: var(--ward-space-12);
+  list-style: none;
+}
+
+.attentionItem {
+  padding: var(--ward-space-8) var(--ward-space-12);
+  border-bottom: 1px solid var(--ward-divider);
+  border-left: 0;
+  font-size: 0.75rem;
+  line-height: var(--ward-leading-relaxed);
+  color: var(--ward-text);
+}
+
+/*
+ * 🔴 **THE MONOSPACE FACE CAME OFF THIS ONE TOO, 2026-09-06 — and unlike `.panelCount` there was no
+ * designed half to keep.** This slot renders `row.unit.name` ("Ward 2K", "Graylands Older
+ * Adult") and `row.need` ("A locked adult bed"). **Measured in a browser, not inferred: 11 text
+ * nodes on this screen, 11 of them prose, none containing a digit at all.** A hospital ward's name
+ * is not a figure, and it sat in a code face directly beside the panel count that had just been
+ * corrected — a half-corrected view reads as a mistake where a wholly uncorrected one reads as a
+ * style.
+ *
+ * ⚠️ **NOTE WHAT IS ABSENT: there is no `font-variant-numeric` here to preserve.** `.panelCount` had
+ * one and keeping it was the whole difference between a fix and a regression. This rule never had
+ * one, because nothing here was ever a number — which is itself the evidence that the face was
+ * applied to the slot without anyone asking what the slot holds.
+ */
+.attentionWho {
+  display: block;
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  color: var(--ward-warning);
+}
+
+/* The "need"/"who" and "ward"/"site" two-line cell — a bold primary line and a quieter second
+ * line underneath it, used in both tables below rather than each growing its own variant. */
+.who {
+  margin-top: var(--ward-space-2);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 400;
+  color: var(--ward-muted);
+}
+
+/* `WardTable`'s per-screen width variable (`ward-table.module.css`), same mechanism
+ * `search.module.css` already uses — never a length prop. */
+.gapTable {
+  composes: table from "../ward-table/ward-table.module.css";
+}
+
+.networkTable {
+  composes: table from "../ward-table/ward-table.module.css";
+  --ward-table-min-width: 40rem;
+}
+
+/*
+ * 🔴 A CHIP HIGHLIGHTS, IT NEVER HIDES — owner ruling; see `capacity-screen.tsx`'s own comment on
+ * `visibleNetworkRows` for the two prior rulings this one repeats. Every row in the network table
+ * renders on every chip; these two rules are the only thing that changes, and both are a WEIGHT,
+ * never a removal.
+ *
+ * ⚠️ TOKEN-DRIVEN AND DELIBERATELY NOT THE ONLY SIGNAL. `--ward-subtle` lifts a matching row the
+ * same way `.totalRow` already lifts a sum row, and `--ward-muted` recedes a non-matching one the
+ * same way `.notTracked` already recedes an absent figure — but `ward-tokens.module.css`'s own
+ * comment is explicit that under `forced-colors` a tone difference can vanish entirely, which is
+ * why `.matchMark` below carries the same fact in words. Losing the lift here loses a convenience;
+ * losing the word would lose the fact.
+ */
+.networkTable tbody tr[data-ward-network-row-matches="true"] {
+  background: var(--ward-subtle);
+}
+
+/*
+ * 🔴 **`color` IS INHERITED, AND A `<td>` ALWAYS DECLARES ITS OWN — so the row-scoped rule that used
+ * to stand here (`.networkTable tbody tr[...] { color: ... }`) never entered the cascade at all.**
+ * A property declared on the element itself always wins over a value the element would otherwise
+ * inherit from an ancestor, regardless of specificity — raising specificity on the row selector
+ * would not have helped, because the row's `color` was never in competition with `.table td`'s; it
+ * was simply never read. `ward-table.module.css`'s `.table td { color: var(--text); }` (specificity
+ * 0,1,1) painted every cell in this table regardless. Confirmed 2026-09-06/07: every `NetworkRow`
+ * cell is a `<td>` (no `<th>` in the body row), so the override below reaches `td` directly, at
+ * specificity 0,2,3 — no `!important`, per this design language's own rule against it.
+ *
+ * The highlight half (`[data-ward-network-row-matches="true"]` below) does not have this problem:
+ * `background` is not inherited, and `.table td` declares no `background` of its own (checked
+ * against `ward-table.module.css` — see the guard test), so the row's fill paints straight through
+ * the cell's own transparent box. That is a fact about `ward-table.module.css` today, not a
+ * guarantee; `tests/ward-capacity-network-row-de-emphasis.test.ts` pins both halves so either
+ * direction of regression — the row-only mistake fixed here, or a future cell background blocking
+ * the highlight — goes red instead of silently reverting to identical rows.
+ */
+.networkTable tbody tr[data-ward-network-row-matches="false"] td {
+  color: var(--ward-muted);
+}
+
+/*
+ * Task 2, Part Two — the network table folded by health service. Every group is TWO `<tbody>`
+ * elements (a header/summary tbody that is always rendered, a body tbody hidden by class when
+ * folded) rather than one, because `<details>` cannot wrap a `<tr>` — see `capacity-screen.tsx`'s
+ * own comment on `NetworkServiceGroupRows` for why `BandGroup` could not be reused as-is.
+ *
+ * ⚠️ **`.table tbody tr:last-child` (`ward-table.module.css`) ZEROES THE BORDER ON THE LAST ROW OF
+ * EVERY TBODY, NOT JUST THE TABLE'S OWN LAST ROW** — `:last-child` is scoped to siblings within one
+ * parent, and each group here is its own tbody. Left alone, every group's own last row (which is
+ * usually its header/summary row, since a service's body tbody sits AFTER it) would lose its
+ * divider, and consecutive groups would visually run together. Restored here, scoped under
+ * `.networkTable` as this file's own compound-selector rule already requires (see
+ * `ward-table.module.css`'s comment on why a bare class loses to `.table th, .table td` silently) —
+ * except for the table's own final tbody, which correctly keeps no border under it.
+ */
+.networkTable tbody:not(:last-of-type) tr:last-child th,
+.networkTable tbody:not(:last-of-type) tr:last-child td {
+  border-bottom: 0.0625rem solid var(--ward-divider);
+}
+
+/* The group summary/fold row — heavier than a body row, same treatment as `.totalRow` above, so it
+ * reads as a header rather than a sixteenth ward. */
+.groupSummaryRow th,
+.groupSummaryRow td {
+  font-weight: 600;
+  background: var(--ward-subtle);
+  border-top: 1px solid var(--ward-border);
+}
+
+.groupFoldButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ward-tap);
+  padding: var(--ward-space-4) var(--ward-space-10);
+  border: 1px solid var(--ward-border);
+  border-radius: var(--ward-radius-pixel);
+  background: var(--ward-chrome);
+  color: var(--ward-text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.groupFoldButton:hover {
+  border-color: var(--ward-border-strong);
+}
+
+.groupWardCount {
+  display: block;
+  margin-top: var(--ward-space-2);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 400;
+  color: var(--ward-muted);
+}
+
+/*
+ * ⚠️ NOT `.notTracked`, DELIBERATELY — same discipline as `.statedZero` versus `.notTracked` above.
+ * `.notTracked` means "this screen was never told this figure"; this means "this column has no
+ * honest total to state at all" (bed kinds served, per-ward freshness) — a different fact from
+ * either a tracked figure or an absent one, even though today it renders with the same weight.
+ */
+.groupNoSummary {
+  color: var(--ward-muted);
+  font-style: italic;
+}
+
+/* A service `wardServiceOrder` names with no real inpatient unit reporting to this board — a
+ * sentence, never a heading over nothing, matching `bed-map.module.css`'s own `.serviceAbsent`
+ * treatment for the identical case one panel up. */
+.networkGroupAbsent {
+  color: var(--ward-muted);
+  font-style: italic;
+}
+
+/* The ward rows beneath a folded group's summary row. `display: none` on the whole `<tbody>` —
+ * never `visibility: hidden`, which would still take up the table's layout space, and never
+ * unmounting, which would make the summary row's `aria-controls` dangle. */
+.groupBodyClosed {
+  display: none;
+}
+
+/* The word `.matchMark` wraps — see `NetworkRow`'s own comment for why a `WardChip` (which throws
+ * without text) is what actually carries this fact once colour cannot. */
+.matchMark {
+  margin-top: var(--ward-space-2);
+}
+
+/* The "All four together" row: heavier than a body row so it reads as a sum rather than a fifth
+ * bed kind. Figures stay tabular-nums via `.screen`, so this only needs weight and a resting tone. */
+.totalRow th,
+.totalRow td {
+  font-weight: 600;
+  background: var(--ward-subtle);
+  border-top: 1px solid var(--ward-border);
+}
+
+.gapNumber {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ⚠️ NOT A GREYED-OUT CELL. `notTracked` renders the same weight and colour as any other cell text
+ * — an absence stated in words is a fact, not a lesser one, and dimming it would read as "ignore
+ * this column" rather than "this column has an honest answer of 'not tracked'". */
+.notTracked {
+  color: var(--ward-muted);
+  font-style: italic;
+}
+
+/* A REPORTED zero, stated as the word "none" (owner ruling 2026-09-06, census §8).
+ *
+ * ⚠️ Deliberately a separate class from `.notTracked` even though the two are identical today. That
+ * one means "this ward does not report this figure"; this one means "this ward reports it and it is
+ * zero". They are the two facts the freeing field exists to keep apart, and `Ready` used to render
+ * its "none" through `.notTracked` — a class named for the opposite meaning. The distinction a
+ * reader gets is carried by the WORDS ("none" vs "Not tracked here"), not by the styling; the names
+ * exist so the next person editing either treatment knows which fact they are changing. */
+.statedZero {
+  color: var(--ward-muted);
+  font-style: italic;
+}
+
+/* The cleaning count beside a Ready figure (owner ruling 2026-09-05). Its own line, because it is a
+ * second fact rather than a qualifier on the number — and muted, because the number is what a
+ * coordinator scans down the column and this must not compete with it. */
+.beingMadeReady {
+  display: block;
+  margin-top: var(--ward-space-2);
+  font-size: var(--t-0, 0.75rem);
+  line-height: var(--ward-leading-relaxed);
+  color: var(--ward-muted);
+}
+
+/*
+ * Restored 2026-09-05 with the coordinator's capacity-refresh control (see capacity-screen.tsx).
+ *
+ * ⚠️ EVERY CUSTOM PROPERTY BELOW WAS CHECKED AGAINST `ward-tokens.module.css` BEFORE USE. A first
+ * draft of this block used `--ward-surface`, `--ward-ink`, `--ward-radius-sm`, `--ward-text-sm`,
+ * `--ward-surface-raised` and `--ward-ink-muted` — none of which are defined anywhere in `src`.
+ * An undefined custom property does not fail a build, a lint or a test: the declaration is simply
+ * dropped and the element renders unstyled.
+ *
+ * 🔴 **THE PARENTHESIS THAT USED TO BE HERE WAS FALSE AND IS WITHDRAWN.** It said several of those
+ * names were "already used elsewhere in THIS file and are equally dead there". They are not used
+ * anywhere in this file's live CSS — they appear twice, in the comment immediately above, **which I
+ * had just written.** I grepped the whole file for `--ward-` and read my own new prose back as
+ * evidence of pre-existing dead code. Measured properly, with comments blanked before counting:
+ * every one of those six names has 0 live uses here.
+ *
+ * ⚠️ **AND THE WIDER CLAIM IT IMPLIED IS ALSO FALSE.** Audited across all 56 stylesheets under
+ * `src/`, with comments stripped: the only `var()` references to an undefined property that carry
+ * no fallback are three Next.js font variables (injected on an element at runtime, not in CSS) and
+ * two uses of `--text-2xl`, which Tailwind's own default theme defines via `@import "tailwindcss"`.
+ * **No live ward declaration is dropped for want of a token.** The hazard described above is real
+ * and it caught my own draft; it is not an existing condition of this codebase.
+ *
+ * `--ward-tap` is the repo's production tap target. It is used rather than a literal, so this
+ * control cannot drift to the 44px a generic WCAG reading suggests — that reintroduces a known
+ * ui-smoke flake.
+ */
+.refreshButton {
+  min-height: var(--ward-tap);
+  padding: var(--ward-space-4) var(--ward-space-10);
+  border: 1px solid var(--ward-border);
+  border-radius: var(--ward-radius-pixel);
+  background: var(--ward-chrome);
+  color: var(--ward-text);
+  font-size: 0.75rem;
+  line-height: var(--ward-leading-ui);
+  cursor: pointer;
+}
+
+.refreshButton:hover {
+  border-color: var(--ward-border-strong);
+}
+
+/* The releases this board deliberately leaves out of every figure, stated rather than dropped. */
+.excluded {
+  margin: 0;
+  padding: var(--ward-space-10) var(--ward-space-16);
+  font-size: 0.75rem;
+  line-height: var(--ward-leading-relaxed);
+  color: var(--ward-muted);
+}
+
+/*
+ * The mid-update signal beside a ward's Ready figure. Deliberately the same weight as
+ * `.beingMadeReady` — both qualify the SAME number, and giving one of them more visual force would
+ * rank two cautions the model does not rank.
+ */
+.midUpdate {
+  display: block;
+  margin-top: var(--ward-space-2);
+  font-size: var(--t-0, 0.75rem);
+  line-height: var(--ward-leading-relaxed);
+  color: var(--ward-warning);
+}
+
+/*
+ * The synthetic-data disclosure every other ward screen already carries. Added 2026-09-06 after a
+ * walk of the running app found this screen showing invented figures and named Perth hospitals with
+ * nothing on the page saying so. Copied from `ward/ward.module.css` unchanged rather than restyled —
+ * a disclosure that looks different on different screens reads as decoration.
+ */
+.governanceBanner {
+  display: flex;
+  min-height: var(--ward-tap);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ward-space-12);
+  border-bottom: 0.0625rem solid var(--ward-divider);
+  background: var(--surface-chrome);
+  padding: var(--ward-space-8) var(--ward-space-12);
+}
+
+.governanceBanner p {
+  min-width: 0;
+  flex: 1 1 12rem;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--ward-leading-body);
+}
+
+.prototypeBadge {
+  flex-shrink: 0;
+  border: 0.0625rem solid var(--warning-border);
+  border-radius: var(--radius-sm);
+  background: var(--ward-warning-soft);
+  padding: var(--ward-space-2) var(--ward-space-8);
+  color: var(--ward-warning);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Third-edition Capacity adoption. The legacy declarations above remain the default contract for
+ * an unmarked consumer; this screen opts into the drawing's shell tokens at its root. */
+.screen {
+  min-width: 0;
+  min-height: 100%;
+  display: block;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--t-3);
+}
+
+.main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 0.875rem 1.5rem 1.5rem;
+}
+
+/* The mounted bar carries the visible page title. Keep the local heading in the accessibility
+ * tree so the page retains its existing h1 and descriptive context. */
+.pageHeader {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.columns {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.columns > * {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.capacityGrid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.875rem;
+  align-items: start;
+}
+
+.secondary {
+  display: grid;
+  min-width: 0;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.networkHeaderRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem 0.875rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.networkHeading {
+  margin: 0;
+  padding: 0;
+  border-bottom: 0;
+  background: transparent;
+  color: var(--accent-ink);
+  font-family: var(--display);
+  font-size: var(--t-2);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.networkHeaderTime {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-family: var(--body);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.secondary > :global([data-ward-primitive="panel"]) {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.secondary > :global([data-ward-primitive="panel"]) + :global([data-ward-primitive="panel"]) {
+  border-top: 1px solid var(--line);
+}
+
+.secondary :global([data-ward-primitive="panel-header"]) {
+  border-bottom: 0;
+  background: transparent;
+}
+
+@media (min-width: 64rem) {
+  .capacityGrid {
+    grid-template-columns: minmax(0, 1fr) 21rem;
+  }
+}
+
+.bar,
+.filters,
+.foot,
+.absent,
+.attention,
+.excluded {
+  font-family: var(--body);
+}
+
+.bar {
+  padding: 0.875rem;
+}
+
+.filters {
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.5rem 1rem;
+  border-bottom-color: var(--line);
+  background: var(--surface);
+}
+
+.screen .filters [data-ward-primitive="filters"] {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+  --ward-muted: var(--ink-soft);
+  --ward-blue: var(--accent-ink);
+  gap: 0.375rem;
+}
+
+.screen .filters button {
+  gap: 0.375rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  font-size: var(--t-1);
+}
+
+.screen .filters button span {
+  font-size: var(--t-0);
+}
+
+.foot,
+.absent,
+.excluded {
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.5;
+}
+
+.foot {
+  padding: 0.625rem 1rem;
+  border-top-color: var(--line);
+}
+
+.foot strong {
+  color: var(--ink-soft);
+}
+
+.absent {
+  padding: 0.875rem;
+}
+
+.attention {
+  gap: 0;
+  padding: 0;
+}
+
+.attentionItem {
+  padding: 0.75rem 0.875rem;
+  border-bottom: 1px solid var(--line);
+  border-left: 0;
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  line-height: 1.45;
+}
+
+.attentionItem:last-child {
+  border-bottom: 0;
+}
+
+.attentionWho {
+  margin-bottom: 0.1875rem;
+  color: var(--warn);
+  font-family: var(--body);
+  font-size: var(--t-1);
+}
+
+.excluded {
+  padding: 0.625rem 0.875rem;
+  border-top: 1px solid var(--line);
+}
+
+/* The existing semantic table is the single source of every mismatch fact. It is laid out as the
+ * drawing's five-cell band rather than duplicating the same engine figures into cosmetic cards. */
+.gapBandWrap {
+  overflow: visible;
+}
+
+.gapTable {
+  --ward-table-cell-inset: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+  border-top: 1px solid var(--line);
+}
+
+.gapTable thead {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.gapTable tbody,
+.gapTable tfoot {
+  display: contents;
+}
+
+.gapTable tbody tr,
+.gapTable tfoot tr {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  padding: 0.625rem 0.875rem 0.75rem;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.gapTable tbody tr:nth-child(2n),
+.gapTable tfoot tr {
+  border-right: 0;
+}
+
+.gapTable tfoot tr {
+  grid-column: 1 / -1;
+  border-bottom: 0;
+  background: var(--surface-2);
+}
+
+.gapTable tbody td,
+.gapTable tfoot th,
+.gapTable tfoot td {
+  display: block;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.45;
+}
+
+/* These table cells form one metric tile, not separately highlighted data rows. */
+.screen .gapTable tbody tr:hover > td {
+  background: transparent;
+}
+
+.gapTable tbody td:first-child,
+.gapTable tfoot th {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.gapTable tbody td:nth-child(4),
+.gapTable tfoot td:nth-child(4) {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  align-items: baseline;
+  gap: 0.4375rem;
+  margin-top: 0.1875rem;
+  color: var(--ink);
+}
+
+.screen .gapTable [data-ward-primitive="chip"] {
+  --ward-danger: var(--danger);
+  --ward-success: var(--good);
+  --ward-muted: var(--muted);
+}
+
+.gapTable tbody td:nth-child(2),
+.gapTable tfoot td:nth-child(2),
+.gapTable tbody td:nth-child(3),
+.gapTable tfoot td:nth-child(3) {
+  margin-top: 0.1875rem;
+}
+
+.gapTable tbody td:nth-child(2)::after,
+.gapTable tfoot td:nth-child(2)::after {
+  content: " waiting";
+}
+
+.gapTable tbody td:nth-child(3)::after,
+.gapTable tfoot td:nth-child(3)::after {
+  content: " fit";
+}
+
+.gapTable tbody td:last-child,
+.gapTable tfoot td:last-child,
+.gapTable .who {
+  /* The prose repeats the same labelled figures. Keep it available to assistive technology
+     without turning the drawing's compact comparison band into five paragraphs. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.groupDefinitions {
+  border-top: 1px solid var(--line);
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.groupDefinitions summary {
+  display: list-item;
+  min-height: 3rem;
+  align-content: center;
+  padding: 0.625rem 0.875rem;
+  cursor: pointer;
+}
+
+.groupDefinitions dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0 0.875rem 0.875rem;
+}
+
+.groupDefinitions dt {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.groupDefinitions dd {
+  margin: 0.25rem 0 0;
+}
+
+.gapTable .gapNumber {
+  white-space: nowrap;
+  flex-shrink: 0;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-5);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.gapTable :global([data-ward-primitive="chip"]) {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: var(--t-0);
+  text-transform: none;
+}
+
+@media (min-width: 64rem) {
+  .gapTable {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .gapTable tbody tr,
+  .gapTable tbody tr:nth-child(2n) {
+    border-right: 1px solid var(--line);
+    border-bottom: 0;
+  }
+
+  .gapTable tfoot tr {
+    grid-column: auto;
+    border-bottom: 0;
+  }
+}
+
+.networkTable {
+  --ward-table-cell-inset: 0.375rem 0.5625rem;
+}
+
+.networkTable tbody tr[data-ward-network-row-matches="true"] {
+  background: var(--accent-soft);
+}
+
+.networkTable tbody tr[data-ward-network-row-matches="false"] td {
+  color: var(--muted);
+}
+
+.groupSummaryRow th,
+.groupSummaryRow td,
+.totalRow th,
+.totalRow td {
+  border-color: var(--line);
+  background: var(--surface-2);
+}
+
+.groupFoldButton,
+.refreshButton {
+  min-height: 3rem;
+  border-color: var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--t-1);
+}
+
+.groupFoldButton:hover,
+.refreshButton:hover {
+  border-color: var(--ink-soft);
+  background: var(--sunk);
+}
+
+.who,
+.groupWardCount,
+.groupNoSummary,
+.networkGroupAbsent,
+.beingMadeReady,
+.midUpdate,
+.notTracked,
+.statedZero {
+  color: var(--muted);
+  font-family: var(--body);
+  font-size: var(--t-0);
+}
+
+.midUpdate {
+  color: var(--warn);
+}
+
+.capacityFooter {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 0.875rem;
+  padding: 0.8125rem 1rem 0.9375rem;
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  background: var(--surface-2);
+}
+
+.capacityFooter section {
+  min-width: 0;
+}
+
+.capacityFooter h2 {
+  margin: 0 0 0.3125rem;
+  color: var(--accent-ink);
+  font-family: var(--display);
+  font-size: var(--t-2);
+  font-weight: 600;
+}
+
+.capacityFooter p,
+.capacityFooter li {
+  margin: 0 0 0.25rem;
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  line-height: 1.5;
+}
+
+.capacityFooter ul {
+  margin: 0;
+  padding-left: 1.1em;
+}
+
+.prototypeBadge {
+  display: inline-flex;
+  margin-bottom: 0.375rem;
+  border-color: var(--warn);
+  border-radius: var(--r2);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: var(--t-0);
+}
+
+.reconciliation {
+  grid-column: 1 / -1;
+  padding-top: 0.625rem;
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 40rem) {
+  .screen {
+    padding-top: 0;
+  }
+
+  .main {
+    padding: 0.875rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen *,
+  .screen *::before,
+  .screen *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .capacityFooter,
+  .groupFoldButton,
+  .refreshButton,
+  .gapTable,
+  .gapTable tbody tr,
+  .gapTable tfoot tr {
+    border-color: CanvasText;
+  }
+
+  .networkTable tbody tr[data-ward-network-row-matches="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}
+
+@media print {
+  .screen,
+  .screen *,
+  .screen *::before,
+  .screen *::after {
+    background-color: Canvas !important;
+    color: CanvasText !important;
+    box-shadow: none !important;
+  }
+
+  .main {
+    padding: 0;
+  }
+
+  .capacityGrid {
+    display: block;
+  }
+
+  .secondary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 0.875rem;
+  }
+
+  .groupBodyClosed {
+    display: table-row-group;
+  }
+
+  .groupFoldButton,
+  .filters,
+  .refreshButton {
+    display: none;
+  }
+
+  .networkTable {
+    min-width: 0;
+    font-size: 8pt;
+  }
+
+  .capacityFooter {
+    break-inside: avoid;
+    border-color: CanvasText;
+  }
+}
+
+/* Q003: desktop panels use the available workspace without turning the whole page into a clipped
+ * viewport. The map and the three summary panels share one bottom edge; their own headers remain
+ * in place while each panel's content scrolls. The long ward table gets a separate, larger region
+ * so the filter remains visible while rows move beneath it. */
+@media (min-width: 64rem) {
+  .capacityGrid {
+    height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
+    align-items: stretch;
+  }
+
+  .capacityGrid > :global([data-ward-primitive="panel"]) {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .capacityGrid > :global([data-ward-primitive="panel"]) > :global([data-ward-primitive="panel-header"]),
+  .secondary > :global([data-ward-primitive="panel"]) > :global([data-ward-primitive="panel-header"]) {
+    position: sticky;
+    z-index: 1;
+    top: 0;
+    flex: none;
+  }
+
+  .secondary {
+    min-height: 0;
+    grid-template-rows: auto repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .secondary > :global([data-ward-primitive="panel"]) {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .capacityPanelBody {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+}
+
+@media (min-width: 62.5625rem) {
+  .wardsSection > :global([data-ward-primitive="panel"]) {
+    display: flex;
+    height: var(--ward-workspace-height, clamp(36rem, calc(100dvh - 9rem), 64rem));
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  .wardsSection > :global([data-ward-primitive="panel"]) > :global([data-ward-primitive="panel-header"]),
+  .wardsSection .filters {
+    flex: none;
+  }
+
+  .networkBody {
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+@media print {
+  .capacityGrid,
+  .wardsSection > :global([data-ward-primitive="panel"]) {
+    height: auto;
+  }
+
+  .capacityGrid > :global([data-ward-primitive="panel"]),
+  .secondary > :global([data-ward-primitive="panel"]),
+  .capacityPanelBody,
+  .networkBody {
+    overflow: visible;
+  }
+}
+
+/* Q004: compact network context and a selected ward, with one independently scrolling body. */
+.snapshotTime {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.375rem;
+  margin: 0;
+  color: var(--muted);
+  text-align: right;
+  font-size: var(--t-0);
+}
+
+.liveDot {
+  position: relative;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+  background: var(--good);
+}
+
+.liveDot[data-live="true"]::after {
+  content: "";
+  position: absolute;
+  inset: -0.125rem;
+  border-radius: 50%;
+  pointer-events: none;
+  border: 1px solid var(--good);
+  box-shadow: 0 0 0.375rem var(--good);
+  opacity: 0;
+  animation: capacityMetroPulse 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.liveDot[data-live="false"] {
+  background: var(--muted);
+}
+
+@keyframes capacityMetroPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liveDot[data-live="true"]::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .liveDot {
+    background: CanvasText;
+  }
+  .liveDot[data-live="true"]::after {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+}
+
+/*
+ * Task C1 (build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2/§3) — the
+ * whole-network disclosure sitting beside the mismatch panel while a service is chosen ("Across the
+ * whole network, not only {S}."). Tokens only, no hex; the same muted weight `.snapshotTime` and
+ * `.absent` already give a supporting sentence that is not itself a clinical figure.
+ */
+.serviceScopeNote {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+.snapshotTime span {
+  white-space: nowrap;
+}
+.groupDefinitions summary {
+  min-height: var(--ward-tap, var(--spacing-tap, 3rem));
+}
+.secondary {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.networkHeading {
+  flex: none;
+}
+.readySummary {
+  flex: none;
+  padding: 0.875rem;
+  border-bottom: 1px solid var(--line);
+}
+.readySummary h3,
+.confirmationSection h3 {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.readySummary p {
+  margin: 0.375rem 0 0;
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+.readySummary .readyValue {
+  display: flex;
+  align-items: baseline;
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+.readyValue strong {
+  margin-right: 0.375rem;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-6);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.preparationWarning {
+  color: var(--warn);
+}
+.sidebarTabs {
+  display: flex;
+  flex: none;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.sidebarTabs button {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.875rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.sidebarTabs button[aria-selected="true"] {
+  border-bottom-color: var(--gilt);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+}
+.sidebarTabs button:hover {
+  color: var(--ink);
+  background: var(--sunk);
+}
+.sidebarBody {
+  min-height: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.sidebarSectionTitle {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.875rem 0.875rem 0.375rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.sidebarSectionTitle span {
+  color: var(--ink);
+  font-family: var(--mono);
+}
+.sidebarFooter {
+  display: flex;
+  flex: none;
+  align-items: center;
+  padding: 0.625rem 0.875rem;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.sidebarFooter a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.25rem;
+  color: var(--accent-ink);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.sidebarFooter a:hover {
+  color: var(--ink);
+  text-decoration-thickness: 2px;
+}
+.sidebarBody .freeingList {
+  list-style: none;
+  margin: 0;
+  padding: 0.375rem 0.875rem 0.875rem;
+  display: flex;
+  flex-direction: column;
+}
+.freeingItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.5rem 0.375rem;
+  border-bottom: 1px solid var(--line);
+}
+.freeingItem:last-child {
+  border-bottom: 0;
+}
+.freeingWardButton {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--ward-tap, 2.75rem);
+  padding: 0;
+  border: 0;
+  border-radius: var(--r2);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.freeingWardButton:hover {
+  background: var(--sunk);
+}
+.freeingWardButton:hover .freeingWardName {
+  color: var(--accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.freeingWardName {
+  font-family: var(--body);
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.freeingBadge {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 0.1875rem 0.5625rem;
+  border-radius: 9999px;
+  background: var(--good-soft);
+  color: var(--good);
+  font-size: var(--t-0);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.textButton,
+.wardRowSelect {
+  /* D1 #2917: tap floor without bloating table density — flex + modest padding, not fixed chrome height. */
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: var(--ward-tap, var(--spacing-tap, 3rem));
+  width: fit-content;
+  padding: 0.375rem 0.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--accent-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.textButton:hover,
+.wardRowSelect:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.wardRowSelect {
+  color: var(--ink);
+  font-weight: 600;
+}
+.attentionAction {
+  margin: 0 0.875rem 0.875rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--t-0);
+  text-align: left;
+  cursor: pointer;
+}
+.wardIdentity {
+  flex: none;
+  padding: 0.75rem 0.875rem;
+  border-bottom: 1px solid var(--line);
+}
+.wardIdentity .textButton {
+  min-height: var(--ward-tap);
+  font-size: var(--t-0);
+}
+.wardIdentity h2 {
+  margin: 0.625rem 0 0.1875rem;
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: var(--t-3);
+  font-weight: 600;
+}
+.wardIdentity p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+.wardFacts {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.875rem;
+  font-size: var(--t-1);
+}
+.wardFacts > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 0.75rem;
+  align-items: baseline;
+}
+.wardFacts dt {
+  color: var(--muted);
+}
+.wardFacts dd {
+  margin: 0;
+  text-align: right;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.confirmationSection {
+  padding: 0.875rem;
+  border-top: 1px solid var(--line);
+}
+.confirmationSection p {
+  margin: 0.5rem 0;
+  font-size: var(--t-1);
+}
+.sidebarWarning,
+.dischargeSummary {
+  margin: 0;
+  padding: 0.625rem 0.875rem;
+  font-size: var(--t-1);
+}
+.sidebarWarning {
+  color: var(--warn);
+}
+.dischargeSummary {
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+}
+.dischargeRecords {
+  margin: 0;
+  padding: 0.5rem 0.875rem 0.875rem;
+  list-style: none;
+}
+.dischargeRecords li {
+  padding: 0.625rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--t-1);
+}
+.dischargeRecords li:last-child {
+  border-bottom: 0;
+}
+.dischargeRecords p {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+.dischargeRecords p.preparationWarning {
+  color: var(--warn);
+}
+.recordButton {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.375rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.recordButton span {
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+.recordButton:hover strong {
+  text-decoration: underline;
+}
+.recordDetail {
+  padding: 0.875rem;
+}
+.recordDetail h3 {
+  margin: 0.875rem 0 0;
+  color: var(--ink);
+  font-size: var(--t-2);
+}
+.recordDetail .wardFacts {
+  padding: 0.875rem 0;
+}
+.recordDetail > p {
+  font-size: var(--t-1);
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.625rem 1rem;
+  padding: 0.625rem 0.875rem;
+}
+.sortControl {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+.sortControl select {
+  min-height: 2.25rem;
+  max-width: 100%;
+  padding: 0.375rem 1.5rem 0.375rem 0.5rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.networkBody {
+  min-height: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+}
+
+.networkTableScroll {
+  flex: 1;
+  min-height: 0;
+  max-height: clamp(24rem, calc(100dvh - 12rem), 52rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+
+.networkTableScroll[data-ward-scroll-hint="true"] {
+  border: 1px solid var(--line);
+}
+
+.networkTable {
+  --ward-table-min-width: 68rem;
+  --ward-table-cell-inset: 0.5rem 0.625rem;
+  font-size: var(--t-1);
+}
+
+.stickyHeaderRow,
+.stickyHeaderRow th,
+.networkTable thead th,
+.networkTable thead tr {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line-strong);
+}
+.screen .networkTable th {
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--surface-2);
+}
+.screen .networkTable td:nth-child(n + 3):nth-child(-n + 10),
+.screen .networkTable th:nth-child(n + 3):nth-child(-n + 10) {
+  text-align: right;
+  font-family: var(--mono);
+}
+.screen .networkTable td,
+.screen .networkTable th {
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+.screen .networkTable td:first-child,
+.screen .networkTable th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  min-width: 14rem;
+  white-space: normal;
+  background: var(--surface);
+  box-shadow: 1px 0 0 var(--line);
+}
+.screen .networkTable thead th:first-child {
+  position: sticky;
+  left: 0;
+  top: 0;
+  z-index: 20;
+  background: var(--surface-2);
+  box-shadow: 1px 0 0 var(--line);
+}
+.screen .networkTable .groupSummaryRow th:first-child,
+.screen .networkTable .totalRow th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background: var(--surface-2);
+  box-shadow: 1px 0 0 var(--line);
+}
+.networkTable tbody tr:hover td:first-child {
+  background: var(--sunk);
+}
+.screen .networkTable td:nth-child(2) {
+  min-width: 7rem;
+}
+.screen .networkTable td:nth-child(14) {
+  min-width: 10rem;
+  white-space: normal;
+}
+.networkTable tbody tr[data-selected="true"] {
+  background: var(--accent-soft);
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+.networkTable tbody tr[data-selected="true"] td:first-child {
+  background: var(--accent-soft);
+}
+.networkTable tbody tr[data-ward-network-row-matches="true"] td:first-child {
+  background: var(--accent-soft);
+}
+.networkTable tbody tr[data-ward-network-row-matches="true"]:hover td:first-child {
+  background: var(--accent-soft);
+}
+.networkTable tbody tr[data-testid^="ward-capacity-network-row-"] {
+  cursor: pointer;
+}
+.screen .networkTable .beingMadeReady {
+  min-width: 8rem;
+  max-width: 9rem;
+  margin-left: auto;
+  color: var(--warn);
+  font-family: var(--body);
+  white-space: normal;
+}
+.screen .networkTable .groupSummaryRow th,
+.screen .networkTable .groupSummaryRow td {
+  padding-top: 0.4375rem;
+  padding-bottom: 0.4375rem;
+}
+.groupFoldButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.25rem;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.groupFoldButton:hover {
+  background: var(--sunk);
+  border-color: var(--line-strong);
+}
+.foldIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-right: 0.25rem;
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.groupWardCount {
+  display: inline;
+  margin-left: 0.5rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: nowrap;
+}
+.refreshButton {
+  min-height: 2.25rem;
+  padding: 0.375rem 0.75rem;
+  font-size: var(--t-0);
+  cursor: pointer;
+}
+.matchMark {
+  margin-top: 0.25rem;
+}
+.capacityFooter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+.capacityFooter .prototypeBadge {
+  margin: 0;
+  background: transparent;
+  color: var(--muted);
+}
+.sidebarBody:focus-visible,
+.wardIdentity h2:focus-visible,
+.screen button:focus-visible,
+.screen select:focus-visible,
+.sidebarFooter a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  scroll-margin: 0.5rem;
+}
+@media (min-width: 64rem) {
+  .secondary {
+    min-height: 0;
+  }
+  .sidebarBody {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+}
+@media (min-width: 62.5625rem) {
+  .wardsSection > :global([data-ward-primitive="panel"]) {
+    height: auto;
+    max-height: var(--ward-workspace-height, clamp(36rem, calc(100dvh - 9rem), 64rem));
+  }
+}
+/* D1 #2917: tablet 820 + phone/coarse — interactive capacity rows/controls ≥ tap floor */
+@media (max-width: 51.25rem), (pointer: coarse) {
+  .sidebarTabs button,
+  .refreshButton,
+  .sortControl select,
+  .textButton,
+  .recordButton,
+  .wardRowSelect,
+  .attentionAction,
+  .groupFoldButton,
+  .sidebarFooter a {
+    min-height: var(--ward-tap, var(--spacing-tap, 3rem));
+  }
+  .textButton,
+  .wardRowSelect,
+  .sidebarFooter a {
+    display: inline-flex;
+    align-items: center;
+  }
+  .freeingItem,
+  .networkTable tbody tr {
+    min-height: var(--ward-tap, var(--spacing-tap, 3rem));
+  }
+  .snapshotTime {
+    text-align: left;
+  }
+}
+
+/* D1 #2917 phone IA (~390): one column, sticky primary chrome, no horizontal bleed */
+@media (max-width: 40rem) {
+  .screen {
+    overflow-x: clip;
+  }
+  .main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    overflow-x: clip;
+  }
+  .pageHeader {
+    background: var(--surface, var(--ward-chrome, Canvas));
+    padding-bottom: 0.5rem;
+  }
+  .secondary {
+    order: 2;
+  }
+}
+@media (forced-colors: active) {
+  .secondary,
+  .sidebarTabs,
+  .sidebarFooter,
+  .wardIdentity,
+  .confirmationSection {
+    border-color: CanvasText;
+  }
+  .sidebarTabs button[aria-selected="true"] {
+    border-bottom-color: Highlight;
+  }
+}
+@media print {
+  .secondary {
+    display: block;
+  }
+  .sidebarBody {
+    overflow: visible;
+  }
+  .freeingItem .textButton,
+  .wardRowSelect,
+  .groupFoldButton,
+  .recordButton {
+    display: inline !important;
+  }
+  .sidebarTabs,
+  .sidebarFooter,
+  .wardIdentity .textButton,
+  .recordDetail .textButton,
+  .attentionAction {
+    display: none;
+  }
+  .wardsSection > :global([data-ward-primitive="panel"]) {
+    max-height: none;
+  }
+  .networkTable {
+    --ward-table-min-width: 0;
+  }
+  .screen .networkTable td,
+  .screen .networkTable th {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .screen .networkTable td:first-child,
+  .screen .networkTable th:first-child,
+  .screen .networkTable td:nth-child(2),
+  .screen .networkTable td:nth-child(14),
+  .screen .networkTable .beingMadeReady {
+    min-width: 0;
+  }
+}

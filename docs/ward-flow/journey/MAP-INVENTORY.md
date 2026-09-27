@@ -1,0 +1,229 @@
+# WHAT THE WARD JOURNEY MAP CURRENTLY SHOWS
+
+## 111 BOXES ON THE ROUTE MAP  (lane = how it is coloured)
+- [expected] A community team
+- [expected] A crisis service
+- [expected] Police
+- [expected] Ambulance
+- [expected] Another hospital
+- [expected] A doctor in an ED
+- [expected] A GP
+- [heading] Who raises it  ·  seven — A doctor in an ED may only raise it as an ED referral — they cannot claim another source.
+- [expected] A referral is raised — Somebody has decided this person needs to go somewhere.
+- [expected] Addressed to up to three places at once — Never two of the same kind. Each answers on its own, and cannot see the others.
+- [expected] ①  Sent to a community team — Named as free text — there is no register of teams to choose from.
+- [expected] ②  Sent to a psychiatric ward — Carries what the bed must be: sex, gender, secure, involuntary, high-acuity nursing.
+- [expected] ③  Sent to an emergency department — Must say what it is FOR: a bed, a psychiatric review, or a medical assessment.
+- [expected] The team answers
+- [end] Accepted — community follow-up — The arm ends here. It never becomes a bed search.
+- [end] Declined — four reasons — Outside the team's catchment · needs inpatient care, not community follow-up · the client declined or could not be contacted · already open to another team.
+- [stall] No answer at all — and nothing can close it — No acceptance anywhere cancels a queued community arm, so unlike the other two it can only end by the team answering or the referrer taking this arm back. Nothing escalates, and there is no clock.
+- [stall] The referrer withdraws just this arm — A narrow exception added 17 September 2026, and only while the arm is still queued — a team that has already answered keeps its answer. The bed request stands.
+- [diversion] It can also begin part-way through a bed search — Redirecting a bed search to a community team raises a real referral of this kind — or reuses a queued arm already asking that same team, rather than asking twice. So this arm does not only start at the front door.
+- [note] This arm is exempt from the automatic cancellation — In both directions. A ward accepting does not close it, and it accepting does not close the bed search. It is the only arm that behaves this way.
+- [expected] The ward answers
+- [expected] Accepted — The only answer anywhere that starts something.
+- [end] Declined — seven reasons — No suitable bed · age band not provided here · no bed of that designation · no secure bed · belongs to another service · referred elsewhere · another reason.
+- [stall] No answer at all — It simply stays waiting. Nothing escalates on its own, and there is no clock on it.
+- [diversion] Every other waiting arm is cancelled — Automatically, the moment a ward OR a department accepts — except the community arm, which is exempt in both directions. The referrer is neither asked nor told.
+- [diversion] The referrer takes the WHOLE referral back — The default, and the opposite of the community arm's one-arm exception: every still-queued destination goes at once. If a bed search is already running it releases the held bed and cancels the transport, and closes as 'did not proceed'. Refused once transport has collected the patient — that needs a coordinator, not an automatic withdrawal.
+- [stall] A ward cannot accept while a department's bed search is live — One referral, two arms: if the emergency department already raised the bed search, the ward arm is refused until that movement closes or arrives. Neither arm's screen shows the other.
+- [expected] It lands on that department's board — And the referrer can see their patient sitting there.
+- [expected] Expected to arrive — Triaged, and not here yet. It sits on a separate list from the referrals.
+- [stall] Expected, and never arrives — A queued ED arm can be declined or withdrawn before arrival, removing this expectation. Otherwise it stays until arrival; past 72 hours the screen adds a reminder but changes no record.
+- [expected] Marked present — The only door between the two lists. Stamped once; a repeat keeps the earliest time.
+- [expected] The department answers, or acts
+- [expected] Accepted — the department takes them — And every other destination still waiting is cancelled on the spot, including the ward request sent alongside it. The referrer is not asked.
+- [end] Declined — three reasons only — Belongs to another service · referred elsewhere · another reason. The four bed-shaped reasons are withheld on purpose: an ED is not being asked for a bed.
+- [expected] A doctor raises a bed search from here — This is what creates the record that moves. It can be linked back to the referral that sent them, or raised for somebody nobody referred.
+- [end] The department decides no bed is needed — Two labels, one behaviour: 'for community follow-up' raises no referral and tells no team — only the separate action below does that. Unwinds a held bed, an uncollected transport job and every live ward request. Refused once transport has collected them.
+- [diversion] Referred straight to a community team instead — Ends the bed search and creates or reuses a real community referral. Available from the moment the bed search exists until the patient is collected — not only from a department. Refused once they are collected, and while a legal form has no conclusive examination outcome.
+- [end] Left the department — Only recordable after an outcome has been recorded first.
+- [seam] A movement now exists — Accepting a referral starts nothing by itself. This second record is the one that moves.
+- [expected] Placement requested
+- [expected] Wards are asked — One at a time, or several at once, up to three.
+- [expected] A ward accepts in principle — Still no bed set aside.
+- [expected] A bed is pulled and held — Empty, offered to nobody else. Four hours is the default, not a rule — a coordinator can set the hold anywhere between thirty minutes and four hours. The admission this creates now names the movement it came from — a join added by owner ruling on 21 September, and the first pointer of any kind between the patient's track and the bed's; it is empty for the beds seeded as already occupied, so anything reading it has to cope with nothing being there.
+- [expected] Transport is booked — Five answers, none defaulted — provider, escort, CAD number, voluntary or involuntary, estimated time.
+- [expected] Handover ready
+- [expected] The crew accepts, and sets off
+- [expected] The patient is collected — After this point, everything changes.
+- [expected] The ward says they have arrived — The one step that can never be undone.
+- [expected] Occupied — on the ward
+- [expected] Clinically ready to leave — The patient's departure and the named bed-release record proceed on two tracks.
+- [stall] A ward declines — seven reasons — No bed · sex mix · no specialling · acuity mix · capability mismatch · bed pulled for an earlier referral · out of catchment.
+- [stall] One ward's request is taken back — Seven reasons. The other wards asked carry on considering.
+- [stall] The acceptance is withdrawn — Four reasons — recorded in error · the decision changed · the patient's situation changed · the bed was lost. A stepped-back pull still holds its bed, so withdrawal is refused until the pull is restored and released.
+- [end] The bed search is abandoned — Pulled from every ward still considering it, or — once a ward has accepted — the acceptance revoked and any held bed given back. It closes as 'did not proceed'. This is also where an examination outcome of a community order, or a revocation, lands while no bed is held yet.
+- [stall] The held bed is given back — four reasons — NINE different actions delete that admission, not one — releasing the pull (four reasons of its own), releasing a held bed after transport was stopped, abandoning the bed search, the referrer withdrawing it, the department deciding no bed is needed, sending them to a community team instead, an examination outcome that ends it, releasing the bed a diverted journey held, and releasing the bed while reopening the search. Whichever it was, the admission record is deleted outright: nobody was ever in this bed.
+- [stall] Transport cancelled before collection — Four reasons. The job is deleted and nothing is rebooked. Whether the bed is still held depends on how far the record has got — and the notice works that out from the stage, not from the bed.
+- [diversion] The journey is stopped after collection — Three reasons, and somebody must say where the patient now is. The movement closes and the bed stays held.
+- [absent] The patient absconds — No state exists for this. They are still admitted, the bed is still theirs, and nothing anywhere can say they are missing.
+- [forced] A coordinator places them anyway — Eight of the bed checks can be passed by recording one of five reasons — the receiving team has agreed despite the mismatch · clinical urgency outweighs it · the bed information is known to be out of date · continuity with an earlier admission here · closer to home or family. Running out of one-to-one nursing or of high-acuity capacity can be passed the same way, and passing the acuity one also demands that the nurse unit manager was consulted.
+- [stall] The one refusal nothing can override — If the ward is designated for one gender and the patient's recorded gender is the other, no reason passes it and the app will not even offer the list. Non-binary, Different term, and not-recorded genders can use the coordinator-reviewed exception. Every other bed check here can be forced; this one cannot.
+- [forced] A patient with a non-binary, Different term, or unrecorded gender onto a single-gender ward — Only a coordinator, and only with one of six recorded reasons — a single room is available · the patient's stated preference, agreed with the ward · no single room is free and the ward agreed a plan for privacy · the only suitable ready bed, agreed with the ward · they know this ward from an earlier stay · closer to home or supports.
+- [absent] Starting a new legal form from the legal forms screen — A form is issued when the emergency department raises the bed search, and the legal forms screen records when it was written or received and its expiry. Only a form started there is lost: 'Record a form' opens the whole form, and its save button is disabled, so it records nothing.
+- [diversion] No transport needed — Marked arrived straight from the held bed, with no journey recorded at all.
+- [diversion] Pulling again when the bed is already held — Restores the record to 'pulled' and returns before any capacity, specialling, acuity or eligibility check runs. Deliberate — the held bed is one of the things those checks count — but it means a second pull is not a second decision.
+- [stall] The bed stops suiting them, part-way — Checked again at four separate steps while the bed is held — pulling it, handover ready, the crew accepting, and collection. The refusal says to withdraw the acceptance and refer again — but withdrawing is itself refused while a bed is held, and THAT refusal names the real route: pull it again to restore it, release the pull, then withdraw. Three steps, and only the second message tells you them.
+- [breach] The cancellation can state the wrong thing — Whether a bed is still held is worked out from how far the record has got, not from the bed. A record stepped backwards still holds its bed, and the cancellation then tells everyone no bed is held.
+- [breach] The legal authority is revoked before pick-up — Sending the crew is still allowed; collecting the patient is refused while the bed is held. A crew can be sent to a door it will be turned away from.
+- [diversion] Away at an ED, or on leave — Two unlike things in one place. Away at an emergency department is recorded against the PATIENT and paired with their return. A leave bed is recorded against the WARD and names the one stay it belongs to (owner ruling, 25 September), but it still carries no reason and no destination.
+- [stall] Once the record closes, nothing can be added to it — Arriving closes it, and so does every other ending. More than thirty checks across the engine then refuse. Three of those matter: the Mental Health Act status, the sex or gender recorded for bed matching, and whether a legal form arrived or when it expires. If any of those is wrong at the moment the record closes, it can never be corrected there, and the refusals name no other route.
+- [diversion] Sending a country patient home — Logged against the admission once it has been arranged off the system: home hospital, whether its ward agreed, road or flight, provider and tracking number. It books nothing. Only when the home ward agreed does it also open a new movement asking for a bed at home.
+- [expected] Track one — the person leaves — Eight recorded ways out, and one of them frees no bed at all.
+- [expected] Track two — the bed is released — Expected, then confirmed, then discharged — but confirming can be skipped, and expected straight to discharged is allowed on purpose. The last step happens when the named patient is recorded leaving, and moves TWO counts: the beds a ward may allocate, and the beds it has empty.
+- [stall] Stuck, or waiting on something — Seven things it can wait on, nine reasons it can be stuck. Neither is a stage.
+- [end] Discharged to the community — Frees a bed.
+- [diversion] Transferred to another psychiatric ward — Frees THIS ward's bed and gains the state nothing — the only one that is not a release.
+- [end] Transferred to a general hospital — Frees a bed.
+- [end] Moved to residential care — Frees a bed.
+- [end] Left against advice — Frees a bed.
+- [end] Died on the ward — Frees a bed.
+- [end] Transferred to police or prison custody — Frees a bed.
+- [end] Did not return — Frees a bed.
+- [record] Is this the same person already? — Four warnings when somebody is added — the record number already exists · same name and same date of birth · same name where the date of birth does not confirm it · a name one keystroke away from an existing one. All four are warnings. None of them refuses.
+- [absent] What the form asks for and then discards — Triage category, statutory legal status, Aboriginal and Torres Strait Islander status, address, presenting facility, health service, presenting complaint and clinical intake notes are all collected when a patient is added. Six fields are kept: record number, given name, family name, date of birth, gender, and suburb if one was typed. The model has nowhere to put the rest, so it goes on submit with nothing said. 'Save draft' and 'Print' on the same screen record nothing either.
+- [record] Is the patient medically cleared? — Three answers, not two — unrecorded, cleared, and explicitly not cleared.
+- [absent] Nothing on this map expires on its own — The clock only moves when somebody advances it, and advancing it changes one number and nothing else — no hold lapses, no request is cancelled, nothing escalates. Every deadline, every countdown and every 'overdue' on any screen is worked out fresh each time the screen is read.
+- [record] Six settings change what is allowed — How long a pulled bed is held (thirty minutes to four hours, default four). How many places one referral may be sent to at once (one to three — a coordinator can only turn this DOWN from three, never up). The department's access target (twelve to thirty-six hours). The morning count deadline, and the two 'due soon' warning times. Saving them replaces all six at once or is refused outright.
+- [record] Where they sit in the queue — Flagged urgent first, then the urgency tier, then whoever has waited longest, then the record's own id as a tie-break. Nothing else moves anybody up.
+- [record] Two patients wanting the same bed — A function can work out which movements are competing for one bed, but no screen calls it, so no clash is shown anywhere today. If it were used it would only name the clash: it never ranks the patients and never arranges an outcome.
+- [record] Flagged urgent — Ten reasons. Lifts the patient above every urgency level, and re-sorts nothing on its own.
+- [record] Escalated — Which wards were tried and who was rung. Six people it can be escalated to.
+- [record] A ward states how many beds it can allocate — Set outright rather than counted up, and refused if it claims more beds than the ward physically has. Asking a ward to refresh it records that somebody asked, and moves no number at all.
+- [record] The legal status changes — Four values. Changing it triggers nothing — even if it makes the accepted ward unlawful.
+- [record] The legal paperwork arrives — Nine forms can be recorded as received — 1A, 3A, 3C, 3D, 5A, 5B, 6A, 6B, 6C. Receipt can be undone and recorded again; every expiry is a time a clinician typed.
+- [record] An examination is recorded — Four outcomes. Only “a further examination is ordered” allows a second one.
+- [record] The paperwork is written, continued, or attached — Written and continued forms store clinician-typed start and expiry times and clear the old legal clock. A 3C after arrival on a 3D is refused. A file can be attached by name. The country-extension event is always refused; use the typed-expiry event instead.
+- [record] The ward's authority does not match the person's status — Two shapes, both named: an involuntary patient on a voluntary ward, and a voluntary patient on a locked one. It can be flagged, and it cannot be overridden: ward authority for an involuntary patient is never overridable (owner ruling, 25 September).
+- [record] Somebody is told — Twenty-three kinds of notice. Written once, never rewritten, never deleted, never expiring.
+- [record] The journey is diverted while it is under way — Only once the patient is actually in the vehicle — it is refused before collection, after arrival, and a second time on a movement already diverted. It records a reason and where they were taken instead. The held bed does not come back on its own: giving it back is a separate act, and refused unless this movement was in fact diverted.
+- [stall] After they arrive, the form's expiry cannot be recorded — Arriving closes the record that moves, and adding an expiry to a closed record is refused. So a patient on the ward under a legal form is past the point where this route can record or extend its expiry, and the refusal names no other way.
+- [record] A clock somebody starts by hand — Two kinds, forty-eight hours and seven days, raised against a movement and cleared again. Only one can be open at a time — raising a second is refused, and so is clearing one that was never raised. Nothing starts it automatically and nothing expires it; it is a note about time, not a timer.
+- [absent] The rule for a bed kept during a medical trip — A threshold exists for how long a general-hospital trip must be expected to last before the ward bed is given up, and a function decides from it. Nothing in the app calls that function, so the rule is neither applied nor shown anywhere. The threshold is set to 24 hours, while the note beside it still describes the owner's figure as 48.
+- [record] A row appears in the coordinator's inbox — Five live fact categories are acknowledged rather than completed. The engine refuses completion of their real rows, but a fabricated commitment-prefixed ID can be completed because it is not checked against the inbox.
+- [record] Step-down, and what is holding the discharge up — Two settings on a known admission: step-down candidacy and one discharge barrier. The acting ward must match; a substantive barrier is refused for a stay under seven days. Neither moves a bed figure.
+- [record] A discharge recorded the other way — A second event does exactly what recording a departure does, but only for a patient whose identity is linked, and only against the revision number the screen last read. Same result, different door.
+- [record] The bed is being prepared — Being cleaned · awaiting maintenance or repair. Since the owner's ruling of 1 September it counts: a bed still being made ready is not open, and a pull is refused when every free bed at the ward is still being made ready.
+- [record] Only the ward it belongs to may touch it — Confirming a release, reversing it, flagging it stuck, clearing that flag, marking the bed being cleaned, and finally freeing it are each refused to any other ward. It is what stops one ward's freed bed landing in another ward's figures.
+- [record] The ward's own day, beside the patient's — A morning count a ward confirms, a message it can be sent, and a sweep that works out which beds on leave are worth warning about. None of them belongs to any one patient, which is why they sit off the journey rather than on it.
+- [heading] Recorded alongside  · — Happens at some point without moving the journey.
+- [heading] ←  Stalls, undos and endings — Grey goes back into the route. Teal does not.
+- [heading] Read down the middle  ↓ — Read straight down.
+- [heading] Diversions  → — It carries on, somewhere other than expected.
+
+## 96 ACTIONS, and which boxes each is attached to
+- RECEIVE_REFERRAL :: Raise a referral at the front door :: boxes = raised, addressed, armCommunity, armWard, armEd, srcCommunity, srcCrisis, srcPolice, srcAmbulance, srcHospital, srcEd, srcGp
+- ADD_PATIENT :: Add a person who is not on file :: boxes = raised, rkDuplicate, rkIntakeLost
+- RECORD_MEDICAL_CLEARANCE :: Record whether they are medically cleared :: boxes = addressed, rkClearance, edArrived
+- RECORD_ARRIVED_IN_DEPARTMENT :: Mark that an expected patient has turned up :: boxes = addressed, edExpected, edArrived, edNeverArrives
+- ACCEPT_REFERRAL :: Accept the referral :: boxes = wardAnswers, wardAccepted, othersCancelled, cmhtAnswers, cmhtAccepted, edAnswers, edAccepted, cmhtNothing, wardBlocked, dForced, dNonBinary
+- DECLINE_REFERRAL :: Decline the referral :: boxes = wardAnswers, wardDeclined, cmhtAnswers, cmhtDeclined, edAnswers, edDeclined, cmhtNothing
+- RECORD_REFERRER_WITHDRAWAL :: The referrer takes the referral back :: boxes = wardAnswers, cmhtWithdrawn, wardNothing, cmhtNothing, wardWithdrawn
+- ADD_REFERRAL_CORRECTION :: Add a correction to a referral :: boxes = wardAnswers, addressed
+- RECORD_LOCAL_BED_SOUGHT :: Record that a bed closer to home was looked for :: boxes = wardAnswers, addressed
+- RAISE_REFERRAL :: Start a bed search from a department :: boxes = seam, placement, edRaise
+- REFER_TO_UNITS :: Ask one or more wards :: boxes = asked, dForced
+- ACCEPT_IN_PRINCIPLE :: A ward accepts in principle :: boxes = inPrinciple, dForced, dGenderHard
+- DECLINE :: A ward declines the bed search :: boxes = sWardDecline
+- WITHDRAW_WARD_REQUEST :: Take back one ward's request :: boxes = asked, sWithdrawWard
+- WITHDRAW_ACCEPTANCE :: Undo a ward's acceptance :: boxes = sAcceptWithdrawn
+- WITHDRAW_REFERRAL :: Abandon the bed search :: boxes = sAbandoned
+- REFER_TO_COMMUNITY_TEAM :: Send them to a community team instead :: boxes = edToCommunity, cmhtFromSearch
+- RECORD_ED_OUTCOME :: The department decides they need no bed :: boxes = edOutcome, edAnswers
+- RECORD_NO_REFERRAL :: Record that nobody referred them :: boxes = placement, edRaise
+- RECORD_ESCALATION :: Record an escalation :: boxes = asked, rkEscalate
+- STEP_BACK_STAGE :: Correct the record backwards :: boxes = asked, inPrinciple, pulled
+- PULL_PATIENT :: Take the bed :: boxes = pulled, dRepull, dForced, dGenderHard, dNoLongerSuits
+- RELEASE_PULL :: Give the held bed back :: boxes = sPullReleased
+- RELEASE_HELD_BED :: Release a bed left held by a stopped journey :: boxes = sStopTransport
+- RECORD_TRANSPORT_NEED :: Record whether transport is needed :: boxes = booked, dNoTransport
+- BOOK_TRANSPORT :: Book the transport :: boxes = booked
+- HANDOVER_READY :: Confirm handover is ready :: boxes = handover, dNoLongerSuits
+- TRANSPORT_ACCEPTED :: The crew accepts the job :: boxes = enroute, dNoLongerSuits
+- TRANSPORT_EN_ROUTE :: The crew sets off :: boxes = enroute
+- PATIENT_COLLECTED :: The patient is picked up :: boxes = collected, dNoLongerSuits
+- PATIENT_ARRIVED :: The ward says they have arrived :: boxes = arrived, dNoTransport
+- CANCEL_TRANSPORT :: Cancel the transport before collection :: boxes = sCancelTransport, dCancelLie
+- STOP_TRANSPORT :: Stop the journey after collection :: boxes = sStopTransport
+- RECORD_LEFT_DEPARTMENT :: Record that they have left the department :: boxes = edLeft
+- RECORD_EXAMINATION :: Record an examination outcome :: boxes = dRevoked, rkExam, sAbandoned
+- CHANGE_LEGAL_STATUS :: Change the legal status :: boxes = occupied, asked, rkLegalStatus
+- RECORD_LEGAL_FORM_RECEIVED :: Mark a form as physically received :: boxes = occupied, rkForm
+- CORRECT_LEGAL_FORM_RECEIPT :: Undo a form receipt :: boxes = occupied, rkForm
+- RECORD_LEGAL_FORM_EXPIRY :: Record or extend a form's expiry :: boxes = occupied, rkForm, rkExpiryShut
+- RECORD_MOVEMENT_GENDER :: Correct the recorded gender :: boxes = asked, pulled
+- RECORD_LEAVING :: Record that the patient has left :: boxes = personLeaves, bedReleased, end0, end1, end2, end3, end4, end5, end6, end7
+- RECORD_AWAY_AT_EMERGENCY_DEPARTMENT :: Record that they are away at an ED :: boxes = dAway
+- RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT :: Record that they are back :: boxes = dAway
+- RECORD_LEAVE_BED :: Record a bed as on leave :: boxes = dAway
+- END_LEAVE_BED :: End a bed's leave :: boxes = dAway
+- FLAG_BED_RELEASE :: Flag a bed as coming free :: boxes = bedReleased, ready
+- CONFIRM_BED_RELEASE :: Confirm the discharge is going ahead :: boxes = bedReleased, ready
+- REVERT_BED_RELEASE :: Put a confirmed discharge back to expected :: boxes = bedReleased, bedStuck, ready
+- BLOCK_BED_RELEASE :: Flag a discharge as stuck :: boxes = bedStuck
+- CLEAR_BED_RELEASE_BLOCK :: Clear the stuck flag :: boxes = bedStuck
+- SET_BED_PREPARATION :: Mark a bed as being made ready :: boxes = bedReleased, rkPrep
+- RELEASE_BED :: Release the bed :: boxes = bedReleased
+- CONFIRM_CAPACITY :: Restate how many beds a ward has :: boxes = asked
+- RECORD_WARD_INTAKE_CONSTRAINTS :: Record what is restricting a ward's intake :: boxes = asked
+- REQUEST_CAPACITY_REFRESH :: Ask a ward to refresh its numbers :: boxes = asked
+- CHANGE_URGENCY :: Change how urgent it is :: boxes = asked, rkUrgent
+- FLAG_MOVEMENT_URGENT :: Flag it urgent :: boxes = asked, pulled, rkUrgent, rkQueue
+- CLEAR_MOVEMENT_URGENT_FLAG :: Clear the urgent flag :: boxes = asked, pulled, rkUrgent
+- RECORD_MOVEMENT_BLOCKER :: Say what is holding this up :: boxes = asked, pulled, handover
+- CLEAR_MOVEMENT_BLOCKER :: Say nothing is holding it up :: boxes = asked, pulled, handover
+- MARK_NOTICE_READ :: Mark a notice read :: boxes = rkNotice
+- ACKNOWLEDGE_INBOX_ITEM :: Acknowledge an inbox row :: boxes = rkInbox
+- COMPLETE_INBOX_ITEM :: Tick off an inbox row :: boxes = rkInbox
+- REOPEN_INBOX_ITEM :: Reopen a completed row :: boxes = rkInbox
+- ADVANCE_CLOCK :: Move the demonstration clock :: boxes = rkClock
+- RESET_SCENARIO :: Reset the board :: boxes = NONE
+- SET_SCENARIO :: Switch to a different simulated night :: boxes = NONE
+- SET_CONFIGURATION :: Change the coordinator's settings :: boxes = rkSettings
+- RECORD_PATIENT_DISCHARGE :: Record a discharge (handled earlier) :: boxes = rkDischarge, personLeaves
+- OPEN_DISCHARGE_RECORD :: Open a discharge record (handled earlier) :: boxes = rkDischarge
+- REVIEW_AUDIT_EVENT :: Review an audit entry (handled earlier) :: boxes = NONE
+- RECORD_DIVERSION :: Divert a journey already under way :: boxes = rkDiversion
+- RELEASE_DIVERTED_BED :: Give back the bed a diverted patient was holding :: boxes = rkDiversion
+- SET_ARRIVAL_DETAILS :: Record how and when they are expected :: boxes = edExpected
+- EVALUATE_ARRIVAL_LATENESS :: Work out whether an expected arrival is late :: boxes = edExpected
+- SET_STEP_DOWN_CANDIDATE :: Mark somebody as a step-down candidate :: boxes = rkDischargePlan
+- SET_DISCHARGE_BARRIER :: Record what is holding a discharge up :: boxes = rkDischargePlan
+- UPDATE_EXPECTED_DISCHARGE :: Set or move the expected discharge date :: boxes = rkDischargePlan
+- RECORD_MOVEMENT_MEDICAL_CLEARANCE :: Record medical clearance against the movement :: boxes = rkClearance
+- UPLOAD_PATIENT_FORM :: Attach a file to the movement :: boxes = rkLegalWritten
+- RECORD_LEGAL_FORM_WRITTEN :: Record that a legal form was written :: boxes = rkLegalWritten
+- RECORD_LEGAL_FORM_CONTINUATION :: Record that a form was continued :: boxes = rkLegalWritten
+- RECORD_COUNTRY_EXTENSION :: Country extension request (always refused) :: boxes = rkLegalWritten
+- FLAG_LEGAL_MISMATCH :: Flag that the ward's authority does not match :: boxes = rkLegalMismatch
+- RAISE_EXPECT_FLAG :: Start a forty-eight-hour or seven-day clock by hand :: boxes = rkExpectFlag
+- CLEAR_EXPECT_FLAG :: Clear that hand-set clock :: boxes = rkExpectFlag
+- RELEASE_AND_REOPEN_SEARCH :: Give the bed back and reopen the search, in one act :: boxes = sPullReleased
+- CONFIRM_MORNING_ROLLUP :: Confirm the ward's morning count :: boxes = rkWardDay
+- SEND_WARD_BUZZ :: Send a message to a ward :: boxes = rkWardDay
+- EVALUATE_LEAVE_BED_WARNINGS :: Sweep the beds held during leave :: boxes = rkWardDay
+- RECORD_REPATRIATION :: Log a repatriation arranged by phone :: boxes = dRepat
+- RECORD_HANDOVER_SIGN_OFF :: Sign off the shift handover :: boxes = rkWardDay
+- RECORD_CLINICAL_CONTACT :: Record that a team was contacted :: boxes = rkNotice
+- DISPATCH_BROADCAST_ALERT :: Send a network-wide alert :: boxes = rkNotice
+- ACKNOWLEDGE_BROADCAST_ALERT :: Acknowledge a network-wide alert :: boxes = rkNotice
+- STAND_DOWN_BROADCAST_ALERT :: Stand down a network-wide alert :: boxes = rkNotice
+
+## 11 STATE MACHINES
+- A referral destination: states = raised | Waiting | Accepted | Declined | Cancelled | Withdrawn — a flag, not a state
+- A movement: states = raised in a department | Placement requested | Destination review | Accepted, awaiting bed | Bed pulled | Handover ready | Moving | Arrived | Closed — did not proceed
+- An admission: states = No admission | Held | Occupied | Departed | Removed — not a state | Waitlisted
+- A transport job: states = No job | Booked | Crew accepted | En route | Collected | Arrived | Deleted | Stopped
+- A bed release: states = Not flagged | Expected | Confirmed | Discharged | Stuck — a flag, not a stage | Being made ready — a flag
+- The front door — an expect becomes a referral: states = Raised | Expected to arrive | In the department | Medically cleared — or not
+- A patient's legal status: states = Voluntary | Referred for psychiatric examination | Detained awaiting examination | Involuntary inpatient
+- An examination: states = Not examined | Further examination ordered | Inpatient order | Community order, or revoked | Superseded
+- A notice: states = Nothing sent | Raised, unread | Read
+- A row in the coordinator's inbox: states = Not showing | Showing | Acknowledged | Ticked off
+- A legal form's receipt: states = Not recorded as received | Recorded as received | An expiry, typed by a clinician
+
+## 2 WORD LISTS the map names
+- vocabularies
+- labels

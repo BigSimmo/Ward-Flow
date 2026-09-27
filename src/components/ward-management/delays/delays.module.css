@@ -1,0 +1,5414 @@
+/* The Delays screen — three-column working surface, rebuilt against the locked mockup
+ * (`delays-final.html`). Layout only. Every colour and every space resolves through a
+ * `--ward-*` token or a token from the shared v2 layer, and this screen paints no ground of
+ * its own: `ward-shell.module.css` owns that, pinned by ward-shell.dom.test.tsx. */
+/* ⚠️ THE PAGE SHELL, ADDED 2026-09-05 AFTER IT WAS MISSING ENTIRELY.
+ * This screen shipped with no rail column, no `.main` and no page header — so a coordinator who
+ * reached it had no way to any other board, and two landmarks every other Ward Flow route
+ * guarantees were absent. Mirrors `escalation.module.css`'s shell exactly rather than inventing a
+ * second one; that file is the template because this screen replaces it.
+ * Still paints no ground of its own — `ward-shell.module.css` owns that. */
+.screen {
+  composes: wardTokens from "../ward-tokens.module.css";
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  display: block;
+  min-height: 100dvh;
+  max-width: 100%;
+  overflow-x: clip;
+  color: var(--ink);
+  background: var(--ground);
+  font-family: var(--body);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * ⚠️ SCROLL DECISION, MADE DELIBERATELY (brief requirement 7). `.main` stays the one page scroll
+ * container — the header band, the three-column surface, and any panel beneath it all scroll
+ * together as one page. The mockup gives each of its three columns an independent scroller; this
+ * screen bounds only the two columns most likely to outgrow the viewport — `.personList` and the
+ * cause/register panels below — with their own `max-height` + `overflow-y`, rather than the
+ * mockup's viewport-locked `height:100vh` three-way stretch. That trade is unchanged from the
+ * original decision here; only the column shapes it applies to have moved.
+ */
+.main {
+  grid-column: auto;
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+  flex-direction: column;
+  gap: var(--ward-space-12);
+  overflow-x: clip;
+  overflow-y: visible;
+  padding: var(--ward-space-16) var(--ward-space-20) var(--ward-space-24);
+}
+
+.ph,
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-16, 1rem);
+  flex-wrap: wrap;
+  padding: 4px 0 12px;
+  border-bottom: 1px solid var(--line);
+  box-shadow:
+    0 4px 6px -1px color-mix(in srgb, var(--ink) 4%, transparent),
+    0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
+  margin-bottom: var(--ward-space-14, 0.875rem);
+}
+
+.pageTitleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pageTitle {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8, 0.5rem);
+  color: var(--ink);
+  font-size: var(--t-6);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.pageSubtitle {
+  font-size: var(--t-1);
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.mastheadMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.statPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  border-radius: var(--pill, 9999px);
+  font-size: var(--t-1);
+}
+
+.statPillLabel {
+  color: var(--muted);
+}
+
+.statPillValue {
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.breachedSentinelPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--ward-danger-soft, var(--danger-soft));
+  color: var(--ward-danger, var(--danger));
+  border: 1px solid var(--danger-line, var(--ward-danger));
+  padding: 4px 10px;
+  border-radius: var(--pill, 9999px);
+  font-size: var(--t-1);
+  font-weight: 600;
+}
+
+.sentinelDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ward-danger, var(--danger));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ward-danger) 25%, transparent);
+}
+
+.liveClockPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  border-radius: var(--pill, 9999px);
+  font-size: var(--t-1);
+  font-family: var(--mono);
+  color: var(--muted);
+}
+
+/*
+ * Wave 4 item 15 — alias pedagogy when a MERGE 01 bookmark lands here.
+ * Compact notice, dismissible; same surface language as other Delays chrome.
+ */
+.aliasBanner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ward-space-12);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  padding: var(--ward-space-8) var(--ward-space-12);
+}
+
+.aliasBanner p {
+  min-width: 0;
+  flex: 1 1 12rem;
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-1);
+  line-height: var(--ward-leading-body);
+}
+
+.aliasBannerDismiss {
+  flex-shrink: 0;
+  min-height: var(--ward-tap);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: var(--ward-space-2) var(--ward-space-12);
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.aliasBannerDismiss:hover {
+  background: var(--surface-2);
+}
+
+.liveDot {
+  position: relative;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+  background: var(--good, var(--ward-success));
+}
+
+.liveDot::after {
+  content: "";
+  position: absolute;
+  inset: -0.125rem;
+  border-radius: 50%;
+  pointer-events: none;
+  border: 1px solid var(--good, var(--ward-success));
+  box-shadow: 0 0 0.375rem var(--good, var(--ward-success));
+  animation: delaysMetroPulse 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes delaysMetroPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liveDot::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .liveDot {
+    background: CanvasText;
+  }
+  .liveDot::after {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+}
+
+/*
+ * 🔴 **THE SAME 30px-AGAINST-48px SHORTFALL `movements.module.css`'s `.action` HAD, FOUND HERE
+ * UNFIXED, TASK 6b.** That file's own fix commit (`7747bb44f`) measured its identical rule —
+ * `padding: var(--ward-space-5)` (5px) around a 12px font, no `min-height` — at 30px tall against
+ * the `--ward-tap` (3rem/48px) production floor. This file's `.action` is the same declarations,
+ * used the same way: both call sites in `delays-screen.tsx` are `<Link>` elements ("Release the bed
+ * pull at …", "Override a refusal on the coordinator screen"), an inline `<a>` with no intrinsic
+ * height of its own. `display: inline-flex; align-items: center;` added alongside `min-height` for
+ * the same reason the Movements fix needed both: the taller box needs something to centre the label
+ * inside it, or the text sits pinned to the top of the extra space rather than centred in it.
+ */
+.action {
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ward-tap);
+  font-size: var(--t-1);
+  font-weight: 600;
+  padding: var(--ward-space-5) var(--ward-space-10);
+  cursor: pointer;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--ward-radius-pixel);
+}
+/* ⚠️ **THE HOVER CUE IS THE BORDER, NOT THE BACKGROUND — and that is the whole point of this rule.**
+ *
+ * This used to be `background: var(--surface-2)` alone, against `.action`'s `--ward-canvas`. Ward
+ * Lead measured the pair at **1.04:1, a channel distance of 11** — invisible. So the button gave no
+ * response at all under the pointer. It did not LOOK broken, which is exactly why it survived a
+ * direct look at all three merged screens.
+ *
+ * 🔴 **IT IS ALSO THE THIRD INSTANCE OF ONE LINEAGE**, and the first where the tint carried an
+ * interaction rather than decoration: the retired `--ward-ground` claimed to separate panels at
+ * 1.08:1, `.totalRow` claims to lift a summary row at 1.04:1, and this claimed to signal hover.
+ * A tint that reads as "a slightly different surface" in a stylesheet and as nothing on a monitor.
+ * **This pair was copied from the ward primitives, so the primitives taught it — do not copy it into
+ * a fourth place.**
+ *
+ * **Why no neutral token replaced it:** Ward Lead measured every candidate and the best,
+ * `--surface-inset`, is 1.14:1 — still inside the noise. There is no neutral surface token in this
+ * palette that gives a usable hover cue, so the ruling was to stop signalling hover with a
+ * background alone.
+ *
+ * **What each property does, because they fail independently:**
+ *   `--clinical-accent-soft`   the house pattern (`.pwa-action-secondary:hover`, globals.css).
+ *                              Works by HUE, not luminance — weak on luminance in light, a genuine
+ *                              cue in dark (1.48:1). Never sufficient alone.
+ *   `--ward-border-strong`     #667085 -> #55627a, 4.88:1 -> 5.99:1 against the canvas. **This is
+ *                              the load-bearing half.** It survives forced colours, a v2 palette
+ *                              change and a monitor with a blue cast, none of which the hue does.
+ *                              Measured identical on both this branch and master, unlike the
+ *                              accent, whose value differs between trees.
+ */
+.action:hover {
+  background: var(--accent-soft);
+  border-color: var(--line-strong);
+}
+
+/* Restoring the per-row facts the old priority queue and escalation board each carried alone
+ * (MERGE 01 audit, 2026-09-05): a blocked-on sentence and the escalation facts are each their own
+ * fact, so each renders on its own line inside the row's shared `annotation` slot rather than
+ * running together as one paragraph. */
+.annotationLine {
+  display: block;
+}
+.annotationLine + .annotationLine {
+  margin-top: var(--ward-space-4);
+}
+
+/*
+ * The synthetic-data disclosure every other ward screen already carries. Added 2026-09-06 after a
+ * walk of the running app found this screen showing invented figures and named Perth hospitals with
+ * nothing on the page saying so. Copied from `ward/ward.module.css` unchanged rather than restyled —
+ * a disclosure that looks different on different screens reads as decoration.
+ *
+ * ⚠️ **RESTYLED FOR PHONE, 2026-09-07.** The audit measured this banner consuming most of the first
+ * 375px viewport alongside the title and the wait band — `min-height: var(--ward-tap)` plus a full
+ * paragraph of body text wraps to a tall block at that width. Below `40rem` (the same phone
+ * threshold the rail reserve above already uses) it drops the enforced tap-target height and
+ * shrinks to the mockup's own compact chip form. **The disclosure text itself is unchanged and
+ * still renders at every width** — `tests/ward-prototype-disclosure.test.ts` requires a real
+ * `styles.prototypeBadge` element in the tree, and shrinking it is not the same as removing it.
+ */
+.governanceBanner {
+  display: flex;
+  min-height: var(--ward-tap);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ward-space-12);
+  border-bottom: 0.0625rem solid var(--line);
+  background: var(--surface-2);
+  padding: var(--ward-space-8) var(--ward-space-12);
+}
+
+.governanceBanner p {
+  min-width: 0;
+  flex: 1 1 12rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-body);
+}
+
+.prototypeBadge {
+  flex-shrink: 0;
+  border: 0.0625rem solid var(--warn);
+  border-radius: var(--radius-sm);
+  background: var(--warn-soft);
+  padding: var(--ward-space-2) var(--ward-space-8);
+  color: var(--warn);
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 40rem) {
+  .governanceBanner {
+    min-height: 0;
+    align-items: flex-start;
+    gap: var(--ward-space-6);
+    padding: var(--ward-space-6) var(--ward-space-10);
+  }
+  /* 🔴 THIS BLOCK ONCE ALSO SET A HARD-CODED CHIP SIZE OF ABOUT 10.5px, described in its own
+   * comment as "the mockup's own chip size". THAT ONE LINE IS DELETED ON PURPOSE AND THE REST OF
+   * THE BLOCK IS NOT — do not read the absence as an omission and helpfully put one back.
+   *
+   * The restyle's stated purpose, at the top of this media query, is VERTICAL SPACE on a 375px
+   * viewport. `min-height: 0` is what actually reclaims it; the padding and gap help. A chip that
+   * is one line at either size reclaims essentially NOTHING by shrinking its text — and it costs
+   * legibility at exactly the width where a small chip is hardest to read.
+   *
+   * ⚠️ It would also have SURVIVED the type-floor raise. The base rule above now resolves to 12px;
+   * this one would have kept painting the smaller size below 40rem. The screen would have read as
+   * fixed at desktop width, the diff would have looked complete, and the narrow width would have
+   * kept the violation — invisible to a diff, and to any enumeration run at a single width.
+   *
+   * ⚠️ The exact literal is deliberately NOT quoted above. A comment that spells out the value it
+   * removed makes every later search for that value find this file, so a check asking "is the
+   * hard-coded size gone?" would answer no — the removal documenting itself out of its own
+   * verification. `git log -p` on this block has the number if anyone needs it. */
+  .prototypeBadge {
+    padding: var(--ward-space-2) var(--ward-space-8);
+    line-height: var(--ward-leading-ui);
+  }
+}
+
+/* ---------- the attention list, scoped to your own place ---------- */
+.attention {
+  margin: 0;
+  padding: var(--ward-space-16);
+  display: grid;
+  gap: var(--ward-space-12);
+  list-style: none;
+}
+
+.attentionItem {
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  padding: var(--ward-space-8) var(--ward-space-12);
+  font-size: var(--t-1);
+  line-height: var(--ward-leading-relaxed);
+  color: var(--ink);
+}
+
+.attentionWho {
+  display: block;
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--warn);
+}
+
+/* ================================================================================
+ * THE HEADER BAND: THE WAIT, THEN WHO IS HOLDING PEOPLE UP.
+ *
+ * ⚠️ **ONE PANEL, NOT TWO — TASK 2.1.** The mockup nests `.waitStrip` directly above `.owners`
+ * inside a single `<section>`, so "how long people have waited" and "who is holding them up" read
+ * as one header answering one question from two angles. The previous build split them into two
+ * separate `WardPanel`s roughly 185px apart, and the strip stopped reading as a header at all.
+ * `.ownerStrip` below is designed to sit as the second child of whichever single panel also holds
+ * the wait band (`.bar`/`.foot`, unchanged below) — the TSX author folds both into one `WardPanel`
+ * rather than two.
+ * ================================================================================ */
+.ownerStrip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--ward-space-8);
+  padding: var(--ward-space-2) 0 0;
+}
+
+@media (max-width: 56rem) {
+  .ownerStrip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 40rem) {
+  .ownerStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/*
+ * ---------- owner cards ----------
+ * ⚠️ **CORRECTED, 2026-09-07, TWICE.** This comment used to read "no `data-o`/per-owner hue is
+ * asked for in this task's class list, and none is added here". The mockup's rebuild DOES ask for
+ * one — a 3px top border coloured by `data-owner`, exactly like `.ownerCard[data-o]` there — and
+ * `.ownerCard` below carries the `data-owner` attribute hook ready for it.
+ *
+ * ⚠️ **BUT THE COLOUR ITSELF IS NOT HERE, AND THAT IS A DECISION HANDED BACK, NOT AN OVERSIGHT.**
+ * The four hues this needs (`--ward-domain-ward` / `-ed` / `-transport` / `-coordinator`) were
+ * attempted in `ward-tokens.module.css` and reverted — see that file's own note beside
+ * `--ward-table-min-width` for the full reasoning. In short: they need to exist as raw colour
+ * somewhere, `tests/ward-raw-colour.test.ts` forbids raw colour anywhere under
+ * `src/components/ward-management` including that file, and the compliant fix (a v2-level token
+ * pair in `src/app/globals.css` or `ckb-v2-tokens.css`) is a third file outside this task's
+ * two-file scope. So `data-owner` is wired here, ready to receive colour the moment those four
+ * tokens exist — add one `border-top-color` rule per owner value, keyed off it, the same shape as
+ * `data-severe` below — but no colour is guessed at in the meantime. `.ownerCardActive` (selected)
+ * and `data-severe` (danger override) both still apply and are unaffected by this gap.
+ */
+.ownerCard {
+  display: grid;
+  width: 100%;
+  min-height: var(--ward-tap);
+  gap: var(--ward-space-3);
+  align-content: start;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: var(--ward-space-8) var(--ward-space-10);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast),
+    border-color var(--duration-fast);
+}
+
+/*
+ * 🔴 **NOBODY'S MOVE IS NOT NOBODY'S PROBLEM**, carried from the mockup's own comment on this exact
+ * rule. "No suitable bed anywhere in the network" is genuinely nobody's move — no reason typed into
+ * a form creates a bed — so it is grouped under Other. But it is also the most serious thing this
+ * system can report, so a card carrying a severe cause is marked severe whatever its ownership.
+ */
+.ownerCard[data-severe="true"] {
+  background: var(--danger-soft);
+}
+
+.ownerCard:hover {
+  background: var(--surface-2);
+}
+
+.ownerCardActive {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: var(--shadow-inset);
+}
+
+.ownerName {
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.ownerSub {
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-body);
+}
+
+.ownerCount {
+  font-family: var(--mono);
+  color: var(--ink);
+  font-size: var(--t-5);
+  font-weight: 600;
+  line-height: var(--ward-leading-none);
+  font-variant-numeric: tabular-nums;
+}
+
+.ownerCard[data-severe="true"] .ownerCount {
+  color: var(--danger);
+}
+
+/*
+ * `ownerHot`/`ownerAlso` — the two urgent sub-figures an owner card can carry ("3 with authority
+ * expired", "2 more not cleared"). Bold weight carries the alarm as much as the colour does, so the
+ * line still reads as urgent under `forced-colors` once colour collapses to plain text.
+ *
+ * Mockup colour mapping: the mockup paints `.ownerHot` in `--danger` (a genuinely dangerous fact —
+ * a legal authority already expired) and `.ownerAlso` in `--ed`, its own department hue. `.ownerAlso`
+ * keeps the `--ward-warning` stand-in rather than the ED domain hue the mockup uses, pending the
+ * same blocked domain-hue tokens noted beside `.ownerCard` above — a real caution either way, one
+ * rung below `.ownerHot`'s expired-authority danger, which is the warning/danger split this palette
+ * already draws elsewhere.
+ */
+.ownerHot {
+  color: var(--danger);
+  font-size: var(--t-0);
+  font-weight: 700;
+  line-height: var(--ward-leading-body);
+}
+
+.ownerAlso {
+  color: var(--warn);
+  font-size: var(--t-0);
+  font-weight: 700;
+  line-height: var(--ward-leading-body);
+}
+
+/* ================================================================================
+ * THE THREE-COLUMN WORKING SURFACE
+ *
+ * Left: everyone waiting. Middle: what the blockers are, and the escalation/resolved registers.
+ * Right: the selected person's own detail. Mobile-first: one column, stacked in document order,
+ * below `64rem`; three side by side at and above it — the same spine the locked mockup draws.
+ *
+ * ⚠️ **MEASURE UPDATED TO THE MOCKUP'S OWN, TASK 2.1.** The mockup's `grid3` is 240px | 552px |
+ * 384px. 240px and 384px translate exactly to `15rem` and `24rem`; the middle column keeps flexing
+ * (`minmax(0, 1fr)`) rather than being pinned to 552px, since this file's own middle column now
+ * stacks two panels of its own (the cause panel and the register tabs) whose natural width the
+ * flex column should set instead of a value borrowed from the mockup's different content.
+ *
+ * `64rem` is not a new step in the scale — `capacity.module.css`'s `.columns` already pins the same
+ * value for its own two-column split. This file's own row — `delays/delays.module.css: 64` — is
+ * already registered in `tests/ward-primitives-shared.test.ts`'s `KNOWN_BREAKPOINTS` list. This is
+ * still the ONLY `min-width` breakpoint in this file.
+ * ================================================================================ */
+.columns {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ward-space-12);
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  .columns {
+    /*
+     * ⚠️ **19rem, NOT 15rem, AND THE FOUR REMS WERE MEASURED RATHER THAN CHOSEN.** At 15rem the
+     * person rows rendered 113px tall against the mockup's 67px, because both the cause title and
+     * the demographics line wrapped to two lines each in a 240px column — so exactly ONE patient
+     * fitted on a 1440x900 screen, which is the fault the whole rebuild exists to fix.
+     *
+     * The four rems come out of the middle column, which had them spare: it was measuring 665px
+     * against the mockup's own 552px. Nothing else gives them up, and the detail column must not —
+     * it holds the full record and is the narrowest thing on screen that cannot wrap gracefully.
+     */
+    grid-template-columns: 19rem minmax(0, 1fr) 24rem;
+  }
+}
+
+.colList,
+.colDetail,
+.causePanel,
+.tabsPanel {
+  min-width: 0;
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--e0);
+}
+
+.colList {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.colDetail {
+  min-width: 0;
+}
+
+.detailBackdrop {
+  display: none;
+}
+
+/* The middle column is a plain stacking wrapper, not a panel itself — it holds the cause panel and
+ * the register tabs, each of which draws its own chrome from the shared rule above. Mirrors the
+ * mockup's own `.midCol`, which is likewise unstyled beyond the stack. */
+.colMiddle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-12);
+  min-width: 0;
+}
+
+/* ---------- left: the waiting list ----------
+ * The bounded, independently-scrolling region (see the `.main` scroll-decision comment above). */
+.personList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-6);
+  min-height: 0;
+  max-height: 34rem;
+  overflow-y: auto;
+  padding: var(--ward-space-10);
+}
+
+/*
+ * ---------- the person row: the owner spine ----------
+ * ⚠️ **THE LEFT EDGE IS OWNERSHIP, NEVER SEVERITY — TASK 2.2, AND THE MOCKUP STATES THIS RULE IN
+ * ITS OWN COMMENT.** `data-owner` is meant to colour the 3px left border, exactly like
+ * `.ownerCard`'s top border above; `data-severe` is a background wash BEHIND it, never a second
+ * competing stripe, and IS implemented below. A severe person under Wards would keep a Wards-blue
+ * edge and gain a danger wash — the two languages (who, and how bad) never fighting for the same
+ * line — the moment the per-owner colour exists to draw.
+ *
+ * ⚠️ **THE `data-owner` COLOUR ITSELF IS THE SAME BLOCKED DECISION AS `.ownerCard` ABOVE.** The
+ * attribute hook is wired here so the row is ready the moment `--ward-domain-*` exists — add one
+ * `border-left-color` rule per owner value, the same shape `.ownerCard[data-owner=…]` would take —
+ * but no colour is guessed at in the meantime. See the note in `ward-tokens.module.css` beside
+ * `--ward-table-min-width` for why.
+ */
+.personRow {
+  display: grid;
+  width: 100%;
+  min-height: var(--ward-tap);
+  gap: var(--ward-space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: var(--ward-space-6) var(--ward-space-8);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast),
+    border-color var(--duration-fast);
+}
+
+.personRow[data-severe="true"] {
+  background: var(--danger-soft);
+}
+
+.personRow:hover {
+  background: var(--surface-2);
+}
+
+.personRowActive {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: var(--shadow-inset);
+}
+
+/*
+ * `personRowDim` — the highlight-not-hide treatment `capacity.module.css`'s network table already
+ * uses for a non-matching row (`tr[data-ward-network-row-matches="false"] td`). A dim row stays a
+ * patient somebody may need to read, so weight, border and background carry the recede — never
+ * text colour or opacity, which would push it under the 4.5:1 floor. `personId`'s own weight step
+ * (600 -> 500) is the ONE place this reduces emphasis on the text itself, and 500 is still well
+ * inside a normal reading weight, not a faded one.
+ */
+.personRowDim {
+  background: var(--surface-2);
+}
+
+.personTop {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-4);
+  flex-wrap: wrap;
+}
+
+/*
+ * ---------- typography ranks, TASK 3 ----------
+ * The audit measured 402 of ~610 text nodes on this screen at one size and one weight — meta,
+ * cause and figures were all indistinguishable. Three ranks now exist on a row:
+ *   `.personId`   the rail — mono, ink, the one thing a coordinator scans down the list by.
+ *   `.personCause` the blocker — same size as the demographics line below it, but a step darker in
+ *                   ink so it outranks them, since the blocker is the reason this row exists.
+ *   `.personMeta` / `.personWait` / `.personSince` — the supporting facts, muted.
+ *
+ * 🔴 **SIZE NO LONGER CARRIES ANY OF THAT RANK — owner ruling O-16.2, 2026-09-11.** All five are
+ * now `var(--t-1)`, because four of them sat below the 12px floor and a coordinator who cannot
+ * READ the wait has no hierarchy to benefit from. **He was told, before ruling, that raising them
+ * flattens this ladder, and chose legibility.**
+ *
+ * ⚠️ **SO THE RANKS SURVIVE ON THE OTHER TWO CHANNELS ONLY, AND THEY ARE NOW LOAD-BEARING:**
+ * `.personId` is the only one with mono AND weight 600 AND `--ward-heading`; `.personCause` is the
+ * only muted-row element in `--ward-text` rather than `--ward-muted`. **Take the colour off
+ * `.personCause` and the blocker becomes indistinguishable from the demographics beside it — which
+ * is the 2026 defect this comment records, reached from the other direction.**
+ * `tests/ward-delays-type-ranks.test.ts` holds that, and it is why it exists.
+ */
+.personId {
+  font-family: var(--mono);
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.personRowDim .personId {
+  font-weight: 500;
+}
+
+.personWait {
+  margin-left: auto;
+  font-family: var(--mono);
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * `personWaitLong` marks a wait at or beyond 24 hours. Colour is not the only signal — the pill
+ * shape (border + soft fill) is the FORM difference the brief asks for, so the flag survives a
+ * colour-blind read and a forced-colors pass (the border is drawn, not implied by a tint).
+ */
+.personWaitLong {
+  border: 0.0625rem solid var(--danger);
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  padding: 0 var(--ward-space-4);
+  color: var(--danger);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The demographics line ("Adult · Male · Secure"). Muted and 400-weight — the bottom rank, so the
+ * cause line above it (darker ink, same size) reads as the more important of the two. */
+.personMeta {
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+/* The blocker itself. Was the same colour as `.personMeta` — the exact "one size, one weight"
+ * problem the audit measured — so this is now `--ward-text`, a real step darker than
+ * `--ward-muted`, rather than a second copy of the demographics rank. */
+.personCause {
+  color: var(--ink);
+  font-size: var(--t-0);
+  display: flex;
+  align-items: baseline;
+  gap: var(--ward-space-6);
+}
+
+/*
+ * The third rank: how long THIS blocker has been the blocker, distinct from `.personWait` (how
+ * long since arrival) — the mockup's `.qSince`, and the fact the mockup's own comment calls "the
+ * half a list cannot show".
+ *
+ * ⚠️ **THIS COMMENT USED TO CLAIM THIS WAS THE SMALLEST OF THE ROW'S THREE MONO FIGURES. IT WAS
+ * NOT, AND HAD NOT BEEN FOR SOME TIME** — it was joint-smallest with `.personWait`, both at the
+ * old 10px step, so the three-step mono ladder it described was implemented as two. **Corrected
+ * rather than deleted, because the INTENT it records is real: this is a secondary stat, not the
+ * scan rail `.personId` is.** That intent is now carried by colour and family alone; since
+ * O-16.2 every figure on the row is one size.
+ */
+.personSince {
+  margin-left: auto;
+  font-family: var(--mono);
+  color: var(--muted);
+  font-size: var(--t-0);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.personSince[data-stale="true"] {
+  color: var(--danger);
+  font-weight: 500;
+}
+
+/* A small inline marker meaning "not medically cleared" — unchanged from the previous build. */
+.uncleared {
+  display: inline-flex;
+  align-items: center;
+  border: 0.0625rem solid var(--warn);
+  border-radius: var(--radius-sm);
+  background: var(--warn-soft);
+  padding: 0 var(--ward-space-4);
+  color: var(--warn);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ================================================================================
+ * THE CAUSE PANEL — blockers grouped under their owner, TASK 2.4.
+ * New: this grouping did not exist in the previous build at all. Mirrors the mockup's own
+ * `#causeList` structure — one `.grp` per owner with anybody under it, a heading carrying a hued
+ * dot and a live count, then one `.causeRow` per cause with a proportional bar against the busiest
+ * cause on the whole board.
+ * ================================================================================ */
+.causeList {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 20rem;
+  overflow-y: auto;
+}
+
+.grp {
+  border-top: 0.0625rem solid var(--line);
+}
+.grp:first-child {
+  border-top: 0;
+}
+
+.grpHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ward-space-8);
+  padding: var(--ward-space-6) var(--ward-space-10) var(--ward-space-5);
+  background: var(--surface-2);
+}
+
+/* `data-owner` hook present, coloured uniformly for now — see the `--ward-domain-*` note beside
+ * `.ownerCard` above. Add one `background` rule per owner value here, the same shape `.ownerCard`
+ * and `.personRow` would take, once those tokens exist. */
+.grpDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: none;
+  align-self: center;
+  border-radius: var(--radius-sm);
+  background: var(--line-strong);
+}
+
+.grpName {
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.grpN {
+  margin-left: auto;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+}
+
+.causeRow {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  min-height: var(--ward-tap, 44px);
+}
+
+.causeRow:hover {
+  background: var(--sunk);
+  border-color: var(--line-strong);
+}
+
+.causeRow[data-sev="danger"] {
+  border-color: var(--danger-line, var(--ward-danger));
+  background: var(--ward-danger-soft, var(--danger-soft));
+}
+
+.causeRow[data-sev="danger"]:hover {
+  border-color: var(--ward-danger, var(--danger));
+}
+
+.causeRowActive {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.causeN {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-family: var(--mono);
+  font-size: var(--t-2, 13px);
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.causeRow[data-sev="danger"] .causeN {
+  color: var(--ward-danger, var(--danger));
+}
+
+.causeRow[data-sev="warn"] .causeN {
+  color: var(--ward-warning, var(--warn));
+}
+
+.causeMain {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-right: 32px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.causeName {
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+.causeRow[data-sev="danger"] .causeName {
+  color: var(--ward-danger, var(--danger));
+}
+
+.causeTrack {
+  height: 4px;
+  border-radius: var(--pill, 9999px);
+  background: var(--sunk);
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.causeRow[data-sev="danger"] .causeTrack {
+  background: var(--ward-danger-soft, var(--danger-soft));
+}
+
+.causeTrackFill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--pill, 9999px);
+  transition: width 0.2s ease;
+}
+
+.causeTrackFill[data-severe="true"],
+.causeRow[data-sev="danger"] .causeTrackFill {
+  background: var(--ward-danger, var(--danger));
+}
+
+.causeRow[data-sev="warn"] .causeTrackFill {
+  background: var(--ward-warning, var(--warn));
+}
+
+.causeMeta {
+  font-size: var(--t-0, 11px);
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.causeMeta strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ================================================================================
+ * THE REGISTER TABS — Escalations / Attention / Resolved today
+ * ================================================================================ */
+.tabbar {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  padding: 0 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.tabbtn,
+.tabBtn {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-height: var(--ward-tap, 44px);
+  padding: 10px 12px;
+  color: var(--muted);
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.12s ease;
+  box-sizing: border-box;
+}
+
+.tabbtn:hover,
+.tabBtn:hover {
+  color: var(--ink);
+}
+
+.tabbtnActive,
+.tabBtnActive {
+  color: var(--ink);
+}
+
+.tabbtnActive::after,
+.tabBtnActive::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gilt, var(--ward-warning));
+}
+
+.tabbtnName {
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+}
+
+.tabbtnCount,
+.tabNum {
+  font-family: var(--mono);
+  font-size: var(--t-0, 10px);
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--pill, 9999px);
+  background: var(--sunk);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+.tabbtnActive .tabbtnCount,
+.tabBtnActive .tabNum {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.tabbtnCountHot {
+  background: var(--ward-danger-soft, var(--danger-soft));
+  color: var(--ward-danger, var(--danger));
+  border-color: var(--ward-danger, var(--danger));
+}
+
+.tabbtnCountZero,
+.tabNumZero {
+  font-family: var(--body);
+  font-size: var(--t-0, 10px);
+  font-style: italic;
+  color: var(--muted);
+}
+
+.tabPanes,
+.tabBody {
+  min-height: 0;
+  max-height: calc(100vh - 460px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.tabPane {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tabPane[hidden] {
+  display: none;
+}
+
+.paneScope {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: var(--t-0, 11px);
+  line-height: 1.35;
+}
+
+.registerList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.registerRow {
+  all: unset;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 8px 10px;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  transition: all 0.12s ease;
+}
+
+.registerRow:hover {
+  background: var(--sunk);
+  border-color: var(--line-strong);
+}
+
+.registerRowId {
+  font-family: var(--mono);
+  font-size: var(--t-2, 13px);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.registerRowAge {
+  font-family: var(--mono);
+  font-size: var(--t-0, 11px);
+  color: var(--muted);
+  float: right;
+}
+
+.registerRowMeta {
+  font-size: var(--t-0, 11px);
+  color: var(--ink-soft);
+  line-height: 1.3;
+}
+
+.outsideServiceTag {
+  color: var(--ward-warning, var(--warn));
+  font-weight: 600;
+}
+
+.rows {
+  display: grid;
+  gap: var(--ward-space-6);
+}
+
+.row {
+  display: grid;
+  gap: var(--ward-space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--ward-space-6) var(--ward-space-8);
+}
+.row[data-tone="danger"] {
+  background: var(--danger-soft);
+}
+.row[data-tone="warn"] {
+  background: var(--warn-soft);
+}
+.row[data-tone="good"] {
+  background: var(--surface);
+}
+
+.rowTop {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ward-space-6);
+}
+
+.rowId {
+  font-family: var(--mono);
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rowWhen {
+  margin-left: auto;
+  font-family: var(--mono);
+  color: var(--muted);
+  font-size: var(--t-0);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.rowSub {
+  color: var(--ink);
+  font-size: var(--t-0);
+}
+
+.rowWho {
+  color: var(--muted);
+  font-size: var(--t-0);
+  letter-spacing: 0.02em;
+}
+
+/* ---------- the keyboard hint at the list foot, TASK 2.4 ---------- */
+.kbdHint {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-4);
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.kbd {
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  padding: 0 var(--ward-space-4);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+}
+
+@media (max-width: 40rem) {
+  .kbdHint {
+    display: none;
+  }
+}
+
+/* ---------- right: the selected person ---------- */
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-10);
+  min-width: 0;
+  padding: var(--ward-space-12);
+}
+
+.detailEmpty {
+  margin: 0;
+  padding: var(--ward-space-16);
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: var(--ward-leading-relaxed);
+  font-style: italic;
+}
+
+.detailHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-4);
+  border-bottom: 0.0625rem solid var(--line);
+  padding-bottom: var(--ward-space-8);
+}
+
+.detailName {
+  font-family: var(--mono);
+  color: var(--ink);
+  font-size: var(--t-5, 1.125rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.detailSub {
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.detailFacts {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--ward-space-2) var(--ward-space-10);
+}
+
+.detailLabel {
+  padding-top: var(--ward-space-1);
+  color: var(--muted);
+  font-size: var(--t-0);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detailValue {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-1);
+}
+
+.clearLine {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ward-space-6);
+  flex-wrap: wrap;
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  padding: var(--ward-space-6) var(--ward-space-8);
+}
+
+.clearLineUncleared {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.clearState {
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 700;
+}
+
+.clearLineUncleared .clearState {
+  color: var(--warn);
+}
+
+.clearWhy {
+  color: var(--ink);
+  font-size: var(--t-0);
+}
+
+/* ---------- the wait, drawn to scale ----------
+ * One person, one rail, proportional to their whole wait. `tlSeg`/`tlSegQuiet` are the fills along
+ * `tlTrack`; `tlEvent` is a marker positioned along that rail (its own `left` is set inline by the
+ * screen, from the same data the trail list below states in words), holding one `tlDot` and one
+ * `tlLabel`. `tlCaption` is the sentence underneath. Exactly like the mockup's own version of this
+ * element, it adds no data of its own — every figure it draws is already stated in words a few
+ * centimetres away — so if the two ever disagree, the words are right and this is broken. */
+.timeline {
+  position: relative;
+  margin-top: var(--ward-space-6);
+  padding-top: var(--ward-space-10);
+}
+
+.tlTrack {
+  position: relative;
+  display: flex;
+  height: 0.875rem;
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.tlSeg {
+  min-width: 0;
+  height: 100%;
+  background: var(--line-strong);
+}
+
+/* The trailing gap since the last recorded event — the longest and most important segment. */
+.tlSegQuiet {
+  border-left: 1px solid var(--line);
+  background: var(--warn-soft);
+}
+
+.tlEvent {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateX(-50%);
+}
+
+.tlDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: var(--ward-space-3);
+  border: 0.0625rem solid var(--surface);
+  border-radius: var(--ward-radius-round);
+  background: var(--line-strong);
+}
+
+.tlLabel {
+  margin-top: var(--ward-space-2);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.tlCaption {
+  margin-top: var(--ward-space-6);
+  color: var(--ink);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-body);
+}
+
+/*
+ * `prefers-reduced-motion`: the only transitions this file adds are the plain background/border
+ * cues on the interactive lists and controls above. Kill them outright rather than shortening them
+ * — there is no motion here worth keeping at a lower amplitude.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .ownerCard,
+  .personRow,
+  .causeRow,
+  .tabBtn {
+    transition: none;
+  }
+}
+
+/*
+ * Two-tone focus ring — the mockup's own model, translated into this file's tokens: an outline in
+ * the page ground colour so it reads over the element's own fill, plus a box-shadow ring in the
+ * heading-ink colour so it reads on any surface underneath that, including a themed background.
+ */
+.ownerCard:focus-visible,
+.personRow:focus-visible,
+.causeRow:focus-visible,
+.tabBtn:focus-visible {
+  outline: 0.125rem solid var(--surface);
+  outline-offset: 0;
+  box-shadow: 0 0 0 0.25rem var(--ink);
+}
+
+/*
+ * `forced-colors`: every rule above that carries its state in a colour alone gets a drawn border
+ * here instead, the same treatment the locked mockup gives its own equivalents. Text-role tokens
+ * (`--ward-danger`, `--ward-warning`, `--ward-heading`, …) already survive forced-colors through
+ * `ward-tokens.module.css`'s own block. Ownership has no colour of its own yet at all (see the
+ * `data-owner` note beside `.ownerCard` above), so there is nothing for this block to re-point for
+ * it — the WORD ("Wards", "ED", …) already printed in `.ownerName`/`.grpName` is what forced-colors
+ * readers get today, same as everyone else.
+ */
+@media (forced-colors: active) {
+  .ownerCard,
+  .ownerCardActive,
+  .personRow,
+  .personRowActive,
+  .personRowDim,
+  .causeRow,
+  .causeRowActive,
+  .clearLineUncleared,
+  .uncleared,
+  .personWaitLong,
+  .row,
+  .tabBtn,
+  .kbd {
+    border: 0.0625rem solid CanvasText;
+    background: Canvas;
+  }
+  .tlSeg,
+  .tlSegQuiet,
+  .tlDot,
+  .tlEvent,
+  .grpDot,
+  .causeTrackFill {
+    background: CanvasText;
+  }
+}
+
+/*
+ * ⚠️ **SIX RULES RESTORED 2026-09-07, AND THEY WERE DROPPED BY A BRIEF RATHER THAN BY A DECISION.**
+ * The three-column rewrite was briefed with an explicit "existing, keep working" class list, and
+ * these six were simply missing from it — so an agent that obeyed its brief exactly still deleted
+ * six rules the screen renders every load.
+ *
+ * ⚠️ **A MISSING CSS-MODULE CLASS DOES NOT CRASH AND DOES NOT FAIL A TYPECHECK.** `styles.absent`
+ * on a deleted rule is `undefined`, React renders `class=""`, and the element simply loses its
+ * styling — silently, on a screen whose absence sentences are the thing being read. Found by
+ * diffing the classes the TSX names against the classes the stylesheet declares, which is the only
+ * check that can see this; nothing in lint, types or the DOM tests looks at it.
+ */
+/* D3's provenance paragraphs. Deliberately NOT `.absent` or `.foot`: both are muted
+ * 0.6875-0.75rem footnote styles, and this section is the one a reader consults when they
+ * have stopped trusting the figures above it. A provenance statement set smaller and fainter
+ * than the numbers it qualifies is an absence promoted to a footnote.
+ *
+ * Every token here is one this stylesheet already uses elsewhere — a token declared in a sheet
+ * this file does not compose resolves to nothing, silently, and paints no error. */
+.provenance {
+  margin: 0;
+  padding: var(--ward-space-10) var(--ward-space-16);
+  border-top: 1px solid var(--line);
+  font-size: var(--t-1);
+  line-height: var(--ward-leading-relaxed);
+  color: var(--ink);
+}
+
+.absent {
+  margin: 0;
+  padding: var(--ward-space-16);
+  font-size: var(--t-1);
+  line-height: var(--ward-leading-relaxed);
+  color: var(--muted);
+}
+
+.bar {
+  padding: var(--ward-space-16);
+}
+
+.filters {
+  padding: var(--ward-space-10) var(--ward-space-16);
+  border-bottom: 1px solid var(--line);
+}
+
+.foot {
+  margin: 0;
+  padding: var(--ward-space-10) var(--ward-space-16);
+  border-top: 1px solid var(--line);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-relaxed);
+  color: var(--muted);
+}
+
+.pageHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-4);
+}
+
+.pageSubtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+/* ---------- the owner spine ----------------------------------------------
+ * ⚠️ **THE FOUR HUES ARRIVED 2026-09-07, AND THE THREE COMMENTS ABOVE THAT SAY THEY ARE BLOCKED ARE
+ * NOW OUT OF DATE — read this block, not them.** They were blocked for a real reason: raw colour is
+ * forbidden anywhere under `src/components/ward-management`, `ward-tokens.module.css` included, and
+ * an agent correctly stopped rather than guess a near-hue from the existing palette. The compliant
+ * home was one level up, in the v2 token layer, where raw values are legal — `--ward-domain-ward`,
+ * `-ed`, `-transport` and `-coordinator`, each with a `-soft` pair, in light, dark and forced
+ * colours. They are the owner-approved mockup's own values, unaltered.
+ *
+ * 🔴 **THIS IS THE SINGLE MOST EXPENSIVE THING THE FIRST BUILD LACKED.** A measured audit put it
+ * plainly: the screen carried 424 custom properties and not one domain hue, so every row read as
+ * grey text on white and the board's spine — *who you have to chase* — was invisible. The mockup
+ * uses these on every row, on every owner card and on every group dot simultaneously.
+ *
+ * ⚠️ **COLOUR IS THE SECOND CHANNEL, NEVER THE ONLY ONE.** Each row also states its owner in words
+ * through the cause it sits under, each card is captioned, and under `forced-colors` all four
+ * collapse to `CanvasText` deliberately. A coordinator who cannot distinguish these hues loses a
+ * scanning aid, not a fact.
+ *
+ * ⚠️ **`other` IS DELIBERATELY LEFT ON THE NEUTRAL BORDER COLOUR.** It is not a fifth department —
+ * it is the absence of one, and giving it a hue of its own would make "we could not attribute this"
+ * look like a place you can ring.
+ */
+
+.grpDot[data-owner="wards"] {
+  background: var(--ward-domain-ward);
+}
+
+.grpDot[data-owner="ed"] {
+  background: var(--ward-domain-ed);
+}
+
+.grpDot[data-owner="transport"] {
+  background: var(--ward-domain-transport);
+}
+
+.grpDot[data-owner="yours"] {
+  background: var(--ward-domain-coordinator);
+}
+
+/*
+ * ⚠️ **SEVERITY IS A WASH BEHIND THE EDGE, NEVER A SECOND STRIPE.** The mockup states this rule in
+ * its own comment and it resolves a genuine collision: the shared `WardRecordRow` spends its left
+ * edge on severity, so porting that convention here would have left nowhere to say who owns the
+ * delay. Two languages, two channels — the edge answers "who do I chase", the ground answers "how
+ * bad is this", and a serious person is visible without the two fighting for one stripe.
+ */
+.personRow[data-severe="true"] {
+  background: var(--danger-soft);
+}
+
+/* Third-edition presentation, 2026-09-13. The historical notes above describe the
+ * previous drawing. This block adopts delays-third-edition.html without changing
+ * the engine populations, clocks, marking rules or the bounded-scroll decision. */
+.screen {
+  min-height: 0;
+}
+.ownerMeter {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 0.25rem;
+  border: 0;
+  appearance: none;
+  background: var(--sunk);
+}
+.ownerMeter::-webkit-meter-bar {
+  border: 0;
+  border-radius: 999px;
+  background: var(--sunk);
+}
+.ownerMeter::-webkit-meter-optimum-value {
+  background: var(--muted);
+}
+.ownerMeter::-moz-meter-bar {
+  background: var(--muted);
+}
+.filters {
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+.filters :global([data-ward-primitive="filters"]) {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: 0.375rem;
+  padding: 0.125rem;
+  background: var(--sunk);
+  border-radius: var(--radius-md, 0.5rem);
+  border: 1px solid var(--line);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.filters :global([data-ward-primitive="filters"]) button {
+  flex: 1 1 auto;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius-sm, 0.375rem);
+  font-size: var(--t-0);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+}
+.filters :global([data-ward-primitive="filters"]) button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: var(--lift);
+}
+.filters :global([data-ward-primitive="filters"]) button:hover:not([aria-pressed="true"]) {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.filters :global([data-ward-primitive="filters"]) span {
+  font-size: var(--t-0);
+  opacity: 0.85;
+}
+.colDetail :global([data-ward-primitive="record-row"]) {
+  border-left: 0;
+}
+.colDetail :global([data-ward-primitive="record-row"]) * {
+  font-size: var(--t-1);
+}
+.main {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+  gap: 0.875rem;
+  padding: 1rem 1.5rem 1.5rem;
+}
+.pageTitle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.pageHeader {
+  margin: 0;
+}
+.pageSubtitle {
+  font-size: var(--t-1);
+}
+.governanceBanner {
+  min-height: 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+}
+.prototypeBadge {
+  border-radius: 999px;
+  font-size: var(--t-0);
+  font-weight: 500;
+}
+.topModular {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
+}
+.bar {
+  padding: 0;
+}
+.waitBand {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+}
+.waitBand > div {
+  padding: 0.625rem 0.875rem;
+  border-right: 1px solid var(--line);
+}
+.waitBand > div:last-child {
+  border-right: 0;
+}
+.waitBand dt {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.waitBand dd {
+  margin: 0.125rem 0 0;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-6);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.waitBand dd span {
+  font-family: var(--body);
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+.ownerStrip {
+  min-width: 0;
+  max-width: 100%;
+  gap: 0.625rem;
+  padding: 0.625rem 0.875rem;
+}
+.ownerCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 0.625rem 0.75rem;
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  min-height: var(--ward-tap);
+}
+.ownerTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.ownerName {
+  font-size: var(--t-2);
+  font-weight: 600;
+  color: var(--ink);
+}
+.ownerCount {
+  color: var(--ink);
+  font-size: var(--t-5);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.ownerMeterTrack {
+  width: 100%;
+  height: 0.25rem;
+  background: var(--sunk, var(--surface-2));
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 0.125rem 0;
+}
+.ownerMeterFill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.2s ease-in-out;
+}
+.ownerMeterFill[data-severe="true"] {
+  background: var(--danger);
+}
+.ownerMeter {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.ownerSub {
+  font-size: var(--t-0);
+  font-weight: 400;
+  color: var(--muted);
+  line-height: 1.35;
+}
+.ownerHot {
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--danger);
+  line-height: 1.35;
+}
+.ownerCard[data-owner],
+.ownerCard[data-severe="true"] {
+  border-color: var(--line);
+  background: var(--surface);
+}
+.ownerCard[data-severe="true"] .ownerCount {
+  color: var(--danger);
+}
+.ownerCardActive,
+.ownerCard[data-owner][aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.ownerCard:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+.colList,
+.colDetail {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.columns {
+  gap: 0.875rem;
+}
+.colMiddle {
+  gap: 0.875rem;
+}
+.personList {
+  margin: 0;
+  padding: 0;
+  gap: 0;
+  max-height: 37rem;
+}
+.personRow,
+.personRow[data-owner],
+.personRow[data-severe="true"] {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--surface);
+  padding: 0.75rem 0.875rem;
+  gap: 0.375rem;
+}
+.personRow:hover {
+  background: var(--surface-2);
+}
+.personRowActive,
+.personRow[data-owner][aria-pressed="true"] {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.personRowDim {
+  opacity: 1;
+}
+.personWaitLong {
+  border: 0;
+  background: transparent;
+  color: var(--warn);
+  padding: 0;
+  font-weight: 500;
+}
+.personCause {
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  flex-wrap: wrap;
+}
+.personSince {
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+}
+.personId {
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+}
+.uncleared {
+  border-radius: 999px;
+  font-size: var(--t-0);
+}
+.personTierBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.375rem;
+  height: 1.125rem;
+  border-radius: var(--radius-sm, 0.25rem);
+  font-size: var(--t-0);
+  font-weight: 700;
+  font-family: var(--mono);
+  line-height: 1;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+}
+.personTierBadge[data-tier="1"] {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.personTierBadge[data-tier="2"] {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.personTierBadge[data-tier="3"] {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.clearedBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.375rem;
+  height: 1.125rem;
+  border-radius: 999px;
+  border: 1px solid var(--good);
+  background: var(--good-soft);
+  color: var(--good);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  line-height: 1;
+}
+.markedBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.375rem;
+  height: 1.125rem;
+  border-radius: var(--radius-sm, 0.25rem);
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink, var(--ink));
+  font-size: var(--t-0);
+  font-weight: 600;
+  line-height: 1;
+}
+.personBlockerRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+  margin-top: 0.125rem;
+}
+.personOwnerTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.3125rem;
+  height: 1rem;
+  border-radius: var(--radius-sm, 0.25rem);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  line-height: 1;
+  flex-shrink: 0;
+}
+.personStatusLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.125rem;
+}
+.breachBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.375rem;
+  height: 1.125rem;
+  border-radius: var(--radius-sm, 0.25rem);
+  border: 1px solid var(--danger);
+  background: var(--danger);
+  color: var(--surface);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+.severeBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.375rem;
+  height: 1.125rem;
+  border-radius: var(--radius-sm, 0.25rem);
+  border: 1px solid var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+.personLegalAlert {
+  display: block;
+  margin-top: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm, 0.25rem);
+  font-size: var(--t-0);
+  font-weight: 600;
+  border: 1px solid var(--warn);
+  background: var(--warn-soft);
+  color: var(--warn);
+  line-height: 1.3;
+}
+.personLegalAlert[data-breached="true"] {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.personReminder,
+.detailReminder {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: var(--t-0);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--warn);
+}
+
+.detailReminder {
+  margin-top: var(--ward-space-4);
+}
+.grpHead {
+  padding: 0.5rem 0.875rem;
+}
+.grpDot {
+  display: none;
+}
+.grpName,
+.grpN {
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+}
+.causeList {
+  max-height: 37rem;
+}
+.causeRow {
+  min-height: var(--ward-tap);
+  padding: 0.625rem 0.875rem;
+  grid-template-columns: 1.5rem minmax(0, 1fr);
+}
+.causeRow[data-sev="danger"] {
+  background: var(--surface);
+}
+.causeRowActive {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.causeRow[aria-pressed="true"] {
+  background: var(--accent-soft);
+}
+.causeName {
+  font-size: var(--t-2);
+  font-weight: 600;
+}
+.causeMeta {
+  font-size: var(--t-0);
+}
+.causeTrack,
+.causeRow[data-sev="danger"] .causeTrack {
+  background: var(--sunk);
+}
+.causeTrackFill,
+.causeRow[data-sev="danger"] .causeTrackFill {
+  background: var(--muted);
+}
+.tabBtn {
+  font-size: var(--t-0);
+  font-weight: 600;
+  min-height: 2.75rem;
+}
+.tabBtnActive {
+  border-bottom-color: var(--gilt);
+}
+.tabNum {
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+}
+.row {
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+}
+.rowWhen,
+.rowWho,
+.rowSub,
+.paneScope {
+  font-size: var(--t-0);
+}
+.foot {
+  font-size: var(--t-0);
+  padding: 0.625rem 0.875rem;
+  background: var(--surface-2);
+}
+.detail {
+  padding: 1rem;
+  gap: 0.875rem;
+}
+.detailTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.detailCloseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm, 0.25rem);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.detailCloseBtn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+.detailCloseBtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.detailName {
+  font-size: var(--t-5);
+}
+.detailLabel {
+  font-size: var(--t-0);
+}
+.detailFacts {
+  grid-template-columns: minmax(5rem, 0.8fr) minmax(0, 1.8fr);
+  gap: 0.625rem 0.875rem;
+  margin: 0;
+}
+.detailValue {
+  font-size: var(--t-2);
+}
+.clearWhy,
+.tlCaption {
+  font-size: var(--t-1);
+}
+.attentionTabList {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.attentionCard {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.625rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.attentionCard:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+}
+.attentionCardActive {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.attentionCard:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+.attentionCardTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.attentionWhen {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.attentionCardBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: var(--t-0);
+  color: var(--ink-soft);
+}
+.attentionOutside {
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--warn);
+}
+.attentionTitle {
+  font-weight: 500;
+}
+.tabNumZero {
+  opacity: 0.6;
+}
+.attention {
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.625rem;
+  padding: 0.875rem;
+}
+.attentionItem {
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  font-size: var(--t-1);
+}
+.attentionWho {
+  font-size: var(--t-2);
+}
+.action {
+  border-radius: var(--r2);
+  font-size: var(--t-1);
+}
+.ownerCard:focus-visible,
+.personRow:focus-visible,
+.causeRow:focus-visible,
+.tabBtn:focus-visible,
+.action:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  box-shadow: none;
+}
+@media (min-width: 1100px) {
+  .columns {
+    display: grid;
+    gap: 0.875rem;
+  }
+  .columnsClosed {
+    grid-template-columns: minmax(20rem, 1fr) minmax(28rem, 1.4fr);
+    width: 100%;
+  }
+  .columnsWithDetail {
+    grid-template-columns: minmax(15rem, 0.68fr) minmax(19rem, 1.05fr) minmax(20rem, 1fr);
+  }
+}
+
+/* Systemic delays and network holds (Image 2 elevation) */
+.systemicPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-12, 0.75rem);
+  padding: 0.75rem 0.875rem 1rem;
+}
+.systemicHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.systemicDesc {
+  margin: 0;
+  flex: 1 1 24rem;
+  font-size: var(--t-1, 0.8125rem);
+  color: var(--muted);
+  line-height: var(--ward-leading-relaxed, 1.45);
+}
+.systemicActions {
+  flex-shrink: 0;
+}
+.logHoldButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--ward-tap, 3rem);
+  padding: 0.375rem 0.875rem;
+  border-radius: var(--radius-sm, 0.375rem);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+.logHoldButton:hover {
+  background: var(--surface-2);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.logHoldButton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.protoNotice {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm, 0.25rem);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  animation: delaysMetroPulse 0.3s ease;
+}
+.systemicFilterBar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.systemicChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: var(--ward-tap, 3rem);
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+.systemicChip:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+.systemicChipActive {
+  background: var(--accent-soft);
+  color: var(--ink);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.systemicChip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.chipCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.375rem;
+  height: 1.125rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+}
+.systemicChipActive .chipCount {
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+.systemicGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.holdCard {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
+  gap: 0.5rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 0.5rem);
+  background: var(--surface);
+  transition: border-color 0.15s ease;
+}
+.holdCard:hover {
+  border-color: var(--line-strong);
+}
+.holdCard[data-severity="danger"] {
+  border-left: 3px solid var(--danger);
+}
+.holdCard[data-severity="warn"] {
+  border-left: 3px solid var(--warn);
+}
+.holdCard[data-severity="info"] {
+  border-left: 3px solid var(--accent);
+}
+.holdCardTop {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.holdFacilityBlock {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0.125rem;
+}
+.holdFacility {
+  font-size: var(--t-2, 0.875rem);
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.holdService {
+  font-size: var(--t-0, 0.75rem);
+  color: var(--muted);
+}
+.holdBadges {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+.holdCategoryBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-sm, 0.25rem);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: normal;
+  line-height: 1.3;
+}
+.holdElapsed {
+  font-family: var(--mono);
+  font-size: var(--t-0, 0.75rem);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.holdReasonRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+}
+.holdReason {
+  font-size: var(--t-1, 0.8125rem);
+  font-weight: 600;
+  color: var(--ink);
+}
+.holdImpact {
+  margin: 0;
+  font-size: var(--t-0, 0.75rem);
+  color: var(--ink-soft);
+  line-height: var(--ward-leading-relaxed, 1.4);
+}
+.holdFooter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding-top: 0.375rem;
+  border-top: 1px solid var(--line);
+  margin-top: auto;
+}
+.holdMetaPill,
+.holdOwnerPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: var(--t-0, 0.75rem);
+  color: var(--muted);
+}
+.holdMetaPill strong,
+.holdOwnerPill strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+@media (max-width: 1099px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .colDetail {
+    scroll-margin-block-start: 8rem;
+  }
+}
+@media (width < 768px), (max-width: 768px) {
+  .detailBackdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: var(--scrim);
+    z-index: 99;
+  }
+
+  .colDetail {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 85dvh;
+    z-index: 100;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    background: var(--surface);
+    border-top: 1px solid var(--line-strong);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow: var(--lift);
+  }
+
+  .colDetail [data-ward-primitive="panel"] {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+}
+@media (max-width: 56rem) {
+  .topModular {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .ownerStrip {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 0.875rem;
+    padding-bottom: 0.5rem;
+    padding-inline-end: 0.875rem;
+    -webkit-overflow-scrolling: touch;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .ownerCard {
+    flex: 0 0 11.5rem;
+    scroll-snap-align: start;
+  }
+}
+
+@media (max-width: 640px) {
+  .screen {
+    padding-top: 0;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+  .main {
+    padding: 0.875rem;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+  .waitBand {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .waitBand > div:nth-child(2) {
+    border-right: 0;
+  }
+  .waitBand > div:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--line);
+  }
+  .topModular {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .ownerStrip {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 0.875rem;
+    padding-bottom: 0.5rem;
+    padding-inline-end: 0.875rem;
+    -webkit-overflow-scrolling: touch;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .ownerCard {
+    flex: 0 0 11.5rem;
+    scroll-snap-align: start;
+  }
+  .personList {
+    max-height: 34rem;
+  }
+}
+@media (forced-colors: active) {
+  .ownerCard[aria-pressed="true"],
+  .personRow[aria-pressed="true"],
+  .causeRow[aria-pressed="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+  .ownerCard:focus-visible,
+  .personRow:focus-visible,
+  .causeRow:focus-visible,
+  .tabBtn:focus-visible,
+  .action:focus-visible {
+    outline-color: CanvasText;
+  }
+  .causeTrackFill {
+    background: CanvasText;
+  }
+}
+/* Q003: one aligned operational workspace; each column owns its content scroll. */
+@media screen and (min-width: 1100px) {
+  .columns {
+    height: var(--ward-workspace-height, 48rem);
+    align-items: stretch;
+  }
+
+  .colList,
+  .colDetail,
+  .colMiddle {
+    min-height: 0;
+  }
+
+  .colMiddle {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) minmax(18rem, 0.75fr);
+  }
+
+  .columns [data-ward-primitive="panel"] {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  .personList,
+  .causeList,
+  .tabBody,
+  .detailBody {
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .filters,
+  .tabbar,
+  .columns .foot {
+    flex: 0 0 auto;
+  }
+}
+
+.detailBody:focus-visible,
+.personList:focus-visible,
+.causeList:focus-visible,
+.tabBody:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+
+@media screen and (max-width: 640px) {
+  .personList,
+  .causeList,
+  .tabBody,
+  .detailBody {
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+
+/*
+ * Dark Theme Crisp Borders for Delay Reason Cards, Panels, and Rows.
+ * Uses semantic token var(--line-strong) to maintain crisp boundary separation in dark mode.
+ */
+:global([data-theme="dark"]) .ownerCard,
+:global(.dark) .ownerCard,
+:global([data-theme="dark"]) .ownerCard[data-owner],
+:global(.dark) .ownerCard[data-owner],
+:global([data-theme="dark"]) .ownerCard[data-severe="true"],
+:global(.dark) .ownerCard[data-severe="true"],
+:global([data-theme="dark"]) .causeRow,
+:global(.dark) .causeRow,
+:global([data-theme="dark"]) .attentionCard,
+:global(.dark) .attentionCard,
+:global([data-theme="dark"]) .row,
+:global(.dark) .row,
+:global([data-theme="dark"]) .personRow,
+:global(.dark) .personRow,
+:global([data-theme="dark"]) .personRow[data-owner],
+:global(.dark) .personRow[data-owner],
+:global([data-theme="dark"]) .personRow[data-severe="true"],
+:global(.dark) .personRow[data-severe="true"],
+:global([data-theme="dark"]) .grp,
+:global(.dark) .grp,
+:global([data-theme="dark"]) .causePanel,
+:global(.dark) .causePanel,
+:global([data-theme="dark"]) .tabsPanel,
+:global(.dark) .tabsPanel,
+:global([data-theme="dark"]) .clearLine,
+:global(.dark) .clearLine,
+:global([data-theme="dark"]) .waitBand,
+:global(.dark) .waitBand,
+:global([data-theme="dark"]) .waitBand > div,
+:global(.dark) .waitBand > div,
+:global([data-theme="dark"]) .tabbar,
+:global(.dark) .tabbar,
+:global([data-theme="dark"]) .filters,
+:global(.dark) .filters,
+:global([data-theme="dark"]) .filters :global([data-ward-primitive="filters"]),
+:global(.dark) .filters :global([data-ward-primitive="filters"]),
+:global([data-theme="dark"]) .governanceBanner,
+:global(.dark) .governanceBanner,
+:global([data-theme="dark"]) .holdCard,
+:global(.dark) .holdCard,
+:global([data-theme="dark"]) .holdFooter,
+:global(.dark) .holdFooter,
+:global([data-theme="dark"]) .systemicChip,
+:global(.dark) .systemicChip,
+:global([data-theme="dark"]) .logHoldButton,
+:global(.dark) .logHoldButton,
+:global([data-theme="dark"]) .personOwnerTag,
+:global(.dark) .personOwnerTag {
+  border-color: var(--line-strong);
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .ownerCard,
+  :global(:root:not([data-theme="light"])) .ownerCard[data-owner],
+  :global(:root:not([data-theme="light"])) .ownerCard[data-severe="true"],
+  :global(:root:not([data-theme="light"])) .causeRow,
+  :global(:root:not([data-theme="light"])) .attentionCard,
+  :global(:root:not([data-theme="light"])) .row,
+  :global(:root:not([data-theme="light"])) .personRow,
+  :global(:root:not([data-theme="light"])) .personRow[data-owner],
+  :global(:root:not([data-theme="light"])) .personRow[data-severe="true"],
+  :global(:root:not([data-theme="light"])) .grp,
+  :global(:root:not([data-theme="light"])) .causePanel,
+  :global(:root:not([data-theme="light"])) .tabsPanel,
+  :global(:root:not([data-theme="light"])) .clearLine,
+  :global(:root:not([data-theme="light"])) .waitBand,
+  :global(:root:not([data-theme="light"])) .waitBand > div,
+  :global(:root:not([data-theme="light"])) .tabbar,
+  :global(:root:not([data-theme="light"])) .filters,
+  :global(:root:not([data-theme="light"])) .filters :global([data-ward-primitive="filters"]),
+  :global(:root:not([data-theme="light"])) .governanceBanner,
+  :global(:root:not([data-theme="light"])) .holdCard,
+  :global(:root:not([data-theme="light"])) .holdFooter,
+  :global(:root:not([data-theme="light"])) .systemicChip,
+  :global(:root:not([data-theme="light"])) .logHoldButton,
+  :global(:root:not([data-theme="light"])) .personOwnerTag {
+    border-color: var(--line-strong);
+  }
+}
+
+@media print {
+  .columns,
+  .colMiddle,
+  .colDetail,
+  .detailBody {
+    display: block;
+    position: static;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    z-index: auto;
+  }
+
+  .colDetail {
+    bottom: auto;
+    left: auto;
+    right: auto;
+    box-shadow: none;
+    border-top: none;
+  }
+
+  .detailBackdrop {
+    display: none !important;
+  }
+}
+
+@media print {
+  .screen,
+  .screen * {
+    color: CanvasText !important;
+    background-color: Canvas !important;
+  }
+  .personList,
+  .causeList,
+  .tabBody {
+    max-height: none;
+    overflow: visible;
+  }
+  .columns {
+    display: block;
+  }
+  .ownerStrip {
+    display: grid;
+    overflow: visible;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   WARD FLOW DELAYS & BOTTLENECK CONTROL — PERFECTED MASTER EXTENSIONS
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.masthead {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mastTopRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.mastTitleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mastTitle {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-size: var(--t-6);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.mastSub {
+  margin: 0;
+  font-size: var(--t-1);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.worklistCountBadge {
+  font-family: var(--mono);
+  font-size: var(--t-1);
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--pill, 9999px);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+
+.mastActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 0 10px;
+  height: var(--ward-tap, 44px);
+  min-width: 220px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.searchBox:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.searchIcon {
+  width: 15px;
+  height: 15px;
+  color: var(--muted);
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.searchInput {
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  width: 100%;
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: var(--muted);
+}
+
+.iconBtn {
+  width: var(--ward-tap, 44px);
+  height: var(--ward-tap, 44px);
+  min-width: var(--ward-tap, 44px);
+  min-height: var(--ward-tap, 44px);
+  border-radius: var(--r2, 6px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.iconBtn:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+}
+
+.btnAction {
+  height: var(--ward-tap, 44px);
+  min-height: var(--ward-tap, 44px);
+  padding: 0 14px;
+  border-radius: var(--r2, 6px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+
+.btnAction:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+}
+
+.btnActionPrimary {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+
+.btnActionPrimary:hover {
+  background: var(--accent-ink);
+  border-color: var(--accent-ink);
+}
+
+.scopeTrack {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 3px;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.scopeBtn {
+  height: 34px;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s;
+}
+
+.scopeBtn:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+
+.scopeBtnActive {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+
+.scopeBtnBadge {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  padding: 1px 5px;
+  border-radius: var(--pill, 9999px);
+  background: var(--sunk);
+  color: inherit;
+}
+
+.toastNotice {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  background: var(--ink);
+  color: var(--text-inverse, var(--ward-canvas));
+  padding: 10px 16px;
+  border-radius: var(--r2, 6px);
+  box-shadow: 0 4px 16px rgb(var(--ward-shadow-rgb) / 0.25);
+  font-size: var(--t-1);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topExecutiveControlRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.execTitleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.execSectionTitle {
+  margin: 0;
+  font-size: var(--t-3);
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.execSectionSub {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.viewSwitcherSeg {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 3px;
+  gap: 3px;
+}
+
+.viewSwitchBtn {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+
+.viewSwitchBtn:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+
+.viewSwitchBtnActive {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.radarPanel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 10px);
+  box-shadow: var(--lift);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.radarHeader {
+  padding: 10px 16px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.radarTitleCluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.radarTitle {
+  font-size: var(--t-1);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.radarLegend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: var(--t-0);
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legendDot {
+  width: 9px;
+  height: 9px;
+  border-radius: var(--pill, 9999px);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.legendDotYours { background: var(--accent); }
+.legendDotWards { background: var(--svc-north); }
+.legendDotTransport { background: var(--svc-south); }
+.legendDotBreached { background: var(--danger); box-shadow: 0 0 0 2px var(--danger-soft); }
+
+.radarCanvasBox {
+  position: relative;
+  width: 100%;
+  padding: 12px 16px 8px;
+  background: var(--surface);
+  overflow-x: auto;
+}
+
+.radarSvg {
+  width: 100%;
+  min-width: 600px;
+  height: auto;
+  display: block;
+}
+
+.radarTooltip {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2, 6px);
+  padding: 8px 12px;
+  font-size: var(--t-0);
+  line-height: 1.4;
+  color: var(--ink);
+  box-shadow: 0 4px 16px rgb(var(--ward-shadow-rgb) / 0.18);
+  pointer-events: none;
+  min-width: 200px;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+}
+
+.ttHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ttId {
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--accent-ink);
+}
+
+.ttEd {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.ttWait {
+  font-family: var(--mono);
+  color: var(--muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.ttAlert {
+  font-weight: 700;
+  color: var(--danger-ink);
+  display: block;
+  margin-top: 2px;
+}
+
+.ttStatus {
+  font-size: var(--t-0);
+  color: var(--muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.radarPointGroup {
+  cursor: pointer;
+  outline: none;
+}
+
+.radarPointGroup:focus-visible circle:last-child {
+  stroke: var(--accent) !important;
+  stroke-width: 2.5px !important;
+}
+
+.pillarsGrid {
+  display: grid;
+  grid-template-columns: 1.15fr 1.35fr 1.5fr;
+  gap: 14px;
+}
+
+@media (max-width: 68rem) {
+  .pillarsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pillarCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 10px);
+  box-shadow: var(--lift);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pillarHeader {
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pillarTitle {
+  font-size: var(--t-1);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.pillarBadge {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  padding: 1px 7px;
+  border-radius: var(--pill, 9999px);
+  background: var(--sunk);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.pillarBody {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.sentinelBreach {
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+  border-radius: var(--r2, 6px);
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sentinelBreachLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sentinelBreachIcon {
+  width: 18px;
+  height: 18px;
+  color: var(--danger-ink);
+  flex-shrink: 0;
+}
+
+.sentinelBreachText {
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--danger-ink);
+  line-height: 1.25;
+}
+
+.sentinelBreachText span {
+  display: block;
+  font-size: var(--t-0);
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+.sentinelCount {
+  font-family: var(--mono);
+  font-size: var(--t-4);
+  font-weight: 700;
+  color: var(--danger-ink);
+}
+
+.sentinelSubRows {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.sentinelTile {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sentinelTileWarn {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.sentinelTileLabel {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.sentinelTileWarn .sentinelTileLabel {
+  color: var(--warn-ink);
+}
+
+.sentinelTileVal {
+  font-family: var(--mono);
+  font-size: var(--t-3);
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.sentinelTileWarn .sentinelTileVal {
+  color: var(--warn-ink);
+}
+
+.sentinelTileVal span {
+  font-size: var(--t-0);
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.waitBand {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.waitBand div {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.waitBand dt {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-weight: 500;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.waitBand dd {
+  font-family: var(--mono);
+  font-size: var(--t-3);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.waitBand dd span {
+  font-size: var(--t-0);
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.durationMeter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.durationBar {
+  height: 10px;
+  border-radius: var(--pill, 9999px);
+  background: var(--sunk);
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+.durationSeg {
+  height: 100%;
+  transition: width 0.2s;
+}
+
+.durationSegCatastrophic { background: var(--danger); }
+.durationSegAccessBlocked { background: var(--warn); }
+.durationSegRoutine { background: var(--accent); }
+
+.durationPills {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.durationPillBtn {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  cursor: pointer;
+  transition: all 0.12s;
+  text-align: left;
+}
+
+.durationPillBtn:hover {
+  background: var(--sunk);
+  border-color: var(--line-strong);
+}
+
+.durationPillBtnActive {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.durationPillLabel {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.durationPillVal {
+  font-family: var(--mono);
+  font-size: var(--t-3);
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.durationPillVal span {
+  font-size: var(--t-0);
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.durationLegendNote {
+  font-size: var(--t-0);
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.ownerRowGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.ownerTile {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.12s;
+}
+
+.ownerTile:hover {
+  background: var(--sunk);
+  border-color: var(--line-strong);
+}
+
+.ownerTileActive {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.ownerTileTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.ownerTileCount {
+  font-family: var(--mono);
+  font-size: var(--t-3);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.ownerTileName {
+  font-size: var(--t-1);
+  font-weight: 700;
+  color: var(--accent-ink);
+}
+
+.ownerTileDesc {
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.25;
+}
+
+.ownerTileAlert {
+  font-size: var(--t-0);
+  font-weight: 700;
+  color: var(--danger-ink);
+  margin-top: 3px;
+}
+
+.splitLayout {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.worklistPanel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 10px);
+  box-shadow: var(--lift);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.worklistHeader {
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  box-shadow:
+    0 4px 6px -1px color-mix(in srgb, var(--ink) 4%, transparent),
+    0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.worklistTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.worklistTitle {
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.worklistSort {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.sortSelect {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 4px 8px;
+  font-family: var(--body);
+  font-size: var(--t-1);
+  color: var(--ink);
+  outline: none;
+  cursor: pointer;
+}
+
+.filterChipsRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  max-width: 100%;
+}
+
+.filterChip {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: var(--pill, 9999px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-family: var(--body);
+  font-size: var(--t-0);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s;
+}
+
+.filterChip:hover {
+  background: var(--surface-3);
+  border-color: var(--line-strong);
+}
+
+.filterChipActive {
+  background: var(--accent-ink);
+  color: var(--on-accent);
+  border-color: var(--accent-ink);
+}
+
+.filterChipDanger {
+  color: var(--danger-ink);
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.filterChipDanger.filterChipActive {
+  background: var(--danger);
+  color: var(--text-inverse);
+}
+
+.filterChipWarn {
+  color: var(--warn-ink);
+  border-color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.filterChipWarn.filterChipActive {
+  background: var(--warn);
+  color: var(--text-inverse);
+}
+
+.chipBadge {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  padding: 1px 5px;
+  border-radius: var(--pill, 9999px);
+  background: var(--sunk);
+  color: inherit;
+  border: 1px solid var(--line);
+}
+
+.filterChipActive .chipBadge {
+  background: var(--surface);
+  border-color: currentColor;
+  color: var(--ink);
+}
+
+.activeFilterBanner {
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--line);
+  padding: 6px 14px;
+  font-size: var(--t-0);
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.clearFilterLink {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: var(--t-0);
+}
+
+.workspacePanel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 10px);
+  box-shadow: var(--lift);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: sticky;
+  top: 16px;
+}
+
+.dossierContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.dossierHeader {
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dossierTitleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dossierIdRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dossierId {
+  font-family: var(--mono);
+  font-size: var(--t-4);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.dossierSub {
+  font-size: var(--t-1);
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.dossierCloseBtn {
+  width: var(--ward-tap, 44px);
+  height: var(--ward-tap, 44px);
+  min-width: var(--ward-tap, 44px);
+  min-height: var(--ward-tap, 44px);
+  border-radius: var(--r2, 6px);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.dossierCloseBtn:hover {
+  background: var(--surface-3);
+}
+
+.dossierBody {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.dossierSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dossierSectionTitle {
+  font-size: var(--t-1);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent-ink);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dossierBlockerCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dossierBlockerCardWarn {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.dossierBlockerCardDanger {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.dossierBlockerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dossierBlockerName {
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.dossierBlockerActionRequired {
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.dossierLegalClock {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.legalClockTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.legalFormName {
+  font-weight: 700;
+  font-size: var(--t-1);
+  color: var(--ink);
+}
+
+.legalFormExpiry {
+  font-family: var(--mono);
+  font-size: var(--t-1);
+  font-weight: 700;
+  color: var(--warn-ink);
+}
+
+.legalFormExpiryBreached {
+  color: var(--danger-ink);
+}
+
+.legalFormProgressTrack {
+  height: 6px;
+  background: var(--sunk);
+  border-radius: var(--pill, 9999px);
+  overflow: hidden;
+}
+
+.legalFormProgressFill {
+  height: 100%;
+  background: var(--warn);
+  transition: width 0.2s;
+}
+
+.legalFormProgressFillBreached {
+  background: var(--danger);
+}
+
+.legalConsequence {
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.wardQueryList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wardQueryRow {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wardQueryLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wardQueryName {
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.wardQueryReason {
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.wardQueryStatus {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.wardQueryStatusCandidate {
+  background: var(--good-soft);
+  color: var(--good-ink);
+  border: 1px solid var(--good);
+}
+
+.wardQueryStatusDeclined {
+  background: var(--sunk);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.dossierActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.bottleneckContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.bottleneckTabsBar {
+  display: flex;
+  align-items: center;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  padding: 4px;
+  gap: 3px;
+  overflow-x: auto;
+}
+
+.bTabBtn {
+  height: 36px;
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: all 0.12s;
+}
+
+.bTabBtn:hover {
+  background: var(--surface-3);
+  color: var(--ink);
+}
+
+.bTabBtnActive {
+  background: var(--surface);
+  color: var(--accent-ink);
+  border: 1px solid var(--line);
+}
+
+.bTabBadge {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  padding: 1px 5px;
+  border-radius: var(--pill, 9999px);
+  background: var(--sunk);
+  color: inherit;
+}
+
+.bottleneckTabBody {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.causeGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.causeGroupHeader {
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.causeRowBtn {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  transition: all 0.12s;
+  width: 100%;
+}
+
+.causeRowBtn:hover {
+  background: var(--sunk);
+  border-color: var(--line-strong);
+}
+
+.causeRowBtnActive {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.causeRowTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.causeRowName {
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.causeRowVal {
+  font-family: var(--mono);
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.causeMeterTrack {
+  height: 4px;
+  background: var(--sunk);
+  border-radius: var(--pill, 9999px);
+  overflow: hidden;
+}
+
+.causeMeterFill {
+  height: 100%;
+  background: var(--accent);
+}
+
+.causeMeterFillDanger {
+  background: var(--danger);
+}
+
+.causeRowSub {
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.escFeed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.escItem {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.escItemTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.escPatientId {
+  font-family: var(--mono);
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--accent-ink);
+}
+
+.escTimestamp {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.escContact {
+  font-size: var(--t-1);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.escNote {
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.holdGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.holdCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.holdTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.holdFacility {
+  font-weight: 700;
+  font-size: var(--t-1);
+  color: var(--ink);
+}
+
+.holdElapsed {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.holdReason {
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+  line-height: 1.3;
+}
+
+.holdFooter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.emptyState {
+  padding: 32px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+.errorBanner {
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+  border-radius: var(--r2, 6px);
+  padding: 12px 16px;
+  color: var(--danger-ink);
+  font-size: var(--t-1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+
+/* ================================================================================
+ * PERFECTED THIRD EDITION: 60% / 40% MASTER-DETAIL WORKSPACE
+ * ================================================================================ */
+.splitLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 68rem) {
+  .splitLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.worklistPanel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg, 10px);
+  box-shadow: var(--lift);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* --- WORKLIST HEADER & FILTER / SEARCH CONTROLS --- */
+.worklistHeader {
+  padding: 12px 14px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.worklistTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.filterChipsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--pill, 9999px);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: var(--t-0, 11px);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.filterChip:hover {
+  background: var(--sunk);
+  border-color: var(--line-strong);
+}
+
+.filterChipActive {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.chipBadge {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: var(--pill, 9999px);
+  background: var(--sunk);
+  color: inherit;
+}
+
+.filterChipActive .chipBadge {
+  background: var(--surface);
+}
+
+.worklistSearchSortBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.searchBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 200px;
+}
+
+.searchBox svg {
+  position: absolute;
+  left: 10px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 6px 10px 6px 32px;
+  border-radius: var(--r2, 6px);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: var(--t-0, 12px);
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.searchInput:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.worklistSort {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--t-0, 11px);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.sortSelect {
+  padding: 5px 8px;
+  border-radius: var(--r2, 6px);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: var(--t-0, 11px);
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+}
+
+.activeFilterBanner {
+  margin: 10px 16px 0;
+  padding: 8px 12px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: var(--r2, 6px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: var(--t-0, 11px);
+  color: var(--accent-ink);
+}
+
+.clearFilterBtn {
+  background: none;
+  border: none;
+  color: var(--accent-ink);
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-size: var(--t-0, 11px);
+}
+
+.patientCardsList {
+  padding: 12px 12px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(100vh - 360px);
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+}
+
+.patientCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: border-color 0.12s, box-shadow 0.12s, background 0.12s;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  min-height: fit-content;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.patientCard:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+}
+
+.patientCardSelected {
+  border-color: var(--accent);
+  background: var(--surface-2);
+  box-shadow: inset 3px 0 0 var(--accent), 0 2px 6px rgb(var(--ward-shadow-rgb) / 0.06);
+}
+
+.patientCardBreached {
+  border-left: 3.5px solid var(--danger);
+}
+
+.patientCardImminent {
+  border-left: 3.5px solid var(--warn);
+}
+
+.cardSelectButton {
+  all: unset;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+  color: var(--ink);
+  text-align: left;
+  font-family: var(--body);
+}
+
+.cardSelectButton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.cardTopRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.cardIdCluster {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cardPatientId {
+  font-family: var(--mono);
+  font-size: var(--t-2, 14px);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.triageTag {
+  font-family: var(--mono);
+  font-size: var(--t-0, 11px);
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--r2, 4px);
+  background: var(--sunk);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+
+.triageTagT1 {
+  background: var(--ward-danger-soft, var(--danger-soft));
+  color: var(--ward-danger, var(--danger));
+  border-color: var(--ward-danger, var(--danger));
+}
+
+.triageTagT2 {
+  background: var(--ward-warning-soft, var(--warn-soft));
+  color: var(--ward-warning, var(--warn));
+  border-color: var(--ward-warning, var(--warn));
+}
+
+.triageTagT3 {
+  background: var(--ward-blue-soft, var(--accent-soft));
+  color: var(--ward-blue, var(--accent));
+  border-color: var(--ward-blue, var(--accent));
+}
+
+.escalatedTag {
+  font-size: var(--t-0, 11px);
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--pill, 9999px);
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.cardWaitClock {
+  font-family: var(--mono);
+  font-size: var(--t-2, 13px);
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.accessBlockBadge {
+  font-size: var(--t-0, 11px);
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--pill, 9999px);
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+}
+
+.catastrophicBadge {
+  font-size: var(--t-0, 11px);
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--pill, 9999px);
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.cardLocRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: var(--t-1, 12px);
+  color: var(--muted);
+}
+
+.cardFacility {
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.cardDemographics {
+  font-size: var(--t-0, 11px);
+  color: var(--muted);
+}
+
+.lockedBedFlag {
+  font-weight: 600;
+  font-size: var(--t-0, 11px);
+  color: var(--warn);
+  background: var(--warn-soft);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--warn);
+}
+
+.cardLegalAlert {
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: var(--t-0, 11px);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.cardLegalAlertImminent {
+  background: var(--warn-soft);
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.cardBlockerStrip {
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2, 6px);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cardBlockerTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.cardOwnerTag {
+  font-size: var(--t-0, 10px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.cardOwnerTagYours {
+  background: var(--accent);
+  color: var(--text-inverse);
+}
+
+.cardOwnerTagWards {
+  background: var(--ward-domain-ward);
+  color: var(--text-inverse);
+}
+
+.cardOwnerTagTransport {
+  background: var(--ward-domain-transport);
+  color: var(--text-inverse);
+}
+
+.cardOwnerTagEd {
+  background: var(--sunk);
+  color: var(--muted);
+}
+
+.cardStagnation {
+  font-size: var(--t-0, 11px);
+  font-family: var(--mono);
+  color: var(--muted);
+}
+
+.cardBlockerTitle {
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.cardBlockerDetail {
+  font-size: var(--t-0, 11px);
+  color: var(--muted);
+}
+
+/* Right Workspace Panel */
+.workspacePanel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg, 10px);
+  box-shadow: var(--lift);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 72px;
+  overflow: hidden;
+}
+
+/* State A: Selected Patient Dossier */
+.dossierContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.dossierHeader {
+  padding: 14px 18px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dossierTitleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dossierIdRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dossierId {
+  font-family: var(--mono);
+  font-size: var(--t-4, 18px);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.dossierSub {
+  font-size: var(--t-1, 12px);
+  color: var(--muted);
+}
+
+.dossierBody {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+.dossierSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dossierSectionTitle {
+  font-size: var(--t-0, 11px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dossierBlockerCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dossierBlockerCardDanger {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.dossierBlockerCardWarn {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.dossierBlockerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dossierBlockerName {
+  font-size: var(--t-2, 14px);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.dossierBlockerActionRequired {
+  font-size: var(--t-1, 12.5px);
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.dossierLegalClock {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.legalClockTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.legalFormName {
+  font-weight: 700;
+  font-size: var(--t-2, 14px);
+  color: var(--ink);
+}
+
+.legalFormExpiry {
+  font-family: var(--mono);
+  font-size: var(--t-2, 13px);
+  font-weight: 700;
+  color: var(--danger);
+}
+
+.legalFormProgressTrack {
+  height: 6px;
+  background: var(--sunk);
+  border-radius: var(--pill, 9999px);
+  overflow: hidden;
+}
+
+.legalFormProgressFill {
+  height: 100%;
+  background: var(--danger);
+  transition: width 0.3s;
+}
+
+.legalConsequence {
+  font-size: var(--t-0, 11px);
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.wardQueryList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wardQueryRow {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wardQueryRowDeclined {
+  opacity: 0.75;
+}
+
+.wardQueryRowCandidate {
+  background: var(--ward-success-soft, var(--good-soft));
+  border-color: var(--ward-success, var(--good));
+}
+
+.wardQueryLeft {
+  display: flex;
+  flex-direction: column;
+}
+
+.wardQueryName {
+  font-weight: 600;
+  font-size: var(--t-1, 13px);
+  color: var(--ink);
+}
+
+.wardQueryReason {
+  font-size: var(--t-0, 11px);
+  color: var(--muted);
+}
+
+.wardQueryStatus {
+  font-family: var(--mono);
+  font-size: var(--t-0, 11px);
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--pill, 9999px);
+}
+
+.wardQueryStatusDeclined {
+  background: var(--sunk);
+  color: var(--muted);
+}
+
+.wardQueryStatusCandidate {
+  background: var(--ward-success, var(--good));
+  color: var(--text-inverse);
+}
+
+.dossierActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* State B: Statewide Bottlenecks & Escalations Tabs */
+.bottleneckContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.bottleneckTabsBar {
+  padding: 0 14px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bTabBtn {
+  background: none;
+  border: none;
+  padding: 12px 10px;
+  font-size: var(--t-1, 13px);
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.12s;
+}
+
+.bTabBtn:hover {
+  color: var(--ink);
+}
+
+.bTabBtnActive {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.bTabBtnActive::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gilt, var(--ward-warning));
+}
+
+.bTabBadge {
+  font-family: var(--mono);
+  font-size: var(--t-0, 10px);
+  padding: 1px 6px;
+  border-radius: var(--pill, 9999px);
+  background: var(--sunk);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.bTabBtnActive .bTabBadge {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.bottleneckTabBody {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+.causeGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.causeGroupHeader {
+  font-size: var(--t-0, 11px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.causeRowBtn {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  transition: all 0.12s;
+}
+
+.causeRowBtn:hover {
+  background: var(--sunk);
+  border-color: var(--line-strong);
+}
+
+.causeRowBtnActive {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.causeRowTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.causeRowName {
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.causeRowVal {
+  font-family: var(--mono);
+  font-size: var(--t-2, 13px);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.causeMeterTrack {
+  height: 4px;
+  background: var(--sunk);
+  border-radius: var(--pill, 9999px);
+  overflow: hidden;
+}
+
+.causeMeterFill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s;
+}
+
+.causeMeterFillDanger {
+  background: var(--danger);
+}
+
+.causeMeterFillWarn {
+  background: var(--warn);
+}
+
+.causeRowSub {
+  font-size: var(--t-0, 11px);
+  color: var(--muted);
+  line-height: 1.25;
+}
+
+.emptyContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2.5rem 1rem;
+  text-align: center;
+}
+
+.emptyText {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+.resetFilterBtn {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ward-tap, 3rem);
+  padding: 0 1.125rem;
+  border-radius: var(--pill, 9999px);
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: var(--t-0);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.resetFilterBtn:hover {
+  opacity: 0.9;
+}
+
+/* ================================================================================
+ * SYSTEMIC DELAY HOLDS (DELAYS WITH NO NAMED PERSON)
+ * ================================================================================ */
+.systemicPanel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 10px);
+  box-shadow: var(--lift);
+  padding: 18px 20px;
+  margin-top: 14px;
+}
+
+.systemicHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.systemicDesc {
+  font-size: var(--t-1);
+  color: var(--muted);
+  line-height: 1.45;
+  max-width: 800px;
+  margin: 0;
+}
+
+.systemicActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.logHoldButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--r2, 6px);
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.logHoldButton:hover {
+  background: var(--sunk);
+  border-color: var(--ink);
+}
+
+.logHoldButton:focus-visible {
+  outline: 2px solid var(--accent);
+}
+
+.systemicFilterBar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.systemicChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--pill, 9999px);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  font-size: var(--t-0);
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.systemicChip:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.systemicChipActive {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.systemicChipBadge {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: var(--pill, 9999px);
+  background: var(--sunk);
+  color: inherit;
+}
+
+.systemicGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 14px;
+}
+
+.systemicCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 8px);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04);
+}
+
+.systemicCardDanger {
+  border-color: var(--danger-line, var(--danger-line, var(--ward-danger)));
+  background: var(--ward-danger-soft, var(--danger-soft));
+}
+
+.systemicCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.systemicCardTitleCluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.systemicFacility {
+  font-weight: 700;
+  font-size: var(--t-1);
+  color: var(--ink);
+}
+
+.systemicCatPill {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: var(--pill, 9999px);
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.systemicElapsed {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.systemicReason {
+  font-size: var(--t-1);
+  color: var(--ink);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.systemicImpactStrip {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  background: var(--ward-warning-soft, var(--warn-soft));
+  border-left: 3px solid var(--ward-warning, var(--warn));
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: var(--t-0);
+  color: var(--ink);
+}
+
+.systemicImpactLabel {
+  font-weight: 700;
+  color: var(--ward-warning, var(--warn-ink));
+}
+
+.systemicImpactValue {
+  font-weight: 500;
+}
+
+.systemicCardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.systemicReview {
+  font-family: var(--mono);
+}
+
+.systemicOwner {
+  font-weight: 500;
+}
+
+/* Keyboard focus on the sort boxes: both .sortSelect rules above remove the outline with nothing in
+   its place (polish report, 26 September 2026). Same ring as the cards and tabs; focus only, so the
+   resting look is unchanged. */
+.sortSelect:focus-visible {
+  outline: 0.125rem solid var(--surface);
+  outline-offset: 0;
+  box-shadow: 0 0 0 0.25rem var(--ink);
+}

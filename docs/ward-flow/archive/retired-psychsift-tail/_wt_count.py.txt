@@ -1,0 +1,34 @@
+﻿from pathlib import Path
+import re
+text = Path(r'D:\Worktrees\Database\ward-lead\_wt_list.txt').read_text(encoding='utf-8', errors='replace')
+entries = []
+cur = {}
+for line in text.splitlines():
+    if line.startswith('worktree '):
+        if cur: entries.append(cur)
+        cur = {'path': line[9:].strip()}
+    elif line.startswith('HEAD '):
+        cur['head'] = line[5:].strip()[:12]
+    elif line.startswith('branch '):
+        cur['branch'] = line[7:].strip().replace('refs/heads/','')
+    elif line.startswith('detached'):
+        cur['branch'] = '(detached)'
+    elif line.startswith('locked'):
+        cur['locked'] = True
+if cur: entries.append(cur)
+
+# Ward-relevant: path or branch contains ward / ward-flow / ward-lead / elevation / psychsift ward
+keys = re.compile(r'ward|elevation|ward-flow|ward_lead|ward-lead|ward/', re.I)
+rel = []
+for e in entries:
+    blob = f"{e.get('path','')} {e.get('branch','')}"
+    if keys.search(blob):
+        rel.append(e)
+
+print(f'TOTAL_WORKTREES {len(entries)}')
+print(f'WARD_RELEVANT {len(rel)}')
+print('---')
+for e in sorted(rel, key=lambda x: x.get('path','').lower()):
+    lock = ' LOCKED' if e.get('locked') else ''
+    print(f"{e.get('branch','?'):50} {e.get('head','?'):12}{lock}")
+    print(f"  {e.get('path')}")

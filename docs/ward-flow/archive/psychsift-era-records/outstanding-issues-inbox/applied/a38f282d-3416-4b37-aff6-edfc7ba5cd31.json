@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "id": "a38f282d-3416-4b37-aff6-edfc7ba5cd31",
+  "createdOn": "2026-09-10",
+  "action": "cancel",
+  "payload": {
+    "requestId": "7235af08-d774-4657-9e90-1a57072a3c0e",
+    "reason": "SUPERSEDED BY A CORRECTED REQUEST — this one carries a false causal claim in its own detail text and must not reconcile as written. It asserts that the 641px column overflow is 'the predictable consequence of an APPROVED change' citing owner-ruling-2026-09-07-board-columns.md. That is FALSE and I never checked it: the five approved columns (Presentation, Review status, Plan, Bed number, Legal form expiry) do not exist anywhere in src/components/ward-management/ and belong to the ward board, a different screen. The queued referral table's six columns are Referral, Tier, Since referral, Age band, Sex, Home region. Replaced by a request carrying the measurement without the invented cause."
+  }
+}

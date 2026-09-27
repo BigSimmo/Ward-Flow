@@ -1,0 +1,256 @@
+/* template-component.module.css */
+
+.horizonContainer {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border-medium);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.toolbarTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.controlsGroup {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.zoomButtonGroup {
+  display: flex;
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.zoomBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.zoomBtn:hover {
+  background: var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.zoomBtnActive {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.scrubberWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.scrubberInput {
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+/* 34px Lane Standard */
+.laneContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.laneRow {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  height: 34px; /* The 34px Lane Standard */
+  border-bottom: 1px solid var(--border-subtle);
+  align-items: center;
+}
+
+.laneHeader {
+  padding: 0 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.laneTrack {
+  position: relative;
+  height: 100%;
+  background: var(--surface-sunken);
+}
+
+/* 20px Event Bar Standard */
+.eventBar {
+  position: absolute;
+  top: 7px; /* Vertical Centering: (34 - 20) / 2 = 7px */
+  height: 20px; /* The 20px Event Bar Standard */
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition:
+    transform 0.1s ease,
+    filter 0.1s ease;
+  user-select: none;
+}
+
+.eventBar:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+  z-index: 10;
+}
+
+.eventBar:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  z-index: 20;
+}
+
+/* Event Types Mapped to Semantic Tokens */
+.barAdmit {
+  background: var(--admit-bg);
+  color: var(--admit-text);
+}
+
+.barTransit {
+  background: var(--transit-bg);
+  color: var(--transit-text);
+}
+
+.barLeave {
+  background: var(--leave-bg);
+  border: 1px solid var(--leave-border);
+  color: var(--leave-text);
+}
+
+.barDischarge {
+  background: var(--discharge-bg);
+  color: var(--discharge-text);
+}
+
+.barDelay {
+  background: var(--delay-bg);
+  color: var(--delay-text);
+}
+
+.barPredicted {
+  background: var(--predicted-bg);
+  border: 1px dashed var(--predicted-border);
+  color: var(--predicted-text);
+}
+
+/* Adaptive Typography Modes */
+.modeId .eventFullTitle,
+.modeId .eventStatusBadge {
+  display: none;
+}
+
+.modeCompact .eventFullTitle {
+  display: none;
+}
+
+.modeCompact .eventStatusBadge {
+  display: inline;
+}
+
+.modeFull .eventFullTitle,
+.modeFull .eventStatusBadge {
+  display: inline;
+}
+
+/* Detail Drawer Styles */
+.drawerBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 1000;
+}
+
+.drawerPanel {
+  width: 420px;
+  max-width: 90vw;
+  background: var(--surface);
+  border-left: 1px solid var(--border-medium);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-drawer);
+}
+
+.drawerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+}
+
+.drawerTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.drawerCloseBtn {
+  background: transparent;
+  border: 1px solid var(--border-medium);
+  color: var(--text-secondary);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.drawerCloseBtn:hover {
+  background: var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.drawerBody {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+}

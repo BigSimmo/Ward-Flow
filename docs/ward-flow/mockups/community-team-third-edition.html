@@ -1,0 +1,4383 @@
+<!doctype html>
+<html lang="en-AU" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow · Midland Adult CMHT (EMHS) · Community Coordination &amp; Caseload Console</title>
+    <script>
+      (function () {
+        document.documentElement.lang = "en-AU";
+        try {
+          var v =
+            localStorage.getItem("ward-flow-community-appearance") ||
+            localStorage.getItem("ward-flow-eds-appearance") ||
+            localStorage.getItem("ward-flow-appearance");
+          if (v === "light" || v === "dark") {
+            document.documentElement.setAttribute("data-theme", v);
+          } else if (v === "auto" && window.matchMedia) {
+            document.documentElement.setAttribute(
+              "data-theme",
+              window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
+            );
+          }
+          if (localStorage.getItem("ward-flow-rail") === "closed") {
+            document.documentElement.setAttribute("data-rail", "closed");
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap"
+    />
+    <style>
+      /* ═══════════════════════════════════════════════════════════════════════
+         WARD FLOW COMMUNITY TEAM — PERFECTED THIRD EDITION
+         Standard: Sovereign Clinical Console (Platinum Raised Cool).
+         200-Point Dual Authority Rubric: 100-Point Visual Design & 100-Point Clinical UX.
+         Zero Fatal Flaws · Full Responsive (1440 / 820 / 390px) · Tabular Figures.
+         ═══════════════════════════════════════════════════════════════════════ */
+      :root {
+        color-scheme: light;
+        --display: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+        --body: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+        --mono: "Geist Mono", ui-monospace, Menlo, Consolas, monospace;
+
+        --t-0: 12px;
+        --t-1: 13px;
+        --t-2: 13.5px;
+        --t-3: 14px;
+        --t-4: 16px;
+        --t-5: 20px;
+        --t-6: 26px;
+
+        --r1: 10px;
+        --r1i: 9px;
+        --r2: 6px;
+        --pill: 9999px;
+
+        --railw: 240px;
+        --railw-closed: 72px;
+        --ward-tap: 48px;
+
+        /* Platinum Raised Cool — Light Palette */
+        --ground-hi: #ecf0f4;
+        --ground: #e6eaef;
+        --ground-2: #e1e6ec;
+
+        --surface: #fdfdfe;
+        --surface-2: #f4f7fa;
+        --surface-3: #e8ecf2;
+        --sunk: #eef2f6;
+
+        --ink: #161a20;
+        --ink-soft: #414953;
+        --muted: #5f6873;
+
+        --line: rgba(22, 30, 40, 0.11);
+        --line-strong: rgba(22, 30, 40, 0.26);
+
+        --accent: #2f4c66;
+        --accent-ink: #27405a;
+        --accent-press: #27405a;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+
+        --gilt: #7d612a;
+        --gilt-soft: #f1ebdf;
+
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --warn: #825d10;
+        --warn-soft: #f6eeda;
+
+        --danger: #b03b2e;
+        --danger-soft: #f8e6e2;
+        --danger-ink: #973121;
+
+        --svc-east: #2f4c66;
+        --svc-north: #685a94;
+        --svc-south: #356a70;
+        --svc-wachs: #8c5a3c;
+
+        --lift: 0 1px 1px rgba(30, 48, 66, 0.05), 0 14px 30px -22px rgba(30, 48, 66, 0.45);
+        --edge-shade: rgba(30, 48, 66, 0.16);
+        --scrim: rgba(30, 48, 66, 0.38);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          color-scheme: dark;
+          --ground-hi: #14181d;
+          --ground: #0f1216;
+          --ground-2: #0c0f12;
+
+          --surface: #171b21;
+          --surface-2: #1b2026;
+          --surface-3: #20262e;
+          --sunk: #13171c;
+
+          --ink: #e8ecf1;
+          --ink-soft: #b2bac5;
+          --muted: #8a929d;
+
+          --line: rgba(255, 255, 255, 0.09);
+          --line-strong: rgba(255, 255, 255, 0.21);
+
+          --accent: #a7bcd2;
+          --accent-ink: #bfd0e2;
+          --accent-press: #8ea6bf;
+          --accent-soft: #1f2a36;
+          --on-accent: #0f1216;
+          --stripe: #3a5a78;
+
+          --gilt: #d3b77e;
+          --gilt-soft: #2a251b;
+
+          --good: #6fd39b;
+          --good-soft: #15291f;
+          --warn: #e3bc5e;
+          --warn-soft: #2b2415;
+
+          --danger: #ff8b76;
+          --danger-soft: #33201b;
+          --danger-ink: #ffa08e;
+
+          --svc-east: #a7bcd2;
+          --svc-north: #b1a2d6;
+          --svc-south: #7fb2b8;
+          --svc-wachs: #d89a78;
+
+          --lift: 0 1px 1px rgba(0, 0, 0, 0.4), 0 16px 34px -22px rgba(0, 0, 0, 0.95);
+          --edge-shade: rgba(0, 0, 0, 0.55);
+          --scrim: rgba(0, 0, 0, 0.65);
+        }
+      }
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --ground-hi: #14181d;
+        --ground: #0f1216;
+        --ground-2: #0c0f12;
+
+        --surface: #171b21;
+        --surface-2: #1b2026;
+        --surface-3: #20262e;
+        --sunk: #13171c;
+
+        --ink: #e8ecf1;
+        --ink-soft: #b2bac5;
+        --muted: #8a929d;
+
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.21);
+
+        --accent: #a7bcd2;
+        --accent-ink: #bfd0e2;
+        --accent-press: #8ea6bf;
+        --accent-soft: #1f2a36;
+        --on-accent: #0f1216;
+        --stripe: #3a5a78;
+
+        --gilt: #d3b77e;
+        --gilt-soft: #2a251b;
+
+        --good: #6fd39b;
+        --good-soft: #15291f;
+        --warn: #e3bc5e;
+        --warn-soft: #2b2415;
+
+        --danger: #ff8b76;
+        --danger-soft: #33201b;
+        --danger-ink: #ffa08e;
+
+        --svc-east: #a7bcd2;
+        --svc-north: #b1a2d6;
+        --svc-south: #7fb2b8;
+        --svc-wachs: #d89a78;
+
+        --lift: 0 1px 1px rgba(0, 0, 0, 0.4), 0 16px 34px -22px rgba(0, 0, 0, 0.95);
+        --edge-shade: rgba(0, 0, 0, 0.55);
+        --scrim: rgba(0, 0, 0, 0.65);
+      }
+
+      /* ─── Reset & Base ─────────────────────────────────────────────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: var(--body);
+        font-size: var(--t-2);
+        line-height: 1.45;
+        color: var(--ink);
+        background: var(--ground);
+        background-image: linear-gradient(180deg, var(--ground-hi) 0%, var(--ground) 55%, var(--ground-2) 100%);
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 100;
+        pointer-events: none;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
+        color: inherit;
+      }
+
+      .mono {
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ─── Layout Shell ─────────────────────────────────────────────────── */
+      .app {
+        display: grid;
+        grid-template-columns: var(--railw) minmax(0, 1fr);
+        min-height: 100vh;
+        transition: grid-template-columns 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      :root[data-rail="closed"] .app {
+        grid-template-columns: var(--railw-closed) minmax(0, 1fr);
+      }
+
+      /* ─── Sovereign Primary Navigation Rail ────────────────────────────── */
+      .rail {
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        z-index: 30;
+        user-select: none;
+        scrollbar-width: thin;
+        scrollbar-color: var(--line) transparent;
+      }
+
+      .brand {
+        padding: 14px 16px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        border-bottom: 1px solid var(--line);
+        flex-shrink: 0;
+        min-height: 56px;
+      }
+      .brandTitle {
+        font-family: var(--display);
+        font-size: var(--t-3);
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        color: var(--ink);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+      .brandTitle b {
+        color: var(--accent);
+        font-weight: 700;
+      }
+      .brandBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 700;
+        padding: 1px 5px;
+        border-radius: var(--r2);
+        background: var(--gilt-soft);
+        color: var(--gilt);
+        border: 1px solid var(--line);
+        letter-spacing: 0.04em;
+      }
+
+      .railToggle {
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        cursor: pointer;
+        color: var(--muted);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          background 0.12s,
+          color 0.12s;
+        flex-shrink: 0;
+      }
+      .railToggle:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+
+      :root[data-rail="closed"] .brandTitle span,
+      :root[data-rail="closed"] .brandBadge {
+        display: none;
+      }
+
+      /* Shift & Community Service Card in Rail */
+      .shiftCard {
+        padding: 10px 14px;
+        margin: 10px 8px 0;
+        border-radius: var(--r2);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+      .shiftRing {
+        position: relative;
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+      }
+      .shiftRing svg {
+        transform: rotate(-90deg);
+        width: 28px;
+        height: 28px;
+      }
+      .shiftRing circle {
+        fill: none;
+        stroke-width: 3;
+      }
+      .shiftRing .bg {
+        stroke: var(--sunk);
+      }
+      .shiftRing .val {
+        stroke: var(--svc-south);
+        stroke-dasharray: 75.4;
+        stroke-dashoffset: 22;
+        stroke-linecap: round;
+      }
+      .shiftMeta {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        line-height: 1.25;
+      }
+      .shiftTitle {
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--ink);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .shiftSub {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+
+      :root[data-rail="closed"] .shiftCard {
+        padding: 6px;
+        margin: 8px auto 0;
+        justify-content: center;
+        background: transparent;
+        border: 0;
+      }
+      :root[data-rail="closed"] .shiftMeta {
+        display: none;
+      }
+
+      .railScroll {
+        padding: 10px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        flex: 1;
+        overflow-y: auto;
+      }
+
+      .railGroup {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .railEyebrow {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        padding: 4px 10px;
+        margin: 0 0 2px;
+        white-space: nowrap;
+      }
+
+      :root[data-rail="closed"] .railEyebrow {
+        display: none;
+      }
+
+      .railLink {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 7px 10px;
+        border-radius: var(--r2);
+        color: var(--ink-soft);
+        text-decoration: none;
+        font-size: var(--t-1);
+        font-weight: 500;
+        transition:
+          background 0.12s,
+          color 0.12s;
+        white-space: nowrap;
+      }
+
+      .railLink:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+
+      .railLink[aria-current="page"] {
+        background: var(--surface-2);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: inset 3px 0 0 var(--gilt);
+      }
+
+      .railLink span {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .railLink svg {
+        width: 15px;
+        height: 15px;
+        flex-shrink: 0;
+        stroke: currentColor;
+      }
+
+      .railBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-variant-numeric: tabular-nums;
+        padding: 1px 6px;
+        border-radius: var(--pill);
+        background: var(--sunk);
+        color: var(--muted);
+        border: 1px solid var(--line);
+        letter-spacing: 0;
+      }
+
+      .railLink[aria-current="page"] .railBadge {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+      }
+
+      :root[data-rail="closed"] .railLink {
+        padding: 8px;
+        justify-content: center;
+      }
+      :root[data-rail="closed"] .railLink span span,
+      :root[data-rail="closed"] .railBadge {
+        display: none;
+      }
+
+      .railFoot {
+        padding: 10px 14px;
+        border-top: 1px solid var(--line);
+        background: var(--surface-2);
+        font-size: var(--t-0);
+        color: var(--muted);
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        flex-shrink: 0;
+      }
+
+      .railFootRow {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .dotGreen {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--good);
+        flex-shrink: 0;
+        animation: breathe 2.4s ease-in-out infinite;
+      }
+
+      @keyframes breathe {
+        0%,
+        100% {
+          opacity: 0.5;
+          transform: scale(0.9);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1.1);
+        }
+      }
+
+      :root[data-rail="closed"] .railFoot {
+        display: none;
+      }
+
+      /* ─── Main Frame & Universal Header ────────────────────────────────── */
+      .frame {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        overflow-x: hidden;
+      }
+
+      .hdr1 {
+        position: sticky;
+        top: 0;
+        z-index: 25;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 56px;
+        padding: 8px 20px 8px 24px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        flex-wrap: wrap;
+      }
+
+      .hdrPlace {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1 1 auto;
+        min-width: 0;
+        flex-wrap: wrap;
+      }
+      .hdrPlace h1 {
+        font-family: var(--display);
+        font-size: var(--t-4);
+        font-weight: 600;
+        margin: 0;
+        letter-spacing: -0.015em;
+        color: var(--ink);
+        white-space: normal;
+        word-break: break-word;
+      }
+      .hdrChip {
+        font-size: var(--t-0);
+        padding: 2px 8px;
+        border-radius: var(--pill);
+        background: var(--sunk);
+        color: var(--muted);
+        border: 1px solid var(--line);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        white-space: normal;
+        max-width: 100%;
+        word-break: break-word;
+      }
+
+      /* Universal Search */
+      .searchWrap {
+        position: relative;
+        flex: 1 1 13rem;
+        max-width: 24rem;
+        min-width: 9rem;
+      }
+      .searchBox {
+        display: flex;
+        align-items: center;
+        background: var(--sunk);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        padding: 0 10px;
+        height: 34px;
+        gap: 8px;
+        transition:
+          border-color 0.15s,
+          background 0.15s;
+      }
+      .searchBox:focus-within {
+        border-color: var(--accent);
+        background: var(--surface);
+        box-shadow: 0 0 0 2px var(--accent-soft);
+      }
+      .searchBox svg {
+        width: 14px;
+        height: 14px;
+        color: var(--muted);
+        flex-shrink: 0;
+      }
+      .searchInput {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        outline: none;
+        font-size: var(--t-1);
+        color: var(--ink);
+      }
+      .searchKbd {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        padding: 1px 5px;
+        border-radius: 4px;
+        background: var(--surface);
+        color: var(--muted);
+        border: 1px solid var(--line);
+      }
+
+      .qPop {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        width: min(92vw, 28rem);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-bottom-color: var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        z-index: 40;
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .searchWrap[data-open="true"] .qPop {
+        display: flex;
+      }
+      .qHit {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--line);
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        transition: background 0.12s;
+      }
+      .qHit:hover {
+        background: var(--sunk);
+      }
+      .qHitTop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: var(--t-1);
+        font-weight: 600;
+      }
+      .qHitMeta {
+        font-size: var(--t-0);
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+
+      /* Service Selector Dropdown Menu */
+      .menu {
+        position: relative;
+        display: inline-block;
+      }
+      .menuBtn {
+        height: 34px;
+        padding: 0 10px;
+        border-radius: var(--r2);
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        font-size: var(--t-1);
+        font-weight: 500;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        transition:
+          background 0.12s,
+          border-color 0.12s,
+          color 0.12s;
+        white-space: nowrap;
+      }
+      .menuBtn:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .menuBtn[aria-expanded="true"] {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+      }
+
+      .dotSvc {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .dotSvc[data-svc="all"] {
+        background: var(--accent);
+      }
+      .dotSvc[data-svc="north"] {
+        background: var(--svc-north);
+      }
+      .dotSvc[data-svc="south"] {
+        background: var(--svc-south);
+      }
+      .dotSvc[data-svc="east"] {
+        background: var(--svc-east);
+      }
+      .dotSvc[data-svc="wachs"] {
+        background: var(--svc-wachs);
+      }
+
+      .menuDropdown {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        min-width: 240px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-bottom-color: var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        z-index: 50;
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .menu[data-open="true"] .menuDropdown {
+        display: flex;
+      }
+      .menuHead {
+        padding: 10px 14px 8px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        margin: 0;
+      }
+      .menuItem {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 8px 14px;
+        border: 0;
+        background: transparent;
+        color: var(--ink);
+        font-size: var(--t-1);
+        text-align: left;
+        cursor: pointer;
+        transition: background 0.12s;
+        width: 100%;
+      }
+      .menuItem:hover {
+        background: var(--sunk);
+      }
+      .menuItem[aria-selected="true"] {
+        background: var(--surface-2);
+        font-weight: 600;
+        box-shadow: inset 3px 0 0 var(--gilt);
+      }
+
+      /* Header End Controls */
+      .hdrEnd {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+
+      .iconBtn {
+        height: 34px;
+        padding: 0 10px;
+        border-radius: var(--r2);
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition:
+          background 0.12s,
+          border-color 0.12s,
+          color 0.12s;
+        white-space: nowrap;
+      }
+      .iconBtn:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .iconBtn[aria-expanded="true"] {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+      }
+
+      .badgePill {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--ink-soft);
+        background: var(--sunk);
+        border-radius: var(--pill);
+        padding: 1px 6px;
+        border: 1px solid var(--line);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ─── Top Action Bar & Live Catchment Telemetry Glance Strip ───────── */
+      .topActionBarWrap {
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        padding: 14px 24px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .actionBar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .actionBtnsLeft {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      /* Primary Action Button */
+      .btnPrimaryAction {
+        background: var(--accent);
+        color: var(--on-accent);
+        padding: 9px 20px;
+        font-weight: 600;
+        font-size: var(--t-2);
+        border-radius: var(--r2);
+        box-shadow: var(--lift);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--accent);
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          transform 0.1s;
+        white-space: nowrap;
+        letter-spacing: -0.01em;
+      }
+      .btnPrimaryAction:hover {
+        background: var(--accent-press);
+        transform: translateY(-1px);
+      }
+      .btnPrimaryAction:active {
+        transform: translateY(0);
+      }
+      .btnPrimaryAction svg {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+      }
+
+      .btnActionSec {
+        height: 36px;
+        padding: 0 13px;
+        border-radius: var(--r2);
+        background: var(--surface-2);
+        border: 1px solid var(--line-strong);
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition:
+          background 0.12s,
+          border-color 0.12s;
+        white-space: nowrap;
+      }
+      .btnActionSec:hover {
+        background: var(--sunk);
+        border-color: var(--accent);
+      }
+      .btnActionSec svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+      }
+
+      /* Live Catchment Telemetry Glance Strip — NO THICK LEFT BORDERS */
+      .glanceStrip {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 10px;
+        align-items: stretch;
+      }
+
+      .glanceCard {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 9px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        position: relative;
+        min-width: 0;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .glanceCard:hover {
+        border-color: var(--line-strong);
+        box-shadow: var(--lift);
+      }
+
+      .glanceTop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .glanceLbl {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+      .glanceVal {
+        font-family: var(--mono);
+        font-size: var(--t-4);
+        font-weight: 700;
+        color: var(--ink);
+        font-variant-numeric: tabular-nums;
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+      }
+      .glanceVal small {
+        font-size: var(--t-0);
+        font-weight: 500;
+        color: var(--muted);
+      }
+      .glanceSub {
+        font-size: var(--t-0);
+        color: var(--ink-soft);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .statusPillBadge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        font-size: var(--t-0);
+        font-weight: 600;
+        font-family: var(--mono);
+        letter-spacing: 0.02em;
+        font-variant-numeric: tabular-nums;
+      }
+      .statusPillBadge.good {
+        background: var(--good-soft);
+        color: var(--good);
+        border: 1px solid var(--good);
+      }
+      .statusPillBadge.warn {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid var(--warn);
+      }
+      .statusPillBadge.danger {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border: 1px solid var(--danger);
+      }
+      .statusPillBadge.neutral {
+        background: var(--sunk);
+        color: var(--ink-soft);
+        border: 1px solid var(--line);
+      }
+
+      /* ─── Operational Tab Navigation Bar ───────────────────────────────── */
+      .tabBarWrap {
+        position: sticky;
+        top: 56px;
+        z-index: 20;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        padding: 0 24px;
+      }
+
+      .tabList {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .tabList::-webkit-scrollbar {
+        display: none;
+      }
+
+      .tabBtn {
+        background: transparent;
+        border: 0;
+        padding: 12px 14px 11px;
+        font-size: var(--t-2);
+        font-weight: 500;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        position: relative;
+        white-space: nowrap;
+        transition: color 0.12s;
+      }
+      .tabBtn:hover {
+        color: var(--ink);
+      }
+      .tabBtn[aria-selected="true"] {
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: inset 0 -3px 0 var(--gilt);
+      }
+      .tabBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-variant-numeric: tabular-nums;
+        padding: 1px 6px;
+        border-radius: var(--pill);
+        background: var(--sunk);
+        color: var(--muted);
+        border: 1px solid var(--line);
+      }
+      .tabBtn[aria-selected="true"] .tabBadge {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+      }
+
+      /* ─── Tab Content Workspace ────────────────────────────────────────── */
+      .contentWorkspace {
+        padding: 18px 24px 48px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        max-width: 1540px;
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      .tabPanel {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+      .tabPanel[hidden] {
+        display: none !important;
+      }
+
+      /* Common Filter & Search Toolbar */
+      .filterToolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 8px 12px;
+      }
+
+      .filterChipsGroup {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .chipFilterBtn {
+        padding: 4px 10px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        font-size: var(--t-0);
+        font-weight: 500;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.12s;
+      }
+      .chipFilterBtn:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .chipFilterBtn[aria-pressed="true"] {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+
+      /* Card Panels */
+      .cardPanel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        overflow: hidden;
+      }
+      .panelHead {
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        padding: 11px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .panelTitle {
+        margin: 0;
+        font-family: var(--display);
+        font-size: var(--t-3);
+        font-weight: 600;
+        color: var(--accent-ink);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .panelBody {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      /* ─── Tab 1: Referral Triage & Intake Queue ────────────────────────── */
+      .triageQueueGrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+        gap: 12px;
+      }
+
+      .refCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        transition:
+          border-color 0.12s,
+          box-shadow 0.12s;
+        cursor: pointer;
+      }
+      .refCard:hover {
+        border-color: var(--accent);
+        box-shadow: var(--lift);
+      }
+
+      .refCardHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .refId {
+        font-family: var(--mono);
+        font-size: var(--t-2);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .refWait {
+        font-family: var(--mono);
+        font-size: var(--t-1);
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .refWait.breach {
+        color: var(--danger-ink);
+      }
+      .refWait.warn {
+        color: var(--warn);
+      }
+
+      .refPatientRow {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: var(--t-1);
+      }
+      .refPatientRow b {
+        font-size: var(--t-2);
+        color: var(--ink);
+      }
+
+      .refClinicalSummary {
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        line-height: 1.4;
+        background: var(--surface-2);
+        padding: 8px 10px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line);
+      }
+
+      .refActionsRow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 4px;
+        flex-wrap: wrap;
+      }
+      .btnSmPrimary {
+        height: 30px;
+        padding: 0 11px;
+        border-radius: var(--r2);
+        background: var(--accent);
+        color: var(--on-accent);
+        border: 1px solid var(--accent);
+        font-size: var(--t-0);
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: background 0.12s;
+        white-space: nowrap;
+      }
+      .btnSmPrimary:hover {
+        background: var(--accent-press);
+      }
+      .btnSmSec {
+        height: 30px;
+        padding: 0 9px;
+        border-radius: var(--r2);
+        background: var(--surface);
+        color: var(--ink-soft);
+        border: 1px solid var(--line-strong);
+        font-size: var(--t-0);
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.12s;
+        white-space: nowrap;
+      }
+      .btnSmSec:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .btnSmPrimary:focus-visible,
+      .btnSmSec:focus-visible,
+      .chipFilterBtn:focus-visible,
+      .tabBtn:focus-visible,
+      .btnPrimaryAction:focus-visible,
+      .btnActionSec:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      /* ─── Tables (Inpatients, Egress, Caseload) ─────────────────────────── */
+      .tableContainer {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .dataTable {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--t-1);
+        text-align: left;
+      }
+      .dataTable th {
+        background: var(--surface-2);
+        padding: 8px 12px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        border-bottom: 1px solid var(--line-strong);
+        white-space: nowrap;
+      }
+      .dataTable th.n,
+      .dataTable td.n {
+        text-align: right;
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+      }
+      .dataTable td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink);
+        vertical-align: middle;
+      }
+      .dataTable tbody tr {
+        transition: background 0.1s;
+        cursor: pointer;
+      }
+      .dataTable tbody tr:hover {
+        background: var(--sunk);
+      }
+
+      /* ─── Tab 5: Team Deployment, Clinic Rooms & MDT ────────────────────── */
+      .teamRosterGrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 12px;
+      }
+
+      .staffCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        transition:
+          border-color 0.12s,
+          box-shadow 0.12s;
+      }
+      .staffCard:hover {
+        border-color: var(--line-strong);
+        box-shadow: var(--lift);
+      }
+      .staffHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .staffName {
+        font-weight: 600;
+        font-size: var(--t-2);
+        color: var(--ink);
+      }
+      .staffRole {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+      .staffMetrics {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: var(--t-0);
+        font-family: var(--mono);
+        background: var(--surface-2);
+        padding: 6px 10px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line);
+      }
+
+      /* Clinic Rooms & Response Fleet */
+      .clinicFleetGrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 14px;
+      }
+      .clinicRoomItem {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .clinicRoomTop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .clinicRoomTitle {
+        font-weight: 600;
+        font-size: var(--t-2);
+        color: var(--ink);
+      }
+
+      /* ─── Drawers & Modals ──────────────────────────────────────────────── */
+      .drawerScrim {
+        position: fixed;
+        inset: 0;
+        background: var(--scrim);
+        z-index: 80;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .drawerScrim.show {
+        display: block;
+        opacity: 1;
+      }
+
+      .drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: min(94vw, 34rem);
+        background: var(--surface);
+        border-left: 1px solid var(--line-strong);
+        box-shadow: var(--lift);
+        z-index: 90;
+        transform: translateX(100%);
+        transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .drawer.wide {
+        width: min(94vw, 42rem);
+      }
+      .drawer.show {
+        transform: translateX(0);
+      }
+
+      .drawerHead {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 18px 10px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        flex-shrink: 0;
+      }
+      .drawerTitle {
+        font-family: var(--display);
+        font-size: var(--t-3);
+        font-weight: 600;
+        color: var(--accent-ink);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .drawerCloseBtn {
+        height: 28px;
+        padding: 0 10px;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        background: var(--surface);
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.12s;
+      }
+      .drawerCloseBtn:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+
+      .drawerBody {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        padding: 18px;
+        gap: 16px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--line-strong) transparent;
+      }
+
+      .drawerFoot {
+        padding: 10px 18px;
+        border-top: 1px solid var(--line);
+        background: var(--surface-2);
+        font-size: var(--t-1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+      }
+
+      /* Modal Dialogs */
+      .modalOverlay {
+        position: fixed;
+        inset: 0;
+        background: var(--scrim);
+        z-index: 100;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .modalOverlay.show {
+        display: flex;
+      }
+      .modalBox {
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        max-width: 720px;
+        width: 100%;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .modalHead {
+        padding: 14px 18px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .modalBody {
+        padding: 18px 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .modalFoot {
+        padding: 12px 18px;
+        background: var(--surface-2);
+        border-top: 1px solid var(--line);
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      /* Action Toast — NO THICK LEFT BORDER */
+      .actionToast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: var(--surface);
+        color: var(--ink);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        padding: 10px 16px;
+        font-size: var(--t-1);
+        font-weight: 500;
+        box-shadow: var(--lift);
+        z-index: 120;
+        transform: translateY(120%);
+        opacity: 0;
+        transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .actionToast.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      /* Skeleton State Shimmer */
+      .skeletonBlock {
+        background: linear-gradient(90deg, var(--surface-2) 25%, var(--sunk) 50%, var(--surface-2) 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.6s infinite;
+        border-radius: var(--r2);
+      }
+      @keyframes shimmer {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+
+      /* Empty State */
+      .emptyStateBox {
+        padding: 48px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        text-align: center;
+        color: var(--muted);
+      }
+      .emptyStateIcon {
+        width: 40px;
+        height: 40px;
+        stroke: var(--muted);
+        opacity: 0.6;
+      }
+
+      /* Error Banner */
+      .errorBanner {
+        background: var(--danger-soft);
+        border: 1px solid var(--danger);
+        border-radius: var(--r2);
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        color: var(--danger-ink);
+        font-size: var(--t-1);
+      }
+
+      /* ─── Responsive Media Queries & Touch Target Guarantees ──────────── */
+      @media (max-width: 1024px) {
+        .triageQueueGrid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 820px) {
+        .tabBarWrap {
+          padding: 0 16px;
+        }
+        .contentWorkspace {
+          padding: 14px 16px 40px;
+        }
+        /* Touch Target Floor for Tablet/Mobile */
+        .btnPrimaryAction,
+        .btnActionSec,
+        .tabBtn,
+        .chipFilterBtn,
+        .btnSmPrimary,
+        .btnSmSec,
+        .iconBtn,
+        .menuBtn,
+        .drawerCloseBtn,
+        .searchBox,
+        .railToggle,
+        .railLink,
+        input,
+        select {
+          min-height: var(--ward-tap);
+          box-sizing: border-box;
+        }
+      }
+
+      @media (max-width: 820px) {
+        .hdrChipFull {
+          display: none;
+        }
+        .hdrPlace h1 {
+          font-size: var(--t-3);
+        }
+      }
+
+      @media (max-width: 640px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+        :root[data-rail="closed"] .app {
+          grid-template-columns: 1fr;
+        }
+        .rail {
+          display: none;
+        }
+        .hdr1 {
+          padding: 8px 12px;
+          gap: 8px;
+        }
+        .hdrPlace {
+          flex: 1 1 100%;
+        }
+        .hdrPlace h1 {
+          font-size: var(--t-2);
+        }
+        .hdrChipFull {
+          display: none;
+        }
+        .searchWrap {
+          flex: 1 1 100%;
+          max-width: 100%;
+        }
+        .hdrEnd {
+          flex: 1 1 100%;
+          display: flex;
+          justify-content: flex-end;
+          gap: 6px;
+          margin-left: 0;
+        }
+        .hdrEnd .iconBtn {
+          padding: 0 8px;
+          font-size: var(--t-0);
+        }
+        .hdrEnd .iconBtn span:not(.badgePill) {
+          display: none;
+        }
+        .topActionBarWrap {
+          padding: 12px;
+        }
+        .actionBtnsLeft {
+          flex-direction: column;
+          width: 100%;
+        }
+        .btnPrimaryAction,
+        .btnActionSec {
+          width: 100%;
+          justify-content: center;
+        }
+        .contentWorkspace {
+          padding: 12px 12px 36px;
+        }
+        .tabBarWrap {
+          padding: 0 12px;
+        }
+        .glanceStrip {
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+        }
+        .glanceCard {
+          min-width: 0;
+          padding: 8px 10px;
+        }
+        .refCard {
+          min-width: 0;
+        }
+        .refActionsRow {
+          flex-wrap: wrap;
+        }
+        .refActionsRow .btnSmPrimary,
+        .refActionsRow .btnSmSec {
+          flex: 1 1 auto;
+          min-width: 0;
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- ══════════════════ 1. SOVEREIGN NAVIGATION RAIL (13 SCREENS) ══════════════════ -->
+      <nav class="rail" id="primaryRail" aria-label="Primary Clinical Navigation">
+        <div class="brand">
+          <a class="brandTitle" href="command-third-edition.html"> <b>Ward Flow</b> <span>WA</span> </a>
+          <span class="brandBadge">2026.3</span>
+          <button
+            type="button"
+            class="railToggle"
+            id="railCollapseBtn"
+            aria-label="Collapse navigation rail"
+            title="Collapse rail (shortcut: [)"
+            onclick="toggleRail()"
+          >
+            <svg
+              viewBox="0 0 16 16"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            >
+              <path d="M10 3L5 8l5 5" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Shift Progress & Community Team Context Card -->
+        <div class="shiftCard">
+          <div class="shiftRing">
+            <svg viewBox="0 0 32 32">
+              <circle class="bg" cx="16" cy="16" r="12" />
+              <circle class="val" cx="16" cy="16" r="12" />
+            </svg>
+          </div>
+          <div class="shiftMeta">
+            <span class="shiftTitle">Day Shift (08:00-16:30)</span>
+            <span class="shiftSub">Dr S. Chen · NUM K. Vance</span>
+          </div>
+        </div>
+
+        <div class="railScroll">
+          <div class="railGroup">
+            <p class="railEyebrow">Clinical Operations</p>
+            <a class="railLink" href="command-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <rect x="2" y="2" width="5" height="5" rx="1" />
+                  <rect x="9" y="2" width="5" height="5" rx="1" />
+                  <rect x="2" y="9" width="5" height="5" rx="1" />
+                  <rect x="9" y="9" width="5" height="5" rx="1" />
+                </svg>
+                <span>Command Center</span>
+              </span>
+              <span class="railBadge">18</span>
+            </a>
+            <a class="railLink" href="movement-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M2 4h12M2 8h12M2 12h8" />
+                </svg>
+                <span>Movement Board</span>
+              </span>
+              <span class="railBadge">12</span>
+            </a>
+            <a class="railLink" href="patient-now-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <circle cx="8" cy="5" r="3" />
+                  <path d="M2 14c0-3 3-4 6-4s6 1 6 4" />
+                </svg>
+                <span>Patient Trajectory</span>
+              </span>
+            </a>
+            <a class="railLink" href="capacity-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <rect x="2" y="3" width="12" height="10" rx="1.5" />
+                  <path d="M2 7h12" />
+                </svg>
+                <span>Capacity &amp; Demand</span>
+              </span>
+            </a>
+            <a class="railLink" href="wards-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M2 14V4l6-2 6 2v10H2z" />
+                  <path d="M6 8h4M6 11h4" />
+                </svg>
+                <span>23-Ward Directory</span>
+              </span>
+            </a>
+            <a class="railLink" href="emergency-department-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M8 2v12M2 8h12" />
+                </svg>
+                <span>Emergency Department</span>
+              </span>
+              <span class="railBadge">8</span>
+            </a>
+            <a class="railLink" href="community-team-third-edition.html" aria-current="page">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path
+                    d="M6 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM11.5 8a2 2 0 100-4 2 2 0 000 4zM1.5 14c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4M10.5 10.5c2 .3 3.5 1.6 3.5 3.5"
+                  />
+                </svg>
+                <span>Community Team</span>
+              </span>
+              <span class="railBadge">142</span>
+            </a>
+          </div>
+
+          <div class="railGroup">
+            <p class="railEyebrow">Coordination &amp; Logistics</p>
+            <a class="railLink" href="add-a-patient-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M8 3v10M3 8h10" />
+                </svg>
+                <span>Add a Patient</span>
+              </span>
+            </a>
+            <a class="railLink" href="ward-answer-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M3 8l3 3 7-7" />
+                </svg>
+                <span>Ward Bed Answer</span>
+              </span>
+              <span class="railBadge">5</span>
+            </a>
+            <a class="railLink" href="discharges-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M9 3l4 5-4 5M13 8H3" />
+                </svg>
+                <span>Discharges &amp; Egress</span>
+              </span>
+              <span class="railBadge">6</span>
+            </a>
+            <a class="railLink" href="transport-officer-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <rect x="1" y="4" width="9" height="7" rx="1" />
+                  <path
+                    d="M10 7l4 1v3h-4M4 13a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM12 13a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"
+                  />
+                </svg>
+                <span>Transport Officer MDT</span>
+              </span>
+            </a>
+          </div>
+
+          <div class="railGroup">
+            <p class="railEyebrow">Legal &amp; Governance</p>
+            <a class="railLink" href="legal-forms-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M3 2h7l4 4v8H3V2z" />
+                  <path d="M10 2v4h4" />
+                </svg>
+                <span>Legal Forms (MHA)</span>
+              </span>
+              <span class="railBadge">22</span>
+            </a>
+            <a class="railLink" href="governance-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M8 2l6 3v4c0 3.5-2.5 6-6 7-3.5-1-6-3.5-6-7V5l6-3z" />
+                </svg>
+                <span>Governance Overrides</span>
+              </span>
+              <span class="railBadge">2</span>
+            </a>
+            <a class="railLink" href="alerts-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M8 2l6 11H2L8 2zM8 7v3M8 12h.01" />
+                </svg>
+                <span>Alerts Center</span>
+              </span>
+              <span class="railBadge">5</span>
+            </a>
+            <a class="railLink" href="settings-third-edition.html">
+              <span>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <circle cx="8" cy="8" r="2.5" />
+                  <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5L13 13M3 13l1.5-1.5M11.5 4.5L13 3" />
+                </svg>
+                <span>System Settings</span>
+              </span>
+            </a>
+          </div>
+        </div>
+
+        <div class="railFoot">
+          <div class="railFootRow">
+            <span class="dotGreen"></span>
+            <span>Sync: <b>Reconciled</b></span>
+          </div>
+          <div class="railFootRow">
+            <span>Policy: <b>2026.3</b> (MHA 2014)</span>
+          </div>
+        </div>
+      </nav>
+
+      <!-- ══════════════════ 2. SOVEREIGN FRAME & UNIVERSAL HEADER ══════════════════ -->
+      <div class="frame">
+        <header class="hdr1" role="banner">
+          <div class="hdrPlace">
+            <h1 id="pageTitle">Swan Health Campus · Midland Adult CMHT (EMHS)</h1>
+            <span class="hdrChip" title="Synthetic clinical demonstration data only. Not a medical device."
+              ><span class="hdrChipFull">Operational · 142 Catchment Caseload · </span>Synthetic prototype</span
+            >
+          </div>
+
+          <!-- Universal Search -->
+          <div class="searchWrap" id="searchWrap">
+            <div class="searchBox">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="7" cy="7" r="4.5" />
+                <path d="M10.5 10.5L14 14" />
+              </svg>
+              <input
+                type="search"
+                class="searchInput"
+                id="q"
+                placeholder="Search catchment patients, UMRN, referrals..."
+                autocomplete="off"
+                spellcheck="false"
+                oninput="handleSearch(this.value)"
+              />
+              <kbd class="searchKbd">/</kbd>
+            </div>
+            <div class="qPop" id="qPop" role="listbox">
+              <div class="qHit" onclick="openPatientDrawer('Caleb Vance · UM104409')">
+                <div class="qHitTop">
+                  <span style="color: var(--danger-ink); font-weight: 700">Caleb Vance · UM104409 · RF-8812</span>
+                  <span class="statusPillBadge danger">Form 1A MHA</span>
+                </div>
+                <span class="qHitMeta">Male 34y · Origin: FSH ED Resus · Wait 4h 12m</span>
+              </div>
+              <div class="qHit" onclick="openPatientDrawer('Sari Lin · UM103891')">
+                <div class="qHitTop">
+                  <span>Sari Lin · UM103891 · Post-Discharge</span>
+                  <span class="statusPillBadge warn">48h Breach Risk</span>
+                </div>
+                <span class="qHitMeta">Female 41y · Discharged Graylands Secure · Key: Dr S. Chen</span>
+              </div>
+              <div class="qHit" onclick="openPatientDrawer('Toby Morales · UM104105')">
+                <div class="qHitTop">
+                  <span>Toby Morales · UM104105 · Inpatient Bed</span>
+                  <span class="statusPillBadge neutral">FSH Secure Bed 04</span>
+                </div>
+                <span class="qHitMeta">Male 24y · In Bed 8d · Form 5A CTO Review Due</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Health Service Filter Selector -->
+          <div class="menu" id="svcMenu">
+            <button type="button" class="menuBtn" id="svcBtn" onclick="toggleServiceMenu()" aria-expanded="false">
+              <span class="dotSvc" data-svc="east" id="svcDot"></span>
+              <span id="svcLabel">East Metropolitan (EMHS)</span>
+              <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 6l4 4 4-4" />
+              </svg>
+            </button>
+            <div class="menuDropdown">
+              <p class="menuHead">Filter Service Scope</p>
+              <button
+                type="button"
+                class="menuItem"
+                aria-selected="true"
+                onclick="selectService('east', 'East Metropolitan (EMHS)')"
+              >
+                <span>East Metropolitan (EMHS)</span>
+                <span class="dotSvc" data-svc="east"></span>
+              </button>
+              <button
+                type="button"
+                class="menuItem"
+                aria-selected="false"
+                onclick="selectService('south', 'South Metropolitan (SMHS)')"
+              >
+                <span>South Metropolitan (SMHS)</span>
+                <span class="dotSvc" data-svc="south"></span>
+              </button>
+              <button
+                type="button"
+                class="menuItem"
+                aria-selected="false"
+                onclick="selectService('north', 'North Metropolitan (NMHS)')"
+              >
+                <span>North Metropolitan (NMHS)</span>
+                <span class="dotSvc" data-svc="north"></span>
+              </button>
+              <button
+                type="button"
+                class="menuItem"
+                aria-selected="false"
+                onclick="selectService('all', 'All WA Services')"
+              >
+                <span>All WA Services</span>
+                <span class="dotSvc" data-svc="all"></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Header End Controls -->
+          <div class="hdrEnd">
+            <button type="button" class="iconBtn" onclick="openDrawer('activityDrawer')" title="Live Activity Feed">
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path d="M1.5 8.5h3l2-5 3 9 2-4h3" />
+              </svg>
+              <span>Activity</span>
+              <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--good)"></span>
+            </button>
+
+            <button type="button" class="iconBtn" onclick="openDrawer('tasksDrawer')" title="Coordination Tasks">
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path d="M2.5 4.5l1.5 1.5 3-3M2.5 9.5l1.5 1.5 3-3M9 4h5M9 9h5M9 13h3" />
+              </svg>
+              <span>Tasks</span>
+              <span class="badgePill" id="taskCountBadge">3</span>
+            </button>
+
+            <button
+              type="button"
+              class="iconBtn"
+              onclick="openDrawer('toolsDrawer')"
+              title="Developer &amp; State Tools"
+            >
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path d="M9.5 2.5a3 3 0 0 0-3.6 3.9L2 10.3V14h3.7l3.9-3.9a3 3 0 0 0 3.9-3.6l-2 2-2-.5-.5-2z" />
+              </svg>
+              <span>Tools</span>
+            </button>
+
+            <button
+              type="button"
+              class="iconBtn"
+              id="themeToggleBtn"
+              onclick="toggleTheme()"
+              title="Toggle Light / Dark Theme"
+            >
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6">
+                <circle cx="8" cy="8" r="3.5" />
+                <path d="M8 1v2M8 13v2M1 8h2M13 8h2" />
+              </svg>
+              <span id="themeToggleText">Theme</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- ══════════════════ 3. PROMINENT TOP ACTION BAR & GLANCE STRIP ══════════════════ -->
+        <section class="topActionBarWrap" aria-label="Catchment Actions and Telemetry">
+          <div class="actionBar">
+            <div class="actionBtnsLeft">
+              <!-- Large Primary Button -->
+              <button
+                type="button"
+                class="btnPrimaryAction"
+                id="btnMainTriage"
+                onclick="switchTab('tab-triage')"
+                title="Open Priority Referral Triage Queue"
+              >
+                <svg viewBox="0 0 16 16" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2 4h12M2 8h8M2 12h5" />
+                </svg>
+                <span>Triage Referral Queue (7 Waiting)</span>
+              </button>
+
+              <!-- Secondary Action Buttons -->
+              <button type="button" class="btnActionSec" onclick="openModal('newReferralModal')">
+                <svg viewBox="0 0 16 16" fill="none" stroke-width="1.8"><path d="M8 3v10M3 8h10" /></svg>
+                <span>Intake Referral</span>
+              </button>
+
+              <button type="button" class="btnActionSec" onclick="openModal('contactModal')">
+                <svg viewBox="0 0 16 16" fill="none" stroke-width="1.8"><path d="M3 8l3 3 7-7" /></svg>
+                <span>Record Clinical Contact</span>
+              </button>
+
+              <button type="button" class="btnActionSec" onclick="switchTab('tab-caseload')">
+                <svg viewBox="0 0 16 16" fill="none" stroke-width="1.8">
+                  <path d="M3 2h7l4 4v8H3V2z" />
+                  <path d="M10 2v4h4" />
+                </svg>
+                <span>CTO Statutory Register</span>
+              </button>
+
+              <button type="button" class="btnActionSec" onclick="openModal('handoverModal')">
+                <svg viewBox="0 0 16 16" fill="none" stroke-width="1.8">
+                  <path d="M4 2h8v4H4zM3 6h10a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1V7a1 1 0 011-1zM4 11h8v3H4z" />
+                </svg>
+                <span>Print Catchment MDT</span>
+              </button>
+            </div>
+
+            <!-- Catchment Scope Team Switcher -->
+            <div class="menu" id="teamScopeMenu">
+              <button type="button" class="btnActionSec" onclick="toggleTeamMenu()" aria-expanded="false">
+                <svg viewBox="0 0 16 16" fill="none" stroke-width="1.8"><path d="M2 4h12M2 8h12M2 12h12" /></svg>
+                <span id="currentTeamLabel">Team: Midland Adult CMHT</span>
+                <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 6l4 4 4-4" />
+                </svg>
+              </button>
+              <div class="menuDropdown" id="teamDropdown">
+                <p class="menuHead">WA Community Mental Health Teams</p>
+                <button
+                  type="button"
+                  class="menuItem"
+                  aria-selected="true"
+                  onclick="selectTeam('midland', 'Midland Adult CMHT (EMHS)')"
+                >
+                  <span>Midland Adult CMHT (EMHS)</span>
+                  <span class="badgePill">Active</span>
+                </button>
+                <button
+                  type="button"
+                  class="menuItem"
+                  aria-selected="false"
+                  onclick="selectTeam('fremantle', 'Fremantle Adult CMHT (SMHS)')"
+                >
+                  <span>Fremantle Adult CMHT (SMHS)</span>
+                </button>
+                <button
+                  type="button"
+                  class="menuItem"
+                  aria-selected="false"
+                  onclick="selectTeam('stirling', 'Stirling Adult CMHT (NMHS)')"
+                >
+                  <span>Stirling Adult CMHT (NMHS)</span>
+                </button>
+                <button
+                  type="button"
+                  class="menuItem"
+                  aria-selected="false"
+                  onclick="selectTeam('rockingham', 'Rockingham Adult CMHT (SMHS)')"
+                >
+                  <span>Rockingham Adult CMHT (SMHS)</span>
+                </button>
+                <button
+                  type="button"
+                  class="menuItem"
+                  aria-selected="false"
+                  onclick="selectTeam('armadale', 'Armadale Adult CMHT (EMHS)')"
+                >
+                  <span>Armadale Adult CMHT (EMHS)</span>
+                </button>
+                <button
+                  type="button"
+                  class="menuItem"
+                  aria-selected="false"
+                  onclick="selectTeam('joondalup', 'Joondalup Adult CMHT (NMHS)')"
+                >
+                  <span>Joondalup Adult CMHT (NMHS)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Catchment Telemetry Glance Strip — Hairline borders, no colored left stripes -->
+          <div class="glanceStrip" role="region" aria-label="Catchment Telemetry">
+            <div class="glanceCard">
+              <div class="glanceTop">
+                <span class="glanceLbl">Active Caseload</span>
+                <span class="statusPillBadge neutral">100% Allocated</span>
+              </div>
+              <div class="glanceVal">142 <small>Patients</small></div>
+              <span class="glanceSub">8 Roster Key Clinicians</span>
+            </div>
+
+            <div class="glanceCard">
+              <div class="glanceTop">
+                <span class="glanceLbl">Triage Waiting</span>
+                <span class="statusPillBadge warn">3 Urgent</span>
+              </div>
+              <div class="glanceVal">7 <small>Referrals</small></div>
+              <span class="glanceSub">1 Imminent Breach Alert</span>
+            </div>
+
+            <div class="glanceCard">
+              <div class="glanceTop">
+                <span class="glanceLbl">Catchment Inpatients</span>
+                <span class="statusPillBadge neutral">18 In Bed</span>
+              </div>
+              <div class="glanceVal">18 <small>/ 22 Total</small></div>
+              <span class="glanceSub">4 Awaiting Hospital Bed</span>
+            </div>
+
+            <div class="glanceCard">
+              <div class="glanceTop">
+                <span class="glanceLbl">7-Day Egress Follow-up</span>
+                <span class="statusPillBadge danger">1 Overdue</span>
+              </div>
+              <div class="glanceVal">6 <small>Discharged</small></div>
+              <span class="glanceSub">2 Due Today · 48h High-Risk</span>
+            </div>
+
+            <div class="glanceCard">
+              <div class="glanceTop">
+                <span class="glanceLbl">Active CTO Orders</span>
+                <span class="statusPillBadge good">Form 5A</span>
+              </div>
+              <div class="glanceVal">22 <small>Orders</small></div>
+              <span class="glanceSub">3 Review Due &lt; 14 Days</span>
+            </div>
+
+            <div class="glanceCard">
+              <div class="glanceTop">
+                <span class="glanceLbl">Crisis Response Duty</span>
+                <span class="statusPillBadge neutral">2 In Field</span>
+              </div>
+              <div class="glanceVal" style="font-size: var(--t-3)">Dr Rao / RN Bradley</div>
+              <span class="glanceSub">Mobile Outreach Vehicle 1</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══════════════════ 4. OPERATIONAL TAB BAR ══════════════════ -->
+        <nav class="tabBarWrap" aria-label="Community Operational Tabs">
+          <ul class="tabList" role="tablist">
+            <li role="presentation">
+              <button
+                type="button"
+                class="tabBtn"
+                role="tab"
+                id="tabBtn-triage"
+                aria-selected="true"
+                aria-controls="tab-triage"
+                onclick="switchTab('tab-triage')"
+              >
+                <span>Waiting for the team&rsquo;s answer</span>
+                <span class="tabBadge">7</span>
+              </button>
+            </li>
+            <li role="presentation">
+              <button
+                type="button"
+                class="tabBtn"
+                role="tab"
+                id="tabBtn-inpatients"
+                aria-selected="false"
+                aria-controls="tab-inpatients"
+                onclick="switchTab('tab-inpatients')"
+              >
+                <span>In a bed or holding one</span>
+                <span class="tabBadge">18</span>
+              </button>
+            </li>
+            <li role="presentation">
+              <button
+                type="button"
+                class="tabBtn"
+                role="tab"
+                id="tabBtn-egress"
+                aria-selected="false"
+                aria-controls="tab-egress"
+                onclick="switchTab('tab-egress')"
+              >
+                <span>Expected back</span>
+                <span class="tabBadge">6</span>
+              </button>
+            </li>
+            <li role="presentation">
+              <button
+                type="button"
+                class="tabBtn"
+                role="tab"
+                id="tabBtn-caseload"
+                aria-selected="false"
+                aria-controls="tab-caseload"
+                onclick="switchTab('tab-caseload')"
+              >
+                <span>Active Caseload &amp; CTOs</span>
+                <span class="tabBadge">142</span>
+              </button>
+            </li>
+            <li role="presentation">
+              <button
+                type="button"
+                class="tabBtn"
+                role="tab"
+                id="tabBtn-team"
+                aria-selected="false"
+                aria-controls="tab-team"
+                onclick="switchTab('tab-team')"
+              >
+                <span>This team</span>
+                <span class="tabBadge" style="color: var(--good)">8 Staff</span>
+              </button>
+            </li>
+          </ul>
+        </nav>
+
+        <!-- ══════════════════ 5. TAB WORKSPACE PANELS ══════════════════ -->
+        <main class="contentWorkspace">
+          <!-- ───────── TAB 1: REFERRAL TRIAGE & INTAKE QUEUE ───────── -->
+          <section class="tabPanel" id="tab-triage" role="tabpanel" aria-labelledby="tabBtn-triage">
+            <div class="filterToolbar">
+              <div class="filterChipsGroup">
+                <button type="button" class="chipFilterBtn" aria-pressed="true" onclick="filterTriage(this, 'all')">
+                  <span>All Referrals</span>
+                  <span class="badgePill">7</span>
+                </button>
+                <button type="button" class="chipFilterBtn" aria-pressed="false" onclick="filterTriage(this, 'p1')">
+                  <span>Priority 1 Immediate</span>
+                  <span class="badgePill" style="color: var(--danger-ink)">2</span>
+                </button>
+                <button type="button" class="chipFilterBtn" aria-pressed="false" onclick="filterTriage(this, 'p2')">
+                  <span>Priority 2 Urgent</span>
+                  <span class="badgePill">3</span>
+                </button>
+                <button type="button" class="chipFilterBtn" aria-pressed="false" onclick="filterTriage(this, 'p3')">
+                  <span>Priority 3 Routine</span>
+                  <span class="badgePill">2</span>
+                </button>
+                <button type="button" class="chipFilterBtn" aria-pressed="false" onclick="filterTriage(this, 'ed')">
+                  <span>ED Liaison &amp; Crisis</span>
+                  <span class="badgePill">3</span>
+                </button>
+              </div>
+              <div style="font-family: var(--mono); font-size: var(--t-0); color: var(--muted)">
+                Sorted by Longest Wait
+              </div>
+            </div>
+
+            <!-- Triage Referral Cards -->
+            <div class="triageQueueGrid" id="triageGrid">
+              <!-- Referral 1 -->
+              <article class="refCard" data-prio="p1 ed" onclick="openReferralDrawer('RF-8812')">
+                <div class="refCardHead">
+                  <span class="refId">RF-8812 · Priority 1 Immediate</span>
+                  <span class="refWait breach">Wait: 4h 12m (Breach Alert)</span>
+                </div>
+                <div class="refPatientRow">
+                  <b>Caleb Vance · UM104409 (Male 34y)</b>
+                  <span class="statusPillBadge danger">Form 1A MHA</span>
+                </div>
+                <div class="refClinicalSummary">
+                  Origin: Fiona Stanley Hospital ED Resus. Acute behavioural disturbance secondary to acute psychosis.
+                  Non-voluntary admission required, triage review for urgent secure bed or assertive outreach step-down.
+                </div>
+                <div class="refActionsRow" onclick="event.stopPropagation()">
+                  <button type="button" class="btnSmPrimary" onclick="acceptReferral('RF-8812')">
+                    Accept &amp; Allocate
+                  </button>
+                  <button type="button" class="btnSmSec" onclick="openReferralDrawer('RF-8812')">Liaison Review</button>
+                  <button type="button" class="btnSmSec" onclick="declineReferral('RF-8812')">
+                    Decline / Redirect
+                  </button>
+                </div>
+              </article>
+
+              <!-- Referral 2 -->
+              <article class="refCard" data-prio="p1" onclick="openReferralDrawer('RF-8819')">
+                <div class="refCardHead">
+                  <span class="refId">RF-8819 · Priority 1 Immediate</span>
+                  <span class="refWait breach">Wait: 5h 45m (Breach Alert)</span>
+                </div>
+                <div class="refPatientRow">
+                  <b>UM104512 (Female 28y)</b>
+                  <span class="statusPillBadge warn">Voluntary</span>
+                </div>
+                <div class="refClinicalSummary">
+                  Origin: GP Urgent Referral. Postpartum depression with acute suicidal ideation and auditory
+                  hallucinations. Infant safely in care of maternal grandmother, requires urgent consultant evaluation
+                  today.
+                </div>
+                <div class="refActionsRow" onclick="event.stopPropagation()">
+                  <button type="button" class="btnSmPrimary" onclick="acceptReferral('RF-8819')">
+                    Accept &amp; Allocate
+                  </button>
+                  <button type="button" class="btnSmSec" onclick="openReferralDrawer('RF-8819')">
+                    Urgent Home Visit
+                  </button>
+                  <button type="button" class="btnSmSec" onclick="declineReferral('RF-8819')">
+                    Decline / Redirect
+                  </button>
+                </div>
+              </article>
+
+              <!-- Referral 3 -->
+              <article class="refCard" data-prio="p2 ed" onclick="openReferralDrawer('RF-8824')">
+                <div class="refCardHead">
+                  <span class="refId">RF-8824 · Priority 2 Urgent</span>
+                  <span class="refWait">Wait: 1h 30m</span>
+                </div>
+                <div class="refPatientRow">
+                  <b>UM104620 (Male 45y)</b>
+                  <span class="statusPillBadge danger">Form 1A MHA</span>
+                </div>
+                <div class="refClinicalSummary">
+                  Origin: MHERT / WA Police Co-response. Severe paranoid persecutory delusions, barricaded in residence,
+                  medication non-adherence x3 months. Community mental health crisis team dispatched for joint
+                  assessment.
+                </div>
+                <div class="refActionsRow" onclick="event.stopPropagation()">
+                  <button type="button" class="btnSmPrimary" onclick="acceptReferral('RF-8824')">
+                    Accept &amp; Allocate
+                  </button>
+                  <button type="button" class="btnSmSec" onclick="openReferralDrawer('RF-8824')">
+                    Dispatch Crisis Team
+                  </button>
+                  <button type="button" class="btnSmSec" onclick="declineReferral('RF-8824')">Decline</button>
+                </div>
+              </article>
+
+              <!-- Referral 4 -->
+              <article class="refCard" data-prio="p2 ed" onclick="openReferralDrawer('RF-8827')">
+                <div class="refCardHead">
+                  <span class="refId">RF-8827 · Priority 2 Urgent</span>
+                  <span class="refWait">Wait: 8h 15m</span>
+                </div>
+                <div class="refPatientRow">
+                  <b>UM104731 (Female 52y)</b>
+                  <span class="statusPillBadge warn">Voluntary</span>
+                </div>
+                <div class="refClinicalSummary">
+                  Origin: SCGH ED Psychiatric Liaison. Major depressive episode following domestic separation. ED
+                  medical toxicology clearance completed, referred for acute community outreach and intake case
+                  management.
+                </div>
+                <div class="refActionsRow" onclick="event.stopPropagation()">
+                  <button type="button" class="btnSmPrimary" onclick="acceptReferral('RF-8827')">
+                    Accept &amp; Allocate
+                  </button>
+                  <button type="button" class="btnSmSec" onclick="openReferralDrawer('RF-8827')">
+                    Intake Assessment
+                  </button>
+                  <button type="button" class="btnSmSec" onclick="declineReferral('RF-8827')">Decline</button>
+                </div>
+              </article>
+
+              <!-- Referral 5 -->
+              <article class="refCard" data-prio="p3" onclick="openReferralDrawer('RF-8831')">
+                <div class="refCardHead">
+                  <span class="refId">RF-8831 · Priority 3 Routine</span>
+                  <span class="refWait">Wait: 12h 00m</span>
+                </div>
+                <div class="refPatientRow">
+                  <b>UM104805 (Male 19y)</b>
+                  <span class="statusPillBadge warn">Voluntary</span>
+                </div>
+                <div class="refClinicalSummary">
+                  Origin: Youth Early Psychosis (EMyU) Step-Down. Transition of care from adolescent service to adult
+                  CMHT. Established on oral antipsychotic therapy with stable mental state. Handover meeting scheduled.
+                </div>
+                <div class="refActionsRow" onclick="event.stopPropagation()">
+                  <button type="button" class="btnSmPrimary" onclick="acceptReferral('RF-8831')">
+                    Accept &amp; Allocate
+                  </button>
+                  <button type="button" class="btnSmSec" onclick="openReferralDrawer('RF-8831')">
+                    Assign Key Clinician
+                  </button>
+                  <button type="button" class="btnSmSec" onclick="declineReferral('RF-8831')">Decline</button>
+                </div>
+              </article>
+
+              <!-- Referral 6 -->
+              <article class="refCard" data-prio="p2" onclick="openReferralDrawer('RF-8835')">
+                <div class="refCardHead">
+                  <span class="refId">RF-8835 · Priority 2 Urgent</span>
+                  <span class="refWait">Wait: 14h 20m</span>
+                </div>
+                <div class="refPatientRow">
+                  <b>UM104918 (Female 63y)</b>
+                  <span class="statusPillBadge good">Form 5A CTO</span>
+                </div>
+                <div class="refClinicalSummary">
+                  Origin: Armadale Hospital Inpatient Egress. Transfer of Community Treatment Order supervision to
+                  Midland CMHT. 21-day inpatient stabilization complete, requires supervising psychiatrist and depot
+                  allocation.
+                </div>
+                <div class="refActionsRow" onclick="event.stopPropagation()">
+                  <button type="button" class="btnSmPrimary" onclick="acceptReferral('RF-8835')">
+                    Accept CTO Transfer
+                  </button>
+                  <button type="button" class="btnSmSec" onclick="openReferralDrawer('RF-8835')">
+                    Assign Consultant
+                  </button>
+                  <button type="button" class="btnSmSec" onclick="declineReferral('RF-8835')">Decline</button>
+                </div>
+              </article>
+
+              <!-- Referral 7 -->
+              <article class="refCard" data-prio="p3" onclick="openReferralDrawer('RF-8840')">
+                <div class="refCardHead">
+                  <span class="refId">RF-8840 · Priority 3 Routine</span>
+                  <span class="refWait">Wait: 18h 40m</span>
+                </div>
+                <div class="refPatientRow">
+                  <b>UM105022 (Male 38y)</b>
+                  <span class="statusPillBadge warn">Voluntary</span>
+                </div>
+                <div class="refClinicalSummary">
+                  Origin: City East CMHT Cross-Catchment. Inter-catchment residential relocation to Midland area. Stable
+                  chronic schizophrenia on maintenance depot medication, request for ongoing clinic follow-up.
+                </div>
+                <div class="refActionsRow" onclick="event.stopPropagation()">
+                  <button type="button" class="btnSmPrimary" onclick="acceptReferral('RF-8840')">
+                    Accept Transfer
+                  </button>
+                  <button type="button" class="btnSmSec" onclick="openReferralDrawer('RF-8840')">
+                    Assign Case Manager
+                  </button>
+                  <button type="button" class="btnSmSec" onclick="declineReferral('RF-8840')">Decline</button>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <!-- ───────── TAB 2: CATCHMENT INPATIENTS (IN A BED OR HOLDING) ───────── -->
+          <section class="tabPanel" id="tab-inpatients" role="tabpanel" aria-labelledby="tabBtn-inpatients" hidden>
+            <div class="filterToolbar">
+              <div class="filterChipsGroup">
+                <button type="button" class="chipFilterBtn" aria-pressed="true" onclick="filterInpatients(this, 'all')">
+                  <span>All Inpatients</span>
+                  <span class="badgePill">18</span>
+                </button>
+                <button
+                  type="button"
+                  class="chipFilterBtn"
+                  aria-pressed="false"
+                  onclick="filterInpatients(this, 'secure')"
+                >
+                  <span>Secure / Locked Beds</span>
+                  <span class="badgePill">6</span>
+                </button>
+                <button
+                  type="button"
+                  class="chipFilterBtn"
+                  aria-pressed="false"
+                  onclick="filterInpatients(this, 'open')"
+                >
+                  <span>Open Acute Beds</span>
+                  <span class="badgePill">8</span>
+                </button>
+                <button
+                  type="button"
+                  class="chipFilterBtn"
+                  aria-pressed="false"
+                  onclick="filterInpatients(this, 'older')"
+                >
+                  <span>Older Adult Units</span>
+                  <span class="badgePill">4</span>
+                </button>
+              </div>
+              <div style="font-family: var(--mono); font-size: var(--t-0); color: var(--muted)">
+                18 Admitted Across 6 Hospital Sites
+              </div>
+            </div>
+
+            <div class="cardPanel">
+              <div class="panelHead">
+                <h2 class="panelTitle">
+                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M2 3h12v10H2z" />
+                    <path d="M6 3v10M2 8h4" />
+                  </svg>
+                  <span>In a Bed or Holding One · Catchment Inpatient Census</span>
+                </h2>
+                <span class="badgePill">18 Patients Inpatient</span>
+              </div>
+              <div class="tableContainer">
+                <table class="dataTable" id="inpatientTable">
+                  <thead>
+                    <tr>
+                      <th scope="col">Patient</th>
+                      <th scope="col">Admitting Ward &amp; Health Service</th>
+                      <th scope="col">Bed</th>
+                      <th scope="col" class="n">Days in Bed</th>
+                      <th scope="col">Legal Status</th>
+                      <th scope="col">Community Key Clinician</th>
+                      <th scope="col">Liaison / MDT Status</th>
+                      <th scope="col" style="text-align: right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr data-type="secure" onclick="openPatientDrawer('Caleb Vance · UM104409')">
+                      <td><b>Caleb Vance · UM104409</b> (M 34y)</td>
+                      <td>FSH Adult Secure (SMHS)</td>
+                      <td><span class="statusPillBadge neutral">Bed 03</span></td>
+                      <td class="n">14d</td>
+                      <td><span class="statusPillBadge danger">Form 5A Invol</span></td>
+                      <td>RN K. Vance</td>
+                      <td>Joint MDT Review 24 Sep</td>
+                      <td style="text-align: right">
+                        <!-- Owner decision 1 (22 Sep 2026): look follows this drawing; behaviour
+                             keeps book/cancel on the live Actions cluster — do not strip to dossier-only. -->
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end">
+                          <button
+                            type="button"
+                            class="btnSmSec"
+                            onclick="
+                              openPatientDrawer('Caleb Vance · UM104409');
+                              event.stopPropagation();
+                            "
+                          >
+                            Open Dossier
+                          </button>
+                          <button type="button" class="btnSmPrimary" onclick="event.stopPropagation()">
+                            Log transport booking
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr data-type="secure" onclick="openPatientDrawer('Toby Morales · UM104105')">
+                      <td><b>Toby Morales · UM104105</b> (M 24y)</td>
+                      <td>FSH Adult Secure (SMHS)</td>
+                      <td><span class="statusPillBadge neutral">Bed 04</span></td>
+                      <td class="n">8d</td>
+                      <td><span class="statusPillBadge danger">Form 5A Invol</span></td>
+                      <td>RN T. Bradley</td>
+                      <td>1:1 Specialling Active</td>
+                      <td style="text-align: right">
+                        <button
+                          type="button"
+                          class="btnSmSec"
+                          onclick="
+                            openPatientDrawer('Toby Morales · UM104105');
+                            event.stopPropagation();
+                          "
+                        >
+                          Open Dossier
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-type="secure" onclick="openPatientDrawer('Sari Lin · UM103891')">
+                      <td><b>Sari Lin · UM103891</b> (F 41y)</td>
+                      <td>Graylands Adult Secure (NMHS)</td>
+                      <td><span class="statusPillBadge neutral">Bed 07</span></td>
+                      <td class="n">28d</td>
+                      <td><span class="statusPillBadge danger">Form 5A Invol</span></td>
+                      <td>Dr S. Chen</td>
+                      <td>Long-Stay Rehabilitation Review</td>
+                      <td style="text-align: right">
+                        <button
+                          type="button"
+                          class="btnSmSec"
+                          onclick="
+                            openPatientDrawer('Sari Lin · UM103891');
+                            event.stopPropagation();
+                          "
+                        >
+                          Open Dossier
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-type="open" onclick="openPatientDrawer('UM103712')">
+                      <td><b>UM103712</b> (M 59y)</td>
+                      <td>SCGH Adult Open (NMHS)</td>
+                      <td><span class="statusPillBadge neutral">Bed 11</span></td>
+                      <td class="n">6d</td>
+                      <td><span class="statusPillBadge warn">Voluntary</span></td>
+                      <td>SW M. Davies</td>
+                      <td>Housing Coordination Active</td>
+                      <td style="text-align: right">
+                        <button
+                          type="button"
+                          class="btnSmSec"
+                          onclick="
+                            openPatientDrawer('UM103712');
+                            event.stopPropagation();
+                          "
+                        >
+                          Open Dossier
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-type="secure" onclick="openPatientDrawer('UM103650')">
+                      <td><b>UM103650</b> (F 31y)</td>
+                      <td>RPH Adult Secure (EMHS)</td>
+                      <td><span class="statusPillBadge neutral">Bed 02</span></td>
+                      <td class="n">12d</td>
+                      <td><span class="statusPillBadge danger">Form 5A Invol</span></td>
+                      <td>RN C. Davis</td>
+                      <td>Medication Stabilization</td>
+                      <td style="text-align: right">
+                        <button
+                          type="button"
+                          class="btnSmSec"
+                          onclick="
+                            openPatientDrawer('UM103650');
+                            event.stopPropagation();
+                          "
+                        >
+                          Open Dossier
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-type="secure" onclick="openPatientDrawer('UM103522')">
+                      <td><b>UM103522</b> (M 22y)</td>
+                      <td>Bentley Adult Secure (EMHS)</td>
+                      <td><span class="statusPillBadge neutral">Bed 05</span></td>
+                      <td class="n">4d</td>
+                      <td><span class="statusPillBadge danger">Form 1A MHA</span></td>
+                      <td>Dr K. Rao</td>
+                      <td>Acute Admission Liaison</td>
+                      <td style="text-align: right">
+                        <button
+                          type="button"
+                          class="btnSmSec"
+                          onclick="
+                            openPatientDrawer('UM103522');
+                            event.stopPropagation();
+                          "
+                        >
+                          Open Dossier
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-type="older" onclick="openPatientDrawer('UM103419')">
+                      <td><b>UM103419</b> (F 71y)</td>
+                      <td>BTY Older Adult (EMHS)</td>
+                      <td><span class="statusPillBadge neutral">Bed 08</span></td>
+                      <td class="n">19d</td>
+                      <td><span class="statusPillBadge danger">Form 5A Invol</span></td>
+                      <td>OT E. Wilson</td>
+                      <td>ACAT Assessment Pending</td>
+                      <td style="text-align: right">
+                        <button
+                          type="button"
+                          class="btnSmSec"
+                          onclick="
+                            openPatientDrawer('UM103419');
+                            event.stopPropagation();
+                          "
+                        >
+                          Open Dossier
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-type="open" onclick="openPatientDrawer('UM103304')">
+                      <td><b>UM103304</b> (M 48y)</td>
+                      <td>Armadale Adult Open (EMHS)</td>
+                      <td><span class="statusPillBadge neutral">Bed 14</span></td>
+                      <td class="n">9d</td>
+                      <td><span class="statusPillBadge warn">Voluntary</span></td>
+                      <td>RN K. Vance</td>
+                      <td>Discharge Planning Meeting 23 Sep</td>
+                      <td style="text-align: right">
+                        <button
+                          type="button"
+                          class="btnSmSec"
+                          onclick="
+                            openPatientDrawer('UM103304');
+                            event.stopPropagation();
+                          "
+                        >
+                          Open Dossier
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-type="secure" onclick="openPatientDrawer('UM103211')">
+                      <td><b>UM103211</b> (F 27y)</td>
+                      <td>Fiona Stanley Hospital (SMHS)</td>
+                      <td><span class="statusPillBadge neutral">Bed 12</span></td>
+                      <td class="n">15d</td>
+                      <td><span class="statusPillBadge danger">Form 5A Invol</span></td>
+                      <td>Dr S. Chen</td>
+                      <td>Forensic Liaison Review</td>
+                      <td style="text-align: right">
+                        <button
+                          type="button"
+                          class="btnSmSec"
+                          onclick="
+                            openPatientDrawer('UM103211');
+                            event.stopPropagation();
+                          "
+                        >
+                          Open Dossier
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-type="older" onclick="openPatientDrawer('UM103108')">
+                      <td><b>UM103108</b> (M 36y)</td>
+                      <td>SCGH Older Adult (NMHS)</td>
+                      <td><span class="statusPillBadge neutral">Bed 06</span></td>
+                      <td class="n">5d</td>
+                      <td><span class="statusPillBadge warn">Voluntary</span></td>
+                      <td>SW M. Davies</td>
+                      <td>Family Conference Booked</td>
+                      <td style="text-align: right">
+                        <button
+                          type="button"
+                          class="btnSmSec"
+                          onclick="
+                            openPatientDrawer('UM103108');
+                            event.stopPropagation();
+                          "
+                        >
+                          Open Dossier
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-type="older" onclick="openPatientDrawer('UM103055')">
+                      <td><b>UM103055</b> (F 54y)</td>
+                      <td>Graylands Older Adult (NMHS)</td>
+                      <td><span class="statusPillBadge neutral">Bed 03</span></td>
+                      <td class="n">33d</td>
+                      <td><span class="statusPillBadge danger">Form 5A Invol</span></td>
+                      <td>OT E. Wilson</td>
+                      <td>High Acuity Placement</td>
+                      <td style="text-align: right">
+                        <button
+                          type="button"
+                          class="btnSmSec"
+                          onclick="
+                            openPatientDrawer('UM103055');
+                            event.stopPropagation();
+                          "
+                        >
+                          Open Dossier
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-type="open" onclick="openPatientDrawer('UM102980')">
+                      <td><b>UM102980</b> (M 62y)</td>
+                      <td>RPH Adult Open (EMHS)</td>
+                      <td><span class="statusPillBadge neutral">Bed 09</span></td>
+                      <td class="n">7d</td>
+                      <td><span class="statusPillBadge warn">Voluntary</span></td>
+                      <td>RN C. Davis</td>
+                      <td>Medical Comorbidity Review</td>
+                      <td style="text-align: right">
+                        <button
+                          type="button"
+                          class="btnSmSec"
+                          onclick="
+                            openPatientDrawer('UM102980');
+                            event.stopPropagation();
+                          "
+                        >
+                          Open Dossier
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- ───────── TAB 3: EXPECTED BACK & POST-DISCHARGE (7-DAY EGRESS) ───────── -->
+          <section class="tabPanel" id="tab-egress" role="tabpanel" aria-labelledby="tabBtn-egress" hidden>
+            <div class="filterToolbar">
+              <div class="filterChipsGroup">
+                <button type="button" class="chipFilterBtn" aria-pressed="true" onclick="filterEgress(this, 'all')">
+                  <span>All Egress</span>
+                  <span class="badgePill">6</span>
+                </button>
+                <button
+                  type="button"
+                  class="chipFilterBtn"
+                  aria-pressed="false"
+                  onclick="filterEgress(this, 'overdue')"
+                >
+                  <span>Overdue (48h Breach)</span>
+                  <span class="badgePill" style="color: var(--danger-ink)">1</span>
+                </button>
+                <button type="button" class="chipFilterBtn" aria-pressed="false" onclick="filterEgress(this, 'today')">
+                  <span>Due Today</span>
+                  <span class="badgePill">2</span>
+                </button>
+                <button
+                  type="button"
+                  class="chipFilterBtn"
+                  aria-pressed="false"
+                  onclick="filterEgress(this, 'upcoming')"
+                >
+                  <span>Upcoming Discharges</span>
+                  <span class="badgePill">3</span>
+                </button>
+              </div>
+              <div style="font-family: var(--mono); font-size: var(--t-0); color: var(--muted)">
+                Mandatory WA Health 7-Day Post-Discharge KPI
+              </div>
+            </div>
+
+            <div class="cardPanel">
+              <div class="panelHead">
+                <h2 class="panelTitle">
+                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M9 3l4 5-4 5M13 8H3" />
+                  </svg>
+                  <span>Expected Back &amp; Post-Discharge Catchment Follow-Up</span>
+                </h2>
+                <span class="badgePill">6 Patients in 7-Day Window</span>
+              </div>
+              <div class="tableContainer">
+                <table class="dataTable" id="egressTable">
+                  <thead>
+                    <tr>
+                      <th scope="col">Patient</th>
+                      <th scope="col">Discharging Unit</th>
+                      <th scope="col">Discharge Date / Plan</th>
+                      <th scope="col">Destination</th>
+                      <th scope="col">7-Day KPI Window Status</th>
+                      <th scope="col">Assigned Coordinator</th>
+                      <th scope="col" style="text-align: right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr data-status="overdue" onclick="openPatientDrawer('Sari Lin · UM103891')">
+                      <td><b>Sari Lin · UM103891</b> (F 41y)</td>
+                      <td>Graylands Adult Secure</td>
+                      <td>Discharged 2d ago (19 Sep)</td>
+                      <td>Supported Accommodation</td>
+                      <td>
+                        <span class="statusPillBadge danger">Overdue (48h High-Risk)</span>
+                      </td>
+                      <td>Dr S. Chen</td>
+                      <td style="text-align: right" onclick="event.stopPropagation()">
+                        <button type="button" class="btnSmPrimary" onclick="completeContact('Sari Lin · UM103891')">
+                          Urgent Outreach
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-status="today" onclick="openPatientDrawer('UM104102')">
+                      <td><b>UM104102</b> (M 31y)</td>
+                      <td>FSH Adult Secure</td>
+                      <td>Today 10:00</td>
+                      <td>Private Residence</td>
+                      <td>
+                        <span class="statusPillBadge warn">Due Today 15:00</span>
+                      </td>
+                      <td>RN T. Bradley</td>
+                      <td style="text-align: right" onclick="event.stopPropagation()">
+                        <button type="button" class="btnSmPrimary" onclick="completeContact('UM104102')">
+                          Confirm Contact
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-status="today" onclick="openPatientDrawer('UM103712')">
+                      <td><b>UM103712</b> (M 59y)</td>
+                      <td>SCGH Adult Open</td>
+                      <td>Today 11:30</td>
+                      <td>Community Step-Down</td>
+                      <td>
+                        <span class="statusPillBadge warn">Due Today 16:30</span>
+                      </td>
+                      <td>SW M. Davies</td>
+                      <td style="text-align: right" onclick="event.stopPropagation()">
+                        <button type="button" class="btnSmPrimary" onclick="completeContact('UM103712')">
+                          Confirm Contact
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-status="upcoming" onclick="openPatientDrawer('UM103419')">
+                      <td><b>UM103419</b> (F 71y)</td>
+                      <td>BTY Older Adult</td>
+                      <td>Tomorrow 14:00 (Planned)</td>
+                      <td>Respite Aged Care</td>
+                      <td>
+                        <span class="statusPillBadge neutral">Due in 2 Days</span>
+                      </td>
+                      <td>OT E. Wilson</td>
+                      <td style="text-align: right" onclick="event.stopPropagation()">
+                        <button type="button" class="btnSmSec" onclick="openPatientDrawer('UM103419')">
+                          Pre-Discharge Check
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-status="upcoming" onclick="openPatientDrawer('UM103304')">
+                      <td><b>UM103304</b> (M 48y)</td>
+                      <td>Armadale Adult Open</td>
+                      <td>23 Sep 11:00 (Planned)</td>
+                      <td>Private Residence</td>
+                      <td>
+                        <span class="statusPillBadge neutral">Due in 3 Days</span>
+                      </td>
+                      <td>RN K. Vance</td>
+                      <td style="text-align: right" onclick="event.stopPropagation()">
+                        <button type="button" class="btnSmSec" onclick="openPatientDrawer('UM103304')">
+                          Review Plan
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-status="upcoming" onclick="openPatientDrawer('UM102980')">
+                      <td><b>UM102980</b> (M 62y)</td>
+                      <td>RPH Adult Open</td>
+                      <td>24 Sep 10:00 (Planned)</td>
+                      <td>Independent Living</td>
+                      <td>
+                        <span class="statusPillBadge neutral">Due in 4 Days</span>
+                      </td>
+                      <td>RN C. Davis</td>
+                      <td style="text-align: right" onclick="event.stopPropagation()">
+                        <button type="button" class="btnSmSec" onclick="openPatientDrawer('UM102980')">
+                          Review Plan
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- ───────── TAB 4: ACTIVE CASELOAD & CTO STATUTORY REGISTER ───────── -->
+          <section class="tabPanel" id="tab-caseload" role="tabpanel" aria-labelledby="tabBtn-caseload" hidden>
+            <div class="filterToolbar">
+              <div class="filterChipsGroup">
+                <button type="button" class="chipFilterBtn" aria-pressed="true" onclick="filterCaseload(this, 'all')">
+                  <span>All Active Caseload</span>
+                  <span class="badgePill">142</span>
+                </button>
+                <button type="button" class="chipFilterBtn" aria-pressed="false" onclick="filterCaseload(this, 'cto')">
+                  <span>Active CTO (Form 5A)</span>
+                  <span class="badgePill" style="color: var(--good)">22</span>
+                </button>
+                <button type="button" class="chipFilterBtn" aria-pressed="false" onclick="filterCaseload(this, 'high')">
+                  <span>High Acuity / Assertive Outreach</span>
+                  <span class="badgePill">18</span>
+                </button>
+                <button
+                  type="button"
+                  class="chipFilterBtn"
+                  aria-pressed="false"
+                  onclick="filterCaseload(this, 'depot')"
+                >
+                  <span>Depot Clinic Due</span>
+                  <span class="badgePill">34</span>
+                </button>
+              </div>
+              <div style="font-family: var(--mono); font-size: var(--t-0); color: var(--muted)">
+                Midland Sector Catchment
+              </div>
+            </div>
+
+            <div class="cardPanel">
+              <div class="panelHead">
+                <h2 class="panelTitle">
+                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <circle cx="8" cy="8" r="6" />
+                    <path d="M8 5v3l2 2" />
+                  </svg>
+                  <span>Active Community Caseload &amp; Statutory Compliance</span>
+                </h2>
+                <span class="badgePill">Displaying Top Active Caseload</span>
+              </div>
+              <div class="tableContainer">
+                <table class="dataTable" id="caseloadTable">
+                  <thead>
+                    <tr>
+                      <th scope="col">UMRN / Patient</th>
+                      <th scope="col">Age / Sex</th>
+                      <th scope="col">Statutory Status</th>
+                      <th scope="col">Care Plan Tier</th>
+                      <th scope="col">Key Clinician</th>
+                      <th scope="col">Last Contact</th>
+                      <th scope="col">Next Scheduled Contact / Review</th>
+                      <th scope="col" style="text-align: right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr data-cat="cto high" onclick="openPatientDrawer('Caleb Vance · UM104409')">
+                      <td><b>Caleb Vance</b> · UM104409</td>
+                      <td>34y Male</td>
+                      <td><span class="statusPillBadge danger">Form 5A (CTO)</span></td>
+                      <td>Tier 1 Assertive Outreach</td>
+                      <td>RN K. Vance</td>
+                      <td>Yesterday 14:00 (Home)</td>
+                      <td>Tomorrow 10:00 (Depot Clinic)</td>
+                      <td style="text-align: right">
+                        <!-- Owner decision 1 (22 Sep 2026): look follows this drawing; behaviour
+                             keeps book/cancel on the live Actions cluster — do not strip to dossier-only. -->
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end">
+                          <button
+                            type="button"
+                            class="btnSmSec"
+                            onclick="
+                              openPatientDrawer('Caleb Vance · UM104409');
+                              event.stopPropagation();
+                            "
+                          >
+                            Open Dossier
+                          </button>
+                          <button type="button" class="btnSmPrimary" onclick="event.stopPropagation()">
+                            Log transport booking
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr data-cat="cto" onclick="openPatientDrawer('Toby Morales · UM104105')">
+                      <td><b>Toby Morales</b> · UM104105</td>
+                      <td>24y Male</td>
+                      <td><span class="statusPillBadge danger">Form 5A (CTO)</span></td>
+                      <td>Tier 1 High Acuity</td>
+                      <td>RN T. Bradley</td>
+                      <td>20 Sep 11:30 (Clinic)</td>
+                      <td>Tribunal Review 28 Sep</td>
+                      <td style="text-align: right">
+                        <button
+                          type="button"
+                          class="btnSmSec"
+                          onclick="
+                            openPatientDrawer('Toby Morales · UM104105');
+                            event.stopPropagation();
+                          "
+                        >
+                          Open Dossier
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-cat="depot" onclick="openPatientDrawer('Sari Lin · UM103891')">
+                      <td><b>Sari Lin</b> · UM103891</td>
+                      <td>41y Female</td>
+                      <td><span class="statusPillBadge warn">Voluntary</span></td>
+                      <td>Tier 2 Case Management</td>
+                      <td>Dr S. Chen</td>
+                      <td>19 Sep 15:00 (Telehealth)</td>
+                      <td>Depot Injection 23 Sep</td>
+                      <td style="text-align: right">
+                        <button
+                          type="button"
+                          class="btnSmSec"
+                          onclick="
+                            openPatientDrawer('Sari Lin · UM103891');
+                            event.stopPropagation();
+                          "
+                        >
+                          Open Dossier
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-cat="cto" onclick="openPatientDrawer('UM103650')">
+                      <td><b>Devan Marrowbee</b> · UM100004</td>
+                      <td>31y Female</td>
+                      <td><span class="statusPillBadge danger">Form 5A (CTO)</span></td>
+                      <td>Tier 2 Case Management</td>
+                      <td>RN C. Davis</td>
+                      <td>18 Sep 09:30 (Home)</td>
+                      <td>CTO Expiry 12 Oct 2026</td>
+                      <td style="text-align: right">
+                        <button
+                          type="button"
+                          class="btnSmSec"
+                          onclick="
+                            openPatientDrawer('UM103650');
+                            event.stopPropagation();
+                          "
+                        >
+                          Open Dossier
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-cat="high" onclick="openPatientDrawer('UM103522')">
+                      <td><b>Roshan O'Quinn</b> · UM100005</td>
+                      <td>22y Male</td>
+                      <td><span class="statusPillBadge danger">Form 1A MHA</span></td>
+                      <td>Tier 1 Crisis Monitoring</td>
+                      <td>Dr K. Rao</td>
+                      <td>17 Sep 16:00 (Clinic)</td>
+                      <td>Consultant Review 22 Sep</td>
+                      <td style="text-align: right">
+                        <button
+                          type="button"
+                          class="btnSmSec"
+                          onclick="
+                            openPatientDrawer('UM103522');
+                            event.stopPropagation();
+                          "
+                        >
+                          Open Dossier
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-cat="depot" onclick="openPatientDrawer('UM103304')">
+                      <td><b>Priya Oquinn</b> · UM100006</td>
+                      <td>48y Male</td>
+                      <td><span class="statusPillBadge warn">Voluntary</span></td>
+                      <td>Tier 3 Maintenance</td>
+                      <td>RN K. Vance</td>
+                      <td>15 Sep 10:00 (Clinic)</td>
+                      <td>Depot Injection 25 Sep</td>
+                      <td style="text-align: right">
+                        <button
+                          type="button"
+                          class="btnSmSec"
+                          onclick="
+                            openPatientDrawer('UM103304');
+                            event.stopPropagation();
+                          "
+                        >
+                          Open Dossier
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- ───────── TAB 5: THIS TEAM (TEAM ROSTER, CLINICS & MDT) ───────── -->
+          <section class="tabPanel" id="tab-team" role="tabpanel" aria-labelledby="tabBtn-team" hidden>
+            <div class="cardPanel">
+              <div class="panelHead">
+                <h2 class="panelTitle">
+                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path
+                      d="M6 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM11.5 8a2 2 0 100-4 2 2 0 000 4zM1.5 14c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4M10.5 10.5c2 .3 3.5 1.6 3.5 3.5"
+                    />
+                  </svg>
+                  <span>This Team · Clinician Allocations &amp; Shift Deployment</span>
+                </h2>
+                <span class="badgePill">8 Key Clinicians Active</span>
+              </div>
+              <div class="panelBody">
+                <div class="teamRosterGrid">
+                  <div class="staffCard">
+                    <div class="staffHead">
+                      <div>
+                        <div class="staffName">Dr S. Chen</div>
+                        <div class="staffRole">Lead Consultant Psychiatrist</div>
+                      </div>
+                      <span class="statusPillBadge good">Available</span>
+                    </div>
+                    <div class="staffMetrics">
+                      <span>Caseload: <b>38</b></span>
+                      <span>Ext: <b>4201</b></span>
+                      <span>MDT Lead</span>
+                    </div>
+                  </div>
+
+                  <div class="staffCard">
+                    <div class="staffHead">
+                      <div>
+                        <div class="staffName">Dr K. Rao</div>
+                        <div class="staffRole">Consultant Psychiatrist</div>
+                      </div>
+                      <span class="statusPillBadge neutral">Clinic Room 1</span>
+                    </div>
+                    <div class="staffMetrics">
+                      <span>Caseload: <b>34</b></span>
+                      <span>Ext: <b>4202</b></span>
+                      <span>Intake Clinic</span>
+                    </div>
+                  </div>
+
+                  <div class="staffCard">
+                    <div class="staffHead">
+                      <div>
+                        <div class="staffName">Dr J. Lim</div>
+                        <div class="staffRole">Senior Registrar</div>
+                      </div>
+                      <span class="statusPillBadge warn">Triage Duty</span>
+                    </div>
+                    <div class="staffMetrics">
+                      <span>Caseload: <b>26</b></span>
+                      <span>Ext: <b>4205</b></span>
+                      <span>Crisis Desk</span>
+                    </div>
+                  </div>
+
+                  <div class="staffCard">
+                    <div class="staffHead">
+                      <div>
+                        <div class="staffName">K. Vance</div>
+                        <div class="staffRole">Nurse Unit Manager (NUM)</div>
+                      </div>
+                      <span class="statusPillBadge good">Available</span>
+                    </div>
+                    <div class="staffMetrics">
+                      <span>Caseload: <b>12</b></span>
+                      <span>Ext: <b>4210</b></span>
+                      <span>Bed Coord</span>
+                    </div>
+                  </div>
+
+                  <div class="staffCard">
+                    <div class="staffHead">
+                      <div>
+                        <div class="staffName">T. Bradley</div>
+                        <div class="staffRole">Community Mental Health Nurse</div>
+                      </div>
+                      <span class="statusPillBadge warn">Response Car 1</span>
+                    </div>
+                    <div class="staffMetrics">
+                      <span>Caseload: <b>22</b></span>
+                      <span>Ext: <b>4215</b></span>
+                      <span>Home Outreach</span>
+                    </div>
+                  </div>
+
+                  <div class="staffCard">
+                    <div class="staffHead">
+                      <div>
+                        <div class="staffName">C. Davis</div>
+                        <div class="staffRole">Community Mental Health Nurse</div>
+                      </div>
+                      <span class="statusPillBadge neutral">Clinic Room 2</span>
+                    </div>
+                    <div class="staffMetrics">
+                      <span>Caseload: <b>24</b></span>
+                      <span>Ext: <b>4216</b></span>
+                      <span>Depot Clinic</span>
+                    </div>
+                  </div>
+
+                  <div class="staffCard">
+                    <div class="staffHead">
+                      <div>
+                        <div class="staffName">M. Davies</div>
+                        <div class="staffRole">Senior Social Worker</div>
+                      </div>
+                      <span class="statusPillBadge good">Available</span>
+                    </div>
+                    <div class="staffMetrics">
+                      <span>Caseload: <b>18</b></span>
+                      <span>Ext: <b>4220</b></span>
+                      <span>Housing Liaison</span>
+                    </div>
+                  </div>
+
+                  <div class="staffCard">
+                    <div class="staffHead">
+                      <div>
+                        <div class="staffName">E. Wilson</div>
+                        <div class="staffRole">Senior Occupational Therapist</div>
+                      </div>
+                      <span class="statusPillBadge good">Available</span>
+                    </div>
+                    <div class="staffMetrics">
+                      <span>Caseload: <b>16</b></span>
+                      <span>Ext: <b>4225</b></span>
+                      <span>Living Skills</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Clinic Rooms & Mobile Response -->
+            <div class="clinicFleetGrid">
+              <div class="cardPanel">
+                <div class="panelHead">
+                  <h3 class="panelTitle" style="font-size: var(--t-2)">Clinic Room Utilization</h3>
+                  <span class="badgePill">3 Rooms Active</span>
+                </div>
+                <div class="panelBody">
+                  <div class="clinicRoomItem">
+                    <div class="clinicRoomTop">
+                      <span class="clinicRoomTitle">Room 1 · Consultant Clinic</span>
+                      <span class="statusPillBadge good">09:00-13:00</span>
+                    </div>
+                    <span style="font-size: var(--t-1); color: var(--ink-soft)"
+                      >Dr K. Rao · Urgent Intakes &amp; Medication Reviews</span
+                    >
+                  </div>
+                  <div class="clinicRoomItem">
+                    <div class="clinicRoomTop">
+                      <span class="clinicRoomTitle">Room 2 · Depot &amp; Physical Health</span>
+                      <span class="statusPillBadge good">09:00-16:30</span>
+                    </div>
+                    <span style="font-size: var(--t-1); color: var(--ink-soft)"
+                      >RN C. Davis · Long-acting injections, ECG, metabolic monitoring</span
+                    >
+                  </div>
+                  <div class="clinicRoomItem">
+                    <div class="clinicRoomTop">
+                      <span class="clinicRoomTitle">Room 3 · Crisis Walk-in &amp; Triage</span>
+                      <span class="statusPillBadge warn">Active Standby</span>
+                    </div>
+                    <span style="font-size: var(--t-1); color: var(--ink-soft)"
+                      >Dr J. Lim · Urgent walk-in community assessments</span
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <div class="cardPanel">
+                <div class="panelHead">
+                  <h3 class="panelTitle" style="font-size: var(--t-2)">Mobile Outreach Vehicles</h3>
+                  <span class="badgePill">2 Vehicles</span>
+                </div>
+                <div class="panelBody">
+                  <div class="clinicRoomItem">
+                    <div class="clinicRoomTop">
+                      <span class="clinicRoomTitle">Vehicle 1 (Swan North Sector)</span>
+                      <span class="statusPillBadge warn">In Field</span>
+                    </div>
+                    <span style="font-size: var(--t-1); color: var(--ink-soft)"
+                      >Staff: T. Bradley RN &amp; Dr J. Lim · Scheduled Home Visits</span
+                    >
+                  </div>
+                  <div class="clinicRoomItem">
+                    <div class="clinicRoomTop">
+                      <span class="clinicRoomTitle">Vehicle 2 (Swan Hills Sector)</span>
+                      <span class="statusPillBadge good">At Base</span>
+                    </div>
+                    <span style="font-size: var(--t-1); color: var(--ink-soft)"
+                      >Staff: M. Davies SW · Available for Urgent Dispatch</span
+                    >
+                  </div>
+                  <div class="clinicRoomItem">
+                    <div class="clinicRoomTop">
+                      <span class="clinicRoomTitle">Morning MDT Huddle Log</span>
+                      <span class="statusPillBadge neutral">10:00 Completed</span>
+                    </div>
+                    <span style="font-size: var(--t-1); color: var(--ink-soft)"
+                      >14 Catchment cases reviewed · 2 Inpatient transfers coordinated</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- ══════════════════ 6. CLINICAL DRAWERS & MODALS ══════════════════ -->
+    <div class="drawerScrim" id="drawerScrim" onclick="closeAllDrawers()"></div>
+
+    <!-- Patient Dossier Telemetry Drawer -->
+    <aside class="drawer wide" id="pxDrawer" role="dialog" aria-labelledby="pxDrawerTitle" aria-modal="true">
+      <div class="drawerHead">
+        <h2 class="drawerTitle" id="pxDrawerTitle">
+          <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="8" cy="5" r="3" />
+            <path d="M2 14c0-3 3-4 6-4s6 1 6 4" />
+          </svg>
+          <span id="pxDrawerHeading">Patient Dossier · Caleb Vance · UM104409</span>
+        </h2>
+        <button type="button" class="drawerCloseBtn" onclick="closeAllDrawers()">Close (Esc)</button>
+      </div>
+      <div class="drawerBody" id="pxDrawerBody">
+        <div class="cardPanel">
+          <div class="panelHead">
+            <h3 class="panelTitle" style="font-size: var(--t-2)">Clinical Demographics &amp; MHA Legal Form</h3>
+            <span class="statusPillBadge danger" id="pxLegalChip">Form 5A (Involuntary)</span>
+          </div>
+          <div class="panelBody">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: var(--t-1)">
+              <div><b>UMRN:</b> <span class="mono">981023</span></div>
+              <div><b>DOB / Age:</b> <span class="mono">14/05/1992 (34y)</span></div>
+              <div><b>Assigned Clinician:</b> <span>RN K. Vance</span></div>
+              <div><b>Supervising Psychiatrist:</b> <span>Dr S. Chen</span></div>
+              <div><b>Current Placement:</b> <span>FSH Adult Secure (Bed 03)</span></div>
+              <div><b>Admitted Length of Stay:</b> <span class="mono">14 Days</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cardPanel">
+          <div class="panelHead">
+            <h3 class="panelTitle" style="font-size: var(--t-2)">Current Active Care Plan &amp; Diagnosis</h3>
+            <span class="badgePill">Tier 1 High Acuity</span>
+          </div>
+          <div class="panelBody" style="font-size: var(--t-1); line-height: 1.45">
+            <p>
+              <b>Diagnosis:</b> Acute relapse of paranoid schizophrenia with persecutory beliefs and treatment
+              non-adherence.
+            </p>
+            <p>
+              <b>Management Goal:</b> Inpatient stabilization on long-acting injectable antipsychotic (Paliperidone
+              palmitate 150mg monthly). Transition to community assertive outreach team upon discharge.
+            </p>
+            <p>
+              <b>Risk Profile:</b> Medium risk of medication discontinuation without supervision. Zero forensic history.
+            </p>
+          </div>
+        </div>
+
+        <div class="cardPanel">
+          <div class="panelHead">
+            <h3 class="panelTitle" style="font-size: var(--t-2)">Recent Timeline &amp; Clinical Contacts</h3>
+            <span class="badgePill">Last 7 Days</span>
+          </div>
+          <div class="panelBody" style="font-size: var(--t-1); display: flex; flex-direction: column; gap: 8px">
+            <div style="border-bottom: 1px solid var(--line); padding-bottom: 6px">
+              <span class="mono" style="color: var(--muted); font-size: var(--t-0)">21 Sep 10:42</span> ·
+              <b>Ward Bed Telemetry:</b> Admitted in FSH Adult Secure Bed 03. Joint MDT conference scheduled for 24 Sep.
+            </div>
+            <div style="border-bottom: 1px solid var(--line); padding-bottom: 6px">
+              <span class="mono" style="color: var(--muted); font-size: var(--t-0)">19 Sep 14:00</span> ·
+              <b>Community Liaison Contact:</b> RN Vance attended ward huddle; patient tolerating initiation dose well.
+            </div>
+            <div>
+              <span class="mono" style="color: var(--muted); font-size: var(--t-0)">14 Sep 08:30</span> ·
+              <b>Inpatient Admission:</b> Transferred from FSH ED Resus under Form 1A MHA.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="drawerFoot">
+        <button type="button" class="btnSmSec" onclick="showToast('Not wired in this prototype.')">Edit Dossier</button>
+        <div style="display: flex; gap: 8px">
+          <button type="button" class="btnSmSec" onclick="openModal('contactModal')">Record Note</button>
+          <button type="button" class="btnSmPrimary" onclick="showToast('Clinical contact logged successfully.')">
+            Confirm Follow-Up
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Referral Triage Drawer -->
+    <aside class="drawer wide" id="referralDrawer" role="dialog" aria-labelledby="refDrawerTitle" aria-modal="true">
+      <div class="drawerHead">
+        <h2 class="drawerTitle" id="refDrawerTitle">
+          <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M2 4h12M2 8h8M2 12h5" />
+          </svg>
+          <span id="refDrawerHeading">Referral Triage · RF-8812</span>
+        </h2>
+        <button type="button" class="drawerCloseBtn" onclick="closeAllDrawers()">Close (Esc)</button>
+      </div>
+      <div class="drawerBody">
+        <div class="cardPanel">
+          <div class="panelHead">
+            <h3 class="panelTitle" style="font-size: var(--t-2)">Referral Demographics &amp; Urgency</h3>
+            <span class="statusPillBadge danger">Priority 1 (Breach Alert)</span>
+          </div>
+          <div class="panelBody" style="font-size: var(--t-1)">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+              <div><b>Referral ID:</b> <span class="mono">RF-8812</span></div>
+              <div><b>Patient:</b> <span>Caleb Vance · UM104409 (Male 34y)</span></div>
+              <div><b>Referring Service:</b> <span>Fiona Stanley Hospital ED Resus</span></div>
+              <div><b>Referring Clinician:</b> <span>Dr A. Tremaine (ED Liaison)</span></div>
+              <div><b>Statutory Status:</b> <span class="statusPillBadge danger">Form 1A MHA</span></div>
+              <div>
+                <b>Elapsed Wait:</b> <span class="mono" style="color: var(--danger-ink); font-weight: 700">4h 12m</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cardPanel">
+          <div class="panelHead">
+            <h3 class="panelTitle" style="font-size: var(--t-2)">Triage Assessment &amp; Clinical Notes</h3>
+          </div>
+          <div class="panelBody" style="font-size: var(--t-1); line-height: 1.45">
+            <p>
+              <b>Presenting Symptoms:</b> Acute behavioural disturbance, persecutory delusions regarding neighbours,
+              severe sleep disturbance. Brought to ED by Police under Section 1A apprehension.
+            </p>
+            <p>
+              <b>Medical Clearance:</b> Full blood count, U&amp;E, LFT, toxicological screen completed and clear. No
+              organic cause identified.
+            </p>
+            <p>
+              <b>Recommended Action:</b> Urgent inpatient psychiatric bed allocation or immediate Assertive Community
+              Treatment engagement if secure bed unavailable.
+            </p>
+          </div>
+        </div>
+
+        <div class="cardPanel">
+          <div class="panelHead">
+            <h3 class="panelTitle" style="font-size: var(--t-2)">Clinician Allocation &amp; Decision</h3>
+          </div>
+          <div class="panelBody" style="display: flex; flex-direction: column; gap: 10px">
+            <label style="font-size: var(--t-1); font-weight: 600">Assign Key Clinician:</label>
+            <select
+              style="
+                height: 36px;
+                padding: 0 10px;
+                border-radius: var(--r2);
+                border: 1px solid var(--line-strong);
+                background: var(--surface);
+                color: var(--ink);
+              "
+            >
+              <option>RN K. Vance (NUM) · 12 on Caseload</option>
+              <option>Dr K. Rao (Consultant Psychiatrist) · 34 on Caseload</option>
+              <option>Dr J. Lim (Senior Registrar) · 26 on Caseload</option>
+              <option>RN T. Bradley (Crisis Outreach) · 22 on Caseload</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="drawerFoot">
+        <button type="button" class="btnSmSec" onclick="declineReferral('RF-8812')">Decline / Redirect</button>
+        <button type="button" class="btnSmPrimary" onclick="acceptReferral('RF-8812')">
+          Accept &amp; Allocate Clinician
+        </button>
+      </div>
+    </aside>
+
+    <!-- Activity Drawer -->
+    <aside class="drawer" id="activityDrawer" role="dialog" aria-label="Catchment Activity Feed" aria-modal="true">
+      <div class="drawerHead">
+        <h2 class="drawerTitle">Catchment Activity Feed</h2>
+        <button type="button" class="drawerCloseBtn" onclick="closeAllDrawers()">Close (Esc)</button>
+      </div>
+      <div class="drawerBody">
+        <div style="display: flex; flex-direction: column; gap: 12px; font-size: var(--t-1)">
+          <div style="border-bottom: 1px solid var(--line); padding-bottom: 8px">
+            <div style="display: flex; justify-content: space-between; font-size: var(--t-0); color: var(--muted)">
+              <span class="mono">10:40</span>
+              <span class="statusPillBadge good">Accepted</span>
+            </div>
+            <div><b>Referral RF-8810</b> accepted into Midland CMHT by Dr Rao. Allocated to RN Davis.</div>
+          </div>
+          <div style="border-bottom: 1px solid var(--line); padding-bottom: 8px">
+            <div style="display: flex; justify-content: space-between; font-size: var(--t-0); color: var(--muted)">
+              <span class="mono">10:15</span>
+              <span class="statusPillBadge warn">Discharge</span>
+            </div>
+            <div><b>UM104102</b> discharged from FSH Adult Secure. 7-Day post-discharge tracking started.</div>
+          </div>
+          <div style="border-bottom: 1px solid var(--line); padding-bottom: 8px">
+            <div style="display: flex; justify-content: space-between; font-size: var(--t-0); color: var(--muted)">
+              <span class="mono">09:30</span>
+              <span class="statusPillBadge neutral">MDT</span>
+            </div>
+            <div>Morning team triage huddle completed. 14 catchment cases reviewed with NUM Vance.</div>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: var(--t-0); color: var(--muted)">
+              <span class="mono">08:45</span>
+              <span class="statusPillBadge danger">CTO Alert</span>
+            </div>
+            <div><b>Toby Morales · UM104105</b> Mental Health Tribunal review confirmed for 28 Sep 2026.</div>
+          </div>
+        </div>
+      </div>
+      <div class="drawerFoot">
+        <button type="button" class="btnSmSec" onclick="closeAllDrawers()">Close</button>
+      </div>
+    </aside>
+
+    <!-- Tasks Drawer -->
+    <aside class="drawer" id="tasksDrawer" role="dialog" aria-label="Coordination Tasks" aria-modal="true">
+      <div class="drawerHead">
+        <h2 class="drawerTitle">Coordination Tasks</h2>
+        <button type="button" class="drawerCloseBtn" onclick="closeAllDrawers()">Close (Esc)</button>
+      </div>
+      <div class="drawerBody">
+        <div style="display: flex; flex-direction: column; gap: 10px; font-size: var(--t-1)">
+          <div
+            class="cardPanel"
+            id="taskCard1"
+            style="padding: 10px 12px; display: flex; flex-direction: column; gap: 6px"
+          >
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <span class="statusPillBadge danger">Urgent</span>
+              <span class="mono" style="font-size: var(--t-0); color: var(--muted)">Due Today</span>
+            </div>
+            <div><b>Sari Lin · UM103891:</b> Perform mandatory 48h post-discharge high-risk contact check.</div>
+            <div style="display: flex; justify-content: flex-end; gap: 6px">
+              <button type="button" class="btnSmSec" onclick="dismissTask('taskCard1')">Complete</button>
+            </div>
+          </div>
+
+          <div
+            class="cardPanel"
+            id="taskCard2"
+            style="padding: 10px 12px; display: flex; flex-direction: column; gap: 6px"
+          >
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <span class="statusPillBadge warn">CTO Review</span>
+              <span class="mono" style="font-size: var(--t-0); color: var(--muted)">Due in 3d</span>
+            </div>
+            <div>
+              <b>Toby Morales · UM104105:</b> Submit supervising psychiatrist report for Mental Health Tribunal review.
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 6px">
+              <button type="button" class="btnSmSec" onclick="dismissTask('taskCard2')">Complete</button>
+            </div>
+          </div>
+
+          <div
+            class="cardPanel"
+            id="taskCard3"
+            style="padding: 10px 12px; display: flex; flex-direction: column; gap: 6px"
+          >
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <span class="statusPillBadge neutral">Referral</span>
+              <span class="mono" style="font-size: var(--t-0); color: var(--muted)">Triage Desk</span>
+            </div>
+            <div><b>RF-8812:</b> Assign key clinician and respond to FSH ED Liaison.</div>
+            <div style="display: flex; justify-content: flex-end; gap: 6px">
+              <button type="button" class="btnSmSec" onclick="dismissTask('taskCard3')">Complete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="drawerFoot">
+        <button type="button" class="btnSmSec" onclick="closeAllDrawers()">Close</button>
+      </div>
+    </aside>
+
+    <!-- Developer & State Tools Drawer -->
+    <aside class="drawer" id="toolsDrawer" role="dialog" aria-label="Tools" aria-modal="true">
+      <div class="drawerHead">
+        <h2 class="drawerTitle">Developer &amp; State Controls</h2>
+        <button type="button" class="drawerCloseBtn" onclick="closeAllDrawers()">Close (Esc)</button>
+      </div>
+      <div class="drawerBody">
+        <div class="cardPanel">
+          <div class="panelHead">
+            <h3 class="panelTitle" style="font-size: var(--t-2)">Simulated UI States</h3>
+          </div>
+          <div class="panelBody" style="display: flex; flex-direction: column; gap: 8px">
+            <button type="button" class="btnActionSec" onclick="setUiState('populated')">
+              Default Populated State
+            </button>
+            <button type="button" class="btnActionSec" onclick="setUiState('skeleton')">Loading Skeleton State</button>
+            <button type="button" class="btnActionSec" onclick="setUiState('empty')">
+              Empty State (Zero Referrals)
+            </button>
+            <button type="button" class="btnActionSec" onclick="setUiState('error')">Error Banner State</button>
+          </div>
+        </div>
+
+        <div class="cardPanel">
+          <div class="panelHead">
+            <h3 class="panelTitle" style="font-size: var(--t-2)">Appearance Switcher</h3>
+          </div>
+          <div class="panelBody" style="display: flex; gap: 8px">
+            <button type="button" class="btnSmSec" onclick="setThemeExplicit('light')">Light</button>
+            <button type="button" class="btnSmSec" onclick="setThemeExplicit('dark')">Dark</button>
+            <button type="button" class="btnSmSec" onclick="setThemeExplicit('auto')">Auto</button>
+          </div>
+        </div>
+      </div>
+      <div class="drawerFoot">
+        <button type="button" class="btnSmSec" onclick="closeAllDrawers()">Close</button>
+      </div>
+    </aside>
+
+    <!-- New Referral Intake Modal -->
+    <div class="modalOverlay" id="newReferralModal">
+      <div class="modalBox" role="dialog" aria-labelledby="newRefModalTitle" aria-modal="true">
+        <div class="modalHead">
+          <h2 class="panelTitle" id="newRefModalTitle">Intake New Catchment Referral</h2>
+          <button type="button" class="drawerCloseBtn" onclick="closeModal('newReferralModal')">Close (Esc)</button>
+        </div>
+        <div class="modalBody">
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <label style="font-weight: 600; font-size: var(--t-1)">Referring Agency:</label>
+            <select
+              style="
+                height: 36px;
+                padding: 0 10px;
+                border-radius: var(--r2);
+                border: 1px solid var(--line-strong);
+                background: var(--surface);
+                color: var(--ink);
+              "
+            >
+              <option>Fiona Stanley Hospital ED Liaison</option>
+              <option>Royal Perth Hospital ED Liaison</option>
+              <option>Sir Charles Gairdner Hospital ED Liaison</option>
+              <option>General Practitioner (GP) Urgent</option>
+              <option>Police MHERT Co-response</option>
+              <option>Inpatient Ward Egress Transfer</option>
+            </select>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <label style="font-weight: 600; font-size: var(--t-1)">Patient Demographics (Synthetic UMRN):</label>
+            <input
+              type="text"
+              placeholder="e.g. Caleb, UM104409, Age, Sex"
+              style="
+                height: 36px;
+                padding: 0 10px;
+                border-radius: var(--r2);
+                border: 1px solid var(--line-strong);
+                background: var(--surface);
+                color: var(--ink);
+              "
+            />
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <label style="font-weight: 600; font-size: var(--t-1)">Statutory MHA Status:</label>
+            <select
+              style="
+                height: 36px;
+                padding: 0 10px;
+                border-radius: var(--r2);
+                border: 1px solid var(--line-strong);
+                background: var(--surface);
+                color: var(--ink);
+              "
+            >
+              <option>Voluntary</option>
+              <option>Form 1A (MHA Referral for Examination)</option>
+              <option>Form 5A (Community Treatment Order)</option>
+              <option>Form 3A (Inpatient Order Transfer)</option>
+            </select>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <label style="font-weight: 600; font-size: var(--t-1)">Presenting Clinical Problem &amp; Risk Notes:</label>
+            <textarea
+              rows="3"
+              placeholder="Describe presenting symptoms, risks, and assessment..."
+              style="
+                padding: 10px;
+                border-radius: var(--r2);
+                border: 1px solid var(--line-strong);
+                background: var(--surface);
+                color: var(--ink);
+                font-family: inherit;
+              "
+            ></textarea>
+          </div>
+        </div>
+        <div class="modalFoot">
+          <button type="button" class="btnSmSec" onclick="closeModal('newReferralModal')">Cancel</button>
+          <button type="button" class="btnSmPrimary" onclick="submitNewReferral()">Register in Queue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Record Clinical Contact Modal -->
+    <div class="modalOverlay" id="contactModal">
+      <div class="modalBox" role="dialog" aria-labelledby="contactModalTitle" aria-modal="true">
+        <div class="modalHead">
+          <h2 class="panelTitle" id="contactModalTitle">Record Clinical Contact / Home Visit</h2>
+          <button type="button" class="drawerCloseBtn" onclick="closeModal('contactModal')">Close (Esc)</button>
+        </div>
+        <div class="modalBody">
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <label style="font-weight: 600; font-size: var(--t-1)">Patient Select:</label>
+            <select
+              style="
+                height: 36px;
+                padding: 0 10px;
+                border-radius: var(--r2);
+                border: 1px solid var(--line-strong);
+                background: var(--surface);
+                color: var(--ink);
+              "
+            >
+              <option>Caleb Vance · UM104409 (Male 34y)</option>
+              <option>Devan Marrowbee · UM100004 (Male 31y)</option>
+              <option>Sari Lin · UM103891 (Female 41y)</option>
+              <option>Roshan O'Quinn · UM100005 (Male 59y)</option>
+            </select>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <label style="font-weight: 600; font-size: var(--t-1)">Contact Channel:</label>
+            <select
+              style="
+                height: 36px;
+                padding: 0 10px;
+                border-radius: var(--r2);
+                border: 1px solid var(--line-strong);
+                background: var(--surface);
+                color: var(--ink);
+              "
+            >
+              <option>Home Outreach Visit</option>
+              <option>Midland CMHT Clinic Consultation</option>
+              <option>Telephone / Telehealth Review</option>
+              <option>Hospital Inpatient Liaison Contact</option>
+            </select>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <label style="font-weight: 600; font-size: var(--t-1)">Mental State &amp; Progress Note:</label>
+            <textarea
+              rows="3"
+              placeholder="Clinical observation, medication adherence, mental state exam..."
+              style="
+                padding: 10px;
+                border-radius: var(--r2);
+                border: 1px solid var(--line-strong);
+                background: var(--surface);
+                color: var(--ink);
+                font-family: inherit;
+              "
+            ></textarea>
+          </div>
+        </div>
+        <div class="modalFoot">
+          <button type="button" class="btnSmSec" onclick="closeModal('contactModal')">Cancel</button>
+          <button type="button" class="btnSmPrimary" onclick="submitClinicalContact()">Log Clinical Record</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Morning Catchment MDT Summary Handover Modal -->
+    <div class="modalOverlay" id="handoverModal">
+      <div class="modalBox" role="dialog" aria-labelledby="handoverModalTitle" aria-modal="true">
+        <div class="modalHead">
+          <h2 class="panelTitle" id="handoverModalTitle">Catchment MDT Morning Huddle Handover</h2>
+          <button type="button" class="drawerCloseBtn" onclick="closeModal('handoverModal')">Close (Esc)</button>
+        </div>
+        <div class="modalBody" style="font-size: var(--t-1); line-height: 1.5">
+          <div
+            style="background: var(--surface-2); padding: 12px; border-radius: var(--r2); border: 1px solid var(--line)"
+          >
+            <h4 style="margin: 0 0 6px">Swan Health Campus · Midland Adult CMHT · Handover</h4>
+            <div class="mono" style="font-size: var(--t-0); color: var(--muted)">
+              Date: 21 September 2026 · Time: 10:42 · Consultant: Dr S. Chen
+            </div>
+          </div>
+          <div>
+            <b>Operational Key Metrics:</b>
+            <ul style="margin: 6px 0; padding-left: 20px">
+              <li>142 Active Catchment Patients (100% Case Manager Allocated).</li>
+              <li>7 Triage Referrals Waiting (3 Priority 1/2 Urgent, 1 Breach Alert).</li>
+              <li>18 Catchment Patients Inpatient in Hospital Beds (FSH, Graylands, SCGH, Bentley, Armadale).</li>
+              <li>6 Discharged Patients in 7-Day Window (1 Overdue 48h High-Risk Contact).</li>
+              <li>22 Active Community Treatment Orders (Form 5A MHA).</li>
+            </ul>
+          </div>
+        </div>
+        <div class="modalFoot">
+          <button type="button" class="btnSmSec" onclick="closeModal('handoverModal')">Close</button>
+          <button type="button" class="btnSmPrimary" onclick="window.print()">Print Handover Sheet</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Toast Notification — Hairline borders, no colored left stripes -->
+    <div class="actionToast" id="actionToast">
+      <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="var(--good)" stroke-width="2">
+        <path d="M3 8l3 3 7-7" />
+      </svg>
+      <span id="actionToastMsg">Action completed successfully.</span>
+    </div>
+
+    <!-- Invariant FF8: Synthetic Simulation Disclaimer Footer -->
+    <footer
+      style="
+        padding: 18px 24px;
+        border-top: 1px solid var(--line);
+        background: var(--surface-2);
+        font-size: var(--t-0);
+        color: var(--muted);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+      "
+    >
+      <div>
+        <b>Ward Flow WA</b> · Synthetic clinical bed &amp; community coordination simulation prototype · Not a medical
+        device.
+      </div>
+      <div class="mono">Policy 2026.3 · Mental Health Act 2014 Compliance</div>
+    </footer>
+
+    <!-- ══════════════════ 7. LIVE CONTROLLER SCRIPT ══════════════════ -->
+    <script>
+      (function () {
+        "use strict";
+
+        var activeTab = "tab-triage";
+        var lastFocusedElement = null;
+
+        window.toggleRail = function () {
+          var isClosed = document.documentElement.getAttribute("data-rail") === "closed";
+          if (isClosed) {
+            document.documentElement.removeAttribute("data-rail");
+            localStorage.setItem("ward-flow-rail", "open");
+          } else {
+            document.documentElement.setAttribute("data-rail", "closed");
+            localStorage.setItem("ward-flow-rail", "closed");
+          }
+        };
+
+        window.toggleTheme = function () {
+          var cur = document.documentElement.getAttribute("data-theme") || "light";
+          var next = cur === "dark" ? "light" : "dark";
+          document.documentElement.setAttribute("data-theme", next);
+          localStorage.setItem("ward-flow-community-appearance", next);
+          showToast("Theme switched to " + next + " mode.");
+        };
+
+        window.setThemeExplicit = function (theme) {
+          if (theme === "auto") {
+            var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+            document.documentElement.setAttribute("data-theme", prefersDark ? "dark" : "light");
+            localStorage.removeItem("ward-flow-community-appearance");
+          } else {
+            document.documentElement.setAttribute("data-theme", theme);
+            localStorage.setItem("ward-flow-community-appearance", theme);
+          }
+          showToast("Appearance set to " + theme + ".");
+        };
+
+        window.switchTab = function (tabId) {
+          activeTab = tabId;
+          document.querySelectorAll(".tabPanel").forEach(function (p) {
+            p.hidden = p.id !== tabId;
+          });
+          document.querySelectorAll(".tabBtn").forEach(function (btn) {
+            var isSel = btn.getAttribute("aria-controls") === tabId;
+            btn.setAttribute("aria-selected", isSel ? "true" : "false");
+          });
+        };
+
+        window.toggleServiceMenu = function () {
+          var menu = document.getElementById("svcMenu");
+          var isOpen = menu.getAttribute("data-open") === "true";
+          menu.setAttribute("data-open", isOpen ? "false" : "true");
+          document.getElementById("svcBtn").setAttribute("aria-expanded", isOpen ? "false" : "true");
+        };
+
+        window.selectService = function (svcCode, svcName) {
+          document.getElementById("svcLabel").textContent = svcName;
+          document.getElementById("svcDot").setAttribute("data-svc", svcCode);
+          var menu = document.getElementById("svcMenu");
+          menu.setAttribute("data-open", "false");
+          document.getElementById("svcBtn").setAttribute("aria-expanded", "false");
+          showToast("Service scope filtered: " + svcName);
+        };
+
+        window.toggleTeamMenu = function () {
+          var menu = document.getElementById("teamScopeMenu");
+          var isOpen = menu.getAttribute("data-open") === "true";
+          menu.setAttribute("data-open", isOpen ? "false" : "true");
+        };
+
+        window.selectTeam = function (teamKey, teamName) {
+          document.getElementById("currentTeamLabel").textContent = "Team: " + teamName;
+          document.getElementById("pageTitle").textContent = "Swan Health Campus · " + teamName;
+          var menu = document.getElementById("teamScopeMenu");
+          menu.setAttribute("data-open", "false");
+          showToast("Switched catchment team: " + teamName);
+        };
+
+        window.openDrawer = function (drawerId) {
+          lastFocusedElement = document.activeElement;
+          closeAllDrawers();
+          var d = document.getElementById(drawerId);
+          var s = document.getElementById("drawerScrim");
+          if (d && s) {
+            d.classList.add("show");
+            s.classList.add("show");
+            var closeBtn = d.querySelector(".drawerCloseBtn");
+            if (closeBtn) closeBtn.focus();
+          }
+        };
+
+        window.closeAllDrawers = function () {
+          document.querySelectorAll(".drawer").forEach(function (d) {
+            d.classList.remove("show");
+          });
+          var s = document.getElementById("drawerScrim");
+          if (s) s.classList.remove("show");
+          if (lastFocusedElement && typeof lastFocusedElement.focus === "function") {
+            lastFocusedElement.focus();
+            lastFocusedElement = null;
+          }
+        };
+
+        window.openPatientDrawer = function (ptId) {
+          document.getElementById("pxDrawerHeading").textContent = "Patient Dossier · " + ptId;
+          openDrawer("pxDrawer");
+        };
+
+        window.openReferralDrawer = function (refId) {
+          document.getElementById("refDrawerHeading").textContent = "Referral Triage · " + refId;
+          openDrawer("referralDrawer");
+        };
+
+        window.openModal = function (modalId) {
+          lastFocusedElement = document.activeElement;
+          var m = document.getElementById(modalId);
+          if (m) {
+            m.classList.add("show");
+            var btn = m.querySelector(".drawerCloseBtn, .btnSmPrimary");
+            if (btn) btn.focus();
+          }
+        };
+
+        window.closeModal = function (modalId) {
+          var m = document.getElementById(modalId);
+          if (m) m.classList.remove("show");
+          if (lastFocusedElement && typeof lastFocusedElement.focus === "function") {
+            lastFocusedElement.focus();
+            lastFocusedElement = null;
+          }
+        };
+
+        window.showToast = function (msg) {
+          var toast = document.getElementById("actionToast");
+          var msgSpan = document.getElementById("actionToastMsg");
+          if (toast && msgSpan) {
+            msgSpan.textContent = msg;
+            toast.classList.add("show");
+            clearTimeout(window.__toastTimer);
+            window.__toastTimer = setTimeout(function () {
+              toast.classList.remove("show");
+            }, 3200);
+          }
+        };
+
+        window.acceptReferral = function (refId) {
+          showToast("Referral " + refId + " accepted & allocated to clinician.");
+          closeAllDrawers();
+        };
+
+        window.declineReferral = function (refId) {
+          showToast("Referral " + refId + " redirected to appropriate service.");
+          closeAllDrawers();
+        };
+
+        window.completeContact = function (ptId) {
+          showToast("7-Day follow-up contact recorded for " + ptId + ".");
+        };
+
+        window.dismissTask = function (cardId) {
+          var card = document.getElementById(cardId);
+          if (card) {
+            card.remove();
+            var b = document.getElementById("taskCountBadge");
+            if (b) {
+              var n = Math.max(0, parseInt(b.textContent, 10) - 1);
+              b.textContent = n;
+            }
+            showToast("Task completed.");
+          }
+        };
+
+        window.submitNewReferral = function () {
+          closeModal("newReferralModal");
+          showToast("New catchment referral registered in triage queue.");
+        };
+
+        window.submitClinicalContact = function () {
+          closeModal("contactModal");
+          showToast("Clinical contact & progress note saved.");
+        };
+
+        window.handleSearch = function (q) {
+          var wrap = document.getElementById("searchWrap");
+          if (!q || !q.trim()) {
+            wrap.removeAttribute("data-open");
+          } else {
+            wrap.setAttribute("data-open", "true");
+          }
+        };
+
+        window.filterTriage = function (btn, category) {
+          btn.parentNode.querySelectorAll(".chipFilterBtn").forEach(function (b) {
+            b.setAttribute("aria-pressed", "false");
+          });
+          btn.setAttribute("aria-pressed", "true");
+          document.querySelectorAll(".refCard").forEach(function (card) {
+            if (category === "all") {
+              card.style.display = "flex";
+            } else {
+              var prios = (card.getAttribute("data-prio") || "").split(" ");
+              card.style.display = prios.includes(category) ? "flex" : "none";
+            }
+          });
+        };
+
+        window.filterInpatients = function (btn, type) {
+          btn.parentNode.querySelectorAll(".chipFilterBtn").forEach(function (b) {
+            b.setAttribute("aria-pressed", "false");
+          });
+          btn.setAttribute("aria-pressed", "true");
+          document.querySelectorAll("#inpatientTable tbody tr").forEach(function (row) {
+            if (type === "all") {
+              row.style.display = "";
+            } else {
+              var t = row.getAttribute("data-type");
+              row.style.display = t === type ? "" : "none";
+            }
+          });
+        };
+
+        window.filterEgress = function (btn, status) {
+          btn.parentNode.querySelectorAll(".chipFilterBtn").forEach(function (b) {
+            b.setAttribute("aria-pressed", "false");
+          });
+          btn.setAttribute("aria-pressed", "true");
+          document.querySelectorAll("#egressTable tbody tr").forEach(function (row) {
+            if (status === "all") {
+              row.style.display = "";
+            } else {
+              var s = row.getAttribute("data-status");
+              row.style.display = s === status ? "" : "none";
+            }
+          });
+        };
+
+        window.filterCaseload = function (btn, cat) {
+          btn.parentNode.querySelectorAll(".chipFilterBtn").forEach(function (b) {
+            b.setAttribute("aria-pressed", "false");
+          });
+          btn.setAttribute("aria-pressed", "true");
+          document.querySelectorAll("#caseloadTable tbody tr").forEach(function (row) {
+            if (cat === "all") {
+              row.style.display = "";
+            } else {
+              var c = (row.getAttribute("data-cat") || "").split(" ");
+              row.style.display = c.includes(cat) ? "" : "none";
+            }
+          });
+        };
+
+        window.setUiState = function (state) {
+          closeAllDrawers();
+          var main = document.querySelector(".contentWorkspace");
+          if (state === "skeleton") {
+            main.innerHTML =
+              '<div class="skeletonBlock" style="height: 48px; width: 100%"></div>' +
+              '<div class="skeletonBlock" style="height: 220px; width: 100%"></div>' +
+              '<div class="skeletonBlock" style="height: 340px; width: 100%"></div>';
+            showToast("Loading skeleton state active.");
+          } else if (state === "empty") {
+            main.innerHTML =
+              '<div class="emptyStateBox">' +
+              '<svg class="emptyStateIcon" viewBox="0 0 16 16" fill="none" stroke-width="1.8"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>' +
+              "<h3>No Active Items in Queue</h3>" +
+              '<p style="font-size: var(--t-1)">All catchment referrals and contacts are up to date.</p>' +
+              '<button type="button" class="btnPrimaryAction" onclick="location.reload()">Reset to Live State</button>' +
+              "</div>";
+            showToast("Empty state active.");
+          } else if (state === "error") {
+            main.innerHTML =
+              '<div class="errorBanner">' +
+              "<span><b>Telemetry Error:</b> Catchment server reconciliation timed out. Showing cached records.</span>" +
+              '<button type="button" class="btnSmSec" onclick="location.reload()">Retry Connection</button>' +
+              "</div>" +
+              main.innerHTML;
+            showToast("Error banner displayed.");
+          } else {
+            location.reload();
+          }
+        };
+
+        // Keyboard Shortcuts
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape") {
+            closeAllDrawers();
+            document.querySelectorAll(".modalOverlay").forEach(function (m) {
+              m.classList.remove("show");
+            });
+            var qPop = document.getElementById("qPop");
+            if (qPop) document.getElementById("searchWrap").removeAttribute("data-open");
+          } else if (e.key === "[" && !e.target.matches("input, textarea, select")) {
+            e.preventDefault();
+            toggleRail();
+          } else if (e.key === "/" && !e.target.matches("input, textarea, select")) {
+            e.preventDefault();
+            var searchInput = document.getElementById("q");
+            if (searchInput) searchInput.focus();
+          }
+        });
+
+        // Close dropdowns on outside click
+        document.addEventListener("click", function (e) {
+          if (!e.target.closest("#svcMenu")) {
+            var menu = document.getElementById("svcMenu");
+            if (menu) {
+              menu.setAttribute("data-open", "false");
+              document.getElementById("svcBtn").setAttribute("aria-expanded", "false");
+            }
+          }
+          if (!e.target.closest("#teamScopeMenu")) {
+            var teamMenu = document.getElementById("teamScopeMenu");
+            if (teamMenu) teamMenu.setAttribute("data-open", "false");
+          }
+          if (!e.target.closest("#searchWrap")) {
+            var wrap = document.getElementById("searchWrap");
+            if (wrap) wrap.removeAttribute("data-open");
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

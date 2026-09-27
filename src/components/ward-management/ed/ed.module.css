@@ -1,0 +1,3750 @@
+/*
+ * Third-Edition Emergency Department (ED Hub) Stylesheet.
+ * Composes wardShellTokens from `src/app/ward-flow-shell-tokens.module.css`.
+ * 100% tokenized: no raw hex, rgb, or hsl values, strictly satisfying tests/ward-raw-colour.test.ts.
+ */
+
+.screen {
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  display: block;
+  min-height: 100dvh;
+  color: var(--ink);
+  background: var(--ground);
+  font-family: var(--body);
+  font-variant-numeric: tabular-nums;
+  overflow-x: clip;
+  min-width: 0;
+  width: 100%;
+
+  --text: var(--ink);
+  --text-heading: var(--ink);
+  --text-muted: var(--muted);
+  --ward-border: var(--line);
+  --ward-border-strong: var(--line-strong);
+  --ward-divider: var(--line);
+  --surface-chrome: var(--surface-2);
+  --radius-sm: var(--r2);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem clamp(0.75rem, 2vw, 1.5rem) 2.5rem;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 20rem;
+  scroll-padding: 0.5rem;
+}
+
+.notFoundHeading {
+  margin: 1.5rem 0 0.5rem;
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: var(--t-4);
+  font-weight: 600;
+}
+
+.notFoundBody {
+  max-width: 34rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.55;
+}
+
+.recoveryContainer {
+  margin-top: 1rem;
+}
+
+.recoveryLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: var(--surface);
+  font-size: var(--t-1);
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+
+.recoveryLink:hover {
+  opacity: 0.9;
+}
+
+.recoveryLink:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Prototype Governance Banner */
+.governanceBanner {
+  display: flex;
+  min-height: 2.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  background: var(--surface-2);
+  padding: 0.5rem 0.875rem;
+}
+
+.governanceBanner p {
+  min-width: 0;
+  flex: 1 1 14rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.4;
+}
+
+.prototypeBadge {
+  flex-shrink: 0;
+  border: 1px solid var(--warn);
+  border-radius: var(--r2);
+  background: var(--warn-soft);
+  padding: 0.15rem 0.5rem;
+  color: var(--warn);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ─── Base Third-Edition Panel Primitives ─── */
+.panel {
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+}
+
+.ph {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  border-radius: var(--r1i) var(--r1i) 0 0;
+  box-shadow:
+    0 4px 6px -1px color-mix(in srgb, var(--ink) 4%, transparent),
+    0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
+}
+
+.ph h2,
+.ph h3 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--t-3);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--accent-ink);
+}
+
+.ph .count {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.phActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.fullscreenToggleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 44px;
+  padding: 3px 8px;
+  font-family: var(--body);
+  font-size: var(--t-0);
+  font-weight: 500;
+  color: var(--ink-soft);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
+}
+
+.fullscreenToggleBtn:hover {
+  background: var(--sunk);
+  color: var(--ink);
+  border-color: var(--ink-soft);
+}
+
+.fullscreenToggleBtn[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.expandIcon {
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.fullscreenBoard {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1000 !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: var(--surface) !important;
+}
+
+.fullscreenBoard .ph {
+  border-radius: 0;
+  padding: 12px 24px;
+  flex-shrink: 0;
+}
+
+.fullscreenBoard .boardChips {
+  padding: 8px 24px;
+  flex-shrink: 0;
+}
+
+.fullscreenBoard .tableWrap {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 0 24px 24px;
+  min-height: 20rem;
+  scroll-padding: 0.5rem;
+}
+
+.fullscreenBoard .boardTable th:last-child,
+.fullscreenBoard .boardTable td:last-child {
+  min-width: 320px;
+  max-width: none;
+}
+
+.referralBarSection {
+  min-width: 0;
+}
+
+.referralBarSection .ph {
+  align-items: center;
+}
+
+.referralBarSection .acceptButton {
+  margin-left: auto;
+  /* Explicit 48px/3rem floor: satisfies ED action buttons tap floor and eliminates friction */
+  min-height: var(--spacing-tap);
+  padding: 8px 12px;
+  font-size: var(--t-0);
+  font-weight: 600;
+}
+
+.referralPanelBody {
+  padding: 14px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.note {
+  margin: 0;
+  font-size: var(--t-1);
+  color: var(--muted);
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.none {
+  margin: 0;
+  font-size: var(--t-1);
+  color: var(--muted);
+  font-style: italic;
+  padding: 12px 16px;
+}
+
+/* ─── 8-Department Selector Strip ─── */
+.departmentSwitcher {
+  min-width: 0;
+}
+
+.edList {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 12px 16px;
+  list-style: none;
+  margin: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.edList::-webkit-scrollbar {
+  height: 6px;
+}
+
+.edList::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 9px;
+}
+
+.edList > li {
+  flex: 1 1 10rem;
+  min-width: 9.5rem;
+  display: flex;
+}
+
+.edCard {
+  flex: 1 1 auto;
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: var(--r2);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  text-decoration: none;
+  color: var(--ink);
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+  cursor: pointer;
+}
+
+.edCard:hover,
+.edCard:active {
+  background: var(--sunk);
+}
+
+.edCard[aria-pressed="true"],
+.edCard[aria-current="page"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.edCode {
+  font-family: var(--display);
+  font-size: var(--t-3);
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  letter-spacing: -0.01em;
+}
+
+.edCode em {
+  font-family: var(--body);
+  font-style: normal;
+  font-size: var(--t-0);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edStat {
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.edStat.quiet {
+  color: var(--muted);
+}
+
+.edBar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--sunk);
+  overflow: hidden;
+}
+
+.edBar i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--muted);
+}
+
+.edCard[data-p="high"] .edBar i {
+  background: var(--danger);
+}
+
+.edCard[data-p="med"] .edBar i {
+  background: var(--warn);
+}
+
+.edBreach {
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--danger);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.breachBadge {
+  display: inline-block;
+  margin-right: 0.25rem;
+  font-size: 0.85em;
+  line-height: 1;
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* ─── Active Department Identity Banner ─── */
+.edIdent {
+  padding: 11px 16px 13px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px 16px;
+  border-top: 1px solid var(--line);
+}
+
+.edHead {
+  flex: 1 1 22rem;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.edName {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--t-6);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.edWhere {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.edWhere .svc[data-svc="east"] {
+  color: var(--svc-east, var(--accent));
+}
+
+.edWhere .svc[data-svc="north"] {
+  color: var(--svc-north, var(--good));
+}
+
+.edWhere .svc[data-svc="south"] {
+  color: var(--svc-south, var(--warn));
+}
+
+.edWhere .svc[data-svc="wachs"] {
+  color: var(--svc-wachs, var(--muted));
+}
+
+.edWhere .code {
+  font-family: var(--mono);
+  letter-spacing: 0;
+}
+
+.edChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.edChips .chip,
+.summaryPill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: var(--t-0);
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.edChips .chip b,
+.summaryPill b {
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.edChips .chip i,
+.summaryPill i {
+  font-style: normal;
+  color: var(--muted);
+}
+
+/* ─── Grid Modules ─── */
+.edGrid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.edGrid > .panel,
+.edGrid > .full {
+  grid-column: 1 / -1;
+}
+
+.edGrid > .mod {
+  grid-column: 1 / -1;
+  align-self: start;
+}
+
+@media (min-width: 1080px) {
+  .edGrid > .mod {
+    grid-column: span 6;
+  }
+}
+
+.mod > .ph {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 3px 10px;
+}
+
+.mod > .ph .count {
+  margin-left: 0;
+  text-align: right;
+}
+
+.mod > .ph .note {
+  grid-column: 1 / -1;
+  order: 3;
+}
+
+/* ─── Compact, Modernised Needs Attention ─── */
+.attentionWrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0;
+  background: var(--surface);
+}
+
+.attentionList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attentionRow {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 14px 8px 10px;
+  border-top: 1px solid var(--line);
+  border-left: 3px solid transparent;
+  background: var(--surface);
+  transition: background 0.12s ease;
+}
+
+.attentionList > .attentionRow:first-child {
+  border-top: 0;
+}
+
+.attentionRow:hover {
+  background: var(--sunk);
+}
+
+.attentionRow[data-tone="danger"] {
+  border-left-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.attentionRow[data-tone="danger"]:hover {
+  background: var(--danger-soft);
+  filter: brightness(0.98);
+}
+
+.attentionRow[data-tone="warn"] {
+  border-left-color: var(--warn);
+}
+
+.attentionRow[data-tone="good"] {
+  border-left-color: var(--good);
+}
+
+.attentionRow[data-tone="quiet"] {
+  border-left-color: var(--line-strong);
+}
+
+.attentionHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.attentionBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: var(--r2);
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  line-height: 1;
+}
+
+.attentionBadge[data-tone="danger"] {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border: 1px solid var(--danger);
+}
+
+.attentionBadge[data-tone="warn"] {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+}
+
+.attentionBadge[data-tone="good"] {
+  background: var(--good-soft);
+  color: var(--good);
+  border: 1px solid var(--good);
+}
+
+.attentionBadge[data-tone="quiet"] {
+  background: var(--sunk);
+  color: var(--muted);
+  border: 1px solid var(--line-strong);
+}
+
+.attentionBadgeGlyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.attentionTitle {
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.attentionRow[data-tone="danger"] .attentionTitle {
+  color: var(--danger);
+}
+
+.attentionMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.attentionMetaDot {
+  color: var(--line-strong);
+  font-weight: 600;
+}
+
+.attentionIdBtn {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--accent-ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  padding: 0.5px 5px;
+  cursor: pointer;
+  text-decoration: none;
+  line-height: 1.3;
+  transition: background 0.1s ease, border-color 0.1s ease, color 0.1s ease;
+}
+
+.attentionIdBtn:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+
+.attentionDemographics {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.attentionStamp {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  padding-left: 8px;
+}
+
+.attentionStamp[data-tone="danger"] {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.attentionStamp[data-tone="warn"] {
+  color: var(--warn);
+}
+
+.attentionStamp[data-tone="good"] {
+  color: var(--good);
+}
+
+.attentionBody {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-left: 23px;
+  min-width: 0;
+}
+
+.attentionWhy {
+  margin: 0;
+  font-size: var(--t-0);
+  color: var(--ink-soft);
+  line-height: 1.4;
+  flex: 1 1 auto;
+  min-width: 0;
+  text-wrap: pretty;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.attentionAct {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.attentionActionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 2px 10px;
+  border-radius: var(--r2);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--t-0);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.08s ease;
+}
+
+.attentionActionBtn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.attentionActionBtn:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 768px) {
+  .attentionHeader {
+    flex-wrap: wrap;
+  }
+  .attentionBody {
+    flex-direction: column;
+    align-items: stretch;
+    padding-left: 0;
+    gap: 6px;
+  }
+  .attentionAct {
+    margin-left: 0;
+    width: 100%;
+  }
+  .attentionActionBtn {
+    width: 100%;
+    min-height: 36px;
+  }
+}
+
+/* ─── Priority List Language (Needs attention & Lists) ─── */
+.lstWrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px 0 4px;
+}
+
+.lst {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lstRow {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 2px 9px;
+  padding: 9px 14px 10px;
+  border-top: 1px solid var(--line);
+}
+
+.lst > .lstRow:first-child {
+  border-top: 0;
+}
+
+.lstRow[data-tone="danger"] {
+  background: var(--danger-soft);
+}
+
+.tick {
+  width: 7px;
+  height: 7px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex: none;
+}
+
+.tick[data-tone="danger"] {
+  background: var(--danger);
+}
+
+.tick[data-tone="warn"] {
+  background: var(--warn);
+}
+
+.tick[data-tone="good"] {
+  background: var(--good);
+}
+
+.tick[data-tone="quiet"] {
+  background: var(--line-strong);
+}
+
+.tickGlyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.lstMain {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.lstTitle {
+  font-size: var(--t-2);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.lstRow[data-tone="danger"] .lstTitle {
+  color: var(--danger);
+}
+
+.lstWhy {
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+  line-height: 1.45;
+  text-wrap: pretty;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.lstWhy i {
+  color: var(--muted);
+}
+
+.lstEnd {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+  text-align: right;
+}
+
+.lstAct {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.stamp {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.lstRow[data-tone="danger"] .stamp {
+  color: var(--danger);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 8px;
+  font-size: var(--t-0);
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.meta > * + * {
+  padding-left: 8px;
+  border-left: 1px solid var(--line);
+}
+
+.meta .mono {
+  font-family: var(--mono);
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.bayNumber {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Patient-drawer header line (site / legal status / urgency), per
+   docs/ward-flow/mockups/emergency-department-third-edition.html ~2985-2993
+   (`.fresh { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono);
+   font-size: var(--t-0); color: var(--muted); white-space: normal; flex-basis: 100%; line-height:
+   1.4; }`) — the drawing pairs it with .meta on the same element in exactly this .popHead context
+   (`.popHead .fresh.meta { color: var(--muted); }` at ~5040), confirming the combination is
+   intentional. Declared after .meta so it wins the conflicting properties (display, align-items)
+   on that shared element, matching the drawing's rendered result. */
+.fresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  white-space: normal;
+  flex-basis: 100%;
+  line-height: 1.4;
+}
+
+.nameBtn {
+  font: inherit;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+.nameBtn:hover {
+  text-decoration-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.lstRow[data-tone="danger"] .nameBtn {
+  color: var(--danger);
+}
+
+/* ─── Buttons & Controls ─── */
+.ctl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 14px;
+  border-radius: var(--r2);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
+}
+
+.ctl:hover,
+.ctl:active {
+  background: var(--sunk);
+  border-color: var(--ink-soft);
+}
+
+.ctl.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--surface);
+}
+
+.ctl.primary:hover {
+  background: var(--accent-ink);
+  border-color: var(--accent-ink);
+}
+
+.ctl.small {
+  min-height: 44px;
+  padding: 4px 10px;
+  font-size: var(--t-1);
+  font-weight: 600;
+}
+
+.ctl[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background: var(--surface-2);
+  color: var(--muted);
+  border-color: var(--line);
+}
+
+.idBtn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-family: var(--mono);
+  font-size: var(--t-2);
+  font-weight: 600;
+  color: var(--accent-ink);
+  letter-spacing: -0.01em;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  white-space: nowrap;
+  background: transparent;
+  border: 0;
+  padding: 0 4px;
+  cursor: pointer;
+}
+
+.idBtn:hover {
+  color: var(--ink);
+}
+
+.idBtn.tiny {
+  font-size: var(--t-0);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+@media (pointer: coarse) {
+  .ctl,
+  .ctl.small,
+  .idBtn,
+  .fullscreenToggleBtn,
+  .boardChip,
+  .tabBtn,
+  .actionUnfoldToggle,
+  .rowChevronBtn,
+  .referralField select,
+  .referralField input,
+  .capacityInput,
+  .tableActionGroup button,
+  .tableActionGroup select {
+    min-height: 2.75rem;
+  }
+}
+
+/* ─── Segmented Tabs (Department lists) ─── */
+.tabbar {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 4px;
+  gap: 2px;
+}
+
+.tabbar::-webkit-scrollbar {
+  display: none;
+}
+
+.tabBtn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 11px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  font-family: var(--body);
+  font-size: var(--t-0);
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 4px 4px 0 0;
+  transition:
+    color 0.12s,
+    background 0.12s,
+    border-color 0.12s;
+}
+
+.tabBtn:hover {
+  color: var(--ink);
+  background: var(--surface);
+}
+
+.tabBtn[aria-selected="true"] {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
+  background: var(--surface);
+}
+
+.tabBtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.tabNum {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: var(--sunk);
+  padding: 1px 7px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--line);
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1.3;
+}
+
+.tabBtn[aria-selected="true"] .tabNum {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  color: var(--accent-ink);
+}
+
+.tabNum[data-zero="true"] {
+  font-family: var(--body);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--muted);
+  background: transparent;
+  box-shadow: none;
+  padding: 0 2px;
+}
+
+/* ─── Board & Filter Chips ─── */
+.boardChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.boardChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
+}
+
+.boardChip:hover,
+.boardChip:active {
+  background: var(--sunk);
+  border-color: var(--ink-soft);
+}
+
+.boardChip[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.boardChip .c {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 500;
+  color: var(--ink-soft);
+  background: var(--sunk);
+  padding: 0 7px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.boardChip[aria-pressed="true"] .c {
+  color: var(--accent-ink);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.boardChip .c[data-zero="true"] {
+  font-family: var(--body);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--muted);
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* ─── Tabular Board ─── */
+.tableWrap {
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  min-height: 20rem;
+  scroll-padding: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tableWrap::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.tableWrap::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 4px;
+}
+
+.tableWrap::-webkit-scrollbar-track {
+  background: var(--sunk);
+}
+
+.boardWrap[data-overflowing="true"] {
+  box-shadow: inset -18px 0 16px -16px var(--edge-shade, transparent);
+}
+
+.boardTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-1);
+  text-align: left;
+}
+
+.boardTable th {
+  padding: 8px 10px;
+  font-family: var(--body);
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+
+.thSub {
+  display: block;
+  font-size: var(--t-0);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--muted);
+}
+
+.boardTable td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  line-height: 1.35;
+}
+
+.boardTable td p {
+  margin: 2px 0 0;
+  line-height: 1.3;
+}
+
+.boardTable td.story {
+  /* Restored per tests/ward-table-min-width.test.ts's pinned value (11rem) and git history
+   * (`min-width: 11rem; max-width: 14rem;` immediately before both were narrowed together to
+   * 7.5rem/10.5rem, which is the change this pin exists to catch). */
+  min-width: 11rem;
+  max-width: 14rem;
+  white-space: normal;
+  text-wrap: pretty;
+}
+
+.boardTable td.story p.outstandingItem {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  line-height: 1.35;
+}
+
+.boardTable td.story p.outstandingItem .outstandingLabel {
+  font-weight: 600;
+  color: var(--ink);
+  font-size: var(--t-1);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+@media (max-width: 1500px) {
+  .boardTable td.story {
+    min-width: 9rem;
+    max-width: 11.5rem;
+  }
+  .boardTable th,
+  .boardTable td {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+}
+
+.boardTable td b {
+  display: block;
+  color: var(--ink);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Patient identity must remain readable when the third-edition surface is dark. */
+.boardTable td > b {
+  color: var(--ink-soft);
+}
+
+.boardTable td .sub {
+  display: block;
+  margin-top: 1px;
+  font-size: var(--t-0);
+  color: var(--muted);
+  white-space: nowrap;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.boardTable td .sub[data-state],
+.boardTable td .sub[data-testid^="ward-ed-form-expiry-"] {
+  white-space: normal;
+  max-width: 11rem;
+  line-height: 1.2;
+}
+
+.boardTable td .track {
+  display: block;
+  margin-top: 3px;
+  width: 4.5rem;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--sunk);
+  overflow: hidden;
+}
+
+.boardTable td .track i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--muted);
+}
+
+.boardTable td:first-child,
+.boardTable th:first-child {
+  font-weight: 400;
+  text-align: left;
+}
+
+.idCol {
+  text-align: left;
+  min-width: 125px;
+}
+
+.idCell {
+  text-align: left;
+  vertical-align: top;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  min-width: 125px;
+}
+
+.idCellGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.rowChevronBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--t-0, 12px);
+  cursor: pointer;
+  border-radius: var(--r2);
+  line-height: 1;
+  transition:
+    color 0.12s,
+    background 0.12s;
+}
+
+.rowChevronBtn:hover {
+  color: var(--ink);
+  background: var(--sunk);
+}
+
+.rowChevron {
+  display: inline-block;
+  line-height: 1;
+}
+
+/* Numeric/identifier columns (Identifier, In department): right-aligned tabular figures, per
+   docs/ward-flow/mockups/emergency-department-third-edition.html ~2519-2529
+   (`.dataTable .n, .dataTable th.n { text-align: right; font-family: var(--mono);
+   font-variant-numeric: tabular-nums; white-space: nowrap; }` / `.dataTable td.n { color:
+   var(--ink); }`) — scoped under .boardTable so it only ever touches this board's cells. */
+.boardTable .n,
+.boardTable th.n {
+  text-align: right;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  white-space: nowrap;
+}
+
+.boardTable td.n {
+  color: var(--ink);
+}
+
+.boardTable th:last-child,
+.boardTable td:last-child {
+  min-width: 120px;
+  max-width: 260px;
+}
+
+.boardTable td .cardMeta {
+  margin: 1px 0 0;
+  font-size: var(--t-0, 12px);
+  line-height: 1.2;
+}
+
+tr.qRow {
+  display: table-row;
+}
+
+tr.qRow[data-selected="true"] td {
+  background: var(--accent-soft);
+}
+
+tr.qRow:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.sortBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  white-space: nowrap;
+}
+
+.sortBtn:hover {
+  color: var(--ink);
+}
+
+.sortBtn .ar {
+  width: 5px;
+  height: 5px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-1.5px) rotate(45deg);
+  opacity: 0.35;
+}
+
+.sortBtn .ar[data-dir="ascending"] {
+  opacity: 1;
+  transform: translateY(1.5px) rotate(-135deg);
+}
+
+.sortBtn .ar[data-dir="descending"] {
+  opacity: 1;
+}
+
+.thSub {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--body);
+  font-size: var(--t-0);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.rev {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  font-size: var(--t-2);
+  white-space: nowrap;
+  color: var(--ink-soft);
+}
+
+.rev i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line-strong);
+  flex: none;
+  align-self: center;
+}
+
+.rev[data-seen="false"] {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.rev[data-seen="false"] i {
+  background: var(--warn);
+}
+
+.qNote[data-tone="warn"] {
+  color: var(--warn);
+}
+
+.dest[data-tone="good"] {
+  color: var(--good);
+  font-weight: 600;
+}
+
+.dest[data-tone="warn"] {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+/* ─── Legal Form Badge & Dropdown ─── */
+.formField {
+  position: relative;
+  display: inline-block;
+}
+
+.formPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  font-family: var(--mono);
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+
+.formPill:hover,
+.formPill:active {
+  background: var(--sunk);
+  border-color: var(--ink-soft);
+}
+
+.formPill[aria-expanded="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.formPill[data-none="true"] {
+  font-family: var(--body);
+  color: var(--muted);
+}
+
+.formPill[data-tone="warn"] {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.formPill[data-tone="danger"] {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.formPill .caret {
+  width: 5px;
+  height: 5px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-1.5px) rotate(45deg);
+}
+
+.formPill[aria-expanded="true"] .caret {
+  transform: translateY(1.5px) rotate(-135deg);
+}
+
+.formMenu {
+  position: absolute;
+  z-index: 22;
+  top: calc(100% + 5px);
+  left: 0;
+  min-width: 9rem;
+  padding: 5px;
+  display: grid;
+  gap: 1px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+  list-style: none;
+  margin: 0;
+}
+
+.formMenu[hidden] {
+  display: none !important;
+}
+
+.formMenu button {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: var(--r2);
+  background: transparent;
+  font-family: var(--mono);
+  font-size: var(--t-2);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.formMenu button:hover,
+.formMenu button:active {
+  background: var(--sunk);
+}
+
+.formMenu li[aria-selected="true"] button {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  font-weight: 600;
+}
+
+.formMenu li.sep button {
+  font-family: var(--body);
+  color: var(--muted);
+}
+
+.formMenu li.sep {
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+  padding-top: 4px;
+}
+
+.formDue {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.formDue[data-tone="warn"] {
+  color: var(--warn);
+}
+
+.formDue[data-tone="danger"] {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* ─── 24 Hours Activity Timeline ─── */
+.tlWrap {
+  padding: 8px 14px 12px;
+}
+
+.tl {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  gap: 0;
+}
+
+.tlRow {
+  display: grid;
+  grid-template-columns: 3.4rem 14px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0 10px;
+  padding: 4px 6px;
+  border-radius: var(--r2);
+  transition: background 0.12s ease;
+}
+
+.tlRow:hover {
+  background: var(--surface-2);
+}
+
+.tlAt {
+  display: grid;
+  text-align: right;
+}
+
+.tlAt b {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.tlAt i {
+  font-family: var(--mono);
+  font-style: normal;
+  font-size: var(--t-0, 12px);
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.tlMark {
+  position: relative;
+  align-self: stretch;
+  display: flex;
+  justify-content: center;
+}
+
+.tlMark::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+}
+
+.tlMark .tick {
+  position: relative;
+  margin-top: 4px;
+  box-shadow: 0 0 0 3px var(--surface);
+}
+
+.tlWhat {
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+
+.tlWhat b {
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.tlBy {
+  font-size: var(--t-0);
+  color: var(--muted);
+  white-space: nowrap;
+  padding-left: 8px;
+  font-style: italic;
+}
+
+@media (min-width: 1240px) {
+  .tlWrap > .tl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 32px;
+  }
+}
+
+@media (min-width: 1760px) {
+  .tlWrap > .tl {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 32px;
+  }
+}
+
+.tlTight {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.tlTight .tlRow {
+  grid-template-columns: 2.9rem 14px minmax(0, 1fr) auto;
+  padding: 5px 0;
+}
+
+/* ─── Footer Disclosure ("What is invented and what is real") ─── */
+.edMore {
+  padding: 0 16px 12px;
+}
+
+.edMore > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  margin-left: -8px;
+  border-radius: 4px;
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  list-style: none;
+  cursor: pointer;
+  transition:
+    color 0.12s,
+    background 0.12s;
+}
+
+.edMore > summary::-webkit-details-marker {
+  display: none;
+}
+
+.edMore > summary::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-1.5px) rotate(45deg);
+  transition: transform 0.12s;
+}
+
+.edMore[open] > summary::after {
+  transform: translateY(1.5px) rotate(-135deg);
+}
+
+.edMore > summary:hover {
+  color: var(--ink);
+  background: var(--sunk);
+}
+
+.edMore[open] > summary {
+  color: var(--ink);
+}
+
+.edMore > .edFoot {
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 4px;
+}
+
+.edFoot {
+  padding: 12px 16px 14px;
+  display: grid;
+  gap: 8px;
+  font-size: var(--t-1);
+  color: var(--muted);
+  line-height: 1.55;
+  max-width: 100ch;
+}
+
+.edFoot b {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.edFoot code {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--ink-soft);
+}
+
+/* ─── Clocks, Rejections, and Capacity Primitives (Test contracts) ─── */
+.clockGrid {
+  display: grid;
+  gap: var(--ward-space-4, 0.25rem);
+  margin: 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 0.5rem 0;
+}
+
+.clockRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: var(--t-1);
+}
+
+.clockRow dt {
+  color: var(--muted);
+}
+
+.clockRow dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.clockRow[data-state="over"] dd {
+  color: var(--warn);
+}
+
+.tierLabel {
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  padding: 0.15rem 0.5rem;
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 650;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.tierLabel[data-urgency="1"] {
+  border-color: var(--danger, var(--line-strong));
+  background: var(--danger-soft, var(--surface-2));
+  color: var(--danger, var(--ink));
+}
+
+.tierLabel[data-urgency="2"] {
+  border-color: var(--warn, var(--line-strong));
+  background: var(--warn-soft, var(--surface-2));
+  color: var(--warn, var(--ink));
+}
+
+.tierLabel[data-urgency="3"] {
+  border-color: var(--line);
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+.urgencyGlyph {
+  display: inline-block;
+  margin-right: 0.25rem;
+  font-size: 0.85em;
+  line-height: 1;
+}
+
+.rejection {
+  margin: 0.5rem 0;
+  border: 1px solid var(--danger);
+  border-radius: var(--r2);
+  background: var(--danger-soft);
+  padding: 0.5rem 0.75rem;
+  color: var(--danger);
+  font-size: var(--t-1);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.arrivalLate {
+  display: block;
+  margin: 0.4rem 0 0;
+  border: 1px solid var(--danger);
+  border-radius: var(--r2);
+  background: var(--danger-soft);
+  padding: 0.4rem 0.65rem;
+  color: var(--danger);
+  font-size: var(--t-0);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.beingMadeReady {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.capacityTableWrap {
+  position: relative;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.capacityTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-1);
+  text-align: left;
+}
+
+.capacityTable th,
+.capacityTable td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.capacityTable th {
+  font-family: var(--body);
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--surface-2);
+}
+
+.cardList {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Single-column Referred Panel (Still to be moved + Recent decisions) */
+.referredSubSection {
+  min-width: 0;
+}
+
+.referredSubSection + .referredSubSection {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+/* Streamlined Referrals Inbox within Department Lists (§Image 1 fix) */
+.inboxSection {
+  min-width: 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.inboxList {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.inboxItem {
+  display: grid;
+  gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  font-size: var(--t-1);
+  line-height: 1.35;
+}
+
+.inboxItemHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.inboxItemHeader strong {
+  font-family: var(--mono);
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.inboxPurpose {
+  font-size: var(--t-0, 12px);
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.inboxFacts {
+  font-size: var(--t-0, 12px);
+  color: var(--muted);
+  margin: 0;
+}
+
+.inboxClocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 2px 0 0;
+  padding: 0;
+  font-size: var(--t-0, 12px);
+  font-family: var(--mono);
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.inboxClockRow {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.inboxClockRow dt {
+  color: var(--muted);
+}
+
+.inboxClockRow dd {
+  margin: 0;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.inboxClearance {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  padding: 2px 6px;
+  border-radius: var(--r1);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: var(--t-0, 12px);
+  color: var(--ink-soft);
+  width: fit-content;
+}
+
+.inboxClearanceLabel {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.inboxActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.inboxBtn {
+  height: 22px;
+  min-height: 22px;
+  padding: 1px 8px;
+  font-size: var(--t-0, 12px);
+  font-weight: 500;
+  border-radius: var(--r2);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+  white-space: nowrap;
+  line-height: 1.2;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
+}
+
+.inboxBtn:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.inboxBtnPrimary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--surface);
+  font-weight: 600;
+}
+
+.inboxBtnPrimary:hover {
+  background: var(--accent-press);
+  border-color: var(--accent-press);
+  color: var(--surface);
+}
+
+.inboxSubheading {
+  margin: 8px 12px 2px;
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.inboxMeta {
+  margin: 0 12px 6px;
+  font-size: var(--t-0, 12px);
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.card {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  background: var(--surface);
+}
+
+.card:first-child {
+  border-top: 0;
+}
+
+.cardHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.cardHeader strong {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-2);
+}
+
+.cardMeta {
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.acceptButton,
+.declineButton {
+  display: inline-flex;
+  min-height: var(--spacing-tap);
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r2);
+  padding: 0 1rem;
+  font-size: var(--t-1);
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid var(--line-strong);
+}
+
+.acceptButton {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--surface);
+}
+
+.acceptButton[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.declineButton {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.declineButton[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.arrivedButton {
+  display: inline-flex;
+  min-height: var(--spacing-tap);
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r2);
+  padding: 0 0.85rem;
+  font-size: var(--t-1);
+  font-weight: 600;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.arrivedButton:hover {
+  background: var(--sunk);
+}
+
+.outstandingItem {
+  display: inline-flex;
+  align-items: center;
+  margin: 0.2rem 0;
+  border-radius: var(--r1);
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  padding: 0.15rem 0.45rem;
+  color: var(--warn);
+  font-size: var(--t-0);
+  line-height: 1.3;
+}
+
+.outstandingLabel {
+  margin-inline-end: 0.35rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: var(--t-0, 12px);
+}
+
+.referralState {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.placeholder {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  padding: 0.75rem 1rem;
+}
+
+.sectionHeading {
+  margin: 0;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--accent-ink);
+  background: var(--surface-2);
+  font-family: var(--display);
+  font-size: var(--t-3);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.listSection {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+
+.departmentWorkspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+  min-height: 0;
+}
+
+.departmentWorkspace > .panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: clamp(34rem, calc(100dvh - 12.5rem), 54rem);
+  overflow: hidden;
+}
+
+.departmentWorkspace > .panel > .ph,
+.departmentWorkspace > .panel > .tabbar {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 1024px) {
+  .departmentWorkspace {
+    grid-template-columns: 1fr;
+  }
+
+  .departmentWorkspace > .panel {
+    height: auto;
+    max-height: 34rem;
+  }
+}
+
+.workspaceColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.workspaceColumn > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.workspaceHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  border-radius: var(--r1i) var(--r1i) 0 0;
+}
+
+.workspaceHeader h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--t-3);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--accent-ink);
+}
+
+.workspaceHeader p {
+  margin: 0;
+  font-size: var(--t-1);
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.unitMeta {
+  margin: 0;
+  font-size: var(--t-1);
+  color: var(--muted);
+  line-height: 1.5;
+  padding: 0.5rem 1rem 0.25rem;
+}
+
+.departmentListTabs {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.departmentListTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.boardTable .outstandingItem {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  line-height: 1.4;
+}
+
+.boardTable .outstandingLabel {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.tableActionGroup {
+  position: relative;
+  display: inline-flex;
+}
+
+.tableActionGroup[data-unfolded="false"] button:not(.actionUnfoldToggle) {
+  display: none;
+}
+
+.tableActionGroup[data-unfolded="false"] .actionDropdownMenu {
+  display: none;
+}
+
+.tableActionGroup[data-unfolded="true"] {
+  position: relative;
+  display: inline-flex;
+}
+
+.actionDropdownMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 30;
+  min-width: 14rem;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  box-shadow: var(--lift);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.actionDropdownMenu button {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 8px 12px;
+  font-size: var(--t-0, 12px);
+  font-weight: 500;
+  border-radius: var(--r1);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.actionDropdownMenu button:hover:not([aria-disabled="true"]) {
+  background: var(--sunk);
+  border-color: var(--line-strong);
+}
+
+.actionDropdownMenu button[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: var(--muted);
+  border-color: transparent;
+  background: transparent;
+}
+
+.primaryActionButton {
+  font-weight: 600;
+}
+
+
+.actionUnfoldToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  height: auto;
+  min-width: 44px;
+  padding: 6px 12px;
+  font-size: var(--t-0, 12px);
+  font-weight: 600;
+  border-radius: var(--r2);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+  line-height: 1.2;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
+}
+
+.actionUnfoldToggle:hover {
+  background: var(--sunk);
+  border-color: var(--ink-soft);
+}
+
+.tableActionGroup[data-unfolded="true"] .actionUnfoldToggle {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.tableActionGroup .acceptButton,
+.tableActionGroup .declineButton,
+.tableActionGroup button {
+  min-height: 44px;
+  height: auto;
+  min-width: 44px;
+  padding: 6px 12px;
+  font-size: var(--t-0, 12px);
+  font-weight: 500;
+  border-radius: var(--r2);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+  white-space: nowrap;
+  line-height: 1.2;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
+}
+
+.tableActionGroup .acceptButton {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--surface);
+  font-weight: 600;
+}
+
+.tableActionGroup .acceptButton:hover {
+  background: var(--accent-press);
+  border-color: var(--accent-press);
+  color: var(--surface);
+}
+
+.tableActionGroup .declineButton:hover,
+.tableActionGroup button:hover {
+  background: var(--sunk);
+  border-color: var(--ink-soft);
+  color: var(--ink);
+}
+
+.tableActionGroup button[aria-disabled="true"],
+.tableActionGroup .acceptButton[aria-disabled="true"],
+.tableActionGroup .declineButton[aria-disabled="true"] {
+  opacity: 0.45;
+  background: transparent;
+  border-color: var(--line);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.tableActionGroup select {
+  height: 20px;
+  padding: 0 4px;
+  font-size: var(--t-0, 12px);
+  border-radius: var(--r2);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.policeFlag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: var(--r2);
+  border: 1px solid var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger-ink, var(--danger));
+  font-size: var(--t-0);
+  font-weight: 600;
+  margin-top: 4px;
+  width: fit-content;
+}
+
+.declineForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  margin-top: 8px;
+}
+
+/*
+ * Restored 2026-09-16 — dropped by commit 8035fdfa9f's third-edition rewrite while ed-screen.tsx
+ * still referenced them (styles.declineFieldset / declineLegend / declineOption / declineSubmit),
+ * which resolved to `undefined` and rendered these controls with no class at all. Token names are
+ * carried over from the pre-rewrite file (`git show 8035fdfa9f~1:…/ed.module.css`) mapped onto
+ * this file's own third-edition vocabulary: --ward-space-N -> the literal rem it resolved to,
+ * --text-xs -> var(--t-1) and sub-12px -> var(--t-0) (the established alias in sibling
+ * third-edition stylesheets, e.g. ward.module.css), --ward-border/--text/--text-heading/
+ * --text-muted -> --line/--ink/--muted (the tokens every other rule in this file actually reads —
+ * the legacy names still resolve via the `.screen` alias block above but would diverge from every
+ * neighbouring rule), --radius-md -> var(--r2), and --clinical-accent(-border/-contrast) ->
+ * var(--accent)/var(--surface) — NOT left as `var(--clinical-accent)`, which resolves globally to
+ * the unrelated v2 app accent colour when nothing in this file re-aliases it locally, unlike the
+ * sibling third-edition files that do. --ward-tap -> var(--spacing-tap), this repo's one tap-
+ * target knob (src/app/globals.css), matching the pattern already used by every other
+ * third-edition ward stylesheet (e.g. board.module.css).
+ */
+.declineFieldset {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.declineLegend {
+  padding: 0;
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 700;
+}
+
+.declineOption {
+  display: flex;
+  min-height: var(--spacing-tap);
+  align-items: center;
+  gap: 0.5rem;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: var(--t-1);
+}
+
+.declineSubmit {
+  display: inline-flex;
+  min-height: var(--spacing-tap);
+  align-items: center;
+  justify-content: center;
+  border: 0.0625rem solid var(--accent);
+  border-radius: var(--r2);
+  background: var(--accent);
+  padding: 0 0.875rem;
+  color: var(--surface);
+  font-size: var(--t-1);
+  font-weight: 700;
+}
+
+.declineSubmit:disabled {
+  cursor: not-allowed;
+  border-color: var(--line);
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+/*
+ * The aria form of the same disabled state, kept alongside `:disabled` rather than replacing it —
+ * a control unavailable for a STATED reason carries `aria-disabled` rather than the native
+ * attribute so the reason stays reachable by keyboard, and without this rule it would keep the
+ * full accent fill and read as available while refusing every press.
+ */
+.declineSubmit[aria-disabled="true"] {
+  cursor: not-allowed;
+  border-color: var(--line);
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+.referralField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.referralField select,
+.referralField input[type="text"] {
+  min-height: 44px;
+  height: 44px;
+  padding: 8px 12px;
+  border-radius: var(--r2);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  box-sizing: border-box;
+}
+
+.referralField select:focus-visible,
+.referralField input[type="text"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+/* Restored 2026-09-16 alongside the decline-form classes above — same drop, same commit, same
+ * token mapping. */
+.referralForm {
+  display: grid;
+  gap: 0.625rem;
+}
+
+.referralGrid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.referralCheckbox {
+  display: flex;
+  min-height: var(--spacing-tap);
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 400;
+}
+
+.capacityInput {
+  padding: 6px 10px;
+  border-radius: var(--r2);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--t-1);
+}
+
+.clockGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 6px 16px;
+  margin: 6px 0;
+  padding: 8px 12px;
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+.clockRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: var(--t-0);
+}
+
+.clockRow dt {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.clockRow dd {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.clockRow[data-level="breach"] {
+  color: var(--danger);
+}
+
+.clockRow[data-level="breach"] dd {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.clockRow[data-level="warning"] {
+  color: var(--warn);
+}
+
+.clockRow[data-level="warning"] dd {
+  color: var(--warn);
+  font-weight: 700;
+}
+
+.boardChips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.referralBarSection {
+  margin-bottom: 1rem;
+}
+
+.referralBarSection .ph {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  gap: 16px;
+}
+
+.referralBarSection .ph h2 {
+  margin: 0;
+  font-size: var(--t-2);
+  font-weight: 400;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.referralBarSection .ph h2 b {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.referralBarSection .ph h2 .note {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  font-weight: 400;
+}
+
+.referralBarSection .acceptButton {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+  font-size: var(--t-1);
+  padding: 6px 14px;
+  border-radius: var(--r2);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.referralBarSection .acceptButton:hover {
+  background: var(--accent-press);
+  border-color: var(--accent-press);
+}
+
+.capacitySection .ph {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  gap: 12px;
+}
+
+.capacitySection .ph h2 {
+  margin: 0;
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.capacitySection .ph .note {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  flex: 1 1 auto;
+}
+
+.capacitySection .ph .count {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.capacityTableWrap {
+  position: relative;
+  overflow-x: auto;
+  padding: 0;
+}
+
+.capacityTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-1);
+}
+
+.capacityTable th,
+.capacityTable td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.capacityTable thead th {
+  background: var(--surface-2);
+  font-family: var(--body);
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line-strong);
+  white-space: nowrap;
+}
+
+.capacityTable thead th.n,
+.capacityTable td.n {
+  text-align: right;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.capacityTable tbody tr {
+  transition: background 0.12s ease;
+}
+
+.capacityTable tbody tr:hover {
+  background: var(--sunk);
+}
+
+.capacityTable tbody tr:last-child th,
+.capacityTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.capacityTable tbody th {
+  font-family: var(--body);
+  font-weight: 700;
+  font-size: var(--t-0);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.capacityTable tbody td {
+  color: var(--ink);
+  font-size: var(--t-1);
+}
+
+.capacityTable .beingMadeReady {
+  display: block;
+  font-family: var(--body);
+  font-size: var(--t-0);
+  color: var(--warn);
+  font-weight: 600;
+  margin-top: 2px;
+  line-height: 1.2;
+}
+
+.capacityHeaderTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.capacityKpiGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.capacityKpiReady {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--good-soft);
+  border: 1px solid var(--good);
+  color: var(--good-ink, var(--good));
+  border-radius: var(--r2);
+  font-size: var(--t-0);
+  font-weight: 500;
+}
+
+.statusDotLive {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--good);
+}
+
+.capacityKpiPending {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  color: var(--warn-ink, var(--warn));
+  border-radius: var(--r2);
+  font-size: var(--t-0);
+  font-weight: 500;
+}
+
+.capacityFilterBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  width: 100%;
+}
+
+.capacityFilterBtn {
+  padding: 5px 12px;
+  font-size: var(--t-0);
+  font-weight: 500;
+  border-radius: var(--r2);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.capacityFilterBtn:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.capacityFilterBtn.activeFilter,
+.activeFilter {
+  background: var(--accent);
+  color: var(--surface);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.capacityRow {
+  transition: background 0.12s ease;
+}
+
+.capacityRow:hover {
+  background: var(--sunk);
+}
+
+.unitNameCol {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.unitNameText {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.serviceTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: var(--r2);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-family: var(--mono);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+}
+
+.serviceTag[data-service="nmhs"] {
+  background: var(--svc-north-soft, var(--surface-2));
+  border-color: var(--svc-north);
+  color: var(--svc-north);
+}
+
+.serviceTag[data-service="smhs"] {
+  background: var(--svc-south-soft, var(--surface-2));
+  border-color: var(--svc-south);
+  color: var(--svc-south);
+}
+
+.serviceTag[data-service="emhs"] {
+  background: var(--svc-east-soft, var(--surface-2));
+  border-color: var(--svc-east);
+  color: var(--svc-east);
+}
+
+.serviceTag[data-service="wachs"] {
+  background: var(--svc-wachs-soft, var(--surface-2));
+  border-color: var(--svc-wachs);
+  color: var(--svc-wachs);
+}
+
+.cohortTag {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: var(--r2);
+  font-size: var(--t-0);
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.securityTag {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: var(--r2);
+  font-size: var(--t-0);
+  color: var(--ink-soft);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+.readyPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  padding: 3px 8px;
+  border-radius: var(--r2);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: var(--t-0);
+  background: var(--good-soft);
+  color: var(--good-ink, var(--good));
+  border: 1px solid var(--good);
+}
+
+.zeroPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  padding: 3px 8px;
+  border-radius: var(--r2);
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: var(--t-0);
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.bedCapacityCell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.bedTotalNum {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: var(--t-0);
+  color: var(--ink);
+}
+
+.capacityMeter {
+  width: 64px;
+  height: 4px;
+  background: var(--sunk);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.capacityMeterFill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.edMore {
+  margin-top: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.edMore summary {
+  padding: 10px 16px;
+  font-family: var(--display);
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  background: var(--surface-2);
+  user-select: none;
+}
+
+.edMore summary:hover {
+  color: var(--ink);
+}
+
+.edFoot {
+  padding: 12px 16px;
+  font-size: var(--t-1);
+  color: var(--muted);
+  line-height: 1.55;
+  display: grid;
+  gap: 8px;
+}
+
+.edFoot p {
+  margin: 0;
+}
+
+.edFoot code {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  background: var(--surface-2);
+  padding: 1px 4px;
+  border-radius: 2px;
+  border: 1px solid var(--line);
+}
+
+.subFormRow {
+  background: var(--surface-2);
+}
+
+.subFormRow td {
+  padding: 12px 16px;
+  border-bottom: 2px solid var(--line-strong);
+  max-width: 0;
+  width: 100%;
+  vertical-align: top;
+}
+
+.bayCell {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  white-space: nowrap;
+}
+
+.declineForm[role="dialog"] {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  box-shadow: var(--lift);
+  padding: 14px 18px;
+  max-width: 44rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.declineForm[role="dialog"] .declineLegend {
+  font-size: var(--t-2);
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 0.5rem;
+}
+
+/* ─── The Patient Detail Drawer (.pxDrawer) ─── */
+.pxDrawer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.pxDrawer[hidden] {
+  display: none;
+}
+
+.pxDrawer::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 39;
+  pointer-events: auto;
+}
+
+.pxDrawer .menuPanel {
+  position: relative;
+  z-index: 40;
+  pointer-events: auto;
+  width: min(540px, 100vw);
+  height: 100vh;
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  box-shadow: var(--lift);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-content: stretch;
+  overflow: hidden;
+}
+
+.pxDrawer .pxBody {
+  overflow-y: auto;
+  align-content: start;
+  padding: 0;
+}
+
+/* Patient-drawer body layout, per
+   docs/ward-flow/mockups/emergency-department-third-edition.html ~3193-3197
+   (`.popBody { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; }`).
+   .pxBody above already sets align-content: start, which is otherwise a no-op without a flex/grid
+   display — this activates it, and the single minmax(0, 1fr) column clamps a wide child so it
+   cannot force the drawer wider. Scoped to .pxDrawer, matching .pxBody's own scoping, so it cannot
+   restyle a popBody used anywhere else. The drawing's sibling-section separator
+   (`.popBody > section + section { border-top }`) is deliberately not added: .pxBlock (below)
+   already gives every section but the first an identical border-top via `:first-child { border-
+   top: 0 }`, so restating it here would be a no-op duplicate, not a new visual property. */
+.pxDrawer .popBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.popHead {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.popHead h2 {
+  font-size: var(--t-3);
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.popHead .count {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.closeBtn {
+  font-family: var(--body);
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 4px 10px;
+  cursor: pointer;
+  transition:
+    color 0.12s,
+    border-color 0.12s,
+    background 0.12s;
+}
+
+.closeBtn:hover {
+  color: var(--ink);
+  background: var(--sunk);
+  border-color: var(--line-strong);
+}
+
+.popHead .closeBtn {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: center;
+}
+
+.popHead .meta {
+  grid-column: 1;
+  margin: 0;
+  color: var(--muted);
+}
+
+.popFoot {
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.pxBlock {
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--line);
+}
+
+.pxBlock:first-child {
+  border-top: 0;
+}
+
+.pxBlock h3 {
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.pairs {
+  display: grid;
+  margin: 0;
+  padding: 0;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: 9.5rem minmax(0, 1fr);
+  gap: 10px;
+  padding: 5px 0;
+  border-top: 1px solid var(--line);
+  font-size: var(--t-1);
+}
+
+.pairs > .pair:first-child {
+  border-top: 0;
+}
+
+.pair dt {
+  color: var(--muted);
+}
+
+.pair dd {
+  margin: 0;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.pair dd b {
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.pxP {
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+  line-height: 1.5;
+  margin: 0 0 6px 0;
+  text-wrap: pretty;
+}
+
+.pxP b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ─── Responsive & Accessibility ─── */
+@media (max-width: 640px) {
+  .edName {
+    font-size: var(--t-5);
+  }
+}
+
+@media (forced-colors: active) {
+  .boardChip,
+  .formPill,
+  .formMenu,
+  .panel,
+  .ctl {
+    border: 1px solid CanvasText;
+  }
+  .boardChip[aria-pressed="true"],
+  .formMenu li[aria-selected="true"] button {
+    background: Highlight;
+    color: HighlightText;
+  }
+  tr.qRow[data-selected="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+  .tableActionGroup {
+    gap: 12px;
+  }
+
+  .actionUnfoldToggle,
+  .tableActionGroup button,
+  .tableActionGroup a,
+  .ctl,
+  .boardChip,
+  .formPill,
+  .formMenu button,
+  .sortBtn,
+  .idBtn,
+  .nameBtn,
+  .rowChevronBtn,
+  .tabBtn,
+  .raiseBtn,
+  .clearBtn {
+    min-height: 44px;
+    min-width: 44px;
+    height: auto;
+    box-sizing: border-box;
+  }
+}
+
+/* ─── Dark Theme Crisp Borders & Contrast Elevation ─── */
+@media (prefers-color-scheme: dark) {
+  .card,
+  .edCard,
+  .inboxItem,
+  .panel,
+  .tierLabel,
+  .boardTable,
+  .boardTable th,
+  .boardTable td,
+  .declineForm,
+  .subFormRow,
+  .subFormRow td,
+  .modalBackdrop {
+    border-color: var(--line-strong);
+  }
+
+  .card,
+  .edCard,
+  .inboxItem {
+    background: var(--surface-2);
+  }
+}
+
+:global([data-theme="dark"]) .card,
+:global([data-theme="dark"]) .table,
+:global([data-theme="dark"]) .panel,
+:global([data-theme="dark"]) .edCard,
+:global([data-theme="dark"]) .inboxItem,
+:global([data-theme="dark"]) .tierLabel,
+:global([data-theme="dark"]) .boardTable,
+:global([data-theme="dark"]) .boardTable th,
+:global([data-theme="dark"]) .boardTable td,
+:global([data-theme="dark"]) .declineForm,
+:global([data-theme="dark"]) .subFormRow,
+:global([data-theme="dark"]) .subFormRow td,
+:global([data-theme="dark"]) .modalBackdrop {
+  border-color: var(--line-strong);
+}
+
+:global([data-theme="dark"]) .card,
+:global([data-theme="dark"]) .edCard,
+:global([data-theme="dark"]) .inboxItem {
+  background: var(--surface-2);
+}
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--scrim);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  padding: 1rem;
+}
+
+.tabNum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.transitBadge,
+.transitBadgeOverdue,
+.transitBadgeHold {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ward-space-4, 0.25rem);
+  padding: var(--ward-space-2, 0.125rem) var(--ward-space-6, 0.375rem);
+  border-radius: var(--radius-pill, 9999px);
+  font-size: max(0.75rem, 12px);
+  font-weight: 600;
+  line-height: var(--ward-leading-compact, 1.25);
+  white-space: nowrap;
+  width: fit-content;
+  margin-top: 0.25rem;
+}
+
+.transitBadge {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+}
+
+.transitBadgeOverdue {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  font-weight: 700;
+}
+
+.transitBadgeHold {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+/* ─── Print Protection (Black ink on white background) ─── */
+@media print {
+  .screen,
+  .screen * {
+    color-scheme: light;
+    color: CanvasText !important;
+    background-color: Canvas !important;
+  }
+  .boardTable th,
+  .boardTable td,
+  .panel,
+  .card {
+    border-color: var(--line-strong) !important;
+    box-shadow: none !important;
+  }
+}

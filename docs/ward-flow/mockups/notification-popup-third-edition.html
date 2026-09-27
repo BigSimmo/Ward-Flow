@@ -1,0 +1,1637 @@
+<!doctype html>
+<html lang="en-AU" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow · Notification &amp; Buzzer Center Popup Mockup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap"
+    />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem("ward-flow-theme");
+          if (saved === "light" || saved === "dark") {
+            document.documentElement.setAttribute("data-theme", saved);
+          } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            document.documentElement.setAttribute("data-theme", "dark");
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <style>
+      /* ═══════════════════════════════════════════════════════════════════════
+         WARD FLOW DESIGN SYSTEM — THIRD EDITION TOKENS
+         Platinum Raised Cool (Light) & Sovereign Dark (Dark)
+         WCAG 2.1 AA Compliant (Contrast >= 4.5:1, Zero Fonts < 12px, Tabular Figures)
+         ═══════════════════════════════════════════════════════════════════════ */
+      :root {
+        color-scheme: light;
+        --display: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --body: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --mono: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+
+        --t-0: 12px;
+        --t-1: 13px;
+        --t-2: 13.5px;
+        --t-3: 14.5px;
+        --t-4: 16px;
+        --t-5: 20px;
+        --t-6: 24px;
+
+        --r1: 12px;
+        --r2: 8px;
+        --r3: 6px;
+        --pill: 9999px;
+
+        /* Light Palette (Platinum Raised Cool) */
+        --ground-hi: #ecf0f4;
+        --ground: #e6eaef;
+        --ground-2: #e1e6ec;
+        --surface: #fdfdfe;
+        --surface-2: #f4f7fa;
+        --surface-3: #eef2f6;
+        --sunk: #e9edf2;
+
+        --ink: #161a20;
+        --ink-soft: #3d4754;
+        --muted: #596473;
+
+        --line: rgba(22, 30, 40, 0.1);
+        --line-strong: rgba(22, 30, 40, 0.22);
+
+        --accent: #2f4c66;
+        --accent-ink: #1e354a;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+
+        --gilt: #7d612a;
+        --gilt-soft: #f1ebdf;
+
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --good-ink: #165639;
+
+        --warn: #825d10;
+        --warn-soft: #fbf5e6;
+        --warn-border: #d4a34b;
+        --warn-ink: #684906;
+
+        --danger: #b03b2e;
+        --danger-soft: #fcf0ee;
+        --danger-border: #e28a7f;
+        --danger-ink: #8f291e;
+
+        --popup-shadow: 0 20px 48px -10px rgba(15, 23, 42, 0.22), 0 2px 8px rgba(15, 23, 42, 0.08);
+        --card-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+        --scrim: rgba(15, 23, 42, 0.4);
+      }
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --ground-hi: #14181d;
+        --ground: #0f1216;
+        --ground-2: #0a0d10;
+
+        --surface: #171b21;
+        --surface-2: #1b2026;
+        --surface-3: #222932;
+        --sunk: #12161b;
+
+        --ink: #e8ecf1;
+        --ink-soft: #b8c1cc;
+        --muted: #8a929d;
+
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.2);
+
+        --accent: #a7bcd2;
+        --accent-ink: #c8d8e8;
+        --accent-soft: #1f2a36;
+        --on-accent: #0f1216;
+        --stripe: #3a5a78;
+
+        --gilt: #d3b77e;
+        --gilt-soft: #2a251b;
+
+        --good: #6fd39b;
+        --good-soft: #152b20;
+        --good-ink: #8ae3b1;
+
+        --warn: #e3bc5e;
+        --warn-soft: #2a2315;
+        --warn-border: #7a5f22;
+        --warn-ink: #f0cf7e;
+
+        --danger: #ff8b76;
+        --danger-soft: #321a16;
+        --danger-border: #7a3227;
+        --danger-ink: #ffb4a6;
+
+        --popup-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.8), 0 2px 10px rgba(0, 0, 0, 0.5);
+        --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+        --scrim: rgba(0, 0, 0, 0.65);
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         RESET & BASE
+         ═══════════════════════════════════════════════════════════════════════ */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: var(--body);
+        font-size: var(--t-2);
+        line-height: 1.45;
+        color: var(--ink);
+        background: var(--ground);
+        min-height: 100vh;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 999;
+        pointer-events: none;
+      }
+
+      button {
+        font-family: inherit;
+        font-size: inherit;
+        border: none;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      .mono {
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         DEMO TOOLBAR (TOP SWITCHER)
+         ═══════════════════════════════════════════════════════════════════════ */
+      .demo-toolbar {
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: var(--t-1);
+        position: sticky;
+        top: 0;
+        z-index: 200;
+      }
+
+      .demo-title-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .demo-badge {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        padding: 2px 8px;
+        border-radius: var(--pill);
+        font-weight: 700;
+        font-size: var(--t-0);
+        font-family: var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .demo-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .segmented-control {
+        display: inline-flex;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r3);
+        padding: 2px;
+        gap: 2px;
+      }
+
+      .segmented-btn {
+        padding: 4px 10px;
+        font-size: var(--t-0);
+        font-weight: 500;
+        color: var(--muted);
+        border-radius: 4px;
+        transition: all 0.15s ease;
+      }
+
+      .segmented-btn:hover {
+        color: var(--ink);
+      }
+
+      .segmented-btn.active {
+        background: var(--surface);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+      }
+
+      .btn-pill-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: var(--r3);
+        background: var(--surface-2);
+        border: 1px solid var(--line-strong);
+        color: var(--ink);
+        font-size: var(--t-0);
+        font-weight: 600;
+        transition: all 0.15s ease;
+      }
+
+      .btn-pill-action:hover {
+        background: var(--sunk);
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         APPLICATION CONSOLE (BACKGROUND CONTEXT)
+         ═══════════════════════════════════════════════════════════════════════ */
+      .app-layout {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        min-height: calc(100vh - 45px);
+      }
+
+      .app-rail {
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        padding: 16px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .brand-box {
+        padding: 4px 8px 12px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+      }
+
+      .brand-box b {
+        font-size: var(--t-4);
+        font-weight: 700;
+        color: var(--accent);
+      }
+
+      .brand-box span {
+        font-size: var(--t-0);
+        font-weight: 700;
+        color: var(--gilt);
+        letter-spacing: 0.08em;
+      }
+
+      .rail-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .rail-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 7px 10px;
+        border-radius: var(--r3);
+        color: var(--ink-soft);
+        font-size: var(--t-1);
+        font-weight: 500;
+      }
+
+      .rail-link.active {
+        background: var(--surface-2);
+        color: var(--ink);
+        font-weight: 600;
+        border-left: 3px solid var(--gilt);
+      }
+
+      .app-main {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .app-header {
+        height: 52px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        padding: 0 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        z-index: 10;
+      }
+
+      .app-header-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .ward-selector {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--ink);
+      }
+
+      .ward-tag {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        padding: 2px 8px;
+        border-radius: var(--r3);
+        font-size: var(--t-0);
+        font-family: var(--mono);
+        font-weight: 700;
+      }
+
+      .shift-status {
+        font-size: var(--t-1);
+        color: var(--muted);
+      }
+
+      .app-header-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      /* Notification Bell Trigger Button */
+      .bell-trigger-wrap {
+        position: relative;
+      }
+
+      .btn-bell-trigger {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: var(--r2);
+        background: var(--surface-2);
+        border: 1px solid var(--line-strong);
+        color: var(--ink);
+        font-size: var(--t-1);
+        font-weight: 600;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        transition: all 0.15s ease;
+      }
+
+      .btn-bell-trigger:hover,
+      .btn-bell-trigger.active {
+        background: var(--sunk);
+        border-color: var(--accent);
+      }
+
+      .bell-icon {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+      }
+
+      .bell-badge-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--danger);
+        color: #ffffff;
+        padding: 1px 7px;
+        border-radius: var(--pill);
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        box-shadow: 0 1px 2px rgba(176, 59, 46, 0.35);
+      }
+
+      .bell-badge-pill.cleared {
+        background: var(--good);
+        box-shadow: 0 1px 2px rgba(34, 117, 80, 0.35);
+      }
+
+      /* Background Simulated Bed Board Content */
+      .board-canvas {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        opacity: 0.9;
+      }
+
+      .board-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .board-title h1 {
+        font-size: var(--t-5);
+        font-weight: 700;
+        letter-spacing: -0.015em;
+      }
+
+      .bed-grid-preview {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+      }
+
+      .sim-bed-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        box-shadow: var(--card-shadow);
+      }
+
+      .sim-bed-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .sim-bed-num {
+        font-family: var(--mono);
+        font-weight: 700;
+        font-size: var(--t-2);
+      }
+
+      .sim-bed-status {
+        font-size: var(--t-0);
+        padding: 2px 6px;
+        border-radius: var(--r3);
+        background: var(--surface-2);
+        color: var(--muted);
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         BACKDROP SCRIM (MODAL & DRAWER MODES)
+         ═══════════════════════════════════════════════════════════════════════ */
+      .modal-scrim {
+        position: fixed;
+        inset: 0;
+        background: var(--scrim);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        z-index: 100;
+        opacity: 1;
+        transition: opacity 0.2s ease;
+      }
+
+      .modal-scrim.hidden {
+        display: none;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         THE REDESIGNED NOTIFICATION POPUP (POPUP / MODAL / DRAWER MODES)
+         ═══════════════════════════════════════════════════════════════════════ */
+      .notification-popup {
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--popup-shadow);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        z-index: 150;
+        transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      /* Mode 1: Anchored Header Popover (Default) */
+      .notification-popup.mode-popover {
+        position: absolute;
+        top: 60px;
+        right: 24px;
+        width: 460px;
+        max-width: calc(100vw - 48px);
+        max-height: calc(100vh - 80px);
+      }
+
+      /* Arrow indicator on popover */
+      .notification-popup.mode-popover::before {
+        content: "";
+        position: absolute;
+        top: -6px;
+        right: 48px;
+        width: 12px;
+        height: 12px;
+        background: var(--surface-2);
+        border-left: 1px solid var(--line-strong);
+        border-top: 1px solid var(--line-strong);
+        transform: rotate(45deg);
+        z-index: 2;
+      }
+
+      /* Mode 2: Centered Focal Modal */
+      .notification-popup.mode-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 520px;
+        max-width: calc(100vw - 32px);
+        max-height: 85vh;
+      }
+
+      /* Mode 3: Right Slide Drawer */
+      .notification-popup.mode-drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 440px;
+        max-width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+        border-left: 1px solid var(--line-strong);
+        border-top: none;
+        border-right: none;
+        border-bottom: none;
+      }
+
+      /* Popup Top Bar */
+      .popup-head {
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        padding: 14px 18px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        position: relative;
+        z-index: 3;
+      }
+
+      .popup-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .popup-title-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .bell-icon-badge {
+        width: 28px;
+        height: 28px;
+        border-radius: var(--r3);
+        background: var(--accent-soft);
+        color: var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .bell-icon-badge svg {
+        width: 15px;
+        height: 15px;
+        fill: currentColor;
+      }
+
+      .popup-heading {
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--ink);
+        letter-spacing: -0.01em;
+      }
+
+      .unit-pill {
+        font-size: var(--t-0);
+        font-family: var(--mono);
+        font-weight: 700;
+        color: var(--muted);
+        background: var(--sunk);
+        padding: 1px 6px;
+        border-radius: var(--r3);
+      }
+
+      .popup-title-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .status-pill-alert {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 2px 8px;
+        border-radius: var(--pill);
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border: 1px solid var(--danger-border);
+        font-size: var(--t-0);
+        font-family: var(--mono);
+        font-weight: 700;
+      }
+
+      .status-pill-alert.cleared {
+        background: var(--good-soft);
+        color: var(--good-ink);
+        border-color: rgba(34, 117, 80, 0.25);
+      }
+
+      .pulse-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--danger);
+        animation: pulse 1.6s infinite;
+      }
+
+      .status-pill-alert.cleared .pulse-dot {
+        background: var(--good);
+        animation: none;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(0.95);
+          opacity: 0.8;
+        }
+        50% {
+          transform: scale(1.2);
+          opacity: 1;
+        }
+        100% {
+          transform: scale(0.95);
+          opacity: 0.8;
+        }
+      }
+
+      .btn-close-popup {
+        width: 26px;
+        height: 26px;
+        border-radius: var(--r3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted);
+        transition: all 0.15s ease;
+      }
+
+      .btn-close-popup:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+
+      /* Segmented Filter Tab Strip */
+      .popup-filter-tabs {
+        display: flex;
+        align-items: center;
+        background: var(--surface-3);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 2px;
+        gap: 2px;
+      }
+
+      .filter-tab-btn {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 6px 8px;
+        border-radius: var(--r3);
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--muted);
+        transition: all 0.15s ease;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      .filter-tab-btn:hover {
+        color: var(--ink);
+      }
+
+      .filter-tab-btn.active {
+        background: var(--surface);
+        color: var(--ink);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+
+      .tab-count-bubble {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 4px;
+        border-radius: var(--pill);
+        background: var(--sunk);
+        color: var(--ink-soft);
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .filter-tab-btn.active .tab-count-bubble {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+      }
+
+      .tab-count-bubble.urgent-tone {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+      }
+
+      /* Notification Scrollable Body */
+      .popup-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background: var(--surface);
+      }
+
+      /* Section Separator */
+      .section-label {
+        font-size: var(--t-0);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin: 4px 0 2px 4px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         CARD 1: CRITICAL ACTION CARD (09:30 CENSUS OVERDUE)
+         ═══════════════════════════════════════════════════════════════════════ */
+      .notice-card {
+        border-radius: var(--r2);
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        box-shadow: var(--card-shadow);
+        transition: all 0.2s ease;
+      }
+
+      .notice-card.urgent-card {
+        background: var(--danger-soft);
+        border: 1px solid var(--danger-border);
+      }
+
+      .notice-card.warn-card {
+        background: var(--warn-soft);
+        border: 1px solid var(--warn-border);
+      }
+
+      .notice-card.buzz-card {
+        background: var(--surface-2);
+        border: 1px solid var(--accent-soft);
+        border-left: 3px solid var(--accent);
+      }
+
+      .notice-card.info-card {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+      }
+
+      .card-header-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .card-badge-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .card-tag {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 2px 7px;
+        border-radius: var(--pill);
+      }
+
+      .card-tag.danger {
+        background: var(--danger);
+        color: #ffffff;
+      }
+
+      .card-tag.warn {
+        background: var(--warn);
+        color: #ffffff;
+      }
+
+      .card-tag.buzz {
+        background: var(--accent);
+        color: var(--on-accent);
+      }
+
+      .card-tag.info {
+        background: var(--sunk);
+        color: var(--ink-soft);
+      }
+
+      .card-time-mono {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .card-title {
+        font-size: var(--t-2);
+        font-weight: 700;
+        color: var(--ink);
+        line-height: 1.35;
+      }
+
+      .card-desc {
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        line-height: 1.45;
+      }
+
+      .card-actions-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 2px;
+      }
+
+      .btn-action-primary-danger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: var(--r3);
+        background: var(--danger);
+        color: #ffffff;
+        font-size: var(--t-1);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        box-shadow: 0 1px 3px rgba(176, 59, 46, 0.35);
+        transition: all 0.15s ease;
+      }
+
+      .btn-action-primary-danger:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+      }
+
+      .btn-action-secondary {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: var(--r3);
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        color: var(--ink);
+        font-size: var(--t-0);
+        font-weight: 600;
+        transition: all 0.15s ease;
+      }
+
+      .btn-action-secondary:hover {
+        background: var(--sunk);
+      }
+
+      .card-state-confirmed {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--good);
+        font-size: var(--t-1);
+        font-weight: 600;
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         EMPTY STATES (REPLACING CRUDE DASHED BOXES)
+         ═══════════════════════════════════════════════════════════════════════ */
+      .empty-state-card {
+        padding: 24px 18px;
+        border-radius: var(--r2);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 8px;
+      }
+
+      .empty-icon-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--sunk);
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .empty-title {
+        font-size: var(--t-2);
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      .empty-subtitle {
+        font-size: var(--t-0);
+        color: var(--muted);
+        max-width: 280px;
+        line-height: 1.4;
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         POPUP FOOTER TOOLBAR
+         ═══════════════════════════════════════════════════════════════════════ */
+      .popup-footer {
+        background: var(--surface-2);
+        border-top: 1px solid var(--line);
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: var(--t-0);
+      }
+
+      .audio-indicator {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--muted);
+        font-weight: 500;
+      }
+
+      .audio-indicator.on {
+        color: var(--ink-soft);
+      }
+
+      .footer-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .btn-footer-link {
+        color: var(--accent);
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .btn-footer-link:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Top Interactive Demo Controls -->
+    <header class="demo-toolbar" role="region" aria-label="Mockup Demonstration Controls">
+      <div class="demo-title-group">
+        <span class="demo-badge">Design Mockup</span>
+        <strong>Ward Flow · Notification &amp; Buzzer Center Redesign</strong>
+      </div>
+      <div class="demo-controls">
+        <span style="font-size: var(--t-0); color: var(--muted)">Popup Presentation:</span>
+        <div class="segmented-control" role="group" aria-label="Popup Mode">
+          <button type="button" class="segmented-btn active" id="btn-mode-popover" onclick="setPopupMode('popover')">
+            Bell Dropdown
+          </button>
+          <button type="button" class="segmented-btn" id="btn-mode-modal" onclick="setPopupMode('modal')">
+            Centered Modal
+          </button>
+          <button type="button" class="segmented-btn" id="btn-mode-drawer" onclick="setPopupMode('drawer')">
+            Right Drawer
+          </button>
+        </div>
+
+        <button type="button" class="btn-pill-action" onclick="toggleSimulatedBuzz()">
+          <span id="buzz-sim-label">+ Simulate Coordinator Buzz</span>
+        </button>
+
+        <button type="button" class="btn-pill-action" onclick="toggleSimulatedNotice()">
+          <span id="notice-sim-label">+ Simulate Ward Notice</span>
+        </button>
+
+        <button type="button" class="btn-pill-action" onclick="toggleTheme()" aria-label="Toggle light or dark theme">
+          <span id="theme-toggle-label">Theme: Light</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Application Shell Canvas (Background) -->
+    <div class="app-layout">
+      <!-- Sovereign 13-Screen Navigation Rail -->
+      <aside class="app-rail">
+        <div class="brand-box">
+          <b>Ward Flow</b>
+          <span>CLINICAL</span>
+        </div>
+        <nav class="rail-nav">
+          <div class="rail-link">Command Center</div>
+          <div class="rail-link active">Ward 2K · Acute Med</div>
+          <div class="rail-link">Bed Allocation Board</div>
+          <div class="rail-link">Patient Transfers</div>
+          <div class="rail-link">Delay Barriers</div>
+          <div class="rail-link">Discharge Planning</div>
+          <div class="rail-link">Emergency Inbound</div>
+        </nav>
+      </aside>
+
+      <!-- Main Application Stage -->
+      <div class="app-main">
+        <div class="app-header">
+          <div class="app-header-left">
+            <div class="ward-selector">
+              <span>Ward 2K — Acute Medical</span>
+              <span class="ward-tag">28 BEDS</span>
+            </div>
+            <span class="shift-status">Morning Shift · 10:18 AM</span>
+          </div>
+
+          <div class="app-header-right">
+            <!-- Notification Bell Anchor Button -->
+            <div class="bell-trigger-wrap">
+              <button
+                type="button"
+                id="bell-trigger"
+                class="btn-bell-trigger active"
+                onclick="togglePopupVisibility()"
+                aria-expanded="true"
+                aria-haspopup="dialog"
+                aria-label="Notification &amp; Buzzer Center, 2 alerts pending"
+              >
+                <svg class="bell-icon" viewBox="0 0 24 24">
+                  <path
+                    d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"
+                  />
+                </svg>
+                <span>Alerts</span>
+                <span class="bell-badge-pill" id="header-bell-badge">2</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulated Background Bed Board -->
+        <main class="board-canvas">
+          <div class="board-header-row">
+            <div class="board-title">
+              <h1>Ward 2K Bed Board</h1>
+              <p style="color: var(--muted); font-size: var(--t-1)">
+                Live census view. 24 of 28 beds occupied · 4 allocatable · 2 incoming arrivals pending
+              </p>
+            </div>
+          </div>
+
+          <div class="bed-grid-preview">
+            <div class="sim-bed-card">
+              <div class="sim-bed-head">
+                <span class="sim-bed-num">Bed 01</span>
+                <span class="sim-bed-status">Occupied</span>
+              </div>
+              <p style="font-weight: 600">Margaret Higgins</p>
+              <p style="font-size: var(--t-0); color: var(--muted)">Discharge scheduled 14:00</p>
+            </div>
+
+            <div class="sim-bed-card">
+              <div class="sim-bed-head">
+                <span class="sim-bed-num">Bed 02</span>
+                <span class="sim-bed-status">Occupied</span>
+              </div>
+              <p style="font-weight: 600">David Kelly</p>
+              <p style="font-size: var(--t-0); color: var(--muted)">Pending allied health clearance</p>
+            </div>
+
+            <div class="sim-bed-card">
+              <div class="sim-bed-head">
+                <span class="sim-bed-num">Bed 03</span>
+                <span class="sim-bed-status" style="color: var(--good); background: var(--good-soft)">Allocatable</span>
+              </div>
+              <p style="font-weight: 600; color: var(--muted)">Empty &amp; Cleaned</p>
+              <p style="font-size: var(--t-0); color: var(--muted)">Ready for admission</p>
+            </div>
+
+            <div class="sim-bed-card">
+              <div class="sim-bed-head">
+                <span class="sim-bed-num">Bed 04</span>
+                <span class="sim-bed-status" style="color: var(--warn); background: var(--warn-soft)">Reserved</span>
+              </div>
+              <p style="font-weight: 600; color: var(--warn-ink)">Held for Inbound ED Patient</p>
+              <p style="font-size: var(--t-0); color: var(--warn)">Overdue arrival (>60m)</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Backdrop Scrim for Modal and Drawer Modes -->
+    <div id="popup-scrim" class="modal-scrim hidden" onclick="togglePopupVisibility()"></div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         REDESIGNED NOTIFICATION POPUP COMPONENT
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <section
+      id="notification-popup"
+      class="notification-popup mode-popover"
+      role="dialog"
+      aria-label="Notification &amp; Buzzer Center for Ward 2K"
+      aria-modal="true"
+    >
+      <!-- a) Header with Context & Alert Badge -->
+      <header class="popup-head">
+        <div class="popup-title-row">
+          <div class="popup-title-left">
+            <div class="bell-icon-badge" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"
+                />
+              </svg>
+            </div>
+            <div>
+              <h2 class="popup-heading">Notification &amp; Buzzer Center</h2>
+              <span class="unit-pill">WARD 2K</span>
+            </div>
+          </div>
+
+          <div class="popup-title-right">
+            <span class="status-pill-alert" id="popup-status-pill">
+              <span class="pulse-dot"></span>
+              <span id="popup-badge-text">2 Alerts</span>
+            </span>
+            <button
+              type="button"
+              class="btn-close-popup"
+              onclick="togglePopupVisibility()"
+              aria-label="Close notification popup"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <!-- b) Segmented Category Tab Filter -->
+        <div class="popup-filter-tabs" role="tablist" aria-label="Notification filters">
+          <button
+            type="button"
+            role="tab"
+            id="tab-all"
+            aria-selected="true"
+            class="filter-tab-btn active"
+            onclick="switchTab('all')"
+          >
+            <span>All</span>
+            <span class="tab-count-bubble" id="count-all">2</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="tab-urgent"
+            aria-selected="false"
+            class="filter-tab-btn"
+            onclick="switchTab('urgent')"
+          >
+            <span>Urgent Tasks</span>
+            <span class="tab-count-bubble urgent-tone" id="count-urgent">2</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="tab-buzzes"
+            aria-selected="false"
+            class="filter-tab-btn"
+            onclick="switchTab('buzzes')"
+          >
+            <span>Buzzes</span>
+            <span class="tab-count-bubble" id="count-buzzes">0</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="tab-notices"
+            aria-selected="false"
+            class="filter-tab-btn"
+            onclick="switchTab('notices')"
+          >
+            <span>Notices</span>
+            <span class="tab-count-bubble" id="count-notices">0</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- c) Scrollable Notification Cards Feed -->
+      <div class="popup-body" id="notification-feed">
+        <!-- ITEM 1: CRITICAL CENSUS OVERDUE -->
+        <article class="notice-card urgent-card" id="card-census" data-type="urgent">
+          <div class="card-header-row">
+            <div class="card-badge-group">
+              <span class="card-tag danger">Census Overdue</span>
+              <span class="card-time-mono">09:30 (+48m)</span>
+            </div>
+            <span class="card-time-mono" style="color: var(--danger-ink); font-weight: 700">Action Required</span>
+          </div>
+
+          <div>
+            <h3 class="card-title">09:30 Morning Census Overdue</h3>
+            <p class="card-desc">Confirm discharges and allocatable beds to unlock coordinator placement queue.</p>
+          </div>
+
+          <div class="card-actions-row" id="census-actions">
+            <button
+              type="button"
+              class="btn-action-primary-danger"
+              onclick="confirmMorningCensus()"
+              id="btn-confirm-census"
+            >
+              <span>Confirm Now</span>
+            </button>
+            <button type="button" class="btn-action-secondary" onclick="viewCensusBreakdown()">Review Beds</button>
+          </div>
+        </article>
+
+        <!-- ITEM 2: OVERDUE INBOUND ARRIVAL -->
+        <article class="notice-card warn-card" id="card-overdue-arrival" data-type="urgent">
+          <div class="card-header-row">
+            <div class="card-badge-group">
+              <span class="card-tag warn">Overdue Arrival</span>
+              <span class="card-time-mono">ETA 09:12</span>
+            </div>
+            <span class="card-time-mono" style="color: var(--warn-ink); font-weight: 700">&gt;60m Overdue</span>
+          </div>
+
+          <div>
+            <h3 class="card-title">Inbound Transfer: Unknown Patient</h3>
+            <p class="card-desc">
+              Transfer from Emergency Department has exceeded 60m delay. Destination: Ward 2K, Bed 04.
+            </p>
+          </div>
+
+          <div class="card-actions-row" id="arrival-actions">
+            <div style="display: flex; gap: 8px">
+              <button type="button" class="btn-action-secondary" onclick="contactEmergencyDept()">Contact ED</button>
+              <button type="button" class="btn-action-secondary" onclick="acknowledgeArrivalDelay()">
+                Acknowledge Delay
+              </button>
+            </div>
+            <span class="card-time-mono">Ref: TR-8841</span>
+          </div>
+        </article>
+
+        <!-- ITEM 3: SIMULATED COORDINATOR BUZZ (DYNAMIC) -->
+        <article class="notice-card buzz-card" id="card-buzz" data-type="buzzes" style="display: none">
+          <div class="card-header-row">
+            <div class="card-badge-group">
+              <span class="card-tag buzz">Coordinator Buzz</span>
+              <span class="card-time-mono">Just Now</span>
+            </div>
+            <span class="card-time-mono" style="color: var(--accent); font-weight: 700">State Bed Flow</span>
+          </div>
+
+          <div>
+            <h3 class="card-title">Capacity Refresh Requested</h3>
+            <p class="card-desc">
+              State Bed Flow Coordinator requests immediate update on Ward 2K pending discharges for incoming stroke
+              referrals.
+            </p>
+          </div>
+
+          <div class="card-actions-row">
+            <button type="button" class="btn-action-secondary" onclick="dismissBuzz()">Acknowledge Buzz</button>
+            <span class="card-time-mono">Role: Coordinator</span>
+          </div>
+        </article>
+
+        <!-- ITEM 4: SIMULATED DIRECT WARD NOTICE (DYNAMIC) -->
+        <article class="notice-card info-card" id="card-notice" data-type="notices" style="display: none">
+          <div class="card-header-row">
+            <div class="card-badge-group">
+              <span class="card-tag info">Ward Notice</span>
+              <span class="card-time-mono">08:45</span>
+            </div>
+            <span class="card-time-mono">Pharmacy</span>
+          </div>
+
+          <div>
+            <h3 class="card-title">Urgent Med Delivery Received</h3>
+            <p class="card-desc">
+              IV antibiotic order for Bed 07 has been delivered to the medication clean utility room.
+            </p>
+          </div>
+
+          <div class="card-actions-row">
+            <button type="button" class="btn-action-secondary" onclick="acknowledgeNotice()">Mark as Read</button>
+            <span class="card-time-mono">Notice #1092</span>
+          </div>
+        </article>
+
+        <!-- EMPTY STATE CARDS (Shown when filtered tab has zero items) -->
+        <div class="empty-state-card" id="empty-buzzes" style="display: none">
+          <div class="empty-icon-circle" aria-hidden="true">✓</div>
+          <p class="empty-title">No Active Coordinator Buzzes</p>
+          <p class="empty-subtitle">
+            All coordinator requests for Ward 2K have been acknowledged. Live buzzes will ring here.
+          </p>
+        </div>
+
+        <div class="empty-state-card" id="empty-notices" style="display: none">
+          <div class="empty-icon-circle" aria-hidden="true">✓</div>
+          <p class="empty-title">No Unread Ward Notices</p>
+          <p class="empty-subtitle">Clinical bulletins and pharmacy advisories for Ward 2K are up to date.</p>
+        </div>
+
+        <div class="empty-state-card" id="empty-all-cleared" style="display: none">
+          <div class="empty-icon-circle" style="background: var(--good-soft); color: var(--good)" aria-hidden="true">
+            ✓
+          </div>
+          <p class="empty-title">All Notifications Addressed</p>
+          <p class="empty-subtitle">No overdue urgent tasks, buzzes, or notices pending for Ward 2K.</p>
+        </div>
+      </div>
+
+      <!-- d) Footer with Audio Status and History Link -->
+      <footer class="popup-footer">
+        <div class="audio-indicator on">
+          <span style="font-size: 14px">🔊</span>
+          <span>Buzzer Audio: Active</span>
+        </div>
+        <div class="footer-actions">
+          <button type="button" class="btn-footer-link" onclick="acknowledgeAllAlerts()">Clear All Alerts</button>
+        </div>
+      </footer>
+    </section>
+
+    <!-- Interactive Behavior Script -->
+    <script>
+      let currentTab = "all";
+      let popupMode = "popover";
+      let hasCensus = true;
+      let hasArrival = true;
+      let hasBuzz = false;
+      let hasNotice = false;
+      let isOpen = true;
+
+      function updateCounts() {
+        const urgentCount = (hasCensus ? 1 : 0) + (hasArrival ? 1 : 0);
+        const buzzCount = hasBuzz ? 1 : 0;
+        const noticeCount = hasNotice ? 1 : 0;
+        const total = urgentCount + buzzCount + noticeCount;
+
+        document.getElementById("count-all").textContent = total;
+        document.getElementById("count-urgent").textContent = urgentCount;
+        document.getElementById("count-buzzes").textContent = buzzCount;
+        document.getElementById("count-notices").textContent = noticeCount;
+
+        const badgePill = document.getElementById("header-bell-badge");
+        badgePill.textContent = total;
+        if (total === 0) {
+          badgePill.classList.add("cleared");
+        } else {
+          badgePill.classList.remove("cleared");
+        }
+
+        const popupPill = document.getElementById("popup-status-pill");
+        const popupText = document.getElementById("popup-badge-text");
+        if (total > 0) {
+          popupPill.classList.remove("cleared");
+          popupText.textContent = total + (total === 1 ? " Alert" : " Alerts");
+        } else {
+          popupPill.classList.add("cleared");
+          popupText.textContent = "All Clear";
+        }
+
+        renderFeed();
+      }
+
+      function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll(".filter-tab-btn").forEach((btn) => {
+          btn.classList.remove("active");
+          btn.setAttribute("aria-selected", "false");
+        });
+        const activeBtn = document.getElementById("tab-" + tab);
+        if (activeBtn) {
+          activeBtn.classList.add("active");
+          activeBtn.setAttribute("aria-selected", "true");
+        }
+        renderFeed();
+      }
+
+      function renderFeed() {
+        const censusCard = document.getElementById("card-census");
+        const arrivalCard = document.getElementById("card-overdue-arrival");
+        const buzzCard = document.getElementById("card-buzz");
+        const noticeCard = document.getElementById("card-notice");
+
+        const emptyBuzzes = document.getElementById("empty-buzzes");
+        const emptyNotices = document.getElementById("empty-notices");
+        const emptyAll = document.getElementById("empty-all-cleared");
+
+        // Hide all initially
+        censusCard.style.display = "none";
+        arrivalCard.style.display = "none";
+        buzzCard.style.display = "none";
+        noticeCard.style.display = "none";
+        emptyBuzzes.style.display = "none";
+        emptyNotices.style.display = "none";
+        emptyAll.style.display = "none";
+
+        const urgentCount = (hasCensus ? 1 : 0) + (hasArrival ? 1 : 0);
+        const total = urgentCount + (hasBuzz ? 1 : 0) + (hasNotice ? 1 : 0);
+
+        if (currentTab === "all") {
+          if (hasCensus) censusCard.style.display = "flex";
+          if (hasArrival) arrivalCard.style.display = "flex";
+          if (hasBuzz) buzzCard.style.display = "flex";
+          if (hasNotice) noticeCard.style.display = "flex";
+          if (total === 0) emptyAll.style.display = "flex";
+        } else if (currentTab === "urgent") {
+          if (hasCensus) censusCard.style.display = "flex";
+          if (hasArrival) arrivalCard.style.display = "flex";
+          if (urgentCount === 0) emptyAll.style.display = "flex";
+        } else if (currentTab === "buzzes") {
+          if (hasBuzz) {
+            buzzCard.style.display = "flex";
+          } else {
+            emptyBuzzes.style.display = "flex";
+          }
+        } else if (currentTab === "notices") {
+          if (hasNotice) {
+            noticeCard.style.display = "flex";
+          } else {
+            emptyNotices.style.display = "flex";
+          }
+        }
+      }
+
+      function confirmMorningCensus() {
+        const actionRow = document.getElementById("census-actions");
+        actionRow.innerHTML = '<span class="card-state-confirmed">✓ Census Confirmed at 10:18 (Ward 2K)</span>';
+        setTimeout(() => {
+          hasCensus = false;
+          updateCounts();
+        }, 1200);
+      }
+
+      function acknowledgeArrivalDelay() {
+        const actionRow = document.getElementById("arrival-actions");
+        actionRow.innerHTML = '<span class="card-state-confirmed">✓ Delay Acknowledged · ED Nurse Contacted</span>';
+        setTimeout(() => {
+          hasArrival = false;
+          updateCounts();
+        }, 1200);
+      }
+
+      function contactEmergencyDept() {
+        alert("Connecting to Emergency Department Charge Nurse: Ext. 4410");
+      }
+
+      function viewCensusBreakdown() {
+        alert("Opening Ward 2K Census breakdown: 24 occupied, 4 allocatable beds.");
+      }
+
+      function toggleSimulatedBuzz() {
+        hasBuzz = !hasBuzz;
+        document.getElementById("buzz-sim-label").textContent = hasBuzz
+          ? "✕ Dismiss Buzz"
+          : "+ Simulate Coordinator Buzz";
+        updateCounts();
+      }
+
+      function dismissBuzz() {
+        hasBuzz = false;
+        document.getElementById("buzz-sim-label").textContent = "+ Simulate Coordinator Buzz";
+        updateCounts();
+      }
+
+      function toggleSimulatedNotice() {
+        hasNotice = !hasNotice;
+        document.getElementById("notice-sim-label").textContent = hasNotice
+          ? "✕ Dismiss Notice"
+          : "+ Simulate Ward Notice";
+        updateCounts();
+      }
+
+      function acknowledgeNotice() {
+        hasNotice = false;
+        document.getElementById("notice-sim-label").textContent = "+ Simulate Ward Notice";
+        updateCounts();
+      }
+
+      function acknowledgeAllAlerts() {
+        hasCensus = false;
+        hasArrival = false;
+        hasBuzz = false;
+        hasNotice = false;
+        document.getElementById("buzz-sim-label").textContent = "+ Simulate Coordinator Buzz";
+        document.getElementById("notice-sim-label").textContent = "+ Simulate Ward Notice";
+        updateCounts();
+      }
+
+      function togglePopupVisibility() {
+        isOpen = !isOpen;
+        const popup = document.getElementById("notification-popup");
+        const scrim = document.getElementById("popup-scrim");
+        const bellBtn = document.getElementById("bell-trigger");
+
+        if (isOpen) {
+          popup.style.display = "flex";
+          bellBtn.classList.add("active");
+          if (popupMode !== "popover") scrim.classList.remove("hidden");
+        } else {
+          popup.style.display = "none";
+          bellBtn.classList.remove("active");
+          scrim.classList.add("hidden");
+        }
+      }
+
+      function setPopupMode(mode) {
+        popupMode = mode;
+        const popup = document.getElementById("notification-popup");
+        const scrim = document.getElementById("popup-scrim");
+
+        popup.className = "notification-popup mode-" + mode;
+
+        document.getElementById("btn-mode-popover").classList.toggle("active", mode === "popover");
+        document.getElementById("btn-mode-modal").classList.toggle("active", mode === "modal");
+        document.getElementById("btn-mode-drawer").classList.toggle("active", mode === "drawer");
+
+        if (isOpen && mode !== "popover") {
+          scrim.classList.remove("hidden");
+        } else {
+          scrim.classList.add("hidden");
+        }
+      }
+
+      function toggleTheme() {
+        const root = document.documentElement;
+        const current = root.getAttribute("data-theme") || "light";
+        const next = current === "light" ? "dark" : "light";
+        root.setAttribute("data-theme", next);
+        try {
+          localStorage.setItem("ward-flow-theme", next);
+        } catch (e) {}
+        document.getElementById("theme-toggle-label").textContent = "Theme: " + (next === "light" ? "Light" : "Dark");
+      }
+
+      // Initial count sync
+      updateCounts();
+    </script>
+  </body>
+</html>

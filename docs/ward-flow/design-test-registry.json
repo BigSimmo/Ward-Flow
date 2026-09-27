@@ -1,0 +1,452 @@
+{
+  "$schema": "./design-test-registry.schema.json",
+  "schemaVersion": 1,
+  "description": "Canonical registry connecting Ward Flow mockups and React components to their automated test suites and clinical invariants.",
+  "screens": [
+    {
+      "id": "coordinator",
+      "mockup": "command-third-edition.html",
+      "route": "/",
+      "folder": "coordinator",
+      "component": "src/components/ward-management/coordinator/coordinator-screen.tsx",
+      "testFiles": ["tests/ward-nav.test.ts", "tests/ui-ward-coordinator.spec.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["patientId", "heldBedUntil", "legalStatus", "originEdId"],
+        "primaryTestIds": ["coordinator-command-view"],
+        "landmarkHeadings": ["Bed Coordination Command", "Live Network Overview"]
+      }
+    },
+    {
+      "id": "delays",
+      "mockup": "delays-third-edition.html",
+      "route": "/delays",
+      "folder": "delays",
+      "component": "src/components/ward-management/delays/delays-screen.tsx",
+      "testFiles": ["tests/ward-nav.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["delayReason", "elapsedMinutes", "patientId"],
+        "primaryTestIds": ["delays-screen"],
+        "landmarkHeadings": ["Delays & Blockers"]
+      }
+    },
+    {
+      "id": "movements",
+      "mockup": "movement-third-edition.html",
+      "route": "/movements",
+      "folder": "movements",
+      "component": "src/components/ward-management/movements/movements-screen.tsx",
+      "testFiles": ["tests/ward-nav.test.ts", "tests/ward-transit-arrival-clocks.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["stage", "originEdId", "destinationUnitId", "legalStatus"],
+        "primaryTestIds": ["movements-screen"],
+        "landmarkHeadings": ["Movements Timeline"]
+      }
+    },
+    {
+      "id": "capacity",
+      "mockup": "capacity-third-edition.html",
+      "route": "/capacity",
+      "folder": "capacity",
+      "component": "src/components/ward-management/capacity/capacity-screen.tsx",
+      "testFiles": ["tests/ward-nav.test.ts", "tests/ward-screen-capacity-wording.dom.test.tsx"],
+      "invariants": {
+        "protectedClinicalFields": ["totalBeds", "openBeds", "lockedBeds", "occupiedBeds"],
+        "primaryTestIds": ["capacity-screen"],
+        "landmarkHeadings": ["System Capacity Glance"]
+      }
+    },
+    {
+      "id": "ward",
+      "mockup": "ward-third-edition.html",
+      "route": "/ward/[unitId]",
+      "folder": "ward",
+      "component": "src/components/ward-management/ward/ward-screen.tsx",
+      "testFiles": ["tests/ward-screen.dom.test.tsx", "tests/ward-nav.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["unitId", "bedCount", "intakeConstraints", "authorised"],
+        "primaryTestIds": ["ward-unit-screen"],
+        "landmarkHeadings": ["Ward Overview"]
+      }
+    },
+    {
+      "id": "wards",
+      "mockup": "wards-third-edition.html",
+      "route": "/wards",
+      "folder": "wards",
+      "component": "src/components/ward-management/wards/ward-index.tsx",
+      "testFiles": ["tests/ward-screen-overview-and-entry.dom.test.tsx", "tests/ward-nav.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["healthService", "authorisedForInvoluntary"],
+        "primaryTestIds": ["wards-directory-screen"],
+        "landmarkHeadings": ["Inpatient Wards Directory"]
+      }
+    },
+    {
+      "id": "board",
+      "mockup": "bed-board-third-edition.html",
+      "route": "/board/[unitId]",
+      "folder": "board",
+      "component": "src/components/ward-management/board/ward-board.tsx",
+      "testFiles": ["tests/ward-board-page.dom.test.tsx", "tests/ward-board-third-edition-headings.dom.test.tsx"],
+      "invariants": {
+        "protectedClinicalFields": ["bedId", "patientId", "genderPlacement", "legalStatus"],
+        "primaryTestIds": ["ward-bed-board"],
+        "landmarkHeadings": ["Bed Board"]
+      }
+    },
+    {
+      "id": "ed",
+      "mockup": "emergency-department-third-edition.html",
+      "route": "/ed/[edId]",
+      "folder": "ed",
+      "component": "src/components/ward-management/ed/ed-screen.tsx",
+      "testFiles": ["tests/ward-nav.test.ts", "tests/ward-referral-ed-destination.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["edId", "cadNumber", "transportBooked", "voluntaryStatus"],
+        "primaryTestIds": ["ed-screen"],
+        "landmarkHeadings": ["Emergency Department Flow"]
+      }
+    },
+    {
+      "id": "community",
+      "mockup": "community-team-third-edition.html",
+      "route": "/community/[teamId]",
+      "folder": "community",
+      "component": "src/components/ward-management/community/community-screen.tsx",
+      "testFiles": ["tests/ward-community-hub.dom.test.tsx", "tests/ward-nav.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["teamId", "actingPlaceId", "activeCaseload"],
+        "primaryTestIds": ["community-team-screen"],
+        "landmarkHeadings": ["Community Mental Health Team"]
+      }
+    },
+    {
+      "id": "search",
+      "mockup": "patient-search-third-edition.html",
+      "route": "/search",
+      "folder": "search",
+      "component": "src/components/ward-management/search/patient-search.tsx",
+      "testFiles": ["tests/ward-patient-search.dom.test.tsx", "tests/ward-nav.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["umrn", "catchment", "legalForm"],
+        "primaryTestIds": ["patient-search-screen"],
+        "landmarkHeadings": ["Patient Directory Search"]
+      }
+    },
+    {
+      "id": "patients",
+      "mockup": "patient-now-third-edition.html",
+      "route": "/people/[patientId]",
+      "folder": "patients",
+      "component": "src/components/ward-management/patients/person-screen.tsx",
+      "testFiles": ["tests/ward-patient-search.dom.test.tsx", "tests/ward-nav.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["patientId", "dob", "legalStatus", "genderPlacement"],
+        "primaryTestIds": ["person-detail-screen"],
+        "landmarkHeadings": ["Patient Clinical Dossier"]
+      }
+    },
+    {
+      "id": "hub",
+      "mockup": "search-hub-third-edition.html",
+      "route": "/hub",
+      "folder": "hub",
+      "component": "src/components/ward-management/hub/hub-screen.tsx",
+      "testFiles": ["tests/ward-community-hub.dom.test.tsx", "tests/ward-nav.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["searchQuery", "matchedFilters"],
+        "primaryTestIds": ["search-hub-screen"],
+        "landmarkHeadings": ["Central Flow Hub"]
+      }
+    },
+    {
+      "id": "referrals-new",
+      "mockup": "raise-a-referral-third-edition.html",
+      "route": "/referrals/new",
+      "folder": "referrals",
+      "component": "src/components/ward-management/referrals/referral-intake.tsx",
+      "testFiles": ["tests/ward-referral-intake-third-edition.dom.test.tsx", "tests/ward-nav.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["patientId", "originEdId", "targetUnits", "legalStatus"],
+        "primaryTestIds": ["referral-intake-form"],
+        "landmarkHeadings": ["Raise Bed Referral"]
+      }
+    },
+    {
+      "id": "statistics-overview",
+      "mockup": "statistics-overview-third-edition.html",
+      "route": "/statistics/overview",
+      "folder": "statistics",
+      "component": "src/components/ward-management/statistics/statistics-overview-screen.tsx",
+      "testFiles": ["tests/ward-statistics.test.ts", "tests/ward-browser-build-css.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["serviceId", "admissionsCount", "occupancyRate"],
+        "primaryTestIds": ["statistics-overview-screen"],
+        "landmarkHeadings": ["System Statistics Overview"]
+      }
+    },
+    {
+      "id": "statistics-ward",
+      "mockup": "statistics-ward-third-edition.html",
+      "route": "/statistics/ward/[unitId]",
+      "folder": "statistics",
+      "component": "src/components/ward-management/statistics/statistics-ward-screen.tsx",
+      "testFiles": ["tests/ward-statistics-ward-capacity.dom.test.tsx", "tests/ward-statistics.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["unitId", "meanStayDays", "dischargeRate"],
+        "primaryTestIds": ["statistics-ward-screen"],
+        "landmarkHeadings": ["Ward Metrics"]
+      }
+    },
+    {
+      "id": "statistics-community",
+      "mockup": "statistics-community-third-edition.html",
+      "route": "/statistics/community/[teamId]",
+      "folder": "statistics",
+      "component": "src/components/ward-management/statistics/statistics-community-screen.tsx",
+      "testFiles": ["tests/ward-statistics-community-figures.test.ts", "tests/ward-statistics.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["teamId", "activeCaseload", "acceptedReferrals"],
+        "primaryTestIds": ["statistics-community-screen"],
+        "landmarkHeadings": ["Community Metrics"]
+      }
+    },
+    {
+      "id": "statistics-ed",
+      "mockup": "statistics-emergency-department-third-edition.html",
+      "route": "/statistics/ed/[edId]",
+      "folder": "statistics",
+      "component": "src/components/ward-management/statistics/statistics-ed-screen.tsx",
+      "testFiles": ["tests/ward-statistics-ed-waits.test.ts", "tests/ward-statistics.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["edId", "prolongedStayCount", "diversionRate"],
+        "primaryTestIds": ["statistics-ed-screen"],
+        "landmarkHeadings": ["Emergency Department Metrics"]
+      }
+    },
+    {
+      "id": "network",
+      "mockup": "network-third-edition.html",
+      "route": "/network",
+      "folder": "network",
+      "component": "src/components/ward-management/ward-management-modes.tsx",
+      "testFiles": ["tests/ward-capacity-network-fold.dom.test.tsx", "tests/ward-nav.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["networkStatus", "regionalCatchments"],
+        "primaryTestIds": ["network-flow-screen"],
+        "landmarkHeadings": ["Statewide Network Flow"]
+      }
+    },
+    {
+      "id": "governance",
+      "mockup": "governance-third-edition.html",
+      "route": "/governance",
+      "folder": "governance",
+      "component": "src/components/ward-management/governance/governance-screen.tsx",
+      "testFiles": ["tests/ward-governance-claims.test.ts", "tests/ward-browser-build-css.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["auditLog", "overrideReason", "legalReviewDate"],
+        "primaryTestIds": ["governance-screen"],
+        "landmarkHeadings": ["Clinical & Statutory Governance"]
+      }
+    },
+    {
+      "id": "handover",
+      "mockup": "handover-third-edition.html",
+      "route": "/handover",
+      "folder": "handover",
+      "component": "src/components/ward-management/handover/handover-page.tsx",
+      "testFiles": ["tests/ward-handover-filters.dom.test.tsx", "tests/ward-handover-filters.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["shift", "unitId", "statutoryBreaches", "speciallingAcuity"],
+        "primaryTestIds": ["ward-handover-sheet"],
+        "landmarkHeadings": ["Shift Handover Sheet"]
+      }
+    },
+    {
+      "id": "discharges",
+      "mockup": "discharges-third-edition.html",
+      "route": "/discharges",
+      "folder": "discharges",
+      "component": "src/components/ward-management/discharges/discharge-board.tsx",
+      "testFiles": ["tests/ui-ward-discharges.spec.ts", "tests/ward-nav.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["patientId", "estimatedDeparture", "dischargeBlocker"],
+        "primaryTestIds": ["discharge-board-screen"],
+        "landmarkHeadings": ["Planned & Blocked Discharges"]
+      }
+    },
+    {
+      "id": "out-of-area",
+      "mockup": "out-of-area-third-edition.html",
+      "route": "/out-of-area",
+      "folder": "out-of-area",
+      "component": "src/components/ward-management/out-of-area/out-of-area-board.tsx",
+      "testFiles": ["tests/ward-out-of-area-live-state.dom.test.tsx", "tests/ward-nav.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["patientId", "homeCatchment", "placedCatchment", "repatriationDueDate"],
+        "primaryTestIds": ["out-of-area-board"],
+        "landmarkHeadings": ["Out of Area Placements"]
+      }
+    },
+    {
+      "id": "on-call",
+      "mockup": "on-call-third-edition.html",
+      "route": "/on-call",
+      "folder": "on-call",
+      "component": "src/components/ward-management/on-call/on-call-screen.tsx",
+      "testFiles": ["tests/ward-on-call-screen.dom.test.tsx", "tests/ward-on-call-holds-no-people.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["rosterSlot", "executiveEscalation", "contactNumber"],
+        "primaryTestIds": ["on-call-screen"],
+        "landmarkHeadings": ["Executive & Medical On-Call"]
+      }
+    },
+    {
+      "id": "alerts",
+      "mockup": "alerts-third-edition.html",
+      "route": "/alerts",
+      "folder": "alerts",
+      "component": "src/components/ward-management/alerts/alerts-screen.tsx",
+      "testFiles": [
+        "tests/ward-alerts-screen.dom.test.tsx",
+        "tests/ward-alerts-open-movements-only.dom.test.tsx"
+      ],
+      "invariants": {
+        "protectedClinicalFields": ["legal_timing_breached", "destination_unlawful", "dueAt"],
+        "primaryTestIds": ["ward-alerts-page"],
+        "landmarkHeadings": ["Operational inbox", "Alerts"]
+      }
+    },
+    {
+      "id": "officer",
+      "mockup": "transport-officer-third-edition.html",
+      "route": "/transport/officer",
+      "folder": "officer",
+      "component": "src/components/ward-management/officer/officer-screen.tsx",
+      "testFiles": ["tests/ward-officer-kpi-and-copy.dom.test.tsx", "tests/ward-officer-print.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["cadNumber", "transportStatus", "involuntaryTransportForm"],
+        "primaryTestIds": ["transport-officer-screen"],
+        "landmarkHeadings": ["Transport Coordination Desk"]
+      }
+    },
+    {
+      "id": "legal-forms",
+      "mockup": "legal-forms-third-edition.html",
+      "route": "/legal-forms",
+      "folder": "legal-forms",
+      "component": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
+      "testFiles": ["tests/ward-legal-forms-screen.dom.test.tsx", "tests/ward-legal-forms-derivations.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["formType", "statutoryDueInstant", "authorisedMedicalPractitioner"],
+        "primaryTestIds": ["legal-forms-screen"],
+        "landmarkHeadings": ["Statutory Mental Health Forms"]
+      }
+    },
+    {
+      "id": "patients-new",
+      "mockup": "add-a-patient-third-edition.html",
+      "route": "/people/new",
+      "folder": "patients",
+      "component": "src/components/ward-management/patients/add-patient.tsx",
+      "testFiles": ["tests/ward-nav.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["umrn", "genderPlacement", "catchmentId"],
+        "primaryTestIds": ["add-patient-form"],
+        "landmarkHeadings": ["Register Synthetic Patient"]
+      }
+    },
+    {
+      "id": "referrals",
+      "mockup": "referrals-third-edition.html",
+      "route": "/referrals",
+      "folder": "referrals",
+      "component": "src/components/ward-management/referrals/referral-board.tsx",
+      "testFiles": ["tests/ward-referral-screens.dom.test.tsx", "tests/ward-nav.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["referralId", "triagedAt", "parallelOffers", "declines"],
+        "primaryTestIds": ["referral-board-screen"],
+        "landmarkHeadings": ["Referral Tracking Board"]
+      }
+    },
+    {
+      "id": "settings",
+      "mockup": "settings-third-edition.html",
+      "route": "/settings",
+      "folder": "settings",
+      "component": "src/components/ward-management/settings/settings-screen.tsx",
+      "testFiles": ["tests/ward-settings-screen.dom.test.tsx", "tests/ward-settings-appearance.dom.test.tsx"],
+      "invariants": {
+        "protectedClinicalFields": ["edTargetMinutes", "pulledBedHoldHours", "parallelOfferCap"],
+        "primaryTestIds": ["settings-screen"],
+        "landmarkHeadings": ["Prototype Configuration & Settings"]
+      }
+    },
+    {
+      "id": "statistics",
+      "mockup": "statistics-third-edition.html",
+      "route": "/statistics",
+      "folder": "statistics",
+      "component": "src/components/ward-management/statistics/statistics-screen.tsx",
+      "testFiles": ["tests/ward-statistics-sections.dom.test.tsx", "tests/ward-statistics.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["serviceTotals", "timeSeriesWindow"],
+        "primaryTestIds": ["statistics-index-screen"],
+        "landmarkHeadings": ["Flow Statistics & Metrics"]
+      }
+    },
+    {
+      "id": "statistics-compare",
+      "mockup": "statistics-compare-third-edition.html",
+      "route": "/statistics/compare",
+      "folder": "statistics",
+      "component": "src/components/ward-management/statistics/statistics-compare-screen.tsx",
+      "testFiles": ["tests/ward-statistics-compare-two-tables.dom.test.tsx", "tests/ward-statistics.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["comparisonCohort", "serviceMetricDeltas"],
+        "primaryTestIds": ["statistics-compare-screen"],
+        "landmarkHeadings": ["Service & Unit Comparative Analytics"]
+      }
+    },
+    {
+      "id": "statistics-service",
+      "mockup": "statistics-service-third-edition.html",
+      "route": "/statistics/service/[serviceId]",
+      "folder": "statistics",
+      "component": "src/components/ward-management/statistics/statistics-service-screen.tsx",
+      "testFiles": ["tests/ward-statistics-service-screen.dom.test.tsx", "tests/ward-statistics.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["serviceId", "hospitalsUnderService", "netFlow"],
+        "primaryTestIds": ["statistics-service-screen"],
+        "landmarkHeadings": ["Health Service Aggregates"]
+      }
+    },
+    {
+      "id": "sign-in",
+      "mockup": "sign-in-third-edition.html",
+      "route": "/mockups/ward-flow-sign-in",
+      "folder": "../ward-flow-sign-in",
+      "component": "src/components/ward-flow-sign-in/ward-flow-sign-in-screen.tsx",
+      "testFiles": ["tests/ward-sign-in-shell.dom.test.tsx", "tests/ward-nav.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["syntheticRoles", "demoAccessScope"],
+        "primaryTestIds": ["sign-in-screen"],
+        "landmarkHeadings": ["Demonstration Sign In"]
+      }
+    },
+    {
+      "id": "ward-answer",
+      "mockup": "ward-answer-third-edition.html",
+      "route": "/ward/[unitId]/answer",
+      "folder": "ward",
+      "component": "src/components/ward-management/ward/ward-answer-view.tsx",
+      "testFiles": ["tests/ward-screen-refusal-surface.dom.test.tsx", "tests/ward-nav.test.ts"],
+      "invariants": {
+        "protectedClinicalFields": ["eligibilityGates", "acceptDeclineDecision", "coordinatorReason"],
+        "primaryTestIds": ["ward-answer-screen"],
+        "landmarkHeadings": ["Referral Admission Response"]
+      }
+    }
+  ]
+}

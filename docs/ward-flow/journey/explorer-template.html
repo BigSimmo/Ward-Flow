@@ -1,0 +1,3053 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Ward Journey Explorer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap"
+    />
+    <style>
+      :root {
+        --ground: #f6f6f4;
+        --surface: #ffffff;
+        --sunk: #efefec;
+        --ink: #1b1b19;
+        --ink-2: #4a4a44;
+        --ink-3: #6d6d66;
+        --muted: #8a8a82;
+        --line: rgba(27, 27, 25, 0.16);
+        --line-2: rgba(27, 27, 25, 0.1);
+        --good: #2f6f4e;
+        --warn: #9a6a12;
+        --danger: #a33a2e;
+        --accent: #2f4d6b;
+        --absent: #6a4f7a;
+        --ending: #1e5f5c;
+        --seam: #2f6f4e;
+        --forced: #8a4b86;
+        --annot: #6d6257;
+        --body: "Geist", system-ui, -apple-system, sans-serif;
+        --mono: "Geist Mono", ui-monospace, monospace;
+      }
+      :root:not([data-theme="light"]) {
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --ground: #14140f;
+          --surface: #1c1c18;
+          --sunk: #232320;
+          --ink: #f0efe9;
+          --ink-2: #c9c8c0;
+          --ink-3: #a0a098;
+          --muted: #82827a;
+          --line: rgba(240, 239, 233, 0.18);
+          --line-2: rgba(240, 239, 233, 0.11);
+          --good: #7fc79e;
+          --warn: #e0b064;
+          --danger: #ef8878;
+          --accent: #9dc2e6;
+          --absent: #bda4d0;
+          --ending: #7fc4bf;
+          --seam: #7fc79e;
+          --forced: #d0a5cd;
+          --annot: #b9ab9c;
+        }
+      }
+      :root[data-theme="dark"] {
+        --ground: #14140f;
+        --surface: #1c1c18;
+        --sunk: #232320;
+        --ink: #f0efe9;
+        --ink-2: #c9c8c0;
+        --ink-3: #a0a098;
+        --muted: #82827a;
+        --line: rgba(240, 239, 233, 0.18);
+        --line-2: rgba(240, 239, 233, 0.11);
+        --good: #7fc79e;
+        --warn: #e0b064;
+        --danger: #ef8878;
+        --accent: #9dc2e6;
+        --absent: #bda4d0;
+        --ending: #7fc4bf;
+        --seam: #7fc79e;
+        --forced: #d0a5cd;
+        --annot: #b9ab9c;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: var(--body);
+        background: var(--ground);
+        color: var(--ink);
+        -webkit-font-smoothing: antialiased;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      a {
+        color: var(--accent);
+      }
+      button {
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      /* ---------- chrome ---------- */
+      header.top {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        padding: 12px 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: center;
+      }
+      .brand {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        margin-right: 6px;
+      }
+      .brand b {
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .brand span {
+        font-size: 11.5px;
+        color: var(--muted);
+        font-family: var(--mono);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .tabs {
+        display: flex;
+        gap: 0;
+        border: 1px solid var(--line);
+      }
+      .tabs button {
+        background: transparent;
+        border: 0;
+        padding: 7px 14px;
+        font-size: 13px;
+        border-right: 1px solid var(--line-2);
+        color: var(--ink-2);
+      }
+      .tabs button:last-child {
+        border-right: 0;
+      }
+      .tabs button[aria-selected="true"] {
+        background: var(--ink);
+        color: var(--ground);
+        font-weight: 500;
+      }
+      .search {
+        flex: 1 1 260px;
+        min-width: 200px;
+        position: relative;
+      }
+      .search input {
+        width: 100%;
+        padding: 8px 11px;
+        font: inherit;
+        font-size: 13px;
+        background: var(--ground);
+        color: var(--ink);
+        border: 1px solid var(--line);
+        border-radius: 0;
+      }
+      .search input:focus {
+        outline: 2px solid var(--accent);
+        outline-offset: -1px;
+      }
+      .lanes {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .lanes button {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        padding: 5px 10px;
+        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--ink-2);
+      }
+      .lanes button[aria-pressed="true"] {
+        border-color: var(--ink);
+        color: var(--ink);
+        font-weight: 500;
+      }
+      .swatch {
+        width: 14px;
+        height: 3px;
+        display: inline-block;
+      }
+      .count {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      /* ---------- layout ---------- */
+      /* `align-items: flex-start` sizes each child to its CONTENT, so the 1980px map stopped
+     being constrained and pushed the whole page sideways. The panel gets its own
+     `align-self` instead, and main is explicitly capped. */
+      .wrap {
+        display: flex;
+        align-items: stretch;
+        gap: 0;
+        max-width: 100%;
+      }
+      main {
+        flex: 1 1 auto;
+        min-width: 0;
+        max-width: 100%;
+        padding: 20px;
+      }
+      aside.panel {
+        position: sticky;
+        top: 61px;
+        flex: 0 0 420px;
+        width: 420px;
+        height: calc(100vh - 61px);
+        overflow-y: auto;
+        background: var(--surface);
+        border-left: 1px solid var(--line);
+        padding: 20px;
+      }
+      @media (max-width: 1100px) {
+        .wrap {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        main {
+          width: 100%;
+        }
+        aside.panel {
+          position: static;
+          width: 100%;
+          max-width: 100%;
+          flex: 0 0 auto;
+          height: auto;
+          border-left: 0;
+          border-top: 1px solid var(--line);
+        }
+      }
+
+      /* ---------- map ---------- */
+      .mapscroll {
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 12px;
+        max-width: 100%;
+        cursor: grab;
+      }
+      .mapscroll.dragging {
+        cursor: grabbing;
+        user-select: none;
+      }
+      .map {
+        position: relative;
+        transform-origin: top left;
+      }
+      #mapsizer {
+        position: relative;
+      }
+
+      .viewbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        margin: 0 0 10px;
+      }
+      .viewbar button {
+        font: inherit;
+        font-size: 12px;
+        padding: 4px 10px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink-2);
+        cursor: pointer;
+      }
+      .viewbar button[aria-pressed="true"] {
+        background: var(--ink);
+        color: var(--surface);
+        border-color: var(--ink);
+      }
+      .viewbar .sep {
+        width: 1px;
+        height: 18px;
+        background: var(--line);
+        margin: 0 4px;
+      }
+      /* Read out, never drawn. */
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
+      }
+      .viewbar select.whosel {
+        font: inherit;
+        font-size: 12px;
+        padding: 3px 6px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink);
+      }
+      .viewbar .hint {
+        font-size: 11.5px;
+        color: var(--ink-2);
+      }
+
+      /* The control bar has to survive the top bar being hidden, or the only way back is a
+         reload. It sits under the top bar when that is showing, and at the very top when it is not. */
+      .viewbar {
+        position: sticky;
+        top: 61px;
+        z-index: 3;
+        background: var(--bg);
+        padding: 8px 0;
+      }
+      body.hide-top .viewbar {
+        top: 0;
+      }
+
+      body.hide-top .top {
+        display: none;
+      }
+      body.hide-guide .howto,
+      body.hide-guide .legend {
+        display: none;
+      }
+      /* Gone when hidden, and gone when nothing is selected. With no box chosen the panel held a
+         420px column open for a placeholder that repeated what the guide above the map already
+         says — a third of the window spent saying it twice. */
+      body.hide-panel .panel,
+      body.panel-empty .panel {
+        display: none;
+      }
+
+      /* Full window: the map takes the whole viewport. The bar floats over it. */
+      body.full .disclaim,
+      body.full #view-beh,
+      body.full #view-gates,
+      body.full #view-acts,
+      body.full #view-vocab,
+      body.full #view-cov {
+        display: none !important;
+      }
+      body.full .wrap {
+        display: block;
+        padding: 0;
+        margin: 0;
+        max-width: none;
+      }
+      body.full .mapscroll {
+        position: fixed;
+        inset: 0;
+        overflow: auto;
+        padding: 0;
+        max-width: none;
+        background: var(--bg);
+        z-index: 4;
+      }
+      body.full .viewbar {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 6;
+        margin: 0;
+        padding: 6px 8px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        box-shadow: 0 2px 10px rgb(0 0 0 / 12%);
+      }
+      @media print {
+        /* Paper is landscape and this map is nearly twice as tall as it is wide, so it will run to
+           several pages. That is correct: a map squeezed onto one sheet is a map nobody can read. */
+        @page {
+          size: A3 landscape;
+          margin: 12mm;
+        }
+        /* The reader's own dark mode must not decide what lands on white paper. */
+        :root {
+          --bg: #ffffff !important;
+          --surface: #ffffff !important;
+          --ink: #14161a !important;
+          --ink-2: #454b54 !important;
+          --line: #c9ced6 !important;
+          --sunk: #f4f5f7 !important;
+        }
+        .top,
+        .viewbar,
+        .howto,
+        .panel,
+        #view-beh,
+        #view-gates,
+        #view-acts,
+        #view-vocab,
+        #view-cov {
+          display: none !important;
+        }
+        body,
+        .wrap,
+        main {
+          display: block !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          max-width: none !important;
+          background: #fff !important;
+        }
+        /* Unclipped: the scroller exists for a screen. On paper the map is simply long. */
+        .mapscroll {
+          position: static !important;
+          overflow: visible !important;
+          height: auto !important;
+          max-width: none !important;
+        }
+        #mapsizer,
+        .map {
+          overflow: visible !important;
+        }
+        /* The key goes first, on its own sheet, open. Nobody can read the map without it. */
+        .legend {
+          display: block !important;
+          break-after: page;
+          border: 0 !important;
+        }
+        .legend > summary {
+          font-size: 15px;
+          margin-bottom: 8px;
+        }
+        .legend .lgbody {
+          display: grid !important;
+          grid-template-columns: 1fr 1fr;
+        }
+        .node,
+        .legend .lgrow {
+          break-inside: avoid;
+        }
+        .disclaim {
+          break-before: page;
+        }
+        /* A tinted fill that reads on screen turns to mud on a laser printer; the border and the
+           symbol carry the meaning instead, and both survive. */
+        .node {
+          background: #fff !important;
+        }
+      }
+
+      /* Boxes keep their size. Only the sentence inside them goes. */
+      body.titlesonly .node .nc {
+        display: none;
+      }
+      .node {
+        position: absolute;
+        background: var(--surface);
+        border: 1.5px solid var(--ink);
+        padding: 9px 12px;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        transition:
+          opacity 0.15s,
+          box-shadow 0.15s;
+      }
+      .node .nt {
+        font-size: 13.5px;
+        font-weight: 600;
+        line-height: 1.25;
+      }
+      .node .nc {
+        font-size: 11.5px;
+        line-height: 1.35;
+        color: var(--ink-3);
+      }
+      .node .nsym {
+        position: absolute;
+        top: 9px;
+        right: 9px;
+        line-height: 0;
+        opacity: 0.85;
+      }
+      .node .nt {
+        padding-right: 20px;
+      }
+      .node .nb {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        color: var(--muted);
+        letter-spacing: 0.05em;
+      }
+      .node:hover {
+        box-shadow: 0 0 0 3px rgba(47, 77, 107, 0.18);
+      }
+      .node[aria-current="true"] {
+        box-shadow: 0 0 0 3px var(--accent);
+      }
+      .node.lane-forced {
+        border: 1.5px solid var(--forced);
+        background: color-mix(in srgb, var(--forced) 10%, var(--surface));
+      }
+      .node.lane-forced .nt {
+        color: var(--forced);
+      }
+      .node.lane-seam {
+        border-width: 2.5px;
+        background: var(--sunk);
+      }
+      .node.lane-stall {
+        border: 1px solid var(--muted);
+      }
+      .node.lane-end {
+        border: 1.5px solid var(--ending);
+        background: var(--sunk);
+      }
+      .node.lane-end .nt {
+        color: var(--ending);
+      }
+      .node.lane-diversion {
+        border: 1px solid var(--warn);
+      }
+      .node.lane-breach {
+        border: 1.5px solid var(--danger);
+      }
+      .node.lane-absent {
+        border: 1.5px dashed var(--absent);
+        background: var(--sunk);
+      }
+      .node.lane-absent .nt {
+        color: var(--absent);
+      }
+      .node.lane-record {
+        border: 1px dashed var(--accent);
+      }
+      .node.lane-record .nt {
+        color: var(--accent);
+      }
+      .node.lane-heading {
+        border: 0;
+        background: transparent;
+        padding: 0;
+        justify-content: flex-end;
+        cursor: default;
+      }
+      .node.lane-heading:hover {
+        box-shadow: none;
+      }
+      .node.lane-heading .nt {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-2);
+      }
+      .node.lane-heading .nc {
+        font-size: 11.5px;
+        color: var(--muted);
+      }
+      .node.lane-note {
+        border: 0;
+        border-left: 3px solid var(--muted);
+        background: var(--sunk);
+        cursor: default;
+      }
+      .node.lane-note:hover {
+        box-shadow: none;
+      }
+      .node.lane-note .nt {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink-2);
+      }
+      /* A soft wash of the lane's own colour, so what kind of place a box is reads before
+     anything is looked up. Mixed from the same token, so dark mode needs no second table. */
+      .node.lane-diversion {
+        background: color-mix(in srgb, var(--warn) 7%, var(--surface));
+      }
+      .node.lane-end {
+        background: color-mix(in srgb, var(--ending) 9%, var(--surface));
+      }
+      .node.lane-breach {
+        background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+      }
+      .node.lane-absent {
+        background: color-mix(in srgb, var(--absent) 10%, var(--surface));
+      }
+      .node.lane-record {
+        background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+      }
+      .node.lane-stall {
+        background: color-mix(in srgb, var(--muted) 9%, var(--surface));
+      }
+      /* The seam is where a SECOND record starts. It used to be drawn as ordinary route, which is
+     exactly the misreading it exists to correct. */
+      .node.lane-seam {
+        border: 1.5px solid var(--seam);
+        background: color-mix(in srgb, var(--seam) 9%, var(--surface));
+      }
+      .node.lane-seam .nt {
+        color: var(--seam);
+      }
+      /* A note is not a step. It gets an annotation treatment rather than a route colour, so it can
+     never be mistaken for somewhere the journey goes. */
+      .node.lane-note {
+        border: 0;
+        border-left: 3px solid var(--annot);
+        background: transparent;
+      }
+      .node.lane-note .nt {
+        color: var(--annot);
+        font-weight: 600;
+      }
+      .node.lane-note .nc {
+        font-style: italic;
+      }
+
+      .legend {
+        margin: 0 0 14px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+      }
+      .legend > summary {
+        cursor: pointer;
+        padding: 10px 14px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .legend .lgbody {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 4px 22px;
+        padding: 4px 14px 14px;
+      }
+      .legend .lgrow {
+        display: flex;
+        gap: 10px;
+        align-items: baseline;
+        font-size: 12.5px;
+        line-height: 1.5;
+        padding: 3px 0;
+      }
+      .legend .lgkey {
+        flex: 0 0 62px;
+      }
+      .legend .lgkey svg {
+        display: block;
+      }
+      .legend .lgtxt b {
+        font-weight: 600;
+      }
+      .legend .lgtxt span {
+        color: var(--ink-2);
+      }
+      .views {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 0 16px 8px;
+      }
+      .views button {
+        font: inherit;
+        font-size: 12px;
+        padding: 4px 10px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink-2);
+        cursor: pointer;
+      }
+      .views button[aria-pressed="true"] {
+        background: var(--ink);
+        color: var(--surface);
+        border-color: var(--ink);
+      }
+      .lanes button .tally {
+        color: var(--ink-3, var(--ink-2));
+        font-variant-numeric: tabular-nums;
+        margin-left: 6px;
+        font-size: 11px;
+      }
+      .node.dim {
+        opacity: 0.2;
+      }
+
+      /* ---------- how to read it ---------- */
+      .howto {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 0;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        margin-bottom: 18px;
+      }
+      .howto > div {
+        padding: 13px 15px;
+        border-right: 1px solid var(--line-2);
+      }
+      .howto > div:last-child {
+        border-right: 0;
+      }
+      .howto h3 {
+        margin: 0 0 5px;
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .howto p {
+        margin: 0;
+        font-size: 12.5px;
+        line-height: 1.5;
+        color: var(--ink-2);
+      }
+      .howto b {
+        color: var(--ink);
+      }
+      .node.hit {
+        box-shadow: 0 0 0 3px var(--warn);
+      }
+      .edge.dim {
+        opacity: 0.12;
+      }
+
+      /* ---------- lists ---------- */
+      .sect {
+        margin-bottom: 26px;
+      }
+      .sect > h2 {
+        font-size: 11.5px;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-family: var(--mono);
+        margin: 0 0 10px;
+      }
+      details.act {
+        border: 1px solid var(--line);
+        background: var(--surface);
+        margin-bottom: 7px;
+      }
+      details.act > summary {
+        padding: 10px 13px;
+        cursor: pointer;
+        list-style: none;
+        display: flex;
+        gap: 10px;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+      details.act > summary::-webkit-details-marker {
+        display: none;
+      }
+      details.act > summary:hover {
+        background: var(--sunk);
+      }
+      .act .an {
+        font-size: 13.5px;
+        font-weight: 500;
+      }
+      .act .ae {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .act .body {
+        padding: 0 13px 13px;
+        border-top: 1px solid var(--line-2);
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        padding: 9px 0;
+        border-bottom: 1px dashed var(--line-2);
+      }
+      .row:last-child {
+        border-bottom: 0;
+      }
+      .row .k {
+        flex: 0 0 96px;
+        font-family: var(--mono);
+        font-size: 10.5px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding-top: 2px;
+      }
+      .row .v {
+        flex: 1 1 auto;
+        font-size: 12.5px;
+        line-height: 1.5;
+        color: var(--ink-2);
+        min-width: 0;
+      }
+      .refuse {
+        display: block;
+        padding: 5px 0;
+      }
+      .refuse b {
+        font-weight: 500;
+        color: var(--ink);
+      }
+      .refuse code {
+        display: block;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--danger);
+        background: var(--sunk);
+        padding: 5px 7px;
+        margin-top: 3px;
+        overflow-wrap: anywhere;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+      .chip {
+        font-size: 11.5px;
+        padding: 2px 7px;
+        border: 1px solid var(--line);
+        background: var(--sunk);
+      }
+      .chip.on {
+        border-color: var(--ink);
+      }
+      .pill {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 2px 6px;
+        border: 1px solid currentColor;
+      }
+      .pill.expected {
+        color: var(--good);
+      }
+      .pill.diversion {
+        color: var(--warn);
+      }
+      .pill.stall {
+        color: var(--muted);
+      }
+      .pill.end {
+        color: var(--ending);
+      }
+      .pill.breach {
+        color: var(--danger);
+      }
+      .pill.record {
+        color: var(--accent);
+      }
+      .empty {
+        font-size: 13px;
+        color: var(--muted);
+        font-style: italic;
+        padding: 18px 0;
+      }
+
+      .vgroup {
+        border: 1px solid var(--line);
+        background: var(--surface);
+        margin-bottom: 8px;
+        padding: 12px 14px;
+      }
+      .vgroup h3 {
+        margin: 0 0 3px;
+        font-size: 13.5px;
+        font-weight: 600;
+      }
+      .vgroup .src {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+
+      .note {
+        font-size: 12px;
+        line-height: 1.55;
+        color: var(--ink-3);
+      }
+      .disclaim {
+        font-size: 11.5px;
+        line-height: 1.5;
+        color: var(--muted);
+        border-top: 1px solid var(--line);
+        padding-top: 12px;
+        margin-top: 26px;
+      }
+      .hidden {
+        display: none !important;
+      }
+
+      /* ---------- state machines ---------- */
+      .machine {
+        margin-bottom: 40px;
+      }
+      .machine > header {
+        margin-bottom: 14px;
+      }
+      .machine h2 {
+        margin: 0 0 4px;
+        font-size: 19px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .machine .subject {
+        font-size: 13px;
+        line-height: 1.55;
+        color: var(--ink-2);
+        max-width: 80ch;
+      }
+      .machine .note {
+        margin-top: 12px;
+        padding: 11px 13px;
+        background: var(--sunk);
+        border-left: 3px solid var(--muted);
+        font-size: 12.5px;
+        line-height: 1.55;
+        max-width: 90ch;
+      }
+      .mdiag {
+        position: relative;
+      }
+      .st {
+        position: absolute;
+        background: var(--surface);
+        border: 1.5px solid var(--ink);
+        padding: 8px 11px;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .st .sl {
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.25;
+      }
+      .st .ss {
+        font-size: 11px;
+        line-height: 1.35;
+        color: var(--ink-3);
+      }
+      .st.k-start {
+        border: 1.5px solid var(--muted);
+        background: var(--sunk);
+        border-radius: 999px;
+        align-items: center;
+        justify-content: center;
+      }
+      .st.k-start .sl {
+        font-size: 11.5px;
+        font-weight: 500;
+        color: var(--ink-3);
+      }
+      .st.k-terminal {
+        border-width: 3px;
+      }
+      .st.k-flag {
+        border: 1.5px dashed var(--warn);
+      }
+      .st.k-unreachable {
+        border: 1.5px dashed var(--danger);
+        background: var(--sunk);
+      }
+      .st.k-unreachable .sl {
+        color: var(--danger);
+      }
+      .elabel {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        background: var(--ground);
+        padding: 1px 5px;
+        font-family: var(--mono);
+        font-size: 10.5px;
+        letter-spacing: 0.02em;
+        color: var(--ink-2);
+        white-space: nowrap;
+        cursor: pointer;
+        border: 1px solid var(--line-2);
+      }
+      .elabel:hover,
+      .elabel.on {
+        border-color: var(--ink);
+        color: var(--ink);
+        background: var(--surface);
+      }
+      .elabel.back {
+        color: var(--muted);
+      }
+      .elabel.exit {
+        color: var(--danger);
+      }
+      .elabel.skip,
+      .elabel.side {
+        color: var(--warn);
+      }
+
+      /* ---------- coverage ---------- */
+      table.cov {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 12.5px;
+      }
+      table.cov th,
+      table.cov td {
+        text-align: left;
+        padding: 7px 10px;
+        border-bottom: 1px solid var(--line-2);
+        vertical-align: top;
+      }
+      table.cov th {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 500;
+      }
+      table.cov td.ev {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--ink-3);
+        white-space: nowrap;
+      }
+      table.cov tr:hover td {
+        background: var(--sunk);
+      }
+      .banner {
+        padding: 13px 15px;
+        border: 1.5px solid var(--good);
+        background: var(--surface);
+        font-size: 13px;
+        line-height: 1.55;
+        margin-bottom: 20px;
+      }
+      .banner b {
+        color: var(--good);
+      }
+      .banner.warn {
+        border-color: var(--warn);
+      }
+      .banner.warn b {
+        color: var(--warn);
+      }
+
+      /* ---------- the bed decision ---------- */
+      .gate {
+        border: 1px solid var(--line);
+        background: var(--surface);
+        margin-bottom: 8px;
+        padding: 13px 15px;
+      }
+      .gate.hard {
+        border-left: 3px solid var(--danger);
+      }
+      .gate.soft {
+        border-left: 3px solid var(--warn);
+      }
+      .gate .gh {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+      .gate .gn {
+        font-size: 14.5px;
+        font-weight: 600;
+      }
+      .gate .asks {
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--ink-2);
+        margin-top: 5px;
+      }
+      .gate .gnote {
+        font-size: 12.5px;
+        line-height: 1.55;
+        color: var(--ink-2);
+        margin-top: 8px;
+        padding: 9px 11px;
+        background: var(--sunk);
+      }
+      .when {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+      }
+      .when span {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        padding: 2px 6px;
+        border: 1px solid var(--line);
+      }
+      .when span.on {
+        border-color: var(--ink);
+        color: var(--ink);
+      }
+      .when span.off {
+        color: var(--muted);
+        opacity: 0.55;
+      }
+      .when span.diff {
+        border-color: var(--warn);
+        color: var(--warn);
+      }
+      .gapcard {
+        border: 1.5px dashed var(--muted);
+        background: var(--surface);
+        padding: 15px 16px;
+        margin-bottom: 10px;
+      }
+      .gapcard h3 {
+        margin: 0 0 7px;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .gapcard p {
+        margin: 0 0 8px;
+        font-size: 13px;
+        line-height: 1.55;
+        color: var(--ink-2);
+      }
+      .gapcard .q {
+        font-size: 13px;
+        line-height: 1.55;
+        color: var(--ink);
+        border-top: 1px solid var(--line-2);
+        padding-top: 9px;
+      }
+      .gapcard .q b {
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="top">
+      <div class="brand"><b>The ward journey</b><span>Ward Flow &middot; explorer</span></div>
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tab-map" aria-selected="true">The route</button>
+        <button role="tab" id="tab-beh" aria-selected="false">
+          Behaviour <span class="count" id="behCount"></span>
+        </button>
+        <button role="tab" id="tab-gates" aria-selected="false">The bed decision <span class="count">13</span></button>
+        <button role="tab" id="tab-acts" aria-selected="false">
+          Every action <span class="count" id="actCount"></span>
+        </button>
+        <button role="tab" id="tab-vocab" aria-selected="false">
+          The words it demands <span class="count" id="vocabCount"></span>
+        </button>
+        <button role="tab" id="tab-wrong" aria-selected="false">
+          What's wrong <span class="count" id="wrongCount"></span>
+        </button>
+        <button role="tab" id="tab-cov" aria-selected="false">Coverage</button>
+      </div>
+      <div class="search">
+        <input id="q" type="search" placeholder="Search an action, a reason, a rule&hellip;" autocomplete="off" />
+      </div>
+      <div class="views" id="views"></div>
+      <div class="lanes" id="lanes"></div>
+    </header>
+
+    <div class="wrap">
+      <main>
+        <section id="view-map">
+          <div class="viewbar" id="viewbar"></div>
+          <details class="legend" id="legend">
+            <summary>What the colours and the lines mean</summary>
+            <div class="lgbody" id="lgbody"></div>
+          </details>
+          <div class="howto">
+            <div>
+              <h3>Down the middle</h3>
+              <p>
+                The route when nothing goes wrong, in order, from a referral being raised to a bed becoming free again.
+                <b>Read it top to bottom.</b>
+              </p>
+            </div>
+            <div>
+              <h3>Off to the left</h3>
+              <p>
+                Wherever the journey <b>stalls or reverses</b> &mdash; in grey, and most of these go back into the main
+                route &mdash; or <b>ends</b>, in teal, which nothing follows.
+              </p>
+            </div>
+            <div>
+              <h3>Off to the right</h3>
+              <p>
+                Wherever it <b>carries on somewhere other than expected</b> &mdash; a different destination, a bed kept
+                while the patient is elsewhere, a step skipped.
+              </p>
+            </div>
+            <div>
+              <h3>What the line ends mean</h3>
+              <p>
+                An <b>arrowhead</b> is where the route goes next. A <b>bar</b> is a dead end &mdash; nothing follows it,
+                and it is drawn in its own colour. A line with <b>a head at both ends</b> goes there and comes back.
+              </p>
+            </div>
+            <div>
+              <h3>Off to the far right</h3>
+              <p>
+                Things <b>recorded alongside</b> the journey without moving it &mdash; a legal status changing, an
+                examination, a form arriving. Joined by a <b>dotted line</b> to the point they usually happen.
+              </p>
+            </div>
+            <div>
+              <h3>What the outlines mean</h3>
+              <p>
+                A <b>heavy</b> outline is a point of no return. A <b>red</b> one is something wrong that nothing
+                prevents. A <b>broken</b> one is a stretch the system cannot record at all.
+              </p>
+            </div>
+            <div>
+              <h3>What to do here</h3>
+              <p>
+                <b>Click any box</b> for everything that can happen at that point, and everything that refuses to. Use
+                the buttons above to show one kind of route at a time.
+              </p>
+            </div>
+          </div>
+          <div class="mapscroll" id="mapscroll">
+            <div id="mapsizer">
+              <div class="map" id="map" role="group" aria-label="The ward journey, as boxes and routes"></div>
+            </div>
+          </div>
+          <p class="sr-only" id="announce" role="status" aria-live="polite"></p>
+        </section>
+        <section id="view-beh" class="hidden"></section>
+        <section id="view-gates" class="hidden"></section>
+        <section id="view-acts" class="hidden"></section>
+        <section id="view-vocab" class="hidden"></section>
+        <section id="view-wrong" class="hidden"></section>
+        <section id="view-cov" class="hidden"></section>
+        <div class="disclaim" id="foot"></div>
+      </main>
+      <aside class="panel" id="panel"></aside>
+    </div>
+
+    <script>
+      const DATA = /*__DATA__*/ null;
+
+      // Every lane a node or action can carry, and the colour it draws in.
+      const LANE_COLOUR = {
+        expected: "var(--ink)",
+        seam: "var(--seam)",
+        note: "var(--annot)",
+        diversion: "var(--warn)",
+        forced: "var(--forced)",
+        stall: "var(--muted)",
+        end: "var(--ending)",
+        breach: "var(--danger)",
+        absent: "var(--absent)",
+        record: "var(--accent)",
+      };
+      // The filter buttons. `covers` maps several lanes onto one button, so a lane can never
+      // fall through the filter and vanish — the defect this replaced.
+      const LANES = [
+        { id: "expected", label: "The expected route", colour: "var(--ink)", covers: ["expected"] },
+        { id: "seam", label: "A second record starts", colour: "var(--seam)", covers: ["seam"] },
+        { id: "diversion", label: "Diversions", colour: "var(--warn)", covers: ["diversion"] },
+        { id: "forced", label: "Forced past a refusal", colour: "var(--forced)", covers: ["forced"] },
+        { id: "stall", label: "Stalls and undos", colour: "var(--muted)", covers: ["stall"] },
+        { id: "end", label: "Endings", colour: "var(--ending)", covers: ["end"] },
+        { id: "breach", label: "Nothing stops it", colour: "var(--danger)", covers: ["breach"] },
+        { id: "absent", label: "No record exists", colour: "var(--absent)", covers: ["absent"] },
+        { id: "record", label: "Recorded alongside", colour: "var(--accent)", covers: ["record"] },
+        { id: "note", label: "Notes", colour: "var(--annot)", covers: ["note"] },
+      ];
+      const FILTER_OF = {};
+      for (const l of LANES) for (const c of l.covers) FILTER_OF[c] = l.id;
+      // A lane nobody mapped stays visible rather than silently disappearing.
+      const visible = (lane) => state.lanes.has(FILTER_OF[lane || "record"] ?? "__unmapped__") || !(lane in FILTER_OF);
+
+      /* A box the journey can reach and never leave. Derived from the lines, not listed: a listed one
+   would be wrong the first time a box was added. A line drawn both ways counts as a way back. */
+      function deadEndIds() {
+        const CARRIES = ["expected", "seam", "stall", "diversion", "forced", "end", "breach", "absent"];
+        const onward = new Set(),
+          back = new Set();
+        for (const e of DATA.stages.edges) {
+          if (e.from !== e.to) onward.add(e.from);
+          if (e.both) back.add(e.to);
+        }
+        return new Set(
+          DATA.stages.nodes
+            .filter((n) => CARRIES.includes(n.lane) && !onward.has(n.id) && !back.has(n.id))
+            .map((n) => n.id),
+        );
+      }
+      function idsTouchedBy(test) {
+        const keep = new Set();
+        for (const e of DATA.stages.edges)
+          if (test(e)) {
+            keep.add(e.from);
+            keep.add(e.to);
+          }
+        return keep;
+      }
+      // Each view answers one question about the whole map: which boxes it keeps lit, and which lines.
+      // Returning null for the boxes means every box.
+      const VIEWS = [
+        { id: "all", label: "Everything", nodes: () => null, edge: () => true },
+        {
+          id: "route",
+          label: "The expected route",
+          nodes: () => new Set(DATA.stages.nodes.filter((n) => ["expected", "seam"].includes(n.lane)).map((n) => n.id)),
+          edge: (e) => ["expected", "seam"].includes(e.lane),
+        },
+        { id: "dead", label: "Dead ends", nodes: () => deadEndIds(), edge: (e) => deadEndIds().has(e.to) },
+        { id: "auto", label: "Happens automatically", nodes: () => idsTouchedBy((e) => e.auto), edge: (e) => !!e.auto },
+        { id: "undo", label: "Can be undone", nodes: () => idsTouchedBy((e) => e.both), edge: (e) => !!e.both },
+        {
+          id: "gap",
+          label: "Nothing is recorded",
+          nodes: () => new Set(DATA.stages.nodes.filter((n) => ["absent", "breach"].includes(n.lane)).map((n) => n.id)),
+          edge: (e) => ["absent", "breach"].includes(e.lane),
+        },
+      ];
+      /* Who is asking. "anyone" is the map as it has always been. */
+      const WHO = [
+        ["anyone", "Anyone"],
+        ["ward", "A ward"],
+        ["ed", "An emergency department"],
+        ["community", "A community team"],
+        ["coordinator", "The coordinator"],
+        ["officer", "An authorised officer"],
+      ];
+      // Where the flat list of roles is not the whole truth. Shown beside the filter, not hidden.
+      const ROLE_CAVEATS = {
+        WITHDRAW_REFERRAL: "until it has been accepted — after that only the referrer or the coordinator",
+        ACCEPT_REFERRAL: "except a non-binary placement onto a single-gender ward, which only a coordinator may clear",
+      };
+      const actionsForRole = (role) =>
+        role === "anyone" ? DATA.actions : DATA.actions.filter((a) => (a.roles || []).includes(role));
+      // A box belongs to a role if any action attached to it belongs to that role.
+      function nodesForRole(role) {
+        if (role === "anyone") return null;
+        const keep = new Set();
+        for (const a of actionsForRole(role)) for (const n of a.nodes || []) keep.add(n);
+        return keep;
+      }
+
+      const state = {
+        tab: "map",
+        transition: null,
+        lanes: new Set(LANES.map((l) => l.id)),
+        q: "",
+        node: null,
+        view: "all",
+        who: "anyone",
+        phase: "all",
+        trail: null,
+        show: { top: true, guide: true, panel: true },
+        full: false,
+        detail: "full",
+        zoom: 1,
+      };
+      const viewNow = () => VIEWS.find((v) => v.id === state.view) || VIEWS[0];
+      let viewNodes = null;
+
+      /* How big the map is drawn, and how much of each box is shown. */
+      function applyZoom() {
+        const map = $("#map"),
+          sizer = $("#mapsizer"),
+          box = $("#mapscroll");
+        if (!map || !sizer || !box) return;
+        const { width, height } = DATA.stages;
+        let z = state.zoom;
+        if (z === "width" || z === "fit") {
+          // Fit needs the pane's real size. In the bare view that is the window; otherwise it is
+          // whatever the column happens to be. Height only counts when the map has room to use it.
+          // Fitting the WHOLE map means fitting its height too, and this map is nearly twice as
+          // tall as it is wide — the whole thing in one window comes out too small to read. So the
+          // useful control is fit-to-width, and fitting everything is the separate, honest option.
+          const availW = (box.clientWidth || width) - 4;
+          const availH = state.full ? window.innerHeight - 20 : Math.max(window.innerHeight - 260, 320);
+          z = z === "width" ? availW / width : Math.min(availW / width, availH / height);
+        }
+        z = Math.max(0.08, Math.min(2, z));
+        map.style.transform = "scale(" + z + ")";
+        sizer.style.width = Math.round(width * z) + "px";
+        sizer.style.height = Math.round(height * z) + "px";
+        return z;
+      }
+
+      // One place that puts the state onto the document, so no toggle can set a class and forget
+      // to clear another. Every control below changes state and calls this.
+      function applyChrome() {
+        const b = document.body.classList;
+        b.toggle("hide-top", !state.show.top);
+        b.toggle("hide-guide", !state.show.guide);
+        b.toggle("hide-panel", !state.show.panel);
+        b.toggle("full", state.full);
+        b.toggle("titlesonly", state.detail === "titles");
+      }
+
+      function renderViewbar() {
+        const host = $("#viewbar");
+        if (!host) return;
+        host.textContent = "";
+        const toggle = (label, on, fn, title) => {
+          const b = el("button", null, label);
+          b.setAttribute("aria-pressed", on);
+          if (title) b.title = title;
+          b.onclick = fn;
+          host.append(b);
+          return b;
+        };
+        {
+          const label = el("span", "hint", "Who is asking:");
+          host.append(label);
+          const sel = el("select");
+          sel.className = "whosel";
+          for (const [id, text] of WHO) {
+            const o = document.createElement("option");
+            o.value = id;
+            o.textContent = text;
+            if (state.who === id) o.selected = true;
+            sel.append(o);
+          }
+          sel.onchange = () => {
+            state.who = sel.value;
+            renderViewbar();
+            renderAll();
+          };
+          host.append(sel);
+          if (state.who !== "anyone") {
+            const n = actionsForRole(state.who).length;
+            host.append(el("span", "hint", `${n} of ${DATA.actions.length} actions`));
+          }
+          host.append(el("span", "sep"));
+        }
+        {
+          const sel = el("select");
+          sel.className = "whosel";
+          for (const [id, text] of PHASES) {
+            const o = document.createElement("option");
+            o.value = id;
+            o.textContent = text;
+            if (state.phase === id) o.selected = true;
+            sel.append(o);
+          }
+          sel.onchange = () => {
+            state.phase = sel.value;
+            renderViewbar();
+            renderAll();
+          };
+          host.append(sel);
+          const walk = el("button", null, state.trail ? "Stop walking" : "Walk it");
+          walk.setAttribute("aria-pressed", !!state.trail);
+          walk.title = "Follow one patient through, a step at a time.";
+          walk.onclick = () => (state.trail ? endWalk() : startWalk(state.node || "raised"));
+          host.append(walk);
+          host.append(el("span", "sep"));
+        }
+        host.append(el("span", "hint", "Show:"));
+        for (const [key, label, why] of [
+          ["top", "Top bar", "The tabs, the search, the views and the colour filters."],
+          ["guide", "Guide", "The explanation above the map, and the legend."],
+          ["panel", "Side panel", "What opens when you click a box. It hides itself when empty."],
+        ]) {
+          toggle(
+            label,
+            state.show[key],
+            () => {
+              state.show[key] = !state.show[key];
+              applyChrome();
+              renderViewbar();
+              applyZoom();
+            },
+            why,
+          );
+        }
+        host.append(el("span", "sep"));
+        const allOff = !state.show.top && !state.show.guide && !state.show.panel && state.full;
+        toggle(
+          "Just the diagram",
+          allOff,
+          () => {
+            const on = !allOff;
+            state.show = { top: !on, guide: !on, panel: !on };
+            state.full = on;
+            if (on && state.zoom === 1) state.zoom = "width";
+            applyChrome();
+            renderViewbar();
+            applyZoom();
+          },
+          "All three at once, and the map fills the window. Esc brings everything back.",
+        );
+        toggle(
+          "Titles only",
+          state.detail === "titles",
+          () => {
+            state.detail = state.detail === "titles" ? "full" : "titles";
+            applyChrome();
+            renderViewbar();
+          },
+          "Hide the sentence inside each box, leaving the boxes and the routes.",
+        );
+        host.append(el("span", "sep"));
+        for (const [label, z] of [
+          ["Fit width", "width"],
+          ["Whole map", "fit"],
+          ["50%", 0.5],
+          ["75%", 0.75],
+          ["100%", 1],
+        ]) {
+          toggle(label, state.zoom === z, () => {
+            state.zoom = z;
+            renderViewbar();
+            applyZoom();
+          });
+        }
+        host.append(
+          el("span", "hint", state.show.top && state.show.guide && state.show.panel ? "" : "Esc brings it all back"),
+        );
+      }
+
+      // A full-window view with no visible way out is a trap, so the key that everyone tries works.
+      window.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        if (state.show.top && state.show.guide && state.show.panel && !state.full) return;
+        state.show = { top: true, guide: true, panel: true };
+        state.full = false;
+        applyChrome();
+        renderViewbar();
+        applyZoom();
+      });
+      window.addEventListener("resize", () => {
+        if (state.zoom === "fit") applyZoom();
+      });
+
+      /* Drag the map by its empty space to move around it. Carried over by hand from the unfolded
+         22 September explorer branch, onto this page's own scroll box. The map is scrolled across
+         by its box and down by the page, so a drag moves both. A press on a box, button or link is
+         left alone, and a drag that moved never also counts as a click. */
+      (function enableDragPan() {
+        // Not $(): this runs while the script is still being read, before $ is defined below.
+        const box = document.getElementById("mapscroll");
+        if (!box) return;
+        let drag = null;
+        box.addEventListener("pointerdown", (e) => {
+          if (e.button !== 0 || e.target.closest("button, a, input, select, summary, .node")) return;
+          drag = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
+        });
+        box.addEventListener("pointermove", (e) => {
+          if (!drag || e.pointerId !== drag.id) return;
+          const dx = e.clientX - drag.x,
+            dy = e.clientY - drag.y;
+          if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 5) return;
+          if (!drag.moved) {
+            drag.moved = true;
+            try {
+              box.setPointerCapture(e.pointerId);
+            } catch {
+              // A pointer the browser no longer tracks cannot be captured; the drag still works.
+            }
+            box.classList.add("dragging");
+          }
+          box.scrollLeft -= dx;
+          window.scrollBy(0, -dy);
+          drag.x = e.clientX;
+          drag.y = e.clientY;
+          e.preventDefault();
+        });
+        // The click that follows a drag is swallowed, and only that one: the flag clears as soon as
+        // the current event has finished, so a drag that produces no click cannot eat the next one.
+        let justDragged = false;
+        box.addEventListener(
+          "click",
+          (c) => {
+            if (justDragged) c.stopPropagation();
+          },
+          { capture: true },
+        );
+        const end = (e) => {
+          if (!drag || e.pointerId !== drag.id) return;
+          if (drag.moved) {
+            box.classList.remove("dragging");
+            justDragged = true;
+            setTimeout(() => (justDragged = false), 0);
+          }
+          drag = null;
+        };
+        box.addEventListener("pointerup", end);
+        box.addEventListener("pointercancel", end);
+      })();
+
+      const PHASES = [
+        ["all", "The whole journey"],
+        ["front", "The front door"],
+        ["bed", "The bed search"],
+        ["ward", "On the ward"],
+        ["leaving", "Leaving"],
+        ["alongside", "Recorded alongside"],
+      ];
+      const nodesInPhase = (ph) =>
+        ph === "all" ? null : new Set(DATA.stages.nodes.filter((n) => n.phase === ph).map((n) => n.id));
+
+      /* ---------------- walking it ----------------
+         The map shows every option at once, which is what a map is for and is exactly why it cannot
+         answer "and then what". Walking takes the branches one at a time. Where the patient is and
+         what the bed is doing are read from the box itself — both were already recorded on every
+         box and nothing on the page had ever shown them together. */
+      const onwardFrom = (id) =>
+        DATA.stages.edges
+          .filter((e) => e.from === id && e.to !== id)
+          .map((e) => ({ to: e.to, lane: e.lane, auto: e.auto, both: e.both }))
+          .filter((e, i, all) => all.findIndex((x) => x.to === e.to) === i);
+      const nodeById = (id) => DATA.stages.nodes.find((n) => n.id === id);
+
+      function startWalk(id) {
+        state.trail = [id || "raised"];
+        state.node = state.trail[state.trail.length - 1];
+        renderViewbar();
+        renderAll();
+      }
+      function stepTo(id) {
+        state.trail.push(id);
+        state.node = id;
+        renderViewbar();
+        renderAll();
+        const box = [...document.querySelectorAll("#map .node")].find((b) => b.getAttribute("data-id") === id);
+        if (box) box.scrollIntoView({ block: "center", inline: "center" });
+      }
+      function walkBack() {
+        if (state.trail && state.trail.length > 1) state.trail.pop();
+        state.node = state.trail[state.trail.length - 1];
+        renderViewbar();
+        renderAll();
+      }
+      function endWalk() {
+        state.trail = null;
+        renderViewbar();
+        renderAll();
+      }
+
+      function renderWalk(host) {
+        const here = nodeById(state.node);
+        if (!here) return;
+        host.append(el("div", "tag", `Step ${state.trail.length}`));
+        const h = el("h2");
+        h.style.cssText = "margin:2px 0 8px;font-size:19px";
+        h.textContent = here.label;
+        host.append(h);
+        if (here.sub) host.append(el("p", "note", here.sub));
+        const fact = (k, v) => {
+          if (!v) return;
+          const r = el("p");
+          r.style.cssText = "margin:6px 0;font-size:13px";
+          r.append(el("b", null, k + " "), document.createTextNode(v));
+          host.append(r);
+        };
+        fact("The patient:", here.patient);
+        fact("The bed:", here.bed);
+
+        const next = onwardFrom(state.node);
+        const t = el("h3");
+        t.style.cssText = "margin:16px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.06em";
+        t.textContent = next.length ? `From here — ${next.length}` : "From here";
+        host.append(t);
+        if (!next.length) {
+          host.append(el("p", "note", "Nothing follows. This is where the journey stops."));
+        }
+        for (const n of next) {
+          const to = nodeById(n.to);
+          if (!to) continue;
+          const b = el("button");
+          b.style.cssText =
+            "display:block;width:100%;text-align:left;font:inherit;font-size:13px;margin:0 0 6px;padding:8px 10px;border:1px solid var(--line);background:var(--surface);cursor:pointer";
+          const mark = symbolFor(to.lane, LANE_COLOUR[to.lane] || "var(--ink)");
+          const row = el("span");
+          row.style.cssText = "display:flex;gap:8px;align-items:center";
+          if (mark) row.append(mark);
+          row.append(document.createTextNode(to.label));
+          b.append(row);
+          if (n.auto) b.append(el("span", "note", "Happens on its own — nobody chooses it."));
+          b.onclick = () => stepTo(n.to);
+          host.append(b);
+        }
+        const bar = el("p");
+        bar.style.cssText = "margin:14px 0 0;display:flex;gap:6px";
+        const btn = (label, fn) => {
+          const x = el("button", null, label);
+          x.style.cssText =
+            "font:inherit;font-size:12px;padding:4px 10px;border:1px solid var(--line);background:var(--surface);cursor:pointer";
+          x.onclick = fn;
+          bar.append(x);
+        };
+        if (state.trail.length > 1) btn("Back a step", walkBack);
+        btn("Start again", () => startWalk("raised"));
+        btn("Stop walking", endWalk);
+        host.append(bar);
+        host.append(
+          el(
+            "p",
+            "note",
+            "Trail: " +
+              state.trail
+                .map((id) => (nodeById(id) || {}).label)
+                .filter(Boolean)
+                .join("  →  "),
+          ),
+        );
+      }
+
+      /* ---------------- a link to a place on it ----------------
+         The address carries what you are looking at, so a link opens on the same thing. Read once
+         on load; written whenever it changes, with replaceState so the back button still means
+         "the page before this one" rather than "the last filter I touched". */
+      function readAddress() {
+        const q = new URLSearchParams(location.hash.replace(/^#/, ""));
+        const set = (k, allowed) => {
+          const v = q.get(k);
+          if (v && (!allowed || allowed.includes(v))) state[k] = v;
+        };
+        set(
+          "view",
+          VIEWS.map((v) => v.id),
+        );
+        set(
+          "who",
+          WHO.map(([id]) => id),
+        );
+        set(
+          "phase",
+          PHASES.map(([id]) => id),
+        );
+        const node = q.get("box");
+        if (node && DATA.stages.nodes.some((n) => n.id === node)) state.node = node;
+        if (q.get("tab")) state.tab = q.get("tab");
+      }
+      function writeAddress() {
+        const q = new URLSearchParams();
+        if (state.tab !== "map") q.set("tab", state.tab);
+        if (state.view !== "all") q.set("view", state.view);
+        if (state.who !== "anyone") q.set("who", state.who);
+        if (state.phase !== "all") q.set("phase", state.phase);
+        if (state.node) q.set("box", state.node);
+        const hash = q.toString();
+        history.replaceState(null, "", hash ? "#" + hash : location.pathname);
+      }
+
+      function renderViews() {
+        const host = $("#views");
+        host.textContent = "";
+        for (const v of VIEWS) {
+          const b = el("button", null, v.label);
+          b.setAttribute("aria-pressed", state.view === v.id);
+          if (v.id === "dead") b.append(el("span", "tally", " " + deadEndIds().size));
+          b.onclick = () => {
+            state.view = v.id;
+            renderViews();
+            renderAll();
+          };
+          host.append(b);
+        }
+      }
+      const $ = (s) => document.querySelector(s);
+      const el = (t, c, txt) => {
+        const n = document.createElement(t);
+        if (c) n.className = c;
+        if (txt != null) n.textContent = txt;
+        return n;
+      };
+      const norm = (s) => (s || "").toLowerCase();
+
+      /* ---------------- lane filter ---------------- */
+      function renderLanes() {
+        const host = $("#lanes");
+        host.textContent = "";
+        for (const l of LANES) {
+          const b = el("button");
+          b.setAttribute("aria-pressed", state.lanes.has(l.id));
+          const sw = el("span", "swatch");
+          sw.style.background = l.colour;
+          const n = DATA.stages.nodes.filter((x) => l.covers.includes(x.lane)).length;
+          b.append(sw, document.createTextNode(l.label), el("span", "tally", String(n)));
+          b.onclick = () => {
+            if (state.lanes.has(l.id)) state.lanes.delete(l.id);
+            else state.lanes.add(l.id);
+            if (state.lanes.size === 0) state.lanes = new Set(LANES.map((x) => x.id));
+            renderLanes();
+            renderAll();
+          };
+          host.append(b);
+        }
+      }
+
+      /* ---------------- the map ---------------- */
+      function renderMap() {
+        viewNodes = viewNow().nodes();
+        // Two independent narrowings — the view, and who is asking. A box has to survive both.
+        const byRole = nodesForRole(state.who);
+        if (byRole) viewNodes = viewNodes ? new Set([...viewNodes].filter((id) => byRole.has(id))) : byRole;
+        const byPhase = nodesInPhase(state.phase);
+        if (byPhase) viewNodes = viewNodes ? new Set([...viewNodes].filter((id) => byPhase.has(id))) : byPhase;
+        // Walking narrows hardest of all: where you are, and where you could go next.
+        if (state.trail) {
+          const lit = new Set([state.node, ...onwardFrom(state.node).map((e) => e.to), ...state.trail]);
+          viewNodes = viewNodes ? new Set([...viewNodes].filter((id) => lit.has(id))) : lit;
+        }
+        const map = $("#map");
+        map.textContent = "";
+        const { nodes, edges, width, height } = DATA.stages;
+        map.style.width = width + "px";
+        map.style.height = height + "px";
+
+        const NS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(NS, "svg");
+        svg.setAttribute("width", width);
+        svg.setAttribute("height", height);
+        svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+        svg.style.position = "absolute";
+        svg.style.top = "0";
+        svg.style.left = "0";
+        svg.setAttribute("aria-hidden", "true");
+
+        const defs = document.createElementNS(NS, "defs");
+        for (const l of LANES) {
+          const m = document.createElementNS(NS, "marker");
+          m.setAttribute("id", "arw-" + l.id);
+          m.setAttribute("viewBox", "0 0 10 10");
+          m.setAttribute("refX", "9");
+          m.setAttribute("refY", "5");
+          m.setAttribute("markerWidth", "7");
+          m.setAttribute("markerHeight", "7");
+          m.setAttribute("orient", "auto-start-reverse");
+          const p = document.createElementNS(NS, "path");
+          p.setAttribute("d", "M 0 0 L 10 5 L 0 10 z");
+          p.setAttribute("fill", l.colour);
+          m.append(p);
+          defs.append(m);
+
+          // A dead end gets a bar, not a head. A route that stops and a route that continues
+          // off the edge of the paper look identical when both end in an arrowhead.
+          const bar = document.createElementNS(NS, "marker");
+          bar.setAttribute("id", "bar-" + l.id);
+          bar.setAttribute("viewBox", "0 0 10 10");
+          bar.setAttribute("refX", "2");
+          bar.setAttribute("refY", "5");
+          bar.setAttribute("markerWidth", "9");
+          bar.setAttribute("markerHeight", "9");
+          bar.setAttribute("orient", "auto-start-reverse");
+          const bp = document.createElementNS(NS, "path");
+          bp.setAttribute("d", "M 2 0 L 2 10");
+          bp.setAttribute("stroke", l.colour);
+          bp.setAttribute("stroke-width", "2.5");
+          bp.setAttribute("fill", "none");
+          bar.append(bp);
+          defs.append(bar);
+        }
+        svg.append(defs);
+
+        /*
+         * Two passes, and the order is the trick. Every line first gets a fat stroke in the page's
+         * own background colour; then every line is drawn again in its lane colour on top. Where
+         * two lines cross, the one drawn later cuts a clean gap in the one underneath, so a reader
+         * can follow either through the junction. In a single pass they meet in a smudge.
+         */
+        for (const e of edges) {
+          if (!visible(e.lane || "expected") || !viewNow().edge(e)) continue; // a dimmed line masks nothing
+          const h = document.createElementNS(NS, "path");
+          h.setAttribute("d", e.d);
+          h.setAttribute("fill", "none");
+          h.setAttribute("stroke", "var(--bg)");
+          h.setAttribute("stroke-width", "6");
+          h.setAttribute("stroke-linecap", "round");
+          h.setAttribute("aria-hidden", "true");
+          svg.append(h);
+        }
+
+        for (const e of edges) {
+          const p = document.createElementNS(NS, "path");
+          p.setAttribute("d", e.d);
+          p.setAttribute("fill", "none");
+          const lane = e.lane || "expected";
+          p.setAttribute("stroke", LANE_COLOUR[lane] || "var(--ink)");
+          // Weight says how much of the journey a line carries: the spine heaviest, a branch off it
+          // lighter, something merely recorded alongside lighter still.
+          p.setAttribute(
+            "stroke-width",
+            lane === "expected" || lane === "seam" ? "2.6" : lane === "record" ? "1.3" : "1.7",
+          );
+          p.setAttribute("stroke-linejoin", "round");
+          p.setAttribute("stroke-linecap", "round");
+          if (e.dashed) p.setAttribute("stroke-dasharray", "7 5");
+          // Nobody chooses this. It is the difference between a decision and a consequence, and it was
+          // drawn identically to a decision until now.
+          else if (e.auto) p.setAttribute("stroke-dasharray", "1.5 4");
+          const fam = FILTER_OF[lane] || "expected";
+          if (e.terminal) p.setAttribute("marker-end", `url(#bar-${fam})`);
+          else if (e.arrow !== false) p.setAttribute("marker-end", `url(#arw-${fam})`);
+          // A route that comes back is drawn coming back, rather than said in the box's text.
+          if (e.both) p.setAttribute("marker-start", `url(#arw-${fam})`);
+          if (e.note) {
+            const t = document.createElementNS(NS, "title");
+            t.textContent = e.note;
+            p.append(t);
+          }
+          p.classList.add("edge");
+          if (!visible(lane) || !viewNow().edge(e)) p.classList.add("dim");
+          svg.append(p);
+        }
+        map.append(svg);
+
+        const hits = state.q ? matchingNodeIds(state.q) : null;
+        for (const n of nodes) {
+          const b = el("button", "node lane-" + n.lane);
+          b.setAttribute("data-id", n.id);
+          b.style.left = n.x + "px";
+          b.style.top = n.y + "px";
+          b.style.width = n.w + "px";
+          if (n.h) b.style.height = n.h + "px";
+          const mark = symbolFor(n.lane, LANE_COLOUR[n.lane] || "var(--ink)");
+          if (mark) {
+            const slot = el("span", "nsym");
+            slot.append(mark);
+            b.append(slot);
+          }
+          if (n.tag) b.append(el("div", "nb", n.tag));
+          b.append(el("div", "nt", n.label));
+          if (n.sub) b.append(el("div", "nc", n.sub));
+          const shown = visible(n.lane) && !(viewNodes && !viewNodes.has(n.id));
+          if (!shown) {
+            b.classList.add("dim");
+            /*
+             * Faded but still tabbable was the defect. It stays ON SCREEN on purpose — a dimmed box
+             * keeps the shape of the whole map, which is why this filters rather than hides — but it
+             * leaves the tab order and the accessibility tree.
+             */
+            b.inert = true;
+            b.tabIndex = -1;
+            b.setAttribute("aria-hidden", "true");
+          }
+          if (hits && hits.has(n.id)) b.classList.add("hit");
+          if (state.node === n.id) b.setAttribute("aria-current", "true");
+          if (n.lane === "heading") {
+            b.disabled = true;
+            b.setAttribute("aria-hidden", "true");
+          } else
+            b.onclick = () => {
+              state.node = n.id;
+              renderMap();
+              renderPanel();
+            };
+          map.append(b);
+        }
+
+        const z = applyZoom() || 1;
+        // The spine is the point of the map, and it sits in the middle of a canvas wider than the
+        // pane — so an untouched map opens centred on it, not scrolled hard left onto the stalls.
+        // Only on the first paint: re-centring on every click would fight whoever is reading it.
+        if (!mapCentred) {
+          const box = document.querySelector(".mapscroll");
+          if (box && box.clientWidth) {
+            box.scrollLeft = Math.max(0, DATA.stages.spineX * z - box.clientWidth / 2);
+            mapCentred = true;
+          }
+        }
+      }
+      let mapCentred = false;
+
+      function actionsFor(nodeId) {
+        return DATA.actions.filter((a) => (a.nodes || []).includes(nodeId));
+      }
+      function matchingNodeIds(q) {
+        const k = norm(q);
+        const out = new Set();
+        for (const n of DATA.stages.nodes) {
+          if (norm(n.label).includes(k) || norm(n.sub).includes(k)) out.add(n.id);
+        }
+        for (const a of DATA.actions) {
+          if (actionMatches(a, k)) for (const id of a.nodes || []) out.add(id);
+        }
+        return out;
+      }
+
+      /* ---------------- actions ---------------- */
+      function actionMatches(a, k) {
+        if (!k) return true;
+        const hay = [
+          a.name,
+          a.event,
+          a.does,
+          a.needs,
+          a.changes,
+          (a.reasons || []).join(" "),
+          (a.refuses || []).map((r) => r.when + " " + r.message).join(" "),
+          (a.roles || []).join(" "),
+        ].join(" ");
+        return norm(hay).includes(k);
+      }
+
+      function actionCard(a, open) {
+        const d = el("details", "act");
+        if (open) d.open = true;
+        const s = el("summary");
+        const left = el("div");
+        left.style.minWidth = "0";
+        left.append(el("div", "an", a.name));
+        /* Where a person would actually do this. An engine event can lack a screen control,
+           and some such events are always refused; never imply that they work. */
+        if (a.screen) {
+          const w = el("p");
+          w.style.cssText = "margin:6px 0;font-size:12.5px";
+          if (a.screen.screen === "NONE") {
+            w.style.color = "var(--absent)";
+            w.append(
+              el("b", null, "No screen can do this. "),
+              document.createTextNode("The action entry below states what the engine does with it."),
+            );
+          } else {
+            w.append(el("b", null, "Where: "), document.createTextNode(a.screen.control + "  ·  " + a.screen.screen));
+          }
+          left.append(w);
+        }
+        if (ROLE_CAVEATS[a.event]) {
+          const c = el("p", "note");
+          c.style.color = "var(--warn)";
+          c.textContent = "Not always: " + ROLE_CAVEATS[a.event] + ".";
+          left.append(c);
+        }
+        if (a.lane) {
+          const p = el("span", "pill " + a.lane, LANES.find((l) => l.id === FILTER_OF[a.lane])?.label || a.lane);
+          p.style.marginTop = "4px";
+          p.style.display = "inline-block";
+          left.append(p);
+        }
+        s.append(left, el("span", "ae", a.event));
+        d.append(s);
+
+        const body = el("div", "body");
+        const row = (k, build) => {
+          const r = el("div", "row");
+          r.append(el("div", "k", k));
+          const v = el("div", "v");
+          build(v);
+          r.append(v);
+          body.append(r);
+        };
+
+        if (a.does) row("What it does", (v) => (v.textContent = a.does));
+        if (a.needs) row("Needs", (v) => (v.textContent = a.needs));
+        if (a.refuses && a.refuses.length)
+          row("Refuses", (v) => {
+            for (const r of a.refuses) {
+              const w = el("span", "refuse");
+              w.append(el("b", null, r.when));
+              if (r.message) w.append(el("code", null, r.message));
+              v.append(w);
+            }
+          });
+        if (a.changes) row("Changes", (v) => (v.textContent = a.changes));
+        if (a.reasons && a.reasons.length)
+          row("Must pick from", (v) => {
+            for (const rn of a.reasons) {
+              const voc = DATA.vocab.vocabularies[rn];
+              const box = el("div");
+              box.style.marginBottom = "8px";
+              const h = el("div");
+              h.style.fontSize = "12px";
+              h.style.fontWeight = "500";
+              h.style.marginBottom = "4px";
+              h.textContent = voc ? `${prettyVocab(rn)} — ${voc.members.length}` : prettyVocab(rn);
+              box.append(h);
+              if (voc) {
+                const cs = el("div", "chips");
+                for (const m of voc.members) cs.append(el("span", "chip", prettyMember(m)));
+                box.append(cs);
+              }
+              v.append(box);
+            }
+          });
+        if (a.override) row("Override", (v) => (v.textContent = "Can be pushed through with a recorded reason."));
+        if (a.roles && a.roles.length)
+          row("Who", (v) => {
+            const cs = el("div", "chips");
+            for (const r of a.roles) cs.append(el("span", "chip", r));
+            v.append(cs);
+          });
+        d.append(body);
+        return d;
+      }
+
+      const prettyMember = (m) =>
+        /[a-z]_[a-z]|^[a-z]+$/.test(m) && !/\s/.test(m)
+          ? m.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase())
+          : m;
+      const prettyVocab = (n) =>
+        n
+          .replace(/_/g, " ")
+          .toLowerCase()
+          .replace(/^./, (c) => c.toUpperCase());
+
+      function renderActs() {
+        const host = $("#view-acts");
+        host.textContent = "";
+        const k = norm(state.q);
+        const shown = DATA.actions.filter((a) => visible(a.lane) && actionMatches(a, k));
+        const groups = new Map();
+        for (const a of shown) {
+          const g = a.group || "Other";
+          if (!groups.has(g)) groups.set(g, []);
+          groups.get(g).push(a);
+        }
+        if (!shown.length) {
+          host.append(el("div", "empty", "Nothing matches that. Try a shorter word."));
+          return;
+        }
+        for (const [g, list] of groups) {
+          const sect = el("section", "sect");
+          const h = el("h2");
+          h.textContent = `${g} — ${list.length}`;
+          sect.append(h);
+          for (const a of list) sect.append(actionCard(a, !!k && shown.length <= 6));
+          host.append(sect);
+        }
+      }
+
+      function renderVocab() {
+        const host = $("#view-vocab");
+        host.textContent = "";
+        const k = norm(state.q);
+        const names = Object.keys(DATA.vocab.vocabularies).sort();
+        let any = false;
+        for (const n of names) {
+          const v = DATA.vocab.vocabularies[n];
+          const hay = norm(n + " " + v.members.join(" "));
+          if (k && !hay.includes(k)) continue;
+          any = true;
+          const box = el("div", "vgroup");
+          const h = el("h3");
+          h.textContent = `${prettyVocab(n)} — ${v.members.length}`;
+          box.append(h, el("div", "src", v.file));
+          const cs = el("div", "chips");
+          for (const m of v.members)
+            cs.append(el("span", "chip" + (k && norm(m).includes(k) ? " on" : ""), prettyMember(m)));
+          box.append(cs);
+          host.append(box);
+        }
+        if (!any) host.append(el("div", "empty", "Nothing matches that."));
+      }
+
+      /* ---------------- side panel ---------------- */
+      function renderPanel() {
+        const p = $("#panel");
+        p.textContent = "";
+        // Whether anything is SELECTED, not whether the panel has child nodes: with nothing
+        // chosen it still renders a placeholder, so counting children said "not empty" about a
+        // column whose whole content was an instruction to click something.
+        document.body.classList.toggle("panel-empty", !state.node && !state.transition && !state.trail);
+        if (state.trail) {
+          renderWalk(p);
+          return;
+        }
+        if (state.tab === "beh" && state.transition) {
+          const { machine, t, from, to } = state.transition;
+          const a = actionOf(t.action);
+          p.append(el("div", "tag", machine));
+          const hh = el("h2");
+          hh.style.margin = "2px 0 8px";
+          hh.style.fontSize = "19px";
+          hh.textContent = a ? a.name : t.action;
+          p.append(hh);
+          const move = el("p", "note");
+          move.innerHTML = "<b>" + from.label + "</b> \u2192 <b>" + to.label + "</b>";
+          p.append(move);
+          if (t.guard) {
+            const g = el("p", "note");
+            g.style.color = "var(--danger)";
+            g.textContent = t.guard;
+            p.append(g);
+          }
+          if (a) {
+            const sect = el("section", "sect");
+            sect.style.marginTop = "16px";
+            sect.append(actionCard(a, true));
+            p.append(sect);
+          }
+          return;
+        }
+        if (state.tab !== "map") {
+          p.append(el("h2", null, "How to use this"));
+          p.append(
+            el(
+              "p",
+              "note",
+              "Every action listed here was read out of the engine, not written by hand. Open one to see what it needs before it is allowed, everything that refuses it, and the exact words it makes somebody choose from.",
+            ),
+          );
+          p.append(el("p", "note", "Search runs across all three tabs at once."));
+          return;
+        }
+        const n = DATA.stages.nodes.find((x) => x.id === state.node);
+        if (!n) {
+          p.append(el("h2", null, "Pick a box"));
+          p.append(
+            el(
+              "p",
+              "note",
+              "Down the middle is the route when nothing goes wrong. To the left, the journey stalls, reverses or ends. To the right, it carries on somewhere other than expected.",
+            ),
+          );
+          p.append(
+            el("p", "note", "Click any box to see everything that can happen there — and everything that refuses to."),
+          );
+          const t = el("p", "note");
+          t.innerHTML = "<b>A broken outline</b> means there is no way to record that at all.";
+          p.append(t);
+          return;
+        }
+        const head = el("div");
+        head.style.marginBottom = "14px";
+        if (n.tag) head.append(el("div", "nb", n.tag));
+        const h = el("h2");
+        h.style.margin = "2px 0 6px";
+        h.style.fontSize = "19px";
+        h.textContent = n.label;
+        head.append(h);
+        if (n.sub) head.append(el("p", "note", n.sub));
+        p.append(head);
+
+        const pair = (k, v) => {
+          const r = el("div", "row");
+          r.append(el("div", "k", k));
+          const d = el("div", "v");
+          d.textContent = v;
+          r.append(d);
+          return r;
+        };
+        if (n.patient) p.append(pair("The patient", n.patient));
+        if (n.bed) p.append(pair("The bed", n.bed));
+
+        const acts = actionsFor(n.id).filter((a) => visible(a.lane));
+        const sect = el("section", "sect");
+        sect.style.marginTop = "18px";
+        const hh = el("h2");
+        hh.textContent = acts.length ? `What can happen here — ${acts.length}` : "What can happen here";
+        sect.append(hh);
+        if (!acts.length) sect.append(el("div", "empty", "Nothing is recorded against this point on its own."));
+        for (const a of acts) sect.append(actionCard(a, acts.length <= 3));
+        p.append(sect);
+      }
+
+      /* ---------------- state machines ---------------- */
+      /* Edge paths are COMPUTED from the state boxes, never hand-authored: a hand-authored path
+   silently stops pointing at its box the moment the box is nudged. */
+      const G = (s) => ({
+        x: s.x,
+        y: s.y,
+        w: s.w,
+        h: s.h,
+        r: s.x + s.w,
+        b: s.y + s.h,
+        cx: s.x + s.w / 2,
+        cy: s.y + s.h / 2,
+      });
+
+      function pathFor(t, A, B) {
+        const a = G(A),
+          b = G(B),
+          off = t.offset || 0;
+        switch (t.route) {
+          case "straight":
+            if (a.r <= b.x)
+              return [
+                [a.r, a.cy],
+                [b.x, b.cy],
+              ];
+            if (b.r <= a.x)
+              return [
+                [a.x, a.cy],
+                [b.r, b.cy],
+              ];
+            return a.cy < b.cy
+              ? [
+                  [a.cx, a.b],
+                  [b.cx, b.y],
+                ]
+              : [
+                  [a.cx, a.y],
+                  [b.cx, b.b],
+                ];
+          case "below": {
+            const y = Math.max(a.b, b.b) + 30 + off;
+            return [
+              [a.cx, a.b],
+              [a.cx, y],
+              [b.cx, y],
+              [b.cx, b.b],
+            ];
+          }
+          case "above": {
+            const y = Math.min(a.y, b.y) - 26 - off;
+            return [
+              [a.cx, a.y],
+              [a.cx, y],
+              [b.cx, y],
+              [b.cx, b.y],
+            ];
+          }
+          case "self": {
+            const x1 = a.x + a.w * 0.28,
+              x2 = a.x + a.w * 0.72,
+              y = a.y - 20 - off;
+            return [
+              [x1, a.y],
+              [x1, y],
+              [x2, y],
+              [x2, a.y],
+            ];
+          }
+          case "exit": {
+            const m = a.b + 26 + off,
+              lx = Math.min(b.r - 24, b.x + 26 + off * 0.55);
+            return [
+              [a.cx, a.b],
+              [a.cx, m],
+              [lx, m],
+              [lx, b.y],
+            ];
+          }
+          case "up":
+            return [
+              [a.cx, a.y],
+              [a.cx, b.b],
+            ];
+          case "down":
+            return [
+              [a.cx, a.b],
+              [a.cx, b.y],
+            ];
+          default:
+            return [
+              [a.cx, a.cy],
+              [b.cx, b.cy],
+            ];
+        }
+      }
+      /* A label goes on a HORIZONTAL run wherever there is one long enough to hold it. Several
+   edges that drop from the same box share an x, so labels placed on the vertical run all
+   land on top of each other; their horizontal runs are at different heights and do not. */
+      function labelAt(pts) {
+        let i0 = -1,
+          best = -1;
+        for (let i = 0; i < pts.length - 1; i++) {
+          const dx = Math.abs(pts[i + 1][0] - pts[i][0]),
+            dy = Math.abs(pts[i + 1][1] - pts[i][1]);
+          if (dy <= 1 && dx > 40 && dx > best) {
+            best = dx;
+            i0 = i;
+          }
+        }
+        if (i0 < 0) {
+          for (let i = 0; i < pts.length - 1; i++) {
+            const len = Math.abs(pts[i + 1][0] - pts[i][0]) + Math.abs(pts[i + 1][1] - pts[i][1]);
+            if (len > best) {
+              best = len;
+              i0 = i;
+            }
+          }
+        }
+        return [(pts[i0][0] + pts[i0 + 1][0]) / 2, (pts[i0][1] + pts[i0 + 1][1]) / 2];
+      }
+      const toD = (pts) => pts.map(([x, y], i) => (i ? "L " : "M ") + Math.round(x) + " " + Math.round(y)).join(" ");
+      const actionOf = (ev) => DATA.actions.find((a) => a.event === ev);
+      const EDGE_COLOUR = { back: "var(--muted)", exit: "var(--danger)", skip: "var(--warn)", side: "var(--warn)" };
+
+      function renderMachine(m, host) {
+        const wrap = el("section", "machine");
+        const head = el("header");
+        head.append(el("h2", null, m.name), el("div", "subject", m.subject));
+        wrap.append(head);
+
+        const scroll = el("div", "mapscroll");
+        const box = el("div", "mdiag");
+        box.style.width = m.width + "px";
+        box.style.height = m.height + "px";
+
+        const NS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(NS, "svg");
+        svg.setAttribute("width", m.width);
+        svg.setAttribute("height", m.height);
+        svg.setAttribute("viewBox", "0 0 " + m.width + " " + m.height);
+        svg.style.position = "absolute";
+        svg.style.top = "0";
+        svg.style.left = "0";
+        svg.setAttribute("aria-hidden", "true");
+        const defs = document.createElementNS(NS, "defs");
+        const markers = Object.assign({ fwd: "var(--ink)" }, EDGE_COLOUR);
+        for (const key of Object.keys(markers)) {
+          const mk = document.createElementNS(NS, "marker");
+          mk.setAttribute("id", "m-" + m.id + "-" + key);
+          mk.setAttribute("viewBox", "0 0 10 10");
+          mk.setAttribute("refX", "9");
+          mk.setAttribute("refY", "5");
+          mk.setAttribute("markerWidth", "6");
+          mk.setAttribute("markerHeight", "6");
+          mk.setAttribute("orient", "auto-start-reverse");
+          const pp = document.createElementNS(NS, "path");
+          pp.setAttribute("d", "M 0 0 L 10 5 L 0 10 z");
+          pp.setAttribute("fill", markers[key]);
+          mk.append(pp);
+          defs.append(mk);
+        }
+        svg.append(defs);
+
+        const byId = Object.fromEntries(m.states.map((x) => [x.id, x]));
+        const labels = [];
+        const k = norm(state.q);
+        for (const t of m.transitions) {
+          const A = byId[t.from],
+            B = byId[t.to];
+          if (!A || !B) continue;
+          const pts = pathFor(t, A, B);
+          const kind = t.kind || "fwd";
+          const p = document.createElementNS(NS, "path");
+          p.setAttribute("d", toD(pts));
+          p.setAttribute("fill", "none");
+          p.setAttribute("stroke", EDGE_COLOUR[kind] || "var(--ink)");
+          p.setAttribute("stroke-width", kind === "fwd" ? "2" : "1.5");
+          if (kind === "exit" || kind === "side") p.setAttribute("stroke-dasharray", "6 4");
+          p.setAttribute("marker-end", "url(#m-" + m.id + "-" + (EDGE_COLOUR[kind] ? kind : "fwd") + ")");
+          svg.append(p);
+          labels.push([t, labelAt(pts), kind]);
+        }
+        box.append(svg);
+
+        for (const st of m.states) {
+          const b = el("div", "st k-" + (st.kind || "normal"));
+          b.style.left = st.x + "px";
+          b.style.top = st.y + "px";
+          b.style.width = st.w + "px";
+          b.style.height = st.h + "px";
+          b.append(el("div", "sl", st.label));
+          if (st.sub) b.append(el("div", "ss", st.sub));
+          box.append(b);
+        }
+
+        for (const entry of labels) {
+          const t = entry[0],
+            lx = entry[1][0],
+            ly = entry[1][1],
+            kind = entry[2];
+          const a = actionOf(t.action);
+          const lab = el("button", "elabel " + kind);
+          lab.style.left = lx + "px";
+          lab.style.top = ly + "px";
+          const base = a ? a.name : t.action;
+          lab.textContent = t.label ? base + " · " + t.label : base;
+          if (k && norm(t.action + " " + base + " " + (t.guard || "")).includes(k)) lab.classList.add("on");
+          lab.title = t.action;
+          lab.onclick = () => {
+            state.transition = { machine: m.name, t: t, from: byId[t.from], to: byId[t.to] };
+            renderPanel();
+          };
+          box.append(lab);
+        }
+
+        scroll.append(box);
+        wrap.append(scroll);
+        if (m.note) wrap.append(el("div", "note", m.note));
+        host.append(wrap);
+        deCollide(box);
+      }
+
+      /* Nudge any label that lands on a box or on another label until it is clear. Hand-tuned
+   offsets are correct only for the data they were tuned against; this stays correct when
+   a label is reworded or a state is moved. Vertical only, and small, so a label never
+   drifts far from the line it belongs to. */
+      function deCollide(box) {
+        const hits = (r, others) =>
+          others.some(
+            (o) => r.left < o.right - 2 && r.right > o.left + 2 && r.top < o.bottom - 2 && r.bottom > o.top + 2,
+          );
+        const boxes = [...box.querySelectorAll(".st")].map((b) => b.getBoundingClientRect());
+        const placed = [];
+        const frame = box.getBoundingClientRect();
+        for (const l of box.querySelectorAll(".elabel")) {
+          // Keep the label inside the diagram. A label centred on a line near an edge otherwise
+          // overflows and is clipped by the scroll container — it reads as a truncated word.
+          const half = l.getBoundingClientRect().width / 2 + 4;
+          const left = parseFloat(l.style.left) || 0;
+          l.style.left = Math.min(Math.max(left, half), frame.width - half) + "px";
+          const base = parseFloat(l.style.top) || 0;
+          for (let tries = 0; tries < 20; tries++) {
+            const r = l.getBoundingClientRect();
+            if (!hits(r, boxes) && !hits(r, placed)) break;
+            const step = (Math.floor(tries / 2) + 1) * 16 * (tries % 2 ? -1 : 1);
+            l.style.top = base + step + "px";
+          }
+          placed.push(l.getBoundingClientRect());
+        }
+      }
+
+      function renderMachines() {
+        const host = $("#view-beh");
+        host.textContent = "";
+        const intro = el("div", "banner");
+        intro.innerHTML =
+          "<b>Every state each record can be in, and every action that moves it.</b> " +
+          "Five records run alongside each other — a referral destination, a movement, an admission, a transport job and a bed release. " +
+          "Click any label on a line to see what that action needs, what refuses it, and what else it changes.";
+        host.append(intro);
+        for (const m of DATA.machines.machines) renderMachine(m, host);
+
+        const r = DATA.machines.resources;
+        const sect = el("section", "machine");
+        const h = el("header");
+        h.append(el("h2", null, r.title), el("div", "subject", r.blurb));
+        sect.append(h);
+        for (const c of r.counts) {
+          const cap = el("h3");
+          cap.style.margin = "16px 0 6px";
+          cap.style.fontSize = "14px";
+          cap.textContent = c.name + " — " + c.means;
+          sect.append(cap);
+          const t = el("table", "cov");
+          const thead = el("thead");
+          const tr = el("tr");
+          ["Action", "Effect", "Note"].forEach((x) => tr.append(el("th", null, x)));
+          thead.append(tr);
+          t.append(thead);
+          const tb = el("tbody");
+          for (const mv of c.moves) {
+            const a = actionOf(mv.action);
+            const row = el("tr");
+            row.append(el("td", null, a ? a.name : mv.action));
+            row.append(el("td", "ev", mv.effect));
+            row.append(el("td", null, mv.note || ""));
+            tb.append(row);
+          }
+          t.append(tb);
+          sect.append(t);
+        }
+        host.append(sect);
+      }
+
+      /* ---------------- the bed decision ---------------- */
+      function renderGates() {
+        const host = $("#view-gates");
+        host.textContent = "";
+        const g = DATA.machines.gates;
+        const k = norm(state.q);
+
+        const head = el("section", "machine");
+        const h = el("header");
+        h.append(el("h2", null, g.title), el("div", "subject", g.blurb));
+        head.append(h);
+        host.append(head);
+
+        const ov = el("div", "banner warn");
+        ov.innerHTML = "<b>Eight of the thirteen can be pushed past; five cannot.</b> " + g.overridable;
+        host.append(ov);
+
+        for (const r of g.rows) {
+          if (k && !norm(r.gate + " " + r.asks + " " + (r.note || "")).includes(k)) continue;
+          const card = el("div", "gate " + (r.hard ? "hard" : "soft"));
+          const gh = el("div", "gh");
+          gh.append(el("div", "gn", r.gate));
+          const when = el("div", "when");
+          const front = el("span", r.referral ? "on" : "off", "front door");
+          const move = el("span", r.movement ? "on" : "off", "bed search");
+          when.append(front, move);
+          if (r.differs) when.append(el("span", "diff", "asks differently"));
+          when.append(el("span", r.hard ? "on" : "", r.hard ? "no override" : "overridable"));
+          gh.append(when);
+          card.append(gh);
+          card.append(el("div", "asks", r.asks));
+          if (r.note) card.append(el("div", "gnote", r.note));
+          host.append(card);
+        }
+
+        const out = el("section", "machine");
+        out.style.marginTop = "28px";
+        const oh = el("header");
+        oh.append(el("h2", null, g.outside.title), el("div", "subject", g.outside.blurb));
+        out.append(oh);
+        for (const item of g.outside.items) {
+          const c = el("div", "gate");
+          c.append(el("div", "asks", item));
+          out.append(c);
+        }
+        host.append(out);
+      }
+
+      /* ---------------- coverage ---------------- */
+      function renderCoverage() {
+        const host = $("#view-cov");
+        host.textContent = "";
+        const cov = DATA.coverage;
+        const b = el("div", "banner");
+        b.innerHTML =
+          "<b>All " +
+          cov.total +
+          " actions are accounted for.</b> " +
+          cov.mapped +
+          " move a record from one state to another, and are drawn on the Behaviour tab. " +
+          "The other " +
+          (cov.total - cov.mapped) +
+          " change a record without changing its state — each one names what it writes. " +
+          "This table is generated, and the build refuses to produce the page at all if a single action is left unaccounted for.";
+        host.append(b);
+        const t = el("table", "cov");
+        const thead = el("thead");
+        const tr = el("tr");
+        ["Action", "Event", "Where it is modelled", "What it writes"].forEach((x) => tr.append(el("th", null, x)));
+        thead.append(tr);
+        t.append(thead);
+        const tb = el("tbody");
+        const k = norm(state.q);
+        for (const row of cov.rows) {
+          if (k && !norm(row.name + " " + row.event + " " + row.transitions.join(" ") + " " + row.writes).includes(k))
+            continue;
+          const r2 = el("tr");
+          r2.append(el("td", null, row.name));
+          r2.append(el("td", "ev", row.event));
+          const w = el("td");
+          if (row.transitions.length) {
+            const cs = el("div", "chips");
+            row.transitions.forEach((x) => cs.append(el("span", "chip", x)));
+            w.append(cs);
+          } else {
+            const sp = el("span", null, "changes no state");
+            sp.style.color = "var(--muted)";
+            w.append(sp);
+          }
+          r2.append(w);
+          r2.append(el("td", null, row.writes || ""));
+          tb.append(r2);
+        }
+        t.append(tb);
+        host.append(t);
+
+        if (DATA.machines.gaps && DATA.machines.gaps.length) {
+          const sect = el("section", "sect");
+          sect.style.marginTop = "32px";
+          sect.append(el("h2", null, "Three more things worth your decision"));
+          const lead = el("p", "note");
+          lead.style.marginBottom = "14px";
+          lead.textContent = "These came out of modelling the behaviour rather than the pathway. None is fixed here.";
+          sect.append(lead);
+          for (const gp of DATA.machines.gaps) {
+            const c = el("div", "gapcard");
+            c.append(el("h3", null, gp.title));
+            c.append(el("p", null, gp.body));
+            const q = el("div", "q");
+            q.innerHTML = "<b>The question this puts to you.</b> " + gp.question;
+            c.append(q);
+            sect.append(c);
+          }
+          host.append(sect);
+        }
+      }
+
+      /* ---------------- tabs ---------------- */
+      function setTab(t) {
+        state.tab = t;
+        for (const [id, view] of [
+          ["map", "#view-map"],
+          ["beh", "#view-beh"],
+          ["gates", "#view-gates"],
+          ["acts", "#view-acts"],
+          ["vocab", "#view-vocab"],
+          ["cov", "#view-cov"],
+          ["wrong", "#view-wrong"],
+        ]) {
+          $("#tab-" + id).setAttribute("aria-selected", String(id === t));
+          $(view).classList.toggle("hidden", id !== t);
+        }
+        renderAll();
+      }
+      /* A filter that changes the picture silently has not told everyone. */
+      function announce(text) {
+        const n = $("#announce");
+        if (!n) return;
+        n.textContent = "";
+        /*
+         * A timer, not requestAnimationFrame. The clear-then-set is what makes a screen reader
+         * re-announce identical text — but a hidden or background tab never runs an animation
+         * frame at all, so the second half simply never happened and the region stayed empty.
+         * Measured: in a hidden tab the frame callback did not fire and a 30ms timer did.
+         */
+        setTimeout(() => {
+          n.textContent = text;
+        }, 30);
+      }
+      function announceMap() {
+        const boxes = [...document.querySelectorAll("#map .node")].filter(
+          (b) => !b.classList.contains("dim") && !b.classList.contains("lane-heading"),
+        ).length;
+        const who = WHO.find(([id]) => id === state.who);
+        const view = viewNow();
+        announce(
+          `Showing ${boxes} of ${DATA.stages.nodes.length} boxes. View: ${view.label}. Who is asking: ${who ? who[1] : "anyone"}.`,
+        );
+      }
+
+      function renderAll() {
+        if (state.tab === "map") renderMap();
+        if (state.tab === "acts") renderActs();
+        if (state.tab === "vocab") renderVocab();
+        if (state.tab === "beh") renderMachines();
+        if (state.tab === "cov") renderCoverage();
+        if (state.tab === "wrong") renderWrong();
+        if (state.tab === "gates") renderGates();
+        renderPanel();
+        // The map's box count only means something while the map is what is on screen; on any other
+        // tab a screen reader heard a count of boxes it could not see.
+        if (state.tab === "map") announceMap();
+        else
+          announce(
+            `Showing: ${($("#tab-" + state.tab)?.textContent || state.tab)
+              .replace(/\s+/g, " ")
+              .replace(/\s*\d+\s*$/, "")
+              .trim()}.`,
+          );
+        writeAddress();
+      }
+
+      /* ---------------- boot ---------------- */
+      $("#tab-map").onclick = () => setTab("map");
+      $("#tab-acts").onclick = () => setTab("acts");
+      $("#tab-vocab").onclick = () => setTab("vocab");
+      $("#tab-beh").onclick = () => setTab("beh");
+      $("#tab-wrong").onclick = () => setTab("wrong");
+      $("#tab-cov").onclick = () => setTab("cov");
+      $("#tab-gates").onclick = () => setTab("gates");
+      $("#q").oninput = (e) => {
+        state.q = e.target.value;
+        renderAll();
+      };
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          state.node = null;
+          $("#q").value = "";
+          state.q = "";
+          renderAll();
+        }
+        if (e.key === "/" && document.activeElement !== $("#q")) {
+          e.preventDefault();
+          $("#q").focus();
+        }
+      });
+
+      $("#actCount").textContent = DATA.actions.length;
+      $("#vocabCount").textContent = Object.keys(DATA.vocab.vocabularies).length;
+      $("#behCount").textContent = DATA.machines.machines.length;
+      $("#foot").innerHTML =
+        "The word lists come from <code style='font-family:var(--mono);font-size:11px'>src/components/ward-management/</code>. Route and action wording is curated and checked against the engine; it can drift, so review the source when it changes. " +
+        // What this map does NOT hold, said on its own face. A refusal is a pathway — it is where
+        // somebody's intended route stops — and this page names a subset of them. A reader who is
+        // not told that will read silence as "there is no refusal here".
+        // When, and from what. A saved copy looks exactly like a current one.
+        (() => {
+          const m = DATA.made || {};
+          const when = m.builtAt
+            ? new Date(m.builtAt).toLocaleString(undefined, { dateStyle: "long", timeStyle: "short" })
+            : "an unrecorded time";
+          const from = m.commit
+            ? `version <code style='font-family:var(--mono);font-size:11px'>${m.commit}</code>${m.branch ? " on " + m.branch : ""}`
+            : "a version that could not be read";
+          const warn = m.dirty
+            ? ` <b style='color:var(--danger)'>Built with ${m.dirtyCount} uncommitted change(s) in the ward source, so this page shows something no saved version produced.</b>`
+            : "";
+          return `<b>Built ${when}</b>, from ${from}.${warn} `;
+        })() +
+        // Only when it has actually been measured. No run means no claim.
+        (() => {
+          const rc = DATA.refusalCoverage;
+          if (!rc) return "Which of those refusals a test actually reaches has not been measured for this build. ";
+          const unknown = rc.refusals - rc.spokenFor;
+          return `Of those, <b>${rc.neverReached.length}</b> were never reached by any test${unknown ? `, and ${unknown} could not be measured` : ""}. `;
+        })() +
+        `The engine refuses in <b>${DATA.coverage.refusalsInEngine}</b> places. This page names <b>${DATA.coverage.refusalsNamed}</b> of them &mdash; the ones that change where a patient ends up. The rest are largely checks on the data itself. ` +
+        "Every person, ward and figure named anywhere in this prototype is invented. This is a prototype, not validated clinical decision support.";
+
+      /* ---------------- the symbols ----------------
+   One mark per meaning, drawn as a path rather than typed as a character: a glyph chosen from a
+   font is at the mercy of whatever font the reader actually has, and the ones that carry meaning
+   here — a warning, a lock, a pencil — are exactly the ones a system font is most likely to
+   substitute or turn into an emoji. Drawn, they are the same everywhere and take the lane colour.
+   They also carry the map through a black-and-white print, where the colours are all one grey. */
+      const SYMBOL = {
+        // a solid arrowhead — it carries on
+        expected: { d: "M 3 2 L 11 7 L 3 12 Z", fill: true },
+        // a diamond — a second record begins here
+        seam: { d: "M 7 1.5 L 12.5 7 L 7 12.5 L 1.5 7 Z", fill: true },
+        // an arrow turning away — it carries on somewhere else
+        diversion: { d: "M 2 11 L 2 6 Q 2 3 6 3 L 11 3 M 8.5 0.5 L 11.5 3 L 8.5 5.5" },
+        // a key — forced past a refusal
+        forced: { d: "M 9.5 2 A 2.6 2.6 0 1 1 6.6 5.6 L 2 10.2 L 2 12.5 L 4.3 12.5 L 4.3 10.8 L 6 10.8 L 6 9.1" },
+        // a pause bar — it stops, or waits
+        stall: { d: "M 4 2.5 L 4 11.5 M 10 2.5 L 10 11.5" },
+        // a line meeting a wall — it ends
+        end: { d: "M 1.5 7 L 9 7 M 11.5 2 L 11.5 12" },
+        // a warning triangle — nothing stops it
+        breach: { d: "M 7 1.5 L 13 12 L 1 12 Z M 7 5.5 L 7 8.5 M 7 10.2 L 7 10.7" },
+        // an open circle — nothing is recorded here
+        absent: { d: "M 7 1.8 A 5.2 5.2 0 1 1 6.99 1.8", dash: "2.4 2.2" },
+        // a pencil — recorded alongside
+        record: { d: "M 2 12 L 3.2 9.2 L 9.8 2.6 L 12 4.8 L 5.4 11.4 Z M 9.8 2.6 L 12 4.8" },
+        // a reference mark — a note about the map
+        note: { d: "M 7 2 L 7 12 M 2.7 4.5 L 11.3 9.5 M 11.3 4.5 L 2.7 9.5" },
+      };
+      function symbolFor(lane, colour) {
+        const spec = SYMBOL[lane];
+        if (!spec) return null;
+        const NS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(NS, "svg");
+        svg.setAttribute("width", "14");
+        svg.setAttribute("height", "14");
+        svg.setAttribute("viewBox", "0 0 14 14");
+        svg.setAttribute("aria-hidden", "true");
+        const path = document.createElementNS(NS, "path");
+        path.setAttribute("d", spec.d);
+        path.setAttribute("stroke", colour);
+        path.setAttribute("stroke-width", "1.4");
+        path.setAttribute("stroke-linecap", "round");
+        path.setAttribute("stroke-linejoin", "round");
+        path.setAttribute("fill", spec.fill ? colour : "none");
+        if (spec.dash) path.setAttribute("stroke-dasharray", spec.dash);
+        svg.append(path);
+        return svg;
+      }
+
+      /* ---------------- what's wrong ----------------
+         Built from the map's own boxes. Three kinds, in the order they should worry a reader:
+         something the app allows that it should not; a stretch it cannot record at all; and a step
+         that behaves in a way nobody would expect. */
+      const WRONG_KINDS = [
+        {
+          id: "breach",
+          title: "The app allows something it should not",
+          lead: "A route the engine permits where a person would expect it to stop.",
+          pick: (n) => n.lane === "breach",
+        },
+        {
+          id: "absent",
+          title: "Nothing is recorded at all",
+          lead: "A stretch of the journey the system has no way to write down. Some of these have a screen with buttons on it.",
+          pick: (n) => n.lane === "absent",
+        },
+        {
+          id: "trap",
+          title: "It does not behave the way it reads",
+          lead: "An ordinary-looking step whose behaviour would surprise the person using it.",
+          pick: (n) => n.finding && n.lane !== "breach" && n.lane !== "absent",
+        },
+      ];
+      const wrongBoxes = () => DATA.stages.nodes.filter((n) => WRONG_KINDS.some((k) => k.pick(n)));
+
+      function renderWrong() {
+        const host = $("#view-wrong");
+        host.textContent = "";
+        const h = el("h2");
+        h.style.margin = "0 0 6px";
+        h.textContent = "What this map says is wrong";
+        host.append(h);
+        host.append(
+          el(
+            "p",
+            "note",
+            "Every item here is a box on the route map. Nothing is listed that the map does not show, and " +
+              "nothing the map shows as one of these is left out. Click any of them to open it on the map.",
+          ),
+        );
+        for (const kind of WRONG_KINDS) {
+          const rows = DATA.stages.nodes.filter(kind.pick);
+          if (!rows.length) continue;
+          const sec = el("section");
+          sec.style.margin = "18px 0 0";
+          const t = el("h3");
+          t.style.margin = "0 0 2px";
+          t.style.fontSize = "15px";
+          t.textContent = `${kind.title} — ${rows.length}`;
+          sec.append(t, el("p", "note", kind.lead));
+          for (const n of rows) {
+            const card = el("div", "gapcard");
+            const mark = symbolFor(n.lane, LANE_COLOUR[n.lane] || "var(--ink)");
+            const head = el("h3");
+            if (mark) {
+              head.style.display = "flex";
+              head.style.alignItems = "center";
+              head.style.gap = "8px";
+              head.append(mark);
+            }
+            head.append(document.createTextNode(n.label));
+            card.append(head);
+            if (n.finding) {
+              const f = el("p");
+              f.style.margin = "0 0 8px";
+              f.style.fontWeight = "600";
+              f.style.fontSize = "13px";
+              f.textContent = n.finding;
+              card.append(f);
+            }
+            if (n.sub) card.append(el("p", null, n.sub));
+            const acts = actionsFor(n.id);
+            if (acts.length) card.append(el("p", "q", "Actions here: " + acts.map((a) => a.name).join(" · ")));
+            const go = el("button", null, "Show it on the map");
+            go.style.cssText =
+              "font:inherit;font-size:12px;padding:4px 10px;border:1px solid var(--line);background:var(--surface);cursor:pointer";
+            go.onclick = () => {
+              state.node = n.id;
+              setTab("map");
+              renderPanel();
+              const box = [...document.querySelectorAll("#map .node")].find((b) => b.getAttribute("data-id") === n.id);
+              if (box) box.scrollIntoView({ block: "center", inline: "center" });
+            };
+            card.append(go);
+            sec.append(card);
+          }
+          host.append(sec);
+        }
+      }
+
+      /* ---------------- the legend ---------------- */
+      // What each lane MEANS, in the words the map uses. Keyed by lane id, so a lane with no sentence
+      // here is a lane nobody can read: the check below refuses to build the page for one.
+      const LANE_MEANS = {
+        expected: "The route when nothing goes wrong.",
+        seam: "A SECOND record starts here. Accepting a referral does not start it — this does.",
+        diversion: "It carries on, somewhere other than expected.",
+        forced:
+          "Somebody overruled a refusal and recorded a reason for it. The patient goes where the app said they should not.",
+        stall: "It stops, reverses or waits. Most of these go back into the route.",
+        end: "It ends. Nothing follows.",
+        breach: "Nothing stops it. The app allows something it should not.",
+        absent: "No record exists. The screen may have a button; nothing is written anywhere.",
+        record: "Recorded alongside the journey, without moving it.",
+        note: "A note about the map, not a step in it.",
+      };
+      const LINE_KINDS = [
+        { d: "M 2 8 L 52 8", w: 2, dash: null, name: "A thick line", means: "the expected route." },
+        { d: "M 2 8 L 52 8", w: 1.5, dash: null, name: "A thin line", means: "a branch off it." },
+        {
+          d: "M 2 8 L 52 8",
+          w: 1.5,
+          dash: "7 5",
+          name: "A dashed line",
+          means: "recorded alongside — it does not move the journey.",
+        },
+        {
+          d: "M 2 8 L 52 8",
+          w: 1.5,
+          dash: "1.5 4",
+          name: "A dotted line",
+          means: "it happens on its own. Nobody chooses it and nobody is asked.",
+        },
+        {
+          d: "M 2 8 L 52 8",
+          w: 1.5,
+          dash: null,
+          name: "Arrows at both ends",
+          means: "it can be undone, and come back.",
+          both: true,
+        },
+        { d: "M 2 8 L 46 8", w: 1.5, dash: null, name: "A bar, not an arrowhead", means: "it stops here.", bar: true },
+      ];
+      function renderLegend() {
+        const host = $("#lgbody");
+        host.textContent = "";
+        const NS = "http://www.w3.org/2000/svg";
+        const row = (keyNode, name, means) => {
+          const r = el("div", "lgrow");
+          const k = el("span", "lgkey");
+          k.append(keyNode);
+          const t = el("span", "lgtxt");
+          t.append(el("b", null, name), document.createTextNode(" "), el("span", null, means));
+          r.append(k, t);
+          host.append(r);
+        };
+        for (const l of LANES) {
+          const key = el("span");
+          key.style.display = "inline-flex";
+          key.style.alignItems = "center";
+          key.style.gap = "6px";
+          const sw = el("span", "swatch");
+          sw.style.background = l.colour;
+          sw.style.width = "26px";
+          key.append(sw);
+          const mark = symbolFor(l.covers[0], l.colour);
+          if (mark) key.append(mark);
+          row(key, l.label + " — ", LANE_MEANS[l.id] || "");
+        }
+        for (const k of LINE_KINDS) {
+          const svg = document.createElementNS(NS, "svg");
+          svg.setAttribute("width", "56");
+          svg.setAttribute("height", "16");
+          const path = document.createElementNS(NS, "path");
+          path.setAttribute("d", k.d);
+          path.setAttribute("stroke", "var(--ink)");
+          path.setAttribute("stroke-width", String(k.w));
+          path.setAttribute("fill", "none");
+          if (k.dash) path.setAttribute("stroke-dasharray", k.dash);
+          path.setAttribute("marker-end", "url(#" + (k.bar ? "bar-expected" : "arw-expected") + ")");
+          if (k.both) path.setAttribute("marker-start", "url(#arw-expected)");
+          svg.append(path);
+          row(svg, k.name + " — ", k.means);
+        }
+      }
+
+      /* A key that must be found and opened is a key most readers never see. It opens itself, and
+         remembers being closed — so it is helpful once and never nagging. Storage can be refused
+         or empty, and then the honest default is to show it. */
+      try {
+        const shut = localStorage.getItem("ward-journey-legend-shut");
+        if (shut !== "1") $("#legend").open = true;
+        $("#legend").addEventListener("toggle", () => {
+          try {
+            localStorage.setItem("ward-journey-legend-shut", $("#legend").open ? "0" : "1");
+          } catch {
+            /* a reader who blocks storage still gets a working page */
+          }
+        });
+      } catch {
+        $("#legend").open = true;
+      }
+
+      $("#wrongCount").textContent = wrongBoxes().length;
+      readAddress();
+      renderViewbar();
+      renderViews();
+      renderLanes();
+      renderLegend();
+      setTab("map");
+    </script>
+  </body>
+</html>

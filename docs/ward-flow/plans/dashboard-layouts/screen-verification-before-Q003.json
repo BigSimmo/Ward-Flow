@@ -1,0 +1,439 @@
+{
+  "_howToUse": "Open the mockup file and the running screen side by side in a real browser, at 390px, 820px and 1440px wide, in both light and dark. Then find this screen's entry below and replace its 'verified': null with an object recording what you saw — the date, your name, the widths and themes you checked, a verdict of 'matches', 'deviates' or 'blocked', the mockupSha256 hash for this file from docs/ward-flow/mockups/MANIFEST.json, and notes describing any deviation and why.",
+  "screens": [
+    {
+      "mockup": "command-third-edition.html",
+      "route": "/",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller Astra; independent Sol source and supplied-capture visual review",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "062502625315466ad4f14d6baa43284953db0da3e4333c9f405f75f42660bee4",
+        "notes": "Q001 owner-requested refinement. Fresh six served drawing/app width-theme comparisons plus phone shortlist/Tasks/Tools, Activity/tally, lower register and expandable key inspected. Independent R4 supplied-capture review found no remaining P1/P2/material design defects in reviewed states; no numeric score claimed. Latest owner adaptations: taller bounded desktop bodies, fixed shell, concise disclosures, sidebar account utilities, compact current-state tally; engine facts and permissions remain authoritative. Existing phone omission of pressure/diagram and fixed shortlist action dock retained. No invented authentication, clinical contacts, shift/pins or live provider stream. Actual task acknowledgement retains its fact; movement record routing/edit controls checked. Exact source adaptations, test failures and corrective passing rerun, local typecheck and evidence filenames: plans/command-shell-refinement/tasks/T4-acceptance.md. This is local adapted-design acceptance, not clinical validation, physical-device proof or renewal of other screens' historical acceptance. Q002 Movements remains separately active. Prior record retained in .superpowers/sdd/command-shell-refinement/screen-verification-before.json."
+      }
+    },
+    {
+      "mockup": "delays-third-edition.html",
+      "route": "/delays",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "ae45af1c7b0b7c84c7f937698751356e3da5100f3c9ffa0f6f45a31492720344",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Actual last open WF329 selected; its Voluntary/locked/Tier3/ED mental-health owner facts remain. Resolved today7 shows6placed/1did-not-proceed while Waiting43 remains unchanged. Six r36 lower captures reviewed clean (F01-delays-lower-review-r36.md). Current UI provides a resolved summary, not invented individual resolved rows. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "movement-third-edition.html",
+      "route": "/movements",
+      "verified": null
+    },
+    {
+      "mockup": "capacity-third-edition.html",
+      "route": "/capacity",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "1366008c7909b6389340a970d35a2ee357e068b6dbe0e51f4fe02de80baf66dc",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Prior visual and behavior evidence retained unchanged. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "ward-third-edition.html",
+      "route": "/ward/[unitId]",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "faf965e8fde959fe77ad15d8019e1585feabe7a50eb68ce8af93c23c431b1d9a",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Prior visual and behavior evidence retained unchanged. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "wards-third-edition.html",
+      "route": "/wards",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "bbe943321f3811e3f8e6b0973572524299e3e796d10b74a71b5a3e6b674bf28f",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Prior visual and behavior evidence retained unchanged. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "bed-board-third-edition.html",
+      "route": "/board/[unitId]",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "cd0bfe4491f1fac4b37d274a188633a47ffd3e26eed557552b925fcff3fef77e",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. All three real order choices now update their explanation to the actual comparator; no sorting change. Quiet count2 and selected two-day Male/Peel record opened the daily sheet. Canonical sheet surface fixes unreadable Light mode; six r37 cells independently close the finding (F07-board-visual-closure-r37.md). Board selection16/16 passed; print rules unchanged, print output not newly exercised. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "emergency-department-third-edition.html",
+      "route": "/ed/[edId]",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "85a6be83781cd9e51ca18a50cdeba18c4501e91c88366cee998651fd6c90f647",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Actual PEEL8 to ARM4 department switch; Recently answered0 preserves empty branch, Still to be moved1 shows WF011 with missing acceptance time explicit. Last patient WF323 urgency form opens with Tier3 and no reason preselected; Record remains disabled. No mutation submitted. Twelve r37 lower/capacity-end captures reviewed without P1/P2 (F02-ed-lower-closure-r37.md); crops show only the form tail. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "community-team-third-edition.html",
+      "route": "/community/[teamId]",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "ba23074d78bb7f705c4ade4b00c59af4139dd7168f047dea625ca187929ecc74",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Actual link from Midland statistics opens9accepted admissions and7expected-back records, with final bed/accepted rows inspected. Eighteen combined community/statistics lower r36 captures reviewed (F05-community-lower-review-r36.md). Missing source-team, follow-up and episode-end information remains stated as unavailable. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "patient-search-third-edition.html",
+      "route": "/search",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "4cd96fd0ff6555fbad9f84579e29ce64e6d682cad0dd1f896a12a67505451ee0",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Accepted RF010 preview now consistently says a destination agreed and none declined before acceptance. Four fresh r35 cells close the copy correction (F14-copy-correction-visual-closure-r35.md); existing real search/empty/keyboard/person-link journeys retained. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "patient-now-third-edition.html",
+      "route": "/people/[patientId]",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "ed139727d3b633300584938937cb04e510898b5f321730213cd81a56086a39c4",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Details six r32 cells and Documents corrected inset four r34 cells independently reviewed. Existing Now/Details/Documents keyboard navigation and patient-linked referral journey retained; no unsupported history or eligibility facts introduced. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "search-hub-third-edition.html",
+      "route": "/hub",
+      "verified": {
+        "date": "2026-09-12",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "ac45fa414e5f38e0eb62121054179bc635d4fb476e29710d59e05aa024aca2a6",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Final Kimberley placeholder preview preserves absence and links to Community index; four390/820 r37 cells reviewed. SJGS search gives2, ArrowDown twice/Enter reaches SJGS Adult Secure ward; browser Back and a settled Escape clear search, restore41results and focus the search field. Canonical Hub paint guard now verifies named palette scopes and rgba alias resolution; pairwise segment collision checks retained. F14-hub-governance-closure-r37.md and F14-hub-palette-guard-r37.md. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "raise-a-referral-third-edition.html",
+      "route": "/referrals/new",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "1e7e5a084bb5113b6b2c548045cfaef87c68d9710384771ab0bb8f643a97f94c",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Prior visual and behavior evidence retained unchanged. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "statistics-overview-third-edition.html",
+      "route": "/statistics/overview",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "56832909a63c4b79b9f01554d4e16b5873b25ed4a90cb9f785f2508060ded55c",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Actual lower disclosure expansion and twelve r36 captures reviewed. Independent columns of unequal depth follow the authoritative drawing; the initial whitespace preference was withdrawn rather than changing the design (F05-statistics-overview-lower-r36.md). No unavailable measure replaced by zero. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "statistics-compare-third-edition.html",
+      "route": "/statistics/compare",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "39f2d5eb347dc49de1aaa907fec8da1e0e3b97b846195d4dbf10f57310d08d85",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Twelve r36 table/chooser-end captures reviewed clean (F05-comparison-ward-lower-r36.md). Earlier absent-file claim was an ignored-artifact search mistake and is superseded. Ward and ED choices are real links, not an unimplemented selection control; SCGH/RPH and ARM ED links exercised. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "statistics-ward-third-edition.html",
+      "route": "/statistics/ward/[unitId]",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "a6377d7cb6e4273c5434dae443bbfe7c66472c88dc491a0e665304d47c7efb6e",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Actual comparison chooser SCGH24beds/19occupied/2ready/2open to RPH20/18/1/1 updates the ward and denominator together. Twelve lower discharge/register/provenance r36 captures reviewed clean (F05-comparison-ward-lower-r36.md). Existing unavailable measures remain explicit. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "statistics-community-third-edition.html",
+      "route": "/statistics/community/[teamId]",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "0c3433eb02fb59b3637e53bc76f6ae08b9c0eb1b512b115ec61257f6df048747",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Actual landing chooser Midland9/7/0/0 to Albany0/0/0/0 and back updates all headline counts with the selected team. Final comparison team rows and provenance inspected at all six cells (F05-community-lower-review-r36.md). Open Midland own page reaches the operational team view. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "statistics-emergency-department-third-edition.html",
+      "route": "/statistics/ed/[edId]",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "5f4d75db0c57a65038291972c5f6c35edc4cb26bdd3e5f926c754159f7dcac30",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Actual ARM4 to RGH8 department-statistics navigation updates heading/population; four390/820 lower r36 captures reviewed clean (F05-ed-switched-end-r36.md), reusing the earlier six-cell comparison. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "network-third-edition.html",
+      "route": "/network",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "d775086794d2ad9e104c43191012cb9db9a4f851fbedf2b8912519f0cba14be7",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Prior visual and behavior evidence retained unchanged. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "governance-third-edition.html",
+      "route": "/governance",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "ff7ba6bf1fb8a5b8983d245dad42686a6ba52478dfdad50d334d641976cbb651",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Deadline limitation and populated override correction already closed in r35. Final subtitle now says Two measures reported, avoiding a false claim that both are computed. Four fresh390/1440 r37 captures independently close this sentence (F14-hub-governance-closure-r37.md). No governance measures or denominators changed. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "handover-third-edition.html",
+      "route": "/handover",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "0389907aa51840b6df22b954ccba0c00254fee7fb3d3fc16a92f170417b187ed",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Actual phone scrolling reached final waiting row43/WF018 and the destination, Pull and LEG columns. Ten corrected light/dark captures independently close the table/footer review in F06-handover-scroll-closure-r37.md. Sign-off remains explicitly unavailable; no action was invented. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "discharges-third-edition.html",
+      "route": "/discharges",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "d6c67d2bd307b0bda97502b4992dbca70597d7ea372ed73cd404d5f723ee9e07",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Fresh-load r36 tablet and phone table-end evidence closes the Stage wrapping defect. Confirmed, Expected and Discharged labels remain intact; horizontal scrolling preserves all columns. F05-discharges-stage-correction-r34.md contains superseding r36 evidence; stale r35 and initial drawer-open r36 captures are excluded. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "out-of-area-third-edition.html",
+      "route": "/out-of-area",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "9de29b5a4166442080ad1c138093fed691ea5bedec6ef7810ed45a32c6ccc055",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Prior visual and behavior evidence retained unchanged. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "on-call-third-edition.html",
+      "route": "/on-call",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "2ecf1ea87bd9cdc73f6a6b0f4bd0cca8eb1c4c34a8f1de40c86c36aee9a6f2a5",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Six r35 directory-end captures independently reviewed clean (F10-on-call-end-review-r35.md). Retains explicit absent contact/rota facts. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "alerts-third-edition.html",
+      "route": "/alerts",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "e1da59257bf1d82161298f64578df716960b701de99e2fd948bf1c6613e58ed5",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Four r35 cells close neutral override explanation: prior gate verdict is not held, rather than falsely asserting a failure. Existing expanded three groups and deadline limitations retained; six focused Alert tests pass in MGOTxd. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "transport-officer-third-edition.html",
+      "route": "/transport/officer",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "797a29aa00cc0734a731a749008c634bc07a862f817d0b3579f5c31b333686ad",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Officer lower/end captures independently reviewed (F09-F10-officer-legal-end-state-review-r34.md). Earlier actual synthetic WF005 collection/arrival changed8to7jobs and43to42open; later provider reload reset the local demonstration, not the recorded historical evidence. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "legal-forms-third-edition.html",
+      "route": "/legal-forms",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "5b5fb6ec50ca581e19f305503ca3bde9404473d3b87390a88dcdeeae15af2ff1",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Four deadline and fifteen no-deadline record ends independently reviewed in r34 (F09-F10-officer-legal-end-state-review-r34.md). Legal deadlines remain operationally recorded and monitored; no unsupported form action invented. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "add-a-patient-third-edition.html",
+      "route": "/people/new",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "2af4db0a8531ef10cc24884c31f4f50492574f1010cd5deb101ec76cd0562ff0",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Prior visual and behavior evidence retained unchanged. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "referrals-third-edition.html",
+      "route": "/referrals",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "60540121681203115c2e05f04a84ead49f00cc2d0124dc75840326ba2c4cb1c6",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Prior visual and behavior evidence retained unchanged. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "settings-third-edition.html",
+      "route": "/settings",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "b2c41c410df39a310e89f3263792da8de05b8bddff8f5a136053e7828f6f3f80",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Demonstration-controls inset correction independently closed in four fresh r35 cells (F12-settings-sign-in-boundary-report-r33.md). Appearance and rail settings survived the actual reload; read-only settings remain explicit. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "statistics-third-edition.html",
+      "route": "/statistics",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "656aaf90665a33d5bc96ee1bd06f28ba01845a93d82aa4d55fb392f80ec08bc0",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Actual Explore disclosure links reached Overview, Compare and the ward chooser; Community chooser reached Midland and its changing counts. Existing lower panels and served six-cell comparisons retained; no new network-wide community measure invented. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "statistics-service-third-edition.html",
+      "route": "/statistics/service/[serviceId]",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "80cd8c1c8b8b8e96714f4ef2b2d4ed1c1eca3e4e1d441c12a4b6160e3ea5576d",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Prior visual and behavior evidence retained unchanged. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "sign-in-third-edition.html",
+      "route": "/mockups/ward-flow-sign-in",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "3c9b73905cfe2b1faab6d9f3dafc01356fbf163c0ae0d86da7176e79e2b7a839",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Prior visual and behavior evidence retained unchanged. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    },
+    {
+      "mockup": "ward-answer-third-edition.html",
+      "route": "/ward/[unitId]/answer",
+      "verified": {
+        "date": "2026-09-13",
+        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+        "widths": [390, 820, 1440],
+        "themes": ["light", "dark"],
+        "verdict": "deviates",
+        "mockupSha256": "a81fbd1e1e40a224feaac7cd5a1a34e514965ea5cb291fc4f0614b4507e00826",
+        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Prior visual and behavior evidence retained unchanged. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness."
+      }
+    }
+  ]
+}

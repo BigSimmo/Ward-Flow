@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "id": "69c170cf-6f0f-485a-bf52-f8385e9095b1",
+  "createdOn": "2026-09-10",
+  "action": "update",
+  "payload": {
+    "id": "#BAY1TY",
+    "detail": "RE-MEASURED 2026-09-10 by Ward Builder Three, in the code rather than from the 2026-09-04 note, and the picture is worse and more specific than that note recorded. (1) THE 2026-09-04 CLAIM 'no gender field anywhere' IS NOT ACCURATE ANY MORE: a field named sexOrGender exists on the person record (ward-patients-seed.ts) and renders on person-screen.tsx as the label 'Sex / gender' - one field whose NAME merges the two concepts and presents them to a clinician as interchangeable. (2) BED MATCHING DOES NOT USE THAT FIELD. It uses movement.sex, whose type is SEXES = ['Female','Male'] - EXACTLY TWO VALUES, no third option, no non-binary, no indeterminate, no not-stated. Consumed at ward-eligibility.ts:106 unit.sexMix[movement.sex] and :107 sexDesignationAccepts(unit.sexDesignation, movement.sex). (3) SO THE FIELD A CLINICIAN READS AND THE FIELD THE ENGINE MATCHES ON APPEAR TO BE DIFFERENT FIELDS - sexOrGender occurs only in the seed and the person screen, and nothing connects it to movement.sex. Updating what is displayed would not change where a patient can be placed. Stated as measured; I did not trace every consumer. (4) The BEDS are modelled more flexibly than the PEOPLE: sexDesignation has an 'Undesignated' value that accepts either, so the accommodation side already has a mixed option and the patient side has none. UNCHANGED FROM 2026-09-04: harmless today (synthetic, no real patients); the data model is the expensive thing to change and the matching rule is cheap; the owner's view via Ward Builder Two is that this goes to a clinician who works in this area rather than being settled internally; TREAT AS A GATE BEFORE ANY REAL-PATIENT USE, not an emergency. RECOMMENDATION ADDED 2026-09-10: do NOT assign this to a builder. Whoever writes the model first answers the clinical and dignity question by default - how many categories, what they are called, whether identity and recorded sex are separate fields, and which of them placement may use - and the model is the half that is expensive to undo. Josh declined a written clinician brief on 2026-09-10; ledger only.",
+    "baseRowFingerprint": "d90500f16865b5545e5724ce44877e5531512f2a280aa0dec0b0587c0eb53fb2"
+  }
+}

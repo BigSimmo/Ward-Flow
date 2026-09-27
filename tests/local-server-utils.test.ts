@@ -1,0 +1,81 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  buildIdleShutdownCommand,
+  circularProjectPortRange,
+  localProjectId,
+  normalizeProjectRoot,
+  parseIdleMinutes,
+  projectPortEnd,
+  projectPortStart,
+  stableProjectPort,
+} from "../src/lib/local-server-utils.mjs";
+
+describe("local server project identity", () => {
+  it("normalizes Windows roots case-insensitively", () => {
+    const first = "C:\\Work\\Clinical-KB";
+    const second = "c:/work/clinical-kb";
+
+    expect(normalizeProjectRoot(first, "win32")).toBe(normalizeProjectRoot(second, "win32"));
+    expect(localProjectId(first, "win32")).toBe(localProjectId(second, "win32"));
+    expect(stableProjectPort(first, "win32")).toBe(stableProjectPort(second, "win32"));
+  });
+
+  it("preserves POSIX case and backslash semantics", () => {
+    const upperCaseRoot = "/work/Clinical-KB";
+    const lowerCaseRoot = "/work/clinical-kb";
+    const backslashRoot = "/work/Clinical\\KB";
+    const slashRoot = "/work/Clinical/KB";
+
+    expect(normalizeProjectRoot(upperCaseRoot, "linux")).not.toBe(normalizeProjectRoot(lowerCaseRoot, "linux"));
+    expect(normalizeProjectRoot(backslashRoot, "linux")).toContain("\\");
+    expect(normalizeProjectRoot(backslashRoot, "linux")).not.toBe(normalizeProjectRoot(slashRoot, "linux"));
+
+    for (const root of [upperCaseRoot, lowerCaseRoot, backslashRoot, slashRoot]) {
+      const projectId = localProjectId(root, "linux");
+      const port = stableProjectPort(root, "linux");
+      expect(projectId).toBe(localProjectId(root, "linux"));
+      expect(projectId).toMatch(/^clinical-kb:[0-9a-f]{12}$/);
+      expect(port).toBe(stableProjectPort(root, "linux"));
+      expect(port).toBeGreaterThanOrEqual(3100);
+      expect(port).toBeLessThanOrEqual(4599);
+    }
+  });
+
+  it("scans the full port range circularly from the preferred port", () => {
+    const ports = circularProjectPortRange(projectPortEnd);
+    expect(ports.slice(0, 3)).toEqual([projectPortEnd, projectPortStart, projectPortStart + 1]);
+    expect(new Set(ports).size).toBe(projectPortEnd - projectPortStart + 1);
+    expect(ports.at(-1)).toBe(projectPortEnd - 1);
+  });
+});
+
+describe("DEV_SERVER_IDLE_MINUTES parsing", () => {
+  it("disables idle shutdown for unset, non-numeric, zero, or negative values", () => {
+    expect(parseIdleMinutes(undefined)).toBeNull();
+    expect(parseIdleMinutes("")).toBeNull();
+    expect(parseIdleMinutes("not-a-number")).toBeNull();
+    expect(parseIdleMinutes("0")).toBeNull();
+    expect(parseIdleMinutes("-5")).toBeNull();
+  });
+
+  it("returns the parsed minute value for a positive number", () => {
+    expect(parseIdleMinutes("45")).toBe(45);
+    expect(parseIdleMinutes("0.5")).toBe(0.5);
+  });
+});
+
+describe("idle-shutdown termination command", () => {
+  it("uses a plain SIGTERM on POSIX platforms", () => {
+    expect(buildIdleShutdownCommand(1234, "linux")).toEqual({ kind: "signal", signal: "SIGTERM" });
+    expect(buildIdleShutdownCommand(1234, "darwin")).toEqual({ kind: "signal", signal: "SIGTERM" });
+  });
+
+  it("terminates the whole process tree with taskkill on Windows", () => {
+    expect(buildIdleShutdownCommand(4321, "win32")).toEqual({
+      kind: "taskkill",
+      command: "taskkill",
+      args: ["/PID", "4321", "/T", "/F"],
+    });
+  });
+});

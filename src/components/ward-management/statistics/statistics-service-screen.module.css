@@ -1,0 +1,157 @@
+/*
+ * Health-service statistics screen — the handful of treatments `statistics-sections.module.css`
+ * (shared with the ward, ED and comparisons screens) does not carry, because none of THEM render a
+ * genuine count beside an absence or a closed-vocabulary tally. Copied from the same three
+ * treatments `statistics.module.css` documents on the coordinator hub, verbatim, rather than
+ * reinvented — this screen makes the identical zero-versus-unavailable distinction that page's own
+ * header explains, and a fourth wording of it would be a fourth place for the two to drift apart.
+ * Every colour is a design token, never a hex value, matching every other ward-management module.
+ */
+
+/*
+ * A real count, in ordinary body treatment, rendered whatever its value. It must never borrow the
+ * `.absence` warning treatment below: a count of nought is an answer, and dressing it as a warning
+ * is exactly how "nobody has been placed elsewhere" comes to look like "this cannot be counted".
+ */
+.measuredCount {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--text-sm, 0.875rem);
+  line-height: var(--ward-leading-relaxed);
+}
+
+/*
+ * A figure this screen cannot attribute cleanly — an accepted ward this prototype cannot place at
+ * any hospital. Warning treatment, because an absence read as a nought is the failure this screen
+ * exists to prevent.
+ */
+.absence {
+  margin: 0;
+  border: 0.0625rem solid var(--warning-border);
+  border-radius: var(--radius-md);
+  background: var(--ward-warning-soft);
+  padding: var(--ward-space-10) var(--ward-space-12);
+  color: var(--ward-warning);
+  font-size: var(--text-xs);
+  line-height: var(--ward-leading-relaxed);
+}
+
+/*
+ * ONE ROW PER MEMBER OF A CLOSED VOCABULARY — every other health service, every out-of-area band —
+ * including the members at nought. Nothing here varies with the value: no bar, no fill, no colour
+ * that changes with the count, and no dimming of a row at nought, for the same reason
+ * `statistics.module.css`'s own `.tallyList` gives: a nought and an absent row are different
+ * statements, and the reader must be able to tell them apart.
+ */
+.tallyList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-md);
+  padding: 0;
+  list-style: none;
+}
+
+.tallyRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ward-space-12);
+  border-top: 0.0625rem solid var(--ward-divider);
+  padding: var(--ward-space-6) var(--ward-space-12);
+}
+
+.tallyRow:first-child {
+  border-top: 0;
+}
+
+.tallyReason {
+  color: var(--text);
+  font-size: var(--text-xs);
+  line-height: var(--ward-leading-relaxed);
+}
+
+.tallyCount {
+  color: var(--text-heading);
+  font-size: var(--text-sm, 0.875rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+/*
+ * THE READY-BEDS TABLE — phone pass, Task 7. Composes the shared `WardTable` block rather than
+ * redeclaring it, exactly the discipline `statistics-sections.module.css`'s own
+ * `.compareWardTable`/`.compareEdTable` already document (see that file's header comment for the
+ * full reasoning and `tests/ward-table-single-source.test.ts` for the guard holding it to one
+ * declaration of cell padding/border).
+ *
+ * 🔴 **THE FIRST VERSION OF THIS RULE FORCED A 25rem MIN-WIDTH AND PINNED A STICKY IDENTITY
+ * COLUMN, AND SCROLLING IT ON THE RUNNING PAGE PROVED THE STICKY COLUMN HID THE OTHER TWO COLUMNS
+ * IT WAS BUILT TO KEEP ATTRIBUTABLE.** Table auto-layout stretched the Ward column to ~233px to
+ * fill the artificial 400px floor, but the 375px viewport's own scroller is only ~301px wide, so
+ * the total scrollable distance (~99px) was far short of the sticky column's own width — the
+ * `Cohort`/`Ready beds` cells sat PARTIALLY UNDER the opaque sticky `Ward` cell at every scroll
+ * position and never fully cleared it. A sticky column only works when it is narrower than the
+ * overflow it is pinned across (`statistics-sections.module.css`'s own sticky column satisfies
+ * this deliberately: capped at 11rem against ~16rem of overflow); an identity column this wide,
+ * against columns this narrow, does not, and forcing the pattern anyway hid real figures behind an
+ * opaque cell — worse than plain horizontal scroll, which was merely inconvenient rather than wrong.
+ *
+ * MEASURED on the running page, 2026-09-06, default font/zoom, 375px viewport
+ * (`http://localhost:4215/mockups/ward-flow/statistics/service/<service>` for each of the five
+ * services this screen renders): with NO artificial `min-width` at all, releasing `white-space:
+ * nowrap` on the row header alone brings the table to EXACTLY the 301px scroller's own width for
+ * East Metro — the one service whose longest ward name, "East Metropolitan Youth Unit (EMyU)",
+ * needs the release; the other four services' shorter names never trigger it. `Cohort` and `Ready
+ * beds` are two short, fixed-format columns (a cohort word, a one/two-digit count) that were never
+ * the source of the overflow, so nothing about them needs to change. No table here needs to scroll
+ * at all: no threshold, no sticky column, and nothing left to hide behind either. The queue table's
+ * own ruling already named this trade for a table shaped like this one — "a tall table on a phone
+ * beats a sideways-scrolling one."
+ *
+ * Matches `th[scope="row"]` rather than `tbody th`, so the totals row's own row header ("All N
+ * wards") wraps under the identical rule rather than needing a second one. No `overflow-wrap`
+ * override needed here (contrast `.edWaitTable` in `statistics-v4.module.css`, which does): this
+ * selector matches a `th`, and `WardTable`'s `overflow-wrap: anywhere` is declared only on
+ * `.table td`, never on `th` — so a `th` already wraps at word boundaries with no override, which
+ * is exactly what breaks "East Metropolitan Youth Unit (EMyU)" cleanly at its own spaces.
+ */
+.readyBedsTable th[scope="row"] {
+  white-space: normal;
+}
+
+.wardLink {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.wardLink:hover {
+  color: var(--accent-hover, var(--accent));
+}
+
+/* ═══ PRINT ════════════════════════════════════════════════════════════════════════════════════
+ *
+ * ⚠️ **Every selector here declares a THEMED text colour, which does not survive printing from a
+ * dark theme.** The theme's `--text-*` tokens resolve to near-white in dark, printers do not paint
+ * the page background, and the result is near-white text on white paper — an absence, rendered as
+ * though the value had simply not been written.
+ *
+ * `statistics-v4.module.css`'s own print block (`@media print`, `.band`/`.panel`/`.dtable`/…) does
+ * NOT cover these: those are its classes, and these four are this file's. A stylesheet's print
+ * coverage is not inherited by the file that composes alongside it.
+ *
+ * `CanvasText`/`Canvas` are the system's own ink and paper, so this is correct in both themes
+ * rather than pinning a light-mode hex. Caught by `tests/ward-management-print-coverage.test.ts`,
+ * which is why the fix is here and not a note in that test's KNOWN_UNFIXED list — this file is
+ * mine and was not "genuinely owned by another session". */
+@media print {
+  .measuredCount,
+  .absence,
+  .tallyReason,
+  .tallyCount {
+    color: CanvasText !important;
+    background-color: Canvas !important;
+  }
+}

@@ -1,0 +1,354 @@
+/* src/components/ward-management/tools/ward-mha-calculator.module.css
+ * MHA Statutory Deadline Calculator component styling.
+ * Complies with 48px tap targets, dark/light theme tokens, and zero hardcoded hex/rgb.
+ */
+
+.calculatorRoot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-16, 1rem);
+  padding: var(--ward-space-16, 1rem);
+  background-color: var(--ward-ground, var(--surface));
+  color: var(--ward-text, var(--text));
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.headerBlock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-8, 0.5rem);
+}
+
+.titleArea {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-2, 0.125rem);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: var(--ward-leading-tight, 1.15);
+  color: var(--ward-heading, var(--text-heading));
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ward-muted, var(--text-muted));
+}
+
+/* Mode selector tablist */
+.modeTabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--ward-space-6, 0.375rem);
+  background-color: var(--surface-subtle);
+  padding: var(--ward-space-4, 0.25rem);
+  border-radius: 8px;
+  border: 1px solid var(--ward-border, var(--neutral-500));
+}
+
+.tabButton {
+  min-height: var(--ward-tap, 3rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ward-space-6, 0.375rem) var(--ward-space-8, 0.5rem);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--ward-muted, var(--text-muted));
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  text-align: center;
+}
+
+.tabButton:hover:not(.tabButtonActive) {
+  background-color: var(--surface);
+  color: var(--ward-text, var(--text));
+}
+
+.tabButtonActive {
+  background-color: var(--surface);
+  color: var(--ward-blue, var(--clinical-accent));
+  border-color: var(--ward-blue-border, var(--clinical-accent-border));
+  font-weight: 600;
+  box-shadow: var(--ward-shadow);
+}
+
+.tabCode {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.tabDuration {
+  font-size: 0.6875rem;
+  opacity: 0.85;
+}
+
+/* Input Section */
+.inputSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-12, 0.75rem);
+  padding: var(--ward-space-12, 0.75rem);
+  background-color: var(--surface-subtle);
+  border: 1px solid var(--ward-border, var(--neutral-500));
+  border-radius: 8px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-4, 0.25rem);
+}
+
+.inputLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ward-text, var(--text));
+}
+
+.dateTimeRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ward-space-8, 0.5rem);
+}
+
+.dateInput,
+.timeInput {
+  min-height: var(--ward-tap, 3rem);
+  padding: 0 var(--ward-space-10, 0.625rem);
+  border: 1px solid var(--ward-border, var(--neutral-500));
+  border-radius: 6px;
+  background-color: var(--surface);
+  color: var(--ward-text, var(--text));
+  font-family: inherit;
+  font-size: 0.9375rem;
+  box-sizing: border-box;
+}
+
+.dateInput:focus,
+.timeInput:focus {
+  outline: 2px solid var(--ward-blue, var(--clinical-accent));
+  outline-offset: -1px;
+}
+
+/* Quick Adjust Controls */
+.quickActionsRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8, 0.5rem);
+  flex-wrap: wrap;
+}
+
+.quickBtn {
+  min-height: var(--ward-tap, 3rem);
+  padding: 0 var(--ward-space-12, 0.75rem);
+  border: 1px solid var(--ward-border, var(--neutral-500));
+  border-radius: 6px;
+  background-color: var(--surface);
+  color: var(--ward-text, var(--text));
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ward-space-4, 0.25rem);
+  transition: background-color 0.15s ease-in-out;
+}
+
+.quickBtn:hover {
+  background-color: var(--surface-chrome);
+}
+
+.quickBtnAccent {
+  border-color: var(--ward-blue-border, var(--clinical-accent-border));
+  color: var(--ward-blue, var(--clinical-accent));
+  font-weight: 600;
+}
+
+/* Presets Row */
+.presetsRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-6, 0.375rem);
+  flex-wrap: wrap;
+}
+
+.presetChip {
+  min-height: var(--ward-tap, 3rem);
+  padding: 0 var(--ward-space-10, 0.625rem);
+  border: 1px solid var(--ward-border, var(--neutral-500));
+  border-radius: 20px;
+  background-color: var(--surface);
+  color: var(--ward-muted, var(--text-muted));
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease-in-out;
+}
+
+.presetChip:hover {
+  background-color: var(--surface-chrome);
+  color: var(--ward-text, var(--text));
+}
+
+/* Results & Countdown Card */
+.resultsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-12, 0.75rem);
+}
+
+/* Status Banner */
+.statusBanner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-4, 0.25rem);
+  padding: var(--ward-space-12, 0.75rem) var(--ward-space-16, 1rem);
+  border-radius: 8px;
+  border-left-width: 4px;
+  border-left-style: solid;
+}
+
+.statusActive {
+  background-color: var(--ward-success-soft, var(--success-bg));
+  color: var(--ward-success, var(--success-text));
+  border-left-color: var(--ward-success, var(--success-text));
+}
+
+.statusUrgent {
+  background-color: var(--ward-warning-soft, var(--warning-bg));
+  color: var(--ward-warning, var(--warning-text));
+  border-left-color: var(--ward-warning, var(--warning-text));
+}
+
+.statusCritical {
+  background-color: var(--ward-danger-soft, var(--danger-bg));
+  color: var(--ward-danger, var(--danger-text));
+  border-left-color: var(--ward-danger, var(--danger-text));
+}
+
+.statusLapsed {
+  background-color: var(--ward-danger-soft, var(--danger-bg));
+  color: var(--ward-danger, var(--danger-text));
+  border-left-color: var(--ward-danger, var(--danger-text));
+  font-weight: 600;
+}
+
+.statusBannerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-8, 0.5rem);
+}
+
+.statusLabel {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.statusCountdown {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.statusDescription {
+  font-size: 0.8125rem;
+  line-height: var(--ward-leading-body, 1.4);
+  margin: 0;
+}
+
+/* Key Metrics Box */
+.metricsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ward-space-8, 0.5rem);
+}
+
+.metricCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-2, 0.125rem);
+  padding: var(--ward-space-10, 0.625rem);
+  background-color: var(--surface-subtle);
+  border: 1px solid var(--ward-border, var(--neutral-500));
+  border-radius: 6px;
+}
+
+.metricLabel {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ward-muted, var(--text-muted));
+}
+
+.metricValue {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ward-text, var(--text));
+}
+
+.metricSub {
+  font-size: 0.6875rem;
+  color: var(--ward-muted, var(--text-muted));
+}
+
+/* Safeguard Alert */
+.safeguardBanner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-4, 0.25rem);
+  padding: var(--ward-space-10, 0.625rem) var(--ward-space-14, 0.875rem);
+  background-color: var(--ward-warning-soft, var(--warning-bg));
+  color: var(--ward-warning, var(--warning-text));
+  border: 1px solid var(--ward-warning, var(--warning-text));
+  border-left-width: 4px;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  line-height: var(--ward-leading-body, 1.4);
+}
+
+.safeguardHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-6, 0.375rem);
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+/* Statutory Reference Card */
+.referenceCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-4, 0.25rem);
+  padding: var(--ward-space-10, 0.625rem);
+  background-color: var(--surface);
+  border: 1px dashed var(--ward-border, var(--neutral-500));
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: var(--ward-muted, var(--text-muted));
+  line-height: var(--ward-leading-copy, 1.35);
+}
+
+.referenceTitle {
+  font-weight: 600;
+  color: var(--ward-text, var(--text));
+  font-size: 0.8125rem;
+}

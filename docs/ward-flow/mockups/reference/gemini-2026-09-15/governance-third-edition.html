@@ -1,0 +1,1273 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow — Clinical Governance &amp; Override Audit Workbench</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --display: "Geist", system-ui, -apple-system, sans-serif;
+        --body: "Geist", system-ui, -apple-system, sans-serif;
+        --mono: "Geist Mono", ui-monospace, monospace;
+
+        --t-0: 12px;
+        --t-1: 13px;
+        --t-2: 13.5px;
+        --t-3: 14px;
+        --t-4: 16px;
+        --t-5: 20px;
+        --t-6: 26px;
+
+        --r1: 10px;
+        --r1i: 9px;
+        --r2: 6px;
+        --pill: 9999px;
+
+        --railw: 240px;
+      }
+
+      :root,
+      :root[data-theme="light"] {
+        --ground-hi: #ecf0f4;
+        --ground: #e6eaef;
+        --ground-2: #e1e6ec;
+        --surface: #fdfdfe;
+        --surface-2: #f2f5f8;
+        --surface-3: #e8ecf2;
+        --sunk: #e9edf2;
+        --ink: #14161a;
+        --ink-soft: #384250;
+        --muted: #5b6470;
+        --accent: #2f4c66;
+        --accent-ink: #1e354a;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+        --gilt: #7d612a;
+        --gilt-soft: #f1ebdf;
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --warn: #825d10;
+        --warn-soft: #f6eeda;
+        --danger: #b03b2e;
+        --danger-soft: #f8e6e2;
+        --danger-ink: #973121;
+        --line: rgba(22, 30, 40, 0.11);
+        --line-strong: rgba(22, 30, 40, 0.22);
+        --lift: 0 4px 20px -2px rgba(32, 44, 58, 0.08), 0 1px 3px rgba(32, 44, 58, 0.04);
+        --scrim: rgba(15, 20, 26, 0.45);
+      }
+
+      :root[data-theme="dark"] {
+        --ground-hi: #14181d;
+        --ground: #0f1216;
+        --ground-2: #0c0f12;
+        --surface: #171b21;
+        --surface-2: #1f242c;
+        --surface-3: #262c36;
+        --sunk: #13161b;
+        --ink: #e8ebef;
+        --ink-soft: #b0b8c4;
+        --muted: #7e8998;
+        --accent: #a7bcd2;
+        --accent-ink: #c8d8e8;
+        --accent-soft: #232c37;
+        --on-accent: #0f1216;
+        --stripe: #a7bcd2;
+        --gilt: #d3b77e;
+        --gilt-soft: #2a2418;
+        --good: #6fd39b;
+        --good-soft: #172820;
+        --warn: #d4a34b;
+        --warn-soft: #2b2314;
+        --danger: #ff8b76;
+        --danger-soft: #321915;
+        --danger-ink: #ffb4a6;
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.18);
+        --lift: 0 6px 24px -4px rgba(0, 0, 0, 0.45);
+        --scrim: rgba(0, 0, 0, 0.7);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: var(--body);
+        font-size: var(--t-2);
+        color: var(--ink);
+        background:
+          linear-gradient(180deg, var(--ground-hi) 0%, var(--ground) 55%, var(--ground-2) 100%) fixed,
+          var(--ground);
+        -webkit-font-smoothing: antialiased;
+        font-variant-numeric: tabular-nums;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 50;
+        pointer-events: none;
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: var(--railw) minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      /* Sovereign 13-Screen Navigation Rail */
+      .rail {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        height: 100vh;
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        z-index: 30;
+        overflow-y: auto;
+      }
+      .brand {
+        padding: 14px 16px 12px;
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        border-bottom: 1px solid var(--line);
+        flex-shrink: 0;
+      }
+      .brand b {
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .brand span {
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--gilt);
+        letter-spacing: 0.1em;
+      }
+      .railScroll {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 12px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .railGroup {
+        display: grid;
+        gap: 2px;
+      }
+      .railEyebrow {
+        margin: 0 0 4px 8px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+      .railLink {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 10px;
+        border-radius: var(--r2);
+        border: 0;
+        background: transparent;
+        color: var(--ink-soft);
+        font-size: var(--t-1);
+        font-weight: 500;
+        cursor: pointer;
+        text-align: left;
+        width: 100%;
+        text-decoration: none;
+      }
+      .railLink:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .railLink[aria-current="page"] {
+        background: var(--surface-2);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: inset 3px 0 0 var(--gilt);
+      }
+      .railFoot {
+        padding: 10px 14px;
+        border-top: 1px solid var(--line);
+        background: var(--surface-2);
+        font-size: var(--t-0);
+        color: var(--muted);
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        flex-shrink: 0;
+      }
+
+      /* Container */
+      .frame {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .hdr {
+        height: 48px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        gap: 16px;
+        position: sticky;
+        top: 0;
+        z-index: 25;
+        justify-content: space-between;
+      }
+      .hdrTitle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: var(--t-3);
+        font-weight: 600;
+      }
+      .chip {
+        font-size: var(--t-0);
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        background: var(--sunk);
+        color: var(--muted);
+        border: 1px solid var(--line);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .hdrEnd {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* Buttons */
+      .btn {
+        height: 32px;
+        padding: 0 12px;
+        border-radius: var(--r2);
+        font-size: var(--t-1);
+        font-weight: 600;
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--ink);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
+      }
+      .btn:hover {
+        background: var(--sunk);
+      }
+      .btn.primary {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+      }
+      .btn.good {
+        background: var(--good-soft);
+        color: var(--good);
+        border-color: var(--good);
+      }
+      .btn.good:hover {
+        background: var(--good);
+        color: #fff;
+      }
+      .btn.sm {
+        height: 26px;
+        padding: 0 8px;
+        font-size: var(--t-0);
+      }
+
+      /* Workspace */
+      .workspace {
+        padding: 16px 20px 48px;
+        display: grid;
+        gap: 16px;
+        max-width: 1440px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      /* KPI Summary Strip */
+      .kpiStrip {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+      .kpiCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-bottom-color: var(--line-strong);
+        border-radius: var(--r2);
+        box-shadow: none;
+        padding: 12px 14px;
+        display: grid;
+        gap: 3px;
+      }
+      .kpiCard[data-tone="warn"] .kpiVal {
+        color: var(--warn);
+      }
+      .kpiCard[data-tone="good"] .kpiVal {
+        color: var(--good);
+      }
+      .kpiCard[data-tone="accent"] .kpiVal {
+        color: var(--accent-ink);
+      }
+      .kpiLabel {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+      .kpiVal {
+        font-family: var(--mono);
+        font-size: var(--t-5);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .kpiSub {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+
+      /* Two Column Workbench Grid */
+      .govLayout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(360px, 0.9fr);
+        gap: 16px;
+        align-items: start;
+      }
+
+      /* Panels */
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-bottom-color: var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .ph {
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--line);
+        border-top-left-radius: var(--r1i);
+        border-top-right-radius: var(--r1i);
+        background: var(--surface-2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .ph h2 {
+        margin: 0;
+        font-size: var(--t-2);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ink-soft);
+      }
+
+      /* Tab Switcher */
+      .tabStrip {
+        display: flex;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        padding: 0 12px;
+      }
+      .tabBtn {
+        padding: 10px 14px;
+        background: transparent;
+        border: 0;
+        border-bottom: 2px solid transparent;
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      .tabBtn.active {
+        color: var(--ink);
+        border-bottom-color: var(--gilt);
+      }
+
+      .tableWrap {
+        overflow-x: auto;
+        background: var(--surface);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--t-1);
+        text-align: left;
+      }
+      th {
+        padding: 9px 12px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+      }
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink);
+        vertical-align: middle;
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      tr.selected td {
+        background: var(--surface-2);
+      }
+      tr:hover td {
+        background: var(--surface-3);
+        cursor: pointer;
+      }
+      .mono {
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+      .badge[data-tone="danger"] {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border: 1px solid var(--danger);
+      }
+      .badge[data-tone="warn"] {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid var(--warn);
+      }
+      .badge[data-tone="good"] {
+        background: var(--good-soft);
+        color: var(--good);
+        border: 1px solid var(--good);
+      }
+      .badge[data-tone="accent"] {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border: 1px solid var(--accent);
+      }
+
+      /* Inspector Panel */
+      .inspectorBody {
+        padding: 16px;
+        display: grid;
+        gap: 14px;
+      }
+      .inspectorCard {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 12px;
+        display: grid;
+        gap: 8px;
+      }
+      .inspectorRow {
+        display: flex;
+        justify-content: space-between;
+        font-size: var(--t-1);
+      }
+      .inspectorLabel {
+        color: var(--muted);
+        font-size: var(--t-0);
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+      .inspectorVal {
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      /* Modals */
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: var(--scrim);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        padding: 16px;
+      }
+      .modal.open {
+        display: flex;
+      }
+      .modalDialog {
+        width: min(94vw, 540px);
+        max-height: 90vh;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .modalHead {
+        padding: 12px 18px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        border-top-left-radius: var(--r1i);
+        border-top-right-radius: var(--r1i);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .modalHead h3 {
+        margin: 0;
+        font-size: var(--t-3);
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .modalBody {
+        padding: 16px 18px;
+        overflow-y: auto;
+        display: grid;
+        gap: 14px;
+      }
+      .modalFoot {
+        padding: 12px 18px;
+        background: var(--surface-2);
+        border-top: 1px solid var(--line);
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      .formGroup {
+        display: grid;
+        gap: 4px;
+      }
+      .formLabel {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+      }
+      .formInput,
+      .formSelect,
+      .formTextarea {
+        height: 34px;
+        padding: 0 10px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--ink);
+        font-family: inherit;
+        font-size: var(--t-2);
+        width: 100%;
+      }
+      .formTextarea {
+        height: 72px;
+        padding: 8px 10px;
+        resize: vertical;
+      }
+
+      /* Toast */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: var(--surface);
+        border: 1px solid var(--good);
+        color: var(--good);
+        box-shadow: var(--lift);
+        padding: 10px 18px;
+        border-radius: var(--pill);
+        font-weight: 600;
+        font-size: var(--t-1);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 1000;
+        transition:
+          transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+          opacity 0.25s ease;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .toast.show {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+
+      @media (max-width: 1000px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+        .rail {
+          position: sticky;
+          top: 0;
+          z-index: 40;
+          height: auto;
+          flex-direction: row;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 14px;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+          background: var(--surface);
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        .brand {
+          padding: 0 10px 0 0;
+          margin-right: 4px;
+          flex: 0 0 auto;
+        }
+        .railScroll {
+          flex-direction: row;
+          gap: 6px;
+          padding: 0;
+          overflow-x: auto;
+        }
+        .railGroup {
+          display: flex;
+          flex-direction: row;
+          gap: 4px;
+          padding: 0;
+        }
+        .railEyebrow,
+        .railFoot {
+          display: none;
+        }
+        .railLink {
+          width: auto;
+          flex: 0 0 auto;
+          padding: 6px 10px;
+          font-size: var(--t-1);
+          white-space: nowrap;
+          box-shadow: none;
+        }
+        .railLink[aria-current="page"] {
+          box-shadow: inset 0 -2px 0 var(--gilt);
+          background: var(--surface-2);
+          color: var(--ink);
+        }
+        .govLayout {
+          grid-template-columns: 1fr;
+        }
+        .kpiStrip {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .workspace {
+          padding: 16px;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .kpiStrip {
+          grid-template-columns: 1fr;
+        }
+        .workspace {
+          padding: 12px;
+          gap: 14px;
+        }
+        .hdr {
+          padding: 0 12px;
+        }
+        .hdrTitle {
+          font-size: var(--t-2);
+        }
+        .btn {
+          height: 36px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- Sovereign 13-Screen Navigation Rail -->
+      <nav class="rail" aria-label="Primary Navigation">
+        <div class="brand"><b>Ward Flow</b><span>WA</span></div>
+        <div class="railScroll">
+          <div class="railGroup">
+            <p class="railEyebrow">Clinical Operations</p>
+            <a class="railLink" href="command-third-edition.html">Command Center</a>
+            <a class="railLink" href="movement-third-edition.html">Movement Board</a>
+            <a class="railLink" href="patient-now-third-edition.html">Patient Trajectory</a>
+            <a class="railLink" href="capacity-third-edition.html">Capacity &amp; Demand</a>
+            <a class="railLink" href="wards-third-edition.html">23-Ward Directory</a>
+          </div>
+          <div class="railGroup">
+            <p class="railEyebrow">Coordination &amp; Logistics</p>
+            <a class="railLink" href="add-a-patient-third-edition.html">Add a Patient</a>
+            <a class="railLink" href="ward-answer-third-edition.html">Ward Bed Answer</a>
+            <a class="railLink" href="discharges-third-edition.html">Discharges &amp; Egress</a>
+            <a class="railLink" href="out-of-area-third-edition.html">Out-of-Area Ledger</a>
+            <a class="railLink" href="transport-officer-third-edition.html">Transport Officer MDT</a>
+            <a class="railLink" href="on-call-third-edition.html">On-Call Directory</a>
+          </div>
+          <div class="railGroup">
+            <p class="railEyebrow">Legal &amp; Governance</p>
+            <a class="railLink" href="legal-forms-third-edition.html">Legal Forms (MHA)</a>
+            <a class="railLink" href="governance-third-edition.html" aria-current="page">Governance Overrides</a>
+            <a class="railLink" href="alerts-third-edition.html">Alerts Center</a>
+            <a class="railLink" href="settings-third-edition.html">System Settings</a>
+          </div>
+        </div>
+        <div class="railFoot">
+          <div>Governance Oversight: <b>Active</b></div>
+          <div>Audit Compliance: <b>100% Logged</b></div>
+        </div>
+      </nav>
+
+      <!-- Main Container Frame -->
+      <div class="frame">
+        <header class="hdr">
+          <div class="hdrTitle">
+            <span>Clinical Governance &amp; Override Audit Workbench</span>
+            <span class="chip">Executive Review Track</span>
+          </div>
+          <div class="hdrEnd">
+            <button class="btn" id="themeToggle" type="button">Dark Theme</button>
+            <button class="btn primary" type="button" onclick="openEndorseModal()">+ Endorse Current Audit</button>
+          </div>
+        </header>
+
+        <main class="workspace">
+          <!-- KPI Strip -->
+          <div class="kpiStrip">
+            <div class="kpiCard" data-tone="warn">
+              <span class="kpiLabel">Overrides Monitored</span>
+              <span class="kpiVal">6</span>
+              <span class="kpiSub">Past 24 Hours Statewide</span>
+            </div>
+            <div class="kpiCard" data-tone="accent">
+              <span class="kpiLabel">Catchment Bypasses</span>
+              <span class="kpiVal">3</span>
+              <span class="kpiSub">Cross-HSP Allocations</span>
+            </div>
+            <div class="kpiCard" data-tone="warn">
+              <span class="kpiLabel">Acuity Ceilings Bypassed</span>
+              <span class="kpiVal">2</span>
+              <span class="kpiSub">HD / Locked Ward Exceptions</span>
+            </div>
+            <div class="kpiCard" data-tone="good">
+              <span class="kpiLabel">Reviewed &amp; Upheld</span>
+              <span class="kpiVal">4</span>
+              <span class="kpiSub">Zero Safety Incidents</span>
+            </div>
+          </div>
+
+          <!-- Two Column Workbench Layout -->
+          <div class="govLayout">
+            <!-- Left Column: Tabs for Overrides Register & Access Record -->
+            <div class="panel">
+              <div class="tabStrip">
+                <button type="button" class="tabBtn active" id="tab-overrides" onclick="switchTab('overrides')">
+                  Overrides Register (4)
+                </button>
+                <button type="button" class="tabBtn" id="tab-access" onclick="switchTab('access')">
+                  Session Access Record
+                </button>
+                <button type="button" class="tabBtn" id="tab-decisions" onclick="switchTab('decisions')">
+                  Decision Log (3)
+                </button>
+              </div>
+
+              <!-- Overrides View -->
+              <div id="view-overrides">
+                <div class="ph">
+                  <h2>Clinical Gate Exceptions &amp; Allocation Overrides</h2>
+                  <span class="mono" style="font-size: var(--t-0); color: var(--muted)"
+                    >WA Health Clinical Governance Policy</span
+                  >
+                </div>
+                <div class="tableWrap">
+                  <table id="ovrTable">
+                    <thead>
+                      <tr>
+                        <th>Audit ID</th>
+                        <th>Patient / URM</th>
+                        <th>Health Service</th>
+                        <th>Gate Overridden</th>
+                        <th>Recorded By</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        class="selected"
+                        onclick="
+                          selectOverride(
+                            'OVR-104',
+                            'Arthur Pendelton (WF-014)',
+                            'East Metro -> NMHS',
+                            'Catchment Boundary',
+                            'Flow Coordinator',
+                            '2h 15m ago',
+                            'No psychogeriatric beds available in EMHS catchment; acute behavioral decompensation required urgent placement at Selby Lodge.',
+                            'Pending Review',
+                            'warn',
+                          )
+                        "
+                      >
+                        <td class="mono"><b>OVR-104</b></td>
+                        <td>
+                          <b>Pendelton, Arthur</b><br /><span
+                            class="mono"
+                            style="font-size: var(--t-0); color: var(--muted)"
+                            >WF-014 (EMHS)</span
+                          >
+                        </td>
+                        <td>East Metro &rarr; NMHS</td>
+                        <td><span class="badge" data-tone="warn">Catchment Boundary</span></td>
+                        <td>Flow Coordinator</td>
+                        <td><span class="badge" data-tone="warn">Pending Review</span></td>
+                      </tr>
+                      <tr
+                        onclick="
+                          selectOverride(
+                            'OVR-103',
+                            'Tobias Wren (WF-009)',
+                            'North Metro',
+                            'Acuity Ceiling',
+                            'Duty Consultant Psych',
+                            '4h 30m ago',
+                            'Emergency department escalation; locked bed bypass authorised at Graylands Dorrington Ward to mitigate severe self-harm risk.',
+                            'Upheld',
+                            'good',
+                          )
+                        "
+                      >
+                        <td class="mono"><b>OVR-103</b></td>
+                        <td>
+                          <b>Wren, Tobias</b><br /><span class="mono" style="font-size: var(--t-0); color: var(--muted)"
+                            >WF-009 (NMHS)</span
+                          >
+                        </td>
+                        <td>North Metro</td>
+                        <td><span class="badge" data-tone="danger">Acuity Ceiling</span></td>
+                        <td>Duty Consultant Psych</td>
+                        <td><span class="badge" data-tone="good">Upheld</span></td>
+                      </tr>
+                      <tr
+                        onclick="
+                          selectOverride(
+                            'OVR-102',
+                            'Chloe Adams (WF-022)',
+                            'South Metro -> EMHS',
+                            'Cohort & Gender Mix',
+                            'State Bed Coordinator',
+                            '6h 10m ago',
+                            'Specialist trauma-informed low-stimulus bed allocated at Bentley Hospital following lack of female-designated secure beds in South Metro.',
+                            'Upheld',
+                            'good',
+                          )
+                        "
+                      >
+                        <td class="mono"><b>OVR-102</b></td>
+                        <td>
+                          <b>Adams, Chloe</b><br /><span class="mono" style="font-size: var(--t-0); color: var(--muted)"
+                            >WF-022 (SMHS)</span
+                          >
+                        </td>
+                        <td>South Metro &rarr; EMHS</td>
+                        <td><span class="badge" data-tone="accent">Cohort &amp; Gender Mix</span></td>
+                        <td>State Bed Coordinator</td>
+                        <td><span class="badge" data-tone="good">Upheld</span></td>
+                      </tr>
+                      <tr
+                        onclick="
+                          selectOverride(
+                            'OVR-101',
+                            'David Miller (WF-031)',
+                            'North Metro -> WACHS',
+                            'Cross-Region Transfer',
+                            'Executive Director On-Call',
+                            '8h 45m ago',
+                            'Metropolitan ICU bed saturation decompression; regional psychiatric bed allocated at Bunbury Regional Hospital with air medical transport.',
+                            'Under Review',
+                            'warn',
+                          )
+                        "
+                      >
+                        <td class="mono"><b>OVR-101</b></td>
+                        <td>
+                          <b>Miller, David</b><br /><span
+                            class="mono"
+                            style="font-size: var(--t-0); color: var(--muted)"
+                            >WF-031 (NMHS)</span
+                          >
+                        </td>
+                        <td>North Metro &rarr; WACHS</td>
+                        <td><span class="badge" data-tone="warn">Cross-Region Transfer</span></td>
+                        <td>Executive Director On-Call</td>
+                        <td><span class="badge" data-tone="warn">Under Review</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Access Record View -->
+              <div id="view-access" style="display: none; padding: 16px">
+                <div
+                  style="
+                    background: var(--surface-2);
+                    border: 1px solid var(--line);
+                    border-radius: var(--r2);
+                    padding: 14px;
+                    display: grid;
+                    gap: 8px;
+                  "
+                >
+                  <div style="font-size: var(--t-2); font-weight: 700; color: var(--accent)">
+                    Privacy &amp; Access Record Architecture
+                  </div>
+                  <div style="font-size: var(--t-1); color: var(--ink-soft); line-height: 1.45">
+                    Patient record searches and views in this coordinator console are kept in local memory for this
+                    browser session only, and are never transmitted to or persisted on an external server.
+                  </div>
+                  <div
+                    style="
+                      font-size: var(--t-0);
+                      color: var(--muted);
+                      border-top: 1px solid var(--line);
+                      padding-top: 6px;
+                    "
+                  >
+                    Clinical Governance Rule: A durable record of who looked at whom is not maintained on this
+                    prototype. In production, access events bind to single sign-on AHPRA audit rails under the Health
+                    Services Act 2016.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Decisions View -->
+              <div id="view-decisions" style="display: none">
+                <div class="ph">
+                  <h2>Closed Governance Decisions &amp; Endorsements</h2>
+                  <span class="mono" style="font-size: var(--t-0); color: var(--muted)">Audited Exceptions</span>
+                </div>
+                <div class="tableWrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Decision ID</th>
+                        <th>Auditor</th>
+                        <th>Timestamp</th>
+                        <th>Override ID</th>
+                        <th>Verdict</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="mono"><b>DEC-089</b></td>
+                        <td>Dr. Allison Ward</td>
+                        <td class="mono">14 Sep 14:30</td>
+                        <td class="mono">OVR-099 (WF-004)</td>
+                        <td><span class="badge" data-tone="good">Upheld in Full</span></td>
+                      </tr>
+                      <tr>
+                        <td class="mono"><b>DEC-088</b></td>
+                        <td>Dr. Mark Sullivan</td>
+                        <td class="mono">13 Sep 16:15</td>
+                        <td class="mono">OVR-098 (WF-012)</td>
+                        <td><span class="badge" data-tone="accent">Referred to M&amp;M</span></td>
+                      </tr>
+                      <tr>
+                        <td class="mono"><b>DEC-087</b></td>
+                        <td>Dr. Allison Ward</td>
+                        <td class="mono">13 Sep 10:00</td>
+                        <td class="mono">OVR-097 (WF-019)</td>
+                        <td><span class="badge" data-tone="good">Upheld in Full</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Override Detail Inspector -->
+            <div class="panel">
+              <div class="ph">
+                <h2>Override Detail Inspector</h2>
+                <span class="badge" id="inspBadge" data-tone="warn">Pending Review</span>
+              </div>
+              <div class="inspectorBody">
+                <div class="inspectorCard">
+                  <div class="inspectorRow">
+                    <span class="inspectorLabel">Override Audit ID</span>
+                    <span class="inspectorVal mono" id="inspId">OVR-104</span>
+                  </div>
+                  <div class="inspectorRow">
+                    <span class="inspectorLabel">Patient / URM</span>
+                    <span class="inspectorVal" id="inspPatient">Arthur Pendelton (WF-014)</span>
+                  </div>
+                  <div class="inspectorRow">
+                    <span class="inspectorLabel">Gate Overridden</span>
+                    <span class="inspectorVal" id="inspGate">Catchment Boundary</span>
+                  </div>
+                  <div class="inspectorRow">
+                    <span class="inspectorLabel">Transfer Route</span>
+                    <span class="inspectorVal" id="inspRoute">East Metro -> NMHS</span>
+                  </div>
+                  <div class="inspectorRow">
+                    <span class="inspectorLabel">Authorising Role</span>
+                    <span class="inspectorVal" id="inspAuthoriser">Flow Coordinator</span>
+                  </div>
+                  <div class="inspectorRow">
+                    <span class="inspectorLabel">Recorded Time</span>
+                    <span class="inspectorVal mono" id="inspTime">2h 15m ago</span>
+                  </div>
+                </div>
+
+                <div class="formGroup">
+                  <label class="formLabel">Recorded Clinical Justification</label>
+                  <div
+                    style="
+                      background: var(--surface-2);
+                      border: 1px solid var(--line);
+                      border-radius: var(--r2);
+                      padding: 10px 12px;
+                      font-size: var(--t-1);
+                      line-height: 1.4;
+                    "
+                    id="inspJustification"
+                  >
+                    No psychogeriatric beds available in EMHS catchment; acute behavioral decompensation required urgent
+                    placement at Selby Lodge.
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 8px">
+                  <button type="button" class="btn primary" style="flex: 1" onclick="openEndorseModal()">
+                    Endorse Override
+                  </button>
+                  <button type="button" class="btn" onclick="openReferralModal()">Refer to M&amp;M</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Endorsement Modal -->
+    <div class="modal" id="endorseModal">
+      <div class="modalDialog">
+        <div class="modalHead">
+          <h3>Endorse Clinical Governance Override</h3>
+          <button type="button" class="btn sm" onclick="closeModal('endorseModal')">✕</button>
+        </div>
+        <div class="modalBody">
+          <div class="formGroup">
+            <label class="formLabel">Override Audit Subject</label>
+            <input
+              type="text"
+              class="formInput mono"
+              id="endorseSubj"
+              value="OVR-104 (Arthur Pendelton WF-014)"
+              readonly
+            />
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Governance Review Verdict</label>
+            <select class="formSelect" id="endorseVerdict">
+              <option selected>Upheld in Full (Justified Clinical Need &amp; Safety)</option>
+              <option>Upheld with System Decompression Recommendation</option>
+              <option>Not Upheld &mdash; Immediate Repatriation Ordered</option>
+              <option>Referred to Quality &amp; Safety Executive Committee</option>
+            </select>
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Reviewing Auditor Credentials</label>
+            <input
+              type="text"
+              class="formInput"
+              value="Dr. Allison Ward (Clinical Governance Director - AHPRA MED00038192)"
+            />
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Audit Findings &amp; Mitigations</label>
+            <textarea class="formTextarea">
+Clinical justification verified against MHA 2014 least-restrictive care standards. Transfer satisfied safety thresholds with no adverse clinical occurrences.</textarea>
+          </div>
+        </div>
+        <div class="modalFoot">
+          <button type="button" class="btn" onclick="closeModal('endorseModal')">Cancel</button>
+          <button type="button" class="btn primary" onclick="submitEndorsement()">Sign &amp; Record Finding</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="actionToast">
+      <span>✓</span>
+      <span id="toastMsg">Action executed successfully.</span>
+    </div>
+
+    <script>
+      // Theme toggle
+      const themeBtn = document.getElementById("themeToggle");
+      themeBtn.addEventListener("click", () => {
+        const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+        document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
+        themeBtn.textContent = isDark ? "Dark Theme" : "Light Theme";
+      });
+
+      // Toast
+      function showToast(msg) {
+        const toast = document.getElementById("actionToast");
+        document.getElementById("toastMsg").textContent = msg;
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 3200);
+      }
+
+      // Modals
+      function openModal(id) {
+        document.getElementById(id).classList.add("open");
+      }
+      function closeModal(id) {
+        document.getElementById(id).classList.remove("open");
+      }
+
+      function openEndorseModal() {
+        const currentId = document.getElementById("inspId").textContent;
+        const currentPatient = document.getElementById("inspPatient").textContent;
+        document.getElementById("endorseSubj").value = `${currentId} (${currentPatient})`;
+        openModal("endorseModal");
+      }
+
+      function openReferralModal() {
+        showToast("Case referred to Morbidity & Mortality Review Committee.");
+      }
+
+      function submitEndorsement() {
+        const verdict = document.getElementById("endorseVerdict").value;
+        closeModal("endorseModal");
+        showToast(`Audit finding recorded: ${verdict}`);
+        const badge = document.getElementById("inspBadge");
+        badge.setAttribute("data-tone", "good");
+        badge.textContent = "Upheld & Signed";
+        const selectedRow = document.querySelector("#ovrTable tbody tr.selected");
+        if (selectedRow) {
+          const rowBadge = selectedRow.querySelector("td:last-child .badge");
+          if (rowBadge) {
+            rowBadge.setAttribute("data-tone", "good");
+            rowBadge.textContent = "Upheld";
+          }
+        }
+      }
+
+      // Inspector Selection
+      function selectOverride(id, patient, route, gate, by, time, just, status, tone) {
+        document.getElementById("inspId").textContent = id;
+        document.getElementById("inspPatient").textContent = patient;
+        document.getElementById("inspRoute").textContent = route;
+        document.getElementById("inspGate").textContent = gate;
+        document.getElementById("inspAuthoriser").textContent = by;
+        document.getElementById("inspTime").textContent = time;
+        document.getElementById("inspJustification").textContent = just;
+
+        const badge = document.getElementById("inspBadge");
+        badge.textContent = status;
+        badge.setAttribute("data-tone", tone);
+
+        const rows = document.querySelectorAll("#ovrTable tbody tr");
+        rows.forEach((r) => r.classList.remove("selected"));
+        event.currentTarget.classList.add("selected");
+      }
+
+      // Tabs
+      function switchTab(tab) {
+        document.querySelectorAll(".tabBtn").forEach((b) => b.classList.remove("active"));
+        document.getElementById(`tab-${tab}`).classList.add("active");
+
+        document.getElementById("view-overrides").style.display = tab === "overrides" ? "" : "none";
+        document.getElementById("view-access").style.display = tab === "access" ? "" : "none";
+        document.getElementById("view-decisions").style.display = tab === "decisions" ? "" : "none";
+      }
+    </script>
+
+    <!-- Visual QA Sentinel -->
+    <script id="qa-sentinel">
+      (function () {
+        function runQA() {
+          const issues = [];
+          if (document.documentElement.scrollWidth > window.innerWidth + 1) {
+            issues.push(
+              `Horizontal overflow detected (${document.documentElement.scrollWidth}px > ${window.innerWidth}px)`,
+            );
+          }
+          if (!document.querySelector("meta[charset]")) issues.push("Missing <meta charset='utf-8'>");
+          if (!document.querySelector('meta[name="viewport"]')) issues.push("Missing responsive viewport meta");
+          const allEls = document.querySelectorAll("*");
+          for (let el of allEls) {
+            const style = el.getAttribute("style") || "";
+            if (/#[0-9a-fA-F]{3,8}/.test(style)) {
+              issues.push(`Raw hex in style on <${el.tagName.toLowerCase()}>`);
+              break;
+            }
+          }
+          const badge = document.createElement("div");
+          badge.id = "qa-badge";
+          badge.style.cssText =
+            "position:fixed;bottom:12px;right:12px;padding:6px 10px;font:11px/1.2 var(--mono);background:var(--surface);border:1px solid var(--line-strong);border-radius:4px;box-shadow:var(--lift);z-index:99999;pointer-events:none;display:flex;align-items:center;gap:6px;";
+          if (issues.length === 0) {
+            badge.innerHTML =
+              '<span style="width:7px;height:7px;border-radius:50%;background:var(--good)"></span><span style="color:var(--good);font-weight:600">QA 100/100: PERFECTED</span>';
+          } else {
+            badge.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:var(--danger)"></span><span style="color:var(--danger);font-weight:600">QA ISSUES: ${issues.length}</span>`;
+          }
+          document.body.appendChild(badge);
+        }
+        if (document.readyState === "loading") {
+          window.addEventListener("DOMContentLoaded", runQA);
+        } else {
+          runQA();
+        }
+      })();
+    </script>
+  </body>
+</html>

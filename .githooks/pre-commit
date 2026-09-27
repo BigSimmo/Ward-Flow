@@ -1,0 +1,219 @@
+#!/bin/sh
+# Keep generated documentation synchronized before relevant commits. The hook
+# writes generated outputs but never stages them: if anything changes, the
+# commit stops so the author can review and stage the exact diff.
+set -eu
+
+# --- Fast staged-file checks ------------------------------------------------------
+# Secret and real-patient-identifier scan, lint on changed lines, and a typecheck
+# scoped to the staged TypeScript files. All read the staged content. Details,
+# timings and escapes are in the script's header. Fails open only when the script
+# or node is absent (an older branch in another worktree), never on a finding.
+if [ -f scripts/pre-commit-checks.mjs ] && command -v node >/dev/null 2>&1; then
+  node scripts/pre-commit-checks.mjs || exit 1
+fi
+
+staged_files=$(git diff --cached --name-only --diff-filter=ACMRD)
+working_files=$(
+  {
+    git diff --name-only --diff-filter=ACMRD
+    git ls-files --others --exclude-standard
+  } | sort -u
+)
+
+# --- Ward Flow generated indexes ------------------------------------------------
+# Three documents are GENERATED from sources that move: the screen map, the rules
+# index and the owner-rulings index. Each carries a `--check` that fails when the
+# committed copy disagrees with its source.
+#
+# 🔴 NOTHING CALLED THEM. An index that is merely regenerable still rots, because
+# nobody remembers to regenerate it — which is the exact failure the rules index
+# itself is about. This is what makes them real rather than decorative.
+#
+# ⚠️ EACH FIRES ONLY WHEN ITS OWN SOURCE IS STAGED, and that narrowness is
+# deliberate. A gate that blocks commits it has no business blocking gets switched
+# off, and then it protects nothing. The screen map deliberately does NOT watch
+# every file under src/components/ward-management/ for that reason — a component
+# edit does not change the map, and a hook that reddened on every one of them
+# would be disabled within a day.
+#
+# Fails open by design: a missing script, a missing node, or an older branch
+# without these tools skips silently rather than blocking a commit it cannot judge.
+ward_flow_index_check() {
+  ward_script="$1"
+  ward_pattern="$2"
+  [ -f "$ward_script" ] || return 0
+  command -v node >/dev/null 2>&1 || return 0
+  # Not during a merge commit: a merge stages both sides' generated files, and the rules index is
+  # compared with a lesson store outside git that grows whenever any session saves a lesson, so it
+  # blocked merges that changed nothing. The fold gate runs every generator --check on the result.
+  [ -f "$(git rev-parse --git-path MERGE_HEAD)" ] && return 0
+  printf '%s
+' "$staged_files" | grep -Eq "$ward_pattern" || return 0
+  if ! node "$ward_script" --check >/dev/null 2>&1; then
+    echo "[pre-commit] $ward_script --check FAILED - a generated index disagrees with its source:" >&2
+    node "$ward_script" --check >&2 2>&1 || true
+    exit 1
+  fi
+}
+
+ward_flow_index_check "scripts/ward-flow/screen-map.mjs"   '^(docs/ward-flow/mockups/|src/app/mockups/ward-flow/|docs/ward-flow/SCREEN-MAP\.md$|scripts/ward-flow/screen-pairs\.mjs$)'
+ward_flow_index_check "scripts/ward-flow/rules-index.mjs"   '^docs/ward-flow/RULES\.md$'
+ward_flow_index_check "scripts/ward-flow/owner-rulings-index.mjs"   '^(docs/ward-flow/(archive/dated-notes/)?owner-.*\.md$|docs/ward-flow/OWNER-RULINGS\.md$)'
+# 🔴 THE DRAWINGS ARE NOW AUTHORITATIVE ON DESIGN, so an edit to one changes what "correct"
+# means for a screen that is already built. Without this, that edit is the one change in the
+# estate that lands silently. The manifest makes a drawing edit as visible as a code edit, and
+# the verification record then reports which screens just went out of date.
+ward_flow_index_check "scripts/ward-flow/mockup-manifest.mjs"   '^docs/ward-flow/mockups/'
+ward_flow_index_check "scripts/ward-flow/screen-verification.mjs"   '^(docs/ward-flow/screen-verification\.json$|docs/ward-flow/SCREEN-VERIFICATION\.md$|scripts/ward-flow/screen-pairs\.mjs$|docs/ward-flow/mockups/MANIFEST\.json$)'
+
+# --- Ward Flow local main fold guard --------------------------------------------
+# "Fold into main" in any Ward Flow context means the LOCAL ward line, never origin/main.
+# Committing Ward Flow files to a local 'main' branch that tracks origin/main risks
+# auto-deploying Ward Flow to production and applying live database migrations.
+current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+if [ "$current_branch" = "main" ] || [ "$current_branch" = "master" ]; then
+  ward_files_staged=$(printf '%s\n' "$staged_files" | grep -E '^(src/components/ward-management/|src/app/mockups/ward-flow/|docs/ward-flow/|scripts/ward-flow/|scripts/run-ward-tests\.mjs|tests/(helpers/|ui-)?ward-)' || true)
+  if [ -n "$ward_files_staged" ]; then
+    if [ "${CONFIRM_WARD_FLOW_FOLD_TO_MAIN:-}" != "I_CONFIRM_FOLD_TO_MAIN" ]; then
+      echo "================================================================================" >&2
+      echo "🔴 CRITICAL SAFETY GUARD: COMMITTING WARD FLOW TO LOCAL MAIN IS BLOCKED" >&2
+      echo "================================================================================" >&2
+      echo "You are committing Ward Flow files to local branch '$current_branch':" >&2
+      printf '  %s\n' "$ward_files_staged" >&2
+      echo "" >&2
+      echo "Pushing 'main' to origin auto-deploys to production and applies migrations to" >&2
+      echo "the live clinical database! Ward Flow must remain isolated on its local branch." >&2
+      echo "" >&2
+      echo "To confirm this commit to local main deliberately, run:" >&2
+      echo "  CONFIRM_WARD_FLOW_FOLD_TO_MAIN=\"I_CONFIRM_FOLD_TO_MAIN\" git commit ..." >&2
+      echo "================================================================================" >&2
+      exit 1
+    fi
+  fi
+fi
+
+if [ "${SKIP_DOCS_SYNC_HOOK:-}" = "1" ]; then
+  exit 0
+fi
+
+matches_staged() {
+  printf '%s\n' "$staged_files" | grep -Eq "$1"
+}
+
+sync_sitemap=0
+sync_inventory=0
+check_module_map=0
+
+if matches_staged '^(src/app/|mockups/|scripts/generate-site-map\.ts$|docs/site-map\.md$)'; then
+  sync_sitemap=1
+fi
+if matches_staged '^(scripts/|package\.json$|docs/scripts-index\.md$)'; then
+  sync_inventory=1
+fi
+if matches_staged '^(src/app/|src/lib/|supabase/schema\.sql$|docs/codebase-index\.md$)'; then
+  check_module_map=1
+fi
+if [ "$sync_sitemap" = "0" ] && [ "$sync_inventory" = "0" ] && [ "$check_module_map" = "0" ]; then
+  exit 0
+fi
+
+# Generators read the working tree. Refuse to combine staged inputs with other
+# unstaged inputs that could make the generated docs describe the wrong commit.
+mixed_inputs=""
+if [ "$sync_sitemap" = "1" ]; then
+  mixed_inputs=$(printf '%s\n' "$working_files" | grep -E '^(src/app/|mockups/|scripts/generate-site-map\.ts$)' || true)
+fi
+if [ "$sync_inventory" = "1" ]; then
+  inventory_inputs=$(printf '%s\n' "$working_files" | grep -E '^(scripts/|package\.json$)' || true)
+  mixed_inputs=$(printf '%s\n%s\n' "$mixed_inputs" "$inventory_inputs" | sed '/^$/d' | sort -u)
+fi
+if [ "$check_module_map" = "1" ]; then
+  module_inputs=$(printf '%s\n' "$working_files" | grep -E '^(src/app/|src/lib/|supabase/schema\.sql$)' || true)
+  mixed_inputs=$(printf '%s\n%s\n' "$mixed_inputs" "$module_inputs" | sed '/^$/d' | sort -u)
+fi
+if [ -n "$mixed_inputs" ]; then
+  echo "[pre-commit] Documentation inputs have unstaged or untracked changes:" >&2
+  printf '%s\n' "$mixed_inputs" >&2
+  echo "[pre-commit] Stage or separate these inputs before regenerating commit documentation." >&2
+  exit 1
+fi
+
+docs_to_check=""
+if [ "$sync_sitemap" = "1" ]; then
+  docs_to_check="$docs_to_check docs/site-map.md"
+fi
+if [ "$sync_inventory" = "1" ]; then
+  docs_to_check="$docs_to_check docs/scripts-index.md"
+fi
+if [ "$check_module_map" = "1" ]; then
+  docs_to_check="$docs_to_check docs/codebase-index.md"
+fi
+
+# Generators rewrite whole files. Refuse before running them when a selected
+# output has an unstaged edit, otherwise regeneration can erase local work and
+# leave the hook looking clean afterward.
+dirty_generated_docs=$(git diff --name-only -- $docs_to_check)
+if [ -n "$dirty_generated_docs" ]; then
+  echo "[pre-commit] Generated documentation has unstaged changes:" >&2
+  printf '%s\n' "$dirty_generated_docs" >&2
+  echo "[pre-commit] Stage or separate these outputs before regeneration." >&2
+  exit 1
+fi
+
+if ! command -v npm >/dev/null 2>&1; then
+  echo "[pre-commit] npm is required for documentation synchronization." >&2
+  echo "[pre-commit] Install the repository toolchain, or bypass once with SKIP_DOCS_SYNC_HOOK=1." >&2
+  exit 1
+fi
+
+repo_root=$(git rev-parse --show-toplevel)
+cd "$repo_root"
+
+# core.hooksPath is an absolute path to the primary checkout, so this hook also
+# runs from linked worktrees whose branch predates the sync tooling and therefore
+# does not contain scripts/update-docs-inventory.mjs. Those commits aborted with
+# MODULE_NOT_FOUND before the author could do anything about it. Fail open for
+# that one task instead.
+if [ "$sync_inventory" = "1" ] && [ ! -f scripts/update-docs-inventory.mjs ]; then
+  if git cat-file -e "HEAD:scripts/update-docs-inventory.mjs" 2>/dev/null; then
+    echo "[pre-commit] scripts/update-docs-inventory.mjs was removed or renamed by the pending commit; refusing to skip inventory synchronization." >&2
+    exit 1
+  fi
+  echo "[pre-commit] scripts/update-docs-inventory.mjs is absent from this worktree - skipping inventory sync." >&2
+  sync_inventory=0
+  # `|| true`: grep exits 1 when it filters everything out, which `set -e` would
+  # otherwise treat as a hook failure.
+  docs_to_check=$(printf '%s\n' $docs_to_check | grep -v '^docs/scripts-index\.md$' || true)
+fi
+
+# Re-check after dropping a task: an empty docs_to_check would make the trailing
+# unstaged-docs diff match every modified file in the tree.
+if [ "$sync_sitemap" = "0" ] && [ "$sync_inventory" = "0" ] && [ "$check_module_map" = "0" ]; then
+  exit 0
+fi
+
+# Synchronize generated documentation in strict dependency order (#Y090R5):
+# sitemap:update runs first, followed by documentation inventory / index sync,
+# confirming generated files match the committed tree in proper dependency order.
+echo "[pre-commit] Synchronizing generated documentation..."
+if [ "$sync_sitemap" = "1" ]; then
+  npm run sitemap:update
+fi
+if [ "$sync_inventory" = "1" ]; then
+  node scripts/update-docs-inventory.mjs
+  npm run docs:check-inventory
+fi
+if [ "$check_module_map" = "1" ]; then
+  npm run docs:check-index
+fi
+
+unstaged_docs=$(git diff --name-only -- $docs_to_check)
+if [ -n "$unstaged_docs" ]; then
+  echo "[pre-commit] Documentation changed or remains unstaged:" >&2
+  printf '%s\n' "$unstaged_docs" >&2
+  echo "[pre-commit] Review and stage these files, then commit again." >&2
+  exit 1
+fi
+
+echo "[pre-commit] Documentation is synchronized."

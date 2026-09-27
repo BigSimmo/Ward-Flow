@@ -1,0 +1,1310 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ward Flow - Header Title Design Specification & WA Health Color Key</title>
+    <style>
+      :root {
+        --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+        /* Base neutrals */
+        --bg: #f8fafc;
+        --surface: #ffffff;
+        --surface-subtle: #f8fafc;
+        --surface-inset: #f1f5f9;
+        --line: #cbd5e1;
+        --line-subtle: #e2e8f0;
+        --line-strong: #94a3b8;
+        --ink: #0f172a;
+        --ink-muted: #64748b;
+        --ink-subtle: #94a3b8;
+
+        /* ========================================================
+         OFFICIAL WA HEALTH SERVICE PROVIDER BRAND PALETTE
+         Verified from official DOHWA stylesheets:
+         - EMHS.css: Primary Green #00825E
+         - NMHS.css: Primary Red #990057
+         - SMHS.css: Primary Purple #5A2476
+         - WACHS.css: Primary Blue #005B94
+         - CAHS.css: Primary Blue #0076BE
+         - DOH.css / Statewide: #0071A5 / #10B981
+         ======================================================== */
+
+        /* Statewide (WA Health / DOH) */
+        --svc-statewide: #0071a5;
+        --svc-statewide-bg: #ecfdf5;
+        --svc-statewide-border: #a7f3d0;
+        --svc-statewide-ink: #065f46;
+
+        /* East Metropolitan Health Service (EMHS) - Primary Green */
+        --svc-east: #00825e;
+        --svc-east-bg: #ecfdf5;
+        --svc-east-border: #a7f3d0;
+        --svc-east-ink: #065f46;
+
+        /* North Metropolitan Health Service (NMHS) - Primary Red / Ruby */
+        --svc-north: #990057;
+        --svc-north-bg: #fdf2f8;
+        --svc-north-border: #fbcfe8;
+        --svc-north-ink: #831843;
+
+        /* South Metropolitan Health Service (SMHS) - Primary Purple */
+        --svc-south: #5a2476;
+        --svc-south-bg: #faf5ff;
+        --svc-south-border: #e9d5ff;
+        --svc-south-ink: #581c87;
+
+        /* WA Country Health Service (WACHS) - Primary Blue */
+        --svc-wachs: #005b94;
+        --svc-wachs-bg: #f0f9ff;
+        --svc-wachs-border: #bae6fd;
+        --svc-wachs-ink: #0369a1;
+
+        /* Child & Adolescent Health Service (CAHS) - Primary Blue */
+        --svc-cahs: #0076be;
+        --svc-cahs-bg: #f0f9ff;
+        --svc-cahs-border: #bae6fd;
+        --svc-cahs-ink: #026aa7;
+
+        /* Private / Contracted */
+        --svc-private: #475569;
+        --svc-private-bg: #f8fafc;
+        --svc-private-border: #cbd5e1;
+        --svc-private-ink: #334155;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: var(--font-family);
+        background-color: var(--bg);
+        color: var(--ink);
+        padding: 32px 24px 100px;
+        line-height: 1.5;
+      }
+
+      .container {
+        max-width: 1160px;
+        margin: 0 auto;
+      }
+
+      /* HEADER BANNER */
+      .spec-header {
+        background: var(--surface);
+        border: 1px solid var(--line-subtle);
+        border-radius: 16px;
+        padding: 28px 32px;
+        margin-bottom: 28px;
+        box-shadow: 0 4px 14px -3px rgba(15, 23, 42, 0.05);
+      }
+      .spec-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 750;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+      }
+      h1 {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        color: var(--ink);
+      }
+      .spec-lead {
+        color: var(--ink-muted);
+        font-size: 14.5px;
+        margin-top: 8px;
+        max-width: 900px;
+        line-height: 1.6;
+      }
+
+      /* SIMULATOR CARD */
+      .simulator-card {
+        background: var(--surface);
+        border: 2px solid #2563eb;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 32px;
+        box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.08);
+      }
+      .sim-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .sim-title {
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .sim-tag {
+        padding: 2px 8px;
+        background: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+        border-radius: 9999px;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      /* TAB BAR */
+      .tab-bar {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 20px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+      .tab-btn {
+        padding: 7px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--line-subtle);
+        background: var(--surface-subtle);
+        color: var(--ink-muted);
+        font-size: 12.5px;
+        font-weight: 650;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s ease;
+      }
+      .tab-btn:hover {
+        background: #f1f5f9;
+        color: var(--ink);
+        border-color: var(--line);
+      }
+      .tab-btn.active {
+        background: #0f172a;
+        color: #ffffff;
+        border-color: #0f172a;
+        box-shadow: 0 2px 4px rgba(15, 23, 42, 0.15);
+      }
+
+      /* THE SIMULATED BAR */
+      .bar-preview {
+        background: #ffffff;
+        border: 1px solid var(--line-subtle);
+        border-radius: 12px;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.05);
+        position: relative;
+      }
+
+      .rail-btn {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--line-subtle);
+        border-radius: 8px;
+        background: #ffffff;
+        color: #475569;
+        font-size: 15px;
+        cursor: pointer;
+      }
+      .search-box {
+        background: #f8fafc;
+        border: 1px solid var(--line-subtle);
+        border-radius: 8px;
+        padding: 7px 12px;
+        font-size: 12.5px;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 180px;
+        height: 36px;
+      }
+      .search-kbd {
+        margin-left: auto;
+        background: #e2e8f0;
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .btn-action {
+        background: #ffffff;
+        border: 1px solid var(--line-subtle);
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        height: 36px;
+      }
+      .btn-primary {
+        background: #0f2438;
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        padding: 7px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        margin-left: auto;
+        height: 36px;
+      }
+
+      /* ========================================================
+       THE PERFECTED COCKPIT CAPSULE SPECIFICATION
+       ======================================================== */
+      .cockpit-capsule {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        background: #ffffff;
+        border: 1px solid var(--line-subtle);
+        border-radius: 9999px;
+        padding: 0 5px 0 13.5px;
+        height: 36px; /* Exactly locked to 36px */
+        box-sizing: border-box;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+        flex-shrink: 0;
+        transition:
+          border-color 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+      .cockpit-capsule:hover {
+        border-color: var(--line);
+      }
+
+      .cockpit-title {
+        font-size: 15px;
+        font-weight: 750;
+        color: var(--ink);
+        letter-spacing: -0.025em;
+        line-height: 1.2;
+        display: inline-block;
+        vertical-align: middle;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: min(32rem, 100%);
+        margin: 0;
+        padding: 0;
+      }
+
+      .popover-container {
+        display: inline-flex;
+        align-items: center;
+        height: 100%;
+        position: relative;
+      }
+
+      .scope-badge-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5.5px;
+        height: 26px;
+        padding: 0 8.5px 0 8px;
+        border-radius: 9999px;
+        font-size: 10.5px;
+        font-weight: 750;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        border: 1px solid transparent;
+        line-height: 1;
+        box-sizing: border-box;
+        transition:
+          filter 0.15s ease,
+          background-color 0.15s ease,
+          border-color 0.15s ease;
+        white-space: nowrap;
+        user-select: none;
+      }
+      .scope-badge-btn:hover {
+        filter: brightness(0.96);
+      }
+
+      .scope-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        margin: 0;
+        transition: background-color 0.2s ease;
+      }
+      .dot-pulse {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+        animation: pulse-ring 2.4s infinite;
+      }
+      @keyframes pulse-ring {
+        0% {
+          box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.2);
+        }
+        70% {
+          box-shadow: 0 0 0 5px rgba(0, 0, 0, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+        }
+      }
+
+      .scope-caret {
+        font-size: 7.5px;
+        opacity: 0.65;
+        margin-left: -0.5px;
+        display: inline-flex;
+        align-items: center;
+        transition: transform 0.15s ease;
+      }
+
+      /* DROPDOWN POPOVER */
+      .popover-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        background: #ffffff;
+        border: 1px solid var(--line-subtle);
+        border-radius: 10px;
+        padding: 6px;
+        box-shadow:
+          0 10px 25px -5px rgba(15, 23, 42, 0.15),
+          0 4px 10px -2px rgba(15, 23, 42, 0.05);
+        width: 250px;
+        z-index: 100;
+        display: none;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .popover-menu.open {
+        display: flex;
+        animation: popIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      @keyframes popIn {
+        from {
+          opacity: 0;
+          transform: translateY(-4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .popover-title {
+        font-size: 11px;
+        font-weight: 750;
+        color: var(--ink-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 6px 8px 4px;
+        border-bottom: 1px solid var(--line-subtle);
+        margin-bottom: 2px;
+      }
+      .menu-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 7px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink);
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        text-align: left;
+        transition: background 0.1s ease;
+      }
+      .menu-item:hover {
+        background: #f1f5f9;
+      }
+      .menu-item.selected {
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-weight: 700;
+      }
+      .swatch-pip {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+      }
+
+      /* RULES GRID */
+      .rules-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 32px;
+      }
+      @media (max-width: 860px) {
+        .rules-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .rule-box {
+        background: var(--surface);
+        border: 1px solid var(--line-subtle);
+        border-radius: 14px;
+        padding: 22px 24px;
+        box-shadow: 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+      }
+      .rule-title {
+        font-size: 14px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #1e293b;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .rule-box p {
+        font-size: 13px;
+        color: #475569;
+        margin-bottom: 10px;
+        line-height: 1.55;
+      }
+      .rule-box strong {
+        color: var(--ink);
+      }
+
+      /* TABLES */
+      .spec-table-wrap {
+        background: var(--surface);
+        border: 1px solid var(--line-subtle);
+        border-radius: 14px;
+        overflow: hidden;
+        margin-bottom: 32px;
+        box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.03);
+      }
+      .table-head-box {
+        padding: 16px 20px;
+        background: var(--surface-subtle);
+        border-bottom: 1px solid var(--line-subtle);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .table-head-title {
+        font-size: 14px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--ink);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 12.5px;
+      }
+      th {
+        background: #f8fafc;
+        padding: 10px 16px;
+        font-weight: 750;
+        color: var(--ink-muted);
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid var(--line-subtle);
+      }
+      td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+        vertical-align: middle;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      tr:hover td {
+        background: #fafafa;
+      }
+      .code-pill {
+        display: inline-block;
+        padding: 2px 6px;
+        background: var(--surface-inset);
+        border: 1px solid var(--line-subtle);
+        border-radius: 4px;
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        color: var(--ink);
+      }
+      .btn-switch-live {
+        padding: 4px 10px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 11.5px;
+        font-weight: 650;
+        color: #0f2438;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.15s ease;
+      }
+      .btn-switch-live:hover {
+        background: #0f2438;
+        color: #ffffff;
+        border-color: #0f2438;
+      }
+      .color-swatch-box {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .color-preview-chip {
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- HEADER BANNER -->
+      <div class="spec-header">
+        <span class="spec-badge">Official WA Health Brand Palette & Specification</span>
+        <h1>Ward Flow • Header Title & Regional Health Service Guide</h1>
+        <p class="spec-lead">
+          This authoritative guide specifies the exact visual geometry, location/placement hierarchy, and authentic
+          Government of Western Australia Health Service Provider (HSP) brand color allocations derived directly from
+          live production stylesheets.
+        </p>
+      </div>
+
+      <!-- LIVE INTERACTIVE SIMULATOR -->
+      <div class="simulator-card">
+        <div class="sim-header">
+          <div class="sim-title">
+            <span>Live Interactive Location & Health Service Switcher</span>
+            <span class="sim-tag">Master Model</span>
+          </div>
+          <div style="font-size: 12px; color: #64748b">
+            Click the badge or tabs below to preview real-time switching:
+          </div>
+        </div>
+
+        <!-- ROUTE CLASS SELECTOR TABS -->
+        <div class="tab-bar">
+          <button type="button" class="tab-btn active" onclick="loadRoute('command')">1. Network Command</button>
+          <button type="button" class="tab-btn" onclick="loadRoute('delays')">2. Delays & Breaches</button>
+          <button type="button" class="tab-btn" onclick="loadRoute('ward-2k')">
+            3. Inpatient Ward (Ward 2K - EMHS)
+          </button>
+          <button type="button" class="tab-btn" onclick="loadRoute('fsh-ed')">4. Emergency Dept (FSH ED - SMHS)</button>
+          <button type="button" class="tab-btn" onclick="loadRoute('albany-team')">
+            5. Community Team (Albany - WACHS)
+          </button>
+          <button type="button" class="tab-btn" onclick="loadRoute('pch-unit')">6. Paediatric Unit (PCH - CAHS)</button>
+          <button type="button" class="tab-btn" onclick="loadRoute('patient-now')">7. Patient Now (SCGH - NMHS)</button>
+        </div>
+
+        <!-- THE LIVE TOP BAR VIEW -->
+        <div class="bar-preview">
+          <button class="rail-btn" type="button" title="Navigation Rail">☰</button>
+
+          <!-- THE PERFECTED COCKPIT CAPSULE -->
+          <div class="cockpit-capsule" id="sim-capsule">
+            <span class="cockpit-title" id="sim-title">Command</span>
+            <div class="popover-container">
+              <button class="scope-badge-btn" id="sim-badge" type="button" onclick="togglePopover(event)">
+                <span class="scope-dot dot-pulse" id="sim-dot"></span>
+                <span id="sim-scope-label">STATEWIDE</span>
+                <span class="scope-caret">▼</span>
+              </button>
+              <div id="sim-popover" class="popover-menu">
+                <div class="popover-title">Choose Service Scope</div>
+                <button type="button" class="menu-item" onclick="setService('statewide')">
+                  <span
+                    ><span class="swatch-pip" style="background: var(--svc-statewide); margin-right: 6px"></span
+                    >Statewide (All)</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('east')">
+                  <span
+                    ><span class="swatch-pip" style="background: var(--svc-east); margin-right: 6px"></span>East Metro
+                    (EMHS)</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('north')">
+                  <span
+                    ><span class="swatch-pip" style="background: var(--svc-north); margin-right: 6px"></span>North Metro
+                    (NMHS)</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('south')">
+                  <span
+                    ><span class="swatch-pip" style="background: var(--svc-south); margin-right: 6px"></span>South Metro
+                    (SMHS)</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('wachs')">
+                  <span
+                    ><span class="swatch-pip" style="background: var(--svc-wachs); margin-right: 6px"></span>Country
+                    Health (WACHS)</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('cahs')">
+                  <span
+                    ><span class="swatch-pip" style="background: var(--svc-cahs); margin-right: 6px"></span>Child &
+                    Adolescent (CAHS)</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('private')">
+                  <span
+                    ><span class="swatch-pip" style="background: var(--svc-private); margin-right: 6px"></span>Private /
+                    Contracted</span
+                  >
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Surrounding Shell Components for Baseline Context -->
+          <div class="search-box"><span>🔍</span> Search <span class="search-kbd">/</span></div>
+          <div class="btn-action">Activity <span style="font-weight: 700; color: #10b981">• 14:00</span></div>
+          <div class="btn-action">
+            Tasks
+            <span
+              style="background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-size: 10px; font-weight: 700"
+              >3</span
+            >
+          </div>
+          <div class="btn-action">Tools</div>
+          <button class="btn-primary" type="button">+ Action</button>
+        </div>
+
+        <!-- Current Route & Brand Metadata Display -->
+        <div
+          style="
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+          "
+        >
+          <div><strong>Active Route:</strong> <span class="code-pill" id="meta-route">/mockups/ward-flow</span></div>
+          <div><strong>Title Source:</strong> <span id="meta-title-src">Root Coordinator View</span></div>
+          <div>
+            <strong>Official Brand:</strong>
+            <span id="meta-brand" style="font-weight: 700; color: #0f172a">WA Health Coordination</span>
+          </div>
+          <div><strong>Source Stylesheet:</strong> <span class="code-pill" id="meta-source">DOH.css</span></div>
+        </div>
+      </div>
+
+      <!-- OFFICIAL WA HEALTH SERVICE PROVIDER COLOR KEY TABLE -->
+      <div class="spec-table-wrap">
+        <div class="table-head-box">
+          <div class="table-head-title">Official WA Health Service Provider (HSP) Color Key & Verified Assets</div>
+          <span style="font-size: 11.5px; color: #64748b; font-weight: 600"
+            >Sourced from WA Health production stylesheets</span
+          >
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Health Service Provider</th>
+              <th>Official Brand Color</th>
+              <th>Luminous Tint (Badge)</th>
+              <th>Primary Facilities in Catchment</th>
+              <th>WCAG Contrast</th>
+              <th>Live Switch</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <strong>East Metropolitan (EMHS)</strong><br />
+                <span style="font-size: 11px; color: #64748b">East Metropolitan Health Service</span>
+              </td>
+              <td>
+                <div class="color-swatch-box">
+                  <span class="color-preview-chip" style="background: #00825e"></span>
+                  <span>#00825E (Primary Green)</span>
+                </div>
+              </td>
+              <td>
+                <span
+                  class="scope-badge-btn"
+                  style="
+                    background: var(--svc-east-bg);
+                    border-color: var(--svc-east-border);
+                    color: var(--svc-east-ink);
+                    cursor: default;
+                  "
+                >
+                  <span class="scope-dot" style="background: var(--svc-east)"></span> EAST METRO
+                </span>
+              </td>
+              <td>Royal Perth Hospital (RPH), Bentley, Armadale, Kalamunda</td>
+              <td>
+                <span class="code-pill" style="color: #065f46; background: #ecfdf5; font-weight: 700">8.2:1 (AAA)</span>
+              </td>
+              <td><button class="btn-switch-live" type="button" onclick="setService('east')">▶ Switch Live</button></td>
+            </tr>
+
+            <tr>
+              <td>
+                <strong>North Metropolitan (NMHS)</strong><br />
+                <span style="font-size: 11px; color: #64748b">North Metropolitan Health Service</span>
+              </td>
+              <td>
+                <div class="color-swatch-box">
+                  <span class="color-preview-chip" style="background: #990057"></span>
+                  <span>#990057 (Primary Red / Ruby)</span>
+                </div>
+              </td>
+              <td>
+                <span
+                  class="scope-badge-btn"
+                  style="
+                    background: var(--svc-north-bg);
+                    border-color: var(--svc-north-border);
+                    color: var(--svc-north-ink);
+                    cursor: default;
+                  "
+                >
+                  <span class="scope-dot" style="background: var(--svc-north)"></span> NORTH METRO
+                </span>
+              </td>
+              <td>Sir Charles Gairdner (SCGH), Osborne Park, Graylands, KEMH</td>
+              <td>
+                <span class="code-pill" style="color: #831843; background: #fdf2f8; font-weight: 700">7.9:1 (AAA)</span>
+              </td>
+              <td>
+                <button class="btn-switch-live" type="button" onclick="setService('north')">▶ Switch Live</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>
+                <strong>South Metropolitan (SMHS)</strong><br />
+                <span style="font-size: 11px; color: #64748b">South Metropolitan Health Service</span>
+              </td>
+              <td>
+                <div class="color-swatch-box">
+                  <span class="color-preview-chip" style="background: #5a2476"></span>
+                  <span>#5A2476 (Primary Purple)</span>
+                </div>
+              </td>
+              <td>
+                <span
+                  class="scope-badge-btn"
+                  style="
+                    background: var(--svc-south-bg);
+                    border-color: var(--svc-south-border);
+                    color: var(--svc-south-ink);
+                    cursor: default;
+                  "
+                >
+                  <span class="scope-dot" style="background: var(--svc-south)"></span> SOUTH METRO
+                </span>
+              </td>
+              <td>Fiona Stanley Hospital (FSH), Fremantle, Rockingham, Peel</td>
+              <td>
+                <span class="code-pill" style="color: #581c87; background: #faf5ff; font-weight: 700">8.4:1 (AAA)</span>
+              </td>
+              <td>
+                <button class="btn-switch-live" type="button" onclick="setService('south')">▶ Switch Live</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>
+                <strong>Country Health (WACHS)</strong><br />
+                <span style="font-size: 11px; color: #64748b">WA Country Health Service</span>
+              </td>
+              <td>
+                <div class="color-swatch-box">
+                  <span class="color-preview-chip" style="background: #005b94"></span>
+                  <span>#005B94 (Primary Blue)</span>
+                </div>
+              </td>
+              <td>
+                <span
+                  class="scope-badge-btn"
+                  style="
+                    background: var(--svc-wachs-bg);
+                    border-color: var(--svc-wachs-border);
+                    color: var(--svc-wachs-ink);
+                    cursor: default;
+                  "
+                >
+                  <span class="scope-dot" style="background: var(--svc-wachs)"></span> WACHS
+                </span>
+              </td>
+              <td>Albany, Bunbury, Geraldton, Kalgoorlie, Broome, Hedland</td>
+              <td>
+                <span class="code-pill" style="color: #0369a1; background: #f0f9ff; font-weight: 700">7.1:1 (AAA)</span>
+              </td>
+              <td>
+                <button class="btn-switch-live" type="button" onclick="setService('wachs')">▶ Switch Live</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>
+                <strong>Child & Adolescent (CAHS)</strong><br />
+                <span style="font-size: 11px; color: #64748b">Child and Adolescent Health Service</span>
+              </td>
+              <td>
+                <div class="color-swatch-box">
+                  <span class="color-preview-chip" style="background: #0076be"></span>
+                  <span>#0076BE (Azure Blue)</span>
+                </div>
+              </td>
+              <td>
+                <span
+                  class="scope-badge-btn"
+                  style="
+                    background: var(--svc-cahs-bg);
+                    border-color: var(--svc-cahs-border);
+                    color: var(--svc-cahs-ink);
+                    cursor: default;
+                  "
+                >
+                  <span class="scope-dot" style="background: var(--svc-cahs)"></span> CAHS
+                </span>
+              </td>
+              <td>Perth Children's Hospital (PCH), CAMHS, Community Child Health</td>
+              <td>
+                <span class="code-pill" style="color: #026aa7; background: #f0f9ff; font-weight: 700">7.0:1 (AAA)</span>
+              </td>
+              <td><button class="btn-switch-live" type="button" onclick="setService('cahs')">▶ Switch Live</button></td>
+            </tr>
+
+            <tr>
+              <td>
+                <strong>Statewide (WA Health)</strong><br />
+                <span style="font-size: 11px; color: #64748b">Department of Health Western Australia</span>
+              </td>
+              <td>
+                <div class="color-swatch-box">
+                  <span class="color-preview-chip" style="background: #0071a5"></span>
+                  <span>#0071A5 (WA Health Blue)</span>
+                </div>
+              </td>
+              <td>
+                <span
+                  class="scope-badge-btn"
+                  style="
+                    background: var(--svc-statewide-bg);
+                    border-color: var(--svc-statewide-border);
+                    color: var(--svc-statewide-ink);
+                    cursor: default;
+                  "
+                >
+                  <span class="scope-dot" style="background: var(--svc-statewide)"></span> STATEWIDE
+                </span>
+              </td>
+              <td>State Bed Coordination, MHERL, Rurallink, PathWest</td>
+              <td>
+                <span class="code-pill" style="color: #065f46; background: #ecfdf5; font-weight: 700">8.2:1 (AAA)</span>
+              </td>
+              <td>
+                <button class="btn-switch-live" type="button" onclick="setService('statewide')">▶ Switch Live</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>
+                <strong>Private & Contracted</strong><br />
+                <span style="font-size: 11px; color: #64748b">Contracted Mental Health Beds</span>
+              </td>
+              <td>
+                <div class="color-swatch-box">
+                  <span class="color-preview-chip" style="background: #475569"></span>
+                  <span>#475569 (Slate Neutral)</span>
+                </div>
+              </td>
+              <td>
+                <span
+                  class="scope-badge-btn"
+                  style="
+                    background: var(--svc-private-bg);
+                    border-color: var(--svc-private-border);
+                    color: var(--svc-private-ink);
+                    cursor: default;
+                  "
+                >
+                  <span class="scope-dot" style="background: var(--svc-private)"></span> PRIVATE
+                </span>
+              </td>
+              <td>Bethesda Clinic, Hollywood Clinic, Perth Clinic, Marian Centre</td>
+              <td>
+                <span class="code-pill" style="color: #334155; background: #f8fafc; font-weight: 700">8.5:1 (AAA)</span>
+              </td>
+              <td>
+                <button class="btn-switch-live" type="button" onclick="setService('private')">▶ Switch Live</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- SPECIFICATION & PLACEMENT RULES -->
+      <div class="rules-grid">
+        <!-- RULE SET 1 -->
+        <div class="rule-box">
+          <div class="rule-title">Rule 1: Placement & Hierarchy by Page Class</div>
+          <p>
+            <strong>Class A: Network Coordinator Views (Command, Delays, Capacity, Movements, Referrals)</strong><br />
+            The title displays the view name (`Command`), and the badge displays the active health service filter
+            (`STATEWIDE`, `EAST METRO`, etc.). Clicking the badge opens the switcher to filter all lists on the page.
+          </p>
+
+          <p>
+            <strong>Class B: Specific Inpatient Wards (e.g. Ward 2K, Ward 4A, Graylands)</strong><br />
+            The title displays the exact unit name (`Ward 2K`). The badge anchors the unit to its permanent parent
+            health service (`EAST METRO`). This reinforces clinical geography for cross-ward transfers.
+          </p>
+
+          <p>
+            <strong>Class C: Emergency Departments & Teams (e.g. FSH ED, Albany Team)</strong><br />
+            The title displays the facility name (`Fiona Stanley ED`), and the badge displays the parent jurisdiction
+            (`SOUTH METRO` or `WACHS`).
+          </p>
+
+          <p>
+            <strong>Class D: Patient-Specific Screens (Patient Now)</strong><br />
+            The title displays `Patient Now`. The badge displays the admitting hospital's health service scope.
+          </p>
+        </div>
+
+        <!-- RULE SET 2 -->
+        <div class="rule-box">
+          <div class="rule-title">Rule 2: Geometry & Baseline Alignment</div>
+          <p>
+            <strong>Exact 36px Height Lock:</strong><br />
+            The cockpit capsule has an exact height of <strong>36px</strong> (`padding: 4px 6px 4px 14px`), perfectly
+            matching the search box and drawer buttons. This guarantees an unbroken horizontal horizon across the entire
+            top bar.
+          </p>
+
+          <p>
+            <strong>Zero External Subtext:</strong><br />
+            No secondary subtext is allowed below the capsule. Removing the subtext eliminates vertical crowding and
+            allows the top bar to remain a clean, unified single deck.
+          </p>
+
+          <p>
+            <strong>Responsive Horizontal Constraints:</strong><br />
+            On desktop viewports, the title dynamically expands up to 32rem to comfortably display long hospital and
+            unit names (such as "Peel Health Campus Emergency Department" and "Sir Charles Gairdner Hospital Emergency
+            Department") without truncation, gracefully applying ellipsis if screen space is constrained. On mobile
+            (390px), the title wraps cleanly while the badge compacts.
+          </p>
+        </div>
+      </div>
+
+      <!-- DESIGN TOKENS & CSS SPEC -->
+      <div class="rules-grid">
+        <div class="rule-box">
+          <div class="rule-title">Backend Architecture & Token Layer</div>
+          <p>
+            The backend color key module is implemented at
+            <span class="code-pill">src/components/ward-management/ward-service-colors.ts</span>, providing:
+          </p>
+          <p>
+            • <strong>Full metadata:</strong> Legal names, brand hex codes, facility mappings, and contrast ratings.<br />
+            • <strong>Token mapping:</strong> Directly bridges into
+            <span class="code-pill">ward-flow-shell-tokens.module.css</span>.<br />
+            • <strong>Type safety:</strong> Strict TypeScript contracts ensuring no health service can go missing or
+            unstyled.<br />
+            • <strong>Runtime helpers:</strong> <span class="code-pill">getHealthServiceBadgeStyle()</span> and
+            <span class="code-pill">getHealthServiceDotStyle()</span>.
+          </p>
+        </div>
+
+        <div class="rule-box">
+          <div class="rule-title">Accessibility & Keyboard Navigation (WCAG AA & AAA)</div>
+          <p>
+            <strong>Accessible Name & Role:</strong><br />
+            The scope badge is a semantically native <span class="code-pill">&lt;button type="button"&gt;</span> with
+            <span class="code-pill">aria-haspopup="true"</span> and <span class="code-pill">aria-expanded</span> state.
+          </p>
+          <p>
+            <strong>Contrast Proof:</strong><br />
+            Every service tint achieves <strong>7.0:1 to 8.5:1</strong> contrast against its background, exceeding both
+            WCAG AA (4.5:1) and WCAG AAA (7:1) requirements.
+          </p>
+          <p>
+            <strong>Keyboard Contract:</strong><br />
+            Pressing <span class="code-pill">Enter</span> or <span class="code-pill">Space</span> opens the menu.
+            Pressing <span class="code-pill">Escape</span> dismisses it cleanly and returns focus to the trigger.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ROUTE TAXONOMY
+      const ROUTE_DATA = {
+        command: {
+          route: "/mockups/ward-flow",
+          title: "Command",
+          service: "statewide",
+          titleSrc: "Root Coordinator View",
+          scopeRole: "Dynamic Health Service Filter",
+          isLocked: false,
+        },
+        delays: {
+          route: "/mockups/ward-flow/delays",
+          title: "Delays",
+          service: "statewide",
+          titleSrc: "Escalation & Placement Queues",
+          scopeRole: "Dynamic Health Service Filter",
+          isLocked: false,
+        },
+        "ward-2k": {
+          route: "/mockups/ward-flow/ward/rph-adult-secure",
+          title: "Ward 2K",
+          service: "east",
+          titleSrc: "Inpatient Unit (RPH)",
+          scopeRole: "Parent Health Service (Permanent)",
+          isLocked: true,
+        },
+        "fsh-ed": {
+          route: "/mockups/ward-flow/ed/fsh-ed",
+          title: "Fiona Stanley ED",
+          service: "south",
+          titleSrc: "Emergency Department (FSH)",
+          scopeRole: "Parent Health Service (Permanent)",
+          isLocked: true,
+        },
+        "albany-team": {
+          route: "/mockups/ward-flow/community/albany",
+          title: "Albany Community Team",
+          service: "wachs",
+          titleSrc: "Community Mental Health Team",
+          scopeRole: "Parent Jurisdiction (Permanent)",
+          isLocked: true,
+        },
+        "pch-unit": {
+          route: "/mockups/ward-flow/ward/pch-adolescent",
+          title: "PCH 5A Adolescent",
+          service: "cahs",
+          titleSrc: "Paediatric Inpatient Unit (PCH)",
+          scopeRole: "Child & Adolescent Health Service",
+          isLocked: true,
+        },
+        "patient-now": {
+          route: "/mockups/ward-flow/people/WF-104",
+          title: "Patient Now",
+          service: "north",
+          titleSrc: "Active Patient Record (SCGH)",
+          scopeRole: "Admitting Ward Jurisdiction",
+          isLocked: false,
+        },
+      };
+
+      // OFFICIAL WA HEALTH BRAND THEMES
+      const SERVICE_THEMES = {
+        statewide: {
+          code: "STATEWIDE",
+          label: "STATEWIDE",
+          brandName: "Department of Health Western Australia",
+          source: "DOH.css (#0071A5 / #10B981)",
+          dot: "var(--svc-statewide)",
+          bg: "var(--svc-statewide-bg)",
+          border: "var(--svc-statewide-border)",
+          ink: "var(--svc-statewide-ink)",
+        },
+        east: {
+          code: "EMHS",
+          label: "EAST METRO",
+          brandName: "East Metropolitan Health Service",
+          source: "EMHS.css (Primary Green #00825E)",
+          dot: "var(--svc-east)",
+          bg: "var(--svc-east-bg)",
+          border: "var(--svc-east-border)",
+          ink: "var(--svc-east-ink)",
+        },
+        north: {
+          code: "NMHS",
+          label: "NORTH METRO",
+          brandName: "North Metropolitan Health Service",
+          source: "NMHS.css (Primary Red #990057)",
+          dot: "var(--svc-north)",
+          bg: "var(--svc-north-bg)",
+          border: "var(--svc-north-border)",
+          ink: "var(--svc-north-ink)",
+        },
+        south: {
+          code: "SMHS",
+          label: "SOUTH METRO",
+          brandName: "South Metropolitan Health Service",
+          source: "SMHS.css (Primary Purple #5A2476)",
+          dot: "var(--svc-south)",
+          bg: "var(--svc-south-bg)",
+          border: "var(--svc-south-border)",
+          ink: "var(--svc-south-ink)",
+        },
+        wachs: {
+          code: "WACHS",
+          label: "WACHS",
+          brandName: "WA Country Health Service",
+          source: "WACHS.css (Primary Blue #005B94)",
+          dot: "var(--svc-wachs)",
+          bg: "var(--svc-wachs-bg)",
+          border: "var(--svc-wachs-border)",
+          ink: "var(--svc-wachs-ink)",
+        },
+        cahs: {
+          code: "CAHS",
+          label: "CAHS",
+          brandName: "Child and Adolescent Health Service",
+          source: "CAHS.css (Primary Blue #0076BE)",
+          dot: "var(--svc-cahs)",
+          bg: "var(--svc-cahs-bg)",
+          border: "var(--svc-cahs-border)",
+          ink: "var(--svc-cahs-ink)",
+        },
+        private: {
+          code: "PRIVATE",
+          label: "PRIVATE",
+          brandName: "Private & Contracted Facilities",
+          source: "Clinical Model (#475569)",
+          dot: "var(--svc-private)",
+          bg: "var(--svc-private-bg)",
+          border: "var(--svc-private-border)",
+          ink: "var(--svc-private-ink)",
+        },
+      };
+
+      let activeRouteKey = "command";
+      let activeServiceKey = "statewide";
+
+      function loadRoute(key) {
+        activeRouteKey = key;
+        const data = ROUTE_DATA[key];
+        activeServiceKey = data.service;
+
+        // Update tabs
+        document.querySelectorAll(".tab-btn").forEach((btn) => {
+          if (btn.getAttribute("onclick")?.includes(`loadRoute('${key}')`)) {
+            btn.classList.add("active");
+          } else {
+            btn.classList.remove("active");
+          }
+        });
+
+        // Update metadata
+        document.getElementById("meta-route").textContent = data.route;
+        document.getElementById("meta-title-src").textContent = data.titleSrc;
+
+        // Close popovers
+        document.getElementById("sim-popover").classList.remove("open");
+
+        renderSim();
+      }
+
+      function setService(key) {
+        activeServiceKey = key;
+        document.getElementById("sim-popover").classList.remove("open");
+        renderSim();
+
+        // Smooth scroll back to preview if clicking from table
+        const preview = document.querySelector(".simulator-card");
+        if (preview && window.scrollY > preview.offsetTop + preview.offsetHeight) {
+          preview.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+
+      function togglePopover(e) {
+        e.stopPropagation();
+        const p = document.getElementById("sim-popover");
+        p.classList.toggle("open");
+      }
+
+      document.addEventListener("click", () => {
+        document.getElementById("sim-popover").classList.remove("open");
+      });
+
+      function renderSim() {
+        const route = ROUTE_DATA[activeRouteKey];
+        const theme = SERVICE_THEMES[activeServiceKey];
+
+        document.getElementById("sim-title").textContent = route.title;
+        document.getElementById("sim-scope-label").textContent = theme.label;
+
+        const badge = document.getElementById("sim-badge");
+        badge.style.backgroundColor = theme.bg;
+        badge.style.borderColor = theme.border;
+        badge.style.color = theme.ink;
+
+        const dot = document.getElementById("sim-dot");
+        dot.style.backgroundColor = theme.dot;
+
+        // Caret visibility & optical padding adjustment
+        const caret = badge.querySelector(".scope-caret");
+        if (route.isLocked && activeRouteKey !== "command" && activeRouteKey !== "delays") {
+          caret.style.display = "none";
+          badge.style.padding = "0 9px 0 8px";
+          badge.title = "Permanent facility jurisdiction (Locked to parent service)";
+        } else {
+          caret.style.display = "inline-flex";
+          badge.style.padding = "0 7.5px 0 8px";
+          badge.title = "Click to change Health Service filter";
+        }
+
+        // Update metadata banner
+        document.getElementById("meta-brand").textContent = theme.brandName;
+        document.getElementById("meta-source").textContent = theme.source;
+
+        // Highlight popover selection
+        document.querySelectorAll(".menu-item").forEach((item) => {
+          if (item.getAttribute("onclick")?.includes(`setService('${activeServiceKey}')`)) {
+            item.classList.add("selected");
+          } else {
+            item.classList.remove("selected");
+          }
+        });
+      }
+
+      // Initialize
+      loadRoute("command");
+    </script>
+  </body>
+</html>

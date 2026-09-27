@@ -1,0 +1,2227 @@
+<title>Emergency Department Waits</title>
+<style>/* ═══════════════════════════════════════════════════════════════════════════
+   STATISTICS LANGUAGE — FOURTH EDITION. THE SOURCE OF RECORD.
+
+   ⚠️ THIS FILE IS THE LANGUAGE. Every v3 statistics mockup copies this file's
+   whole content as the FIRST thing inside its <style> element, byte for byte,
+   then appends its own page rules below a marker. `tests/ward-statistics-v4-
+   language.test.ts` checks that byte-identity and will name the exact character
+   where a copy diverges. Do not hand-patch a copy: edit here and re-cut.
+
+   ═══ WHY A THIRD EDITION, AND WHAT CHANGED ═══
+
+   The owner's brief, 2026-09-06: "utilise the design system like other pages and
+   keep it crisp and white like the same database design system colour scheme …
+   fix those boxes at the top and make them more sophisticated, stylish and not
+   blocky and tacky … live diagrams that are easy to interpret simply, ideally
+   lines or circles, rather than bar charts."
+
+   THE SECOND EDITION WAS ITS OWN COLOUR SCHEME AND THAT IS THE DEFECT IT FIXES.
+   It invented `--ground: #f1f4f8`, `--surface: #ffffff`, `--ink: #0d1421` and a
+   dozen more names that existed nowhere in the product. The application's real
+   system — `src/app/ckb-v2-tokens.css`, the system of record — says
+   `--background: #ffffff` and `--surface: #ffffff`: a genuinely WHITE page, not
+   a grey ground with white cards floating on it. So a statistics screen and the
+   application it belongs to did not look like one product, and the mockup was
+   the thing engineers copy from.
+
+   EVERY VALUE BELOW IS LIFTED FROM THE LIVE SYSTEM, NOT CHOSEN HERE. Each is
+   named with the token it came from so a reader can check it rather than trust
+   it, and so the next person knows this file is a MIRROR and not an author.
+
+   ═══ WHAT THIS EDITION KEEPS FROM THE SECOND, BECAUSE IT IS CLINICAL ═══
+
+     · State is a WORD first. Colour only ever reinforces a word already there.
+     · Absence is stated, never blank.
+     · Figures are tabular. Anything compared down a column lines up.
+     · Every invented figure is listed at the foot of the page.
+     · Contrast floor 4.5:1.
+     · forced-colors and print are handled here, once, for every carrier.
+
+   ═══ WHAT IS DELIBERATELY DIFFERENT ═══
+
+     · WHITE, not a grey ground. Separation is a hairline and a shadow, never a
+       change of fill. `--surface-subtle` (#fbfcfd) is as far as a fill goes.
+     · THE FIGURE STRIP IS NOT A ROW OF BOXES. The owner called the old tiles
+       blocky and tacky, and they were: five bordered cards in a row, each with
+       its own edge, reading as five competing objects. A figure is now a column
+       in one continuous band, separated by a hairline rule rather than by a box.
+       Nothing is nested inside anything.
+     · CHARTS ARE LINES AND ARCS. No bars anywhere in this language. A trend is a
+       line; a proportion is an arc; a single value against a target is a ring.
+       Bars were the second edition's default and they are the least readable
+       shape for "is this going up or down", which is the question these screens
+       are for.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  color-scheme: light;
+
+  /* ── Surfaces. From ckb-v2-tokens.css, light block. The page is WHITE. ──── */
+  --background: #ffffff;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-subtle: #fbfcfd; /* table headers, quiet rows */
+  --surface-wash: #f8fafc; /* footers, quiet strips */
+  --surface-inset: #f4f7fa; /* recessed wells, inputs, chart grounds */
+
+  /* ── Edges. A hairline is how this system separates things. ────────────── */
+  --border: #e6ebf2;
+  --border-strong: #d3dbe5;
+  --border-lux: #dde4ee;
+
+  /* ── Ink. --text-soft is deprecated upstream and deliberately absent. ──── */
+  --text-heading: #0a1220;
+  --text: #1b2533;
+  --text-muted: #55627a;
+
+  /* ── Primary. --primary-500, and the two darker rungs for hover/hold. ──── */
+  --primary: #1d6fb8;
+  --primary-600: #1a66a8;
+  --primary-700: #185c99;
+  --primary-100: #d9e8f8;
+  --primary-soft: #f2f8fe;
+  --primary-contrast: #ffffff;
+
+  /* ── Status. Text/border/bg triples, exactly as the live system pairs them.
+        These are the ONLY hues on the page besides primary. ──────────────── */
+  --success: #0c6b41;
+  --success-bg: #ecfdf3;
+  --success-border: #abefc6;
+  --warning: #8a4d05;
+  --warning-bg: #fffcf6;
+  --warning-border: #f5d9a8;
+  --danger: #a3190f;
+  --danger-bg: #fef3f2;
+  --danger-border: #fda29b;
+
+  /* ── Elevation ladder --e0..--e4 verbatim, plus the hairline ring. ─────── */
+  --e0: none;
+  --e1: 0 1px 2px rgb(13 40 71 / 5%);
+  --e2:
+    0 1px 2px rgb(13 40 71 / 4%), 0 8px 16px -8px rgb(13 40 71 / 9%);
+  --e3:
+    0 2px 4px rgb(13 40 71 / 4%), 0 16px 28px -12px rgb(13 40 71 / 11%);
+  --e4:
+    0 4px 8px rgb(13 40 71 / 5%), 0 32px 56px -20px rgb(13 40 71 / 15%);
+  --ring-hairline: 0 0 0 1px rgb(13 40 71 / 7%);
+
+  /* ── Radius ladder from @theme in globals.css, verbatim. ──────────────── */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-pill: 9999px;
+
+  /* ── Type scale from ckb-v2-tokens.css. --text-2xs is the Chip compact
+        compatibility step; it is NOT a new step to invent against. ───────── */
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-body: 0.9375rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-hero: clamp(1.75rem, 1.2rem + 2vw, 2.25rem);
+
+  /* ── The design system's ONE tap knob (--spacing-tap). Never reduced. ──── */
+  --tap: 3rem;
+
+  /* ── Spacing, 4px grid. ───────────────────────────────────────────────── */
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1rem;
+  --s5: 1.125rem;
+  --s6: 1.5rem;
+  --s7: 2rem;
+  --s8: 2.5rem;
+}
+
+/* The dark block mirrors ckb-v2-tokens.css's own dark values. Written to
+   `:root:not([data-theme="light"])` so an explicit light choice always wins, and
+   repeated under `[data-theme="dark"]` so an explicit dark choice wins too. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --background: #0b0e11;
+    --surface: #12161a;
+    --surface-raised: #1c2126;
+    --surface-subtle: #1c2126;
+    --surface-wash: #161a1e;
+    --surface-inset: #0a0c0e;
+    --border: #333a41;
+    --border-strong: #47505a;
+    --border-lux: #3a424a;
+    --text-heading: #fbfcfd;
+    --text: #f4f6f8;
+    --text-muted: #a8b2bd;
+    --primary: #74bdf0;
+    --primary-600: #92cdf5;
+    --primary-700: #92cdf5;
+    --primary-100: #0d2b48;
+    --primary-soft: #123556;
+    --primary-contrast: #0b0e11;
+    --success: #7de0a3;
+    --success-bg: #0f2119;
+    --success-border: #1f4d35;
+    --warning: #e0a63f;
+    --warning-bg: #241c0e;
+    --warning-border: #5a4520;
+    --danger: #f0755c;
+    --danger-bg: #26130f;
+    --danger-border: #6b2a20;
+    --e1: 0 1px 2px rgb(0 0 0 / 40%);
+    --e2:
+      0 1px 2px rgb(0 0 0 / 50%), 0 8px 16px -8px rgb(0 0 0 / 55%);
+    --e3:
+      0 2px 4px rgb(0 0 0 / 50%), 0 16px 28px -12px rgb(0 0 0 / 60%);
+    --e4:
+      0 4px 8px rgb(0 0 0 / 50%), 0 32px 56px -20px rgb(0 0 0 / 65%);
+    --ring-hairline: 0 0 0 1px rgb(255 255 255 / 9%);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0b0e11;
+  --surface: #12161a;
+  --surface-raised: #1c2126;
+  --surface-subtle: #1c2126;
+  --surface-wash: #161a1e;
+  --surface-inset: #0a0c0e;
+  --border: #333a41;
+  --border-strong: #47505a;
+  --border-lux: #3a424a;
+  --text-heading: #fbfcfd;
+  --text: #f4f6f8;
+  --text-muted: #a8b2bd;
+  --primary: #74bdf0;
+  --primary-600: #92cdf5;
+  --primary-700: #92cdf5;
+  --primary-100: #0d2b48;
+  --primary-soft: #123556;
+  --primary-contrast: #0b0e11;
+  --success: #7de0a3;
+  --success-bg: #0f2119;
+  --success-border: #1f4d35;
+  --warning: #e0a63f;
+  --warning-bg: #241c0e;
+  --warning-border: #5a4520;
+  --danger: #f0755c;
+  --danger-bg: #26130f;
+  --danger-border: #6b2a20;
+  --e1: 0 1px 2px rgb(0 0 0 / 40%);
+  --e2:
+    0 1px 2px rgb(0 0 0 / 50%), 0 8px 16px -8px rgb(0 0 0 / 55%);
+  --e3:
+    0 2px 4px rgb(0 0 0 / 50%), 0 16px 28px -12px rgb(0 0 0 / 60%);
+  --e4:
+    0 4px 8px rgb(0 0 0 / 50%), 0 32px 56px -20px rgb(0 0 0 / 65%);
+  --ring-hairline: 0 0 0 1px rgb(255 255 255 / 9%);
+}
+
+/* ─── base ──────────────────────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--text);
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv02", "cv03", "cv04";
+}
+h1,
+h2,
+h3,
+h4,
+p,
+dl,
+dd,
+dt,
+ul,
+ol,
+figure {
+  margin: 0;
+}
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+a {
+  color: inherit;
+}
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.skip {
+  position: absolute;
+  left: var(--s2);
+  top: var(--s2);
+  z-index: 100;
+  padding: 0.5rem 0.85rem;
+  background: var(--primary);
+  color: var(--primary-contrast);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+.skip:focus {
+  transform: none;
+}
+/* Tabular figures everywhere a reader compares. Not a separate font family —
+   the second edition switched to JetBrains Mono for every number, which made
+   figures read as code on a clinical page. One family, tabular numerals. */
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ─── application bar ───────────────────────────────────────────────────── */
+.appbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  flex-wrap: wrap;
+  padding: var(--s3) var(--s5);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  backdrop-filter: saturate(1.4) blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 650;
+  font-size: var(--text-sm);
+  letter-spacing: -0.011em;
+  color: var(--text-heading);
+  white-space: nowrap;
+}
+.mark .dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--primary);
+  flex: none;
+}
+.appbar .spacer {
+  flex: 1 1 2rem;
+}
+
+/* ─── page frame. Symmetrical: the shell has equal gutters, and every band
+       inside it shares one inline padding. The owner asked for symmetry and the
+       second edition did not have it — panels carried their own padding and the
+       page edge moved from row to row. ──────────────────────────────────── */
+.shell {
+  --gutter: clamp(1rem, 0.4rem + 2vw, 2.5rem);
+  max-width: 96rem;
+  margin: 0 auto;
+  padding: var(--s5) var(--gutter) var(--s8);
+}
+.prototype {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.6rem;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: var(--s3);
+}
+
+.masthead {
+  display: grid;
+  gap: var(--s3);
+  padding-bottom: var(--s5);
+}
+.masthead h1 {
+  font-size: var(--text-hero);
+  font-weight: 660;
+  letter-spacing: -0.024em;
+  line-height: 1.12;
+  color: var(--text-heading);
+  text-wrap: balance;
+}
+.eyebrow {
+  font-size: var(--text-2xs);
+  font-weight: 650;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--primary-700);
+}
+.lede {
+  font-size: var(--text-body);
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 58ch;
+}
+.masthead-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s4);
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.liveness {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.pip {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: var(--radius-pill);
+  background: var(--success);
+  flex: none;
+}
+
+/* ⚠️ THE CONVENIENCE NOTICE — owner ruling 17. Every carrier states it once.
+   A rule on the left rather than a tinted card: it is a standing condition, not
+   an alert, and a coloured box would make it compete with the page's own
+   warnings. */
+.scope {
+  border-left: 2px solid var(--primary);
+  padding: var(--s1) 0 var(--s1) var(--s4);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin-bottom: var(--s5);
+}
+.scope strong {
+  color: var(--text-heading);
+  font-weight: 600;
+}
+
+/* ═══ THE FIGURE BAND — this is the "boxes at the top", rebuilt ═══════════
+   ⚠️ THE OWNER CALLED THE OLD TILES BLOCKY AND TACKY. They were five bordered
+   cards in a row, each with its own edge, its own shadow and its own padding —
+   five competing objects where there is one fact per column.
+
+   This is ONE band. Columns are divided by a hairline, not boxed. There is no
+   per-tile border, no per-tile shadow, and no per-tile fill. The figure leads,
+   the label sits under it in the quiet ink, and the trend line — where a column
+   has one — sits at the bottom as a sparkline rather than as a coloured chip.
+
+   Equal columns, so it is symmetrical at every breakpoint: 2 up on a phone,
+   then 3, then all of them. A final odd column spans the full width on the
+   two-column step, so a lone tile never reads as a dropped one. */
+.band {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--e1);
+  overflow: hidden;
+  margin-bottom: var(--s5);
+}
+.band > * {
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+  padding: var(--s4) var(--s4) var(--s3);
+  display: grid;
+  gap: var(--s1);
+  align-content: start;
+  min-width: 0;
+}
+.band > :nth-child(-n + 2) {
+  border-top: 0;
+}
+.band > :nth-child(2n + 1) {
+  border-left: 0;
+}
+.band > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+@media (min-width: 48rem) {
+  .band {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .band > * {
+    border-top: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+  }
+  .band > :nth-child(-n + 3) {
+    border-top: 0;
+  }
+  .band > :nth-child(2n + 1) {
+    border-left: 1px solid var(--border);
+  }
+  .band > :nth-child(3n + 1) {
+    border-left: 0;
+  }
+  .band > :last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+}
+@media (min-width: 78rem) {
+  .band[data-cols="4"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .band[data-cols="4"] > :nth-child(-n + 4) {
+    border-top: 0;
+  }
+  .band[data-cols="4"] > :nth-child(3n + 1) {
+    border-left: 1px solid var(--border);
+  }
+  .band[data-cols="4"] > :nth-child(4n + 1) {
+    border-left: 0;
+  }
+  .band[data-cols="5"] {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  .band[data-cols="5"] > :nth-child(-n + 5) {
+    border-top: 0;
+  }
+  .band[data-cols="5"] > :nth-child(3n + 1) {
+    border-left: 1px solid var(--border);
+  }
+  .band[data-cols="5"] > :nth-child(5n + 1) {
+    border-left: 0;
+  }
+}
+.stat-figure {
+  font-size: 1.625rem;
+  font-weight: 640;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--text-heading);
+  font-variant-numeric: tabular-nums;
+}
+.stat-figure .unit {
+  font-size: var(--text-md);
+  font-weight: 550;
+  letter-spacing: -0.01em;
+  color: var(--text-muted);
+  margin-left: 0.15rem;
+}
+.stat-label {
+  font-size: var(--text-xs);
+  font-weight: 550;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.stat-note {
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+/* Tone is the FIGURE, never a fill and never an edge. The label already says
+   what the column is; colour reinforces and never carries alone. */
+.stat-figure[data-tone="good"] {
+  color: var(--success);
+}
+.stat-figure[data-tone="warn"] {
+  color: var(--warning);
+}
+.stat-figure[data-tone="crit"] {
+  color: var(--danger);
+}
+.stat-figure[data-tone="primary"] {
+  color: var(--primary-700);
+}
+/* A word beside a figure, for the columns whose value is a name rather than a
+   number — "WF-013, 31h" reads as one fact, not as a truncated statistic. */
+.stat-figure--word {
+  font-size: var(--text-lg);
+  letter-spacing: -0.018em;
+  line-height: 1.25;
+}
+.spark {
+  display: block;
+  width: 100%;
+  height: 1.75rem;
+  margin-top: var(--s2);
+  overflow: visible;
+}
+
+/* ─── panels. One radius, one hairline, one shadow rung. ────────────────── */
+.grid {
+  display: grid;
+  gap: var(--s5);
+  align-items: start;
+}
+@media (min-width: 62rem) {
+  .grid[data-cols="2"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .grid[data-cols="1-2"] {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  }
+  .grid[data-cols="2-1"] {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  }
+}
+.col {
+  display: grid;
+  gap: var(--s5);
+  min-width: 0;
+}
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--e1);
+  overflow: hidden;
+}
+.panel > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+  flex-wrap: wrap;
+  padding: var(--s4) var(--s5);
+  border-bottom: 1px solid var(--border);
+}
+.panel-title {
+  font-size: var(--text-body);
+  font-weight: 620;
+  letter-spacing: -0.012em;
+  color: var(--text-heading);
+}
+.panel-sub {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.panel-body {
+  padding: var(--s4);
+  display: grid;
+  gap: var(--s4);
+}
+.panel-foot {
+  padding: var(--s3) var(--s5);
+  border-top: 1px solid var(--border);
+  background: var(--surface-wash);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.blurb {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ═══ CHARTS — LINES AND ARCS ONLY. NO BARS IN THIS LANGUAGE. ════════════
+   The owner asked for diagrams that show a trend simply and are easy to read:
+   lines and circles, not bar charts. A bar chart answers "how big is each"; a
+   line answers "which way is this going", and that is what every one of these
+   screens is for.
+
+   ⚠️ EVERY CHART CARRIES role="img" WITH A REAL LABEL AND A WRITTEN CAPTION
+   STATING THE SAME NUMBERS IN WORDS. Colour is never the only carrier: a
+   greyscale printout and a reader with no colour perception both get the
+   reading from the caption. */
+.chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.chart-caption {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.chart-caption b {
+  color: var(--text-heading);
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+}
+/* Chart primitives, so five screens draw one chart rather than five. */
+.c-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+  fill: none;
+}
+.c-axis {
+  fill: var(--text-muted);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+.c-line {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.c-line[data-series="b"] {
+  stroke: var(--text-muted);
+  stroke-dasharray: 4 3;
+}
+.c-line[data-tone="good"] {
+  stroke: var(--success);
+}
+.c-line[data-tone="warn"] {
+  stroke: var(--warning);
+}
+.c-line[data-tone="crit"] {
+  stroke: var(--danger);
+}
+.c-area {
+  fill: var(--primary-soft);
+  stroke: none;
+}
+.c-dot {
+  fill: var(--surface);
+  stroke: var(--primary);
+  stroke-width: 2;
+}
+.c-dot[data-tone="crit"] {
+  stroke: var(--danger);
+}
+.c-dot[data-tone="good"] {
+  stroke: var(--success);
+}
+.c-dot--solid {
+  fill: var(--primary);
+  stroke: none;
+}
+.c-threshold {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  fill: none;
+}
+.c-label {
+  fill: var(--text-heading);
+  font-size: 10px;
+  font-weight: 600;
+}
+.c-label--quiet {
+  fill: var(--text-muted);
+  font-weight: 500;
+}
+/* The ring: one value against its whole, drawn as an arc. Replaces every
+   "N of M" bar in the second edition. `pathLength="100"` lets a dash offset be
+   written as a percentage directly, so the markup states the number it draws. */
+.c-ring-track {
+  fill: none;
+  stroke: var(--surface-inset);
+  stroke-width: 10;
+}
+.c-ring-value {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+.c-ring-value[data-tone="good"] {
+  stroke: var(--success);
+}
+.c-ring-value[data-tone="warn"] {
+  stroke: var(--warning);
+}
+.c-ring-value[data-tone="crit"] {
+  stroke: var(--danger);
+}
+.c-ring-centre {
+  fill: var(--text-heading);
+  font-size: 15px;
+  font-weight: 640;
+  font-variant-numeric: tabular-nums;
+  text-anchor: middle;
+}
+.c-ring-sub {
+  fill: var(--text-muted);
+  font-size: 8px;
+  text-anchor: middle;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s5);
+}
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.legend .key {
+  width: 1.1rem;
+  height: 0;
+  border-top: 2px solid var(--primary);
+  flex: none;
+}
+.legend .key[data-series="b"] {
+  border-top-style: dashed;
+  border-top-color: var(--text-muted);
+}
+.legend .key[data-tone="good"] {
+  border-top-color: var(--success);
+}
+.legend .key[data-tone="warn"] {
+  border-top-color: var(--warning);
+}
+.legend .key[data-tone="crit"] {
+  border-top-color: var(--danger);
+}
+.legend b {
+  color: var(--text-heading);
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── tables. No zebra: alternating fills read as meaning on a page where
+       every other fill means something, and a printer drops them. ───────── */
+.table-wrap {
+  overflow-x: auto;
+}
+.dtable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-xs);
+}
+.dtable th,
+.dtable td {
+  padding: 0.6rem var(--s5);
+  text-align: left;
+  vertical-align: baseline;
+  border-bottom: 1px solid var(--border);
+}
+.dtable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-subtle);
+  font-size: var(--text-2xs);
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.dtable tbody th {
+  font-weight: 600;
+  color: var(--text-heading);
+  white-space: nowrap;
+}
+.dtable td {
+  color: var(--text);
+}
+.dtable .n,
+.dtable th.n {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.dtable tbody tr:last-child th,
+.dtable tbody tr:last-child td {
+  border-bottom: 0;
+}
+.dtable tbody tr:hover th,
+.dtable tbody tr:hover td {
+  background: var(--surface-subtle);
+}
+.dtable tfoot th,
+.dtable tfoot td {
+  border-top: 1px solid var(--border-strong);
+  border-bottom: 0;
+  font-weight: 650;
+  color: var(--text-heading);
+  background: var(--surface-subtle);
+}
+
+/* ─── chips. A word first; the fill only reinforces it. ─────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+  font-size: var(--text-2xs);
+  font-weight: 620;
+  letter-spacing: 0.02em;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  background: var(--surface);
+}
+.chip[data-tone="good"] {
+  color: var(--success);
+  border-color: var(--success-border);
+  background: var(--success-bg);
+}
+.chip[data-tone="warn"] {
+  color: var(--warning);
+  border-color: var(--warning-border);
+  background: var(--warning-bg);
+}
+.chip[data-tone="crit"] {
+  color: var(--danger);
+  border-color: var(--danger-border);
+  background: var(--danger-bg);
+}
+.chip[data-tone="primary"] {
+  color: var(--primary-700);
+  border-color: var(--primary-100);
+  background: var(--primary-soft);
+}
+
+/* ─── controls. Nothing stretches; the tap floor grows the box, not the type. */
+.btn {
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.8rem;
+  cursor: pointer;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-heading);
+  white-space: nowrap;
+  justify-self: start;
+  text-decoration: none;
+}
+.btn:hover {
+  background: var(--surface-subtle);
+}
+.btn--primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-contrast);
+}
+.btn--primary:hover {
+  background: var(--primary-600);
+  border-color: var(--primary-600);
+}
+.field {
+  font: inherit;
+  font-size: var(--text-sm);
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-heading);
+  min-width: 0;
+}
+@media (pointer: coarse), (max-width: 40rem) {
+  .btn,
+  .field,
+  .switcher > summary {
+    min-height: var(--tap);
+  }
+}
+
+/* ─── the switcher, for screens that pick one entity from many ──────────── */
+.switcher {
+  position: relative;
+}
+.switcher > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--e1);
+}
+.switcher > summary::-webkit-details-marker {
+  display: none;
+}
+.switcher[open] > summary {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+.sw-eyebrow {
+  font-size: var(--text-2xs);
+  font-weight: 620;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: block;
+  line-height: 1.3;
+}
+.sw-name {
+  font-size: var(--text-sm);
+  font-weight: 620;
+  color: var(--text-heading);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.sw-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  z-index: 60;
+  width: min(24rem, calc(100vw - 2rem));
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--e3);
+  overflow: hidden;
+  padding: var(--s2) 0;
+}
+.sw-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: 0.5rem var(--s4);
+  margin: 0 var(--s2);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+.sw-item:hover {
+  background: var(--surface-subtle);
+}
+.sw-item[aria-current="true"] {
+  background: var(--primary-soft);
+  color: var(--primary-700);
+  font-weight: 620;
+}
+
+/* ─── record rows and absence ───────────────────────────────────────────── */
+.rows > li {
+  padding: var(--s4) var(--s5);
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  gap: 0.3rem;
+}
+.rows > li:last-child {
+  border-bottom: 0;
+}
+.row-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  align-items: center;
+}
+.rid {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-heading);
+  font-size: var(--text-sm);
+}
+.row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.6rem;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.row-meta b {
+  color: var(--text);
+  font-weight: 600;
+}
+/* ⚠️ Absence is STATED. This is the style for the sentence that says so — it is
+   never an empty cell and never a dash. */
+.absent {
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.note {
+  font-size: var(--text-xs);
+  line-height: 1.55;
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-subtle);
+  color: var(--text);
+}
+.note[data-tone="crit"] {
+  border-color: var(--danger-border);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.note[data-tone="warn"] {
+  border-color: var(--warning-border);
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+.note[data-tone="good"] {
+  border-color: var(--success-border);
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+/* ─── footnote ──────────────────────────────────────────────────────────── */
+.footnote {
+  margin-top: var(--s7);
+  padding-top: var(--s5);
+  border-top: 1px solid var(--border);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+.footnote h2 {
+  font-size: var(--text-2xs);
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin: var(--s5) 0 var(--s2);
+}
+.footnote h2:first-child {
+  margin-top: 0;
+}
+.footnote li {
+  padding-left: 1rem;
+  position: relative;
+  margin-bottom: 0.3rem;
+}
+.footnote li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 4px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--border-strong);
+}
+.footnote b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ─── high contrast. Every semantic hue collapses to a system colour, which is
+       survivable only because every state already carries its own WORD. ──── */
+@media (forced-colors: active) {
+  :root {
+    --background: Canvas;
+    --surface: Canvas;
+    --surface-raised: Canvas;
+    --surface-subtle: Canvas;
+    --surface-wash: Canvas;
+    --surface-inset: Canvas;
+    --border: CanvasText;
+    --border-strong: CanvasText;
+    --border-lux: CanvasText;
+    --text-heading: CanvasText;
+    --text: CanvasText;
+    --text-muted: CanvasText;
+    --primary: LinkText;
+    --primary-600: LinkText;
+    --primary-700: LinkText;
+    --primary-100: Canvas;
+    --primary-soft: Canvas;
+    --primary-contrast: Canvas;
+    --success: CanvasText;
+    --success-bg: Canvas;
+    --success-border: CanvasText;
+    --warning: CanvasText;
+    --warning-bg: Canvas;
+    --warning-border: CanvasText;
+    --danger: CanvasText;
+    --danger-bg: Canvas;
+    --danger-border: CanvasText;
+    --e1: none;
+    --e2: none;
+    --e3: none;
+    --e4: none;
+  }
+  .panel,
+  .band,
+  .chip,
+  .btn,
+  .field,
+  .note,
+  .switcher > summary {
+    border: 1px solid CanvasText;
+  }
+  .btn--primary {
+    border-width: 2px;
+  }
+  /* A dashed series is the only thing distinguishing two lines once every hue
+     collapses, so the dash must survive. */
+  .c-line,
+  .c-ring-value,
+  .c-ring-track,
+  .c-threshold,
+  .c-dot {
+    forced-color-adjust: none;
+  }
+}
+
+/* ─── print. Forced to the light palette on all three root forms, because the
+       dark block is written to `:root:not([data-theme="light"])` and would
+       otherwise beat a bare `:root` for every reader who has never touched the
+       theme control — which is the default, not an edge case. ───────────── */
+@media print {
+  :root,
+  :root[data-theme="dark"],
+  :root:not([data-theme="light"]) {
+    --background: #ffffff;
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+    --surface-subtle: #ffffff;
+    --surface-wash: #ffffff;
+    --surface-inset: #ffffff;
+    --border: #999999;
+    --border-strong: #666666;
+    --border-lux: #999999;
+    --text-heading: #000000;
+    --text: #1a1a1a;
+    --text-muted: #333333;
+    --primary: #1d6fb8;
+    --primary-600: #1a66a8;
+    --primary-700: #185c99;
+    --primary-100: #d9e8f8;
+    --primary-soft: #f2f8fe;
+    --primary-contrast: #ffffff;
+    --success: #0c6b41;
+    --success-bg: #ecfdf3;
+    --success-border: #abefc6;
+    --warning: #8a4d05;
+    --warning-bg: #fffcf6;
+    --warning-border: #f5d9a8;
+    --danger: #a3190f;
+    --danger-bg: #fef3f2;
+    --danger-border: #fda29b;
+    --e1: none;
+    --e2: none;
+    --e3: none;
+    --e4: none;
+  }
+  body {
+    background: #ffffff;
+  }
+  .appbar {
+    position: static;
+    backdrop-filter: none;
+  }
+  .panel,
+  .band {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+  .table-wrap {
+    overflow-x: visible;
+  }
+  .dtable thead {
+    display: table-header-group;
+  }
+  .dtable tr {
+    break-inside: avoid;
+  }
+  .btn,
+  .switcher,
+  .skip {
+    display: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FOURTH EDITION ADDITIONS — THE NUMBERS COME FORWARD, THE CHARTS STEP BACK
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Owner brief, 2026-09-06: "you now have too many diagrams. Please focus on
+   core useful ones then state the stats as well for me clearly in data or
+   tables and popup options."
+
+   The third edition answered "which way is this going" well, then answered it
+   five more times on the same page. A coordinator reading a screen mid-shift
+   wants the number, exactly, and wants the working available without leaving
+   the page. So this edition inverts the ratio: AT MOST THREE CHARTS, and every
+   figure a chart implies is also written as a number somebody can read off.
+
+   NOTHING ABOVE THIS LINE CHANGED. The palette, the band, the panels and the
+   line/arc primitives are the third edition's, unaltered, because the owner
+   approved that look. These are additions, not a replacement.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── DISCLOSURES: the "popup options" ────────────────────────────────────────
+
+   Detail that would crowd the page, one click away, with NO JavaScript — a
+   native details/summary works with a keyboard, survives printing (forced open
+   below), and cannot break. `.switcher` above is the page-level version of the
+   same element; this is the in-panel one.
+
+   The summary must say what is inside it, never "more". A coordinator deciding
+   whether to open it is the whole audience for that line.                     */
+
+.reveal {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.reveal + .reveal {
+  margin-top: var(--s3);
+}
+
+.reveal > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  min-height: var(--tap);
+  padding: var(--s2) var(--s4);
+  cursor: pointer;
+  list-style: none;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-heading);
+  background: var(--surface-subtle);
+}
+
+.reveal > summary::-webkit-details-marker {
+  display: none;
+}
+
+.reveal > summary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.reveal > summary::after {
+  content: "";
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform 120ms ease;
+}
+
+.reveal[open] > summary::after {
+  transform: rotate(-135deg) translate(-2px, -2px);
+}
+
+.reveal[open] > summary {
+  border-bottom: 1px solid var(--border);
+}
+
+.reveal-body {
+  padding: var(--s3) var(--s4);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.reveal-body > * + * {
+  margin-top: var(--s3);
+}
+
+.reveal-count {
+  font-weight: 500;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── KEY/VALUE ROWS: a table when a table would only be two columns ───────── */
+
+.kv {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  margin: 0;
+}
+
+.kv > dt {
+  padding: var(--s2) 0;
+  font-size: var(--text-sm);
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+.kv > dd {
+  margin: 0;
+  padding: var(--s2) 0 var(--s2) var(--s4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: right;
+  color: var(--text-heading);
+  font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── A FIGURE ROW INSIDE A PANEL ─────────────────────────────────────────────
+
+   `.band` is the page-level strip and draws its own edge. Two separate builders
+   needed a borderless figure row INSIDE a panel and each invented a name for it;
+   that is what a missing primitive looks like, so it has a name now.          */
+
+.figs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s5);
+}
+
+.figs > div {
+  min-width: 6rem;
+}
+
+/* ── SEVERITY, ENCODED IN FORM AS WELL AS IN NUMBER ──────────────────────────
+
+   A row needing attention must be findable without reading every number and
+   without relying on hue alone — a stripe has width, so it survives greyscale
+   and colour vision deficiency both.                                          */
+
+.dtable tbody tr[data-tone] > :first-child {
+  box-shadow: inset 3px 0 0 0 var(--text-muted);
+}
+
+.dtable tbody tr[data-tone="crit"] > :first-child {
+  box-shadow: inset 3px 0 0 0 var(--danger);
+}
+
+.dtable tbody tr[data-tone="warn"] > :first-child {
+  box-shadow: inset 3px 0 0 0 var(--warning);
+}
+
+.dtable tbody tr[data-tone="good"] > :first-child {
+  box-shadow: inset 3px 0 0 0 var(--success);
+}
+
+.dtable td,
+.dtable th.n,
+.stat-figure,
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── A DELTA, STATED IN WORDS AS WELL AS IN DIRECTION ───────────────────────── */
+
+.delta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.delta[data-dir="up"] {
+  color: var(--danger);
+}
+
+.delta[data-dir="down"] {
+  color: var(--success);
+}
+
+.delta[data-dir="flat"] {
+  color: var(--text-muted);
+}
+
+/* The arrow is decoration; the word beside it carries the meaning, because "up"
+   is good on one row and bad on the next and an arrow cannot say which.       */
+.delta .word {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* ── PRINT AND ACCESSIBILITY ─────────────────────────────────────────────────
+
+   A closed disclosure prints as nothing at all, which loses the working on a
+   page whose whole purpose is showing it. Forced open on paper.               */
+
+@media print {
+  .reveal {
+    break-inside: avoid;
+  }
+
+  .reveal > summary::after {
+    display: none;
+  }
+
+  .reveal-body {
+    display: block !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .reveal,
+  .reveal[open] > summary {
+    border-color: CanvasText;
+  }
+
+  .dtable tbody tr[data-tone] > :first-child {
+    box-shadow: none;
+    border-left: 3px solid CanvasText;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal > summary::after {
+    transition: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAGE RULES — mockup-statistics-ed-v4.html
+   Only what genuinely has no name in the shared language: the in-page jump
+   links, the as-of explainer line, the warn-toned swarm dot (the language
+   only ships a good/crit pairing and this axis needs a third rung between
+   them), the wards-approached mini-lists, and a link colour inside a quiet
+   figure-column note.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-bottom: var(--s5);
+}
+.jump a {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-xs);
+  font-weight: 620;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-heading);
+  text-decoration: none;
+}
+.jump a:hover {
+  background: var(--surface-subtle);
+}
+
+.asof {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 62ch;
+}
+
+.c-dot[data-tone="warn"] {
+  stroke: var(--warning);
+}
+
+.mini-list-title {
+  font-size: var(--text-xs);
+  font-weight: 650;
+  color: var(--text-heading);
+  margin-bottom: var(--s2);
+}
+.mini-list-title .n {
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-left: 0.35rem;
+}
+.mini-list {
+  display: grid;
+  gap: 0.3rem;
+  font-size: var(--text-xs);
+}
+.mini-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s2);
+  color: var(--text-muted);
+}
+.mini-list li b {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.mini-list[data-tone="crit"] li b {
+  color: var(--danger);
+}
+
+.stat-note a {
+  color: var(--primary-700);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+</style>
+
+<a class="skip" href="#stats">Skip to the figures</a>
+
+<div class="appbar">
+  <span class="mark"><span class="dot" aria-hidden="true"></span>Ward Flow</span>
+  <span class="spacer"></span>
+  <span class="liveness"><span class="pip" aria-hidden="true"></span>Live &middot; as at <b>11:42</b></span>
+</div>
+
+<div class="shell" role="main">
+  <p class="prototype">
+    <span>Synthetic prototype</span><span aria-hidden="true">&middot;</span><span>No real patient data</span
+    ><span aria-hidden="true">&middot;</span><span>Every invented figure listed at the foot</span>
+  </p>
+
+  <p class="scope">
+    <strong>This board is a convenience, not a source of truth</strong> &mdash; confirm any placement with the
+    department and ward by phone before acting.
+  </p>
+
+  <nav class="jump" aria-label="Jump to a section of this page">
+    <a href="#waiting-now">Waiting now</a>
+    <a href="#three-legs">Time in three legs</a>
+    <a href="#comparison">Comparison across departments</a>
+  </nav>
+
+  <header class="masthead">
+    <span class="eyebrow">Emergency departments &mdash; wait time and flow</span>
+    <h1>Eight departments, one wait</h1>
+    <p class="lede">
+      <b>71</b> people are waiting across Perth and regional EDs for a mental health bed. <b>6</b> have passed 24
+      hours; <b>2</b> have passed 48. Longest wait: Royal Perth Hospital, <b>61h&nbsp;40m</b>.
+    </p>
+    <p class="asof">
+      <b>Waiting-now figures</b> are live; <b>7-day figures</b> refresh nightly (last 06:05).
+    </p>
+  </header>
+
+  <div class="band" data-cols="5" id="stats">
+    <div>
+      <span class="stat-figure num">71</span>
+      <span class="stat-label">Waiting now</span>
+      <span class="stat-note">eight departments</span>
+    </div>
+    <div>
+      <span class="stat-figure stat-figure--word" data-tone="crit">RPH&#8209;W01, 61h 40m</span>
+      <span class="stat-label">Longest current wait</span>
+      <span class="stat-note">Royal Perth Hospital &middot; <a href="#waiting-now">see who</a></span>
+    </div>
+    <div>
+      <span class="stat-figure num">6h 18m</span>
+      <span class="stat-label">Median wait</span>
+      <span class="stat-note">half longer, half less</span>
+    </div>
+    <div>
+      <span class="stat-figure num" data-tone="crit">6</span>
+      <span class="stat-label">Over 24 hours</span>
+      <span class="stat-note">of 71 &middot; <a href="#waiting-now">see who</a></span>
+    </div>
+    <div>
+      <span class="stat-figure num" data-tone="crit">2</span>
+      <span class="stat-label">Over 48 hours</span>
+      <span class="stat-note">of 71 &middot; <a href="#waiting-now">see who</a></span>
+    </div>
+  </div>
+
+  <div class="col">
+    <!-- ══════════ CENTREPIECE: WHO IS WAITING RIGHT NOW ══════════ -->
+    <section class="panel">
+      <header>
+        <span class="panel-title">Who is waiting right now</span>
+        <span class="panel-sub">every current wait, one mark each</span>
+      </header>
+      <div class="panel-body">
+        <svg class="chart" viewBox="0 0 860 122" role="img" aria-labelledby="swarm-all-title swarm-all-desc">
+          <title id="swarm-all-title">Every person currently waiting, all eight departments, by elapsed time</title>
+          <desc id="swarm-all-desc">
+            71 people waiting now, one dot each, by elapsed wait (0&ndash;64+ hours; vertical position is spacing
+            only). 57 under 12 hours, 8 are 12&ndash;24. 6 have passed 24 hours (warning-toned); 2 have passed 48:
+            Joondalup Health Campus 50h 20m, Royal Perth Hospital 61h 40m.
+          </desc>
+          <line class="c-threshold" x1="332.5" y1="4" x2="332.5" y2="86.8" />
+          <line class="c-threshold" x1="637.0" y1="4" x2="637.0" y2="86.8" />
+          <line class="c-grid" x1="28" y1="86.8" x2="840" y2="86.8" />
+          <circle class="c-dot" cx="32.0" cy="82.0" r="4.1" />
+          <circle class="c-dot" cx="33.5" cy="72.4" r="4.1" />
+          <circle class="c-dot" cx="35.6" cy="62.8" r="4.1" />
+          <circle class="c-dot" cx="36.6" cy="53.2" r="4.1" />
+          <circle class="c-dot" cx="39.8" cy="43.6" r="4.1" />
+          <circle class="c-dot" cx="41.2" cy="82.0" r="4.1" />
+          <circle class="c-dot" cx="44.4" cy="72.4" r="4.1" />
+          <circle class="c-dot" cx="47.4" cy="62.8" r="4.1" />
+          <circle class="c-dot" cx="47.6" cy="53.2" r="4.1" />
+          <circle class="c-dot" cx="49.0" cy="43.6" r="4.1" />
+          <circle class="c-dot" cx="52.2" cy="34.0" r="4.1" />
+          <circle class="c-dot" cx="52.6" cy="24.4" r="4.1" />
+          <circle class="c-dot" cx="55.4" cy="82.0" r="4.1" />
+          <circle class="c-dot" cx="56.8" cy="72.4" r="4.1" />
+          <circle class="c-dot" cx="60.0" cy="62.8" r="4.1" />
+          <circle class="c-dot" cx="61.4" cy="53.2" r="4.1" />
+          <circle class="c-dot" cx="64.4" cy="43.6" r="4.1" />
+          <circle class="c-dot" cx="64.6" cy="34.0" r="4.1" />
+          <circle class="c-dot" cx="67.7" cy="82.0" r="4.1" />
+          <circle class="c-dot" cx="69.1" cy="72.4" r="4.1" />
+          <circle class="c-dot" cx="72.3" cy="62.8" r="4.1" />
+          <circle class="c-dot" cx="75.5" cy="53.2" r="4.1" />
+          <circle class="c-dot" cx="76.1" cy="43.6" r="4.1" />
+          <circle class="c-dot" cx="76.9" cy="34.0" r="4.1" />
+          <circle class="c-dot" cx="81.0" cy="82.0" r="4.1" />
+          <circle class="c-dot" cx="82.8" cy="72.4" r="4.1" />
+          <circle class="c-dot" cx="85.5" cy="62.8" r="4.1" />
+          <circle class="c-dot" cx="86.8" cy="53.2" r="4.1" />
+          <circle class="c-dot" cx="90.8" cy="43.6" r="4.1" />
+          <circle class="c-dot" cx="92.5" cy="82.0" r="4.1" />
+          <circle class="c-dot" cx="96.5" cy="72.4" r="4.1" />
+          <circle class="c-dot" cx="98.3" cy="62.8" r="4.1" />
+          <circle class="c-dot" cx="101.4" cy="53.2" r="4.1" />
+          <circle class="c-dot" cx="102.2" cy="43.6" r="4.1" />
+          <circle class="c-dot" cx="106.2" cy="82.0" r="4.1" />
+          <circle class="c-dot" cx="108.0" cy="72.4" r="4.1" />
+          <circle class="c-dot" cx="108.5" cy="62.8" r="4.1" />
+          <circle class="c-dot" cx="112.0" cy="53.2" r="4.1" />
+          <circle class="c-dot" cx="115.9" cy="43.6" r="4.1" />
+          <circle class="c-dot" cx="117.7" cy="82.0" r="4.1" />
+          <circle class="c-dot" cx="121.7" cy="72.4" r="4.1" />
+          <circle class="c-dot" cx="124.4" cy="62.8" r="4.1" />
+          <circle class="c-dot" cx="125.7" cy="53.2" r="4.1" />
+          <circle class="c-dot" cx="127.4" cy="43.6" r="4.1" />
+          <circle class="c-dot" cx="130.3" cy="82.0" r="4.1" />
+          <circle class="c-dot" cx="136.6" cy="72.4" r="4.1" />
+          <circle class="c-dot" cx="140.6" cy="62.8" r="4.1" />
+          <circle class="c-dot" cx="143.0" cy="82.0" r="4.1" />
+          <circle class="c-dot" cx="145.8" cy="72.4" r="4.1" />
+          <circle class="c-dot" cx="150.0" cy="62.8" r="4.1" />
+          <circle class="c-dot" cx="152.2" cy="53.2" r="4.1" />
+          <circle class="c-dot" cx="158.5" cy="82.0" r="4.1" />
+          <circle class="c-dot" cx="161.4" cy="72.4" r="4.1" />
+          <circle class="c-dot" cx="167.7" cy="82.0" r="4.1" />
+          <circle class="c-dot" cx="171.3" cy="72.4" r="4.1" />
+          <circle class="c-dot" cx="174.1" cy="62.8" r="4.1" />
+          <circle class="c-dot" cx="176.9" cy="53.2" r="4.1" />
+          <circle class="c-dot" cx="187.3" cy="82.0" r="4.1" />
+          <circle class="c-dot" cx="219.1" cy="82.0" r="4.1" />
+          <circle class="c-dot" cx="240.1" cy="82.0" r="4.1" />
+          <circle class="c-dot" cx="251.0" cy="82.0" r="4.1" />
+          <circle class="c-dot" cx="265.0" cy="82.0" r="4.1" />
+          <circle class="c-dot" cx="282.3" cy="82.0" r="4.1" />
+          <circle class="c-dot" cx="296.9" cy="82.0" r="4.1" />
+          <circle class="c-dot" cx="310.9" cy="82.0" r="4.1" />
+          <circle class="c-dot" data-tone="warn" cx="364.3" cy="82.0" r="4.1" />
+          <circle class="c-dot" data-tone="warn" cx="392.8" cy="82.0" r="4.1" />
+          <circle class="c-dot" data-tone="warn" cx="551.4" cy="82.0" r="4.1" />
+          <circle class="c-dot" data-tone="warn" cx="579.8" cy="82.0" r="4.1" />
+          <circle class="c-dot" data-tone="crit" cx="666.6" cy="82.0" r="6" stroke-width="2" />
+          <circle class="c-dot" data-tone="crit" cx="810.4" cy="82.0" r="6" stroke-width="2" />
+          <line x1="666.6" y1="75" x2="666.6" y2="53" stroke="var(--border-strong)" stroke-width="1" />
+          <text class="c-label" x="666.6" y="47" text-anchor="middle">50h 20m &middot; JHC-W01</text>
+          <line x1="810.4" y1="75" x2="810.4" y2="51" stroke="var(--border-strong)" stroke-width="1" />
+          <text class="c-label" x="838" y="45" text-anchor="end">61h 40m &middot; RPH-W01</text>
+          <text class="c-axis" x="28" y="101">0h</text>
+          <text class="c-axis" x="332.5" y="101" text-anchor="middle">24h</text>
+          <text class="c-axis" x="637" y="101" text-anchor="middle">48h</text>
+          <text class="c-axis" x="840" y="101" text-anchor="end">64h+</text>
+        </svg>
+        <p class="chart-caption">
+          57 of 71 are under 12 hours. <b>6 have passed 24 hours</b>; <b>2</b> &mdash; Royal Perth Hospital and
+          Joondalup Health Campus &mdash; have passed 48.
+        </p>
+      </div>
+    </section>
+
+    <!-- ══════════ WAITING NOW — LONGEST FIRST, NAMED ══════════ -->
+    <section class="panel" id="waiting-now">
+      <header>
+        <span class="panel-title">Waiting now &mdash; longest first</span>
+        <span class="panel-sub">8 of 71, past 24/48h, named</span>
+      </header>
+      <div class="table-wrap">
+        <table class="dtable">
+          <caption class="sr">
+            Longest-waiting people currently in an emergency department, all departments
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Ref</th>
+              <th scope="col">Department</th>
+              <th scope="col" class="n">Waiting since</th>
+              <th scope="col">Ward status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-tone="crit">
+              <th scope="row">RPH-W01</th>
+              <td>Royal Perth Hospital</td>
+              <td class="n">61h 40m</td>
+              <td><span class="chip">Awaiting a ward</span></td>
+            </tr>
+            <tr data-tone="crit">
+              <th scope="row">JHC-W01</th>
+              <td>Joondalup Health Campus</td>
+              <td class="n">50h 20m</td>
+              <td><span class="chip" data-tone="good">Accepted &mdash; RPH Adult Secure</span></td>
+            </tr>
+            <tr data-tone="warn">
+              <th scope="row">FSH-W01</th>
+              <td>Fiona Stanley Hospital</td>
+              <td class="n">43h 30m</td>
+              <td><span class="chip">Awaiting a ward</span></td>
+            </tr>
+            <tr data-tone="warn">
+              <th scope="row">RPH-W02</th>
+              <td>Royal Perth Hospital</td>
+              <td class="n">41h 15m</td>
+              <td><span class="chip" data-tone="good">Accepted &mdash; SCGH Adult Open</span></td>
+            </tr>
+            <tr data-tone="warn">
+              <th scope="row">SCGH-W01</th>
+              <td>Sir Charles Gairdner Hospital</td>
+              <td class="n">28h 45m</td>
+              <td><span class="chip">Awaiting a ward</span></td>
+            </tr>
+            <tr data-tone="warn">
+              <th scope="row">RPH-W03</th>
+              <td>Royal Perth Hospital</td>
+              <td class="n">26h 31m</td>
+              <td><span class="chip" data-tone="good">Accepted &mdash; RPH Older Adult</span></td>
+            </tr>
+            <tr>
+              <th scope="row">RGH-W01</th>
+              <td>Rockingham General Hospital</td>
+              <td class="n">22h 18m</td>
+              <td><span class="chip">Awaiting a ward</span></td>
+            </tr>
+            <tr>
+              <th scope="row">PEEL-W01</th>
+              <td>Peel Health Campus</td>
+              <td class="n">21h 11m</td>
+              <td><span class="chip">Awaiting a ward</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="panel-foot">
+        <strong>6 of these 8 have passed 24 hours; 2 &mdash; RPH-W01 and JHC-W01 &mdash; have passed 48.</strong>
+      </p>
+    </section>
+
+    <!-- ══════════ TIME IN THREE LEGS ══════════ -->
+    <section class="panel" id="three-legs">
+      <header>
+        <span class="panel-title">Time in three legs &mdash; last 7 days</span>
+        <span class="panel-sub">45 admitted to a ward</span>
+      </header>
+      <div class="panel-body">
+        <p class="blurb">
+          Three owners, three problems &mdash; one total wait hides which is slow.
+        </p>
+        <div class="table-wrap">
+          <table class="dtable">
+            <caption class="sr">
+              Median duration of each leg of a completed movement, all departments, last 7 days
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Leg</th>
+                <th scope="col">Owned by</th>
+                <th scope="col" class="n">Median duration</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Referral raised &rarr; ward accepts</th>
+                <td>Destination review, across the network</td>
+                <td class="n">3h 10m</td>
+              </tr>
+              <tr>
+                <th scope="row">Ward accepts &rarr; bed pulled, handover ready</th>
+                <td>The accepting ward</td>
+                <td class="n">2h 05m</td>
+              </tr>
+              <tr>
+                <th scope="row">Bed pulled &rarr; patient physically leaves</th>
+                <td>Transport, booked by the sending team (TR&#8209;D4)</td>
+                <td class="n">1h 40m</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row">Typical end-to-end journey</th>
+                <td></td>
+                <td class="n">6h 55m</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <p class="blurb">
+          <strong>Referral to acceptance is the longest leg, at 3h&nbsp;10m</strong>, owned by destination review
+          across the network.
+        </p>
+      </div>
+    </section>
+
+    <!-- ══════════ WHERE THEY WENT ══════════ -->
+    <section class="panel">
+      <header>
+        <span class="panel-title">Where they went &mdash; last 7 days</span>
+        <span class="panel-sub">88 episodes ended</span>
+      </header>
+      <div class="panel-body">
+        <div class="figs">
+          <div>
+            <span class="stat-figure stat-figure--word num">45</span>
+            <span class="stat-label">Admitted to a ward</span>
+          </div>
+          <div>
+            <span class="stat-figure stat-figure--word num">28</span>
+            <span class="stat-label">Discharged home</span>
+          </div>
+          <div>
+            <span class="stat-figure stat-figure--word num">12</span>
+            <span class="stat-label">Community follow-up</span>
+          </div>
+          <div>
+            <span class="stat-figure stat-figure--word num" data-tone="crit">3</span>
+            <span class="stat-label">Left before being seen <span class="chip" data-tone="crit">Safety event</span></span>
+          </div>
+        </div>
+        <p class="blurb">
+          <strong>Left before being seen is a safety event, not a throughput statistic</strong> &mdash; 3 of 88,
+          never folded into &ldquo;discharged.&rdquo;
+        </p>
+      </div>
+    </section>
+
+    <!-- ══════════ WARDS APPROACHED ══════════ -->
+    <section class="panel">
+      <header>
+        <span class="panel-title">Wards approached &mdash; last 7 days</span>
+        <span class="panel-sub">61 referrals sent</span>
+      </header>
+      <div class="panel-body">
+        <p class="blurb">
+          <strong>A decline for no free bed differs from one because the patient does not match the
+          ward</strong> &mdash; never summed here.
+        </p>
+        <div class="band" data-cols="3">
+          <div>
+            <p class="mini-list-title">Accepted <span class="n">45</span></p>
+            <ul class="mini-list">
+              <li><span>RPH Adult Secure</span><b>8</b></li>
+              <li><span>SCGH Adult Open</span><b>7</b></li>
+              <li><span>RPH Older Adult</span><b>6</b></li>
+              <li><span>Out of area &mdash; regional co-location</span><b>6</b></li>
+              <li><span>FSH Adult Secure</span><b>5</b></li>
+              <li><span>BTY Older Adult</span><b>4</b></li>
+              <li><span>SJGM Adult Open</span><b>4</b></li>
+              <li><span>RGH Adult Unit</span><b>3</b></li>
+              <li><span>Other WA wards, each fewer than 3</span><b>2</b></li>
+            </ul>
+          </div>
+          <div>
+            <p class="mini-list-title">Declined &mdash; no free bed <span class="n">10</span></p>
+            <ul class="mini-list" data-tone="crit">
+              <li><span>RPH Adult Secure</span><b>3</b></li>
+              <li><span>SCGH Adult Open</span><b>2</b></li>
+              <li><span>FSH Adult Secure</span><b>2</b></li>
+              <li><span>RPH Older Adult</span><b>2</b></li>
+              <li><span>JHC Adult Open</span><b>1</b></li>
+            </ul>
+          </div>
+          <div>
+            <p class="mini-list-title">Declined &mdash; not suitable <span class="n">6</span></p>
+            <ul class="mini-list" data-tone="crit">
+              <li><span>RPH Adult Secure</span><b>2</b></li>
+              <li><span>BTY Older Adult</span><b>1</b></li>
+              <li><span>SCGH Adult Open</span><b>1</b></li>
+              <li><span>SJGM Adult Open</span><b>1</b></li>
+              <li><span>RGH Adult Unit</span><b>1</b></li>
+            </ul>
+          </div>
+        </div>
+        <p class="blurb">
+          61 referrals: <b>45 accepted</b>, <b>10 declined for no free bed</b>, <b>6 declined as not
+          suitable</b> &mdash; never summed.
+        </p>
+      </div>
+      <p class="panel-foot">
+        <strong>&ldquo;Not suitable&rdquo;</strong> can include clinical mismatch, security needs or a sex-mix
+        constraint. A stale reason is recorded as Unknown.
+      </p>
+    </section>
+
+    <!-- ══════════ COMPARISON ACROSS DEPARTMENTS ══════════ -->
+    <section class="panel" id="comparison">
+      <header>
+        <span class="panel-title">Comparison across departments</span>
+        <span class="panel-sub">same measures, side by side</span>
+      </header>
+      <div class="table-wrap">
+        <table class="dtable">
+          <caption class="sr">
+            Wait time and flow, every emergency department, side by side
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Department</th>
+              <th scope="col" class="n">Waiting now</th>
+              <th scope="col" class="n">Median wait</th>
+              <th scope="col" class="n">Longest wait</th>
+              <th scope="col" class="n">Over 24h</th>
+              <th scope="col" class="n">Over 48h</th>
+              <th scope="col" class="n">Left before seen, 7d</th>
+              <th scope="col" class="n">Accepted, 7d</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-tone="crit">
+              <th scope="row">Royal Perth Hospital</th>
+              <td class="n">17</td>
+              <td class="n">7h 36m</td>
+              <td class="n">61h 40m</td>
+              <td class="n">3</td>
+              <td class="n">1</td>
+              <td class="n">1</td>
+              <td class="n">9</td>
+            </tr>
+            <tr data-tone="warn">
+              <th scope="row">Sir Charles Gairdner Hospital</th>
+              <td class="n">10</td>
+              <td class="n">5h 20m</td>
+              <td class="n">28h 45m</td>
+              <td class="n">1</td>
+              <td class="n">0</td>
+              <td class="n">0</td>
+              <td class="n">8</td>
+            </tr>
+            <tr data-tone="warn">
+              <th scope="row">Fiona Stanley Hospital</th>
+              <td class="n">9</td>
+              <td class="n">6h 10m</td>
+              <td class="n">43h 30m</td>
+              <td class="n">1</td>
+              <td class="n">0</td>
+              <td class="n">1</td>
+              <td class="n">6</td>
+            </tr>
+            <tr>
+              <th scope="row">Armadale Hospital</th>
+              <td class="n">6</td>
+              <td class="n">4h 05m</td>
+              <td class="n">14h 50m</td>
+              <td class="n">0</td>
+              <td class="n">0</td>
+              <td class="n">1</td>
+              <td class="n">4</td>
+            </tr>
+            <tr>
+              <th scope="row">St John of God Midland</th>
+              <td class="n">5</td>
+              <td class="n">4h 50m</td>
+              <td class="n">15h 35m</td>
+              <td class="n">0</td>
+              <td class="n">0</td>
+              <td class="n">0</td>
+              <td class="n">4</td>
+            </tr>
+            <tr>
+              <th scope="row">Rockingham General Hospital</th>
+              <td class="n">8</td>
+              <td class="n">5h 35m</td>
+              <td class="n">22h 18m</td>
+              <td class="n">0</td>
+              <td class="n">0</td>
+              <td class="n">0</td>
+              <td class="n">5</td>
+            </tr>
+            <tr data-tone="crit">
+              <th scope="row">Joondalup Health Campus</th>
+              <td class="n">9</td>
+              <td class="n">6h 40m</td>
+              <td class="n">50h 20m</td>
+              <td class="n">1</td>
+              <td class="n">1</td>
+              <td class="n">0</td>
+              <td class="n">5</td>
+            </tr>
+            <tr>
+              <th scope="row">Peel Health Campus</th>
+              <td class="n">7</td>
+              <td class="n">5h 00m</td>
+              <td class="n">21h 11m</td>
+              <td class="n">0</td>
+              <td class="n">0</td>
+              <td class="n">0</td>
+              <td class="n">4</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row">All eight departments, combined</th>
+              <td class="n">71</td>
+              <td class="n">6h 18m</td>
+              <td class="n">61h 40m</td>
+              <td class="n">6</td>
+              <td class="n">2</td>
+              <td class="n">3</td>
+              <td class="n">45</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <p class="panel-foot">
+        <strong>A 0 here is a measured zero</strong>, not missing. <strong>The combined row is the median of
+        all 71 together</strong>, not an average of the eight.
+      </p>
+    </section>
+
+    <!-- ══════════ DISCLOSURES — THE "POPUP OPTIONS" ══════════ -->
+    <details class="reveal">
+      <summary>Royal Perth Hospital in detail <span class="reveal-count">17 waiting now</span></summary>
+      <div class="reveal-body">
+        <p>
+          Royal Perth Hospital is the worked example, with the longest wait anywhere.
+        </p>
+        <dl class="kv">
+          <dt>Waiting</dt>
+          <dd>17</dd>
+          <dt>Median</dt>
+          <dd>7h 36m</dd>
+          <dt>Longest</dt>
+          <dd>61h 40m (RPH-W01)</dd>
+          <dt>Over 24h</dt>
+          <dd>3</dd>
+          <dt>Over 48h</dt>
+          <dd>1</dd>
+        </dl>
+        <dl class="kv">
+          <dt>Referral &rarr; accepted</dt>
+          <dd>3h 35m</dd>
+          <dt>Accepted &rarr; bed pulled</dt>
+          <dd>2h 20m</dd>
+          <dt>Bed pulled &rarr; departure</dt>
+          <dd>1h 55m</dd>
+          <dt>Total journey</dt>
+          <dd>7h 50m</dd>
+        </dl>
+        <p>
+          <strong>14 referrals sent from here, 7 days:</strong> 9 accepted, 3 declined for no free bed, 2
+          declined as not suitable.
+        </p>
+        <div class="figs">
+          <div>
+            <span class="stat-figure stat-figure--word num">9</span>
+            <span class="stat-label">Admitted to a ward</span>
+          </div>
+          <div>
+            <span class="stat-figure stat-figure--word num">6</span>
+            <span class="stat-label">Discharged home</span>
+          </div>
+          <div>
+            <span class="stat-figure stat-figure--word num">3</span>
+            <span class="stat-label">Community follow-up</span>
+          </div>
+          <div>
+            <span class="stat-figure stat-figure--word num" data-tone="crit">1</span>
+            <span class="stat-label">Left before being seen <span class="chip" data-tone="crit">Safety event</span></span>
+          </div>
+        </div>
+        <p>
+          1 of 19 episodes here ended with the patient leaving before being seen.
+        </p>
+      </div>
+    </details>
+
+    <details class="reveal">
+      <summary>What each disposition outcome means <span class="reveal-count">88 episodes, last 7 days</span></summary>
+      <div class="reveal-body">
+        <ul>
+          <li><b>Admitted to a ward</b> &mdash; bed accepted, patient moved there.</li>
+          <li><b>Discharged home</b> &mdash; assessed, no admission needed.</li>
+          <li><b>Community follow-up</b> &mdash; discharged with a booked community handover.</li>
+          <li><b>Left before being seen</b> &mdash; patient left before assessment.</li>
+        </ul>
+        <p>
+          <strong>This is a safety event</strong>, never a throughput statistic.
+        </p>
+      </div>
+    </details>
+
+    <details class="reveal">
+      <summary>How the combined median is worked out</summary>
+      <div class="reveal-body">
+        <p>
+          <strong>The combined median is not an average of the eight medians</strong> &mdash; it is the median of
+          all 71 people taken together.
+        </p>
+      </div>
+    </details>
+
+    <details class="reveal">
+      <summary>Why the other six departments are not drawn as their own charts</summary>
+      <div class="reveal-body">
+        <p>
+          Royal Perth was built out in full as the worked example; the other six departments&rsquo; headline
+          figures are all in the comparison table above, so nothing is missing, only not drawn twice.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <!-- ══════════ GOVERNANCE ══════════ -->
+  <div class="footnote">
+    <h2>What is real, taken from the repository</h2>
+    <ul>
+      <li>
+        <b>The eight department names and codes</b> are read from <code>ward-sites.ts</code>, shared with the
+        front-doors mockup.
+      </li>
+      <li>
+        <b>The visual language</b> above the marker is <code>statistics-language-v4.css</code>, copied unedited.
+      </li>
+      <li>
+        <b>The seven-stage movement model and transport rules (TR-D1, TR-D4)</b> behind these figures are taken
+        from <code>statistics-v2-brief.md</code>, unchanged.
+      </li>
+    </ul>
+
+    <h2>What is invented</h2>
+    <ul>
+      <li>
+        Every count, wait time, distribution, ward acceptance, decline reason and disposition figure on this
+        page.
+      </li>
+      <li>The &ldquo;as at 11:42&rdquo; and &ldquo;last refreshed 06:05&rdquo; timestamps.</li>
+    </ul>
+
+    <h2>A department is not a ward</h2>
+    <p>
+      This screen describes only <b>people standing in a department</b>, never a bed count or occupancy &mdash;
+      those belong to the ward screens.
+    </p>
+
+    <h2>How &ldquo;three legs&rdquo; was drawn from three named points</h2>
+    <p>
+      The third boundary (bed-pulled-and-handover-ready) follows the seven-stage model and the TR-D4/TR-D1
+      transport rules.
+    </p>
+
+    <h2>What a 0 means, and what a dash means</h2>
+    <p>
+      A <b>0</b> is a genuine measured answer, never &ldquo;not tracked.&rdquo; A dash or &ldquo;not
+      drawn&rdquo; means no figure was produced &mdash; the two are never the same.
+    </p>
+  </div>
+</div>

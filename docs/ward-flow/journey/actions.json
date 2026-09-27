@@ -1,0 +1,2596 @@
+[
+  {
+    "event": "RECEIVE_REFERRAL",
+    "name": "Raise a referral at the front door",
+    "group": "At the front door",
+    "lane": "expected",
+    "nodes": [
+      "raised",
+      "addressed",
+      "armCommunity",
+      "armWard",
+      "armEd",
+      "srcCommunity",
+      "srcCrisis",
+      "srcPolice",
+      "srcAmbulance",
+      "srcHospital",
+      "srcEd",
+      "srcGp"
+    ],
+    "roles": ["community", "ed"],
+    "does": "Logs a brand-new referral, addressed to as many as three places at once, every one of them starting unanswered.",
+    "needs": "Nothing before it — this is where a journey begins. Every field is checked at the door.",
+    "changes": "Creates the referral with every destination set to waiting.",
+    "reasons": [
+      "COHORTS",
+      "REFERRAL_DESTINATION_KINDS",
+      "REFERRAL_PURPOSES",
+      "SEXES",
+      "REFERRAL_GENDERS",
+      "REFERRAL_SOURCES",
+      "HOME_REGIONS"
+    ],
+    "refuses": [
+      {
+        "when": "No destination named",
+        "message": "RECEIVE_REFERRAL needs at least one destination"
+      },
+      {
+        "when": "More than the cap",
+        "message": "RECEIVE_REFERRAL may address at most ${cap} destinations, not ${n}"
+      },
+      {
+        "when": "The same kind twice",
+        "message": "RECEIVE_REFERRAL cannot address the same destination kind twice"
+      },
+      {
+        "when": "An ED that does not exist",
+        "message": "RECEIVE_REFERRAL edId must resolve to a real emergency department"
+      },
+      {
+        "when": "Someone in an ED claiming another source",
+        "message": "RECEIVE_REFERRAL raised as role ed must carry source ed_medical, not ${source}"
+      },
+      {
+        "when": "An ED referral from a site with no ED",
+        "message": "RECEIVE_REFERRAL source ed_medical requires an origin site with an emergency department"
+      },
+      {
+        "when": "A triage time later than the referral",
+        "message": "RECEIVE_REFERRAL triagedAt cannot be later than the referral itself"
+      },
+      {
+        "when": "A patient nobody holds",
+        "message": "RECEIVE_REFERRAL patientId must name a patient this system already holds, and ${id} names none"
+      },
+      {
+        "when": "Text over the limit",
+        "message": "RECEIVE_REFERRAL ${field} is ${n} characters and the limit is ${limit} — it is refused rather than shortened"
+      },
+      {
+        "when": "A blank sending team",
+        "message": "RECEIVE_REFERRAL sendingTeamName is present but blank — omit the field to record no sending team"
+      }
+    ],
+    "screen": {
+      "screen": "referral-intake.tsx (+2 others)",
+      "control": "Send referral"
+    }
+  },
+  {
+    "event": "ADD_PATIENT",
+    "name": "Add a person who is not on file",
+    "group": "At the front door",
+    "lane": "record",
+    "nodes": ["raised", "rkDuplicate", "rkIntakeLost"],
+    "roles": ["ed", "community", "coordinator"],
+    "does": "Registers somebody with no referral, movement or bed record yet — the “searched, nobody came up, so add them” record.",
+    "needs": "Nothing.",
+    "changes": "Creates a new patient record.",
+    "reasons": ["GENDERS"],
+    "refuses": [
+      {
+        "when": "Gender not from the list",
+        "message": "ADD_PATIENT gender must be chosen from GENDERS"
+      }
+    ],
+    "screen": {
+      "screen": "add-patient.tsx (+1 other)",
+      "control": "Add patient"
+    }
+  },
+  {
+    "event": "RECORD_MEDICAL_CLEARANCE",
+    "name": "Record whether they are medically cleared",
+    "group": "At the front door",
+    "lane": "record",
+    "nodes": ["addressed", "rkClearance", "edArrived"],
+    "roles": ["ed"],
+    "does": "Records, or changes, whether a patient in the front-door queue is medically cleared right now.",
+    "needs": "The referral exists. Overwriting an earlier answer is deliberate.",
+    "changes": "Sets or replaces the clearance answer and its time.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "No such referral",
+        "message": "no referral found for id ${referralId}"
+      }
+    ],
+    "screen": {
+      "screen": "ed-screen.tsx",
+      "control": "Record medically cleared"
+    }
+  },
+  {
+    "event": "RECORD_ARRIVED_IN_DEPARTMENT",
+    "name": "Mark that an expected patient has turned up",
+    "group": "At the front door",
+    "lane": "record",
+    "nodes": ["addressed", "edExpected", "edArrived", "edNeverArrives"],
+    "roles": ["ed"],
+    "does": "Marks that a patient the department was expecting has physically arrived.",
+    "needs": "The referral exists. Recording it twice is harmless — the earliest time is kept.",
+    "changes": "Stamps the arrival time, once.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "No such referral",
+        "message": "no referral found for id ${referralId}"
+      }
+    ],
+    "screen": {
+      "screen": "ed-screen.tsx",
+      "control": "Mark arrived in department"
+    }
+  },
+  {
+    "event": "ACCEPT_REFERRAL",
+    "name": "Accept the referral",
+    "group": "At the front door",
+    "lane": "expected",
+    "nodes": [
+      "wardAnswers",
+      "wardAccepted",
+      "othersCancelled",
+      "cmhtAnswers",
+      "cmhtAccepted",
+      "edAnswers",
+      "edAccepted",
+      "cmhtNothing",
+      "wardBlocked",
+      "dForced",
+      "dNonBinary"
+    ],
+    "roles": ["ward", "coordinator", "ed", "community"],
+    "does": "A ward, emergency department or community team says yes to the destination addressed to it. The first yes automatically cancels every other destination still waiting — except a community arm, which never competes for the bed.",
+    "needs": "The destination was actually addressed to you, is still waiting, and the referral has not been withdrawn or accepted elsewhere.",
+    "changes": "Marks that destination accepted, cancels the other waiting non-community destinations, notifies the referrer and the receiving ward. No bed is pulled and no movement is created.",
+    "reasons": ["GENDER_PLACEMENT_REASONS", "OVERRIDE_REASONS"],
+    "override": true,
+    "refuses": [
+      {
+        "when": "The referral already has a movement under way",
+        "message": "referral ${id} already has an open movement (${movementId}); it cannot also be accepted into a ward while that movement is open"
+      },
+      {
+        "when": "Answering for somebody else's kind of destination",
+        "message": "was raised by role ${role}, which may only answer ${ownKind} destinations, not ${kind}"
+      },
+      {
+        "when": "Not addressed to you",
+        "message": "referral ${id} was not addressed to ${kind}"
+      },
+      {
+        "when": "Already accepted somewhere else",
+        "message": "referral ${id} has already been accepted elsewhere"
+      },
+      {
+        "when": "You have already answered",
+        "message": "${kind} has already answered referral ${id} (${state})"
+      },
+      {
+        "when": "The referrer withdrew it",
+        "message": "referral ${id} was withdrawn by its referrer, so ${kind} cannot accept it"
+      },
+      {
+        "when": "A ward accepting without naming a unit",
+        "message": "ACCEPT_REFERRAL into a psychiatric ward must name a unit"
+      },
+      {
+        "when": "A non-binary placement nobody has cleared",
+        "message": "This patient is recorded as non-binary. A coordinator must record a reason after checking with the ward before this placement."
+      },
+      {
+        "when": "A team being asked to name a bed",
+        "message": "${kind} is answered by a team, not a bed — it cannot name a unit"
+      },
+      {
+        "when": "The bed does not suit",
+        "message": "(the eligibility check supplies its own sentence — sex, gender, cohort, security, legal status, acuity or capacity)"
+      }
+    ],
+    "screen": {
+      "screen": "referral-match.tsx (+1 other)",
+      "control": "Accept at the named ward"
+    }
+  },
+  {
+    "event": "DECLINE_REFERRAL",
+    "name": "Decline the referral",
+    "group": "At the front door",
+    "lane": "stall",
+    "nodes": ["wardAnswers", "wardDeclined", "cmhtAnswers", "cmhtDeclined", "edAnswers", "edDeclined", "cmhtNothing"],
+    "roles": ["ward", "coordinator", "ed", "community"],
+    "does": "Says no to the destination addressed to you. Nothing else on the referral changes, and the other places asked carry on.",
+    "needs": "The destination was addressed to you and is still waiting.",
+    "changes": "Marks that one destination declined with its reason, and tells the referrer.",
+    "reasons": ["REFERRAL_DECLINE_REASONS", "COMMUNITY_DECLINE_REASONS"],
+    "refuses": [
+      {
+        "when": "A reason from the wrong list",
+        "message": "DECLINE_REFERRAL reason must be chosen from ${listName}, the vocabulary for ${kind} destinations"
+      },
+      {
+        "when": "Already accepted elsewhere",
+        "message": "referral ${id} has already been accepted elsewhere"
+      },
+      {
+        "when": "The referrer withdrew it",
+        "message": "referral ${id} was withdrawn by its referrer, so ${kind} cannot decline it"
+      }
+    ],
+    "screen": {
+      "screen": "referral-match.tsx (+2 others)",
+      "control": "Decline referral"
+    }
+  },
+  {
+    "event": "RECORD_REFERRER_WITHDRAWAL",
+    "name": "The referrer takes the referral back",
+    "group": "At the front door",
+    "lane": "stall",
+    "nodes": ["wardAnswers", "cmhtWithdrawn", "wardNothing", "cmhtNothing", "wardWithdrawn"],
+    "roles": ["coordinator"],
+    "does": "The referring party withdraws — either just the community half, leaving the bed request standing, or the whole referral, which also gives back any held bed and cancels any transport.",
+    "needs": "Nothing has been accepted yet, and it has not already been withdrawn.",
+    "changes": "Stamps the withdrawal on every still-waiting destination; closes any linked open movement as “did not proceed”.",
+    "reasons": ["WARD_REQUEST_WITHDRAWAL_REASONS"],
+    "refuses": [
+      {
+        "when": "Something has been accepted",
+        "message": "referral ${id} has already been accepted, so it cannot be withdrawn"
+      },
+      {
+        "when": "Already withdrawn",
+        "message": "referral ${id} has already been recorded as withdrawn by its referrer"
+      },
+      {
+        "when": "Nothing left waiting",
+        "message": "every destination on referral ${id} has already answered"
+      },
+      {
+        "when": "Transport has already collected the patient",
+        "message": "referral ${id} is linked to movement ${mid}, whose transport has already been collected; this needs a coordinator decision (see STOP_TRANSPORT) rather than an automatic withdrawal"
+      },
+      {
+        "when": "Withdrawing the community arm with no reason",
+        "message": "RECORD_REFERRER_WITHDRAWAL scoped to community_team must give a reason from WARD_REQUEST_WITHDRAWAL_REASONS"
+      }
+    ],
+    "screen": {
+      "screen": "referral-match.tsx",
+      "control": "Withdraw referral to community team"
+    }
+  },
+  {
+    "event": "ADD_REFERRAL_CORRECTION",
+    "name": "Add a correction to a referral",
+    "group": "At the front door",
+    "lane": "record",
+    "nodes": ["wardAnswers", "addressed"],
+    "roles": ["community", "ed", "coordinator"],
+    "does": "Adds a dated, attributed note correcting something on a referral, at any point in its life. What was said before stays readable.",
+    "needs": "The referral exists. No stage condition at all.",
+    "changes": "Appends the note. Never overwrites.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "A blank note",
+        "message": "ADD_REFERRAL_CORRECTION note must say something — a blank is not a correction"
+      },
+      {
+        "when": "Over the length limit",
+        "message": "ADD_REFERRAL_CORRECTION note is ${n} characters and the limit is ${limit} — it is refused rather than shortened"
+      }
+    ],
+    "screen": {
+      "screen": "referral-match.tsx",
+      "control": "Add a correction"
+    }
+  },
+  {
+    "event": "RECORD_LOCAL_BED_SOUGHT",
+    "name": "Record that a bed closer to home was looked for",
+    "group": "At the front door",
+    "lane": "record",
+    "nodes": ["wardAnswers", "addressed"],
+    "roles": ["coordinator"],
+    "does": "Records that somebody looked for a bed nearer the person's home before sending them further. It never gates an acceptance — it exists so the search can be shown to have happened.",
+    "needs": "The referral is still undecided.",
+    "changes": "Stamps the search and who did it.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Already decided",
+        "message": "referral ${id} was already decided (${state})"
+      },
+      {
+        "when": "Already recorded",
+        "message": "referral ${id} already records a local bed search"
+      }
+    ],
+    "screen": {
+      "screen": "referral-match.tsx",
+      "control": "Record that a local bed was sought and none was suitable"
+    }
+  },
+  {
+    "event": "RAISE_REFERRAL",
+    "name": "Start a bed search from a department",
+    "group": "Finding a bed",
+    "lane": "expected",
+    "nodes": ["seam", "placement", "edRaise"],
+    "roles": ["ed", "community", "ward"],
+    "does": "Opens the record that actually moves — a department's own bed search for a patient in front of them, optionally linked back to the community referral that sent them there.",
+    "needs": "A real department. If linking a referral: it exists, was addressed here, is not withdrawn, was not declined here, and has no other open movement.",
+    "changes": "Creates the movement at the first stage, capturing any legal form and expiry typed in.",
+    "reasons": ["REFERRAL_GENDERS"],
+    "refuses": [
+      {
+        "when": "A referral nobody holds",
+        "message": "RAISE_REFERRAL referralId must name a referral this system already holds, and ${id} names none"
+      },
+      {
+        "when": "Never sent here",
+        "message": "referral ${id} was never addressed to ${name}, so a journey raised there did not come from it"
+      },
+      {
+        "when": "The referrer withdrew it",
+        "message": "referral ${id} was withdrawn by its referrer, so no journey can be raised from it"
+      },
+      {
+        "when": "You already declined it",
+        "message": "${name} declined referral ${id}, so no journey can be raised from it"
+      },
+      {
+        "when": "It is already funding an open journey",
+        "message": "referral ${id} already has a linked movement that did not close as “did not proceed”; a second journey cannot be raised while it stands"
+      }
+    ],
+    "screen": {
+      "screen": "ed-screen.tsx",
+      "control": "Raise into a movement"
+    }
+  },
+  {
+    "event": "REFER_TO_UNITS",
+    "name": "Ask one or more wards",
+    "group": "Finding a bed",
+    "lane": "expected",
+    "nodes": ["asked", "dForced"],
+    "roles": ["coordinator"],
+    "does": "Asks wards to consider the patient — one, or several at once up to the cap. Asking more later adds to the same request.",
+    "needs": "The record is still at one of the two stages where wards can be asked. Once somebody has accepted, you cannot go on asking.",
+    "changes": "Adds those wards to the live list and moves the record to destination review.",
+    "reasons": ["OVERRIDE_REASONS", "GENDER_PLACEMENT_REASONS"],
+    "override": true,
+    "refuses": [
+      {
+        "when": "Too many at once",
+        "message": "cannot refer to ${n} units at once — the parallel cap is ${cap}"
+      },
+      {
+        "when": "Past the point of asking",
+        "message": "cannot refer a movement at its current stage (${stage})"
+      },
+      {
+        "when": "A ward that does not exist",
+        "message": "no unit found for id ${id}"
+      },
+      {
+        "when": "A non-binary placement with no recorded check",
+        "message": "This patient is recorded as non-binary. A coordinator must record a reason after checking with the ward before this placement."
+      },
+      {
+        "when": "Every ward named is ineligible",
+        "message": "(the whole request is refused when no ward on it can take the patient)"
+      }
+    ],
+    "screen": {
+      "screen": "shortlist-panel.tsx",
+      "control": "Refer"
+    }
+  },
+  {
+    "event": "ACCEPT_IN_PRINCIPLE",
+    "name": "A ward accepts in principle",
+    "group": "Finding a bed",
+    "lane": "expected",
+    "nodes": ["inPrinciple", "dForced", "dGenderHard"],
+    "roles": ["ward"],
+    "does": "A ward formally accepts the patient and becomes the destination. Every other ward asked is withdrawn automatically. Still no bed is set aside.",
+    "needs": "The record is at destination review and this ward holds a live request.",
+    "changes": "Records the accepting ward, clears every other live request, and tells the referring department.",
+    "reasons": [],
+    "override": true,
+    "refuses": [
+      {
+        "when": "Somebody already accepted",
+        "message": "movement ${id} is already accepted at ${unit}; the referral to ${other} was withdrawn"
+      },
+      {
+        "when": "Wrong stage",
+        "message": "cannot accept a movement at its current stage (${stage})"
+      },
+      {
+        "when": "This ward was never asked",
+        "message": "${unitId} does not hold a live referral for movement ${id}"
+      },
+      {
+        "when": "A non-binary placement with no recorded check",
+        "message": "This patient is recorded as non-binary. A coordinator must record a reason after checking with the ward before this placement."
+      }
+    ],
+    "screen": {
+      "screen": "ward-screen.tsx (+1 other)",
+      "control": "Accept in principle"
+    }
+  },
+  {
+    "event": "DECLINE",
+    "name": "A ward declines the bed search",
+    "group": "Finding a bed",
+    "lane": "stall",
+    "nodes": ["sWardDecline"],
+    "roles": ["ward"],
+    "does": "A ward asked for a bed says no, with a reason. The patient stays live at every other ward still considering.",
+    "needs": "The record is at destination review and this ward holds a live request.",
+    "changes": "Removes that ward from the list and records the decline. The stage does not move.",
+    "reasons": ["DECLINE_REASONS"],
+    "refuses": [
+      {
+        "when": "A reason not on the list",
+        "message": "DECLINE reason must be chosen from DECLINE_REASONS"
+      },
+      {
+        "when": "Wrong stage",
+        "message": "cannot decline at the movement's current stage (${stage})"
+      },
+      {
+        "when": "This ward was never asked",
+        "message": "${unitId} does not hold a live referral for movement ${id}"
+      }
+    ],
+    "screen": {
+      "screen": "ward-screen.tsx (+1 other)",
+      "control": "Confirm decline"
+    }
+  },
+  {
+    "event": "WITHDRAW_WARD_REQUEST",
+    "name": "Take back one ward's request",
+    "group": "Finding a bed",
+    "lane": "stall",
+    "nodes": ["asked", "sWithdrawWard"],
+    "roles": ["coordinator"],
+    "does": "Withdraws the request from one named ward only. Every other ward asked carries on considering.",
+    "needs": "That ward holds a live request.",
+    "changes": "Removes that one ward and tells it why.",
+    "reasons": ["WARD_REQUEST_WITHDRAWAL_REASONS"],
+    "refuses": [
+      {
+        "when": "A reason not on the list",
+        "message": "WITHDRAW_WARD_REQUEST reason must be chosen from WARD_REQUEST_WITHDRAWAL_REASONS"
+      },
+      {
+        "when": "That ward was never asked",
+        "message": "${unitId} does not hold a live referral for movement ${id}"
+      }
+    ],
+    "screen": {
+      "screen": "shortlist-panel.tsx",
+      "control": "Withdraw this request"
+    }
+  },
+  {
+    "event": "WITHDRAW_ACCEPTANCE",
+    "name": "Undo a ward's acceptance",
+    "group": "Finding a bed",
+    "lane": "stall",
+    "nodes": ["sAcceptWithdrawn"],
+    "roles": ["coordinator"],
+    "does": "Undoes a ward's yes before any bed has been taken, sends the search back to asking wards, and tells that ward its acceptance no longer stands.",
+    "needs": "The record is at “accepted, awaiting bed” — this one step and nowhere later — and no bed is held.",
+    "changes": "Clears the accepting ward and returns to destination review. The ward is deliberately not re-added to the asked list.",
+    "reasons": ["STEP_BACK_REASONS"],
+    "refuses": [
+      {
+        "when": "Wrong stage",
+        "message": "cannot withdraw an acceptance unless the movement is still awaiting a bed (movement ${id} is at ${stage})"
+      },
+      {
+        "when": "A bed is still held",
+        "message": "cannot withdraw an acceptance while movement ${id} still holds a bed (admission ${aid}); pull it again to restore it, release the pull, then withdraw"
+      }
+    ],
+    "screen": {
+      "screen": "ward-management-console.tsx",
+      "control": "Withdraw the acceptance"
+    }
+  },
+  {
+    "event": "WITHDRAW_REFERRAL",
+    "name": "Abandon the bed search",
+    "group": "Finding a bed",
+    "lane": "end",
+    "nodes": ["sAbandoned"],
+    "roles": ["ed", "community", "ward", "coordinator"],
+    "does": "Cancels the search outright — either pulling it from every ward still being asked, or, once accepted, revoking the acceptance and giving back any held bed.",
+    "needs": "The record is open. Once accepted, only the referrer or the coordinator may do it, and only before the patient is collected.",
+    "changes": "Closes the movement as “did not proceed”, releases any held bed, cancels any live transport.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Already accepted, and you are not the referrer or coordinator",
+        "message": "movement ${id} has already been accepted by ${unit}; only the referrer or the coordinator may revoke it now"
+      },
+      {
+        "when": "The patient is already in the vehicle",
+        "message": "movement ${id}'s patient has already been collected; use STOP_TRANSPORT to stop the journey instead of withdrawing the referral"
+      },
+      {
+        "when": "Nothing live to withdraw",
+        "message": "movement ${id} holds no live referral to withdraw"
+      },
+      {
+        "when": "The movement has already closed",
+        "message": "has already closed and cannot be withdrawn"
+      }
+    ],
+    "screen": {
+      "screen": "ed-screen.tsx",
+      "control": "Withdraw referral"
+    }
+  },
+  {
+    "event": "REFER_TO_COMMUNITY_TEAM",
+    "name": "Send them to a community team instead",
+    "group": "Finding a bed",
+    "lane": "diversion",
+    "nodes": ["edToCommunity", "cmhtFromSearch"],
+    "roles": ["ed"],
+    "does": "Instead of admitting, refers the patient straight to a named community team — ends the bed search, creates or reuses a real community referral, and tells everybody involved.",
+    "needs": "The record is open and transport has not collected the patient. If they are on a legal form, a conclusive examination outcome must already be recorded.",
+    "changes": "Gives back any held bed, cancels transport, withdraws live ward requests, closes the movement, and raises or reuses the community arm.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Not a real team",
+        "message": "team “${team}” is not a valid community mental health team"
+      },
+      {
+        "when": "The patient is already in the vehicle",
+        "message": "movement ${id}'s patient has already been collected; use STOP_TRANSPORT to stop the journey instead of referring to a community team"
+      },
+      {
+        "when": "On a form with no conclusive examination",
+        "message": "movement ${id} is on a legal form; a conclusive examination outcome must be recorded before referring to a community team"
+      },
+      {
+        "when": "The record is closed",
+        "message": "cannot refer a closed movement"
+      }
+    ],
+    "screen": {
+      "screen": "ed-screen.tsx",
+      "control": "Confirm CMHT referral"
+    }
+  },
+  {
+    "event": "RECORD_ED_OUTCOME",
+    "name": "The department decides they need no bed",
+    "group": "Finding a bed",
+    "lane": "end",
+    "nodes": ["edOutcome", "edAnswers"],
+    "roles": ["ed"],
+    "does": "Records that the patient no longer needs a psychiatric bed — going home, or to community follow-up — and unwinds everything already in motion.",
+    "needs": "The record is open and transport has not collected the patient. For “for discharge” on a legal form, a conclusive examination outcome must already be recorded.",
+    "changes": "Releases a held bed, cancels an uncollected transport job, drops live ward requests, closes the movement, and notifies every ward affected.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "The patient is already in the vehicle",
+        "message": "movement ${id}'s patient has already been collected; use STOP_TRANSPORT to stop the journey instead of recording an ED outcome"
+      },
+      {
+        "when": "Discharging somebody on a form with no conclusive examination",
+        "message": "movement ${id} is on a legal form; a conclusive examination outcome must be recorded before recording “for discharge”"
+      },
+      {
+        "when": "The record is closed",
+        "message": "cannot record an ED outcome for a closed movement"
+      }
+    ],
+    "screen": {
+      "screen": "ed-screen.tsx",
+      "control": "For discharge"
+    }
+  },
+  {
+    "event": "RECORD_NO_REFERRAL",
+    "name": "Record that nobody referred them",
+    "group": "Finding a bed",
+    "lane": "record",
+    "nodes": ["placement", "edRaise"],
+    "roles": ["ed"],
+    "does": "Records that, on checking, nobody actually referred this patient in.",
+    "needs": "The record is open and is not already linked to a referral.",
+    "changes": "Stamps the absence and its reason.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "It already came from a referral",
+        "message": "movement ${id} was raised from referral ${rid}, so it cannot also record that nobody referred this patient"
+      },
+      {
+        "when": "The record is closed",
+        "message": "cannot record a referral answer for a closed movement"
+      }
+    ],
+    "screen": {
+      "screen": "ed-screen.tsx",
+      "control": "No referral raised"
+    }
+  },
+  {
+    "event": "RECORD_ESCALATION",
+    "name": "Record an escalation",
+    "group": "Finding a bed",
+    "lane": "record",
+    "nodes": ["asked", "rkEscalate"],
+    "roles": ["coordinator"],
+    "does": "Records that the search was escalated — which wards were tried, and who was contacted.",
+    "needs": "The record is open.",
+    "changes": "Stamps the escalation, the wards tried and the contact.",
+    "reasons": ["ESCALATION_CONTACTS"],
+    "refuses": [
+      {
+        "when": "The record is closed",
+        "message": "cannot escalate a closed movement (${reason})"
+      }
+    ],
+    "screen": {
+      "screen": "shortlist-panel.tsx (+1 other)",
+      "control": "Record escalation"
+    }
+  },
+  {
+    "event": "STEP_BACK_STAGE",
+    "name": "Correct the record backwards",
+    "group": "Finding a bed",
+    "lane": "record",
+    "nodes": ["asked", "inPrinciple", "pulled"],
+    "roles": ["coordinator"],
+    "does": "Moves the record back to an earlier point. A pure record correction — it deliberately releases no bed and cancels no transport.",
+    "needs": "The target is strictly earlier than where it is now, and the patient has not arrived.",
+    "changes": "Moves the stage and logs the correction. Nothing else is touched at all.",
+    "reasons": ["STEP_BACK_REASONS"],
+    "refuses": [
+      {
+        "when": "They have arrived",
+        "message": "cannot step back an arrived movement (invariant I-05: physical arrival is irreversible)"
+      },
+      {
+        "when": "Not actually backwards",
+        "message": "STEP_BACK_STAGE target must be strictly before the movement's current stage"
+      }
+    ],
+    "screen": {
+      "screen": "ward-management-console.tsx",
+      "control": "Correct the record"
+    }
+  },
+  {
+    "event": "PULL_PATIENT",
+    "name": "Take the bed",
+    "group": "Holding the bed",
+    "lane": "expected",
+    "nodes": ["pulled", "dRepull", "dForced", "dGenderHard", "dNoLongerSuits"],
+    "roles": ["ward", "coordinator"],
+    "does": "The ward claims the bed it accepted, and an admission record is created marked held — not occupied. A patient is not arrived until the ward says they have arrived.",
+    "needs": "The record is at “accepted, awaiting bed” and this is the ward that accepted.",
+    "changes": "Takes one allocatable bed, creates the held admission, and starts the four-hour hold.",
+    "reasons": ["OVERRIDE_REASONS"],
+    "override": true,
+    "refuses": [
+      {
+        "when": "No allocatable bed left",
+        "message": "no allocatable bed remains at ${unit} (the ward's allocatable count is ${n})"
+      },
+      {
+        "when": "Every free bed is still being made ready",
+        "message": "every free bed at ${unit} is still being made ready (${n} pending); a patient cannot be pulled to a bed that is not open"
+      },
+      {
+        "when": "No one-to-one specialling capacity",
+        "message": "${unit} has no one-to-one specialling capacity left; this patient needs specialling and the ward cannot staff another"
+      },
+      {
+        "when": "High-acuity staffing exhausted — overridable",
+        "message": "This placement needs an override reason and the nurse unit manager consulted."
+      },
+      {
+        "when": "No secure bed free — overridable",
+        "message": "No locked bed is free at ${unit}. This placement needs an override reason to use an open bed."
+      },
+      {
+        "when": "Accepted somewhere else",
+        "message": "movement ${id} was accepted at ${other}, not ${unitId}"
+      }
+    ],
+    "screen": {
+      "screen": "ward-screen.tsx (+1 other)",
+      "control": "Pull a bed"
+    }
+  },
+  {
+    "event": "RELEASE_PULL",
+    "name": "Give the held bed back",
+    "group": "Holding the bed",
+    "lane": "stall",
+    "nodes": ["sPullReleased"],
+    "roles": ["coordinator", "ward"],
+    "does": "A ward gives back a bed it was holding before the patient arrived. The admission record is deleted outright — nobody was ever in this bed.",
+    "needs": "The bed is currently held. A ward may only release its own.",
+    "changes": "Returns the bed to the ward, deletes the admission, sends the record back to “accepted, awaiting bed”, and tells the department.",
+    "reasons": ["RELEASE_PULL_REASONS"],
+    "refuses": [
+      {
+        "when": "Wrong stage",
+        "message": "cannot release a pull at the movement's current stage (${stage})"
+      },
+      {
+        "when": "Another ward's bed",
+        "message": "RELEASE_PULL was raised acting as unit ${id} but movement ${mid}'s bed is pulled at ${other}"
+      },
+      {
+        "when": "A reason not on the list",
+        "message": "RELEASE_PULL reason must be chosen from RELEASE_PULL_REASONS"
+      }
+    ],
+    "screen": {
+      "screen": "shortlist-panel.tsx (+1 other)",
+      "control": "Release the pulled bed"
+    }
+  },
+  {
+    "event": "RELEASE_HELD_BED",
+    "name": "Release a bed left held by a stopped journey",
+    "group": "Holding the bed",
+    "lane": "stall",
+    "nodes": ["sStopTransport"],
+    "roles": ["coordinator", "ward", "ed"],
+    "does": "Releases the bed that stopping a transport deliberately left held, once it is decided the patient is not coming after all. The only way to give that bed back.",
+    "needs": "The journey was stopped after collection, and a bed is still held.",
+    "changes": "Releases the bed and deletes the admission.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "It was not stopped that way",
+        "message": "movement ${id} was not stopped by STOP_TRANSPORT, so there is no held bed to release this way"
+      },
+      {
+        "when": "No bed held",
+        "message": "movement ${id} holds no bed — it may already have been released"
+      },
+      {
+        "when": "Acting as a ward that does not hold the bed",
+        "message": "raised acting as one unit but the bed is held at another"
+      }
+    ],
+    "screen": {
+      "screen": "ward-management-console.tsx",
+      "control": "Release the held bed"
+    }
+  },
+  {
+    "event": "RECORD_TRANSPORT_NEED",
+    "name": "Record whether transport is needed",
+    "group": "The journey",
+    "lane": "record",
+    "nodes": ["booked", "dNoTransport"],
+    "roles": ["ed", "ward", "community"],
+    "does": "Records whether the patient will need help getting to the ward. Answering “no” is what lets them be marked arrived with no journey at all.",
+    "needs": "The record is open. Changing the answer later is deliberate.",
+    "changes": "Sets or replaces the answer.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "The record is closed",
+        "message": "cannot record a transport need for a closed movement (${reason})"
+      }
+    ],
+    "screen": {
+      "screen": "ed-screen.tsx",
+      "control": "No transport needed"
+    }
+  },
+  {
+    "event": "BOOK_TRANSPORT",
+    "name": "Book the transport",
+    "group": "The journey",
+    "lane": "expected",
+    "nodes": ["booked"],
+    "roles": ["ed", "ward", "community"],
+    "does": "Logs a transport booking already made by phone: who is taking them, whether an escort is needed, the CAD number, whether the transport is voluntary or involuntary, and an estimated time.",
+    "needs": "A bed is held or handover is ready, and no job is booked already.",
+    "changes": "Creates the transport job and records who booked it — which decides who may later cancel it.",
+    "reasons": ["TRANSPORT_PROVIDERS", "TRANSPORT_LEGAL_STATUSES"],
+    "refuses": [
+      {
+        "when": "An escort answer left blank",
+        "message": "BOOK_TRANSPORT escortRequired must be answered, and it has no default"
+      },
+      {
+        "when": "No CAD number",
+        "message": "BOOK_TRANSPORT cadNumber must be answered, and it has no default"
+      },
+      {
+        "when": "No estimated time",
+        "message": "BOOK_TRANSPORT estimatedAt must be answered, and it has no default"
+      },
+      {
+        "when": "Already booked",
+        "message": "transport for movement ${id} is already booked"
+      },
+      {
+        "when": "Wrong stage",
+        "message": "cannot book transport at the movement's current stage (${stage})"
+      },
+      {
+        "when": "A ward booking without saying which ward it is",
+        "message": "BOOK_TRANSPORT raised as ward must state its actingUnitId, and it has no default"
+      }
+    ],
+    "screen": {
+      "screen": "ed-screen.tsx (+2 others)",
+      "control": "Transport booked"
+    }
+  },
+  {
+    "event": "HANDOVER_READY",
+    "name": "Confirm handover is ready",
+    "group": "The journey",
+    "lane": "expected",
+    "nodes": ["handover", "dNoLongerSuits"],
+    "roles": ["ed"],
+    "does": "Confirms the patient is ready for the booked crew to collect.",
+    "needs": "A bed is held and either a transport job exists or the ward recorded that transport is not needed.",
+    "changes": "Moves the record to handover ready.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "No transport booked yet",
+        "message": "cannot ready a handover before transport is booked (BOOK_TRANSPORT)"
+      },
+      {
+        "when": "Wrong stage",
+        "message": "cannot ready a handover at the movement's current stage (${stage})"
+      }
+    ],
+    "screen": {
+      "screen": "ed-screen.tsx",
+      "control": "Mark handover ready"
+    }
+  },
+  {
+    "event": "TRANSPORT_ACCEPTED",
+    "name": "The crew accepts the job",
+    "group": "The journey",
+    "lane": "expected",
+    "nodes": ["enroute", "dNoLongerSuits"],
+    "roles": ["officer"],
+    "does": "Records that the transport provider has accepted the collection job.",
+    "needs": "Handover is ready and the job has not already been accepted.",
+    "changes": "Stamps the acceptance.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Already accepted",
+        "message": "transport for movement ${id} was already accepted"
+      }
+    ],
+    "screen": {
+      "screen": "officer-screen.tsx",
+      "control": "Accepted"
+    }
+  },
+  {
+    "event": "TRANSPORT_EN_ROUTE",
+    "name": "The crew sets off",
+    "group": "The journey",
+    "lane": "expected",
+    "nodes": ["enroute"],
+    "roles": ["officer"],
+    "does": "Records that the vehicle has set off towards the patient. Nothing here checks whether the legal authority still stands.",
+    "needs": "The job has been accepted and is not already en route.",
+    "changes": "Stamps the departure.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Already en route",
+        "message": "transport for movement ${id} is already en route"
+      },
+      {
+        "when": "Not accepted yet",
+        "message": "cannot mark transport en route: the movement must be at handover ready with transport accepted"
+      }
+    ],
+    "screen": {
+      "screen": "officer-screen.tsx",
+      "control": "En route"
+    }
+  },
+  {
+    "event": "PATIENT_COLLECTED",
+    "name": "The patient is picked up",
+    "group": "The journey",
+    "lane": "expected",
+    "nodes": ["collected", "dNoLongerSuits"],
+    "roles": ["officer"],
+    "does": "Records that the patient has physically been collected and the journey has begun. After this, cancelling is no longer possible — only stopping.",
+    "needs": "The vehicle is en route, and the legal authority has not been revoked while a bed is still held.",
+    "changes": "Moves the record to moving and stamps the collection.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "The examination was revoked and a bed is still held",
+        "message": "cannot collect a patient for movement ${id}: the examination was revoked and this movement still holds a bed — a person must release the bed or record a repeat examination first"
+      },
+      {
+        "when": "Not en route yet",
+        "message": "cannot collect a patient: the movement must be at handover ready with transport en route"
+      }
+    ],
+    "screen": {
+      "screen": "officer-screen.tsx",
+      "control": "Collected"
+    }
+  },
+  {
+    "event": "PATIENT_ARRIVED",
+    "name": "The ward says they have arrived",
+    "group": "The journey",
+    "lane": "expected",
+    "nodes": ["arrived", "dNoTransport"],
+    "roles": ["officer", "ward"],
+    "does": "The ward confirms the patient is physically here and now occupies the bed. The one step that can never be undone. Where no transport was needed, it can be said straight from a held bed.",
+    "needs": "Either the patient has been collected, or no transport was ever needed and a bed is held. A ward must say which ward it is.",
+    "changes": "Uses up a physically empty bed, flips the held admission to occupied, and closes the movement as arrived.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "No physically empty bed",
+        "message": "no physically empty bed remains at ${unit} (no_bed)"
+      },
+      {
+        "when": "A ward confirming somebody else's patient",
+        "message": "ward ${id} cannot confirm arrival for a patient accepted at ${other}"
+      },
+      {
+        "when": "No transport needed, but no bed held yet",
+        "message": "cannot arrive a patient with no transport needed at the movement's current stage; the bed must be pulled first"
+      }
+    ],
+    "screen": {
+      "screen": "ward-screen.tsx (+2 others)",
+      "control": "Confirm Arrival"
+    }
+  },
+  {
+    "event": "CANCEL_TRANSPORT",
+    "name": "Cancel the transport before collection",
+    "group": "The journey",
+    "lane": "stall",
+    "nodes": ["sCancelTransport", "dCancelLie"],
+    "roles": ["coordinator", "ed", "ward", "community"],
+    "does": "Cancels a booked job before the vehicle has picked the patient up. Only whoever booked it (or the coordinator or department) may do this, and nothing is rebooked for you.",
+    "needs": "A job exists and the patient has not been collected or arrived.",
+    "changes": "Deletes the job entirely. The stage does not move and the bed stays held.",
+    "reasons": ["CANCEL_TRANSPORT_REASONS"],
+    "refuses": [
+      {
+        "when": "The patient has already gone",
+        "message": "cannot cancel transport for movement ${id} — the patient has departed"
+      },
+      {
+        "when": "They have arrived",
+        "message": "cannot cancel transport for movement ${id} — the patient has arrived"
+      },
+      {
+        "when": "A ward cancelling a job it did not book",
+        "message": "CANCEL_TRANSPORT raised as ward acting as ${id} may only cancel transport it booked for movement ${mid}"
+      },
+      {
+        "when": "A reason not on the list",
+        "message": "CANCEL_TRANSPORT reason must be chosen from CANCEL_TRANSPORT_REASONS"
+      },
+      {
+        "when": "A community team cancelling a job it did not book",
+        "message": "may only cancel transport it booked"
+      }
+    ],
+    "screen": {
+      "screen": "shortlist-panel.tsx (+1 other)",
+      "control": "Cancel transport"
+    }
+  },
+  {
+    "event": "STOP_TRANSPORT",
+    "name": "Stop the journey after collection",
+    "group": "The journey",
+    "lane": "diversion",
+    "nodes": ["sStopTransport"],
+    "roles": ["coordinator", "ed"],
+    "does": "Stops a journey with the patient already in the vehicle. Somebody must say where the patient now is. The movement closes and the bed deliberately stays held.",
+    "needs": "The patient has been collected, and has not arrived or already been stopped.",
+    "changes": "Stamps the stop, its reason and the whereabouts; closes the movement; leaves the bed held until it is separately released.",
+    "reasons": ["STOP_TRANSPORT_REASONS", "TRANSPORT_WHEREABOUTS"],
+    "refuses": [
+      {
+        "when": "Not collected yet",
+        "message": "movement ${id}'s transport has not been collected yet; use CANCEL_TRANSPORT instead"
+      },
+      {
+        "when": "Already arrived",
+        "message": "movement ${id}'s patient has already arrived"
+      },
+      {
+        "when": "Whereabouts not on the list",
+        "message": "STOP_TRANSPORT whereabouts must be chosen from TRANSPORT_WHEREABOUTS"
+      }
+    ],
+    "screen": {
+      "screen": "ward-management-console.tsx",
+      "control": "Stop transport"
+    }
+  },
+  {
+    "event": "RECORD_LEFT_DEPARTMENT",
+    "name": "Record that they have left the department",
+    "group": "The journey",
+    "lane": "record",
+    "nodes": ["edLeft"],
+    "roles": ["ed"],
+    "does": "Records the time the patient physically left the emergency department.",
+    "needs": "An outcome has already been recorded, and this has not been recorded before.",
+    "changes": "Stamps the departure time.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "No outcome recorded yet",
+        "message": "movement ${id} has no ed outcome recorded; record an outcome before marking left department"
+      }
+    ],
+    "screen": {
+      "screen": "ed-screen.tsx",
+      "control": "Left the department"
+    }
+  },
+  {
+    "event": "RECORD_EXAMINATION",
+    "name": "Record an examination outcome",
+    "group": "Legal status and examinations",
+    "lane": "breach",
+    "nodes": ["dRevoked", "rkExam", "sAbandoned"],
+    "roles": ["ed"],
+    "does": "Records what an examination found. An inpatient order or a further examination just notes the fact. A community order or a revocation ends the bed search — but only if transport is not already committed. Once it is, the bed is deliberately NOT released: a flag is raised and a person must act.",
+    "needs": "The record is open. A second examination is only allowed if the last one ordered a further examination.",
+    "changes": "An inpatient order or further examination records the outcome only. A community order or revocation before committed transport releases the bed, cancels transport and closes the movement; after commitment it records the outcome and sets a blocker for a coordinator to resolve.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Already conclusively examined",
+        "message": "movement ${id} was already examined"
+      },
+      {
+        "when": "The record is closed",
+        "message": "cannot record an examination for a closed movement (${reason})"
+      }
+    ],
+    "screen": {
+      "screen": "ed-screen.tsx",
+      "control": "Confirm examination outcome"
+    }
+  },
+  {
+    "event": "CHANGE_LEGAL_STATUS",
+    "name": "Change the legal status",
+    "group": "Legal status and examinations",
+    "lane": "record",
+    "nodes": ["occupied", "asked", "rkLegalStatus"],
+    "roles": ["coordinator", "ed"],
+    "does": "Changes the patient's status under the Mental Health Act, recording who changed it and why. It never reacts on its own — even if this makes an already-accepted bed unlawful, that only surfaces for a human to look at.",
+    "needs": "The record is open.",
+    "changes": "Sets the status and logs the change.",
+    "reasons": ["LEGAL_STATUS_CHANGE_REASONS"],
+    "refuses": [
+      {
+        "when": "A reason not on the list",
+        "message": "CHANGE_LEGAL_STATUS reason must be chosen from LEGAL_STATUS_CHANGE_REASONS"
+      },
+      {
+        "when": "The record is closed",
+        "message": "cannot change legal status for a closed movement"
+      }
+    ],
+    "screen": {
+      "screen": "ed-screen.tsx (+1 other)",
+      "control": "Record legal status change"
+    }
+  },
+  {
+    "event": "RECORD_LEGAL_FORM_RECEIVED",
+    "name": "Mark a form as physically received",
+    "group": "Legal status and examinations",
+    "lane": "record",
+    "nodes": ["occupied", "rkForm"],
+    "roles": ["ed"],
+    "does": "Marks that a patient's legal form has physically arrived. Any of the nine forms with a legal clock (1A, 3A, 3C, 3D, 5A, 5B, 6A, 6B, 6C) can be marked, not only Form 1A (owner ruling D-16).",
+    "needs": "The record carries one of those nine forms and has not been marked already.",
+    "changes": "Stamps the receipt.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Already marked",
+        "message": "legal form for movement ${id} was already marked as received"
+      },
+      {
+        "when": "Not one of the nine receivable forms",
+        "message": "movement ${id} does not carry a receivable legal form (legal form ${code}), so a legal form receipt cannot be recorded against it"
+      },
+      {
+        "when": "The record is closed",
+        "message": "cannot mark legal form received for a closed movement (${reason})"
+      }
+    ],
+    "screen": {
+      "screen": "ed-screen.tsx (+1 other)",
+      "control": "Mark Form 1A received (the legal forms screen marks the other eight)"
+    }
+  },
+  {
+    "event": "CORRECT_LEGAL_FORM_RECEIPT",
+    "name": "Undo a form receipt",
+    "group": "Legal status and examinations",
+    "lane": "record",
+    "nodes": ["occupied", "rkForm"],
+    "roles": ["ed"],
+    "does": "Undoes a receipt logged by mistake, keeping a record that a correction happened and why.",
+    "needs": "There is a receipt to correct.",
+    "changes": "Clears the receipt and appends the correction.",
+    "reasons": ["LEGAL_FORM_RECEIPT_CORRECTION_REASONS"],
+    "refuses": [
+      {
+        "when": "Nothing to correct",
+        "message": "movement ${id} has no recorded legal form receipt to correct"
+      },
+      {
+        "when": "The record is closed",
+        "message": "cannot correct a legal form receipt for a closed movement"
+      }
+    ],
+    "screen": {
+      "screen": "ed-screen.tsx",
+      "control": "Save correction"
+    }
+  },
+  {
+    "event": "RECORD_LEGAL_FORM_EXPIRY",
+    "name": "Record or extend a form's expiry",
+    "group": "Legal status and examinations",
+    "lane": "record",
+    "nodes": ["occupied", "rkForm", "rkExpiryShut"],
+    "roles": ["ed", "coordinator"],
+    "does": "Records the expiry written on the form, or an extension written on a fresh one. Every date here is typed by a clinician — nothing is computed and no Act section numbers appear anywhere.",
+    "needs": "The record carries a legal form. An extension must be strictly later than the expiry already there.",
+    "changes": "Sets the expiry and appends it to the history.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "No form on the record",
+        "message": "There is no legal form on this record to add an expiry to."
+      },
+      {
+        "when": "Not a real date",
+        "message": "Enter the expiry written on the form."
+      },
+      {
+        "when": "An extension that is not later",
+        "message": "An extension's new expiry must be later than the expiry already recorded."
+      }
+    ],
+    "screen": {
+      "screen": "ed-screen.tsx",
+      "control": "Save expiry"
+    }
+  },
+  {
+    "event": "RECORD_MOVEMENT_GENDER",
+    "name": "Correct the recorded gender",
+    "group": "Legal status and examinations",
+    "lane": "record",
+    "nodes": ["asked", "pulled"],
+    "roles": ["ed", "coordinator"],
+    "does": "Corrects the gender recorded on an open record and, if a ward already holds or has accepted the bed, tells the coordinator to check the placement still suits.",
+    "needs": "The record is open and the new value differs from what is there.",
+    "changes": "Sets the gender, logs the change, and raises a notice where a bed is involved.",
+    "reasons": ["REFERRAL_GENDERS"],
+    "refuses": [
+      {
+        "when": "Unchanged",
+        "message": "movement ${id} is already recorded as gender ${gender}"
+      },
+      {
+        "when": "The record is closed",
+        "message": "cannot record gender for a closed movement"
+      }
+    ],
+    "screen": {
+      "screen": "ed-screen.tsx (+1 other)",
+      "control": "Record gender"
+    }
+  },
+  {
+    "event": "RECORD_LEAVING",
+    "name": "Record that the patient has left",
+    "group": "On the ward",
+    "lane": "expected",
+    "nodes": ["personLeaves", "bedReleased", "end0", "end1", "end2", "end3", "end4", "end5", "end6", "end7"],
+    "roles": ["ward"],
+    "does": "Records that an admitted patient has physically left the ward, ending their stay. One of the eight destinations frees no bed statewide at all.",
+    "needs": "They are currently occupying a bed and not in active transit. Only the ward they are on may record it; an involuntary patient cannot leave to the community or against advice.",
+    "changes": "Ends the admission and raises the ward's empty and allocatable counts by one (only the timestamps move if this person's release had already been completed), gives back a locked bed, adjusts the sex mix, ends any leave bed, and completes this person's pending bed release.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Already left",
+        "message": "admission ${id} has already left"
+      },
+      {
+        "when": "Not occupying a bed",
+        "message": "admission ${id} is ${state}, and only somebody occupying a bed can leave one"
+      },
+      {
+        "when": "Another ward's patient",
+        "message": "RECORD_LEAVING was raised acting as unit ${id} but admission ${aid} belongs to unit ${other}"
+      }
+    ],
+    "screen": {
+      "screen": "ward-board.tsx (+1 other)",
+      "control": "Record that they have left"
+    }
+  },
+  {
+    "event": "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
+    "name": "Record that they are away at an ED",
+    "group": "On the ward",
+    "lane": "diversion",
+    "nodes": ["dAway"],
+    "roles": ["ward"],
+    "does": "Notes that an admitted patient has gone to an emergency department for a medical problem, while the ward keeps their bed.",
+    "needs": "They are occupying a bed and are not already recorded away.",
+    "changes": "Stamps the absence. No bed figure moves at all.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Already recorded away",
+        "message": "admission ${id} is already recorded as away at an emergency department"
+      }
+    ],
+    "screen": {
+      "screen": "ward-board.tsx",
+      "control": "Record that they have gone to an emergency department"
+    }
+  },
+  {
+    "event": "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
+    "name": "Record that they are back",
+    "group": "On the ward",
+    "lane": "diversion",
+    "nodes": ["dAway"],
+    "roles": ["ward"],
+    "does": "Notes that a patient who went to an emergency department is back on the ward, in the bed that was kept for them.",
+    "needs": "They are currently recorded as away.",
+    "changes": "Clears the absence.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Not recorded away",
+        "message": "admission ${id} is not recorded as away at an emergency department"
+      }
+    ],
+    "screen": {
+      "screen": "ward-board.tsx",
+      "control": "Record that they are back on the ward"
+    }
+  },
+  {
+    "event": "RECORD_LEAVE_BED",
+    "name": "Record a bed as on leave",
+    "group": "On the ward",
+    "lane": "diversion",
+    "nodes": ["dAway"],
+    "roles": ["ward"],
+    "does": "Records that a bed is held for somebody on approved leave, with an expected return. It does not go back into circulation while they are away.",
+    "needs": "The ward may only record it against itself.",
+    "changes": "Creates the leave record.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Recording against another ward",
+        "message": "RECORD_LEAVE_BED was raised acting as unit ${id} but targets unit ${other}"
+      }
+    ],
+    "screen": {
+      "screen": "ward-screen.tsx",
+      "control": "Record leave bed (visible, but currently returns before dispatch)"
+    }
+  },
+  {
+    "event": "END_LEAVE_BED",
+    "name": "End a bed's leave",
+    "group": "On the ward",
+    "lane": "diversion",
+    "nodes": ["dAway"],
+    "roles": ["ward"],
+    "does": "Ends a bed's recorded leave period.",
+    "needs": "The leave record exists and belongs to this ward.",
+    "changes": "Removes the leave record.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Another ward's leave record",
+        "message": "END_LEAVE_BED was raised acting as unit ${id} but leave bed ${lid} belongs to unit ${other}"
+      }
+    ],
+    "screen": {
+      "screen": "ward-screen.tsx (+1 other)",
+      "control": "Ended"
+    }
+  },
+  {
+    "event": "FLAG_BED_RELEASE",
+    "name": "Flag a bed as coming free",
+    "group": "The bed coming free",
+    "lane": "expected",
+    "nodes": ["bedReleased", "ready"],
+    "roles": ["ward"],
+    "does": "A ward flags an upcoming discharge for a named occupying admission, saying when and what it is waiting on.",
+    "needs": "The ward may only flag a stay on its own ward, with no other live release for that stay.",
+    "changes": "Creates the bed release at “expected”.",
+    "reasons": ["BED_RELEASE_WAITING_ON", "BED_RELEASE_BLOCKERS"],
+    "refuses": [
+      {
+        "when": "A blocker not on the list",
+        "message": "FLAG_BED_RELEASE blocker must be chosen from BED_RELEASE_BLOCKERS"
+      },
+      {
+        "when": "Flagging against another ward",
+        "message": "FLAG_BED_RELEASE was raised acting as unit ${id} but targets unit ${other}"
+      }
+    ],
+    "screen": {
+      "screen": "ward-screen.tsx",
+      "control": "Flag bed coming free"
+    }
+  },
+  {
+    "event": "CONFIRM_BED_RELEASE",
+    "name": "Confirm the discharge is going ahead",
+    "group": "The bed coming free",
+    "lane": "expected",
+    "nodes": ["bedReleased", "ready"],
+    "roles": ["ward"],
+    "does": "Confirms an expected discharge is now decided. It does not free the bed — that is a separate step.",
+    "needs": "The release is currently expected.",
+    "changes": "Moves it to confirmed and clears what it was waiting on. A stuck flag survives.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Not expected",
+        "message": "cannot move release ${id} from ${state} to confirmed"
+      },
+      {
+        "when": "Acting as a ward the release does not belong to",
+        "message": "raised acting as one unit but the release belongs to another"
+      }
+    ],
+    "screen": {
+      "screen": "ward-screen.tsx",
+      "control": "Confirm"
+    }
+  },
+  {
+    "event": "REVERT_BED_RELEASE",
+    "name": "Put a confirmed discharge back to expected",
+    "group": "The bed coming free",
+    "lane": "stall",
+    "nodes": ["bedReleased", "bedStuck", "ready"],
+    "roles": ["ward"],
+    "does": "Reverses a confirmed discharge decision, restating what it is now waiting on. The only step of the three that goes backwards.",
+    "needs": "The release is currently confirmed.",
+    "changes": "Moves it back to expected with a stated wait.",
+    "reasons": ["BED_RELEASE_WAITING_ON"],
+    "refuses": [
+      {
+        "when": "Not confirmed",
+        "message": "cannot move release ${id} from ${state} to expected"
+      },
+      {
+        "when": "A wait not on the list",
+        "message": "REVERT_BED_RELEASE waitingOn must be chosen from BED_RELEASE_WAITING_ON"
+      },
+      {
+        "when": "Acting as a ward the release does not belong to",
+        "message": "raised acting as one unit but the release belongs to another"
+      }
+    ],
+    "screen": {
+      "screen": "ward-screen.tsx",
+      "control": "Confirm reversal"
+    }
+  },
+  {
+    "event": "BLOCK_BED_RELEASE",
+    "name": "Flag a discharge as stuck",
+    "group": "The bed coming free",
+    "lane": "stall",
+    "nodes": ["bedStuck"],
+    "roles": ["ward"],
+    "does": "Flags that a discharge — expected or confirmed — is currently stuck, and says why. Being stuck is a flag, not a stage.",
+    "needs": "The bed has not already been released.",
+    "changes": "Sets the blocker and who set it. The stage does not move.",
+    "reasons": ["BED_RELEASE_BLOCKERS"],
+    "refuses": [
+      {
+        "when": "Already released",
+        "message": "cannot block release ${id} because it is already released"
+      },
+      {
+        "when": "No blocker given",
+        "message": "BLOCK_BED_RELEASE requires a blocker chosen from BED_RELEASE_BLOCKERS"
+      },
+      {
+        "when": "Acting as a ward the release does not belong to",
+        "message": "raised acting as one unit but the release belongs to another"
+      }
+    ],
+    "screen": {
+      "screen": "ward-screen.tsx (+1 other)",
+      "control": "Confirm blocked"
+    }
+  },
+  {
+    "event": "CLEAR_BED_RELEASE_BLOCK",
+    "name": "Clear the stuck flag",
+    "group": "The bed coming free",
+    "lane": "expected",
+    "nodes": ["bedStuck"],
+    "roles": ["ward"],
+    "does": "Clears the stuck flag once whatever was holding the discharge up has been resolved.",
+    "needs": "There is a flag to clear.",
+    "changes": "Clears it.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Nothing to clear",
+        "message": "release ${id} carries no blocked flag to clear"
+      },
+      {
+        "when": "Acting as a ward the release does not belong to",
+        "message": "raised acting as one unit but the release belongs to another"
+      }
+    ],
+    "screen": {
+      "screen": "ward-screen.tsx",
+      "control": "No longer blocked"
+    }
+  },
+  {
+    "event": "SET_BED_PREPARATION",
+    "name": "Mark a bed as being made ready",
+    "group": "The bed coming free",
+    "lane": "record",
+    "nodes": ["bedReleased", "rkPrep"],
+    "roles": ["ward"],
+    "does": "Marks a bed as being cleaned or awaiting repair. This is information only — it never stops the bed being counted as available or offered to somebody.",
+    "needs": "The ward may only set it on its own release.",
+    "changes": "Sets the note. No capacity figure moves.",
+    "reasons": ["BED_PREPARATION_NOTES"],
+    "refuses": [
+      {
+        "when": "A note not on the list",
+        "message": "SET_BED_PREPARATION note must be chosen from BED_PREPARATION_NOTES"
+      },
+      {
+        "when": "Acting as a ward the release does not belong to",
+        "message": "raised acting as one unit but the release belongs to another"
+      }
+    ],
+    "screen": {
+      "screen": "ward-screen.tsx",
+      "control": "Confirm being made ready"
+    }
+  },
+  {
+    "event": "RELEASE_BED",
+    "name": "Release the bed",
+    "group": "The bed coming free",
+    "lane": "expected",
+    "nodes": ["bedReleased"],
+    "roles": ["ward"],
+    "does": "Still in the engine, but no longer how a bed comes free. Since 26 September a release completes when the ward records its named patient leaving; this is refused while that person is still in the bed, and no screen sends it.",
+    "needs": "The release has not already been discharged, and the patient it names has already left.",
+    "changes": "Marks it discharged, clears every flag, and raises both the allocatable and the empty count by one.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "No such release",
+        "message": "no bed release found for id ${releaseId}"
+      },
+      {
+        "when": "Its patient is still in the bed",
+        "message": "release ${id} completes when admission ${admissionId} is recorded as having left (RECORD_LEAVING); they are still ${state}"
+      },
+      {
+        "when": "Already released",
+        "message": "release ${id} is already discharged and cannot be discharged again"
+      },
+      {
+        "when": "Acting as a ward the release does not belong to",
+        "message": "raised acting as one unit but the release belongs to another"
+      }
+    ],
+    "screen": {
+      "screen": "NONE",
+      "control": "Nothing can trigger this"
+    }
+  },
+  {
+    "event": "CONFIRM_CAPACITY",
+    "name": "Restate how many beds a ward has",
+    "group": "The ward's own numbers",
+    "lane": "record",
+    "nodes": ["asked"],
+    "roles": ["ward"],
+    "does": "A ward restates how many beds it can currently allocate. This does move a real bed count.",
+    "needs": "The ward may only restate its own, with a current revision and a nonnegative whole number no greater than its bed count.",
+    "changes": "Sets the allocatable figure, marks it as ward-sourced, and stamps the time.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Restating another ward's",
+        "message": "CONFIRM_CAPACITY was raised acting as unit ${id} but targets unit ${other}"
+      },
+      {
+        "when": "Claiming more beds than the ward has",
+        "message": "says a unit can allocate more beds than it has"
+      }
+    ],
+    "screen": {
+      "screen": "ward-screen.tsx (+1 other)",
+      "control": "Confirm capacity"
+    }
+  },
+  {
+    "event": "RECORD_WARD_INTAKE_CONSTRAINTS",
+    "name": "Record what is restricting a ward's intake",
+    "group": "The ward's own numbers",
+    "lane": "record",
+    "nodes": ["asked"],
+    "roles": ["ward"],
+    "does": "A ward records the restrictions it is currently operating under — staffing, infection control, a closed bay, and so on.",
+    "needs": "The ward may only record its own.",
+    "changes": "Replaces its constraint list.",
+    "reasons": ["WARD_INTAKE_CONSTRAINTS"],
+    "refuses": [
+      {
+        "when": "A code not on the list",
+        "message": "RECORD_WARD_INTAKE_CONSTRAINTS codes must all be chosen from WARD_INTAKE_CONSTRAINTS"
+      }
+    ],
+    "screen": {
+      "screen": "ward-screen.tsx",
+      "control": "Save answer"
+    }
+  },
+  {
+    "event": "REQUEST_CAPACITY_REFRESH",
+    "name": "Ask a ward to refresh its numbers",
+    "group": "The ward's own numbers",
+    "lane": "record",
+    "nodes": ["asked"],
+    "roles": ["coordinator"],
+    "does": "Records that somebody asked a ward to refresh its bed numbers. It changes no bed count itself.",
+    "needs": "The ward exists.",
+    "changes": "Logs the request.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "No such ward",
+        "message": "no unit found for id ${unitId}"
+      }
+    ],
+    "screen": {
+      "screen": "capacity-screen.tsx",
+      "control": "Request update"
+    }
+  },
+  {
+    "event": "CHANGE_URGENCY",
+    "name": "Change how urgent it is",
+    "group": "Urgency and blockers",
+    "lane": "record",
+    "nodes": ["asked", "rkUrgent"],
+    "roles": ["coordinator", "ed"],
+    "does": "Changes the urgency, recording who changed it and why. It triggers no re-sorting or re-referral on its own.",
+    "needs": "The record is open.",
+    "changes": "Sets the urgency and logs the change.",
+    "reasons": ["URGENCY_CHANGE_REASONS", "URGENCY_LEVELS"],
+    "refuses": [
+      {
+        "when": "A reason not on the list",
+        "message": "CHANGE_URGENCY reason must be chosen from URGENCY_CHANGE_REASONS"
+      }
+    ],
+    "screen": {
+      "screen": "ed-screen.tsx (+1 other)",
+      "control": "Record urgency change"
+    }
+  },
+  {
+    "event": "FLAG_MOVEMENT_URGENT",
+    "name": "Flag it urgent",
+    "group": "Urgency and blockers",
+    "lane": "record",
+    "nodes": ["asked", "pulled", "rkUrgent", "rkQueue"],
+    "roles": ["coordinator", "ed"],
+    "does": "Marks the patient urgent so they sit above every urgency level in the coordinator's queue, recording who and why.",
+    "needs": "The record is open and not already flagged.",
+    "changes": "Sets the flag and opens a history entry.",
+    "reasons": ["URGENT_MARK_REASONS"],
+    "refuses": [
+      {
+        "when": "Already flagged",
+        "message": "movement ${id} is already flagged urgent"
+      },
+      {
+        "when": "A reason not on the list",
+        "message": "FLAG_MOVEMENT_URGENT reason must be chosen from URGENT_MARK_REASONS"
+      }
+    ],
+    "screen": {
+      "screen": "movement-drawer.tsx (+1 other)",
+      "control": "Flag this patient as urgent"
+    }
+  },
+  {
+    "event": "CLEAR_MOVEMENT_URGENT_FLAG",
+    "name": "Clear the urgent flag",
+    "group": "Urgency and blockers",
+    "lane": "record",
+    "nodes": ["asked", "pulled", "rkUrgent"],
+    "roles": ["coordinator", "ed"],
+    "does": "Removes the urgent flag once it is no longer needed.",
+    "needs": "It is currently flagged. Deliberately allowed even on a closed record.",
+    "changes": "Clears the flag and closes the history entry.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Not flagged",
+        "message": "movement ${id} is not flagged urgent"
+      }
+    ],
+    "screen": {
+      "screen": "movement-drawer.tsx (+1 other)",
+      "control": "Remove the urgent flag"
+    }
+  },
+  {
+    "event": "RECORD_MOVEMENT_BLOCKER",
+    "name": "Say what is holding this up",
+    "group": "Urgency and blockers",
+    "lane": "record",
+    "nodes": ["asked", "pulled", "handover"],
+    "roles": ["ed", "community", "ward", "coordinator", "officer"],
+    "does": "Free text describing what is actually holding the patient up. The only free-text field of its kind in the engine.",
+    "needs": "The record is open and the text is not blank.",
+    "changes": "Replaces the blocker text.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "A blank",
+        "message": "RECORD_MOVEMENT_BLOCKER blocker must say something — a blank is not a statement"
+      },
+      {
+        "when": "Text that differs from “nothing is blocking” only in capitals",
+        "message": "“${blocker}” differs from “${nearMiss}” only in case, and would be stored as an active blocker — use CLEAR_MOVEMENT_BLOCKER to say nothing is holding this up"
+      }
+    ],
+    "screen": {
+      "screen": "ward-management-console.tsx",
+      "control": "Record it"
+    }
+  },
+  {
+    "event": "CLEAR_MOVEMENT_BLOCKER",
+    "name": "Say nothing is holding it up",
+    "group": "Urgency and blockers",
+    "lane": "record",
+    "nodes": ["asked", "pulled", "handover"],
+    "roles": ["ed", "community", "ward", "coordinator", "officer"],
+    "does": "Records that nothing is holding the patient up any more — which is a different statement from nobody ever having recorded one.",
+    "needs": "The record is open and does not already say so.",
+    "changes": "Writes “None — cleared”.",
+    "reasons": ["BLOCKERS_MEANING_NOTHING_IS_BLOCKING"],
+    "refuses": [
+      {
+        "when": "It already says so",
+        "message": "movement ${id} already records that nothing is holding it up"
+      }
+    ],
+    "screen": {
+      "screen": "ward-management-console.tsx",
+      "control": "Clear — nothing is holding this up"
+    }
+  },
+  {
+    "event": "MARK_NOTICE_READ",
+    "name": "Mark a notice read",
+    "group": "The coordinator's inbox",
+    "lane": "record",
+    "nodes": ["rkNotice"],
+    "roles": ["coordinator", "ed", "ward", "officer", "community"],
+    "does": "Marks a notice as read by the person or team it was actually addressed to.",
+    "needs": "You are the addressee, exactly, and it is not already marked.",
+    "changes": "Stamps who read it and when.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Not addressed to you",
+        "message": "MARK_NOTICE_READ role/actingPlaceId must match notice ${id}'s own addressee"
+      },
+      {
+        "when": "Already read",
+        "message": "notice ${id} is already marked read"
+      }
+    ],
+    "screen": {
+      "screen": "ward-bar.tsx (+2 others)",
+      "control": "Mark as read"
+    }
+  },
+  {
+    "event": "ACKNOWLEDGE_INBOX_ITEM",
+    "name": "Acknowledge an inbox row",
+    "group": "The coordinator's inbox",
+    "lane": "record",
+    "nodes": ["rkInbox"],
+    "roles": ["coordinator"],
+    "does": "Records that the coordinator has seen a row and is on top of it, without removing or hiding it.",
+    "needs": "The row names a real category and a real record.",
+    "changes": "Logs the acknowledgement. Touches nothing else.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "A blank id",
+        "message": "ACKNOWLEDGE_INBOX_ITEM inboxItemId must name a row — a blank names nothing"
+      }
+    ],
+    "screen": {
+      "screen": "alerts-screen.tsx (+1 other)",
+      "control": "Acknowledge Alert"
+    }
+  },
+  {
+    "event": "COMPLETE_INBOX_ITEM",
+    "name": "Tick off an inbox row",
+    "group": "The coordinator's inbox",
+    "lane": "record",
+    "nodes": ["rkInbox"],
+    "roles": ["coordinator"],
+    "does": "Ticks off a row that represents a task somebody must do. A row stating a live fact can never be ticked — it leaves the list when it stops being true.",
+    "needs": "Real inbox rows are live facts and cannot be completed. The current guard accepts a fabricated commitment-prefixed ID without checking for a matching row.",
+    "changes": "Logs completion for an accepted ID, even when no inbox row exists.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "It states a live fact",
+        "message": "inbox row ${id} states a live fact, not a commitment — a fact leaves this list when it stops being true, never because it was ticked off"
+      },
+      {
+        "when": "Already complete",
+        "message": "inbox row ${id} is already complete"
+      }
+    ],
+    "screen": {
+      "screen": "ward-tasks-drawer.tsx",
+      "control": "Mark done — built, but the list it sits in is always empty"
+    }
+  },
+  {
+    "event": "REOPEN_INBOX_ITEM",
+    "name": "Reopen a completed row",
+    "group": "The coordinator's inbox",
+    "lane": "record",
+    "nodes": ["rkInbox"],
+    "roles": ["coordinator"],
+    "does": "Undoes a completed row, while keeping the fact that it was once completed.",
+    "needs": "It is currently complete.",
+    "changes": "Logs the reopening.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Not complete",
+        "message": "inbox row ${id} is not complete, so there is nothing to reopen"
+      }
+    ],
+    "screen": {
+      "screen": "ward-tasks-drawer.tsx",
+      "control": "Reopen — built, but the list it sits in is always empty"
+    }
+  },
+  {
+    "event": "ADVANCE_CLOCK",
+    "name": "Move the demonstration clock",
+    "group": "Running the demonstration",
+    "lane": "record",
+    "nodes": ["rkClock"],
+    "roles": ["demo"],
+    "does": "Fast-forwards the demonstration clock. It is the only thing that moves time in this prototype — nothing here runs in real time.",
+    "needs": "Nothing.",
+    "changes": "Moves the clock offset.",
+    "reasons": [],
+    "refuses": [],
+    "screen": {
+      "screen": "ward-demo-controls.tsx (+1 other)",
+      "control": "+1 hour"
+    }
+  },
+  {
+    "event": "RESET_SCENARIO",
+    "name": "Reset the board",
+    "group": "Running the demonstration",
+    "lane": "record",
+    "nodes": [],
+    "roles": ["demo"],
+    "does": "Resets everything back to the standard starting scenario, keeping the clock where it is.",
+    "needs": "Nothing.",
+    "changes": "Replaces the whole state.",
+    "reasons": [],
+    "refuses": [],
+    "screen": {
+      "screen": "ward-demo-controls.tsx (+2 others)",
+      "control": "Reset scenario"
+    }
+  },
+  {
+    "event": "SET_SCENARIO",
+    "name": "Switch to a different simulated night",
+    "group": "Running the demonstration",
+    "lane": "record",
+    "nodes": [],
+    "roles": ["demo"],
+    "does": "Switches to a different pre-built simulated night, resetting every patient, ward and record.",
+    "needs": "A recognised scenario.",
+    "changes": "Replaces the whole state.",
+    "reasons": ["WARD_SCENARIOS"],
+    "refuses": [
+      {
+        "when": "Not a real scenario",
+        "message": "SET_SCENARIO scenario must be chosen from WARD_SCENARIOS"
+      }
+    ],
+    "screen": {
+      "screen": "ward-demo-controls.tsx",
+      "control": "The scenario's own name"
+    }
+  },
+  {
+    "event": "SET_CONFIGURATION",
+    "name": "Change the coordinator's settings",
+    "group": "Running the demonstration",
+    "lane": "record",
+    "nodes": ["rkSettings"],
+    "roles": ["coordinator"],
+    "does": "Saves the tunable settings the rest of the system reads — access-time targets, the parallel referral cap, how long a bed hold lasts.",
+    "needs": "The settings pass validation.",
+    "changes": "Replaces the configuration.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Invalid settings",
+        "message": "(the validator supplies its own sentence naming the offending field)"
+      }
+    ],
+    "screen": {
+      "screen": "settings-screen.tsx",
+      "control": "Save Configuration"
+    }
+  },
+  {
+    "event": "RECORD_PATIENT_DISCHARGE",
+    "name": "Record a discharge (handled earlier)",
+    "group": "Not wired up here",
+    "lane": "record",
+    "nodes": ["rkDischarge", "personLeaves"],
+    "roles": ["ward"],
+    "does": "Reaches a branch that does nothing. The real handling runs earlier, before this point is ever reached.",
+    "needs": "Unreachable in normal use.",
+    "changes": "Nothing.",
+    "reasons": [],
+    "refuses": [],
+    "screen": {
+      "screen": "NONE",
+      "control": "Nothing can trigger this"
+    }
+  },
+  {
+    "event": "OPEN_DISCHARGE_RECORD",
+    "name": "Open a discharge record (handled earlier)",
+    "group": "Not wired up here",
+    "lane": "record",
+    "nodes": ["rkDischarge"],
+    "roles": ["coordinator", "ward"],
+    "does": "Reaches a branch that does nothing. The real handling runs earlier.",
+    "needs": "Unreachable in normal use.",
+    "changes": "Nothing.",
+    "reasons": [],
+    "refuses": [],
+    "screen": {
+      "screen": "discharge-board.tsx (+1 other)",
+      "control": "A patient's row in the discharge list"
+    }
+  },
+  {
+    "event": "REVIEW_AUDIT_EVENT",
+    "name": "Review an audit entry (handled earlier)",
+    "group": "Not wired up here",
+    "lane": "record",
+    "nodes": [],
+    "roles": ["coordinator"],
+    "does": "Reaches a branch that does nothing. The real handling runs earlier.",
+    "needs": "Unreachable in normal use.",
+    "changes": "Nothing.",
+    "reasons": [],
+    "refuses": [],
+    "screen": {
+      "screen": "governance-registers.tsx",
+      "control": "Mark reviewed"
+    }
+  },
+  {
+    "event": "RECORD_DIVERSION",
+    "name": "Divert a journey already under way",
+    "group": "The journey",
+    "lane": "diversion",
+    "nodes": ["rkDiversion"],
+    "roles": ["officer", "coordinator"],
+    "does": "Records that a patient already in the vehicle was taken somewhere other than the ward expecting them, with a reason and the place they went.",
+    "needs": "A transport job that has been collected, on a movement that is open, not arrived, not already stopped or cancelled, and not already diverted.",
+    "changes": "Marks the movement diverted and records where the patient is. The held bed is NOT given back by this act.",
+    "reasons": ["DIVERSION_REASONS"],
+    "refuses": [
+      {
+        "when": "Before the patient is in the vehicle",
+        "message": "transport has not been collected yet; diversion is only for a journey already under way"
+      },
+      {
+        "when": "They have already arrived",
+        "message": "movement ${id}'s patient has already arrived"
+      },
+      {
+        "when": "The journey was already stopped or cancelled",
+        "message": "movement ${id}'s transport was already stopped or cancelled"
+      },
+      {
+        "when": "It was diverted once already",
+        "message": "movement ${id} was already diverted"
+      },
+      {
+        "when": "A reason not on the list",
+        "message": "RECORD_DIVERSION reason must be chosen from DIVERSION_REASONS"
+      }
+    ],
+    "screen": {
+      "screen": "officer-screen.tsx (+1 other)",
+      "control": "Divert"
+    }
+  },
+  {
+    "event": "RELEASE_DIVERTED_BED",
+    "name": "Give back the bed a diverted patient was holding",
+    "group": "Holding the bed",
+    "lane": "record",
+    "nodes": ["rkDiversion"],
+    "roles": ["coordinator", "ward", "ed"],
+    "does": "Releases the bed still held for a movement that was diverted. Separate from the diversion itself, deliberately: diverting somebody does not decide what happens to their bed.",
+    "needs": "A movement that really was diverted, and that still holds a bed.",
+    "changes": "Returns the bed to the ward's figures.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "The movement was never diverted",
+        "message": "movement ${id} was not diverted, so there is no diverted bed to release this way"
+      },
+      {
+        "when": "No bed is held",
+        "message": "movement ${id} holds no bed — it may already have been released"
+      },
+      {
+        "when": "A ward acting on another ward's bed",
+        "message": "RELEASE_DIVERTED_BED was raised acting as unit ${id} but movement ${mid}'s bed is held elsewhere"
+      }
+    ],
+    "screen": {
+      "screen": "ed-screen.tsx (+2 others)",
+      "control": "Release the diverted bed"
+    }
+  },
+  {
+    "event": "SET_ARRIVAL_DETAILS",
+    "name": "Record how and when they are expected",
+    "group": "The journey",
+    "lane": "record",
+    "nodes": ["edExpected"],
+    "roles": ["coordinator", "ed", "ward", "community"],
+    "does": "Records the way the patient is travelling, any tracking number, and the time they are expected.",
+    "needs": "A movement.",
+    "changes": "Stores those three details on the movement and clears any pull-expiry timer. Moves no stage and reserves nothing.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "No such movement",
+        "message": "no movement found for id ${id}"
+      }
+    ],
+    "screen": {
+      "screen": "arrival-time-modal.tsx",
+      "control": "Set arrival details"
+    }
+  },
+  {
+    "event": "EVALUATE_ARRIVAL_LATENESS",
+    "name": "Work out whether an expected arrival is late",
+    "group": "The journey",
+    "lane": "record",
+    "nodes": ["edExpected"],
+    "roles": ["coordinator", "ed", "ward"],
+    "does": "Compares the expected arrival time against the clock and records whether it has passed.",
+    "needs": "A movement, and a role allowed to ask.",
+    "changes": "When late, stamps the movement and sends notices to the emergency department and ward. When on time, leaves it unchanged. No journey stage moves.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "A role not permitted to ask",
+        "message": "${type} requires role ${roles}"
+      }
+    ],
+    "screen": {
+      "screen": "NONE",
+      "control": "Nothing can trigger this"
+    }
+  },
+  {
+    "event": "SET_STEP_DOWN_CANDIDATE",
+    "name": "Mark somebody as a step-down candidate",
+    "group": "On the ward",
+    "lane": "record",
+    "nodes": ["rkDischargePlan"],
+    "roles": ["ward", "coordinator"],
+    "does": "Records that this admission could move to a lower level of care.",
+    "needs": "An admission.",
+    "changes": "Sets the flag, and nothing else. No bed figure moves.",
+    "reasons": [],
+    "refuses": [],
+    "screen": {
+      "screen": "ward-board.tsx",
+      "control": "Step-down candidate"
+    }
+  },
+  {
+    "event": "SET_DISCHARGE_BARRIER",
+    "name": "Record what is holding a discharge up",
+    "group": "On the ward",
+    "lane": "record",
+    "nodes": ["rkDischargePlan"],
+    "roles": ["ward", "coordinator"],
+    "does": "Records the single thing in the way of this discharge, or that nothing is.",
+    "needs": "A known admission on the acting ward; a substantive barrier requires a stay of at least seven days.",
+    "changes": "Sets that one value. It is a note, not a gate — nothing reads it to decide anything.",
+    "reasons": [],
+    "refuses": [],
+    "screen": {
+      "screen": "ward-board.tsx",
+      "control": "Discharge barrier"
+    }
+  },
+  {
+    "event": "UPDATE_EXPECTED_DISCHARGE",
+    "name": "Set or move the expected discharge date",
+    "group": "On the ward",
+    "lane": "record",
+    "nodes": ["rkDischargePlan"],
+    "roles": ["ward", "coordinator"],
+    "does": "Sets when this admission is expected to leave. Moving a date already set counts as one more move.",
+    "needs": "An admission that has not already left. A ward can only set it for its own patients.",
+    "changes": "Sets the expected discharge time, counts the move, and stamps when it was set. It names \"Ward manager\" as the setter only when a ward set it; a coordinator's change records no setter.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "No such admission",
+        "message": "no admission found for id ${admissionId}"
+      },
+      {
+        "when": "The patient has already left",
+        "message": "cannot update expected discharge for departed admission ${admissionId}"
+      },
+      {
+        "when": "A ward changing another ward's patient",
+        "message": "UPDATE_EXPECTED_DISCHARGE was raised acting as unit ${actingUnitId} but admission ${id} belongs to unit ${unitId}"
+      },
+      {
+        "when": "Not a real time",
+        "message": "UPDATE_EXPECTED_DISCHARGE expectedDischargeAt must be a valid timestamp"
+      }
+    ],
+    "screen": {
+      "screen": "discharge-board.tsx",
+      "control": "Update expected departure"
+    }
+  },
+  {
+    "event": "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
+    "name": "Record medical clearance against the movement",
+    "group": "Finding a bed",
+    "lane": "record",
+    "nodes": ["rkClearance"],
+    "roles": ["ed", "coordinator", "ward", "community"],
+    "does": "Records whether this patient is medically cleared — on the MOVEMENT. The referral carries its own separate answer, and the two are not joined.",
+    "needs": "A movement.",
+    "changes": "Stores the answer. Overwritable.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "No such movement",
+        "message": "no movement found for id ${id}"
+      }
+    ],
+    "screen": {
+      "screen": "ward-referral-drawer.tsx",
+      "control": "Medically cleared"
+    }
+  },
+  {
+    "event": "UPLOAD_PATIENT_FORM",
+    "name": "Attach a file to the movement",
+    "group": "Legal status and examinations",
+    "lane": "record",
+    "nodes": ["rkLegalWritten"],
+    "roles": ["coordinator", "ed", "ward", "community", "officer"],
+    "does": "Records that a document was attached, by name and size.",
+    "needs": "A movement.",
+    "changes": "Adds the file's NAME to the record. The file itself is not modelled or stored anywhere in this prototype.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "No such movement",
+        "message": "no movement found for id ${id}"
+      }
+    ],
+    "screen": {
+      "screen": "upload-forms-modal.tsx",
+      "control": "Upload a form"
+    }
+  },
+  {
+    "event": "RECORD_LEGAL_FORM_WRITTEN",
+    "name": "Record that a legal form was written",
+    "group": "Legal status and examinations",
+    "lane": "record",
+    "nodes": ["rkLegalWritten"],
+    "roles": ["ed", "coordinator", "ward", "community"],
+    "does": "Records which form was written, with typed start and expiry times.",
+    "needs": "An open movement, a supported form and valid typed times; 3C cannot follow arrival on 3D.",
+    "changes": "Stores the paper form and its typed expiry, and clears the old legal clock.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "The record has closed",
+        "message": "cannot record a written form for a closed movement"
+      },
+      {
+        "when": "A form with no clock here",
+        "message": "Form ${code} has no legal clock in this prototype"
+      },
+      {
+        "when": "A 3C for somebody who arrived on a 3D",
+        "message": "Form 3C is refused when the person arrived on a Form 3D"
+      }
+    ],
+    "screen": {
+      "screen": "legal-forms-screen.tsx",
+      "control": "Record a written form"
+    }
+  },
+  {
+    "event": "RECORD_LEGAL_FORM_CONTINUATION",
+    "name": "Record that a form was continued",
+    "group": "Legal status and examinations",
+    "lane": "record",
+    "nodes": ["rkLegalWritten"],
+    "roles": ["ed", "coordinator", "ward", "community"],
+    "does": "Records a continuation with typed times. A 5B continues a 5A; other supported forms can replace paper facts without a prior form.",
+    "needs": "An open movement, supported form and valid typed start and expiry times.",
+    "changes": "Stores the paper form and typed expiry, and clears the old legal clock.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "A form with no clock here",
+        "message": "Form ${code} has no legal clock in this prototype"
+      }
+    ],
+    "screen": {
+      "screen": "NONE",
+      "control": "Nothing can trigger this"
+    }
+  },
+  {
+    "event": "RECORD_COUNTRY_EXTENSION",
+    "name": "Country extension request (always refused)",
+    "group": "Legal status and examinations",
+    "lane": "record",
+    "nodes": ["rkLegalWritten"],
+    "roles": ["ed", "coordinator"],
+    "does": "This old extension event is always refused; record a typed expiry with RECORD_LEGAL_FORM_EXPIRY instead.",
+    "needs": "No state can make this event succeed.",
+    "changes": "Nothing.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "Any country-extension request for an existing movement",
+        "message": "country extensions are recorded as a typed expiry — use RECORD_LEGAL_FORM_EXPIRY with the new expiry written on the form"
+      }
+    ],
+    "screen": {
+      "screen": "NONE",
+      "control": "Nothing can trigger this"
+    }
+  },
+  {
+    "event": "FLAG_LEGAL_MISMATCH",
+    "name": "Flag that the ward's authority does not match",
+    "group": "Legal status and examinations",
+    "lane": "record",
+    "nodes": ["rkLegalMismatch"],
+    "roles": ["ward", "coordinator"],
+    "does": "Records one of two mismatches: an involuntary patient on a voluntary ward, or a voluntary patient on a locked one.",
+    "needs": "A movement and a real unit.",
+    "changes": "Raises the flag. It does not stop anything by itself.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "No such movement",
+        "message": "no movement found for id ${id}"
+      },
+      {
+        "when": "No such ward",
+        "message": "no unit found for id ${id}"
+      }
+    ],
+    "screen": {
+      "screen": "NONE",
+      "control": "Nothing can trigger this"
+    }
+  },
+  {
+    "event": "RAISE_EXPECT_FLAG",
+    "name": "Start a forty-eight-hour or seven-day clock by hand",
+    "group": "Urgency and blockers",
+    "lane": "record",
+    "nodes": ["rkExpectFlag"],
+    "roles": ["ward", "coordinator", "ed", "community"],
+    "does": "Raises one of two hand-set clocks against a movement.",
+    "needs": "A movement with no such flag already open.",
+    "changes": "Records the flag. Nothing starts it automatically and nothing expires it.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "One is already open",
+        "message": "movement ${id} already has an open expect flag"
+      }
+    ],
+    "screen": {
+      "screen": "NONE",
+      "control": "Nothing can trigger this"
+    }
+  },
+  {
+    "event": "CLEAR_EXPECT_FLAG",
+    "name": "Clear that hand-set clock",
+    "group": "Urgency and blockers",
+    "lane": "record",
+    "nodes": ["rkExpectFlag"],
+    "roles": ["ward", "coordinator", "ed", "community"],
+    "does": "Clears the flag raised above.",
+    "needs": "A movement with one open.",
+    "changes": "Removes the flag.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "None was ever raised",
+        "message": "movement ${id} has no open expect flag to clear"
+      }
+    ],
+    "screen": {
+      "screen": "NONE",
+      "control": "Nothing can trigger this"
+    }
+  },
+  {
+    "event": "RELEASE_AND_REOPEN_SEARCH",
+    "name": "Give the bed back and reopen the search, in one act",
+    "group": "Holding the bed",
+    "lane": "stall",
+    "nodes": ["sPullReleased"],
+    "roles": ["coordinator", "ward"],
+    "does": "Releases the held bed AND puts the movement back into the bed search together, rather than as two separate steps.",
+    "needs": "An open movement with a held bed, no booked transport, the holding ward acting and a reason from the release list. Cancel transport first if booked.",
+    "changes": "Returns the bed and sends the movement back to the search.",
+    "reasons": ["RELEASE_PULL_REASONS"],
+    "refuses": [
+      {
+        "when": "The record has closed",
+        "message": "cannot release and reopen a closed movement"
+      },
+      {
+        "when": "The wrong stage",
+        "message": "cannot release and reopen at the movement's current stage"
+      },
+      {
+        "when": "A reason not on the list",
+        "message": "RELEASE_AND_REOPEN_SEARCH reason must be chosen from RELEASE_PULL_REASONS"
+      },
+      {
+        "when": "A ward acting on another ward's bed",
+        "message": "RELEASE_AND_REOPEN_SEARCH was raised acting as unit ${id} but the bed is held elsewhere"
+      }
+    ],
+    "screen": {
+      "screen": "NONE",
+      "control": "Nothing can trigger this"
+    }
+  },
+  {
+    "event": "CONFIRM_MORNING_ROLLUP",
+    "name": "Confirm the ward's morning count",
+    "group": "The ward's own numbers",
+    "lane": "record",
+    "nodes": ["rkWardDay"],
+    "roles": ["ward", "coordinator"],
+    "does": "A ward confirming how many discharges it expects that morning.",
+    "needs": "The acting ward must match the target; the count must be a nonnegative safe integer.",
+    "changes": "Records the confirmed number against the ward.",
+    "reasons": [],
+    "refuses": [],
+    "screen": {
+      "screen": "ward-screen.tsx",
+      "control": "Confirm the morning rollup"
+    }
+  },
+  {
+    "event": "SEND_WARD_BUZZ",
+    "name": "Send a message to a ward",
+    "group": "The ward's own numbers",
+    "lane": "record",
+    "nodes": ["rkWardDay"],
+    "roles": ["coordinator", "bed_manager", "executive"],
+    "does": "Sends a short message to a ward, optionally marked urgent.",
+    "needs": "A unit. The engine also accepts a blank message.",
+    "changes": "Records the message. It belongs to no patient.",
+    "reasons": [],
+    "refuses": [],
+    "screen": {
+      "screen": "NONE",
+      "control": "Nothing can trigger this"
+    }
+  },
+  {
+    "event": "EVALUATE_LEAVE_BED_WARNINGS",
+    "name": "Sweep the beds held during leave",
+    "group": "The ward's own numbers",
+    "lane": "record",
+    "nodes": ["rkWardDay"],
+    "roles": ["ward", "coordinator"],
+    "does": "Works out which beds being held while somebody is on leave are worth warning about.",
+    "needs": "Nothing but the clock — it takes no patient and no ward.",
+    "changes": "Records the warnings it worked out.",
+    "reasons": [],
+    "refuses": [],
+    "screen": {
+      "screen": "NONE",
+      "control": "Nothing can trigger this"
+    }
+  },
+  {
+    "event": "RECORD_REPATRIATION",
+    "name": "Log a repatriation arranged by phone",
+    "group": "The journey",
+    "lane": "record",
+    "nodes": ["dRepat"],
+    "roles": ["coordinator"],
+    "does": "Logs a repatriation already arranged off the system: the home hospital, whether its ward agreed, road or flight, the provider, the CAD or tracking number, voluntary or involuntary, and an estimated time. It books nothing.",
+    "needs": "An admission with no repatriation already logged, and every answer given. None has a default.",
+    "changes": "Keeps the log entry. Only if the home ward agreed, it also opens a new return movement at placement requested, so a bed can be found at home.",
+    "reasons": ["TRANSPORT_PROVIDERS", "TRANSPORT_LEGAL_STATUSES"],
+    "refuses": [
+      {
+        "when": "No such admission",
+        "message": "no admission found for id ${id}"
+      },
+      {
+        "when": "Already logged",
+        "message": "admission ${id} already has a repatriation record"
+      },
+      {
+        "when": "A home hospital that does not exist",
+        "message": "RECORD_REPATRIATION homeHospital ${code} does not name a real site"
+      },
+      {
+        "when": "Whether the ward agreed left blank",
+        "message": "RECORD_REPATRIATION receivingWardAgreed must be answered, and it has no default"
+      },
+      {
+        "when": "Neither road nor flight",
+        "message": "RECORD_REPATRIATION mode must be chosen from REPATRIATION_MODES"
+      },
+      {
+        "when": "A provider not on the list",
+        "message": "RECORD_REPATRIATION provider must be chosen from TRANSPORT_PROVIDERS"
+      },
+      {
+        "when": "No CAD or tracking number",
+        "message": "RECORD_REPATRIATION cadNumber must be answered, and it has no default"
+      },
+      {
+        "when": "Voluntary or not left blank",
+        "message": "RECORD_REPATRIATION transportLegalStatus must be chosen from TRANSPORT_LEGAL_STATUSES"
+      },
+      {
+        "when": "No estimated time",
+        "message": "RECORD_REPATRIATION estimatedAt must be answered, and it has no default"
+      }
+    ],
+    "screen": {
+      "screen": "out-of-area-board.tsx",
+      "control": "Record repatriation"
+    }
+  },
+  {
+    "event": "RECORD_HANDOVER_SIGN_OFF",
+    "name": "Sign off the shift handover",
+    "group": "The ward's own numbers",
+    "lane": "record",
+    "nodes": ["rkWardDay"],
+    "roles": ["coordinator", "ward"],
+    "does": "Records that the shift handover was signed off.",
+    "needs": "Nothing beyond the role.",
+    "changes": "Stores the role and the time only. Never a note, a name, or a claim that the sheet was sent to anyone.",
+    "reasons": [],
+    "refuses": [],
+    "screen": {
+      "screen": "handover-page.tsx",
+      "control": "Sign off the handover"
+    }
+  },
+  {
+    "event": "RECORD_CLINICAL_CONTACT",
+    "name": "Record that a team was contacted",
+    "group": "The coordinator's inbox",
+    "lane": "record",
+    "nodes": ["rkNotice"],
+    "roles": ["community", "coordinator", "ed"],
+    "does": "Records that somebody contacted a community team. This is the contact itself, not a message sent through the system.",
+    "needs": "A community team that exists.",
+    "changes": "Stores the team, the time and the role.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "A team that does not exist",
+        "message": "RECORD_CLINICAL_CONTACT teamId ${id} does not name a real team"
+      }
+    ],
+    "screen": {
+      "screen": "community-screen.tsx",
+      "control": "Contacted"
+    }
+  },
+  {
+    "event": "DISPATCH_BROADCAST_ALERT",
+    "name": "Send a network-wide alert",
+    "group": "The coordinator's inbox",
+    "lane": "record",
+    "nodes": ["rkNotice"],
+    "roles": ["coordinator", "bed_manager", "executive"],
+    "does": "Sends an alert to wards and emergency departments across the network, with a severity, a category, who it is aimed at and how long it lasts.",
+    "needs": "A nonblank title and message, valid severity, category and scope, and a positive finite duration when supplied.",
+    "changes": "Adds the alert as active, with nobody yet acknowledging it. It belongs to no patient.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "No title or no message",
+        "message": "DISPATCH_BROADCAST_ALERT requires a non-empty title and message"
+      }
+    ],
+    "screen": {
+      "screen": "alerts-screen.tsx",
+      "control": "+ Broadcast Network Alert"
+    }
+  },
+  {
+    "event": "ACKNOWLEDGE_BROADCAST_ALERT",
+    "name": "Acknowledge a network-wide alert",
+    "group": "The coordinator's inbox",
+    "lane": "record",
+    "nodes": ["rkNotice"],
+    "roles": ["coordinator", "ward", "ed", "officer", "community", "bed_manager", "executive"],
+    "does": "Records that one ward or desk has seen a network-wide alert.",
+    "needs": "An active alert and a known unit that has not acknowledged it already. Duplicate acknowledgement is refused.",
+    "changes": "Adds the unit to the alert's acknowledged list.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "No such alert",
+        "message": "ACKNOWLEDGE_BROADCAST_ALERT alertId ${id} not found"
+      }
+    ],
+    "screen": {
+      "screen": "ward-broadcast-banner.tsx",
+      "control": "Acknowledge (global banner currently acts as coordinator desk)"
+    }
+  },
+  {
+    "event": "STAND_DOWN_BROADCAST_ALERT",
+    "name": "Stand down a network-wide alert",
+    "group": "The coordinator's inbox",
+    "lane": "record",
+    "nodes": ["rkNotice"],
+    "roles": ["coordinator", "bed_manager", "executive"],
+    "does": "Ends a network-wide alert once the pressure has passed.",
+    "needs": "An alert that exists and has not already been stood down.",
+    "changes": "Marks the alert stood down, with the time and who did it.",
+    "reasons": [],
+    "refuses": [
+      {
+        "when": "No such alert",
+        "message": "STAND_DOWN_BROADCAST_ALERT alertId ${id} not found"
+      }
+    ],
+    "screen": {
+      "screen": "alerts-screen.tsx",
+      "control": "Stand Down Directive"
+    }
+  }
+]

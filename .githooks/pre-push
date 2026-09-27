@@ -1,0 +1,35 @@
+#!/bin/sh
+# Pre-push safety net. Delegates to scripts/guard-push.mjs, which runs five
+# guards: ward-flow/origin-main push guard, auto-merge ownership, in-flight CI
+# push guard, format-before-push, and static gate (lint + source typecheck).
+# The auto-merge guard's two
+# blocking cases (armed auto-merge + migration, or armed auto-merge +
+# force-push) are not bypassable; every other guard has explicit override env
+# vars (see the script header) — the ward-flow guard's are CONFIRM_* (not
+# SKIP_*), e.g. CONFIRM_WARD_FLOW_PUSH_TO_MAIN — including
+# SKIP_IN_FLIGHT_CI_GUARD=1 and SKIP_STATIC_GUARD=1.
+#
+# Installed by scripts/install-git-hooks.mjs via `git config core.hooksPath
+# .githooks` (run automatically on npm install/ci). Git passes the pushed refs
+# on stdin as "<localRef> <localSha> <remoteRef> <remoteSha>" lines, which the
+# script reads to scope the format and static checks to what is
+# actually pushed.
+#
+# Set GUARD_PUSH_DISABLE=1 to bypass every guard except auto-merge ownership.
+# Individual non-auto-merge guards also have their own override flags.
+set -eu
+
+if [ "${GUARD_PUSH_DISABLE:-}" = "1" ]; then
+  export SKIP_IN_FLIGHT_CI_GUARD=1
+  export SKIP_FORMAT_GUARD=1
+  export SKIP_STATIC_GUARD=1
+fi
+
+# Resolve node; if unavailable, do not block the push (fail open).
+if ! command -v node >/dev/null 2>&1; then
+  echo "[pre-push] node not found on PATH — skipping push guards" >&2
+  exit 0
+fi
+
+repo_root=$(git rev-parse --show-toplevel)
+exec node "$repo_root/scripts/guard-push.mjs" "$@"

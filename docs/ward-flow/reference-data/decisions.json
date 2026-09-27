@@ -1,0 +1,76 @@
+{
+  "pack_metadata": {
+    "generated_at": "2026-09-17T16:54:00+08:00",
+    "retrieval_date": "2026-09-17",
+    "preparation_only": true,
+    "operational_use_approved": false,
+    "automatic_routing_approved": false
+  },
+  "decisions": [
+    {
+      "decision_id": "D1",
+      "issue_id": "WF-07",
+      "subject": "Graylands capacity disagreement",
+      "decision": "prefer_neither",
+      "applied_rule": "Keep dual 109 and 122 assertions; never reduce to a single number for routing.",
+      "operational_use_approved": false,
+      "automatic_routing_approved": false,
+      "ratification_status": "awaiting HSP ratification"
+    },
+    {
+      "decision_id": "D2",
+      "issue_id": "WF-03",
+      "subject": "Lynwood CAMHS catchment conflict",
+      "decision": "contested_manual_only",
+      "applied_rule": "Retain PDF-to-Swan versus Fremantle-page conflict; manual review only.",
+      "operational_use_approved": false,
+      "automatic_routing_approved": false,
+      "ratification_status": "awaiting HSP ratification"
+    },
+    {
+      "decision_id": "D3",
+      "issue_id": "WF-04",
+      "subject": "Butler/Wanneroo split",
+      "decision": "clinics_verified_no_auto_split",
+      "applied_rule": "Clinics are verified as present; suburb split remains unpublished and is not automated.",
+      "operational_use_approved": false,
+      "automatic_routing_approved": false,
+      "ratification_status": "awaiting HSP ratification"
+    },
+    {
+      "decision_id": "D4",
+      "issue_id": "WF-06",
+      "subject": "Armadale/Orchard naming and contact",
+      "decision": "tip_names_demo_ok",
+      "applied_rule": "Synthetic tip names are demo-only; live contact is Orchard Ave 9398 6600; ATT phone is 9391 2400 until HSP confirms.",
+      "live_contact": "Orchard Ave 9398 6600",
+      "att_phone": "9391 2400",
+      "operational_use_approved": false,
+      "automatic_routing_approved": false,
+      "ratification_status": "awaiting HSP ratification"
+    },
+    {
+      "decision_id": "D5",
+      "issue_id": "OVERLAY-SCOPE",
+      "subject": "Tip/reference overlay scope",
+      "decision": "pack_side_by_side_only",
+      "applied_rule": "Reference pack is side-by-side with the synthetic tip; no Phase 6 tip mutation in this task.",
+      "operational_use_approved": false,
+      "automatic_routing_approved": false,
+      "ratification_status": "not started / Phase 6 gated"
+    },
+    {
+      "decision_id": "D6",
+      "issue_id": "DISTANCE-METHOD",
+      "subject": "Metro distance method",
+      "decision": "osrm_public_road_routing",
+      "applied_rule": "Use OSRM public road routing on OpenStreetMap for metro ED-to-acute pairs; retain source and retrieval date.",
+      "router": "osrm_public",
+      "source": "OpenStreetMap",
+      "retrieved_on": "2026-09-17",
+      "operational_use_approved": false,
+      "automatic_routing_approved": false,
+      "ratification_status": "method applied; operational approval remains false"
+    }
+  ]
+}

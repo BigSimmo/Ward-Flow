@@ -1,0 +1,1861 @@
+<!doctype html>
+<html lang="en-AU" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow · Mockup 4: Perfected Service Scope Popover (Third Edition)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap"
+    />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem("ward-flow-theme");
+          if (saved === "light" || saved === "dark") {
+            document.documentElement.setAttribute("data-theme", saved);
+          } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            document.documentElement.setAttribute("data-theme", "dark");
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <style>
+      /* ═══════════════════════════════════════════════════════════════════════
+         WARD FLOW DESIGN SYSTEM — THIRD EDITION TOKENS
+         Platinum Raised Cool (Light) & Sovereign Dark (Dark)
+         ═══════════════════════════════════════════════════════════════════════ */
+      :root {
+        color-scheme: light;
+        --display: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --body: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --mono: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+
+        --t-0: 11.5px;
+        --t-1: 13px;
+        --t-2: 13.5px;
+        --t-3: 14.5px;
+        --t-4: 16px;
+        --t-5: 20px;
+        --t-6: 24px;
+
+        --r1: 16px;
+        --r2: 10px;
+        --r3: 6px;
+        --pill: 9999px;
+
+        /* Light Palette (Platinum Raised Cool) */
+        --ground-hi: #ecf0f4;
+        --ground: #e6eaef;
+        --ground-2: #e1e6ec;
+        --surface: #fdfdfe;
+        --surface-2: #f4f7fa;
+        --surface-3: #eef2f6;
+        --sunk: #e9edf2;
+
+        --ink: #161a20;
+        --ink-soft: #414953;
+        --muted: #5f6873;
+
+        --line: rgba(22, 30, 40, 0.11);
+        --line-strong: rgba(22, 30, 40, 0.24);
+
+        --accent: #2f4c66;
+        --accent-ink: #1e354a;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+
+        --gilt: #7d612a;
+        --gilt-soft: #f1ebdf;
+
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --warn: #825d10;
+        --warn-soft: #f6eeda;
+        --danger: #b03b2e;
+        --danger-soft: #f8e6e2;
+
+        /* Service Swatches (Standard Ward Flow Palette) */
+        --svc-north: #6e3d6e; /* Plum */
+        --svc-south: #1b6565; /* Teal */
+        --svc-east: #2f4c66; /* Signature Slate */
+        --svc-wachs: #8a4822; /* Warm Rust */
+        --svc-private: #525a66; /* Pewter */
+
+        /* Elevated Diffuse Popover Shadows */
+        --popover-shadow: 0 16px 40px -6px rgba(15, 23, 42, 0.16), 0 0 0 1px rgba(15, 23, 42, 0.06);
+        --popover-bg: rgba(253, 253, 254, 0.98);
+        --bar-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+      }
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --ground-hi: #14181d;
+        --ground: #0f1216;
+        --ground-2: #0c0f12;
+        --surface: #171b21;
+        --surface-2: #1b2026;
+        --surface-3: #222932;
+        --sunk: #13171c;
+
+        --ink: #e8ecf1;
+        --ink-soft: #b2bac5;
+        --muted: #8a929d;
+
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.2);
+
+        --accent: #a7bcd2;
+        --accent-ink: #c8d8e8;
+        --accent-soft: #1f2a36;
+        --on-accent: #0f1216;
+        --stripe: #3a5a78;
+
+        --gilt: #d3b77e;
+        --gilt-soft: #2a251b;
+
+        --good: #6fd39b;
+        --good-soft: #15291f;
+        --warn: #e3bc5e;
+        --warn-soft: #2b2415;
+        --danger: #ff8b76;
+        --danger-soft: #33201b;
+
+        /* Calibrated Dark Swatches */
+        --svc-north: #ba80ba;
+        --svc-south: #38a3a3;
+        --svc-east: #a7bcd2;
+        --svc-wachs: #d99066;
+        --svc-private: #94a3b8;
+
+        --popover-shadow: 0 20px 48px -6px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.12);
+        --popover-bg: rgba(23, 27, 33, 0.97);
+        --bar-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: var(--body);
+        font-size: var(--t-2);
+        color: var(--ink);
+        background: var(--ground);
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        line-height: 1.45;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Top Brand Stripe */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 1000;
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         DEV CONTROLS & REVIEWER PREVIEW DOCK
+         ═══════════════════════════════════════════════════════════════════════ */
+      .dev-toolbar {
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        padding: 10px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        z-index: 50;
+      }
+
+      .dev-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .dev-badge {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: var(--r3);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .dev-badge::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+
+      .dev-title {
+        font-family: var(--display);
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      .dev-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .btn-segment {
+        display: inline-flex;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r3);
+        padding: 2px;
+        gap: 2px;
+      }
+
+      .segment-btn {
+        background: transparent;
+        border: none;
+        padding: 4px 10px;
+        font-family: var(--body);
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--muted);
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .segment-btn:hover {
+        color: var(--ink);
+      }
+
+      .segment-btn.active {
+        background: var(--surface);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+
+      .theme-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--surface-2);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r3);
+        padding: 5px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink);
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .theme-btn:hover {
+        background: var(--sunk);
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         MOCK WARD FLOW TOP BAR & SHELL
+         ═══════════════════════════════════════════════════════════════════════ */
+      .app-canvas {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 24px;
+        max-width: 1400px;
+        margin: 0 auto;
+        width: 100%;
+        gap: 24px;
+      }
+
+      .mock-shell-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        box-shadow: var(--bar-shadow);
+        overflow: visible;
+        position: relative;
+      }
+
+      .mock-bar {
+        height: 52px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        position: relative;
+        border-top-left-radius: 14px;
+        border-top-right-radius: 14px;
+      }
+
+      .bar-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .brand-mark {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+      }
+
+      .brand-crest {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        background: var(--accent);
+        color: var(--on-accent);
+        font-family: var(--display);
+        font-weight: 700;
+        font-size: 11px;
+        letter-spacing: -0.02em;
+      }
+
+      .brand-name {
+        font-family: var(--display);
+        font-weight: 700;
+        font-size: 15px;
+        color: var(--ink);
+        letter-spacing: -0.01em;
+      }
+
+      .bar-sep {
+        color: var(--line-strong);
+        font-weight: 300;
+      }
+
+      .route-title {
+        font-family: var(--display);
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ink-soft);
+      }
+
+      .synthetic-chip {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--muted);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        letter-spacing: 0.02em;
+      }
+
+      .bar-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      /* The Top Bar Trigger Button */
+      .popover-anchor {
+        position: relative;
+        display: inline-block;
+      }
+
+      .wf-service-trigger {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 36px;
+        padding: 0 12px;
+        background: var(--surface-2);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r3);
+        color: var(--ink);
+        font-family: var(--body);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        user-select: none;
+      }
+
+      .wf-service-trigger:hover {
+        background: var(--sunk);
+        border-color: var(--ink-soft);
+      }
+
+      .wf-service-trigger[aria-expanded="true"] {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+        box-shadow: inset 0 0 0 1px var(--accent);
+      }
+
+      .wf-service-trigger:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      .trigger-swatch {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        display: inline-block;
+      }
+
+      .trigger-chevron {
+        width: 14px;
+        height: 14px;
+        color: var(--muted);
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .wf-service-trigger[aria-expanded="true"] .trigger-chevron {
+        transform: rotate(180deg);
+        color: var(--accent-ink);
+      }
+
+      /* Secondary Triggers */
+      .bar-action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 36px;
+        padding: 0 12px;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: var(--r3);
+        color: var(--ink-soft);
+        font-family: var(--body);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+      }
+
+      .bar-action-btn:hover {
+        background: var(--sunk);
+        border-color: var(--line);
+      }
+
+      .count-badge {
+        background: var(--surface-3);
+        color: var(--ink);
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: var(--pill);
+      }
+
+      .live-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--good);
+        display: inline-block;
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         MOCKUP 4: PERFECTED SERVICE SCOPE POPOVER PANEL
+         ═══════════════════════════════════════════════════════════════════════ */
+      .service-popover-panel {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        width: 336px; /* Exactly in the 320px - 340px requirement */
+        background: var(--popover-bg);
+        border: 1px solid var(--line);
+        border-radius: var(--r1); /* 16px */
+        box-shadow: var(--popover-shadow);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        padding: 12px;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        transform-origin: top left;
+        transition:
+          opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+          transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+          visibility 0.18s ease;
+      }
+
+      .service-popover-panel[data-state="closed"] {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.97);
+        pointer-events: none;
+        visibility: hidden;
+      }
+
+      .service-popover-panel[data-state="open"] {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+        visibility: visible;
+      }
+
+      /* Popover Header & Network Metric Badge */
+      .popover-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 6px 10px 6px;
+        margin-bottom: 4px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .popover-heading-group {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+      }
+
+      .popover-title {
+        font-family: var(--display);
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--ink);
+        letter-spacing: -0.01em;
+      }
+
+      .popover-hint {
+        font-family: var(--body);
+        font-size: 11.5px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+
+      .network-metric-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--pill);
+        padding: 3px 9px;
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        font-variant-numeric: tabular-nums;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+      }
+
+      .pulse-indicator {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--good);
+        box-shadow: 0 0 0 2px var(--good-soft);
+        animation: subtle-pulse 2.5s infinite ease-in-out;
+      }
+
+      @keyframes subtle-pulse {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.15);
+          opacity: 0.8;
+        }
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         SERVICE OPTION ROWS (Elevated & Refined)
+         ═══════════════════════════════════════════════════════════════════════ */
+      .service-option-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .service-option-row {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        height: 42px; /* Exact 42px comfortable hit target */
+        min-height: 42px;
+        padding: 0 12px;
+        border-radius: var(--r2); /* 10px */
+        border: 1px solid transparent;
+        background: transparent;
+        cursor: pointer;
+        text-align: left;
+        font-family: var(--body);
+        font-size: 13.5px;
+        font-weight: 500;
+        color: var(--ink);
+        transition:
+          background 0.14s ease,
+          border-color 0.14s ease,
+          color 0.14s ease,
+          box-shadow 0.14s ease;
+        user-select: none;
+        outline: none;
+      }
+
+      .service-option-row:hover {
+        background: var(--sunk);
+        border-color: var(--line);
+      }
+
+      .service-option-row:active {
+        background: var(--surface-3);
+        transform: scale(0.995);
+      }
+
+      .service-option-row:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+      }
+
+      /* Active / Pressed State */
+      .service-option-row[aria-pressed="true"] {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        font-weight: 600;
+        border-color: var(--accent);
+        box-shadow: inset 0 0 0 1px var(--accent);
+      }
+
+      .option-left {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      /* Swatch Dots */
+      .service-swatch-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        display: inline-block;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+      }
+
+      .dot-all {
+        background: var(--muted);
+      }
+
+      .dot-north {
+        background: var(--svc-north);
+      }
+
+      .dot-south {
+        background: var(--svc-south);
+      }
+
+      .dot-east {
+        background: var(--svc-east);
+      }
+
+      .dot-wachs {
+        background: var(--svc-wachs);
+      }
+
+      .dot-private {
+        background: var(--svc-private);
+      }
+
+      .option-name {
+        letter-spacing: -0.01em;
+      }
+
+      .option-right {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* Tabular Count in Geist Mono */
+      .option-count {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.01em;
+      }
+
+      .service-option-row[aria-pressed="true"] .option-count {
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
+
+      /* Active Checkmark Badge in Slate Circle */
+      .check-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: var(--on-accent);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        flex-shrink: 0;
+        transition:
+          transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+          opacity 0.18s ease;
+      }
+
+      .check-badge svg {
+        width: 12px;
+        height: 12px;
+        stroke-width: 2.5;
+      }
+
+      /* Visibility controller */
+      .service-option-row:not([aria-pressed="true"]) .check-badge {
+        opacity: 0;
+        transform: scale(0.5);
+        pointer-events: none;
+      }
+
+      .service-option-row[aria-pressed="true"] .check-badge {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         EXPLANATORY NOTE CALLOUT
+         ═══════════════════════════════════════════════════════════════════════ */
+      .popover-callout {
+        margin-top: 8px;
+        padding: 10px 12px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2); /* 10px */
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+
+      .callout-icon {
+        flex-shrink: 0;
+        width: 15px;
+        height: 15px;
+        margin-top: 2px;
+        color: var(--muted);
+      }
+
+      .callout-content {
+        font-family: var(--body);
+        font-size: 11px;
+        line-height: 1.45;
+        color: var(--muted);
+        letter-spacing: -0.005em;
+      }
+
+      .callout-content strong {
+        color: var(--ink-soft);
+        font-weight: 600;
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         MOCK BACKGROUND SCREEN CONTENT (Visual Context)
+         ═══════════════════════════════════════════════════════════════════════ */
+      .mock-body {
+        padding: 24px;
+        background: var(--ground-hi);
+        border-bottom-left-radius: 14px;
+        border-bottom-right-radius: 14px;
+        min-height: 480px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .scope-notification-strip {
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        padding: 12px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      }
+
+      .scope-info-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .scope-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        padding: 3px 10px;
+        border-radius: var(--pill);
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .scope-summary-text {
+        font-size: 13px;
+        color: var(--ink-soft);
+      }
+
+      .scope-summary-text strong {
+        color: var(--ink);
+      }
+
+      .scope-meta-figures {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .meta-item strong {
+        color: var(--ink);
+      }
+
+      /* Mock Movement Cards Grid */
+      .mock-card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 16px;
+        opacity: 0.95;
+      }
+
+      .mock-panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      }
+
+      .mock-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .mock-panel-title {
+        font-family: var(--display);
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .mock-panel-badge {
+        font-family: var(--mono);
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: var(--surface-2);
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .mock-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12.5px;
+      }
+
+      .mock-table th {
+        text-align: left;
+        padding: 6px 8px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .mock-table td {
+        padding: 9px 8px;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink-soft);
+      }
+
+      .mock-table tr:last-child td {
+        border-bottom: none;
+      }
+
+      .patient-badge {
+        font-family: var(--mono);
+        font-weight: 600;
+        font-size: 11.5px;
+        color: var(--ink);
+      }
+
+      .status-pill {
+        display: inline-flex;
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        font-size: 11px;
+        font-weight: 600;
+        font-family: var(--mono);
+      }
+
+      .pill-good {
+        background: var(--good-soft);
+        color: var(--good);
+      }
+
+      .pill-warn {
+        background: var(--warn-soft);
+        color: var(--warn);
+      }
+
+      .pill-accent {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         DESIGN SPEC & TOKEN INSPECTOR FOOTER
+         ═══════════════════════════════════════════════════════════════════════ */
+      .spec-inspector {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        box-shadow: var(--bar-shadow);
+      }
+
+      .spec-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .spec-title {
+        font-family: var(--display);
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--ink);
+      }
+
+      .spec-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+      }
+
+      .spec-card {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 14px;
+      }
+
+      .spec-card-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .spec-card-value {
+        font-family: var(--mono);
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--ink);
+        line-height: 1.4;
+      }
+
+      .spec-card-desc {
+        font-size: 11.5px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      .swatch-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .swatch-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 8px;
+        border-radius: 6px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        font-family: var(--mono);
+        font-size: 11px;
+      }
+
+      .swatch-preview {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Reviewer / Design Dev Bar -->
+    <header class="dev-toolbar">
+      <div class="dev-left">
+        <span class="dev-badge">Mockup 4</span>
+        <span class="dev-title">Service Scope Popover &amp; Trigger Button (Perfected Third Edition)</span>
+      </div>
+      <div class="dev-right">
+        <div class="btn-segment">
+          <button type="button" class="segment-btn active" id="btnShowInSitu" onclick="setViewMode('in-situ')">
+            In-Situ Context
+          </button>
+          <button type="button" class="segment-btn" id="btnShowIsolated" onclick="setViewMode('isolated')">
+            Isolated Spec
+          </button>
+        </div>
+
+        <div class="btn-segment">
+          <button type="button" class="segment-btn active" id="btnStateOpen" onclick="togglePopover(true)">Open</button>
+          <button type="button" class="segment-btn" id="btnStateClosed" onclick="togglePopover(false)">Closed</button>
+        </div>
+
+        <button
+          type="button"
+          class="theme-btn"
+          id="themeToggleBtn"
+          onclick="toggleTheme()"
+          aria-label="Toggle light/dark theme"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <span id="themeLabel">Dark Theme</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="app-canvas">
+      <!-- Mock Ward Flow Top Shell Card -->
+      <section class="mock-shell-card" id="mockShellArea">
+        <!-- Mock Ward Bar -->
+        <div class="mock-bar">
+          <div class="bar-left">
+            <a href="#" class="brand-mark" aria-label="Ward Flow Home">
+              <span class="brand-crest">WF</span>
+              <span class="brand-name">Ward Flow</span>
+            </a>
+            <span class="bar-sep">/</span>
+            <span class="route-title">Movements · Active Bed Flow</span>
+            <span
+              class="synthetic-chip"
+              title="Patient and movement data are synthetic. WA health services and site codes are real."
+            >
+              SYNTHETIC · WA SITES
+            </span>
+          </div>
+
+          <div class="bar-right">
+            <!-- SERVICE SCOPE TRIGGER & POPUP ANCHOR -->
+            <div class="popover-anchor" id="popoverAnchor">
+              <button
+                type="button"
+                id="serviceTriggerBtn"
+                class="wf-service-trigger"
+                aria-haspopup="true"
+                aria-expanded="true"
+                aria-controls="servicePopover"
+                onclick="handleTriggerClick(event)"
+              >
+                <span class="trigger-swatch dot-all" id="triggerSwatch" aria-hidden="true"></span>
+                <span id="triggerLabel">All services</span>
+                <svg
+                  class="trigger-chevron"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+
+              <!-- FLOATING SERVICE SCOPE POPOVER -->
+              <div
+                id="servicePopover"
+                class="service-popover-panel"
+                data-state="open"
+                role="region"
+                aria-label="Filter by Health Service"
+              >
+                <!-- 1. Header & Metric Badge -->
+                <div class="popover-header">
+                  <div class="popover-heading-group">
+                    <span class="popover-title">Service</span>
+                    <span class="popover-hint">scopes the lists</span>
+                  </div>
+                  <div
+                    class="network-metric-badge"
+                    title="Live total network open bed capacity across all public services and private partners"
+                  >
+                    <span class="pulse-indicator" aria-hidden="true"></span>
+                    <span>69 open beds</span>
+                  </div>
+                </div>
+
+                <!-- 2. Service Options (6 Elevated Rows) -->
+                <div class="service-option-list" role="radiogroup" aria-label="Available services">
+                  <!-- Option 1: All services -->
+                  <button
+                    type="button"
+                    class="service-option-row"
+                    role="radio"
+                    aria-checked="true"
+                    aria-pressed="true"
+                    data-service="all"
+                    data-count="69"
+                    data-swatch="dot-all"
+                    onclick="selectServiceOption('all', 'All services', 'dot-all', '69')"
+                  >
+                    <span class="option-left">
+                      <span class="service-swatch-dot dot-all" aria-hidden="true"></span>
+                      <span class="option-name">All services</span>
+                    </span>
+                    <span class="option-right">
+                      <span class="option-count" aria-hidden="true">69 open</span>
+                      <span class="check-badge" aria-hidden="true">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </span>
+                    </span>
+                  </button>
+
+                  <!-- Option 2: North Metro -->
+                  <button
+                    type="button"
+                    class="service-option-row"
+                    role="radio"
+                    aria-checked="false"
+                    aria-pressed="false"
+                    data-service="north"
+                    data-count="14"
+                    data-swatch="dot-north"
+                    onclick="selectServiceOption('north', 'North Metro', 'dot-north', '14')"
+                  >
+                    <span class="option-left">
+                      <span class="service-swatch-dot dot-north" aria-hidden="true"></span>
+                      <span class="option-name">North Metro</span>
+                    </span>
+                    <span class="option-right">
+                      <span class="option-count" aria-hidden="true">14 open</span>
+                      <span class="check-badge" aria-hidden="true">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </span>
+                    </span>
+                  </button>
+
+                  <!-- Option 3: South Metro -->
+                  <button
+                    type="button"
+                    class="service-option-row"
+                    role="radio"
+                    aria-checked="false"
+                    aria-pressed="false"
+                    data-service="south"
+                    data-count="25"
+                    data-swatch="dot-south"
+                    onclick="selectServiceOption('south', 'South Metro', 'dot-south', '25')"
+                  >
+                    <span class="option-left">
+                      <span class="service-swatch-dot dot-south" aria-hidden="true"></span>
+                      <span class="option-name">South Metro</span>
+                    </span>
+                    <span class="option-right">
+                      <span class="option-count" aria-hidden="true">25 open</span>
+                      <span class="check-badge" aria-hidden="true">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </span>
+                    </span>
+                  </button>
+
+                  <!-- Option 4: East Metro -->
+                  <button
+                    type="button"
+                    class="service-option-row"
+                    role="radio"
+                    aria-checked="false"
+                    aria-pressed="false"
+                    data-service="east"
+                    data-count="26"
+                    data-swatch="dot-east"
+                    onclick="selectServiceOption('east', 'East Metro', 'dot-east', '26')"
+                  >
+                    <span class="option-left">
+                      <span class="service-swatch-dot dot-east" aria-hidden="true"></span>
+                      <span class="option-name">East Metro</span>
+                    </span>
+                    <span class="option-right">
+                      <span class="option-count" aria-hidden="true">26 open</span>
+                      <span class="check-badge" aria-hidden="true">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </span>
+                    </span>
+                  </button>
+
+                  <!-- Option 5: WACHS -->
+                  <button
+                    type="button"
+                    class="service-option-row"
+                    role="radio"
+                    aria-checked="false"
+                    aria-pressed="false"
+                    data-service="wachs"
+                    data-count="9"
+                    data-swatch="dot-wachs"
+                    onclick="selectServiceOption('wachs', 'WACHS', 'dot-wachs', '9')"
+                  >
+                    <span class="option-left">
+                      <span class="service-swatch-dot dot-wachs" aria-hidden="true"></span>
+                      <span class="option-name">WACHS</span>
+                    </span>
+                    <span class="option-right">
+                      <span class="option-count" aria-hidden="true">9 open</span>
+                      <span class="check-badge" aria-hidden="true">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </span>
+                    </span>
+                  </button>
+
+                  <!-- Option 6: Private -->
+                  <button
+                    type="button"
+                    class="service-option-row"
+                    role="radio"
+                    aria-checked="false"
+                    aria-pressed="false"
+                    data-service="private"
+                    data-count="5"
+                    data-swatch="dot-private"
+                    onclick="selectServiceOption('private', 'Private', 'dot-private', '5')"
+                  >
+                    <span class="option-left">
+                      <span class="service-swatch-dot dot-private" aria-hidden="true"></span>
+                      <span class="option-name">Private</span>
+                    </span>
+                    <span class="option-right">
+                      <span class="option-count" aria-hidden="true">5 open</span>
+                      <span class="check-badge" aria-hidden="true">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </span>
+                    </span>
+                  </button>
+                </div>
+
+                <!-- 3. Explanatory Note Callout -->
+                <div class="popover-callout" role="note">
+                  <svg
+                    class="callout-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                  </svg>
+                  <p class="callout-text">
+                    One service, or all of them. Capacity, Delays and Movements narrow their lists to it. The bed
+                    shortlist, whole-network figures, the rail counts and the drawers do not.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Supporting Drawer Triggers -->
+            <button type="button" class="bar-action-btn" title="Synthetic activity log">
+              <span class="live-dot"></span>
+              <span>Activity · 08:42</span>
+            </button>
+
+            <button type="button" class="bar-action-btn" title="Pending coordinator tasks">
+              <span>Tasks</span>
+              <span class="count-badge">4</span>
+            </button>
+
+            <button type="button" class="bar-action-btn" title="Coordinator tools and exports">
+              <span>Tools</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Mock Body Demonstrating Dynamic Scoped State -->
+        <div class="mock-body" id="mockBodyArea">
+          <div class="scope-notification-strip">
+            <div class="scope-info-left">
+              <span class="scope-pill" id="activeScopePill">
+                <span class="service-swatch-dot dot-all" id="bannerSwatch"></span>
+                <span id="bannerScopeName">All services</span>
+              </span>
+              <span class="scope-summary-text" id="bannerScopeText">
+                Showing all <strong>69 open beds</strong> across all 5 WA Health health services.
+              </span>
+            </div>
+            <div class="scope-meta-figures">
+              <span class="meta-item">Movements in scope: <strong id="scopeMovementsCount">18 active</strong></span>
+              <span class="meta-item">Network unassigned: <strong>6</strong></span>
+              <span class="meta-item">Next transfer: <strong>09:15 AWST</strong></span>
+            </div>
+          </div>
+
+          <!-- Movement Table Sample -->
+          <div class="mock-card-grid">
+            <div class="mock-panel">
+              <div class="mock-panel-head">
+                <span class="mock-panel-title">
+                  <span>Priority Transfers in Scope</span>
+                </span>
+                <span class="mock-panel-badge" id="tableFilterBadge">Filtered: All services</span>
+              </div>
+              <table class="mock-table">
+                <thead>
+                  <tr>
+                    <th>Patient</th>
+                    <th>Origin ED</th>
+                    <th>Target Bed / Unit</th>
+                    <th>Health Service</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="movementTableBody">
+                  <!-- Rendered dynamically by script -->
+                </tbody>
+              </table>
+            </div>
+
+            <div class="mock-panel">
+              <div class="mock-panel-head">
+                <span class="mock-panel-title">
+                  <span>Capacity Breakdown by Service</span>
+                </span>
+                <span class="mock-panel-badge">Live Reconciliation</span>
+              </div>
+              <table class="mock-table">
+                <thead>
+                  <tr>
+                    <th>Service</th>
+                    <th>Available Beds</th>
+                    <th>Occupancy</th>
+                    <th>Scope Behavior</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>North Metro (NMHS)</strong></td>
+                    <td><span style="font-family: var(--mono); font-weight: 600">14 open</span></td>
+                    <td>88.2%</td>
+                    <td><span class="status-pill pill-accent">Narrows lists</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>South Metro (SMHS)</strong></td>
+                    <td><span style="font-family: var(--mono); font-weight: 600">25 open</span></td>
+                    <td>84.1%</td>
+                    <td><span class="status-pill pill-accent">Narrows lists</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>East Metro (EMHS)</strong></td>
+                    <td><span style="font-family: var(--mono); font-weight: 600">26 open</span></td>
+                    <td>86.5%</td>
+                    <td><span class="status-pill pill-accent">Narrows lists</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>WA Country (WACHS)</strong></td>
+                    <td><span style="font-family: var(--mono); font-weight: 600">9 open</span></td>
+                    <td>79.4%</td>
+                    <td><span class="status-pill pill-accent">Narrows lists</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Private Partners</strong></td>
+                    <td><span style="font-family: var(--mono); font-weight: 600">5 open</span></td>
+                    <td>62.0%</td>
+                    <td><span class="status-pill pill-accent">Narrows lists</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Design Spec & Token Inspector Card -->
+      <section class="spec-inspector">
+        <div class="spec-head">
+          <span class="spec-title">Mockup 4 Component Specifications · Lead UI Designer Reference</span>
+          <span class="synthetic-chip">WARD FLOW DESIGN SYSTEM 3.0</span>
+        </div>
+
+        <div class="spec-grid">
+          <div class="spec-card">
+            <div class="spec-card-title">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+              </svg>
+              Popover Dimensions &amp; Radius
+            </div>
+            <div class="spec-card-value">Width: 336px · Radius: 16px</div>
+            <div class="spec-card-desc">
+              Strictly constrained between 320px and 340px. Curved with <code>--r1: 16px</code> for elevated floating
+              tier, sitting 8px below trigger.
+            </div>
+          </div>
+
+          <div class="spec-card">
+            <div class="spec-card-title">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"></circle>
+              </svg>
+              Hit Target &amp; Row Geometry
+            </div>
+            <div class="spec-card-value">Height: 42px · Radius: 10px</div>
+            <div class="spec-card-desc">
+              Fingertip-ergonomic 42px touch height with 10px inner corner radius. Tabular counts set in Geist Mono at
+              12px.
+            </div>
+          </div>
+
+          <div class="spec-card">
+            <div class="spec-card-title">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
+              Double-Layer Diffuse Shadow
+            </div>
+            <div class="spec-card-value">0 16px 40px -6px rgba(15,23,42,0.16)</div>
+            <div class="spec-card-desc">
+              Reinforced by 1px peripheral bounding line <code>rgba(15,23,42,0.06)</code> and 16px backdrop blur for
+              pristine legibility.
+            </div>
+          </div>
+
+          <div class="spec-card">
+            <div class="spec-card-title">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              Active Checkmark Badge
+            </div>
+            <div class="spec-card-value">20px Circular Slate Badge</div>
+            <div class="spec-card-desc">
+              Active state is confirmed by a dedicated circular slate badge (<code>var(--accent)</code>) with centered
+              pure white checkmark.
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="spec-card-title">Authorized Service Palette Tokens</div>
+          <div class="swatch-chip-row">
+            <span class="swatch-chip">
+              <span class="swatch-preview" style="background: var(--muted)"></span>
+              <span>All services: Neutral dot</span>
+            </span>
+            <span class="swatch-chip">
+              <span class="swatch-preview" style="background: var(--svc-north)"></span>
+              <span>North Metro: #6e3d6e (Plum)</span>
+            </span>
+            <span class="swatch-chip">
+              <span class="swatch-preview" style="background: var(--svc-south)"></span>
+              <span>South Metro: #1b6565 (Teal)</span>
+            </span>
+            <span class="swatch-chip">
+              <span class="swatch-preview" style="background: var(--svc-east)"></span>
+              <span>East Metro: #2f4c66 (Signature Slate)</span>
+            </span>
+            <span class="swatch-chip">
+              <span class="swatch-preview" style="background: var(--svc-wachs)"></span>
+              <span>WACHS: #8a4822 (Warm Rust)</span>
+            </span>
+            <span class="swatch-chip">
+              <span class="swatch-preview" style="background: var(--svc-private)"></span>
+              <span>Private: #525a66 (Pewter)</span>
+            </span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      // State Store
+      var currentService = "all";
+      var isPopoverOpen = true;
+
+      var mockData = [
+        {
+          patient: "WAR-8821",
+          name: "Davies, K.",
+          origin: "SCGH ED (NMHS)",
+          target: "G1 Ward Bed 04",
+          service: "north",
+          svcName: "North Metro",
+          status: "Transferring",
+          tone: "good",
+        },
+        {
+          patient: "WAR-9104",
+          name: "Chen, H.",
+          origin: "FPH ED (SMHS)",
+          target: "Ward 4B Bed 12",
+          service: "south",
+          svcName: "South Metro",
+          status: "En Route",
+          tone: "accent",
+        },
+        {
+          patient: "WAR-7743",
+          name: "Taylor, M.",
+          origin: "RPH ED (EMHS)",
+          target: "2A Step-Down Bed 02",
+          service: "east",
+          svcName: "East Metro",
+          status: "Allocated",
+          tone: "warn",
+        },
+        {
+          patient: "WAR-6519",
+          name: "Watson, R.",
+          origin: "Bunbury ED (WACHS)",
+          target: "Acute Bed 08",
+          service: "wachs",
+          svcName: "WACHS",
+          status: "Awaiting Amb",
+          tone: "warn",
+        },
+        {
+          patient: "WAR-8092",
+          name: "O'Connor, B.",
+          origin: "Bethesda (Private)",
+          target: "Private Suite 03",
+          service: "private",
+          svcName: "Private",
+          status: "Confirmed",
+          tone: "good",
+        },
+        {
+          patient: "WAR-8311",
+          name: "Patel, S.",
+          origin: "Armadale ED (EMHS)",
+          target: "Ward 3 Bed 06",
+          service: "east",
+          svcName: "East Metro",
+          status: "Ready",
+          tone: "good",
+        },
+        {
+          patient: "WAR-9220",
+          name: "Smith, G.",
+          origin: "Rockingham ED (SMHS)",
+          target: "Ward 2 Bed 14",
+          service: "south",
+          svcName: "South Metro",
+          status: "In Transit",
+          tone: "accent",
+        },
+        {
+          patient: "WAR-7601",
+          name: "Evans, L.",
+          origin: "Joondalup ED (NMHS)",
+          target: "Mental Health Bed 01",
+          service: "north",
+          svcName: "North Metro",
+          status: "Allocated",
+          tone: "warn",
+        },
+      ];
+
+      function renderTable() {
+        var tbody = document.getElementById("movementTableBody");
+        var filtered =
+          currentService === "all"
+            ? mockData
+            : mockData.filter(function (item) {
+                return item.service === currentService;
+              });
+
+        tbody.innerHTML = "";
+        filtered.forEach(function (row) {
+          var tr = document.createElement("tr");
+          tr.innerHTML =
+            '<td><span class="patient-badge">' +
+            row.patient +
+            '</span> <span style="font-size: 11px; color: var(--muted);">(' +
+            row.name +
+            ")</span></td>" +
+            "<td>" +
+            row.origin +
+            "</td>" +
+            "<td><strong>" +
+            row.target +
+            "</strong></td>" +
+            '<td><span class="service-swatch-dot dot-' +
+            row.service +
+            '" style="display:inline-block; vertical-align:middle; margin-right:6px;"></span>' +
+            row.svcName +
+            "</td>" +
+            '<td><span class="status-pill pill-' +
+            row.tone +
+            '">' +
+            row.status +
+            "</span></td>";
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById("tableFilterBadge").textContent =
+          "Filtered: " +
+          (currentService === "all" ? "All services" : document.getElementById("triggerLabel").textContent);
+        document.getElementById("scopeMovementsCount").textContent = filtered.length + " active";
+      }
+
+      function selectServiceOption(serviceId, serviceName, swatchClass, countText) {
+        currentService = serviceId;
+
+        // 1. Update Option Rows
+        var rows = document.querySelectorAll(".service-option-row");
+        rows.forEach(function (row) {
+          var isMatch = row.getAttribute("data-service") === serviceId;
+          row.setAttribute("aria-checked", isMatch ? "true" : "false");
+          row.setAttribute("aria-pressed", isMatch ? "true" : "false");
+        });
+
+        // 2. Update Top Bar Trigger
+        var triggerLabel = document.getElementById("triggerLabel");
+        var triggerSwatch = document.getElementById("triggerSwatch");
+        triggerLabel.textContent = serviceName;
+        triggerSwatch.className = "trigger-swatch " + swatchClass;
+
+        // 3. Update Banner Strip
+        var bannerSwatch = document.getElementById("bannerSwatch");
+        var bannerScopeName = document.getElementById("bannerScopeName");
+        var bannerScopeText = document.getElementById("bannerScopeText");
+
+        bannerSwatch.className = "service-swatch-dot " + swatchClass;
+        bannerScopeName.textContent = serviceName;
+
+        if (serviceId === "all") {
+          bannerScopeText.innerHTML =
+            "Showing all <strong>69 open beds</strong> across all 5 WA Health health services.";
+        } else {
+          bannerScopeText.innerHTML =
+            "Narrowed to <strong>" +
+            serviceName +
+            "</strong> (" +
+            countText +
+            " open beds). Capacity, Delays, and Movements lists scoped.";
+        }
+
+        // 4. Re-render table
+        renderTable();
+      }
+
+      function togglePopover(forceState) {
+        var popover = document.getElementById("servicePopover");
+        var trigger = document.getElementById("serviceTriggerBtn");
+        var btnOpen = document.getElementById("btnStateOpen");
+        var btnClosed = document.getElementById("btnStateClosed");
+
+        if (typeof forceState === "boolean") {
+          isPopoverOpen = forceState;
+        } else {
+          isPopoverOpen = !isPopoverOpen;
+        }
+
+        popover.setAttribute("data-state", isPopoverOpen ? "open" : "closed");
+        trigger.setAttribute("aria-expanded", isPopoverOpen ? "true" : "false");
+
+        if (btnOpen && btnClosed) {
+          btnOpen.classList.toggle("active", isPopoverOpen);
+          btnClosed.classList.toggle("active", !isPopoverOpen);
+        }
+      }
+
+      function handleTriggerClick(e) {
+        e.stopPropagation();
+        togglePopover();
+      }
+
+      function toggleTheme() {
+        var current = document.documentElement.getAttribute("data-theme") || "light";
+        var next = current === "light" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("ward-flow-theme", next);
+        updateThemeBtnLabel(next);
+      }
+
+      function updateThemeBtnLabel(theme) {
+        var label = document.getElementById("themeLabel");
+        if (label) {
+          label.textContent = theme === "light" ? "Dark Theme" : "Light Theme";
+        }
+      }
+
+      function setViewMode(mode) {
+        var inSituBtn = document.getElementById("btnShowInSitu");
+        var isolatedBtn = document.getElementById("btnShowIsolated");
+        var mockBody = document.getElementById("mockBodyArea");
+
+        if (mode === "in-situ") {
+          inSituBtn.classList.add("active");
+          isolatedBtn.classList.remove("active");
+          mockBody.style.display = "flex";
+        } else {
+          isolatedBtn.classList.add("active");
+          inSituBtn.classList.remove("active");
+          mockBody.style.display = "none";
+        }
+      }
+
+      // Keyboard & Outside Click Listeners
+      document.addEventListener("click", function (e) {
+        var popover = document.getElementById("servicePopover");
+        var trigger = document.getElementById("serviceTriggerBtn");
+        if (isPopoverOpen && !popover.contains(e.target) && !trigger.contains(e.target)) {
+          togglePopover(false);
+        }
+      });
+
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && isPopoverOpen) {
+          togglePopover(false);
+          document.getElementById("serviceTriggerBtn").focus();
+        }
+      });
+
+      // Initial Render
+      document.addEventListener("DOMContentLoaded", function () {
+        var currentTheme = document.documentElement.getAttribute("data-theme") || "light";
+        updateThemeBtnLabel(currentTheme);
+        renderTable();
+      });
+    </script>
+  </body>
+</html>

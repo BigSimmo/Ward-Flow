@@ -1,0 +1,1950 @@
+<!doctype html>
+<html lang="en-AU" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <title>Ward Flow — Network & 48-Hour Bed Horizon</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+    />
+    <style>
+      /* ═══════════════════════════════════════════════════════════════════════
+       WARD FLOW — PLATINUM RAISED COOL (THIRD EDITION DESIGN SYSTEM)
+       Tokens derived directly from docs/ward-flow/mockups/network-third-edition.html
+       ═══════════════════════════════════════════════════════════════════════ */
+      :root {
+        color-scheme: light;
+        --ground-hi: #ecf0f4;
+        --ground: #e6eaef;
+        --ground-2: #e1e6ec;
+        --surface: #fdfdfe;
+        --surface-2: #f4f7fa;
+        --sunk: #eef2f6;
+
+        --ink: #161a20;
+        --ink-soft: #414953;
+        --muted: #5f6873;
+
+        --line: rgba(22, 30, 40, 0.11);
+        --line-strong: rgba(22, 30, 40, 0.26);
+
+        --accent: #2f4c66;
+        --accent-ink: #27405a;
+        --accent-press: #27405a;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+
+        --gilt: #7d612a;
+        --gilt-soft: #f1ebdf;
+
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --warn: #825d10;
+        --warn-soft: #f6eeda;
+
+        --danger: #b03b2e;
+        --danger-soft: #f8e6e2;
+        --danger-ink: #973121;
+
+        --svc-east: #2f4c66;
+        --svc-north: #685a94;
+        --svc-south: #356a70;
+        --svc-wachs: #8c5a3c;
+
+        --lift: 0 1px 2px rgba(30, 48, 66, 0.06), 0 14px 30px -22px rgba(30, 48, 66, 0.35);
+        --hl: rgba(255, 255, 255, 0.9);
+        --edge-shade: rgba(30, 48, 66, 0.12);
+
+        --r1: 10px;
+        --r1i: 8px;
+        --r2: 6px;
+        --gap: 14px;
+
+        --t-0: 11px;
+        --t-1: 12px;
+        --t-2: 13px;
+        --t-3: 14px;
+        --t-4: 16px;
+        --t-5: 20px;
+
+        --body: "Geist", "Segoe UI", system-ui, sans-serif;
+        --mono: "Geist Mono", ui-monospace, Consolas, monospace;
+      }
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --ground-hi: #14181d;
+        --ground: #0f1216;
+        --ground-2: #0c0f12;
+        --surface: #171b21;
+        --surface-2: #1b2026;
+        --sunk: #13171c;
+
+        --ink: #e8ecf1;
+        --ink-soft: #b2bac5;
+        --muted: #8a929d;
+
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.21);
+
+        --accent: #a7bcd2;
+        --accent-ink: #bfd0e2;
+        --accent-press: #8ea6bf;
+        --accent-soft: #1f2a36;
+        --on-accent: #0f1216;
+        --stripe: #3a5a78;
+
+        --gilt: #d3b77e;
+        --gilt-soft: #2a251b;
+
+        --good: #6fd39b;
+        --good-soft: #15291f;
+        --warn: #e3bc5e;
+        --warn-soft: #2b2415;
+
+        --danger: #ff8b76;
+        --danger-soft: #33201b;
+        --danger-ink: #ffa08e;
+
+        --svc-east: #a7bcd2;
+        --svc-north: #b1a2d6;
+        --svc-south: #7fb2b8;
+        --svc-wachs: #d89a78;
+
+        --lift: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 34px -22px rgba(0, 0, 0, 0.95);
+        --hl: rgba(255, 255, 255, 0.06);
+        --edge-shade: rgba(0, 0, 0, 0.55);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background:
+          linear-gradient(180deg, var(--ground-hi) 0%, var(--ground) 55%, var(--ground-2) 100%) fixed,
+          var(--ground);
+        color: var(--ink);
+        font-family: var(--body);
+        font-size: var(--t-2);
+        line-height: 1.45;
+        -webkit-font-smoothing: antialiased;
+        font-variant-numeric: tabular-nums;
+        overflow-x: hidden;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Top Brand Stripe */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 100;
+      }
+
+      /* Layout Skeleton */
+      .appShell {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* ─── SIDEBAR RAIL (Q005 4 Groups) ─── */
+      .rail {
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        user-select: none;
+        z-index: 40;
+        overflow-y: auto;
+      }
+      .railBrand {
+        padding: 16px 18px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+      }
+      .railLogo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        color: var(--ink);
+      }
+      .railLogoIcon {
+        width: 28px;
+        height: 28px;
+        background: var(--accent-soft);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 13px;
+        color: var(--accent);
+      }
+      .railLogoText {
+        font-weight: 600;
+        font-size: var(--t-3);
+        letter-spacing: -0.02em;
+      }
+      .railLogoSub {
+        font-size: var(--t-0);
+        color: var(--muted);
+        display: block;
+        line-height: 1.1;
+      }
+
+      .railGroup {
+        padding: 12px 10px 4px;
+      }
+      .railGroupLabel {
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        font-weight: 600;
+        padding: 0 8px 6px;
+      }
+      .railLink {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 10px;
+        border-radius: var(--r2);
+        color: var(--ink-soft);
+        text-decoration: none;
+        font-size: var(--t-2);
+        font-weight: 500;
+        transition:
+          background 120ms ease,
+          color 120ms ease;
+        position: relative;
+      }
+      .railLink:hover {
+        background: var(--surface-2);
+        color: var(--ink);
+      }
+      .railLink[aria-current="page"] {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        font-weight: 600;
+        box-shadow: inset 0 0 0 1px var(--accent);
+      }
+      .railLink svg {
+        width: 16px;
+        height: 16px;
+        stroke-width: 2;
+        flex-shrink: 0;
+      }
+
+      .railFoot {
+        margin-top: auto;
+        padding: 12px;
+        border-top: 1px solid var(--line);
+        background: var(--surface-2);
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+
+      /* ─── MAIN CONTENT AREA ─── */
+      .mainView {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+        background: transparent;
+      }
+
+      /* Masthead */
+      .topBar {
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        padding: 8px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-shrink: 0;
+      }
+      .topTitle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .topTitle h1 {
+        font-size: var(--t-4);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .badgeSynthetic {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: var(--surface-2);
+        border: 1px solid var(--line-strong);
+        color: var(--muted);
+        font-weight: 500;
+      }
+
+      .topControls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .segmentedControl {
+        display: inline-flex;
+        background: var(--sunk);
+        padding: 2px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line);
+      }
+      .segBtn {
+        padding: 4px 12px;
+        font-size: var(--t-1);
+        font-weight: 500;
+        border-radius: 4px;
+        color: var(--ink-soft);
+        cursor: pointer;
+        background: transparent;
+        border: none;
+        transition: all 120ms;
+      }
+      .segBtn.active {
+        background: var(--surface);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .clockBadge {
+        font-family: var(--mono);
+        font-size: var(--t-1);
+        padding: 4px 10px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .clockDot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--good);
+      }
+
+      /* ED Pressure Strip */
+      .pressureStrip {
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        padding: 6px 18px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        overflow-x: auto;
+        font-size: var(--t-1);
+        flex-shrink: 0;
+      }
+      .pressureTitle {
+        font-weight: 600;
+        font-size: 11px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+      }
+      .edChip {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 3px 8px;
+        border-radius: var(--r2);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        white-space: nowrap;
+      }
+      .edName {
+        font-weight: 500;
+      }
+      .edCount {
+        font-family: var(--mono);
+        font-weight: 600;
+      }
+      .edAlert {
+        color: var(--danger);
+        font-weight: 600;
+      }
+
+      /* Filter & Timeline Scrubber Bar */
+      .horizonToolbar {
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        padding: 8px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-shrink: 0;
+      }
+      .filterGroup {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .selectBox {
+        background: var(--surface-2);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        padding: 4px 8px;
+        font-size: var(--t-1);
+        color: var(--ink);
+        font-family: inherit;
+      }
+      .scrubberWrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .scrubberLabel {
+        font-size: var(--t-1);
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .slider {
+        accent-color: var(--accent);
+        cursor: pointer;
+        width: 180px;
+      }
+      .forecastBadge {
+        font-family: var(--mono);
+        font-size: 11.5px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border: 1px solid var(--accent);
+      }
+
+      /* Workspace Body */
+      .workspace {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .canvasArea {
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        padding: 16px 18px;
+        gap: 16px;
+      }
+
+      /* ─── MACRO SERVICE CARDS (TOP SECTION) ─── */
+      .serviceGrid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        flex-shrink: 0;
+      }
+      .svcCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 12px 14px;
+        box-shadow: var(--lift);
+        position: relative;
+        overflow: hidden;
+      }
+      .svcHeader {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 8px;
+      }
+      .svcTitle {
+        font-weight: 600;
+        font-size: var(--t-2);
+      }
+      .svcSites {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .statusBadge {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+      }
+      .statusBadge.open {
+        background: var(--good-soft);
+        color: var(--good);
+        border-color: rgba(34, 117, 80, 0.3);
+      }
+      .statusBadge.tight {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border-color: rgba(130, 93, 16, 0.3);
+      }
+      .statusBadge.critical {
+        background: var(--danger-soft);
+        color: var(--danger);
+        border-color: rgba(176, 59, 46, 0.3);
+      }
+      .svcMetrics {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 11.5px;
+        border-top: 1px solid var(--line);
+        padding-top: 8px;
+      }
+      .metricRow {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .metricVal {
+        font-family: var(--mono);
+        font-weight: 600;
+      }
+
+      /* ─── GANTT SECTION ─── */
+      .ganttCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .ganttHead {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface-2);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .ganttHeadTitle {
+        font-weight: 600;
+        font-size: var(--t-2);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .legendInline {
+        display: flex;
+        gap: 12px;
+        font-size: 11px;
+      }
+      .legendTag {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .legendSwatch {
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+      }
+
+      /* Gantt Table Grid */
+      .ganttContainer {
+        overflow-x: auto;
+        position: relative;
+      }
+      .ganttTable {
+        min-width: 860px;
+        width: 100%;
+        border-collapse: collapse;
+        position: relative;
+      }
+      .timeHeaderRow {
+        display: grid;
+        grid-template-columns: 210px repeat(8, 1fr);
+        border-bottom: 1px solid var(--line-strong);
+        background: var(--surface-2);
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+        position: sticky;
+        top: 0;
+        z-index: 20;
+      }
+      .timeCell {
+        padding: 6px 4px;
+        text-align: center;
+        border-left: 1px solid var(--line);
+      }
+      .timeCell.anchor {
+        color: var(--accent);
+        font-weight: 600;
+        background: var(--accent-soft);
+      }
+
+      .unitRow {
+        display: grid;
+        grid-template-columns: 210px 1fr;
+        border-bottom: 1px solid var(--line);
+        min-height: 46px;
+        position: relative;
+      }
+      .unitRow:hover {
+        background: var(--surface-2);
+      }
+      .unitInfo {
+        padding: 8px 12px;
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .unitName {
+        font-weight: 600;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .unitSub {
+        font-size: 10.5px;
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+
+      .timelineLane {
+        position: relative;
+        height: 100%;
+        background-image: linear-gradient(to right, var(--line) 1px, transparent 1px);
+        background-size: calc((100% / 8)) 100%;
+      }
+
+      /* Gantt Event Bar */
+      .ganttBar {
+        position: absolute;
+        top: 8px;
+        height: 28px;
+        border-radius: 4px;
+        font-size: 10.5px;
+        font-weight: 500;
+        padding: 0 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        border: 1px solid transparent;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition:
+          transform 120ms ease,
+          box-shadow 120ms ease;
+        z-index: 10;
+      }
+      .ganttBar:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+        z-index: 15;
+      }
+      .ganttBar.leave {
+        background: rgba(104, 90, 148, 0.25);
+        border-color: var(--svc-north);
+        color: #dfd7f5;
+      }
+      .ganttBar.confirmed {
+        background: var(--good-soft);
+        border-color: var(--good);
+        color: #98e4ba;
+      }
+      .ganttBar.predicted {
+        background: rgba(47, 76, 102, 0.25);
+        border: 1px dashed var(--accent);
+        color: #c4d7e8;
+      }
+      .ganttBar.admission {
+        background: var(--warn-soft);
+        border-color: var(--warn);
+        color: #f7dca1;
+      }
+
+      /* Vertical Scrubber Cursor */
+      .scrubberCursor {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--accent);
+        z-index: 30;
+        pointer-events: none;
+        transition: left 100ms ease-out;
+      }
+      .scrubberHead {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--accent);
+        margin-left: -4px;
+        margin-top: -2px;
+        box-shadow: 0 0 6px var(--accent);
+      }
+
+      /* ─── RIGHT SIDEBAR (EXPLAINABLE SHORTLIST / INSPECTOR) ─── */
+      .detailAside {
+        background: var(--surface);
+        border-left: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        padding: 16px;
+        gap: 16px;
+      }
+      .asideCard {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r1i);
+        padding: 12px;
+      }
+      .asideTitle {
+        font-size: var(--t-2);
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .detailGrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        font-size: 11.5px;
+        margin-top: 8px;
+      }
+      .detailKey {
+        color: var(--muted);
+      }
+      .detailVal {
+        font-weight: 600;
+        font-family: var(--mono);
+      }
+      .rationaleBox {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 8px 10px;
+        font-size: 11.5px;
+        margin-top: 10px;
+        line-height: 1.4;
+        color: var(--ink-soft);
+      }
+
+      /* SVG Schematic Topology Canvas (for Split / Topology mode) */
+      .topologyMapContainer {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 14px;
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .svgCanvas {
+        width: 100%;
+        height: 220px;
+        background: var(--ground);
+        border-radius: var(--r1i);
+        border: 1px solid var(--line);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="appShell">
+      <!-- ─── 1. Q005 SIDEBAR NAVIGATION ─── -->
+      <nav class="rail" aria-label="Ward Flow navigation">
+        <div class="railBrand">
+          <a href="#" class="railLogo">
+            <div class="railLogoIcon">WF</div>
+            <div>
+              <span class="railLogoText">Ward Flow</span>
+              <span class="railLogoSub">Metro Patient Flow</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- Group 1: Operations -->
+        <div class="railGroup">
+          <div class="railGroupLabel">Operations</div>
+          <a href="#" class="railLink">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
+            </svg>
+            Command
+          </a>
+          <a href="#" class="railLink">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+              />
+            </svg>
+            Movement
+          </a>
+          <a href="#" class="railLink">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+            Capacity
+          </a>
+          <a href="#" class="railLink">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Delays
+          </a>
+          <a href="#" class="railLink" aria-current="page">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+              />
+            </svg>
+            Network
+          </a>
+        </div>
+
+        <!-- Group 2: Service Hubs -->
+        <div class="railGroup">
+          <div class="railGroupLabel">Service Hubs</div>
+          <a href="#" class="railLink">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            Search Hub
+          </a>
+          <a href="#" class="railLink">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+              />
+            </svg>
+            ED Hub
+          </a>
+          <a href="#" class="railLink">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+              />
+            </svg>
+            Ward Hub
+          </a>
+          <a href="#" class="railLink">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              />
+            </svg>
+            Community Hub
+          </a>
+          <a href="#" class="railLink">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"
+              />
+            </svg>
+            Transport Hub
+          </a>
+        </div>
+
+        <!-- Group 3: Care Coordination -->
+        <div class="railGroup">
+          <div class="railGroupLabel">Care Coordination</div>
+          <a href="#" class="railLink">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
+            </svg>
+            Patients
+          </a>
+          <a href="#" class="railLink">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            Make Referrals
+          </a>
+          <a href="#" class="railLink">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
+            Referral Board
+          </a>
+          <a href="#" class="railLink">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            Handover
+          </a>
+          <a href="#" class="railLink">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              />
+            </svg>
+            Discharges
+          </a>
+        </div>
+
+        <!-- Group 4: Oversight -->
+        <div class="railGroup">
+          <div class="railGroupLabel">Oversight</div>
+          <a href="#" class="railLink">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+              />
+            </svg>
+            Governance
+          </a>
+          <a href="#" class="railLink">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
+            </svg>
+            Statistics
+          </a>
+          <a href="#" class="railLink">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"
+              />
+            </svg>
+            Legal
+          </a>
+          <a href="#" class="railLink">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            Out of area
+          </a>
+        </div>
+
+        <div class="railFoot">
+          <div>Synthetic Model v3.4</div>
+          <div style="font-family: var(--mono); margin-top: 2px">42 beds · 14 waiting</div>
+        </div>
+      </nav>
+
+      <!-- ─── 2. MAIN APPLICATION VIEW ─── -->
+      <main class="mainView">
+        <!-- Topbar Header -->
+        <header class="topBar">
+          <div class="topTitle">
+            <h1>Network & 48-Hour Bed Horizon</h1>
+            <span class="badgeSynthetic">Synthetic Prototype</span>
+          </div>
+
+          <div class="topControls">
+            <!-- Multi-Lens Toggle -->
+            <div class="segmentedControl">
+              <button class="segBtn" id="btnTopology" onclick="setLens('topology')">Topology Map</button>
+              <button class="segBtn active" id="btnSplit" onclick="setLens('split')">Split View</button>
+              <button class="segBtn" id="btnHorizon" onclick="setLens('horizon')">48h Horizon Only</button>
+            </div>
+
+            <!-- Pinned Live Clock Anchor -->
+            <div class="clockBadge">
+              <span class="clockDot"></span>
+              <span>Anchor: <b>Mon 14:00</b></span>
+            </div>
+
+            <!-- Theme Toggle -->
+            <button
+              onclick="toggleTheme()"
+              class="segBtn"
+              style="border: 1px solid var(--line); border-radius: 4px; padding: 4px 8px"
+              title="Toggle Light / Dark theme"
+            >
+              🌓 Theme
+            </button>
+          </div>
+        </header>
+
+        <!-- Emergency Department Pressure Strip -->
+        <div class="pressureStrip">
+          <span class="pressureTitle">ED Pressure:</span>
+          <div class="edChip">
+            <span class="edName">Peel:</span> <span class="edCount edAlert">3 wait (1 Form 1A breach)</span>
+          </div>
+          <div class="edChip">
+            <span class="edName">RPH:</span> <span class="edCount">4 wait (longest 9h 12m)</span>
+          </div>
+          <div class="edChip"><span class="edName">SCGH:</span> <span class="edCount">2 wait (all detained)</span></div>
+          <div class="edChip"><span class="edName">FSH:</span> <span class="edCount">3 wait</span></div>
+          <div class="edChip"><span class="edName">Midland:</span> <span class="edCount">1 wait</span></div>
+          <div class="edChip"><span class="edName">Rockingham:</span> <span class="edCount">1 wait</span></div>
+        </div>
+
+        <!-- Filter & Forecast Scrubber -->
+        <div class="horizonToolbar">
+          <div class="filterGroup">
+            <label style="font-size: 11.5px; color: var(--muted); font-weight: 500">Service:</label>
+            <select id="selService" class="selectBox" onchange="applyFilters()">
+              <option value="all">All Services (Statewide)</option>
+              <option value="NMHS">North Metro (SCGH, Graylands)</option>
+              <option value="SMHS">South Metro (FSH, Fremantle, Rockingham)</option>
+              <option value="EMHS">East Metro (RPH, Bentley, Midland)</option>
+              <option value="WACHS">Country (Albany, Bunbury, Kalgoorlie)</option>
+            </select>
+
+            <label style="font-size: 11.5px; color: var(--muted); font-weight: 500; margin-left: 8px">Cohort:</label>
+            <select id="selCohort" class="selectBox" onchange="applyFilters()">
+              <option value="all">All Cohorts</option>
+              <option value="adult">Adult (Open & Secure)</option>
+              <option value="older_adult">Older Adult</option>
+            </select>
+          </div>
+
+          <div class="scrubberWrap">
+            <span class="scrubberLabel">48h Forecast Timeline:</span>
+            <input
+              type="range"
+              min="0"
+              max="48"
+              step="2"
+              value="0"
+              id="scrubberInput"
+              class="slider"
+              oninput="handleScrubber(this.value)"
+            />
+            <span id="scrubberText" class="forecastBadge">+0h (Mon 14:00)</span>
+            <button
+              onclick="resetScrubber()"
+              style="
+                font-size: 11px;
+                text-decoration: underline;
+                color: var(--muted);
+                background: none;
+                border: none;
+                cursor: pointer;
+              "
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Workspace with Content & Detail Inspector -->
+        <div class="workspace">
+          <div class="canvasArea">
+            <!-- 1. MACRO SERVICE PRESSURE CARDS (Updated dynamically by scrubber) -->
+            <div class="serviceGrid" id="serviceCardsContainer">
+              <!-- NMHS -->
+              <div class="svcCard" id="svc-NMHS">
+                <div class="svcHeader">
+                  <div>
+                    <div class="svcTitle" style="color: var(--svc-north)">North Metro (NMHS)</div>
+                    <div class="svcSites">SCGH MHU, Graylands</div>
+                  </div>
+                  <span class="statusBadge open" id="badge-NMHS">Open · 4 Ready</span>
+                </div>
+                <div class="svcMetrics">
+                  <div class="metricRow"><span>Ready now:</span> <span class="metricVal" id="ready-NMHS">4</span></div>
+                  <div class="metricRow">
+                    <span>Leave due back:</span>
+                    <span class="metricVal" style="color: var(--svc-north)" id="leave-NMHS">1</span>
+                  </div>
+                  <div class="metricRow">
+                    <span>Forecast egress:</span>
+                    <span class="metricVal" style="color: var(--good)" id="egress-NMHS">+3</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SMHS -->
+              <div class="svcCard" id="svc-SMHS">
+                <div class="svcHeader">
+                  <div>
+                    <div class="svcTitle" style="color: var(--svc-south)">South Metro (SMHS)</div>
+                    <div class="svcSites">FSH 4B, Fremantle, Rockingham</div>
+                  </div>
+                  <span class="statusBadge tight" id="badge-SMHS">Tight · 1 Ready</span>
+                </div>
+                <div class="svcMetrics">
+                  <div class="metricRow"><span>Ready now:</span> <span class="metricVal" id="ready-SMHS">1</span></div>
+                  <div class="metricRow">
+                    <span>Leave due back:</span>
+                    <span class="metricVal" style="color: var(--svc-north)" id="leave-SMHS">3</span>
+                  </div>
+                  <div class="metricRow">
+                    <span>Forecast egress:</span>
+                    <span class="metricVal" style="color: var(--good)" id="egress-SMHS">+2</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- EMHS -->
+              <div class="svcCard" id="svc-EMHS">
+                <div class="svcHeader">
+                  <div>
+                    <div class="svcTitle" style="color: var(--svc-east)">East Metro (EMHS)</div>
+                    <div class="svcSites">RPH 2K, Bentley, Midland</div>
+                  </div>
+                  <span class="statusBadge critical" id="badge-EMHS">Critical · 0 Ready</span>
+                </div>
+                <div class="svcMetrics">
+                  <div class="metricRow"><span>Ready now:</span> <span class="metricVal" id="ready-EMHS">0</span></div>
+                  <div class="metricRow">
+                    <span>Leave due back:</span>
+                    <span class="metricVal" style="color: var(--svc-north)" id="leave-EMHS">2</span>
+                  </div>
+                  <div class="metricRow">
+                    <span>Forecast egress:</span>
+                    <span class="metricVal" style="color: var(--good)" id="egress-EMHS">+1</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- WACHS -->
+              <div class="svcCard" id="svc-WACHS">
+                <div class="svcHeader">
+                  <div>
+                    <div class="svcTitle" style="color: var(--svc-wachs)">Country (WACHS)</div>
+                    <div class="svcSites">Albany, Bunbury, Kalgoorlie</div>
+                  </div>
+                  <span class="statusBadge open" id="badge-WACHS">Open · 2 Ready</span>
+                </div>
+                <div class="svcMetrics">
+                  <div class="metricRow"><span>Ready now:</span> <span class="metricVal" id="ready-WACHS">2</span></div>
+                  <div class="metricRow">
+                    <span>Leave due back:</span>
+                    <span class="metricVal" style="color: var(--svc-north)" id="leave-WACHS">0</span>
+                  </div>
+                  <div class="metricRow">
+                    <span>Forecast egress:</span>
+                    <span class="metricVal" style="color: var(--good)" id="egress-WACHS">+1</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. TOPOLOGY MAP (Collapsible in Horizon-only mode) -->
+            <div class="topologyMapContainer" id="topologyPanel">
+              <div style="display: flex; justify-content: space-between; align-items: center">
+                <strong style="font-size: 12.5px; display: flex; align-items: center; gap: 6px">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                    />
+                  </svg>
+                  Statewide Flow Schematic & Inter-Catchment Corridors
+                </strong>
+                <span style="font-size: 11px; color: var(--muted)">Simulated Vector Routing · 14 Open Movements</span>
+              </div>
+
+              <svg class="svgCanvas" viewBox="0 0 800 180">
+                <!-- Grid background -->
+                <defs>
+                  <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--line)" stroke-width="0.5" />
+                  </pattern>
+                  <marker
+                    id="arrow"
+                    viewBox="0 0 10 10"
+                    refX="5"
+                    refY="5"
+                    markerWidth="6"
+                    markerHeight="6"
+                    orient="auto-start-reverse"
+                  >
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--muted)" />
+                  </marker>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)" />
+
+                <!-- Nodes for Emergency Departments -->
+                <g transform="translate(40, 30)">
+                  <rect
+                    width="110"
+                    height="34"
+                    rx="6"
+                    fill="var(--surface)"
+                    stroke="var(--danger)"
+                    stroke-width="1.5"
+                  />
+                  <text x="55" y="16" fill="var(--ink)" font-size="11" font-weight="600" text-anchor="middle">
+                    Peel ED
+                  </text>
+                  <text x="55" y="28" fill="var(--danger)" font-size="9" text-anchor="middle">
+                    3 Waiting (Critical)
+                  </text>
+                </g>
+                <g transform="translate(40, 80)">
+                  <rect
+                    width="110"
+                    height="34"
+                    rx="6"
+                    fill="var(--surface)"
+                    stroke="var(--line-strong)"
+                    stroke-width="1"
+                  />
+                  <text x="55" y="16" fill="var(--ink)" font-size="11" font-weight="600" text-anchor="middle">
+                    RPH ED
+                  </text>
+                  <text x="55" y="28" fill="var(--muted)" font-size="9" text-anchor="middle">4 Waiting</text>
+                </g>
+                <g transform="translate(40, 130)">
+                  <rect
+                    width="110"
+                    height="34"
+                    rx="6"
+                    fill="var(--surface)"
+                    stroke="var(--line-strong)"
+                    stroke-width="1"
+                  />
+                  <text x="55" y="16" fill="var(--ink)" font-size="11" font-weight="600" text-anchor="middle">
+                    SCGH ED
+                  </text>
+                  <text x="55" y="28" fill="var(--muted)" font-size="9" text-anchor="middle">2 Waiting</text>
+                </g>
+
+                <!-- Central Statewide Flow Hub -->
+                <g transform="translate(320, 60)">
+                  <circle cx="60" cy="30" r="36" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2" />
+                  <text x="60" y="26" fill="var(--accent-ink)" font-size="10" font-weight="700" text-anchor="middle">
+                    STATEWIDE
+                  </text>
+                  <text x="60" y="38" fill="var(--accent-ink)" font-size="10" font-weight="700" text-anchor="middle">
+                    HUB
+                  </text>
+                </g>
+
+                <!-- Destination Wards -->
+                <g transform="translate(630, 20)">
+                  <rect
+                    width="130"
+                    height="30"
+                    rx="5"
+                    fill="var(--surface)"
+                    stroke="var(--svc-north)"
+                    stroke-width="1"
+                  />
+                  <text x="65" y="14" fill="var(--ink)" font-size="10.5" font-weight="600" text-anchor="middle">
+                    SCGH MHU
+                  </text>
+                  <text x="65" y="24" fill="var(--good)" font-size="9" font-family="var(--mono)" text-anchor="middle">
+                    4 Ready
+                  </text>
+                </g>
+                <g transform="translate(630, 60)">
+                  <rect
+                    width="130"
+                    height="30"
+                    rx="5"
+                    fill="var(--surface)"
+                    stroke="var(--svc-south)"
+                    stroke-width="1"
+                  />
+                  <text x="65" y="14" fill="var(--ink)" font-size="10.5" font-weight="600" text-anchor="middle">
+                    FSH Ward 4B
+                  </text>
+                  <text x="65" y="24" fill="var(--warn)" font-size="9" font-family="var(--mono)" text-anchor="middle">
+                    1 Ready (Leave return)
+                  </text>
+                </g>
+                <g transform="translate(630, 100)">
+                  <rect
+                    width="130"
+                    height="30"
+                    rx="5"
+                    fill="var(--surface)"
+                    stroke="var(--svc-east)"
+                    stroke-width="1"
+                  />
+                  <text x="65" y="14" fill="var(--ink)" font-size="10.5" font-weight="600" text-anchor="middle">
+                    RPH 2K Secure
+                  </text>
+                  <text x="65" y="24" fill="var(--danger)" font-size="9" font-family="var(--mono)" text-anchor="middle">
+                    0 Ready (Blocked)
+                  </text>
+                </g>
+                <g transform="translate(630, 140)">
+                  <rect
+                    width="130"
+                    height="30"
+                    rx="5"
+                    fill="var(--surface)"
+                    stroke="var(--svc-wachs)"
+                    stroke-width="1"
+                  />
+                  <text x="65" y="14" fill="var(--ink)" font-size="10.5" font-weight="600" text-anchor="middle">
+                    Albany Hospital
+                  </text>
+                  <text x="65" y="24" fill="var(--good)" font-size="9" font-family="var(--mono)" text-anchor="middle">
+                    2 Ready
+                  </text>
+                </g>
+
+                <!-- Dynamic Bezier Connectors -->
+                <path
+                  d="M 150 47 Q 240 60 320 80"
+                  fill="none"
+                  stroke="var(--danger)"
+                  stroke-width="2"
+                  marker-end="url(#arrow)"
+                  stroke-dasharray="4,2"
+                />
+                <path
+                  d="M 150 97 Q 240 90 320 90"
+                  fill="none"
+                  stroke="var(--muted)"
+                  stroke-width="1.5"
+                  marker-end="url(#arrow)"
+                />
+                <path
+                  d="M 150 147 Q 240 120 320 100"
+                  fill="none"
+                  stroke="var(--muted)"
+                  stroke-width="1.5"
+                  marker-end="url(#arrow)"
+                />
+
+                <path
+                  d="M 440 80 Q 520 50 630 35"
+                  fill="none"
+                  stroke="var(--good)"
+                  stroke-width="2"
+                  marker-end="url(#arrow)"
+                />
+                <path
+                  d="M 440 90 Q 520 80 630 75"
+                  fill="none"
+                  stroke="var(--warn)"
+                  stroke-width="1.5"
+                  marker-end="url(#arrow)"
+                />
+                <path
+                  d="M 440 100 Q 520 120 630 155"
+                  fill="none"
+                  stroke="var(--muted)"
+                  stroke-width="1.5"
+                  marker-end="url(#arrow)"
+                />
+              </svg>
+            </div>
+
+            <!-- 3. THE 48-HOUR BED HORIZON GANTT CHART -->
+            <div class="ganttCard" id="ganttPanel">
+              <div class="ganttHead">
+                <div class="ganttHeadTitle">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <span>48-Hour Bed Horizon Gantt</span>
+                </div>
+                <div class="legendInline">
+                  <div class="legendTag">
+                    <span class="legendSwatch" style="background: var(--svc-north)"></span><span>Leave Return</span>
+                  </div>
+                  <div class="legendTag">
+                    <span class="legendSwatch" style="background: var(--good)"></span><span>Confirmed Discharge</span>
+                  </div>
+                  <div class="legendTag">
+                    <span class="legendSwatch" style="border: 1px dashed var(--accent); background: transparent"></span
+                    ><span>Predicted</span>
+                  </div>
+                  <div class="legendTag">
+                    <span class="legendSwatch" style="background: var(--warn)"></span><span>Planned Intake</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ganttContainer">
+                <div class="ganttTable">
+                  <!-- Timeline Header Bar (48 Hours in 6h intervals) -->
+                  <div class="timeHeaderRow">
+                    <div style="padding: 6px 12px; font-weight: 600; color: var(--ink)">Unit / Service</div>
+                    <div class="timeCell anchor">Now (14:00)</div>
+                    <div class="timeCell">Mon 20:00 (+6h)</div>
+                    <div class="timeCell">Tue 02:00 (+12h)</div>
+                    <div class="timeCell">Tue 08:00 (+18h)</div>
+                    <div class="timeCell">Tue 14:00 (+24h)</div>
+                    <div class="timeCell">Tue 20:00 (+30h)</div>
+                    <div class="timeCell">Wed 02:00 (+36h)</div>
+                    <div class="timeCell">Wed 08:00 (+42h)</div>
+                  </div>
+
+                  <!-- Live Scrubber Cursor Indicator -->
+                  <div class="scrubberCursor" id="timelineCursor" style="left: calc(210px + 0%)">
+                    <div class="scrubberHead"></div>
+                  </div>
+
+                  <!-- Unit Rows (Dynamic) -->
+                  <div id="unitRowsContainer">
+                    <!-- Injected via JavaScript -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. RIGHT SIDEBAR: EXPLAINABLE INSPECTOR -->
+          <aside class="detailAside">
+            <div class="asideTitle">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
+              </svg>
+              <span>Timeline Event Inspector</span>
+            </div>
+
+            <div class="asideCard" id="inspectorCard">
+              <div style="display: flex; justify-content: space-between; align-items: center">
+                <span
+                  id="inspectBadge"
+                  class="statusBadge"
+                  style="
+                    background: rgba(104, 90, 148, 0.25);
+                    color: var(--svc-north);
+                    border: 1px solid var(--svc-north);
+                  "
+                >
+                  Leave Bed
+                </span>
+                <span id="inspectId" style="font-family: var(--mono); font-weight: 600">WF-LB-104</span>
+              </div>
+
+              <div class="detailGrid">
+                <div>
+                  <span class="detailKey">Unit:</span> <span class="detailVal" id="inspectUnit">RPH 2K Secure</span>
+                </div>
+                <div>
+                  <span class="detailKey">Service:</span> <span class="detailVal" id="inspectService">EMHS</span>
+                </div>
+                <div>
+                  <span class="detailKey">Scheduled:</span>
+                  <span class="detailVal" id="inspectTime">Mon 20:00 (+6h)</span>
+                </div>
+                <div>
+                  <span class="detailKey">Legal Status:</span> <span class="detailVal" id="inspectLegal">Form 3A</span>
+                </div>
+                <div>
+                  <span class="detailKey">Net Bed Impact:</span>
+                  <span class="detailVal" style="color: var(--danger)" id="inspectImpact">-1 Bed</span>
+                </div>
+                <div>
+                  <span class="detailKey">Escort Booked:</span>
+                  <span class="detailVal" id="inspectEscort">St John MH</span>
+                </div>
+              </div>
+
+              <div class="rationaleBox" id="inspectNotes">
+                Patient on approved medical trial leave with family. Mandatory return window closes 20:00. Bed 04 is
+                physically reserved and cannot be released for emergency intake.
+              </div>
+            </div>
+
+            <!-- Network Summary Roll-Up -->
+            <div class="asideCard">
+              <div class="asideTitle" style="font-size: 11.5px">
+                <span>48h Network Forecast Summary</span>
+              </div>
+              <div style="font-size: 11.5px; display: flex; flex-direction: column; gap: 6px">
+                <div class="metricRow">
+                  <span>Active Trial Leave Beds:</span>
+                  <span class="metricVal" style="color: var(--svc-north)">6 beds</span>
+                </div>
+                <div class="metricRow">
+                  <span>Confirmed Egress Today:</span> <span class="metricVal" style="color: var(--good)">+7 beds</span>
+                </div>
+                <div class="metricRow">
+                  <span>Predicted Egress (Tomorrow):</span>
+                  <span class="metricVal" style="color: var(--accent)">+11 beds</span>
+                </div>
+                <div class="metricRow">
+                  <span>Planned Community Referrals:</span>
+                  <span class="metricVal" style="color: var(--warn)">-5 beds</span>
+                </div>
+                <div class="metricRow" style="border-top: 1px solid var(--line); padding-top: 4px">
+                  <span style="font-weight: 600">Projected Net Headroom:</span>
+                  <span class="metricVal" style="color: var(--good); font-weight: 700">+7 beds</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Legal Warning Guard -->
+            <div
+              style="
+                font-size: 10.5px;
+                color: var(--muted);
+                line-height: 1.4;
+                padding: 8px;
+                border-radius: var(--r2);
+                background: var(--surface-2);
+                border: 1px solid var(--line);
+              "
+            >
+              <b>WA Mental Health Act 2014 Compliance:</b> All statutory examination windows (Form 1A) and detention
+              periods (Form 3A) update dynamically against the system clock anchor. Authorisation gates remain
+              non-bypassable.
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+
+    <!-- ─── 3. INTERACTIVE LOGIC SCRIPT ─── -->
+    <script>
+      // Data fixture matching current WA Health Services & Units
+      const TIMELINE_DATA = [
+        {
+          unit: "SCGH Mental Health Unit",
+          service: "NMHS",
+          cohort: "adult",
+          events: [
+            {
+              id: "WF-LB-201",
+              type: "leave",
+              label: "WF-LB-201 (Leave Return)",
+              startH: 6,
+              durH: 4,
+              time: "Mon 20:00",
+              legal: "Form 3A",
+              impact: "-1 Bed",
+              escort: "Carer",
+              notes: "Trial leave return. Bed 02 reserved.",
+            },
+            {
+              id: "WF-DISC-011",
+              type: "confirmed",
+              label: "WF-DISC-011 (Discharge)",
+              startH: 3,
+              durH: 5,
+              time: "Mon 17:00",
+              legal: "Voluntary",
+              impact: "+1 Bed",
+              escort: "Independent",
+              notes: "Hostel accommodation placement confirmed.",
+            },
+            {
+              id: "WF-DISC-034",
+              type: "predicted",
+              label: "WF-DISC-034 (Predicted)",
+              startH: 22,
+              durH: 6,
+              time: "Tue 12:00",
+              legal: "Voluntary",
+              impact: "+1 Bed",
+              escort: "Family",
+              notes: "Step Up/Step Down vacancy expected in Joondalup.",
+            },
+          ],
+        },
+        {
+          unit: "Graylands Hospital (Secure)",
+          service: "NMHS",
+          cohort: "adult",
+          events: [
+            {
+              id: "WF-ADM-019",
+              type: "admission",
+              label: "WF-ADM-019 (Intake)",
+              startH: 8,
+              durH: 4,
+              time: "Mon 22:00",
+              legal: "Form 3A",
+              impact: "-1 Bed",
+              escort: "WAPOL / Liaison",
+              notes: "Approved transfer from Joondalup Health Campus.",
+            },
+          ],
+        },
+        {
+          unit: "FSH Ward 4B (Adult Secure)",
+          service: "SMHS",
+          cohort: "adult",
+          events: [
+            {
+              id: "WF-LB-104",
+              type: "leave",
+              label: "WF-LB-104 (Trial Leave)",
+              startH: 5,
+              durH: 4,
+              time: "Mon 19:00",
+              legal: "Form 3A",
+              impact: "-1 Bed",
+              escort: "St John Ambulance",
+              notes: "Return from trial home leave. Transport confirmed.",
+            },
+            {
+              id: "WF-DISC-029",
+              type: "confirmed",
+              label: "WF-DISC-029 (Discharge)",
+              startH: 26,
+              durH: 6,
+              time: "Tue 16:00",
+              legal: "Voluntary",
+              impact: "+1 Bed",
+              escort: "Supported",
+              notes: "NDIS Supported Independent Living intake approved.",
+            },
+          ],
+        },
+        {
+          unit: "Fremantle Alma Street",
+          service: "SMHS",
+          cohort: "adult",
+          events: [
+            {
+              id: "WF-DISC-012",
+              type: "confirmed",
+              label: "WF-DISC-012 (Discharge)",
+              startH: 4,
+              durH: 4,
+              time: "Mon 18:00",
+              legal: "Voluntary",
+              impact: "+1 Bed",
+              escort: "Family",
+              notes: "Community outpatient program transfer complete.",
+            },
+            {
+              id: "WF-ADM-055",
+              type: "admission",
+              label: "WF-ADM-055 (Community Ref)",
+              startH: 20,
+              durH: 4,
+              time: "Tue 10:00",
+              legal: "Voluntary",
+              impact: "-1 Bed",
+              escort: "Community Nurse",
+              notes: "Direct intake from Fremantle Community Mental Health.",
+            },
+          ],
+        },
+        {
+          unit: "Royal Perth Hospital 2K",
+          service: "EMHS",
+          cohort: "adult",
+          events: [
+            {
+              id: "WF-LB-303",
+              type: "leave",
+              label: "WF-LB-303 (Leave Return)",
+              startH: 8,
+              durH: 4,
+              time: "Mon 22:00",
+              legal: "Form 1A",
+              impact: "-1 Bed",
+              escort: "Carer",
+              notes: "Mandatory return time 22:00. Bed 06 held.",
+            },
+            {
+              id: "WF-DISC-040",
+              type: "predicted",
+              label: "WF-DISC-040 (Discharge)",
+              startH: 18,
+              durH: 5,
+              time: "Tue 08:00",
+              legal: "Form 3A",
+              impact: "+1 Bed",
+              escort: "Independent",
+              notes: "Consultant review scheduled for morning handover.",
+            },
+          ],
+        },
+        {
+          unit: "Bentley Older Adult Unit",
+          service: "EMHS",
+          cohort: "older_adult",
+          events: [
+            {
+              id: "WF-DISC-009",
+              type: "confirmed",
+              label: "WF-DISC-009 (Aged Care Trf)",
+              startH: 28,
+              durH: 6,
+              time: "Tue 18:00",
+              legal: "Voluntary",
+              impact: "+1 Bed",
+              escort: "Non-urgent Medical",
+              notes: "Residential Aged Care Facility (RACF) bed unblocked.",
+            },
+          ],
+        },
+        {
+          unit: "Albany Regional Hospital",
+          service: "WACHS",
+          cohort: "adult",
+          events: [
+            {
+              id: "WF-ADM-077",
+              type: "admission",
+              label: "WF-ADM-077 (RFDS Transfer)",
+              startH: 10,
+              durH: 4,
+              time: "Tue 00:00",
+              legal: "Form 4A",
+              impact: "-1 Bed",
+              escort: "RFDS Flight Crew",
+              notes: "Country patient flight transfer from Esperance ED.",
+            },
+          ],
+        },
+      ];
+
+      let currentForecastH = 0;
+
+      function renderGanttRows() {
+        const sFilter = document.getElementById("selService").value;
+        const cFilter = document.getElementById("selCohort").value;
+        const container = document.getElementById("unitRowsContainer");
+        container.innerHTML = "";
+
+        const filtered = TIMELINE_DATA.filter((row) => {
+          if (sFilter !== "all" && row.service !== sFilter) return false;
+          if (cFilter !== "all" && row.cohort !== cFilter) return false;
+          return true;
+        });
+
+        filtered.forEach((row) => {
+          const tr = document.createElement("div");
+          tr.className = "unitRow";
+
+          tr.innerHTML = `
+          <div class="unitInfo">
+            <span class="unitName" title="${row.unit}">${row.unit}</span>
+            <span class="unitSub">${row.service} · ${row.cohort === "older_adult" ? "Older Adult" : "Adult"}</span>
+          </div>
+          <div class="timelineLane"></div>
+        `;
+
+          const lane = tr.querySelector(".timelineLane");
+
+          row.events.forEach((evt) => {
+            const leftPct = (evt.startH / 48) * 100;
+            const widthPct = Math.max((evt.durH / 48) * 100, 5);
+
+            const bar = document.createElement("button");
+            bar.type = "button";
+            bar.className = `ganttBar ${evt.type}`;
+            bar.style.left = `${leftPct}%`;
+            bar.style.width = `${widthPct}%`;
+            bar.textContent = evt.label;
+            bar.onclick = () => selectEvent(evt, row.unit, row.service);
+
+            lane.appendChild(bar);
+          });
+
+          container.appendChild(tr);
+        });
+
+        updateServiceCards(currentForecastH);
+      }
+
+      function selectEvent(evt, unit, service) {
+        document.getElementById("inspectId").textContent = evt.id;
+        document.getElementById("inspectUnit").textContent = unit;
+        document.getElementById("inspectService").textContent = service;
+        document.getElementById("inspectTime").textContent = evt.time;
+        document.getElementById("inspectLegal").textContent = evt.legal;
+        document.getElementById("inspectImpact").textContent = evt.impact;
+        document.getElementById("inspectEscort").textContent = evt.escort;
+        document.getElementById("inspectNotes").textContent = evt.notes;
+
+        const badge = document.getElementById("inspectBadge");
+        badge.textContent = evt.type.toUpperCase();
+        if (evt.type === "leave") {
+          badge.style.background = "rgba(104, 90, 148, 0.25)";
+          badge.style.color = "var(--svc-north)";
+          badge.style.borderColor = "var(--svc-north)";
+        } else if (evt.type === "confirmed") {
+          badge.style.background = "var(--good-soft)";
+          badge.style.color = "var(--good)";
+          badge.style.borderColor = "var(--good)";
+        } else if (evt.type === "predicted") {
+          badge.style.background = "rgba(47, 76, 102, 0.25)";
+          badge.style.color = "var(--accent)";
+          badge.style.borderColor = "var(--accent)";
+        } else {
+          badge.style.background = "var(--warn-soft)";
+          badge.style.color = "var(--warn)";
+          badge.style.borderColor = "var(--warn)";
+        }
+      }
+
+      function handleScrubber(val) {
+        currentForecastH = parseInt(val, 10);
+        const days = ["Mon", "Tue", "Wed"];
+        const baseHour = 14;
+        const totalH = baseHour + currentForecastH;
+        const dayName = days[Math.floor(totalH / 24)] || "Wed";
+        const h = totalH % 24;
+        const timeStr = `${h < 10 ? "0" : ""}${h}:00`;
+
+        document.getElementById("scrubberText").textContent = `+${currentForecastH}h (${dayName} ${timeStr})`;
+
+        // Move vertical line cursor across the timeline lane width
+        const cursor = document.getElementById("timelineCursor");
+        const pct = (currentForecastH / 48) * 100;
+        cursor.style.left = `calc(210px + ${pct * 0.75}%)`;
+
+        updateServiceCards(currentForecastH);
+      }
+
+      function resetScrubber() {
+        document.getElementById("scrubberInput").value = 0;
+        handleScrubber(0);
+      }
+
+      function updateServiceCards(forecastH) {
+        const base = {
+          NMHS: { ready: 4, leave: 1, egress: 3 },
+          SMHS: { ready: 1, leave: 3, egress: 2 },
+          EMHS: { ready: 0, leave: 2, egress: 1 },
+          WACHS: { ready: 2, leave: 0, egress: 1 },
+        };
+
+        Object.keys(base).forEach((svc) => {
+          let lCount = 0;
+          let eCount = 0;
+
+          TIMELINE_DATA.filter((r) => r.service === svc).forEach((r) => {
+            r.events.forEach((e) => {
+              if (e.startH <= forecastH) {
+                if (e.type === "leave") lCount++;
+                if (e.type === "confirmed" || e.type === "predicted") eCount++;
+              }
+            });
+          });
+
+          const net = base[svc].ready - lCount + eCount;
+
+          document.getElementById(`ready-${svc}`).textContent = Math.max(net, 0);
+          document.getElementById(`leave-${svc}`).textContent = lCount;
+          document.getElementById(`egress-${svc}`).textContent = `+${eCount}`;
+
+          const badge = document.getElementById(`badge-${svc}`);
+          if (net <= 0) {
+            badge.className = "statusBadge critical";
+            badge.textContent = `Critical · ${net} Ready`;
+          } else if (net <= 2) {
+            badge.className = "statusBadge tight";
+            badge.textContent = `Tight · ${net} Ready`;
+          } else {
+            badge.className = "statusBadge open";
+            badge.textContent = `Open · ${net} Ready`;
+          }
+        });
+      }
+
+      function setLens(lens) {
+        document.getElementById("btnTopology").className = "segBtn" + (lens === "topology" ? " active" : "");
+        document.getElementById("btnSplit").className = "segBtn" + (lens === "split" ? " active" : "");
+        document.getElementById("btnHorizon").className = "segBtn" + (lens === "horizon" ? " active" : "");
+
+        const topo = document.getElementById("topologyPanel");
+        const gantt = document.getElementById("ganttPanel");
+
+        if (lens === "topology") {
+          topo.style.display = "flex";
+          gantt.style.display = "none";
+        } else if (lens === "horizon") {
+          topo.style.display = "none";
+          gantt.style.display = "flex";
+        } else {
+          topo.style.display = "flex";
+          gantt.style.display = "flex";
+        }
+      }
+
+      function applyFilters() {
+        renderGanttRows();
+      }
+
+      function toggleTheme() {
+        const html = document.documentElement;
+        const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        html.setAttribute("data-theme", next);
+      }
+
+      // Initialize on load
+      renderGanttRows();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,2742 @@
+<!doctype html>
+<html lang="en-AU" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow · Tools Drawer (Perfected Mockup 3)</title>
+    <script>
+      (function () {
+        document.documentElement.lang = "en-AU";
+        try {
+          var v = localStorage.getItem("ward-flow-theme") || localStorage.getItem("ward-flow-appearance");
+          if (v === "light" || v === "dark") {
+            document.documentElement.setAttribute("data-theme", v);
+          } else if (v === "system" && window.matchMedia) {
+            document.documentElement.setAttribute(
+              "data-theme",
+              window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
+            );
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap"
+    />
+    <style>
+      /* ═══════════════════════════════════════════════════════════════════════
+         WARD FLOW TOOLS DRAWER · PERFECTED MOCKUP 3
+         Standard: Sovereign Clinical Console (Platinum Raised Cool & Sovereign Dark)
+         Dual-Authority Rubric: 100-Point Visual Design & 100-Point Clinical UX
+         ═══════════════════════════════════════════════════════════════════════ */
+
+      :root {
+        color-scheme: light;
+        --display: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+        --body: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+        --mono: "Geist Mono", ui-monospace, Menlo, Consolas, monospace;
+
+        --t-0: 11.5px;
+        --t-1: 13px;
+        --t-2: 13.5px;
+        --t-3: 14.5px;
+        --t-4: 16px;
+        --t-5: 19px;
+        --t-6: 24px;
+
+        --r1: 10px;
+        --r1i: 8px;
+        --r2: 6px;
+        --r3: 14px;
+        --pill: 9999px;
+
+        /* Platinum Raised Cool — Light Palette */
+        --ground-hi: #ecf0f4;
+        --ground: #e6eaef;
+        --ground-2: #e1e6ec;
+
+        --surface: #fdfdfe;
+        --surface-2: #f4f7fa;
+        --surface-3: #e8ecf2;
+        --sunk: #eef2f6;
+
+        --ink: #161a20;
+        --ink-soft: #414953;
+        --muted: #5f6873;
+
+        --line: rgba(22, 30, 40, 0.11);
+        --line-strong: rgba(22, 30, 40, 0.24);
+
+        --accent: #2f4c66;
+        --accent-ink: #27405a;
+        --accent-press: #1f3448;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+
+        --gilt: #7d612a;
+        --gilt-soft: #f1ebdf;
+
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --warn: #825d10;
+        --warn-soft: #f6eeda;
+
+        --danger: #b03b2e;
+        --danger-soft: #f8e6e2;
+        --danger-ink: #973121;
+
+        --svc-east: #2f4c66;
+        --svc-north: #685a94;
+        --svc-south: #356a70;
+        --svc-wachs: #8c5a3c;
+
+        --drawer-w: 420px;
+        --scrim: rgba(18, 25, 34, 0.42);
+        --lift: 0 1px 2px rgba(30, 48, 66, 0.05), 0 16px 36px -18px rgba(30, 48, 66, 0.35);
+        --drawer-shadow: -8px 0 32px rgba(18, 26, 36, 0.18);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          color-scheme: dark;
+          --ground-hi: #14181d;
+          --ground: #0f1216;
+          --ground-2: #0c0f12;
+
+          --surface: #171b21;
+          --surface-2: #1b2026;
+          --surface-3: #20262e;
+          --sunk: #13171c;
+
+          --ink: #e8ecf1;
+          --ink-soft: #b2bac5;
+          --muted: #8a929d;
+
+          --line: rgba(255, 255, 255, 0.09);
+          --line-strong: rgba(255, 255, 255, 0.21);
+
+          --accent: #a7bcd2;
+          --accent-ink: #bfd0e2;
+          --accent-press: #8ea6bf;
+          --accent-soft: #1f2a36;
+          --on-accent: #0f1216;
+          --stripe: #3a5a78;
+
+          --gilt: #d3b77e;
+          --gilt-soft: #2a251b;
+
+          --good: #6fd39b;
+          --good-soft: #15291f;
+          --warn: #e3bc5e;
+          --warn-soft: #2b2415;
+
+          --danger: #ff8b76;
+          --danger-soft: #33201b;
+          --danger-ink: #ffa08e;
+
+          --svc-east: #a7bcd2;
+          --svc-north: #b1a2d6;
+          --svc-south: #7fb2b8;
+          --svc-wachs: #d89a78;
+
+          --scrim: rgba(0, 0, 0, 0.72);
+          --lift: 0 1px 2px rgba(0, 0, 0, 0.45), 0 18px 40px -20px rgba(0, 0, 0, 0.95);
+          --drawer-shadow: -10px 0 40px rgba(0, 0, 0, 0.55);
+        }
+      }
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --ground-hi: #14181d;
+        --ground: #0f1216;
+        --ground-2: #0c0f12;
+
+        --surface: #171b21;
+        --surface-2: #1b2026;
+        --surface-3: #20262e;
+        --sunk: #13171c;
+
+        --ink: #e8ecf1;
+        --ink-soft: #b2bac5;
+        --muted: #8a929d;
+
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.21);
+
+        --accent: #a7bcd2;
+        --accent-ink: #bfd0e2;
+        --accent-press: #8ea6bf;
+        --accent-soft: #1f2a36;
+        --on-accent: #0f1216;
+        --stripe: #3a5a78;
+
+        --gilt: #d3b77e;
+        --gilt-soft: #2a251b;
+
+        --good: #6fd39b;
+        --good-soft: #15291f;
+        --warn: #e3bc5e;
+        --warn-soft: #2b2415;
+
+        --danger: #ff8b76;
+        --danger-soft: #33201b;
+        --danger-ink: #ffa08e;
+
+        --svc-east: #a7bcd2;
+        --svc-north: #b1a2d6;
+        --svc-south: #7fb2b8;
+        --svc-wachs: #d89a78;
+
+        --scrim: rgba(0, 0, 0, 0.72);
+        --lift: 0 1px 2px rgba(0, 0, 0, 0.45), 0 18px 40px -20px rgba(0, 0, 0, 0.95);
+        --drawer-shadow: -10px 0 40px rgba(0, 0, 0, 0.55);
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: var(--body);
+        font-size: var(--t-2);
+        line-height: 1.45;
+        color: var(--ink);
+        background: var(--ground);
+        background-image: linear-gradient(180deg, var(--ground-hi) 0%, var(--ground) 55%, var(--ground-2) 100%);
+        min-height: 100vh;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 120;
+        pointer-events: none;
+      }
+
+      button,
+      input,
+      select {
+        font-family: inherit;
+        color: inherit;
+      }
+
+      /* ══════════════════ TOP PREVIEW CONTROL BAR ══════════════════ */
+      .previewBar {
+        position: sticky;
+        top: 3px;
+        z-index: 70;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line-strong);
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+      }
+
+      .previewBrand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        white-space: nowrap;
+      }
+      .previewBadge {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        background: var(--gilt-soft);
+        color: var(--gilt);
+        border: 1px solid var(--line);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .previewTitle {
+        font-family: var(--display);
+        font-size: var(--t-2);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .previewTitle span {
+        color: var(--muted);
+        font-weight: 400;
+        margin-left: 6px;
+      }
+
+      .previewCenter {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .previewBtn {
+        height: 30px;
+        padding: 0 12px;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        background: var(--surface);
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.14s ease;
+      }
+      .previewBtn:hover {
+        background: var(--sunk);
+        color: var(--ink);
+        border-color: var(--ink-soft);
+      }
+      .previewBtn.primary {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+      }
+      .previewBtn.primary:hover {
+        background: var(--accent-press);
+      }
+
+      .previewRight {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      /* ══════════════════ SIMULATED CANVAS APP BACKDROP ══════════════════ */
+      .canvasWrap {
+        position: relative;
+        min-height: calc(100vh - 48px);
+        display: flex;
+        flex-direction: column;
+        transition: filter 0.2s ease;
+      }
+
+      .canvasWrap.drawerActive {
+        filter: blur(0.5px);
+      }
+
+      /* Simulated Universal Navigation Rail + Command Dashboard */
+      .simApp {
+        display: grid;
+        grid-template-columns: 240px minmax(0, 1fr);
+        min-height: calc(100vh - 48px);
+      }
+
+      .simRail {
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        padding: 16px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        user-select: none;
+      }
+
+      .simBrand {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--line);
+      }
+      .simBrand b {
+        font-size: var(--t-3);
+        color: var(--accent);
+      }
+
+      .simNavSection {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .simNavHeader {
+        font-size: var(--t-0);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        padding: 4px 8px;
+      }
+      .simNavLink {
+        padding: 8px 10px;
+        border-radius: var(--r2);
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: transparent;
+      }
+      .simNavLink.active {
+        background: var(--surface-2);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: inset 3px 0 0 var(--accent);
+      }
+      .simNavBadge {
+        font-family: var(--mono);
+        font-size: 11px;
+        padding: 1px 6px;
+        border-radius: var(--pill);
+        background: var(--sunk);
+        color: var(--muted);
+      }
+
+      .simMain {
+        padding: 24px 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .simHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--surface);
+        padding: 14px 20px;
+        border-radius: var(--r1);
+        border: 1px solid var(--line);
+      }
+      .simHeaderTitle h1 {
+        margin: 0;
+        font-size: var(--t-5);
+        font-weight: 700;
+      }
+      .simHeaderTitle p {
+        margin: 2px 0 0;
+        font-size: var(--t-1);
+        color: var(--muted);
+      }
+
+      .simMetrics {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+      }
+      .simMetricCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 14px 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+      }
+      .simMetricTitle {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--muted);
+        letter-spacing: 0.05em;
+      }
+      .simMetricValue {
+        font-family: var(--mono);
+        font-size: var(--t-6);
+        font-weight: 700;
+        color: var(--ink);
+        margin-top: 4px;
+      }
+      .simMetricSub {
+        font-size: var(--t-0);
+        color: var(--muted);
+        margin-top: 2px;
+      }
+
+      .simBoardSection {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .simBoardHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 12px;
+      }
+      .simBoardHead h2 {
+        margin: 0;
+        font-size: var(--t-3);
+        font-weight: 700;
+      }
+
+      .simPatientRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        font-size: var(--t-1);
+      }
+      .simPatientInfo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .simPatientBadge {
+        font-family: var(--mono);
+        font-size: 11px;
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        background: var(--warn-soft);
+        color: var(--warn);
+        font-weight: 600;
+      }
+
+      /* ══════════════════ SCRIM & OFF-CANVAS DRAWER ══════════════════ */
+      .drawerScrim {
+        position: fixed;
+        inset: 0;
+        background: var(--scrim);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        z-index: 90;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .drawerScrim.open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .toolsDrawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: var(--drawer-w);
+        max-width: 100vw;
+        height: 100vh;
+        background: var(--surface);
+        border-left: 1px solid var(--line-strong);
+        box-shadow: var(--drawer-shadow);
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        transform: translateX(100%);
+        visibility: hidden;
+        transition:
+          transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+          visibility 0.24s;
+        overflow: hidden;
+      }
+
+      .toolsDrawer.open {
+        transform: translateX(0);
+        visibility: visible;
+      }
+
+      /* Isolated View Mode (Centered for design inspection) */
+      body.mode-isolated .canvasWrap {
+        display: none;
+      }
+      body.mode-isolated .drawerScrim {
+        display: none;
+      }
+      body.mode-isolated .toolsDrawer {
+        position: relative;
+        top: auto;
+        right: auto;
+        bottom: auto;
+        margin: 24px auto 40px;
+        height: auto;
+        min-height: calc(100vh - 100px);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r3);
+        box-shadow: var(--lift);
+        transform: none !important;
+        visibility: visible !important;
+      }
+
+      /* ══════════════════ 1. DRAWER HEADER ══════════════════ */
+      .drawerHead {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line-strong);
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-shrink: 0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+      }
+
+      .drawerHeadLeft {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .drawerIconPill {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--r2);
+        background: var(--sunk);
+        border: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent);
+        flex-shrink: 0;
+      }
+      .drawerIconPill svg {
+        width: 17px;
+        height: 17px;
+      }
+
+      .drawerTitle {
+        margin: 0;
+        font-family: var(--display);
+        font-size: var(--t-4);
+        font-weight: 700;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        line-height: 1.2;
+      }
+
+      .networkPill {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border: 1px solid var(--line);
+        letter-spacing: 0.03em;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .drawerCloseBtn {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        background: var(--surface);
+        color: var(--muted);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.14s ease;
+        flex-shrink: 0;
+      }
+      .drawerCloseBtn:hover {
+        background: var(--sunk);
+        color: var(--ink);
+        border-color: var(--ink-soft);
+      }
+      .drawerCloseBtn svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      /* ══════════════════ DRAWER SCROLL BODY ══════════════════ */
+      .drawerBody {
+        flex: 1;
+        overflow-y: auto;
+        padding: 18px 20px 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--line-strong) transparent;
+      }
+
+      .drawerSection {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .sectionEyebrow {
+        font-size: var(--t-0);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        margin: 0 0 2px;
+        padding: 0 2px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .sectionEyebrow .eyebrowBadge {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+
+      /* ══════════════════ 2. APPEARANCE THEME SELECTOR ══════════════════ */
+      .themeSegmentTrack {
+        display: flex;
+        background: var(--sunk);
+        padding: 3px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line);
+        gap: 2px;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+      }
+
+      .themeSegBtn {
+        flex: 1;
+        height: 32px;
+        padding: 0 10px;
+        border: none;
+        border-radius: var(--pill);
+        background: transparent;
+        font-size: var(--t-1);
+        font-weight: 500;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+        white-space: nowrap;
+      }
+
+      .themeSegBtn:hover {
+        color: var(--ink);
+      }
+
+      .themeSegBtn[aria-pressed="true"] {
+        background: var(--surface);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow:
+          0 1px 4px rgba(0, 0, 0, 0.12),
+          inset 0 0 0 1px var(--line-strong);
+      }
+
+      .themeSegBtn svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
+
+      /* ══════════════════ 3. QUICK ACTIONS ("DO") ══════════════════ */
+      .actionCardsList {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .actionCard {
+        position: relative;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-bottom-color: var(--line-strong);
+        border-radius: var(--r1);
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        cursor: pointer;
+      }
+
+      .actionCard:hover {
+        background: var(--surface-2);
+        border-color: var(--line-strong);
+        transform: translateY(-1px);
+        box-shadow: var(--lift);
+      }
+
+      .actionCard:active {
+        transform: translateY(0);
+        background: var(--sunk);
+      }
+
+      .actionCardIcon {
+        width: 38px;
+        height: 38px;
+        border-radius: var(--r2);
+        background: var(--accent-soft);
+        color: var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border: 1px solid var(--line);
+        font-size: 16px;
+      }
+      .actionCardIcon.referral {
+        background: var(--good-soft);
+        color: var(--good);
+      }
+      .actionCardIcon.settings {
+        background: var(--gilt-soft);
+        color: var(--gilt);
+      }
+
+      .actionCardIcon svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .actionCardContent {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .actionCardTitle {
+        font-size: var(--t-2);
+        font-weight: 600;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .actionCardDesc {
+        font-size: var(--t-0);
+        color: var(--muted);
+        line-height: 1.35;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .actionCardChevron {
+        color: var(--muted);
+        transition:
+          transform 0.15s ease,
+          color 0.15s ease;
+        flex-shrink: 0;
+      }
+      .actionCard:hover .actionCardChevron {
+        color: var(--ink);
+        transform: translateX(2px);
+      }
+      .actionCardChevron svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      /* ══════════════════ 4. DEMONSTRATION DECK ══════════════════ */
+      .demoDeckCard {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+      }
+
+      .demoClockRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .demoTimeLabel {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .demoTimeLabel span:first-child {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--muted);
+        letter-spacing: 0.05em;
+      }
+      .demoTimeVal {
+        font-family: var(--mono);
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--ink);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-variant-numeric: tabular-nums;
+      }
+      .demoTimeVal .pulseClock {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--good);
+        display: inline-block;
+      }
+
+      .demoActions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .demoBtn {
+        height: 30px;
+        padding: 0 10px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.12s ease;
+        white-space: nowrap;
+      }
+      .demoBtn:hover {
+        background: var(--sunk);
+        border-color: var(--ink-soft);
+      }
+      .demoBtn.reset {
+        border-color: rgba(130, 93, 16, 0.35);
+        color: var(--warn);
+        background: var(--warn-soft);
+      }
+      .demoBtn.reset:hover {
+        background: var(--warn);
+        color: #ffffff;
+      }
+      .demoBtn svg {
+        width: 13px;
+        height: 13px;
+      }
+
+      /* Role Switcher & Scenario Badges */
+      .roleBlock {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .roleBlockLabel {
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .roleBadgesTrack {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .roleBadgeBtn {
+        height: 28px;
+        padding: 0 10px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line);
+        background: var(--surface);
+        font-size: var(--t-0);
+        font-weight: 500;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.12s ease;
+      }
+      .roleBadgeBtn:hover {
+        border-color: var(--line-strong);
+        color: var(--ink);
+      }
+      .roleBadgeBtn[aria-pressed="true"] {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+        font-weight: 600;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+      }
+      .roleBadgeBtn .roleDot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+
+      /* ══════════════════ 5. STATE DESK HOTLINES ══════════════════ */
+      .hotlinesCard {
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+      }
+
+      .hotlinesHeader {
+        background: linear-gradient(135deg, var(--surface-2) 0%, var(--surface-3) 100%);
+        border-bottom: 1px solid var(--line);
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .hotlinesHeaderLeft {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .waHealthCrest {
+        width: 18px;
+        height: 18px;
+        color: var(--accent);
+        flex-shrink: 0;
+      }
+      .hotlinesTitle {
+        font-size: var(--t-1);
+        font-weight: 700;
+        color: var(--ink);
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+      }
+      .hotlinesSub {
+        font-size: 10.5px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+      .waVerifiedBadge {
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: var(--pill);
+        background: var(--good-soft);
+        color: var(--good);
+        border: 1px solid rgba(34, 117, 80, 0.25);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        white-space: nowrap;
+      }
+
+      .hotlineRows {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .hotlineItem {
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 1px solid var(--line);
+        transition: background 0.12s ease;
+      }
+      .hotlineItem:last-child {
+        border-bottom: none;
+      }
+      .hotlineItem:hover {
+        background: var(--surface-2);
+      }
+
+      .hotlineInfo {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+      .hotlineName {
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .hotlineNumbers {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--ink-soft);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-variant-numeric: tabular-nums;
+      }
+      .hotlineExt {
+        font-weight: 700;
+        color: var(--accent);
+      }
+
+      .copyBtn {
+        height: 26px;
+        padding: 0 8px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.12s ease;
+        flex-shrink: 0;
+      }
+      .copyBtn:hover {
+        background: var(--sunk);
+        color: var(--ink);
+        border-color: var(--ink-soft);
+      }
+      .copyBtn.copied {
+        background: var(--good-soft);
+        color: var(--good);
+        border-color: var(--good);
+      }
+      .copyBtn svg {
+        width: 12px;
+        height: 12px;
+      }
+
+      /* ══════════════════ 6. WARD CONTACTS DIRECTORY ══════════════════ */
+      .wardDirCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+      }
+
+      .wardSearchWrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+      .wardSearchIcon {
+        position: absolute;
+        left: 10px;
+        color: var(--muted);
+        pointer-events: none;
+      }
+      .wardSearchIcon svg {
+        width: 14px;
+        height: 14px;
+      }
+      .wardSearchInput {
+        width: 100%;
+        height: 34px;
+        padding: 0 30px 0 32px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line-strong);
+        background: var(--surface-2);
+        font-size: var(--t-1);
+        color: var(--ink);
+        transition: all 0.15s ease;
+      }
+      .wardSearchInput:focus {
+        outline: none;
+        background: var(--surface);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px var(--accent-soft);
+      }
+      .wardSearchClear {
+        position: absolute;
+        right: 8px;
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+      .wardSearchClear:hover {
+        color: var(--ink);
+      }
+
+      /* Service Filter Pills */
+      .svcPillsTrack {
+        display: flex;
+        gap: 4px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+        scrollbar-width: none;
+      }
+      .svcPillsTrack::-webkit-scrollbar {
+        display: none;
+      }
+      .svcPillBtn {
+        height: 26px;
+        padding: 0 9px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        font-size: var(--t-0);
+        font-weight: 500;
+        color: var(--muted);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+        transition: all 0.12s ease;
+      }
+      .svcPillBtn:hover {
+        color: var(--ink);
+        border-color: var(--line-strong);
+      }
+      .svcPillBtn[aria-pressed="true"] {
+        background: var(--surface);
+        color: var(--ink);
+        font-weight: 600;
+        border-color: var(--line-strong);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+      .svcDot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .svcDot.east {
+        background: var(--svc-east);
+      }
+      .svcDot.north {
+        background: var(--svc-north);
+      }
+      .svcDot.south {
+        background: var(--svc-south);
+      }
+      .svcDot.wachs {
+        background: var(--svc-wachs);
+      }
+
+      /* Wards List */
+      .wardsList {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 280px;
+        overflow-y: auto;
+        padding-right: 2px;
+        scrollbar-width: thin;
+      }
+
+      .wardItem {
+        padding: 8px 10px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        transition:
+          background 0.12s ease,
+          border-color 0.12s ease;
+      }
+      .wardItem:hover {
+        background: var(--sunk);
+        border-color: var(--line-strong);
+      }
+
+      .wardItemLeft {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+      .wardNameRow {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .wardName {
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .wardSite {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+
+      .wardItemRight {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .wardExt {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--accent);
+        background: var(--accent-soft);
+        padding: 1px 6px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .wardEmptyNotice {
+        padding: 24px 16px;
+        text-align: center;
+        font-size: var(--t-1);
+        color: var(--muted);
+      }
+
+      /* ══════════════════ 7. DRAWER FOOTER ══════════════════ */
+      .drawerFoot {
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+        background: var(--surface-2);
+        border-top: 1px solid var(--line);
+        padding: 12px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex-shrink: 0;
+      }
+
+      .drawerFootText {
+        font-size: var(--t-0);
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .drawerFootText b {
+        color: var(--ink-soft);
+      }
+
+      .drawerFootAlert {
+        font-size: 11px;
+        font-family: var(--mono);
+        color: var(--warn);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      /* ══════════════════ TOAST NOTIFICATIONS ══════════════════ */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(80px);
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        color: var(--ink);
+        box-shadow: var(--lift);
+        padding: 10px 18px;
+        border-radius: var(--pill);
+        font-weight: 600;
+        font-size: var(--t-1);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 200;
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+          opacity 0.22s ease;
+      }
+      .toast.show {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+      .toast svg {
+        width: 16px;
+        height: 16px;
+        color: var(--good);
+        flex-shrink: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ══════════════════ TOP PREVIEW BAR ══════════════════ -->
+    <header class="previewBar" role="region" aria-label="Mockup 3 Preview Bar">
+      <div class="previewBrand">
+        <span class="previewBadge">Mockup 3</span>
+        <div class="previewTitle">
+          Ward Flow · <b>Perfected Tools Drawer</b>
+          <span>(100-Point Sovereign Clinical Standard)</span>
+        </div>
+      </div>
+
+      <div class="previewCenter">
+        <button
+          type="button"
+          class="previewBtn primary"
+          id="btnToggleDrawer"
+          onclick="toggleDrawer()"
+          aria-label="Toggle Tools Drawer"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
+            />
+          </svg>
+          <span id="toggleDrawerText">Toggle Drawer [ T ]</span>
+        </button>
+
+        <button
+          type="button"
+          class="previewBtn"
+          id="btnViewMode"
+          onclick="toggleViewMode()"
+          title="Switch between in-context app canvas and isolated design view"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+            <line x1="8" y1="21" x2="16" y2="21" />
+            <line x1="12" y1="17" x2="12" y2="21" />
+          </svg>
+          <span id="viewModeText">Isolated View</span>
+        </button>
+      </div>
+
+      <div class="previewRight">
+        <!-- Global Theme Segment in Top Bar -->
+        <div class="themeSegmentTrack" style="height: 32px">
+          <button
+            type="button"
+            class="themeSegBtn"
+            id="barThemeDark"
+            aria-pressed="true"
+            onclick="setTheme('dark')"
+            title="Dark theme"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            </svg>
+            <span>Dark</span>
+          </button>
+          <button
+            type="button"
+            class="themeSegBtn"
+            id="barThemeLight"
+            aria-pressed="false"
+            onclick="setTheme('light')"
+            title="Light theme"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5" />
+              <line x1="12" y1="1" x2="12" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="23" />
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+              <line x1="1" y1="12" x2="3" y2="12" />
+              <line x1="21" y1="12" x2="23" y2="12" />
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+            </svg>
+            <span>Light</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ══════════════════ SIMULATED CANVAS APP BACKDROP ══════════════════ -->
+    <div class="canvasWrap" id="canvasWrap">
+      <div class="simApp">
+        <!-- Navigation Rail -->
+        <aside class="simRail">
+          <div class="simBrand">
+            <b>Ward Flow</b>
+            <span class="previewBadge">v2026.3</span>
+          </div>
+
+          <div class="simNavSection">
+            <span class="simNavHeader">Operations</span>
+            <a href="command-third-edition.html" class="simNavLink active">
+              <span>Command Center</span>
+              <span class="simNavBadge">18</span>
+            </a>
+            <a href="bed-board-third-edition.html" class="simNavLink">
+              <span>Bed Board</span>
+              <span class="simNavBadge">24</span>
+            </a>
+            <a href="movement-third-edition.html" class="simNavLink">
+              <span>Movements</span>
+              <span class="simNavBadge">6</span>
+            </a>
+          </div>
+
+          <div class="simNavSection">
+            <span class="simNavHeader">Actions</span>
+            <a href="handover-perfected-third-edition.html" class="simNavLink">
+              <span>Handover Sheet</span>
+            </a>
+            <a href="raise-a-referral-perfected-third-edition.html" class="simNavLink">
+              <span>Raise Referral</span>
+            </a>
+            <a href="settings-perfected-third-edition.html" class="simNavLink">
+              <span>Settings</span>
+            </a>
+          </div>
+        </aside>
+
+        <!-- Command Dashboard Background -->
+        <main class="simMain">
+          <div class="simHeader">
+            <div class="simHeaderTitle">
+              <h1>Statewide Bed Coordination</h1>
+              <p>Adult Psychiatric Inpatient Network · Active Shift Day A</p>
+            </div>
+            <button type="button" class="previewBtn primary" onclick="openDrawer()">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path
+                  d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
+                />
+              </svg>
+              <span>Open Tools Drawer</span>
+            </button>
+          </div>
+
+          <div class="simMetrics">
+            <div class="simMetricCard">
+              <div class="simMetricTitle">Total Beds</div>
+              <div class="simMetricValue">312</div>
+              <div class="simMetricSub">Across 23 Units</div>
+            </div>
+            <div class="simMetricCard">
+              <div class="simMetricTitle">Metro Occupancy</div>
+              <div class="simMetricValue" style="color: var(--warn)">96.4%</div>
+              <div class="simMetricSub">Code Yellow Active</div>
+            </div>
+            <div class="simMetricCard">
+              <div class="simMetricTitle">Active Waiting</div>
+              <div class="simMetricValue">18</div>
+              <div class="simMetricSub">4 Urgent Inbound</div>
+            </div>
+            <div class="simMetricCard">
+              <div class="simMetricTitle">Planned Egress</div>
+              <div class="simMetricValue" style="color: var(--good)">11</div>
+              <div class="simMetricSub">Confirmed Today</div>
+            </div>
+          </div>
+
+          <div class="simBoardSection">
+            <div class="simBoardHead">
+              <h2>Priority Flow Watchlist</h2>
+              <span class="previewBadge">MHA Statutory Triage</span>
+            </div>
+            <div class="simPatientRow">
+              <div class="simPatientInfo">
+                <span class="simPatientBadge">Form 1A Due</span>
+                <b>Tobias Wren (42M)</b>
+                <span style="color: var(--muted)">UMRN: UM100009 · Peel ED → Bentley</span>
+              </div>
+              <span style="font-family: var(--mono); color: var(--warn); font-weight: 600">42m remaining</span>
+            </div>
+            <div class="simPatientRow">
+              <div class="simPatientInfo">
+                <span class="simPatientBadge" style="background: var(--accent-soft); color: var(--accent-ink)"
+                  >Escort Inbound</span
+                >
+                <b>Callum Finch (29M)</b>
+                <span style="color: var(--muted)">UMRN: UM100004 · Armadale ED → FSH Secure</span>
+              </div>
+              <span style="font-family: var(--mono); color: var(--muted)">ETA 15:15</span>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- ══════════════════ SCRIM BACKDROP ══════════════════ -->
+    <div class="drawerScrim open" id="drawerScrim" onclick="closeDrawer()" aria-hidden="true"></div>
+
+    <!-- ══════════════════ THE OFF-CANVAS TOOLS DRAWER ══════════════════ -->
+    <aside
+      class="toolsDrawer open"
+      id="toolsDrawer"
+      role="dialog"
+      aria-label="Tools and System Demonstration Drawer"
+      aria-modal="true"
+    >
+      <!-- 1. Header -->
+      <div class="drawerHead">
+        <div class="drawerHeadLeft">
+          <div class="drawerIconPill">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
+              />
+            </svg>
+          </div>
+          <h2 class="drawerTitle">
+            <span>Tools</span>
+            <span class="networkPill">Whole network</span>
+          </h2>
+        </div>
+
+        <button
+          type="button"
+          class="drawerCloseBtn"
+          onclick="closeDrawer()"
+          aria-label="Close tools drawer"
+          title="Close drawer (Esc)"
+        >
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <path d="M3 3l10 10M13 3L3 13" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Drawer Body -->
+      <div class="drawerBody">
+        <!-- 2. Appearance Theme Selector -->
+        <section class="drawerSection" aria-labelledby="appearanceLabel">
+          <div class="sectionEyebrow" id="appearanceLabel">
+            <span>Appearance</span>
+            <span class="eyebrowBadge">Live Theme</span>
+          </div>
+
+          <div class="themeSegmentTrack" role="group" aria-labelledby="appearanceLabel">
+            <button
+              type="button"
+              class="themeSegBtn"
+              id="segDark"
+              data-theme-val="dark"
+              aria-pressed="true"
+              onclick="setTheme('dark')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+              <span>Dark theme</span>
+            </button>
+
+            <button
+              type="button"
+              class="themeSegBtn"
+              id="segLight"
+              data-theme-val="light"
+              aria-pressed="false"
+              onclick="setTheme('light')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="5" />
+                <line x1="12" y1="1" x2="12" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="23" />
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                <line x1="1" y1="12" x2="3" y2="12" />
+                <line x1="21" y1="12" x2="23" y2="12" />
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+              </svg>
+              <span>Light theme</span>
+            </button>
+
+            <button
+              type="button"
+              class="themeSegBtn"
+              id="segSystem"
+              data-theme-val="system"
+              aria-pressed="false"
+              onclick="setTheme('system')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                <line x1="8" y1="21" x2="16" y2="21" />
+                <line x1="12" y1="17" x2="12" y2="21" />
+              </svg>
+              <span>System</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- 3. Quick Actions ("DO") -->
+        <section class="drawerSection" aria-labelledby="quickActionsLabel">
+          <div class="sectionEyebrow" id="quickActionsLabel">
+            <span>Do</span>
+            <span class="eyebrowBadge">Primary Operations</span>
+          </div>
+
+          <div class="actionCardsList">
+            <!-- Action 1: Handover sheet -->
+            <a
+              href="handover-perfected-third-edition.html"
+              class="actionCard"
+              id="actionHandover"
+              title="Open the current handover and its print controls"
+            >
+              <div class="actionCardIcon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
+                </svg>
+              </div>
+              <div class="actionCardContent">
+                <div class="actionCardTitle">Handover sheet</div>
+                <div class="actionCardDesc">Open the current handover and its print controls</div>
+              </div>
+              <div class="actionCardChevron">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+            </a>
+
+            <!-- Action 2: Raise a referral -->
+            <a
+              href="raise-a-referral-perfected-third-edition.html"
+              class="actionCard"
+              id="actionReferral"
+              title="Choose the source and enter the referral details"
+            >
+              <div class="actionCardIcon referral">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="8.5" cy="7" r="4" />
+                  <line x1="20" y1="8" x2="20" y2="14" />
+                  <line x1="23" y1="11" x2="17" y2="11" />
+                </svg>
+              </div>
+              <div class="actionCardContent">
+                <div class="actionCardTitle">Raise a referral</div>
+                <div class="actionCardDesc">Choose the source and enter the referral details</div>
+              </div>
+              <div class="actionCardChevron">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+            </a>
+
+            <!-- Action 3: Settings -->
+            <a
+              href="settings-perfected-third-edition.html"
+              class="actionCard"
+              id="actionSettings"
+              title="System configuration and preference options"
+            >
+              <div class="actionCardIcon settings">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="3" />
+                  <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                  />
+                </svg>
+              </div>
+              <div class="actionCardContent">
+                <div class="actionCardTitle">Settings</div>
+                <div class="actionCardDesc">System configuration and preference options</div>
+              </div>
+              <div class="actionCardChevron">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+            </a>
+          </div>
+        </section>
+
+        <!-- 4. Demonstration Deck -->
+        <section class="drawerSection" aria-labelledby="demoDeckLabel">
+          <div class="sectionEyebrow" id="demoDeckLabel">
+            <span>Demonstration Deck</span>
+            <span class="eyebrowBadge">Dev Controls</span>
+          </div>
+
+          <div class="demoDeckCard">
+            <!-- Simulated Clock Row -->
+            <div class="demoClockRow">
+              <div class="demoTimeLabel">
+                <span>Shift Simulated Time</span>
+                <div class="demoTimeVal">
+                  <span class="pulseClock" aria-hidden="true"></span>
+                  <span id="demoClockTime">14:00</span>
+                  <small style="font-size: 11px; font-weight: 500; color: var(--muted)">(WST)</small>
+                </div>
+              </div>
+
+              <div class="demoActions">
+                <button
+                  type="button"
+                  class="demoBtn"
+                  id="btnTimeTravel"
+                  onclick="advanceShiftHour()"
+                  title="Advance demonstration shift time by +1 hour"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  <span>+1 Hour (Handover)</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="demoBtn reset"
+                  id="btnResetState"
+                  onclick="resetDemoState()"
+                  title="Reset demonstration state and clock"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                  </svg>
+                  <span>Reset State</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Role Switcher & Scenario Badges -->
+            <div class="roleBlock">
+              <div class="roleBlockLabel">Perspective / Role Switcher</div>
+              <div class="roleBadgesTrack" role="radiogroup" aria-label="Clinical Role Perspective">
+                <button
+                  type="button"
+                  class="roleBadgeBtn"
+                  id="roleCoord"
+                  role="radio"
+                  aria-checked="true"
+                  aria-pressed="true"
+                  onclick="switchRole('coordinator')"
+                >
+                  <span class="roleDot"></span>
+                  <span>Coordinator</span>
+                </button>
+                <button
+                  type="button"
+                  class="roleBadgeBtn"
+                  id="roleBedMgr"
+                  role="radio"
+                  aria-checked="false"
+                  aria-pressed="false"
+                  onclick="switchRole('bed_manager')"
+                >
+                  <span class="roleDot"></span>
+                  <span>Bed Manager</span>
+                </button>
+                <button
+                  type="button"
+                  class="roleBadgeBtn"
+                  id="roleReg"
+                  role="radio"
+                  aria-checked="false"
+                  aria-pressed="false"
+                  onclick="switchRole('medical_registrar')"
+                >
+                  <span class="roleDot"></span>
+                  <span>Medical Registrar</span>
+                </button>
+              </div>
+              <div style="font-size: var(--t-0); color: var(--muted); margin-top: 2px" id="roleDesc">
+                Active: <b>Statewide Bed Coordinator</b> (Dr Sophia Chen · Triage Desk)
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. State Desk Hotlines -->
+        <section class="drawerSection" aria-labelledby="hotlinesLabel">
+          <div class="sectionEyebrow" id="hotlinesLabel">
+            <span>State Desk Hotlines</span>
+            <span class="eyebrowBadge">Internal Escalation</span>
+          </div>
+
+          <div class="hotlinesCard">
+            <div class="hotlinesHeader">
+              <div class="hotlinesHeaderLeft">
+                <svg
+                  class="waHealthCrest"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+                <div class="hotlinesTitle">
+                  <span>WA Health Hotline Registry</span>
+                  <span class="hotlinesSub">Department of Health · Verified Clinical Escalation</span>
+                </div>
+              </div>
+              <span class="waVerifiedBadge">
+                <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Verified
+              </span>
+            </div>
+
+            <div class="hotlineRows">
+              <!-- Hotline 1: State Bed Desk -->
+              <div class="hotlineItem">
+                <div class="hotlineInfo">
+                  <div class="hotlineName">
+                    <span>State Bed Desk</span>
+                    <span class="networkPill" style="font-size: 10px; padding: 1px 5px">24/7 Priority</span>
+                  </div>
+                  <div class="hotlineNumbers">
+                    <span class="hotlineExt">ext 8492</span>
+                    <span>·</span>
+                    <span>(08) 6457 8492</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="copyBtn"
+                  id="copyBedDesk"
+                  onclick="copyToClipboard('(08) 6457 8492', 'copyBedDesk')"
+                  title="Copy direct number"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                  <span>Copy</span>
+                </button>
+              </div>
+
+              <!-- Hotline 2: Mental Health Transport -->
+              <div class="hotlineItem">
+                <div class="hotlineInfo">
+                  <div class="hotlineName">Mental Health Transport (MHT)</div>
+                  <div class="hotlineNumbers">
+                    <span class="hotlineExt">ext 7210</span>
+                    <span>·</span>
+                    <span>(08) 9224 7210</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="copyBtn"
+                  id="copyMHT"
+                  onclick="copyToClipboard('(08) 9224 7210', 'copyMHT')"
+                  title="Copy transport line"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                  <span>Copy</span>
+                </button>
+              </div>
+
+              <!-- Hotline 3: Chief Psychiatrist Liaison -->
+              <div class="hotlineItem">
+                <div class="hotlineInfo">
+                  <div class="hotlineName">Chief Psychiatrist Liaison</div>
+                  <div class="hotlineNumbers">
+                    <span class="hotlineExt">ext 1102</span>
+                    <span>·</span>
+                    <span>(08) 6553 1102</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="copyBtn"
+                  id="copyCPL"
+                  onclick="copyToClipboard('(08) 6553 1102', 'copyCPL')"
+                  title="Copy statutory liaison"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                  <span>Copy</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 6. Ward Contacts Directory -->
+        <section class="drawerSection" aria-labelledby="wardDirLabel">
+          <div class="sectionEyebrow" id="wardDirLabel">
+            <span>Ward Contacts Directory</span>
+            <span class="eyebrowBadge" id="wardDirCount">12 Wards</span>
+          </div>
+
+          <div class="wardDirCard">
+            <!-- Real-time search filter -->
+            <div class="wardSearchWrap">
+              <span class="wardSearchIcon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              </span>
+              <input
+                type="search"
+                class="wardSearchInput"
+                id="wardSearchInput"
+                placeholder="Filter ward, hospital site, or ext..."
+                oninput="onWardSearchChange(this.value)"
+                autocomplete="off"
+                spellcheck="false"
+              />
+              <button
+                type="button"
+                class="wardSearchClear"
+                id="wardSearchClear"
+                onclick="clearWardSearch()"
+                aria-label="Clear search"
+              >
+                ✕
+              </button>
+            </div>
+
+            <!-- Service Filter Pills -->
+            <div class="svcPillsTrack" role="radiogroup" aria-label="Filter by Health Service">
+              <button type="button" class="svcPillBtn" data-svc="" aria-pressed="true" onclick="setServiceFilter('')">
+                <span>All (12)</span>
+              </button>
+              <button
+                type="button"
+                class="svcPillBtn"
+                data-svc="EMHS"
+                aria-pressed="false"
+                onclick="setServiceFilter('EMHS')"
+              >
+                <span class="svcDot east"></span>
+                <span>EMHS</span>
+              </button>
+              <button
+                type="button"
+                class="svcPillBtn"
+                data-svc="NMHS"
+                aria-pressed="false"
+                onclick="setServiceFilter('NMHS')"
+              >
+                <span class="svcDot north"></span>
+                <span>NMHS</span>
+              </button>
+              <button
+                type="button"
+                class="svcPillBtn"
+                data-svc="SMHS"
+                aria-pressed="false"
+                onclick="setServiceFilter('SMHS')"
+              >
+                <span class="svcDot south"></span>
+                <span>SMHS</span>
+              </button>
+              <button
+                type="button"
+                class="svcPillBtn"
+                data-svc="WACHS"
+                aria-pressed="false"
+                onclick="setServiceFilter('WACHS')"
+              >
+                <span class="svcDot wachs"></span>
+                <span>WACHS</span>
+              </button>
+            </div>
+
+            <!-- Filterable Contacts List -->
+            <div class="wardsList" id="wardsListContainer" role="list">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- 7. Footer -->
+      <footer class="drawerFoot">
+        <div class="drawerFootAlert">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span>Demo tools, not part of the clinical record.</span>
+        </div>
+        <div class="drawerFootText">
+          <span>Ward Flow Sovereign Console · Build 2026.3</span>
+          <span style="font-family: var(--mono)">WA Health</span>
+        </div>
+      </footer>
+    </aside>
+
+    <!-- ══════════════════ TOAST NOTIFICATION CONTAINER ══════════════════ -->
+    <div class="toast" id="globalToast" role="status" aria-live="polite">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+      <span id="toastMsg">Action complete</span>
+    </div>
+
+    <!-- ══════════════════ INTERACTIVE SCRIPTS ══════════════════ -->
+    <script>
+      /* ─── WARD CONTACTS DIRECTORY DATA ─── */
+      var WARDS_DATA = [
+        {
+          id: "w-2k",
+          name: "Ward 2K",
+          site: "Sir Charles Gairdner Hospital",
+          svc: "NMHS",
+          type: "Adult Acute (30 beds)",
+          ext: "2201",
+          phone: "(08) 6457 2201",
+        },
+        {
+          id: "w-rph",
+          name: "RPH Older Adult",
+          site: "Royal Perth Hospital",
+          svc: "EMHS",
+          type: "Psychogeriatric (18 beds)",
+          ext: "3310",
+          phone: "(08) 9224 3310",
+        },
+        {
+          id: "w-mhu",
+          name: "Mental Health Unit",
+          site: "Bentley Hospital",
+          svc: "EMHS",
+          type: "Adult Acute & Subacute (24 beds)",
+          ext: "4120",
+          phone: "(08) 9416 4120",
+        },
+        {
+          id: "w-scgh-oa",
+          name: "SCGH Older Adult",
+          site: "Sir Charles Gairdner Hospital",
+          svc: "NMHS",
+          type: "Older Adult Acute (16 beds)",
+          ext: "2410",
+          phone: "(08) 6457 2410",
+        },
+        {
+          id: "w-fsh-sec",
+          name: "FSH Adult Secure",
+          site: "Fiona Stanley Hospital",
+          svc: "SMHS",
+          type: "Secure Adult Acute (30 beds)",
+          ext: "8100",
+          phone: "(08) 6152 8100",
+        },
+        {
+          id: "w-moodjar",
+          name: "Moodjar Ward",
+          site: "Rockingham General Hospital",
+          svc: "SMHS",
+          type: "Adult Inpatient (28 beds)",
+          ext: "7400",
+          phone: "(08) 9599 7400",
+        },
+        {
+          id: "w-fre-4a",
+          name: "Ward 4A Acute",
+          site: "Fremantle Hospital",
+          svc: "SMHS",
+          type: "Inpatient Subacute (20 beds)",
+          ext: "3104",
+          phone: "(08) 9431 3104",
+        },
+        {
+          id: "w-ep-cmht",
+          name: "East Perth CMHT",
+          site: "City East Clinic",
+          svc: "EMHS",
+          type: "Community Assessment & Crisis",
+          ext: "6200",
+          phone: "(08) 9224 6200",
+        },
+        {
+          id: "w-mirr-cmht",
+          name: "Mirrabooka CMHT",
+          site: "Stirling Clinic",
+          svc: "NMHS",
+          type: "Community Assessment Team",
+          ext: "5300",
+          phone: "(08) 9345 5300",
+        },
+        {
+          id: "w-murchison",
+          name: "Murchison Inpatient",
+          site: "Geraldton Hospital",
+          svc: "WACHS",
+          type: "Country Acute (12 beds)",
+          ext: "5500",
+          phone: "(08) 9956 5500",
+        },
+        {
+          id: "w-albany",
+          name: "Albany Mental Health",
+          site: "Albany Hospital",
+          svc: "WACHS",
+          type: "Regional Inpatient (14 beds)",
+          ext: "5820",
+          phone: "(08) 9892 5820",
+        },
+        {
+          id: "w-broome",
+          name: "Broome Inpatient Unit",
+          site: "Broome Hospital",
+          svc: "WACHS",
+          type: "Kimberley Acute (10 beds)",
+          ext: "7100",
+          phone: "(08) 9194 7100",
+        },
+      ];
+
+      var activeSvcFilter = "";
+      var activeSearchQuery = "";
+      var simulatedHour = 14;
+      var simulatedMin = 0;
+      var activeRole = "coordinator";
+      var toastTimer = null;
+
+      /* ─── TOAST NOTIFICATION ─── */
+      function showToast(message) {
+        var toast = document.getElementById("globalToast");
+        var msgSpan = document.getElementById("toastMsg");
+        if (!toast || !msgSpan) return;
+
+        msgSpan.textContent = message;
+        toast.classList.add("show");
+
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toast.classList.remove("show");
+        }, 2600);
+      }
+
+      /* ─── THEME CONTROLS & INTERACTIVE SWITCHER ─── */
+      function setTheme(theme) {
+        var resolvedTheme = theme;
+        if (theme === "system") {
+          resolvedTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+
+        document.documentElement.setAttribute("data-theme", resolvedTheme);
+        try {
+          localStorage.setItem("ward-flow-theme", theme);
+          localStorage.setItem("ward-flow-appearance", theme);
+        } catch (e) {}
+
+        // Update drawer segmented buttons
+        var segDark = document.getElementById("segDark");
+        var segLight = document.getElementById("segLight");
+        var segSystem = document.getElementById("segSystem");
+
+        if (segDark) segDark.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
+        if (segLight) segLight.setAttribute("aria-pressed", theme === "light" ? "true" : "false");
+        if (segSystem) segSystem.setAttribute("aria-pressed", theme === "system" ? "true" : "false");
+
+        // Update top preview bar
+        var barDark = document.getElementById("barThemeDark");
+        var barLight = document.getElementById("barThemeLight");
+        if (barDark) barDark.setAttribute("aria-pressed", resolvedTheme === "dark" ? "true" : "false");
+        if (barLight) barLight.setAttribute("aria-pressed", resolvedTheme === "light" ? "true" : "false");
+
+        var label =
+          theme === "system"
+            ? "System appearance (" + resolvedTheme + ")"
+            : theme.charAt(0).toUpperCase() + theme.slice(1) + " theme";
+        showToast("Switched to " + label);
+      }
+
+      /* ─── DRAWER VISIBILITY & VIEW MODE ─── */
+      function openDrawer() {
+        var drawer = document.getElementById("toolsDrawer");
+        var scrim = document.getElementById("drawerScrim");
+        var canvas = document.getElementById("canvasWrap");
+        var toggleBtn = document.getElementById("toggleDrawerText");
+
+        if (drawer) drawer.classList.add("open");
+        if (scrim) scrim.classList.add("open");
+        if (canvas) canvas.classList.add("drawerActive");
+        if (toggleBtn) toggleBtn.textContent = "Close Drawer [ T ]";
+      }
+
+      function closeDrawer() {
+        var drawer = document.getElementById("toolsDrawer");
+        var scrim = document.getElementById("drawerScrim");
+        var canvas = document.getElementById("canvasWrap");
+        var toggleBtn = document.getElementById("toggleDrawerText");
+
+        if (drawer) drawer.classList.remove("open");
+        if (scrim) scrim.classList.remove("open");
+        if (canvas) canvas.classList.remove("drawerActive");
+        if (toggleBtn) toggleBtn.textContent = "Open Drawer [ T ]";
+      }
+
+      function toggleDrawer() {
+        var drawer = document.getElementById("toolsDrawer");
+        if (drawer && drawer.classList.contains("open")) {
+          closeDrawer();
+        } else {
+          openDrawer();
+        }
+      }
+
+      function toggleViewMode() {
+        var isIsolated = document.body.classList.toggle("mode-isolated");
+        var modeBtnText = document.getElementById("viewModeText");
+        if (modeBtnText) {
+          modeBtnText.textContent = isIsolated ? "Canvas View" : "Isolated View";
+        }
+        showToast(isIsolated ? "Switched to Isolated Drawer View" : "Switched to App Canvas View");
+      }
+
+      /* ─── TIME TRAVEL DEMO CONTROLS ─── */
+      function formatTime(h, m) {
+        var hh = h < 10 ? "0" + h : h;
+        var mm = m < 10 ? "0" + m : m;
+        return hh + ":" + mm;
+      }
+
+      function advanceShiftHour() {
+        simulatedHour = (simulatedHour + 1) % 24;
+        var formatted = formatTime(simulatedHour, simulatedMin);
+        var clockEl = document.getElementById("demoClockTime");
+        if (clockEl) {
+          clockEl.textContent = formatted;
+          clockEl.style.color = "var(--accent)";
+          setTimeout(function () {
+            clockEl.style.color = "";
+          }, 600);
+        }
+        showToast("Handover clock advanced +1h → " + formatted + " WST");
+      }
+
+      function resetDemoState() {
+        simulatedHour = 14;
+        simulatedMin = 0;
+        var clockEl = document.getElementById("demoClockTime");
+        if (clockEl) clockEl.textContent = formatTime(simulatedHour, simulatedMin);
+
+        switchRole("coordinator");
+        clearWardSearch();
+        setServiceFilter("");
+        showToast("Demonstration state reset to Day Shift baseline (14:00 WST)");
+      }
+
+      /* ─── ROLE PERSPECTIVE SWITCHER ─── */
+      var ROLES_MAP = {
+        coordinator: {
+          label: "Coordinator",
+          desc: "Active: <b>Statewide Bed Coordinator</b> (Dr Sophia Chen · Triage Desk)",
+          id: "roleCoord",
+        },
+        bed_manager: {
+          label: "Bed Manager",
+          desc: "Active: <b>Site Operations Manager</b> (SCGH/NMHS Bed Placement)",
+          id: "roleBedMgr",
+        },
+        medical_registrar: {
+          label: "Medical Registrar",
+          desc: "Active: <b>Medical Registrar</b> (FSH Emergency MDT & Statutory Intake)",
+          id: "roleReg",
+        },
+      };
+
+      function switchRole(roleKey) {
+        activeRole = roleKey;
+        var roleConfig = ROLES_MAP[roleKey];
+        if (!roleConfig) return;
+
+        ["roleCoord", "roleBedMgr", "roleReg"].forEach(function (btnId) {
+          var btn = document.getElementById(btnId);
+          if (btn) {
+            var isActive = btnId === roleConfig.id;
+            btn.setAttribute("aria-checked", isActive ? "true" : "false");
+            btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+          }
+        });
+
+        var descEl = document.getElementById("roleDesc");
+        if (descEl) descEl.innerHTML = roleConfig.desc;
+
+        showToast("Role perspective: " + roleConfig.label);
+      }
+
+      /* ─── 1-CLICK COPY TO CLIPBOARD ─── */
+      function copyToClipboard(text, btnId) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).catch(function () {});
+        } else {
+          var ta = document.createElement("textarea");
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          try {
+            document.execCommand("copy");
+          } catch (e) {}
+          document.body.removeChild(ta);
+        }
+
+        var btn = document.getElementById(btnId);
+        if (btn) {
+          var originalHTML = btn.innerHTML;
+          btn.classList.add("copied");
+          btn.innerHTML =
+            '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Copied!</span>';
+
+          setTimeout(function () {
+            btn.classList.remove("copied");
+            btn.innerHTML = originalHTML;
+          }, 2000);
+        }
+
+        showToast("Copied " + text + " to clipboard");
+      }
+
+      /* ─── WARD CONTACTS DIRECTORY FILTERING ─── */
+      function renderWardContacts() {
+        var container = document.getElementById("wardsListContainer");
+        var countEl = document.getElementById("wardDirCount");
+        if (!container) return;
+
+        var q = activeSearchQuery.trim().toLowerCase();
+        var filtered = WARDS_DATA.filter(function (item) {
+          var matchSvc = !activeSvcFilter || item.svc === activeSvcFilter;
+          if (!matchSvc) return false;
+
+          if (!q) return true;
+          return (
+            item.name.toLowerCase().indexOf(q) !== -1 ||
+            item.site.toLowerCase().indexOf(q) !== -1 ||
+            item.svc.toLowerCase().indexOf(q) !== -1 ||
+            item.ext.indexOf(q) !== -1 ||
+            item.phone.indexOf(q) !== -1
+          );
+        });
+
+        if (countEl) {
+          countEl.textContent = filtered.length + (filtered.length === 1 ? " Ward" : " Wards");
+        }
+
+        if (filtered.length === 0) {
+          container.innerHTML =
+            '<div class="wardEmptyNotice">No ward contacts matching "<b>' +
+            escapeHtml(q) +
+            '</b>" in ' +
+            (activeSvcFilter || "all services") +
+            ".</div>";
+          return;
+        }
+
+        var html = "";
+        filtered.forEach(function (w, idx) {
+          var dotClass = w.svc === "EMHS" ? "east" : w.svc === "NMHS" ? "north" : w.svc === "SMHS" ? "south" : "wachs";
+          var copyBtnId = "copyWard-" + w.id;
+
+          html +=
+            '<div class="wardItem" role="listitem">' +
+            '  <div class="wardItemLeft">' +
+            '    <div class="wardNameRow">' +
+            '      <span class="svcDot ' +
+            dotClass +
+            '" title="' +
+            w.svc +
+            '"></span>' +
+            '      <span class="wardName">' +
+            escapeHtml(w.name) +
+            "</span>" +
+            '      <span class="wardSite">· ' +
+            escapeHtml(w.site) +
+            "</span>" +
+            "    </div>" +
+            '    <div style="font-size: var(--t-0); color: var(--muted); margin-left: 12px;">' +
+            escapeHtml(w.type) +
+            "</div>" +
+            "  </div>" +
+            '  <div class="wardItemRight">' +
+            '    <span class="wardExt">ext ' +
+            escapeHtml(w.ext) +
+            "</span>" +
+            '    <button type="button" class="copyBtn" id="' +
+            copyBtnId +
+            '" onclick="copyToClipboard(\'' +
+            escapeHtml(w.phone) +
+            "', '" +
+            copyBtnId +
+            '\')" title="Copy phone: ' +
+            escapeHtml(w.phone) +
+            '">' +
+            '      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+            "      <span>" +
+            escapeHtml(w.phone) +
+            "</span>" +
+            "    </button>" +
+            "  </div>" +
+            "</div>";
+        });
+
+        container.innerHTML = html;
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function onWardSearchChange(val) {
+        activeSearchQuery = val;
+        var clearBtn = document.getElementById("wardSearchClear");
+        if (clearBtn) {
+          clearBtn.style.display = val ? "inline-flex" : "none";
+        }
+        renderWardContacts();
+      }
+
+      function clearWardSearch() {
+        var input = document.getElementById("wardSearchInput");
+        if (input) {
+          input.value = "";
+          input.focus();
+        }
+        activeSearchQuery = "";
+        var clearBtn = document.getElementById("wardSearchClear");
+        if (clearBtn) clearBtn.style.display = "none";
+        renderWardContacts();
+      }
+
+      function setServiceFilter(svc) {
+        activeSvcFilter = svc;
+        var buttons = document.querySelectorAll(".svcPillBtn");
+        buttons.forEach(function (btn) {
+          var btnSvc = btn.getAttribute("data-svc") || "";
+          btn.setAttribute("aria-pressed", btnSvc === svc ? "true" : "false");
+        });
+        renderWardContacts();
+      }
+
+      /* ─── GLOBAL KEYBOARD SHORTCUTS ─── */
+      window.addEventListener("keydown", function (e) {
+        // Esc closes drawer
+        if (e.key === "Escape") {
+          closeDrawer();
+        }
+        // 't' or 'T' toggles drawer when not typing in an input
+        if ((e.key === "t" || e.key === "T") && document.activeElement.tagName !== "INPUT") {
+          e.preventDefault();
+          toggleDrawer();
+        }
+        // 'd' or 'D' toggles dark/light theme when not typing
+        if ((e.key === "d" || e.key === "D") && document.activeElement.tagName !== "INPUT") {
+          e.preventDefault();
+          var current = document.documentElement.getAttribute("data-theme") || "dark";
+          setTheme(current === "dark" ? "light" : "dark");
+        }
+        // '/' focuses ward search input
+        if (e.key === "/" && document.activeElement.tagName !== "INPUT") {
+          e.preventDefault();
+          var searchInput = document.getElementById("wardSearchInput");
+          if (searchInput) {
+            if (!document.getElementById("toolsDrawer").classList.contains("open")) {
+              openDrawer();
+            }
+            searchInput.focus();
+          }
+        }
+      });
+
+      // Initialize on DOM load
+      document.addEventListener("DOMContentLoaded", function () {
+        renderWardContacts();
+        var storedTheme = localStorage.getItem("ward-flow-theme") || "dark";
+        setTheme(storedTheme);
+      });
+    </script>
+  </body>
+</html>

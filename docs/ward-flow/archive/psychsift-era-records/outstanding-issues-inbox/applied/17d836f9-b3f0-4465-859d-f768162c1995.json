@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "id": "17d836f9-b3f0-4465-859d-f768162c1995",
+  "createdOn": "2026-09-10",
+  "action": "cancel",
+  "payload": {
+    "requestId": "ea9138f6-c977-46a4-ba7e-4bbcd46b0364",
+    "reason": "Already built and verified working before reconciliation, so this row would have entered the ledger already closed. Verified 2026-09-10 at 8b4b96fa9c, not inferred from file presence: src/app/mockups/ward-flow/statistics/community/[teamId]/ exists; communityStatisticsHref is at statistics-sections.ts:238 and is written as a FULL LITERAL, so the ward-nav.test.ts source-scan trap named in the original request was avoided; it is linked from the statistics hub (statistics-screen.tsx:1019) and from the community screen's own team rows, which settles the one open design question the request deliberately left to the owner — the link went to the hub, mirroring health services. Reachability proved against a running server: the hub returns 200 and carries the community links; /statistics/community/albany and /alma-street-fremantle both return 200 and render; an unknown id returns the honest not-found the sibling routes' contract requires ('No community team in this prototype has the address') rather than a redirect to a different team or an empty page reading as a team with nothing to show. Nothing outstanding."
+  }
+}

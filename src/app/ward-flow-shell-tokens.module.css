@@ -1,0 +1,469 @@
+/*
+ * Ward Flow's THIRD EDITION token layer — distinct from `../components/ward-management/ward-
+ * tokens.module.css` (the `--ward-*` prefixed layer the second-edition screens still use, which
+ * bridges onto THIS app's existing v2 palette rather than defining new colour).
+ *
+ * Phase 1.1 of the third-edition build plan (`docs/ward-flow/plans/2026-09-10-third-edition-
+ * build-master-plan.md` §1.3) is the first application code to port the third edition's own
+ * design system (`docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md`) — nothing under `src/`
+ * carried its tokens before this file. Every value below is copied verbatim from the drawing's
+ * own `:root` block, `docs/ward-flow/mockups/command-third-edition.html` (light default,
+ * `@media (prefers-color-scheme: dark)` guarded against an explicit light choice, and
+ * `[data-theme="dark"]` so the page's own control wins the other way) — never re-derived or
+ * approximated. Sixteen mockups share this token block near verbatim (shell sweep 2026-09-10:
+ * 13 identical), so a future screen composing this layer should find its own tokens already here
+ * rather than repeating them.
+ *
+ * ⚠️ **WHY THIS FILE LIVES UNDER `src/app/`, NOT `src/components/ward-management/shell/` WHERE
+ * THE FOUR PHASE-1.1 SHELL COMPONENTS THEMSELVES LIVE.** `tests/ward-raw-colour.test.ts` walks
+ * every `.css` file under `src/components/ward-management/` recursively and fails on any literal
+ * hex/`rgb()`/`hsl()` in a declaration — a real, zero-tolerance, already-committed gate, measured
+ * clean (zero raw colour) across 51 stylesheets on 2026-09-06 precisely BECAUSE every one of them
+ * aliases this app's existing v2 tokens (`--ward-canvas: var(--surface)`, and so on) rather than
+ * declaring colour of its own. The third edition is not an alias of v2 — its own `:root` in the
+ * drawing IS the palette, deliberately a new closed system that defines its OWN value for every
+ * name under this class rather than reading v2's cascade. ⚠️ (round-1 review, Minor 12, fixing a
+ * wrong claim in this same paragraph) a few names here, `--surface` and `--danger` among them, are
+ * ALSO declared in `globals.css` and `ckb-v2-tokens.css` — with different values (`--surface`:
+ * `#fdfdfe`/`#171b21` here versus `#fcfdfe`/`#101315` in `globals.css` and `#ffffff`/`#12161a` in
+ * `ckb-v2-tokens.css`; `--danger` a literal `#b03b2e` here versus `var(--danger-text)` there).
+ * That coincidence of NAME is harmless, not a collision: every declaration in this file sits
+ * inside `.wardShellTokens` (or one of its guarded variants), so only that element and its
+ * DESCENDANTS ever resolve to these values — not "only an element carrying that class", the
+ * claim this paragraph made until round-2 review Minor 3 caught it: custom properties inherit
+ * down the tree, so anything nested inside one, whether or not it carries the class itself, reads
+ * the same values too. This is pre-existing, not a new consequence of this fix: `WardGlobalSearch`
+ * (`ward-bar.tsx`'s reused, shared search component) renders inside `<header className={styles.
+ * bar}>`, and `.bar` composes this class, so that component's own `var(--surface)` (its two
+ * `background` declarations) already resolves to the third-edition value rather than v2's
+ * whenever it is mounted inside this bar — an accepted consequence of composing tokens onto a
+ * shared ancestor, not a defect this file needs to fix. (Round-2 review, Minor 3, corrected again
+ * round-3 review, Minor E: this paragraph used to also name `var(--danger)` here, carried forward
+ * verbatim from round-1's own wrong claim; `WardGlobalSearch`'s stylesheet declares no `--danger`
+ * read anywhere — `--surface` is the only actual collision.) Nothing OUTSIDE such a subtree ever
+ * resolves to these values, which is the actual
+ * property that keeps this file's coincidence of name harmless. Something
+ * has to write these values down for the first time, and putting that one file beside
+ * `src/app/ckb-v2-tokens.css` — this app's OTHER foundational token layer, which itself carries
+ * 140 raw colour declarations and is outside the guard's scanned directory for exactly this
+ * reason — is the existing precedent for where a token-DEFINITION layer belongs, rather than a
+ * new exemption carved into a guard whose whole point is that ward screens hold no colour of
+ * their own. The four shell components (`ward-rail.tsx`, `ward-bar.tsx`, `ward-live-region.tsx`,
+ * `ward-reconciliation-line.tsx`) and their own stylesheets stay exactly where the phase-1.1
+ * brief put them; only the raw-value token definitions moved.
+ *
+ * `--display`/`--body`/`--mono` resolve to the fonts this app already loads
+ * (`--font-geist-sans`/`--font-geist-mono`, bound in `src/app/layout.tsx`) rather than pulling in
+ * a new font file — the drawing names "Geist"/"Geist Mono" and this app already has both at the
+ * weights the drawing asks for (400 to 700 sans, 400 to 600 mono).
+ *
+ * ⚠️ EVERY SHELL STYLESHEET MUST COMPOSE `.wardShellTokens` ON ITS OWN ROOT CLASS (the
+ * `ward-tasks-drawer.module.css` convention — see that file's own comment). Nothing is mounted
+ * yet (the whole `shell/` directory is unmounted, per the phase-1.1 brief), so a shell component
+ * cannot assume an ancestor already provides these custom properties.
+ */
+/* Adapt legacy roles once, only inside an opted-in Ward design carrier.
+ * Nested primitives declare their own legacy roles and need the same bridge.
+ * Two-class specificity wins over the legacy carrier regardless of CSS load order. */
+.wardShellTokens.wardShellTokens,
+.wardShellTokens :global([data-ward-primitive]) {
+  --ward-text: var(--ink);
+  --ward-heading: var(--ink);
+  --ward-muted: var(--muted);
+  --ward-canvas: var(--surface);
+  --ward-chrome: var(--surface-2);
+  --ward-subtle: var(--surface-2);
+  --ward-ground: var(--ground);
+  --ward-border: var(--line);
+  --ward-border-strong: var(--line-strong);
+  --ward-divider: var(--line);
+  /* Tap floor for shell controls. Bridged to globals --spacing-tap (3rem). */
+  --ward-tap: var(--spacing-tap, 3rem);
+  --ward-blue: var(--accent);
+  --ward-blue-soft: var(--accent-soft);
+  --ward-blue-border: var(--accent);
+  --ward-danger: var(--danger);
+  --ward-danger-soft: var(--danger-soft);
+  --ward-warning: var(--warn);
+  --ward-warning-soft: var(--warn-soft);
+  --ward-success: var(--good);
+  --ward-success-soft: var(--good-soft);
+}
+
+.wardShellTokens {
+  color-scheme: light;
+
+  --ground-hi: #ecf0f4;
+  --ground: #e6eaef;
+  --ground-2: #e1e6ec;
+
+  --surface: #fdfdfe;
+  --surface-2: #f4f7fa;
+  --sunk: #eef2f6;
+
+  --ink: #161a20;
+  --ink-soft: #414953;
+  --muted: #5f6873;
+
+  --line: rgba(22, 30, 40, 0.11);
+  --line-strong: rgba(22, 30, 40, 0.26);
+
+  --accent: #2f4c66;
+  --accent-ink: #27405a;
+  --accent-press: #27405a;
+  --accent-soft: #dfe7f0;
+  --on-accent: #ffffff;
+  --stripe: #2f4c66;
+
+  --gilt: #7d612a;
+  --gilt-soft: #f1ebdf;
+
+  --good: #227550;
+  --good-soft: #e2f0e8;
+  --warn: #825d10;
+  --warn-soft: #f6eeda;
+
+  --danger: #b03b2e;
+  --danger-soft: #f8e6e2;
+  --danger-ink: #973121;
+
+  /* WA Health Service Provider Official Brand Palette */
+  --svc-east: #00825e; /* EMHS: Primary Green - #00825e */
+  --svc-east-bg: #ecfdf5;
+  --svc-east-border: #a7f3d0;
+  --svc-east-ink: #065f46;
+
+  --svc-north: #990057; /* NMHS: Primary Red (Ruby/Magenta) - #990057 */
+  --svc-north-bg: #fdf2f8;
+  --svc-north-border: #fbcfe8;
+  --svc-north-ink: #831843;
+
+  --svc-south: #5a2476; /* SMHS: Primary Purple - #5a2476 */
+  --svc-south-bg: #faf5ff;
+  --svc-south-border: #e9d5ff;
+  --svc-south-ink: #581c87;
+
+  --svc-wachs: #005b94; /* WACHS: Primary Blue - #005b94 */
+  --svc-wachs-bg: #f0f9ff;
+  --svc-wachs-border: #bae6fd;
+  --svc-wachs-ink: #0369a1;
+
+  --svc-cahs: #0076be; /* CAHS: Primary Blue - #0076be */
+  --svc-cahs-bg: #f0f9ff;
+  --svc-cahs-border: #bae6fd;
+  --svc-cahs-ink: #026aa7;
+
+  --svc-statewide: #0071a5; /* WA Health / Statewide */
+  --svc-statewide-bg: #ecfdf5;
+  --svc-statewide-border: #a7f3d0;
+  --svc-statewide-ink: #065f46;
+
+  --svc-private: #475569; /* Private & Contracted Facilities */
+  --svc-private-bg: #f8fafc;
+  --svc-private-border: #cbd5e1;
+  --svc-private-ink: #334155;
+
+  --lift: 0 1px 1px rgba(30, 48, 66, 0.05), 0 14px 30px -22px rgba(30, 48, 66, 0.45);
+  --hl: rgba(255, 255, 255, 0.9);
+  --hl-on-accent: rgba(255, 255, 255, 0.14);
+  --edge-shade: rgba(30, 48, 66, 0.16);
+  --scrim: rgba(30, 48, 66, 0.32);
+
+  --r1: 0.625rem; /* 10px panels */
+  --r1i: 0.5625rem; /* 9px strips — one pixel tighter than the panel it sits in (rule 10) */
+  --r2: 0.375rem; /* 6px controls */
+  --pill: 9999px; /* pill badges matching third-edition mockups */
+
+  /* Design elevation proposal (HOLD-FOR-JOSH, 26 Sept 2026): */
+  /* two standard "nothing here" paddings, taken from values already in use (hub, alerts); */
+  --empty-pad: 1.5rem 1rem;
+  --empty-pad-lg: 2.5rem 1.5rem;
+  /* one letter spacing for uppercase labels (design system: 0.08em beside figures); */
+  --label-track: 0.08em;
+  /* the 12px floor (rule 4) reaches the app-wide 10px and 11px steps on ward routes only; */
+  --text-3xs: var(--t-0);
+  --text-2xs: var(--t-0);
+  /* and one focus ring: the slate accent (design system: the accent is the focus ring). */
+  --focus: var(--accent);
+
+  /* The seven --t-* steps, and nothing in between (rule 4). Never below --t-0 in HTML. */
+  --t-0: 0.75rem; /* 12px — the floor */
+  --t-1: 0.8125rem; /* 13px */
+  --t-2: 0.84375rem; /* 13.5px */
+  --t-3: 0.875rem; /* 14px */
+  --t-4: 1rem; /* 16px */
+  --t-5: 1.25rem; /* 20px */
+  --t-6: 1.625rem; /* 26px */
+
+  --display: var(--font-geist-sans), "Segoe UI", system-ui, sans-serif;
+  --body: var(--font-geist-sans), "Segoe UI", system-ui, sans-serif;
+  --mono: var(--font-geist-mono), ui-monospace, Consolas, monospace;
+
+  /* `--railw-closed` per the phase-1.1 brief, 84px — matches the drawing's own final value
+   * (`command-third-edition.html`'s `:root { --railw-closed: 84px }`), widened from the shell
+   * kit's earlier 76px draft (`third-edition-kit/shell/shell.css`) so "Governance", the widest
+   * closed-rail word, fits at the 12px floor — see the standard's own §5.6 note. `--railw` is the
+   * OPEN width; the closed shape uses `--railw-closed` directly rather than a second variable. */
+  --railw: 14.75rem; /* 236px */
+  --railw-closed: 5.25rem; /* 84px */
+}
+
+/*
+ * Redefined twice on purpose, per the standard's rule 8: once for a machine already set to dark
+ * that the page has made no explicit choice on, once for the page's own control. Never a colour
+ * whose only definition sits inside one of these blocks.
+ *
+ * ⚠️ (round-1 review, Critical 2) The guard below must read `data-theme` off the ROOT, not off
+ * this class's own element. `.wardShellTokens` is `.rail`/`.bar`/`.activitySection` etc. —
+ * `ward-bar.tsx`'s Appearance control stamps `data-theme` on `document.documentElement`, never on
+ * one of those elements, so a selector written as `.wardShellTokens:not([data-theme="light"])`
+ * checks an attribute that element never carries and is therefore always true — the explicit
+ * Light choice on a dark machine did nothing. `:global(:root:not([data-theme="light"]))
+ * .wardShellTokens` matches the shape already used 55 lines below for the explicit-dark rule.
+ */
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .wardShellTokens {
+    color-scheme: dark;
+    --ground-hi: #14181d;
+    --ground: #0f1216;
+    --ground-2: #0c0f12;
+
+    --surface: #171b21;
+    --surface-2: #1b2026;
+    --sunk: #13171c;
+
+    --ink: #e8ecf1;
+    --ink-soft: #b2bac5;
+    --muted: #8a929d;
+
+    --line: rgba(255, 255, 255, 0.09);
+    --line-strong: rgba(255, 255, 255, 0.21);
+
+    --accent: #a7bcd2;
+    --accent-ink: #bfd0e2;
+    --accent-press: #8ea6bf;
+    --accent-soft: #1f2a36;
+    --on-accent: #0f1216;
+    --stripe: #3a5a78;
+
+    --gilt: #d3b77e;
+    --gilt-soft: #2a251b;
+
+    --good: #6fd39b;
+    --good-soft: #15291f;
+    --warn: #e3bc5e;
+    --warn-soft: #2b2415;
+
+    --danger: #ff8b76;
+    --danger-soft: #33201b;
+    --danger-ink: #ffa08e;
+
+    --svc-east: #34d399;
+    --svc-east-bg: rgba(16, 185, 129, 0.15);
+    --svc-east-border: rgba(52, 211, 153, 0.3);
+    --svc-east-ink: #6ee7b7;
+
+    --svc-north: #f472b6;
+    --svc-north-bg: rgba(219, 39, 119, 0.15);
+    --svc-north-border: rgba(244, 114, 182, 0.3);
+    --svc-north-ink: #fbcfe8;
+
+    --svc-south: #c084fc;
+    --svc-south-bg: rgba(168, 85, 247, 0.15);
+    --svc-south-border: rgba(192, 132, 252, 0.3);
+    --svc-south-ink: #e9d5ff;
+
+    --svc-wachs: #38bdf8;
+    --svc-wachs-bg: rgba(14, 165, 233, 0.15);
+    --svc-wachs-border: rgba(56, 189, 248, 0.3);
+    --svc-wachs-ink: #bae6fd;
+
+    --svc-cahs: #38bdf8;
+    --svc-cahs-bg: rgba(2, 106, 167, 0.15);
+    --svc-cahs-border: rgba(56, 189, 248, 0.3);
+    --svc-cahs-ink: #bae6fd;
+
+    --svc-statewide: #34d399;
+    --svc-statewide-bg: rgba(16, 185, 129, 0.15);
+    --svc-statewide-border: rgba(52, 211, 153, 0.3);
+    --svc-statewide-ink: #6ee7b7;
+
+    --svc-private: #94a3b8;
+    --svc-private-bg: rgba(100, 116, 139, 0.15);
+    --svc-private-border: rgba(148, 163, 184, 0.3);
+    --svc-private-ink: #e2e8f0;
+
+    --lift: 0 1px 1px rgba(0, 0, 0, 0.4), 0 16px 34px -22px rgba(0, 0, 0, 0.95);
+    --hl: rgba(255, 255, 255, 0.06);
+    --hl-on-accent: rgba(255, 255, 255, 0.28);
+    --edge-shade: rgba(0, 0, 0, 0.55);
+    --scrim: rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* The page's own control (the Tools drawer's Appearance group) sets data-theme on this same
+ * element's ancestor chain — see `ward-bar.tsx`'s appearance handling, which stamps
+ * `document.documentElement`. A bare attribute selector here (rather than scoped to
+ * `.wardShellTokens`) intentionally mirrors the drawing's own `:root[data-theme="dark"]`, which
+ * must win over the prefers-color-scheme block above regardless of which element the class sits
+ * on. */
+:global([data-theme="dark"]) .wardShellTokens {
+  color-scheme: dark;
+  --ground-hi: #14181d;
+  --ground: #0f1216;
+  --ground-2: #0c0f12;
+
+  --surface: #171b21;
+  --surface-2: #1b2026;
+  --sunk: #13171c;
+
+  --ink: #e8ecf1;
+  --ink-soft: #b2bac5;
+  --muted: #8a929d;
+
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.21);
+
+  --accent: #a7bcd2;
+  --accent-ink: #bfd0e2;
+  --accent-press: #8ea6bf;
+  --accent-soft: #1f2a36;
+  --on-accent: #0f1216;
+  --stripe: #3a5a78;
+
+  --gilt: #d3b77e;
+  --gilt-soft: #2a251b;
+
+  --good: #6fd39b;
+  --good-soft: #15291f;
+  --warn: #e3bc5e;
+  --warn-soft: #2b2415;
+
+  --danger: #ff8b76;
+  --danger-soft: #33201b;
+  --svc-east: #34d399;
+  --svc-east-bg: rgba(16, 185, 129, 0.15);
+  --svc-east-border: rgba(52, 211, 153, 0.3);
+  --svc-east-ink: #6ee7b7;
+
+  --svc-north: #f472b6;
+  --svc-north-bg: rgba(219, 39, 119, 0.15);
+  --svc-north-border: rgba(244, 114, 182, 0.3);
+  --svc-north-ink: #fbcfe8;
+
+  --svc-south: #c084fc;
+  --svc-south-bg: rgba(168, 85, 247, 0.15);
+  --svc-south-border: rgba(192, 132, 252, 0.3);
+  --svc-south-ink: #e9d5ff;
+
+  --svc-wachs: #38bdf8;
+  --svc-wachs-bg: rgba(14, 165, 233, 0.15);
+  --svc-wachs-border: rgba(56, 189, 248, 0.3);
+  --svc-wachs-ink: #bae6fd;
+
+  --svc-cahs: #38bdf8;
+  --svc-cahs-bg: rgba(2, 106, 167, 0.15);
+  --svc-cahs-border: rgba(56, 189, 248, 0.3);
+  --svc-cahs-ink: #bae6fd;
+
+  --svc-statewide: #34d399;
+  --svc-statewide-bg: rgba(16, 185, 129, 0.15);
+  --svc-statewide-border: rgba(52, 211, 153, 0.3);
+  --svc-statewide-ink: #6ee7b7;
+
+  --svc-private: #94a3b8;
+  --svc-private-bg: rgba(100, 116, 139, 0.15);
+  --svc-private-border: rgba(148, 163, 184, 0.3);
+  --svc-private-ink: #e2e8f0;
+
+  --lift: 0 1px 1px rgba(0, 0, 0, 0.4), 0 16px 34px -22px rgba(0, 0, 0, 0.95);
+  --hl: rgba(255, 255, 255, 0.06);
+  --hl-on-accent: rgba(255, 255, 255, 0.28);
+  --edge-shade: rgba(0, 0, 0, 0.55);
+  --scrim: rgba(0, 0, 0, 0.6);
+}
+
+/*
+ * Forced colours: every boundary a CanvasText border on Canvas, no shadow (standard §7.5). Mirrors
+ * `../components/ward-management/ward-tokens.module.css`'s own forced-colors block — same
+ * reasoning, new prefix.
+ */
+@media (forced-colors: active) {
+  .wardShellTokens {
+    --line: CanvasText;
+    --line-strong: CanvasText;
+    --accent: CanvasText;
+    --accent-ink: CanvasText;
+    --gilt: CanvasText;
+    --good: CanvasText;
+    --warn: CanvasText;
+    --danger: CanvasText;
+    --lift: none;
+    --focus: Highlight;
+  }
+}
+
+/*
+ * (round-1 review, Important 7) Print is a RECORD, not a forced-colours mode — standard §7.5:
+ * "every token takes its light value and status colours print exact." Forcing `color:
+ * CanvasText !important` on every descendant (the previous shape of this block) flattens every
+ * status colour — good, warn, danger — to one ink, which is the opposite of "exact". The drawing's
+ * own print rule (`command-third-edition.html:2166-2208`) instead re-declares the whole light
+ * token set on every theme shape the page can be in — `:root`, `:root[data-theme="dark"]`,
+ * `:root:not([data-theme="light"])` — so a dark reader's page still SENDS its real light-mode
+ * colours to the printer rather than inheriting the screen's dark ones or losing them to a single
+ * forced ink. This mirrors that exactly, scoped to the class rather than `:root`, and must list
+ * all three shapes so it wins regardless of which of the three blocks above last matched.
+ */
+@media print {
+  .wardShellTokens,
+  :global([data-theme="dark"]) .wardShellTokens,
+  :global(:root:not([data-theme="light"])) .wardShellTokens {
+    color-scheme: light;
+    --ground-hi: #ecf0f4;
+    --ground: #e6eaef;
+    --ground-2: #e1e6ec;
+
+    --surface: #fdfdfe;
+    --surface-2: #f4f7fa;
+    --sunk: #eef2f6;
+
+    --ink: #161a20;
+    --ink-soft: #414953;
+    --muted: #5f6873;
+
+    --line: rgba(22, 30, 40, 0.11);
+    --line-strong: rgba(22, 30, 40, 0.26);
+
+    --accent: #2f4c66;
+    --accent-ink: #27405a;
+    --accent-press: #27405a;
+    --accent-soft: #dfe7f0;
+    --on-accent: #ffffff;
+    --stripe: #2f4c66;
+
+    --gilt: #7d612a;
+    --gilt-soft: #f1ebdf;
+
+    --good: #227550;
+    --good-soft: #e2f0e8;
+    --warn: #825d10;
+    --warn-soft: #f6eeda;
+
+    --danger: #b03b2e;
+    --danger-soft: #f8e6e2;
+    --danger-ink: #973121;
+
+    --svc-east: #2f4c66;
+    --svc-north: #685a94;
+    --svc-south: #356a70;
+    --svc-wachs: #8c5a3c;
+    --svc-private: #475569;
+
+    --lift: none;
+    --hl: transparent;
+    --hl-on-accent: transparent;
+    --edge-shade: transparent;
+    --scrim: transparent;
+  }
+}

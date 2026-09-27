@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "id": "b22e1bba-3cab-47f9-944d-7107d7c92eb3",
+  "createdOn": "2026-09-07",
+  "action": "add",
+  "payload": {
+    "pri": "P1",
+    "type": "issue",
+    "summary": "Live sign-in outage on psychiatry.tools: auth callback redirects to the server's bound address, breaking every federated login, magic link and email confirmation",
+    "detail": "MEASURED ON PRODUCTION 2026-09-07 by Ward Builder Addon with the owner's explicit approval (one read-only GET, no cookies, no code parameter):",
+    "issueUlid": "01M1XC44XKK0J6SH76N8R5Y49P"
+  }
+}

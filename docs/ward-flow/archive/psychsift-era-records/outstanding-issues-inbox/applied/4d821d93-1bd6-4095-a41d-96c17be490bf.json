@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "id": "4d821d93-1bd6-4095-a41d-96c17be490bf",
+  "createdOn": "2026-09-10",
+  "action": "add",
+  "payload": {
+    "pri": "P2",
+    "type": "issue",
+    "summary": "Ward Flow: the statistics invented-figures guard accepts a sentence that denies its own disclosure (7 of 10 defects admitted)",
+    "detail": "tests/ward-statistics-service-screen.dom.test.tsx (added by 29f8a8e37d) enforces the owner ruling of 2026-09-09 per ITEM on the statistics footnote, which is correct and should not be undone. Its PREDICATE is the defect: ['synthetic','invented','not measured','never a measurement','made up','random walk','not real'].some(m => sentence.toLowerCase().includes(m)) — bare words under some(includes), so the weakest word sets the whole guard's strength. Measured read-only 2026-09-10 by lifting the predicate verbatim and running the adversarial corpus that broke the sibling guard: 7 of 10 admitted. All four NEGATIONS pass — 'These figures are not invented, they are the current state of the network' and 'Nothing here is synthetic any more; every bed count is live' both satisfy it by containing the word they deny, so a footnote asserting that an invented clinical figure is REAL is certified as disclosed. Bystanders also pass ('The ward names are invented; there were 28 referrals this period.'). NEXT ACTION: rewrite that list as verb-bound or noun-bound CLAIMS so a negator lands inside the phrase and breaks the match, add a clause split on ';' and a small labelled retraction list for negators that sit AFTER the claim ('any more', 'until recently'), then re-run that file's own arms. WARNING, do not paste the sibling regex: it reddens the honest statistics item 'The bed occupancy is a random walk, not measured.' — 'random walk' and 'not measured' are statistics vocabulary the sibling list does not carry. The METHOD transfers, the list does not. Worked example, evidence and the five mutation arms: tests/ward-provenance-sentences-carry-their-own-marker.test.ts and docs/ward-flow/provenance-guard-arms-2026-09-10.md, folded on the ward line at 4a35634f96.",
+    "source": "Ward Builder Four, 2026-09-10, read-only predicate measurement; reported to Ward Lead for routing (the file belongs to another chat and has not been touched)",
+    "issueUlid": "01M24XAWHJHZ0ZWKN7GMTZ5QH5"
+  }
+}

@@ -1,0 +1,4810 @@
+/*
+ * Task 4 (Phase 7, "The front door"): the referral intake form. Composes the shared ward token
+ * layer (`ward-tokens.module.css`) — adopted 2026-09-04, replacing the self-contained `--ri-*`
+ * scale this file used to declare. 143 substitutions, the largest in the cluster and none of them
+ * a visual change: every `--ri-space-*` was an exact-value twin of its `--ward-space-*`
+ * counterpart, and `--ri-leading-body` (1.4) matched `--ward-leading-body` exactly.
+ *
+ * `--ri-leading-prose` (1.5) had zero consumers and is deleted — not a visual change.
+ *
+ * ⚠️ `--ri-two-col-breakpoint` HAS ZERO CONSUMERS TOO AND IS DELIBERATELY KEPT. It could never have
+ * had one: a CSS custom property cannot appear in an `@media` condition, so the token named for
+ * this file's breakpoint never drove it and never could. The 40rem in the media query below is a
+ * literal and always was. The token survives as the written record of what that literal means —
+ * owner ruling 2026-09-04, on the standing rule that "nothing uses it" is never sufficient grounds
+ * for deletion in this repository. Do not tidy it away; if it goes, the comment above referring to
+ * it goes with it and the 40rem becomes an unexplained number.
+ *
+ * This screen's audience is a police or ambulance officer standing in someone's living room, or
+ * a community mental health nurse between visits — not someone at a desk. Every field below is a
+ * full-width card in a single vertical stack on a phone, never a dense multi-column grid, and
+ * every tap target is `--spacing-tap` (3rem / `min-h-12`), never the smaller `min-h-11` that
+ * reintroduced a known `ui-smoke` flake elsewhere in this repo. Above `--ri-two-col-breakpoint`
+ * there is room to lay two cards side by side, but the phone layout is the one this form is
+ * designed for and the desktop layout only adapts upward from it.
+ */
+.screen {
+  composes: wardTokens from "../ward-tokens.module.css";
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+
+  /* Consumed by nothing, and cannot be — see the header. It is the written record of what the
+     literal `40rem` in this file's media query means, kept deliberately. */
+  --ri-two-col-breakpoint: 40rem;
+
+  display: block;
+  min-height: 100dvh;
+  /* ⚠️ NO `background` HERE, DELIBERATELY, AND THIS FILE IS THE ONE THAT PREDICTED WHY IT WOULD BE
+     RISKY. It was painting `var(--surface)` straight over `--ward-ground`, which `WardGround`
+     (`ward-shell.module.css`) paints on a real DOM ancestor of this page's `<main>` — the defect
+     `COVERING_THE_GROUND` named this file for. Removed 2026-09-04.
+
+     ⚠️ AND IT MUST BE DELETED, NEVER RENAMED. `--ward-canvas` aliases `--surface`, so repainting
+     this with the alias covers the ground exactly as before while reading as adoption in the diff.
+
+     ⚠️ THE PRINT BLOCK BELOW USED TO RESET THIS DECLARATION AND NOW HAS NOTHING HERE TO RESET.
+     That reset was not paranoia — the `@media print` comment records that printing this screen in
+     dark mode painted the whole page near-black, because `globals.css` resets the print background
+     on `html`/`body` only and that does not reach an element's own explicit `background`. Painting
+     the ground centrally reintroduced exactly that defect one level up, for every ward route; it
+     was found and fixed on 2026-09-04 by giving `.shell` its own `background: transparent` under
+     `@media print`. So the responsibility has MOVED to the shell, not disappeared. The block below
+     is kept because it resets other things too. */
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.main {
+  grid-column: auto;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--ward-space-20);
+  /*
+   * 🔴 **THE `overflow-x: hidden; overflow-y: auto;` PAIR THAT USED TO BE HERE IS WHY
+   * `.intakeAside`'s `position: sticky` DID NOTHING.** `overflow-y: auto` made this element a
+   * scroll container, so the aside pinned to THIS box rather than to the window. This box never
+   * scrolls — nothing constrains its height, so `scrollHeight === clientHeight` — while the document
+   * does. **A sticky pinned to a box that never moves is indistinguishable from one nobody wrote.**
+   *
+   * ⚠️ **REMOVED OUTRIGHT RATHER THAN REPLACED WITH `clip` + `visible`, BECAUSE THE CLIP WAS
+   * PROTECTING NOTHING.** Measured with `overflow-x` forced to `visible` at three emulated
+   * viewports: spill was **0px at 375, 768 and 1440**, both inside this element and on the page.
+   * Ward Builder One found the same on the hub and removed the pair there. Ward Lead's ruling was
+   * `clip` + `visible` with removal preferred if there is no real spill; there is none.
+   *
+   * ⚠️ **DO NOT REINTRODUCE `overflow-y: auto` UNDER ANY OPTION** — that alone is the scrollport,
+   * and changing only the x axis would look like a repair while changing nothing.
+   *
+   * **Verified after, inside the engaged range** — past the 16px offset and before the containing
+   * block runs out, which is the only window where the question can be answered. A sticky is bounded
+   * by its container, so a large scroll shows movement whether it works or not, and a small one is
+   * measured before it engages: **both wrong tests report "still broken".** Held at exactly 16px at
+   * scroll offsets 420, 460, 520, 700, 900 and 1200, where the not-sticky position ranges from 0 to
+   * −780. Compared against the predicted inert position, never against how far it moved — an element
+   * frozen at the top and one scrolling away move by identical amounts.
+   */
+  padding: var(--ward-space-16) var(--ward-space-20) var(--ward-space-24);
+}
+
+.governanceBanner {
+  display: flex;
+  min-height: var(--ward-tap);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ward-space-12);
+  border-bottom: 0.0625rem solid var(--ward-border);
+  background: var(--surface-chrome);
+  padding: var(--ward-space-8) var(--ward-space-12);
+}
+
+.governanceBanner p {
+  min-width: 0;
+  flex: 1 1 12rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-body);
+}
+
+.prototypeBadge {
+  flex-shrink: 0;
+  border: 0.0625rem solid var(--warning-border);
+  border-radius: var(--radius-sm);
+  background: var(--ward-warning-soft);
+  padding: var(--ward-space-4) var(--ward-space-8);
+  color: var(--ward-warning);
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pageHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-4);
+}
+
+.pageTitle {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-3);
+  font-weight: 700;
+}
+
+.pageSubtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-body);
+}
+
+/* Task 6: the board's "New referral" link — the intake form's only entry point. `align-self`
+   keeps it to its own width inside `.pageHeader`'s column flex, which would otherwise stretch it
+   edge to edge and make a single action read as a page-wide banner. Same `--ward-tap`
+   (`--spacing-tap`, 3rem) tap target every other control in this file uses; never `min-h-11`. */
+.headerAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-height: 2.125rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--r2, 6px);
+  background: var(--accent);
+  padding: 0 1rem;
+  color: var(--on-accent);
+  font-size: var(--t-1);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--lift);
+  transition: all 0.15s ease;
+}
+
+@media (max-width: 51.25rem), (pointer: coarse) {
+  .headerAction {
+    min-height: var(--ward-tap, 3rem);
+  }
+}
+
+.headerAction:hover {
+  background: var(--accent-press);
+  border-color: var(--accent-press);
+  box-shadow: var(--lift);
+  color: var(--on-accent);
+}
+
+.headerAction:active {
+  transform: scale(0.98);
+}
+
+.headerAction:focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: 0.125rem;
+}
+
+.form {
+  display: grid;
+  gap: var(--ward-space-16);
+}
+
+/* One decision per card. Phone-first: a single full-width column, always — this never becomes
+   a dense grid, even above the two-column breakpoint below (that widens to two CARDS side by
+   side, not two fields sharing one card). */
+.fieldCard {
+  display: grid;
+  gap: var(--ward-space-8);
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-subtle);
+  margin: 0;
+  padding: var(--ward-space-14) var(--ward-space-16);
+}
+
+.fieldLegend {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ward-space-8);
+  padding: 0;
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 700;
+}
+
+/* The third edition's per-question state word — `Outstanding` until the question is answered.
+ *
+ * ⚠️ 12px, and never smaller. This is the smallest text the third edition adds to this screen, so
+ * it is exactly the kind of label that invites a size below the standard's §4 floor to make a row
+ * sit tighter. The floor is a legibility ruling (D-3), not a taste, and the ratchet at
+ * `scripts/ward-flow/check-text-size-floor.mjs` reddens on any new sub-12px use in this directory.
+ *
+ * ⚠️ The two sub-12px tokens are referred to by SIZE throughout this file's prose and never spelled
+ * — see the note in `hub/hub.module.css`. That ratchet counts token names inside comments too, so a
+ * comment recording that the floor was honoured is otherwise counted as breaking it. */
+.questionState {
+  flex: none;
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Colour is never the only carrier: the state is a WORD first, and these two only tint it. An
+   answered question is not "good" and an outstanding one is not "bad" — an empty form is a normal
+   state, not a warning — so neither takes a red, and outstanding stays the muted ink rather than
+   an amber that would read as a problem with the referral. */
+.questionState[data-state="not-answered"] {
+  color: var(--muted);
+}
+
+/* 🔴 `--ink`, and the two tokens it is NOT are both instructive.
+ *
+ * `--ward-accent-ink` was written here first. It is declared NOWHERE, and I had given it a fallback
+ * — so it would have rendered correctly forever while naming a token that does not exist. The ward
+ * suite's undeclared-token gate caught it; a screenshot never would have, because the fallback made
+ * the screen right.
+ *
+ * The obvious repair, `--accent-ink`, is declared — and would still have been wrong. **Declared
+ * somewhere is not resolvable here.**
+ *
+ * ⚠️ **THE REASON WRITTEN HERE FIRST WAS "the shell is reverted off the line", AND THAT REASON
+ * EXPIRED WITHIN HOURS** — the third-edition shell mount landed at `633dc4b145` the same day. **The
+ * conclusion survived and the justification did not**, which is the worse half: a reader checking
+ * "is the shell still reverted?" would find *no*, conclude the note was stale, and reach for the
+ * token — and be wrong.
+ *
+ * **The durable reason, re-measured after the mount landed.** `--accent-ink` is declared inside
+ * `.wardShellTokens` in `src/app/ward-flow-shell-tokens.module.css`, and that class reaches an
+ * element only through a CSS-Modules `composes:`. **Every file that composes it lives under
+ * `src/components/ward-management/shell/` — that is the durable property, and it is stated instead
+ * of a count on purpose.**
+ *
+ * ⚠️ **THIS SENTENCE USED TO CARRY A COUNT AND THE COUNT WAS WRONG THE DAY IT WAS TYPED.** It said
+ * two files, naming the bar and the rail. `ward-reconciliation-line.module.css` composes it too,
+ * and `git blame` puts that line a day BEFORE this comment — so it was an undercount at birth, not
+ * a claim that aged out. **Nothing anywhere fails when a number parked in a comment stops being
+ * true**, which is why the number is gone rather than corrected: the next reader gets a property
+ * they can re-derive in one grep instead of a figure they have to trust. (Measured 2026-09-12:
+ * three files, four `composes:` lines — the bar composes it twice.)
+ *
+ * **The conclusion is unchanged, and that is worth saying explicitly**: every composing file is
+ * shell chrome, so the token's scope is the bar, the rail and the reconciliation line, never a
+ * wrapper around page content. **The page layout deliberately does not compose it**:
+ * `src/app/mockups/ward-flow/ward-flow-layout.module.css` says so in its own header — *"No colour
+ * and no `wardShellTokens` composition."* So inside this screen the token resolves to nothing
+ * whatever the shell's fold state is.
+ *
+ * ⚠️ **THIS SENTENCE ALSO NAMED ONLY TWO OF THE THREE COMPOSING FILES UNTIL 2026-09-12, FOUR LINES BELOW THE
+ * PARAGRAPH THAT HAD JUST CORRECTED EXACTLY THAT ENUMERATION.** The repair replaced one copy and
+ * left its twin standing, so the note contradicted itself inside a single comment and the commit
+ * message claimed the conclusion "now says so in as many words" — true of the new sentence, false
+ * of the surviving old one. 🔴 **A correction that lands on one instance of a repeated claim is
+ * not a correction; it is a disagreement.** Found by an adversarial read, not by any gate. **That is a fact about how the scope is applied, not about what landed this week,
+ * and it is why this version of the note should still be true next month.** */
+.questionState[data-state="answered"] {
+  color: var(--ink);
+}
+
+.select {
+  min-height: var(--ward-tap);
+  width: 100%;
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: 0 var(--ward-space-10);
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 400;
+}
+
+.select:focus-visible {
+  outline: 0.125rem solid var(--focus);
+  outline-offset: 0.125rem;
+}
+
+/* RB7, build plan item 27 (2026-09-17). Same tokens as `.select` above — border, radius, surface,
+   text, size — so the correction note reads as one family with every other field on this screen,
+   just tall enough (`--ward-tap` twice over) to hold more than one line without the 48px single-line
+   tap target `.select` itself needs. */
+.correctionNote {
+  min-height: calc(var(--ward-tap) * 2);
+  width: 100%;
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: var(--ward-space-8) var(--ward-space-10);
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 400;
+  resize: vertical;
+}
+
+.correctionNote:focus-visible {
+  outline: 0.125rem solid var(--focus);
+  outline-offset: 0.125rem;
+}
+
+/* `.toggleCard` stood here until 2026-08-30, styling the three checkboxes this form used to
+   carry. All three became yes/no radio groups (`.choiceCard`/`.choiceOption` below) when an
+   untouched checkbox turned out to be sending a definite clinical "no" nobody had chosen, and
+   nothing has rendered the class since. Its rules — including its `@media print` reset — have moved
+   onto the classes that ARE rendered, rather than being left behind pointing at nothing: a print
+   guard naming an orphaned selector is decorative, and reads as coverage the screen does not have.
+
+   A note about what it says beneath a question, not a control of its own. Used by the suburb
+   picker to say plainly that its answer is not recorded on the referral. */
+.fieldNote {
+  margin: var(--ward-space-8) 0 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 400;
+  line-height: var(--ward-leading-body);
+}
+
+/* Phase R2.1: a yes/no question that starts with NEITHER answer chosen. Same card weight and the
+   same 48px tap target as a picker card — these two were checkboxes, and an untouched checkbox
+   sent a definite clinical "no" nobody had chosen. `.fieldCard` is not reused directly because a
+   <fieldset> with `display: grid` takes its <legend> out of flow in Chrome; here the legend is
+   laid out as an ordinary block above the two choices. */
+.choiceCard {
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-subtle);
+  margin: 0;
+  padding: var(--ward-space-14) var(--ward-space-16);
+}
+
+/* A <legend> is laid out into the fieldset's top border by default, so these two cards would sit
+   differently from the six picker cards above them — on a clinical form an unexplained difference
+   in how a card is drawn reads as a difference in meaning. Floating the legend takes it out of the
+   border and lays it out as an ordinary block, so a question card looks the same whichever control
+   it holds. */
+.choiceCard > .fieldLegend {
+  float: left;
+  width: 100%;
+}
+
+.choiceRow {
+  display: flex;
+  flex-wrap: wrap;
+  clear: both;
+  gap: var(--ward-space-8);
+  margin-top: var(--ward-space-8);
+}
+
+/* Grows to share the row on a phone, where a wide target is the point; capped on a desktop, where
+   a one-word answer stretched across half a 1440px screen reads as a mis-drawn control rather than
+   a generous one. Never below the 48px tap height at any width. */
+.choiceOption {
+  display: flex;
+  min-height: var(--ward-tap);
+  max-width: 16rem;
+  flex: 1 1 8rem;
+  align-items: center;
+  gap: var(--ward-space-10);
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: 0 var(--ward-space-14);
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 600;
+  line-height: var(--ward-leading-body);
+}
+
+.choiceOption input {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  accent-color: var(--clinical-accent);
+}
+
+.choiceOption:focus-within {
+  outline: 0.125rem solid var(--focus);
+  outline-offset: 0.125rem;
+}
+
+/* FD-21: every destination a referrer may choose, one card each, stacked so a phone reads them in
+   one column and a desktop still gets full-width cards — the facts beside each option are
+   sentences, and sentences in narrow columns are how a clinician skips them. */
+/* ⚠️ `clear: both` IS LOAD-BEARING AND ITS ABSENCE MADE THIS FORM UNUSABLE. `.choiceCard >
+   .fieldLegend` above is `float: left; width: 100%`, so a following block sibling with no `clear`
+   is laid out BESIDE a float that occupies the whole line. There is no room left, this list
+   computed to ZERO width, and its three destination cards were pushed 93px past the right edge of
+   a 1440px viewport — with no horizontal scroll, so they could not be reached or clicked at all.
+   "Where to refer" is the control that sends the referral, so the page could be filled in and not
+   completed.
+
+   `.choiceRow` directly above already carries `clear: both` for the same reason, which is why the
+   Yes/No cards were unaffected and the fault looked like a styling quirk rather than a broken
+   control. Measured in the browser, not inferred: 0px -> 1283px, and the first card's right edge
+   moved from 1518 to 1390 inside a 1425 viewport. */
+.destinationList {
+  display: grid;
+  clear: both;
+  margin: var(--ward-space-8) 0 0;
+  padding: 0;
+  gap: var(--ward-space-8);
+  list-style: none;
+}
+
+.destinationOption {
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: var(--ward-space-14) var(--ward-space-16);
+}
+
+/* GREYED, NEVER REMOVED AND NEVER DISABLED (owner's rule). Keyed off the data attribute rather
+   than a second class for the same reason `.submit[aria-disabled="true"]` above is: the STATE is
+   what the screen renders from, so a card cannot look chosen-able while the option says it is
+   outside the catchment table. The control inside keeps its full 48px target and stays operable —
+   choosing one is allowed, and the card says in words why it is drawn this way, so the meaning is
+   never carried by colour alone. */
+.destinationOption[data-outside-catchment="true"] {
+  border-style: dashed;
+  background: var(--surface-chrome);
+}
+
+/* The label IS the control's accessible name, and carries the 48px tap target. */
+.destinationName {
+  display: flex;
+  min-height: var(--ward-tap);
+  align-items: center;
+  gap: var(--ward-space-10);
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 600;
+  line-height: var(--ward-leading-body);
+}
+
+.destinationName input {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  accent-color: var(--clinical-accent);
+}
+
+.destinationName:focus-within {
+  outline: 0.125rem solid var(--focus);
+  outline-offset: 0.125rem;
+}
+
+.destinationNote {
+  margin: var(--ward-space-8) 0 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 400;
+  line-height: var(--ward-leading-body);
+}
+
+.destinationFacts {
+  display: grid;
+  margin: var(--ward-space-8) 0 0;
+  padding: 0 0 0 var(--ward-space-14);
+  gap: var(--ward-space-4);
+}
+
+.destinationFact {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 400;
+  line-height: var(--ward-leading-body);
+}
+
+/* Why Send is unavailable, named field by field. Never colour alone and never a tooltip: it is
+   readable text in the same block as the control it explains.
+   ⚠️ `border-left-width` IS THE ONLY ASYMMETRY. Matched to `.historyWarning`'s established accent
+   in this same file, so a clinician meets the same "this is a caveat, read it" shape twice on one
+   screen rather than a heavier treatment invented just for this box. Colour is unchanged; this is
+   a second, colour-independent cue that the reason is a blocker, not a note. */
+.unavailableReason {
+  margin: 0;
+  border: 0.0625rem solid var(--warning-border);
+  border-left-width: 0.1875rem;
+  border-radius: var(--radius-lg);
+  background: var(--ward-warning-soft);
+  padding: var(--ward-space-12) var(--ward-space-14);
+  color: var(--ward-warning);
+  font-size: var(--t-0);
+  font-weight: 600;
+  line-height: var(--ward-leading-body);
+}
+
+.rejection {
+  margin: 0;
+  border: 0.0625rem solid var(--danger-border);
+  border-radius: var(--radius-lg);
+  background: var(--ward-danger-soft);
+  padding: var(--ward-space-12) var(--ward-space-14);
+  color: var(--ward-danger);
+  font-size: var(--t-0);
+  font-weight: 600;
+  line-height: var(--ward-leading-body);
+}
+
+/* `.rejection` (shared with `referral-match.tsx`, frozen — see this file's own header note) keeps
+   its uniform border; `.confirmation` is intake-only, so the same left-accent `.unavailableReason`
+   carries is safe to add here for the same reason: a stronger, colour-independent "this is the
+   outcome" shape. */
+.confirmation {
+  margin: 0;
+  border: 0.0625rem solid var(--success-border);
+  border-left-width: 0.1875rem;
+  border-radius: var(--radius-lg);
+  background: var(--ward-success-soft);
+  padding: var(--ward-space-12) var(--ward-space-14);
+  color: var(--ward-success);
+  font-size: var(--t-0);
+  font-weight: 600;
+  line-height: var(--ward-leading-body);
+}
+
+/* The one control that commits the referral, so it carries the strongest weight on the screen:
+   a token-based glow (`--glow-primary`, already used on primary actions elsewhere in the app) in
+   place of a flat fill, and a touch more horizontal room than the field controls beside it. The
+   glow is `none` under `forced-colors` (globals.css) and untouched by `prefers-reduced-motion`,
+   since it is a static shadow rather than an animation. */
+.submit {
+  display: inline-flex;
+  min-height: var(--ward-tap);
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  border: 0.0625rem solid var(--clinical-accent-border);
+  border-radius: var(--radius-md);
+  background: var(--clinical-accent);
+  box-shadow: var(--glow-primary);
+  padding: 0 var(--ward-space-16);
+  color: var(--clinical-accent-contrast);
+  font-size: var(--t-2);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.submit:focus-visible {
+  outline: 0.125rem solid var(--focus);
+  outline-offset: 0.125rem;
+}
+
+/* Unavailable, not gone. Keyed off `aria-disabled` rather than a second class because the native
+   `disabled` attribute is deliberately absent here — it would remove the tab stop, and with it
+   every route to the reason below — so `:disabled` would never match. The control keeps its full
+   48px tap target and stays focusable; it simply stops reading as the thing to press. */
+.submit[aria-disabled="true"] {
+  border-color: var(--ward-border);
+  background: var(--surface-chrome);
+  /* The glow is what reads as "press me"; a control that no longer does that must not keep it. */
+  box-shadow: none;
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+@media (min-width: 40rem) {
+  .form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .rejection,
+  .confirmation,
+  .submit,
+  .unavailableReason,
+  .choiceCard {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen * {
+    transition: none !important;
+  }
+}
+
+/*
+ * Task 5 (Phase 7, "The front door"): the referral board and match view. Shares this module with
+ * the intake form above — `.screen`, `.main`, `.governanceBanner`, `.prototypeBadge`,
+ * `.pageHeader`, `.pageTitle`, `.pageSubtitle`, `.select`, `.fieldLegend` and `.rejection` are all
+ * reused unchanged, never duplicated under a second name.
+ *
+ * The board's queued/decided sections follow `discharges.module.css`'s own table-then-cards
+ * pattern exactly: a table above 40rem, a stacked card list below it, swapped by the media query
+ * above — a table is right at a desk and wrong in a corridor (same rule every sibling board here
+ * documents on its own module).
+ */
+.section {
+  display: grid;
+  gap: var(--ward-space-8);
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-subtle);
+  margin: 0;
+  padding: var(--ward-space-12) var(--ward-space-14);
+}
+
+/* ⚠️ ONE ELEVATED SURFACE ON THE BOARD, AND IT IS THE QUEUE. Measured at 1440px before this
+   pass: both sections painted `rgb(251, 252, 253)` behind the same `--ward-border`, so the live
+   queue and the closed record were indistinguishable as objects — the page had a hierarchy in its
+   headings and none in its surfaces. This is the only rule on the screen that lifts anything, in
+   the v6 sense: a second lifted panel would cancel the first.
+
+   The distinction is carried by fill AND border weight together, not by a shadow alone: under
+   `forced-colors` a shadow is dropped entirely and `--ward-border-strong` is what survives. */
+.sectionLive {
+  border-color: var(--ward-border-strong);
+  background: var(--surface-raised);
+}
+
+.sectionHeading {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 700;
+}
+
+.emptyNote {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-style: italic;
+}
+
+/* Spec D14's own sentence, on the section where the outcome is read (review finding I3): an
+   acceptance records a unit and does not arrange a transfer. Not `.emptyNote`'s italic muted
+   grey — this must be read, not skimmed past, so it takes the body colour and a left rule like
+   `.matchGovernance`. */
+.decidedNote {
+  margin: 0;
+  border-left: 0.125rem solid var(--ward-border);
+  padding-left: var(--ward-space-8);
+  color: var(--ink);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-body);
+}
+
+/* ══ THE TABLE — composed from the shared WardTable primitive ═══════════════════════════════════
+   The six ward table modules each carried their own copy of one body, differing only in a scroll
+   threshold, a divider token, and (in out-of-area) a narrower last-child selector. That body now
+   lives in `ward-table/ward-table.module.css` and this file keeps the one thing that is genuinely
+   per-screen.
+
+   ⚠️ `--ward-table-min-width` IS THE WHOLE REASON THIS RULE STILL EXISTS. The shared block defaults
+   it to 0, so a module composed without it stops scrolling and starts SQUASHING — silent, and on a
+   board a coordinator reads under pressure. `tests/ward-table-min-width.test.ts` pins it, so it is
+   a property something holds rather than a value somebody remembered.
+
+   🔴 **IT WAS 40rem, AND 40rem PUT TWO COLUMNS OFF THE SCREEN AT EVERY WIDTH THIS TABLE IS USED
+   AT BELOW ~800px.** Measured at a 641px viewport — the first width above the card/table swap, so
+   the narrowest this table is ever shown at: the scroller is 499px and the table was pinned to
+   640px, leaving `Sex` and `Home region` outside the queued table and `Waited` and `Decided`
+   outside the decided one. **The decided table's two timing columns are what that section is
+   FOR.** Every column was in the document at every width, which is why nothing went red; they were
+   simply never on the screen, and the only way to reach them was to scroll sideways inside a table
+   that shows no sign of having more — `ward-table.module.css` gives `.tableScroll` nothing but
+   `overflow-x: auto`, no fade and no hint.
+
+   **This is out-of-area's Task 10 defect, on this board, found the same way: by opening it at a
+   width somebody actually uses.** My own design pass measured 375px and 1440px and nothing in
+   between, which is exactly the band where a scroll threshold does its damage.
+
+   30rem (480px) fit the 499px scroller with nothing escaping, measured at 641px on 2026-09-05;
+   32rem still put one column out. It was also still above both tables' intrinsic minimum, so the
+   pin went on doing the job it exists for.
+
+   ⚠️ **RE-MEASURED 2026-09-12** (`tests/ui-ward-table-thresholds.spec.ts`, 1440x900,
+   `clearedMinWidth` = 0px, sentinel 1234px): queued min-content is now 516px, decided is 380px.
+   **"Still above both tables' intrinsic minimum" was never one fact about this file — it was two,
+   which happened to agree on 2026-09-05's seeded data and stopped agreeing once queued's content
+   grew.** 30rem (480px) is now BELOW queued's own floor — INERT by 36px, the identical failure
+   `.compareEdTable` in `statistics-sections.module.css` documents at its own 27.5rem — while it
+   remains comfortably above decided's 380px. **The sentence stayed half right, and the half that
+   stayed right is why nobody re-measured the other half.**
+
+   Raised to 33rem (528px): 12px clear of queued's 516px, so the pin does its job on the table it
+   was silently failing, and still 148px clear of decided's 380px, so decided is unaffected. This
+   also means referrals no longer converges on the 30rem `discharges` and `out-of-area` share —
+   deliberately: those two boards' own tables have not been re-measured here, and nothing says they
+   still need the same number just because they once landed on it for the same reason.
+
+   ⚠️ **AND "INTRINSIC MINIMUM" IS A NUMBER WITH A CONDITION ATTACHED — the primitive's
+   `.table th { white-space: nowrap }`.** Ward Builder One found that declaration setting the floor
+   on the statistics compare tables and asked whether it was setting mine. Measured both ways:
+
+       queued    25.16rem with headers unable to wrap    21.31rem if they may
+       decided   18.76rem                                18.76rem — IDENTICAL
+
+   **So it governs one of these two tables and not the other**, and on their board it governed both
+   heavily (605px against 336px). The difference is which side is longer: their cells are short
+   figures under long header phrases, so the headers set the width; this board's decided table
+   carries "East Metropolitan Youth Unit (EMyU)" and "1h 00m before decision" in the CELLS, which
+   dominate whatever the headers do. **Whether that declaration is load-bearing is a per-table fact,
+   not a property of the primitive** — worth knowing before anyone reads one table's measurement as
+   a general one. The pin here is measured against the scroller, so neither figure changes it. And it converges this board
+   on the value `discharges` and `out-of-area` already use, which out-of-area chose for the same
+   reason against the same 499px box, rather than inventing a third number. */
+/* ⚠️ THIS CLASS EXISTS TO BE PASSED TO `WardTable` AS `wrapperClassName`, AND THAT IS THE WHOLE
+   POINT OF IT. The `@media (max-width: 40rem)` block near the end of this file hides the table and
+   shows the card list by setting `display: none` HERE — so if the rendered scroll wrapper does not
+   carry this local class, the swap silently stops happening and both the table and the cards
+   render on a phone. That is exactly what shipped: `d136656ba` moved this board onto `WardTable`,
+   which supplies its OWN `tableScroll` from the primitive, and the local class stopped reaching
+   the DOM. Measured at 375px afterwards — table `display: block` and cards `display: grid`, both
+   on screen, on the referral board, the discharges board and the out-of-area ledger.
+
+   No `composes:` here any more: `WardTable` already puts the primitive's class on the wrapper, so
+   composing it would emit the same class name twice in one `className`. This class carries only
+   the per-screen behaviour, which is the phone swap. */
+.tableScroll {
+  overflow-x: auto;
+}
+
+/*
+ * D-10 (owner-decisions-2026-09-1x.md): THE MEASURED OVERFLOW CUE, the visual echo to the mandatory
+ * sentence in `.sectionHeading` — never the standard's shade, which does not paint here at all
+ * (`--edge-shade` resolves in a closed third-edition token set composed into three shell-chrome
+ * files only; this board still composes the second-edition layer, so `var(--edge-shade)` would
+ * silently paint nothing) and which this design language has already rejected twice on
+ * accessibility grounds (`ward-table.module.css`'s `[data-ward-scroll-hint]`,
+ * `coordinator.module.css`'s `.diagramScroll[data-overflowing]`) — a gradient degrades to nothing
+ * under `forced-colors: active`.
+ *
+ * `data-overflowing="true"` is stamped on the wrapper by `WardTable` itself (`ward-table.tsx`'s own
+ * `overflowing` prop), never by this file — `referral-board.tsx` measures `scrollWidth`/
+ * `clientWidth` and hands the boolean down, because `WardTable` still cannot know this for itself
+ * (see that component's own doc comment). Selector combines `.tableScroll`, this file's LOCAL
+ * class (not the primitive's own identically-named one), with the attribute, so the cue is scoped
+ * to boards that have actually opted in rather than reaching into `ward-table.module.css`. Same
+ * tokens and same values as `coordinator.module.css`'s `.diagramScroll[data-overflowing="true"]`:
+ * no new design token, and the same measured 3:1+ non-text contrast `--ward-border-strong` already
+ * carries against every surface a ward panel sits on (see `ward-table.module.css`'s
+ * `[data-ward-scroll-hint]` comment for the four contrast figures). `--ward-border-strong` also
+ * needs no `forced-colors` override of its own — it aliases `--muted`, one of the roles
+ * `ckb-v2-tokens.css`'s forced-colors block already re-points to `CanvasText`.
+ */
+.tableScroll[data-overflowing="true"] {
+  border: var(--ward-space-2) solid var(--ward-border-strong);
+  border-radius: var(--radius-md);
+}
+
+.table {
+  composes: table from "../ward-table/ward-table.module.css";
+  --ward-table-min-width: 33rem;
+}
+
+/* The queued register carries eight fact columns. Preserve names as readable identity text and
+   let the existing internal scroller handle the width in dense mode. */
+.queuedTable {
+  --ward-table-min-width: 56rem;
+}
+
+.queuedTable td:first-child {
+  min-width: 11rem;
+}
+
+.selectedRow {
+  background: var(--clinical-accent-soft);
+}
+
+/* ⚠️ THE REFERRAL ID USED TO SIT 8px RIGHT OF ITS OWN COLUMN HEADER AND 15px BELOW ITS OWN ROW.
+   Measured on the board at 1440px: the header's text started at x=114.8 and the id at x=122.8
+   (the button's horizontal padding), and the row's other cells drew their first line at y=284.7
+   while the id drew at y=299.7 — because this button is 48px tall and was centring its text
+   inside that box while every sibling cell is `vertical-align: top`. The id is the first thing
+   read on a queue row and it was the one thing out of line with everything beside it.
+
+   ⚠️ **THE 48px TAP TARGET IS NOT WHAT MOVES.** Production tap targets here are 48px and are
+   never reduced to fix a layout — that has reintroduced a known browser-test flake before. So the
+   box keeps its height and the TEXT moves to the top of it (`flex-start`), and the horizontal
+   padding is pulled back out with an exactly equal negative margin: the cell's own left padding
+   is `--ward-space-8`, so `-{--ward-space-8}` lands the text on the column edge and nothing
+   overflows the table. The target stays the full 48px tall and the same width it always was. */
+.rowSelectButton {
+  display: inline-flex;
+  min-height: var(--ward-tap);
+  align-items: flex-start;
+  border: none;
+  background: transparent;
+  margin-inline-start: calc(-1 * var(--ward-space-8));
+  padding: 0 var(--ward-space-8);
+  color: var(--clinical-accent);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.rowSelectButton:focus-visible {
+  outline: 0.125rem solid var(--focus);
+  outline-offset: 0.125rem;
+}
+
+/* The urgency tier on a queued row. ⚠️ **ONE TONE FOR ALL THREE TIERS, AND THAT IS A RULING, NOT
+   A PREFERENCE.** `.matchTier` below and `ed.module.css`'s `.tierLabel` both record it
+   independently: a tier is a category a clinician set, and colouring it — a danger tone on tier 1,
+   a fade on tier 3 — would read as this screen's own judgement of urgency, which is a threshold
+   wearing a different costume. The words `urgencyTierLabel` supplies carry the direction already
+   and survive greyscale, forced-colors and a colour-blind reader unchanged. This rule adds WEIGHT
+   only, so the board's tier cell finally matches the match view's `.matchTier`, which had been
+   bold heading ink while the same fact on the board beside it was plain body text. */
+/* ⚠️ `.table td.tierCell`, NOT `.tierCell` — AND THE FIRST VERSION WAS SILENTLY HALF-INERT.
+   `ward-table.module.css` declares `.table td { color: var(--ink) }`, a compound descendant
+   selector at (0,1,1). A bare `.tierCell` is (0,1,0) and LOSES on specificity, which is decided
+   before source order — so the colour never applied while the `font-weight` beside it did, because
+   the primitive declares no weight. Measured on the running board: the tier cell rendered
+   `rgb(27, 37, 51)`, byte-identical to the plain cell next to it, while the commit that added it
+   claimed the board's tier now "matches the match view's `.matchTier`, which had been bold heading
+   ink". Half of that was true. **The stylesheet read as though the override applied and the page
+   rendered as though it did not**, and nothing anywhere could go red: the class is present, the
+   token exists, jsdom loads no CSS Modules, and a screenshot of near-black on near-black is a
+   screenshot of the intended design.
+
+   Found because Ward Builder One hit the identical trap on the statistics compare page and said so
+   rather than fixing it quietly. Ward Lead has documented the general case in the primitive
+   (`f8841e4e3`). `.table td.tierCell` is (0,2,1) and wins outright, in either source order.
+
+   Declaring `color` here is allowed; `tests/ward-table-single-source.test.ts` captures this
+   selector and fails only on `padding` or a `border` property, which belong to the primitive
+   alone. */
+.table td.tierCell {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.tierCellContent {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+  flex-wrap: wrap;
+}
+
+.cardTierGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-6);
+  flex-wrap: wrap;
+}
+
+.priorityBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ward-space-4);
+  padding: var(--ward-space-2) var(--ward-space-6);
+  border-radius: var(--radius-sm);
+  font-size: var(--t-0);
+  font-weight: 700;
+  line-height: var(--ward-leading-none);
+  border: 0.0625rem solid var(--ward-border);
+  background: var(--surface-chrome);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.priorityBadge[data-priority="overdue"] {
+  border-color: var(--ward-danger);
+  background: var(--ward-danger-soft);
+  color: var(--ward-danger);
+}
+
+.priorityBadge[data-priority="urgent"] {
+  border-color: var(--ward-warning);
+  background: var(--ward-warning-soft);
+  color: var(--ward-warning);
+}
+
+.priorityBadge[data-priority="routine"] {
+  border-color: var(--ward-border-strong);
+  background: var(--surface-chrome);
+  color: var(--ink);
+}
+
+.priorityIcon {
+  flex-shrink: 0;
+}
+
+.priorityText {
+  display: inline;
+}
+
+/* The cell that HOLDS the wait badge — see `referral-board.tsx` for why the badge is an inner
+   `<span>` and this is a plain table cell. Nothing here may set `display`: that is the whole
+   defect this class exists to undo. */
+.waitCell {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* The figure this task's brief calls out as needing prominence on every queued row — bold and
+   set apart from the surrounding cells, never just another plain column. Reused unchanged on
+   the match view's own header (referral-match.tsx), and on the queued CARD, both of which are
+   non-table elements where `inline-block` is correct. */
+/* ⚠️ **THE PROMINENCE STAYS; THE WARNING TONE GOES.** Ward Lead's ruling, 2026-09-05, applying an
+   existing refusal rather than making a new decision. This badge painted `--warning-bg` /
+   `--warning-text` — the warning role — on EVERY queued referral's waiting time, so a twenty-minute
+   wait and a fifty-minute wait were the same amber, and a queue of one showed a single amber badge
+   that reads as a flag on that patient.
+
+   `P9-D3` calls itself a "direct application" of the repo-wide standing refusal: *"the screen shows
+   elapsed time and NEVER colours it, ranks it or flags it against a limit the owner has not
+   supplied."* That ruling is scoped to the per-ED screen — checked against `P9-D4` rather than
+   assumed — but two other files reached the same conclusion independently for the urgency tier
+   (`.matchTier` below, and `ed.module.css`'s `.tierLabel`): *"a colour is a threshold wearing a
+   different costume, and nobody has ruled on one."*
+
+   **And "but it is uniform" does not save it: a reader cannot know the amber is uniform until they
+   have seen several rows, and a design whose honesty depends on that is not honest on the row that
+   matters.**
+
+   The treatment is `.tierLabel`'s, deliberately, so the two figure badges in this product agree:
+   border plus `--surface-chrome` plus heading ink, which says "this is a figure, read it" and
+   claims nothing about the number.
+
+   ⚠️ **AND ON THIS SCREEN THE FILL DOES NOTHING — THE BORDER IS THE WHOLE MECHANISM.** Measured
+   at 1100px after the change: `--surface-chrome` resolves to `rgb(255, 255, 255)`, the queued
+   section is `--surface-raised`, also `rgb(255, 255, 255)`, so badge-against-panel contrast is
+   1.00. What separates the chip is its `--ward-border` edge at 4.97:1, with ink at 18.75:1.
+
+   That is not a defect and it is not a copy-paste slip either — `.tierLabel`'s own comment says it
+   chose `--surface-chrome` *"because `.card` is itself `--surface-subtle` — a subtle-on-subtle pill
+   would be invisible"*, and this board's live section is white rather than subtle, so the same
+   token lands on the other side of the same argument. `--surface-subtle` was the obvious
+   alternative and is no better here: it is `rgb(251, 252, 253)` against white, a step of about
+   1.01. **On a white panel no neutral fill in this ramp gives a visible step, so the edge has to
+   carry it — which is worth knowing before somebody "fixes" the inert fill by reaching for a
+   colour.** */
+.waitBadge {
+  display: inline-block;
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-chrome);
+  padding: var(--ward-space-4) var(--ward-space-8);
+  color: var(--ink);
+  font-weight: 700;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.patientIdentityGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ward-space-4);
+}
+
+.patientIdTag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--ink-soft);
+  background: var(--surface-chrome);
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-sm);
+  padding: var(--ward-space-2) var(--ward-space-6);
+  line-height: var(--ward-leading-none);
+}
+
+.hospitalCell {
+  font-size: var(--t-1);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.bedCell {
+  white-space: nowrap;
+}
+
+.bedAssignedBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--ward-space-2) var(--ward-space-6);
+  border-radius: var(--radius-sm);
+  font-size: var(--t-0);
+  font-weight: 600;
+  line-height: var(--ward-leading-none);
+  border: 0.0625rem solid var(--ward-border-strong);
+  background: var(--surface-chrome);
+  color: var(--ink);
+}
+
+.bedUnassignedBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--ward-space-2) var(--ward-space-6);
+  border-radius: var(--radius-sm);
+  font-size: var(--t-0);
+  font-style: italic;
+  line-height: var(--ward-leading-none);
+  border: 0.0625rem dashed var(--ward-border);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+}
+
+/* Phone: cards, never a squeezed table (see the media query above). Hidden by default. */
+.cardList {
+  display: none;
+  gap: var(--ward-space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+/* The queued section's card carries a `.cardSelectButton` that owns its own padding (so the
+   whole card is one tap target); the decided section's card has no button — it wraps its
+   content in `.cardBody` instead, so both variants end up padded identically. */
+.cardBody {
+  display: grid;
+  gap: var(--ward-space-4);
+  padding: var(--ward-space-10) var(--ward-space-12);
+}
+
+.cardSelectButton,
+.cardSelectButtonSelected {
+  display: grid;
+  width: 100%;
+  gap: var(--ward-space-4);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  padding: var(--ward-space-10) var(--ward-space-12);
+  text-align: left;
+}
+
+.cardSelectButtonSelected {
+  background: var(--clinical-accent-soft);
+}
+
+.cardSelectButton:focus-visible,
+.cardSelectButtonSelected:focus-visible {
+  outline: 0.125rem solid var(--focus);
+  outline-offset: -0.125rem;
+}
+
+.cardTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ward-space-8);
+}
+
+.cardUnit {
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 700;
+}
+
+/* The decided card's outcome detail — the accepting unit's name, or the decline reason (review
+   finding I3). Set at the same weight as the card's own id so the record's substance is not the
+   faintest thing on the card, and above `.cardService`, which carries the timings. */
+.cardDetail {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* The decided row's two parts, on the table and on the card alike (owner ruling, 2026-09-01:
+   "keep the refusals visible on the board"). The OUTCOME keeps the cell's own colour and size —
+   it is what happened. The refusals sit beneath it, smaller and muted, because a coordinator
+   scanning this column must not read a refusal as the answer; the "Also refused" lead word in
+   `referral-board.tsx` carries that distinction in text, so nothing depends on the colour being
+   noticed. `display: block` on both so the two never run together on one line. */
+.outcomeDetailPrimary {
+  display: block;
+}
+
+.outcomeDetailRefusals {
+  display: block;
+  margin-top: var(--ward-space-4);
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-body);
+}
+
+/* `display: block` because the queued card's copy of this is a `<span>`, not a `<p>` — a
+   `<button>`'s content model is phrasing content (M5). On the decided card's `<p>` it is a
+   no-op, so both variants keep the identical layout they had. */
+.cardService {
+  display: block;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+/* The match view (referral-match.tsx). */
+.matchPanel {
+  display: grid;
+  gap: var(--ward-space-12);
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-subtle);
+  padding: var(--ward-space-12) var(--ward-space-14);
+}
+
+.matchHeading {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 700;
+}
+
+/* Review finding I1 / Task 8 finding B: the urgency tier is its own line on the match view,
+   never a field inside `.matchSummary`'s dot-separated run — see `referral-match.tsx`'s own
+   comment for why the layout changed rather than the words. Styled like the board's tier cell
+   (plain text, heading colour, bold), not as a coloured badge: a tier is a category a clinician
+   set, and colouring it here would read as this screen's own judgement of urgency. */
+.matchTierRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.matchTier {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 700;
+}
+
+.matchSummary {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+/* The match view's own copy of the governance sentence (M7). Deliberately quieter than
+   `.governanceBanner` — it repeats a statement the coordinator has already met at the top of the
+   page, so it must not compete with the referral heading directly above it. */
+.matchGovernance {
+  margin: 0;
+  border-left: 0.125rem solid var(--ward-border);
+  padding-left: var(--ward-space-8);
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-body);
+}
+
+.structuralGap,
+.noBedAccepts {
+  margin: 0;
+  border-radius: var(--radius-lg);
+  padding: var(--ward-space-12) var(--ward-space-14);
+  font-size: var(--t-0);
+  font-weight: 600;
+  line-height: var(--ward-leading-body);
+}
+
+.structuralGap {
+  border: 0.0625rem solid var(--warning-border);
+  background: var(--ward-warning-soft);
+  color: var(--ward-warning);
+}
+
+.noBedAccepts {
+  border: 0.0625rem solid var(--danger-border);
+  background: var(--ward-danger-soft);
+  color: var(--ward-danger);
+}
+
+/*
+ * Phase 8, Task 4. `.matchList` is now the container for the five band groups rather than the flat
+ * row list; the rows themselves live in `.bandRows` inside each group. The class name is kept (and
+ * so is its `data-testid`) because the property it carries is unchanged: every unit in the network
+ * is inside it, and its element count is what pins non-truncation on this screen.
+ */
+.matchList {
+  display: grid;
+  gap: var(--ward-space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * A band group folds; it does not hide. The heading and both counts live in `.bandSummary`, which
+ * a `<details>` renders open or shut alike — including for an empty group — so "there is nothing
+ * available within an hour" is answerable without opening anything.
+ */
+.bandGroup {
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.bandSummary {
+  display: flex;
+  min-height: var(--ward-tap);
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-8);
+  padding: var(--ward-space-8) var(--ward-space-12);
+  cursor: pointer;
+  /* `display: flex` suppresses the browser's own disclosure triangle, so the affordance is
+     replaced explicitly below rather than lost. A group a coordinator cannot see is openable is
+     a group whose rows they will not find. */
+  list-style: none;
+}
+
+.bandSummary::-webkit-details-marker {
+  display: none;
+}
+
+/* Drawn rather than written, so it adds no text to the heading: a glyph in the summary would
+   become part of every count and label assertion and could drift into wording. */
+.bandSummary::after {
+  width: 0;
+  height: 0;
+  border-top: 0.3125rem solid transparent;
+  border-bottom: 0.3125rem solid transparent;
+  border-left: 0.375rem solid var(--muted);
+  content: "";
+}
+
+.bandGroup[open] > .bandSummary::after {
+  transform: rotate(90deg);
+}
+
+.bandSummary:focus-visible {
+  outline: 0.125rem solid var(--focus);
+  outline-offset: -0.125rem;
+}
+
+.bandLabel {
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 700;
+}
+
+/* Two present facts, styled as quiet supporting text — never as a badge or a score, which would
+   read as this screen's own judgement of a band rather than a count of what is in it. */
+.bandCounts {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+}
+
+.bandRows {
+  display: grid;
+  gap: var(--ward-space-8);
+  margin: 0;
+  padding: 0 var(--ward-space-12) var(--ward-space-12);
+  list-style: none;
+}
+
+.bandEmpty {
+  margin: 0;
+  padding: 0 var(--ward-space-12) var(--ward-space-12);
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-body);
+}
+
+/* An unrecorded band is named on the row, never left blank — a blank cell in a distance column is
+   read as "close". Same quiet treatment as every other band, so a gap is not styled as a warning. */
+.matchBand {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+}
+
+.syntheticNotice,
+.allNotRecorded {
+  margin: 0;
+  border-left: 0.125rem solid var(--ward-border);
+  padding-left: var(--ward-space-8);
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-body);
+}
+
+/* Owner ruling D-3 (docs/ward-flow/owner-decisions-2026-09-1x.md, 2026-09-10): the sentence stating
+   the travel times are invented jumps the 12px-floor queue ahead of every other sub-12px use in
+   this file, raised alone rather than as part of a sweep. `.allNotRecorded` above is a different
+   sentence and is deliberately untouched — it is raised only when this screen is rebuilt. */
+.syntheticNotice {
+  font-size: var(--t-0);
+}
+
+/* The optional local-bed step. Nothing here renders when the record is absent except the offer
+   itself — no placeholder, no warning colour, no amber row. */
+.localBed {
+  display: grid;
+  gap: var(--ward-space-8);
+}
+
+.localBedButton {
+  display: inline-flex;
+  min-height: var(--ward-tap);
+  align-items: center;
+  justify-content: center;
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  padding: 0 var(--ward-space-14);
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-align: center;
+}
+
+.localBedButton:focus-visible {
+  outline: 0.125rem solid var(--focus);
+  outline-offset: 0.125rem;
+}
+
+.localBedRecord {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-body);
+}
+
+.matchRowAccepts,
+.matchRowDeclines {
+  display: grid;
+  gap: var(--ward-space-6);
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-md);
+  padding: var(--ward-space-10) var(--ward-space-12);
+}
+
+.matchRowAccepts {
+  border-color: var(--success-border);
+  background: var(--ward-success-soft);
+}
+
+.matchRowDeclines {
+  background: var(--surface-raised);
+}
+
+.matchRowTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-8);
+}
+
+.matchUnitName {
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 700;
+}
+
+.forensicBadge {
+  border-radius: var(--radius-sm);
+  background: var(--ward-danger-soft);
+  padding: var(--ward-space-4) var(--ward-space-8);
+  color: var(--ward-danger);
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.matchUnitInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+  flex-wrap: wrap;
+}
+
+.suitabilityBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ward-space-6);
+  padding: var(--ward-space-4) var(--ward-space-8);
+  border-radius: var(--radius-sm);
+  border: 0.0625rem solid var(--ward-border);
+  background: var(--surface-chrome);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.suitabilityBadge[data-score="100"] {
+  border-color: var(--ward-success);
+  background: var(--ward-success-soft);
+  color: var(--ward-success);
+}
+
+.suitabilityScoreVal {
+  font-weight: 800;
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.suitabilityLabel {
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.suitabilityBadge[data-score="100"] .suitabilityLabel {
+  color: var(--ward-success);
+}
+
+.criteriaChecklist {
+  margin: var(--ward-space-8) 0;
+  padding: var(--ward-space-8);
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-chrome);
+}
+
+.criteriaHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--ward-space-6);
+  padding-bottom: var(--ward-space-4);
+  border-bottom: 0.0625rem solid var(--ward-border);
+  font-size: var(--t-0);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.criteriaTitle {
+  font-weight: 700;
+}
+
+.criteriaCount {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.criteriaList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-4);
+}
+
+.criteriaPass,
+.criteriaFail {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ward-space-6);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-tight);
+}
+
+.criteriaPass {
+  color: var(--ink);
+}
+
+.criteriaFail {
+  color: var(--ward-danger);
+}
+
+.criteriaGlyph {
+  font-weight: 800;
+  flex-shrink: 0;
+  width: var(--ward-space-12);
+}
+
+.criteriaPass .criteriaGlyph {
+  color: var(--ward-success);
+}
+
+.criteriaFail .criteriaGlyph {
+  color: var(--ward-danger);
+}
+
+.criteriaName {
+  font-weight: 600;
+  min-width: 7.5rem;
+}
+
+.criteriaDetail {
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+
+.criteriaFail .criteriaDetail {
+  color: var(--ward-danger);
+}
+
+.matchAcceptRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-8);
+}
+
+.acceptsLabel {
+  color: var(--ward-success);
+  font-size: var(--t-0);
+  font-weight: 700;
+}
+
+.acceptButton {
+  display: inline-flex;
+  min-height: var(--ward-tap);
+  align-items: center;
+  justify-content: center;
+  border: 0.0625rem solid var(--clinical-accent-border);
+  border-radius: var(--radius-md);
+  background: var(--clinical-accent);
+  padding: 0 var(--ward-space-14);
+  color: var(--clinical-accent-contrast);
+  font-size: var(--t-0);
+  font-weight: 700;
+}
+
+.acceptButton:focus-visible {
+  outline: 0.125rem solid var(--focus);
+  outline-offset: 0.125rem;
+}
+
+.matchReasonText {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-body);
+}
+
+/*
+ * THE OVERRIDE ROW — the explanation and the way to act on it, stacked rather than side by side.
+ *
+ * A grid, not the `.matchAcceptRow` flex the eligible arm uses: that row is one label and one
+ * button and reads across; this one is a sentence a clinician must read BEFORE the control that
+ * acts against it, and reading order is the point. Tokens throughout, and the button carries the
+ * production 48px tap target like every other control on this screen.
+ */
+.matchOverrideRow {
+  display: grid;
+  gap: var(--ward-space-8);
+  border-top: 0.0625rem solid var(--ward-border);
+  padding-top: var(--ward-space-8);
+}
+
+.matchOverrideLabel {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 700;
+}
+
+.matchOverrideSelect {
+  min-height: var(--ward-tap);
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: 0 var(--ward-space-8);
+  color: var(--ink);
+  font-size: var(--t-0);
+}
+
+.matchOverrideSelect:focus-visible {
+  outline: 0.125rem solid var(--focus);
+  outline-offset: 0.125rem;
+}
+
+.matchOverrideButton {
+  display: inline-flex;
+  min-height: var(--ward-tap);
+  align-items: center;
+  justify-content: center;
+  border: 0.0625rem solid var(--clinical-accent-border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: 0 var(--ward-space-14);
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 700;
+}
+
+.matchOverrideButton[aria-disabled="true"] {
+  border-color: var(--ward-border);
+  color: var(--muted);
+}
+
+.matchOverrideButton:focus-visible {
+  outline: 0.125rem solid var(--focus);
+  outline-offset: 0.125rem;
+}
+
+.declineControls {
+  display: grid;
+  gap: var(--ward-space-8);
+  border-top: 0.0625rem solid var(--ward-border);
+  padding-top: var(--ward-space-12);
+}
+
+.declineButton {
+  display: inline-flex;
+  min-height: var(--ward-tap);
+  align-items: center;
+  justify-content: center;
+  border: 0.0625rem solid var(--danger-border);
+  border-radius: var(--radius-md);
+  background: var(--ward-danger-soft);
+  padding: 0 var(--ward-space-14);
+  color: var(--ward-danger);
+  font-size: var(--t-1);
+  font-weight: 700;
+}
+
+.declineButton:focus-visible {
+  outline: 0.125rem solid var(--focus);
+  outline-offset: 0.125rem;
+}
+
+/*
+ * The table-to-cards swap for the board's two sections, at the same 40rem breakpoint the file's
+ * earlier `@media (max-width: 40rem)` block already reserves phone-bar padding at. Kept as its
+ * own block, appearing AFTER every base `.tableScroll`/`.cardList` rule above (never before —
+ * two unconditional rules of equal specificity resolve by source order, so a base rule appearing
+ * after a media query would silently win at every width and undo the swap), matching
+ * `discharges.module.css`'s own structure exactly.
+ */
+@media (max-width: 40rem) {
+  .tableScroll {
+    display: none;
+  }
+
+  .cardList {
+    display: grid;
+  }
+}
+
+/*
+ * Print: ink-on-paper, no rail, no chrome control, no interactive control. This module had NO
+ * `@media print` block at all until the Phase 7 visual pass (fix round D) found that printing any
+ * of the three screens this file styles — the referral board, the intake form, and the match view
+ * beneath the board — while the device is in dark mode renders nearly the whole page as pale grey
+ * text on white paper. Starts from `morning.module.css`'s own `@media print` block (read its
+ * comments for the two traps repeated below), applied across a much bigger surface: three screens
+ * sharing one module, not one.
+ *
+ * ⚠️ THE `.screen` HALF OF THIS REASONING HAS MOVED, AND THE MOVE IS WORTH READING BEFORE TOUCHING
+ * THIS BLOCK. `.screen` USED to carry its own explicit `background: var(--surface)`, which the dark
+ * theme resolves to near-black — `#12161a`, from `ckb-v2-tokens.css`'s `.ckb-v2.dark.ckb-v2` ramp.
+ * (This comment previously said `#101315`. That is `globals.css`'s value, and globals LOSES:
+ * `.ckb-v2.ckb-v2` is specificity (0,2,0) against `:root`'s (0,1,0) and both match `<html>`, so
+ * specificity decides, not import order. The old figure was measured against the declaration that
+ * does not apply.)
+ *
+ * The global print reset in globals.css only resets `html`/`body`'s own background, which does not
+ * cascade into an element's own explicit `background` declaration — so without a reset, printing
+ * any of the three screens while the app is in dark mode paints the whole screen container as a
+ * dark band, not the white sheet the print reset promises everywhere else.
+ *
+ * `.screen`'s own background was removed on 2026-09-04 when this file adopted the shared token
+ * layer, so the `background: none` below is now a no-op for it. THE HAZARD DID NOT GO AWAY — it
+ * moved up. `WardGround` (`ward-shell.module.css`) now paints `--ward-ground` on an ancestor of
+ * every ward route, which reintroduced this exact defect for all ~30 of them, including the ones
+ * with no print block of their own to save them. That was found and fixed the same day by giving
+ * `.shell` its own `background: transparent` under `@media print`. A property that moves up to a
+ * shared layer takes its responsibilities with it, and nothing checks that it did.
+ *
+ * Every card-shaped container
+ * below (`.fieldCard`, `.section`, `.card`, `.matchPanel`, `.choiceCard`, `.choiceOption`,
+ * `.destinationOption`, `.destinationName`, `.matchRowAccepts`, `.matchRowDeclines`) has the
+ * identical problem for the same reason — each carries its own explicit
+ * `background: var(--surface-subtle)` / `var(--surface-raised)` / `var(--surface)`, confirmed by
+ * measuring `getComputedStyle(...).backgroundColor` on the rendered dark-mode print output:
+ * `rgb(13, 15, 17)` for `.fieldCard`, `rgb(28, 33, 38)` for the card that was `.toggleCard` when
+ * that measurement was taken — near-black islands that would survive a `.screen`-only reset.
+ *
+ * `.choiceCard`, `.choiceOption` and the destination cards were NOT in this block until
+ * 2026-08-30, and `.toggleCard` — which was — had stopped being rendered by anything. So the block
+ * reset a class no screen produces while three question cards a clinician can actually print went
+ * out as near-black blocks. Both are fixed together, because fixing either alone leaves the guard
+ * in `tests/ward-referrals-print.test.ts` naming something the screen does not have.
+ *
+ * `color-scheme` is inherited, and `.dark` (globals.css) sets `color-scheme: dark` on the root.
+ * System colours such as `CanvasText` below resolve against the *inherited* `color-scheme`, not
+ * the active media type — so under print while the app is in dark mode, `CanvasText` resolves to
+ * white (dark-appearance ink) rather than black, printing white text on the white sheet the print
+ * reset forces. Pinning `color-scheme: light` here makes every `CanvasText` reference under
+ * `.screen` resolve to the light (paper) appearance regardless of the on-screen theme — see
+ * `morning.module.css`'s own block for the measured before/after on that page.
+ *
+ * `color-scheme: light` alone does not fix the muted-text selectors below: a muted colour TOKEN
+ * in the dark theme (`--ink`, `--ink`, `--muted`, `--warning-text`,
+ * `--danger-text`, `--success-text`) is a pale grey/blue/red custom-property value regardless of
+ * what `color-scheme` says, so each selector that uses one of those tokens for text needs naming
+ * explicitly. Found by measuring every painted leaf of text on all three screens, in both colour
+ * schemes, under `@media print` (`.tmp-visual/print-ink-sweep.mjs` /
+ * `print-ink-sweep-match.mjs`) — not by reading this stylesheet's selector list and trusting it,
+ * the same lesson the morning page's own sweep already learned three times over. Measured before
+ * this fix, printed from the dark theme: `.sectionHeading` at `rgb(251, 252, 253)` (contrast
+ * 1.03:1), `.table th` at `rgb(168, 178, 189)` (2.15:1), `.table td` / `.waitBadge` /
+ * `.decidedNote` at `rgb(244, 246, 248)` (1.08:1), `.matchSummary` / `.matchGovernance` /
+ * `.matchReasonText` at `rgb(168, 178, 189)` (2.15:1), `.matchTier` / `.matchUnitName` /
+ * `.fieldLegend` / the checkbox card then called `.toggleCard` at `rgb(251, 252, 253)` (1.03:1) —
+ * pale ink on the white sheet
+ * the print reset forces, on 58 of 59 leaves (board), 14 of 15 (intake), 63 of 63 (match).
+ *
+ * `.prototypeBadge` is deliberately left out of the group below, exactly as `morning.module.css`
+ * leaves its own identical badge unfixed: it carries its own background too (`--warning-bg`), so
+ * background-printing is a printer setting, not a text-colour defect this fix can close, and
+ * fixing text colour alone (`rgb(242, 196, 90)`, contrast 1.64:1) would not make it legible.
+ * Already reported, not new here.
+ */
+/* ══ THE TWO-PANE INTAKE WORKSPACE ═══════════════════════════════════════════════════════════
+   The form on the left is WHAT THE REFERRER IS ASSERTING. The rail on the right is WHAT THE
+   SYSTEM WILL RECORD AND WHAT IS STILL MISSING. Keeping those on opposite sides is the point:
+   nothing on the right can ever look like it is filling the form in, and the referral stays a
+   thing a person states rather than a thing a screen proposes.
+
+   ⚠️ EVERY CLASS BELOW IS INTAKE-ONLY AND NEW. `.screen`, `.main`, `.governanceBanner`,
+   `.prototypeBadge`, `.pageHeader`, `.pageTitle`, `.pageSubtitle` and `.headerAction` are SHARED
+   with `referral-board.tsx`; `.fieldLegend`, `.select` and `.rejection` are shared with
+   `referral-match.tsx`. Both of those files are frozen under an open owner decision, so their
+   rules are REUSED VERBATIM here and never edited — a change to a shared rule would restyle a
+   frozen screen without anybody editing it.
+
+   No raw hex, per DESIGN-LANGUAGE.md rule 1. Every value is a token that already existed. */
+
+.intakeLayout {
+  display: grid;
+  gap: var(--ward-space-20);
+  align-items: start;
+}
+
+/* One column on a phone, always. The rail is context, so it follows the thing it describes
+   rather than competing with it for the first screenful. 64rem — wider than the form's own
+   40rem two-column point — because the rail only earns its width once the form already has
+   two columns of its own. */
+@media (min-width: 64rem) {
+  .intakeLayout {
+    grid-template-columns: minmax(0, 1fr) 21rem;
+  }
+}
+
+/* `min-width: 0` on both tracks: a grid item's default `min-width: auto` refuses to shrink below
+   its content, which is how a long unbroken value pushes a column past the viewport. This screen
+   has already been bitten once by content escaping the right-hand edge with no way to scroll
+   to it. */
+.intakeMain {
+  min-width: 0;
+}
+
+.intakeAside {
+  display: grid;
+  gap: var(--ward-space-12);
+  min-width: 0;
+  align-content: start;
+}
+
+/* Sticky only where there is a second column to be sticky beside. On a phone it is an ordinary
+   block below the form; a sticky panel in a single column would cover the fields. */
+@media (min-width: 64rem) {
+  .intakeAside {
+    position: sticky;
+    top: var(--ward-space-16);
+  }
+}
+
+/* Panel anatomy copied from `WardPanel` — border, small radius, subtle header on canvas fill —
+   so the rail reads as the same furniture as every other ward surface rather than as a second
+   design. */
+.asideCard {
+  border: var(--ward-radius-pixel) solid var(--ward-border);
+  border-radius: var(--radius-md);
+  background: var(--ward-canvas);
+  overflow: hidden;
+}
+
+/* The Progress card is the one figure a referrer glances back at repeatedly while filling the
+   form in, so it carries a coloured top edge marking it as the primary stat — never a second
+   `.asideCard` variant, just this one accent on the same panel shape. The extra weight of the
+   line (3px against the panel's own 1px edge) is what survives greyscale and forced-colours;
+   the colour is a bonus, not the mechanism. */
+.asideCardAccent {
+  border-top-width: 0.1875rem;
+  border-top-color: var(--ward-blue);
+}
+
+.asideCardTitle {
+  margin: 0;
+  padding: var(--ward-space-10) var(--ward-space-14);
+  background: var(--ward-subtle);
+  border-bottom: var(--ward-radius-pixel) solid var(--ward-border);
+  color: var(--ward-muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+  line-height: var(--ward-leading-tight);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+}
+
+.asideCardBody {
+  padding: var(--ward-space-12) var(--ward-space-14);
+}
+
+/* The progress figure. Tabular numerals so the count does not jitter sideways as it climbs —
+   the same reason every other figure in this product uses them. */
+.progressValue {
+  display: block;
+  color: var(--ward-heading);
+  font-size: var(--t-6);
+  font-weight: 700;
+  line-height: var(--ward-leading-none);
+  font-variant-numeric: tabular-nums;
+}
+
+.progressLabel {
+  display: block;
+  margin-top: var(--ward-space-6);
+  color: var(--ward-muted);
+  font-size: var(--t-1);
+  line-height: var(--ward-leading-body);
+}
+
+.summaryList {
+  display: grid;
+  gap: var(--ward-space-8);
+  margin: 0;
+}
+
+.summaryRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ward-space-2);
+}
+
+.summaryTerm {
+  color: var(--ward-muted);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-tight);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+}
+
+/* `overflow-wrap: anywhere` because these are recorded values, not prose: a site code or a team
+   name with no spaces must wrap inside the rail rather than widen it. */
+.summaryValue {
+  margin: 0;
+  color: var(--ward-text);
+  font-size: var(--t-1);
+  line-height: var(--ward-leading-body);
+  overflow-wrap: anywhere;
+}
+
+/* An unanswered question says so in WORDS. It is never a blank line, an em dash, or a gap the
+   reader has to interpret — the absence is the fact being reported. */
+.summaryValueMissing {
+  composes: summaryValue;
+  color: var(--ward-muted);
+  font-style: italic;
+}
+
+.asideNote {
+  margin: 0;
+  color: var(--ward-muted);
+  font-size: var(--t-1);
+  line-height: var(--ward-leading-copy);
+}
+
+/* ── DARK THEME HIGH-CONTRAST BORDERS & CONTRAST ELEVATION ── */
+:global([data-theme="dark"]) .matchPanel,
+:global(.dark) .matchPanel,
+:global([data-theme="dark"]) .matchRowDeclines,
+:global(.dark) .matchRowDeclines,
+:global([data-theme="dark"]) .matchRowAccepts,
+:global(.dark) .matchRowAccepts,
+:global([data-theme="dark"]) .bandGroup,
+:global(.dark) .bandGroup,
+:global([data-theme="dark"]) .card,
+:global(.dark) .card,
+:global([data-theme="dark"]) .kpiCard,
+:global(.dark) .kpiCard,
+:global([data-theme="dark"]) .criteriaChecklist,
+:global(.dark) .criteriaChecklist,
+:global([data-theme="dark"]) .suitabilityBadge,
+:global(.dark) .suitabilityBadge,
+:global([data-theme="dark"]) .priorityBadge,
+:global(.dark) .priorityBadge,
+:global([data-theme="dark"]) .waitBadge,
+:global(.dark) .waitBadge {
+  border-color: var(--ward-border-strong);
+}
+
+:global([data-theme="dark"]) .priorityBadge[data-priority="overdue"],
+:global(.dark) .priorityBadge[data-priority="overdue"] {
+  border-color: var(--ward-danger);
+  color: var(--ward-danger);
+}
+
+:global([data-theme="dark"]) .priorityBadge[data-priority="urgent"],
+:global(.dark) .priorityBadge[data-priority="urgent"] {
+  border-color: var(--ward-warning);
+  color: var(--ward-warning);
+}
+
+:global([data-theme="dark"]) .suitabilityBadge[data-score="100"],
+:global(.dark) .suitabilityBadge[data-score="100"] {
+  border-color: var(--ward-success);
+  color: var(--ward-success);
+}
+
+@media print {
+  .screen {
+    grid-template-columns: 1fr;
+    background: none;
+    color-scheme: light;
+  }
+
+  /*
+   * 🔴 **THE REFERRAL ID PRINTED NOWHERE, AND THE QUEUED CARDS DID NOT PRINT AT ALL.**
+   *
+   * `globals.css:4725-4727` hides `header, nav, button` with `display: none !important` on paper —
+   * correct, and the decline/confirm/reset controls on this board SHOULD vanish. But this screen
+   * makes the whole row and the whole card a real `<button>` so a coordinator can select by
+   * clicking anywhere on it, which is the right accessibility call and is exactly what puts CONTENT
+   * inside a hidden element.
+   *
+   * ⚠️ **The table row was the worse-looking half and the card was the worse one.** `.rowSelectButton`
+   * carries only `{referral.id}` — and the refusal text is deliberately a SIBLING of it, because a
+   * `<button>` takes phrasing content only (see the comment at `referral-board.tsx:411`). So the
+   * answers printed and the identifier did not: a handover sheet of rows saying what was decided
+   * with nothing saying which referral it was about. `.cardSelectButton` wraps the entire queued
+   * card — id, urgency tier and wait badge — so those cards left the page completely.
+   *
+   * 🔴 **`!important` IS REQUIRED AND SPECIFICITY ALONE WOULD NOT DO IT.** The rule being overridden
+   * is itself `!important`, and an `!important` declaration beats a non-important one at any
+   * specificity. ⚠️ `ward-management-network.module.css:1044` fixed the identical defect for
+   * `.serviceCard` and its comment credits specificity — *"`.serviceCard` (0,1,0) outranks the
+   * reset's `button` (0,0,1)"* — which is only half the reason. It wins because it ALSO carries
+   * `!important`; the specificity note explains why it needed no change to the global list.
+   *
+   * ⚠️ **NEVER RELAX THE RULE IN `globals.css`.** The fix belongs in each screen that has content
+   * wearing a button, and only for those classes. Found by Ward Verifier as the second instance of
+   * a class Ward Builder One hit on the search hub — where every one of 41 rows vanished for the
+   * same reason. A written diagnosis on one screen is not a sweep, and this is the third time
+   * tonight that shape has cost something.
+   */
+  .rowSelectButton {
+    display: inline-flex !important;
+  }
+
+  .cardSelectButton,
+  .cardSelectButtonSelected {
+    display: grid !important;
+  }
+
+  /*
+   * THE BLANKET RESET, beneath the named list above. A colour declared on an element itself
+   * cannot be overridden by any ancestor rule at any specificity, which is exactly why the long,
+   * measured selector list above exists — each entry is a leaf that carries its own `color:
+   * var(--ink)`/`--ink`/`--muted` and needed naming individually. This rule does
+   * not replace that list; it is the floor underneath it, so a leaf the sweep missed (a future
+   * one, or one added after this block was last measured) still prints black rather than silently
+   * reintroducing the pale-ink defect the list above was built to close.
+   */
+  .screen,
+  .screen * {
+    color-scheme: light;
+    /* `!important`, not a specificity chase: a compound descendant selector such as `.table td`
+       (0,1,1) outranks this rule's `.screen *` (0,1,0) on specificity alone, so without
+       `!important` a themed leaf using a type-qualified selector would still win and print
+       near-white — exactly the case the `.table th, .table td` rule further down was already
+       written to cover on its own. The intent here is genuinely "nothing on this sheet overrides
+       this ink", underneath the named list rather than instead of it. */
+    color: CanvasText !important;
+    /* The background needs the same floor, underneath the named `background: none` list above:
+       dark-theme tokens survive into print because nothing resets them, so forcing text to
+       `CanvasText` without also neutralising the background produces black ink on a still-dark
+       card for any leaf the named list missed. */
+    background-color: Canvas !important;
+  }
+
+  .screen > aside {
+    display: none !important;
+  }
+
+  .main {
+    overflow: visible;
+    padding: 0;
+  }
+
+  .governanceBanner {
+    border-bottom: 0.0625rem solid CanvasText;
+    background: none;
+  }
+
+  /*
+   * Every bordered, background-carrying card container across all three screens — the intake
+   * form's field cards, the board's queued/decided sections and card-list items, the match
+   * panel, the match view's band groups, and its per-unit rows. `break-inside: avoid` keeps each
+   * card from splitting across a page boundary, matching `morning.module.css`'s identical group.
+   *
+   * `.bandGroup` joined this list in Phase 8 Task 10, having been added to the screen by Task 4
+   * AFTER this print block was written. It carries `background: var(--surface-raised)`, which the
+   * dark theme resolves to `rgb(28, 33, 38)`, so it was the one card left un-reset — and because
+   * `color-scheme: light` above makes `CanvasText` resolve to BLACK, every unit name, verdict and
+   * "Accepts this referral" label inside it would print black on a near-black island. Exactly the
+   * trap the header comment above describes, hit again by a container that did not exist when the
+   * comment was written.
+   *
+   * ON THE SEVERITY FIGURE, qualified by the whole-branch review (W4). This comment previously read
+   * "47 of the match view's 147 painted leaves at a contrast of 1.29:1, measured rather than read
+   * off this selector list". That figure is the output of Task 10's DOM-walking ink probe, which
+   * computed contrast by walking up from each text node to the nearest ancestor carrying a
+   * background and dividing the ink against it. Task 10's own fix round then withdrew that probe,
+   * having demonstrated with real print output that Chrome does not paint an element's background
+   * onto the sheet unless the reader ticks "Background graphics" — so for a container carrying its
+   * own background, which is precisely this case, the probe divides the ink by a colour that is not
+   * on the paper. The 1.29:1 therefore describes the probe's model, not the printed page, and
+   * nothing on this branch re-measured the pre-fix match view by the pixel method that replaced it.
+   * Treat the number as withdrawn; the count of affected leaves is unverified alongside it.
+   *
+   * THE RESET ITSELF STAYS, and is not in question. A reader who prints WITH background graphics
+   * does get the dark island, and black ink on it is genuinely unreadable; resetting the background
+   * is the right defensive fix whether or not the withdrawn probe measured its severity correctly.
+   * What was withdrawn was the method, not the defect.
+   */
+  .fieldCard,
+  .section,
+  /* `.sectionLive` rides on the same element as `.section` and overrides its fill and border in
+     the base layer. Both are single-class selectors, so which one wins here is decided by source
+     order alone — and relying on this block sitting lower in the file is not a property, it is a
+     coincidence that survives until somebody moves a rule. Named explicitly instead. */
+  .sectionLive,
+  .card,
+  .matchPanel,
+  .bandGroup,
+  .choiceCard,
+  .destinationOption,
+  .matchRowAccepts,
+  .matchRowDeclines {
+    border-color: CanvasText;
+    background: none;
+    break-inside: avoid;
+  }
+
+  /*
+   * `.choiceOption` and `.destinationName` are each both a card AND the text carrier — the
+   * answer's word ("Yes"/"No") and the destination's name are direct children of the `<label>`
+   * that carries the class, not separately classed spans inside it — so each needs the card
+   * group's border/background treatment and the text group's `color: CanvasText` in one rule.
+   *
+   * This rule is `.toggleCard`'s, moved. That class styled the three checkboxes this form used to
+   * carry; all three became radio groups and nothing has rendered it since, so its print reset
+   * covered a selector no screen produces while the three cards a clinician actually prints — the
+   * two need questions, the transport question — carried their own `background: var(--surface-subtle)`
+   * straight onto the sheet as near-black islands. Both arrays in
+   * `tests/ward-referrals-print.test.ts` moved with it: a guard naming an orphan is decorative, and
+   * reads as coverage the screen does not have.
+   */
+  .choiceOption,
+  .destinationName {
+    border-color: CanvasText;
+    background: none;
+    break-inside: avoid;
+    color: CanvasText;
+  }
+
+  /* Greyed on screen by its own background; on paper the dashed border is what carries the
+     distinction, so the background goes and the border stays. */
+  .destinationOption[data-outside-catchment="true"] {
+    background: none;
+  }
+
+  /*
+   * The four semantic alert boxes (rejection/confirmation on the intake form and the decline
+   * rejection on the match view; the structural-gap and no-bed-accepts banners on the match
+   * view). Each carries its own themed border/background/text-colour triplet
+   * (`--danger-*`/`--warning-*`/`--success-*`) that is just as illegible in dark-mode print as
+   * the muted tokens above — printed black-on-white here rather than colour-on-colour, which
+   * reads as more urgent on paper, not less.
+   */
+  .rejection,
+  .confirmation,
+  .structuralGap,
+  .noBedAccepts {
+    border-color: CanvasText;
+    background: none;
+    color: CanvasText;
+  }
+
+  /* The two small inline badges that carry meaningful figures, not decoration — the waiting
+     time on every queued row and match header, and the forensic-bed flag on a match row. Unlike
+     `.prototypeBadge` above, these are read, not skimmed past, so they get the same treatment as
+     the alert boxes rather than being left as a known exception. */
+  /* `border-color` joined this rule when `.waitBadge` stopped being an amber fill and became a
+     bordered chip: a themed border prints as a pale grey box on the sheet, and the badge's whole
+     job on paper is to still read as a figure set apart. */
+  .waitBadge,
+  .forensicBadge {
+    border-color: CanvasText;
+    background: none;
+    color: CanvasText;
+  }
+
+  .selectedRow {
+    background: none;
+  }
+
+  /* The six pickers on the intake form and the decline-reason picker on the match view: a
+     `<select>` sets its own explicit `background`/`color` (never the OS default), so pinning
+     `color-scheme: light` above does not reach it — the box stays a near-black island with
+     near-white text unless reset here directly, confirmed by looking at the rendered dark-mode
+     print output, not only by measuring text-node leaves (a `<select>`'s displayed value is
+     drawn by the browser's native control, not as a walkable DOM text node). */
+  .select {
+    background: none;
+    border-color: CanvasText;
+    color: CanvasText;
+  }
+
+  /*
+   * `.table td` (0,1,1: one class plus one type) already outranks `.waitBadge` alone (0,1,0)
+   * wherever a waiting-time badge is rendered as a `<td className={styles.waitBadge}>` — measured
+   * before this fix, the badge's OWN `color: var(--warning-text)` never actually applied inside a
+   * table row at all (`getComputedStyle` returned `var(--ink)`'s value, not `--warning-text`'s).
+   * Giving `.table td` its own `color: CanvasText` here is therefore both correct on its own
+   * terms and the thing that actually reaches a table-row waiting badge, rather than relying on
+   * `.waitBadge`'s lower-specificity rule below to win a fight it does not win in this context.
+   */
+  .table th,
+  .table td {
+    border-bottom-color: CanvasText;
+    color: CanvasText;
+  }
+
+  .declineControls {
+    border-top-color: CanvasText;
+  }
+
+  /*
+   * The muted/heading text group. `.governanceBanner p` and `.matchPanel > p` cover the two
+   * places on this file's screens where the caveat/count sentence is a plain, unclassed `<p>`
+   * (the "not a medical device" prose, and the match view's own "N of M units accept this
+   * referral right now." / "Accepted at X." / "Declined — reason." lines) — the same shape as
+   * `morning.module.css`'s own `.governanceBanner p` entry, styled via a descendant selector
+   * because the paragraph itself carries no class.
+   */
+  .sectionHeading,
+  .decidedNote,
+  .fieldLegend,
+  .governanceBanner p,
+  .matchHeading,
+  .matchGovernance,
+  .matchTier,
+  /* `.tierCell` is the board table's copy of the fact `.matchTier` carries on the match view, and
+     it takes `--ink` for the same reason — so it prints pale from the dark theme for the
+     same reason too. Added in the same commit that created the class, rather than left for the
+     next sweep to find. */
+  .tierCell,
+  .matchSummary,
+  .matchReasonText,
+  .matchUnitName,
+  .acceptsLabel,
+  /*
+   * Phase 8's own text, added to this group in Task 10 for the same reason every name above it is
+   * here: each uses `--ink` or `--muted`, which stay pale grey/blue custom-property
+   * values in the dark theme whatever `color-scheme` says, so each would print as pale ink on the
+   * white sheet the print reset forces once `.bandGroup`'s dark background is reset above. The two
+   * defects had to be fixed together — resetting the background alone would have turned 47
+   * black-on-dark leaves into legible ones while leaving the band headings, counts, per-row band
+   * and both governance sentences pale on white.
+   */
+  .bandLabel,
+  .bandCounts,
+  .bandEmpty,
+  .matchBand,
+  .syntheticNotice,
+  .allNotRecorded,
+  /*
+   * The destination picker's own text, and the suburb note beneath its picker. Each uses
+   * `--muted`, which stays a pale grey-blue custom-property value in the dark theme whatever
+   * `color-scheme` says — so each would print as pale ink on the white sheet the print reset
+   * forces, exactly like every name above it. These are the sentences a clinician would print the
+   * form FOR: which team the catchment table names, how many units accept, why an option is
+   * offered.
+   */
+  .fieldNote,
+  .destinationNote,
+  .destinationFact,
+  /*
+   * The refusals recorded against an accepted referral (owner ruling, 2026-09-01). It sets its own
+   * `--muted`, so the `.table td` reset above cannot reach it — the same trap every name in
+   * this list is here for. A printed board that dropped the refusals to invisible ink would
+   * recreate on paper exactly the defect this rule set exists to have fixed on screen.
+   */
+  .outcomeDetailRefusals,
+  .matchPanel > p {
+    color: CanvasText;
+  }
+}
+
+/*
+ * ⚠️ FORCED COLOURS PUTS THE SYSTEM TOKENS BACK. The aliases above deliberately SEVER the chain to
+ * `--border`, which measures 1.21:1 against `--surface` in light mode and 1.42:1 in dark — far
+ * under the 3:1 a boundary needs. `--neutral-500` gives 4.88:1 and 4.98:1.
+ *
+ * But severing it would also cost a high-contrast user the system border colour, which globals.css
+ * maps to `ButtonBorder`/`CanvasText` under forced colours. A fix for one group of users that
+ * quietly breaks it for another is not a fix, so here the aliases point back at the global tokens.
+ */
+@media (forced-colors: active) {
+  .screen {
+    --ward-border: var(--border);
+  }
+}
+
+/* ══ THE WRITTEN HISTORY ═══════════════════════════════════════════════════════════════════════
+   Owner instruction, 2026-09-05. The only free-text control on this form.
+
+   ⚠️ EVERY CLASS BELOW IS NEW AND INTAKE-ONLY. Not one existing rule in this file was edited to
+   make room for them, because `referral-board.tsx` and `referral-match.tsx` are frozen and share
+   this stylesheet — changing a rule they use restyles a screen nobody opened. Adding is safe;
+   editing is not. (The implementation plan's Task B1 gives the intake its own stylesheet and
+   removes this hazard permanently; until it lands, this rule is live.)
+
+   ⚠️ AND THE HISTORY IS NEVER STYLED AS "ANSWERED". Everywhere else on this screen a completed
+   question can look complete. Nothing checks free text, so nothing here may look checked — the
+   written state is neutral, and the only colour it ever carries is the amber of leaving the
+   screen or the red of being too long to send. */
+.historyWarning {
+  margin: 0 0 var(--ward-space-12);
+  border: 0.0625rem solid var(--ward-warning);
+  border-left-width: 0.1875rem;
+  border-radius: var(--radius-md);
+  background: var(--ward-warning-soft);
+  padding: var(--ward-space-10) var(--ward-space-12);
+  color: var(--ward-text);
+  font-size: var(--t-0);
+  line-height: var(--ward-leading-body);
+}
+
+.historyField {
+  display: grid;
+  gap: var(--ward-space-4);
+}
+
+input.historyField {
+  display: block;
+  width: 100%;
+  min-height: var(--ward-tap);
+  box-sizing: border-box;
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: 0 var(--ward-space-10);
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 400;
+}
+
+input.historyField:focus-visible {
+  outline: 0.125rem solid var(--focus);
+  outline-offset: 0.125rem;
+}
+
+.historyField + .historyField {
+  margin-top: var(--ward-space-14);
+}
+
+.historyLabel {
+  color: var(--ward-heading);
+  font-size: var(--t-1);
+  font-weight: 600;
+  line-height: var(--ward-leading-tight);
+}
+
+/* "Required" / "Optional" reads as a property of the question, not as a state of the answer —
+   it never changes once the form is open, so it must not look like the changing states do. */
+.historyRequirement {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 500;
+}
+
+.historyHint {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 400;
+  line-height: var(--ward-leading-body);
+}
+
+/* ⚠️ NO `max-height` AND `resize: vertical`. A referrer writing a long account must be able to see
+   what they have written; a fixed box that scrolls internally hides the middle of a risk note
+   behind a scrollbar nobody notices on a phone. */
+.historyBox {
+  width: 100%;
+  min-height: 8.5rem;
+  box-sizing: border-box;
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-md);
+  background: var(--ward-canvas);
+  padding: var(--ward-space-10);
+  color: var(--ward-text);
+  /* NO FONT DECLARATION HERE, DELIBERATELY. A <textarea> does not inherit the page font by
+     default, so the instinct is to declare one inheriting it — and the first version of this rule
+     did, which `tests/ward-design-language-contract.test.ts` correctly refused as font debt
+     outside the token layer. It is unnecessary anyway: `globals.css` already applies `font:
+     inherit` to `button, input, textarea, select`, which is why `.select` above carries none
+     either. That same global rule gives this box a 16px floor under 640px, so iOS does not zoom
+     the viewport when a referrer taps into it mid-sentence.
+
+     ⚠️ AND THAT GUARD READS RAW FILE TEXT, COMMENTS INCLUDED. The first wording of this note
+     spelled the declaration out to explain itself and tripped the guard from inside a comment
+     explaining why the declaration is absent. Describe it; do not spell it. */
+  font-size: var(--t-1);
+  line-height: var(--ward-leading-copy);
+  resize: vertical;
+}
+
+.historyBox:focus-visible {
+  outline: 0.125rem solid var(--ward-blue);
+  outline-offset: 0.125rem;
+}
+
+/* The one state the box itself carries. Red, because it BLOCKS the send — and paired with the
+   counter's own words, so the meaning survives a monochrome print and a forced-colours theme.
+   `border-width` is the second, colour-independent cue on the control itself: the box's own edge
+   thickens rather than relying on the meter's text alone to say the send is blocked. */
+.historyBox[data-over-limit="true"] {
+  border-width: 0.125rem;
+  border-color: var(--ward-danger);
+  background: var(--ward-danger-soft);
+}
+
+.historyMeter {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 400;
+  line-height: var(--ward-leading-body);
+}
+
+.historyMeter[data-tone="over"] {
+  color: var(--ward-danger);
+  font-weight: 600;
+}
+
+/* The rail's report of the history — a count and a length, never the text. See
+   `referralSummaryRows` for why a preview is the one thing this block must not become. */
+.historySummary {
+  display: grid;
+  gap: var(--ward-space-4);
+  margin-top: var(--ward-space-12);
+  border: 0.0625rem solid var(--ward-warning);
+  border-radius: var(--radius-md);
+  background: var(--ward-warning-soft);
+  padding: var(--ward-space-10);
+}
+
+.historySummaryTerm {
+  color: var(--ward-heading);
+  font-size: var(--t-0);
+  font-weight: 600;
+}
+
+.historySummaryValue {
+  color: var(--ward-text);
+  font-size: var(--t-0);
+  font-weight: 500;
+}
+
+.historySummaryNote {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 400;
+  line-height: var(--ward-leading-body);
+}
+
+/* ⚠️ NO PER-FILE PRINT BLOCK HERE, AND ITS ABSENCE IS THE DECISION.
+
+   The first version of this section carried one, forcing #000 on #fff so the amber washes above
+   would not print as white-on-white. It was wrong twice over:
+
+     1. `.screen` composes `wardTokens`, and that layer's own `@media print` rule already sets
+        `color: CanvasText !important; background-color: Canvas !important` on `.wardTokens *` —
+        which reaches every element below, including all of these. The block was redundant, and
+        `ward-tokens.module.css` says in terms that per-file resets on composing screens are
+        belt-and-braces rather than the mechanism.
+     2. It used raw hex, which `tests/ward-design-language-contract.test.ts` refuses outside the
+        token layer. That guard caught it, which is what it is for.
+
+   The states above stay legible on paper because each carries a BORDER as well as a wash, and the
+   over-limit counter says "too long to send" in words. Nothing here means anything by colour
+   alone, so losing the colour loses nothing. */
+
+/* ── THE THIRD EDITION'S NUMBERED STEPS ──────────────────────────────────────────────────────
+ *
+ * Task 13. The thirteen question cards were a flat list; the drawing groups them under three
+ * numbered headings — Who the referral is about, What they need, The history.
+ *
+ * 🔴 THIS IS NOT THE DESIGN SYSTEM'S §6.11 STEPPER, AND THE TWO MUST NOT CONVERGE. §6.11's
+ * stepper is a PLACEMENT LIFECYCLE — placement requested, destination review, accepted awaiting
+ * bed, bed pulled, handover ready, moving, arrived — and it belongs to the shortlist column. On an
+ * unsent draft it would paint a half-filled form as sitting at "placement requested": a claim that
+ * a request exists which has not been made. A form's progress and a referral's progress are
+ * different quantities that happen to share a drawn shape. Deliberately no `.step` / `.stepper` /
+ * `.stageLine` class name here, so a later reader cannot import that pattern by autocomplete.
+ *
+ * The fieldset carries no border and no padding: the grouping is the HEADING's job, and a box
+ * around a box around a card is three frames for one question. */
+.stepSection {
+  display: grid;
+  gap: var(--ward-space-16);
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.stepLegend {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ward-space-8);
+  padding: 0;
+}
+
+/* The number is quiet and the name is the heading — a reader navigating by headings wants "What
+   they need", not "Step 2". Both are words either way; the number is never the only label. */
+.stepNo {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.stepName {
+  color: var(--ink);
+  font-size: var(--t-2);
+  font-weight: 700;
+}
+
+/* The label and its state word on one row.
+ *
+ * 🔴 THE CHIP IS A SIBLING OF THE LABEL, NEVER A CHILD, AND A TEST CAUGHT THE DIFFERENCE. A
+ * `<label>`'s text content is its control's accessible NAME. With the chip inside, every select was
+ * renamed — "Age band Outstanding" while empty, "Age band Answered" once picked — so a control's
+ * identity changed every time its value did. This wrapper is what keeps the name a constant. */
+.questionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ward-space-8);
+}
+
+/* What is already open for this person — stated above the questions.
+ *
+ * ⚠️ Deliberately NOT a warning colour. A second referral is sometimes exactly right, and an amber
+ * or red band would read as "you are doing something wrong" when the screen's whole posture is that
+ * it reports and a human decides. The muted rule and quiet ink make it information. */
+.alreadyOpen {
+  margin: 0 0 var(--ward-space-16);
+  border-left: 0.1875rem solid var(--ward-border);
+  padding-left: var(--ward-space-12);
+  color: var(--ink);
+  font-size: var(--t-1);
+}
+
+/* Full-estate F04/F07. Every selector is gated by an owned page root so the shared module does
+ * not restyle ReferralMatchView outside the Referrals register composition. */
+.screen[data-referral-view] {
+  /* The original referral module predates the third-edition palette and many nested controls
+   * still consume its semantic role names. Keep the bridge on this page root so those existing
+   * controls resolve against the canonical scheme without changing either global token layer. */
+  --ink: var(--ink);
+  --ward-accent-ink: var(--accent-ink);
+  --surface-raised: var(--surface);
+  --surface-subtle: var(--surface-2);
+  --surface-chrome: var(--surface-2);
+  --clinical-accent: var(--accent);
+  --clinical-accent-border: var(--accent);
+  --clinical-accent-contrast: var(--on-accent);
+  --clinical-accent-soft: var(--accent-soft);
+  --success-text: var(--good);
+  --success-border: var(--good);
+  --warning-text: var(--warn);
+  --warning-border: var(--warn);
+  --warning-bg: var(--warn-soft);
+  --danger-text: var(--danger);
+  --danger-border: var(--danger);
+  --focus: var(--accent);
+
+  min-width: 0;
+  min-height: 100%;
+  padding-top: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--t-3);
+}
+
+.screen[data-referral-view] .main {
+  display: flex;
+  grid-column: auto;
+  gap: 0.875rem;
+  padding: 0.875rem 1.5rem 1.5rem;
+}
+
+.screen[data-referral-view="intake"] .pageHeader,
+.screen[data-referral-view="register"] .pageHeader {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.screen[data-referral-view] .governanceBanner {
+  order: 4;
+  min-height: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  background: var(--surface-2);
+}
+
+.screen[data-referral-view] .fieldCard,
+.screen[data-referral-view] .choiceCard,
+.screen[data-referral-view] .destinationOption,
+.screen[data-referral-view] .section,
+.screen[data-referral-view] .matchPanel,
+.screen[data-referral-view] .asideCard,
+.screen[data-referral-view] .registerEmpty {
+  border-color: var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  background: var(--surface);
+}
+
+.screen[data-referral-view] .fieldCard,
+.screen[data-referral-view] .choiceCard {
+  padding: 0.875rem 1rem;
+}
+
+.screen[data-referral-view] .stepSection {
+  gap: 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: var(--lift);
+  padding: 0 0 1rem;
+}
+
+.screen[data-referral-view] .stepLegend {
+  width: 100%;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  padding: 0.75rem 1rem;
+}
+
+.screen[data-referral-view] .stepSection > :not(.stepLegend) {
+  margin-right: 1rem;
+  margin-left: 1rem;
+}
+
+.screen[data-referral-view] .asideCard {
+  overflow: hidden;
+  box-shadow: var(--lift);
+}
+
+.screen[data-referral-view] .asideCardAccent {
+  border-top-width: 1px;
+  border-top-color: var(--line);
+}
+
+.screen[data-referral-view] .asideCardTitle {
+  border-color: var(--line);
+  background: var(--surface-2);
+  color: var(--accent-ink);
+  font-family: var(--display);
+  font-size: var(--t-2);
+  text-transform: none;
+  letter-spacing: -0.01em;
+}
+
+.screen[data-referral-view="intake"] .intakeLayout {
+  order: 2;
+  gap: 1rem;
+}
+
+.personPanel {
+  order: 1;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+
+.personPanelHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  padding: 0.75rem 1rem;
+}
+
+.personPanelHeader h2 {
+  margin: 0;
+  color: var(--accent-ink);
+  font-family: var(--display);
+  font-size: var(--t-3);
+  font-weight: 600;
+}
+
+.personPanelHeader span {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-1);
+}
+
+.personPanelBody {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+  padding: 1rem;
+}
+
+.personPanelBody strong {
+  color: var(--ink);
+  font-size: var(--t-4);
+}
+
+.personPanelBody span {
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: var(--t-1);
+}
+
+.personPanelBody p {
+  flex: 1 1 100%;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.5;
+}
+
+.screen[data-referral-view="intake"] .form {
+  gap: 1rem;
+}
+
+.screen[data-referral-view="intake"] .alreadyOpen {
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  background: var(--surface-2);
+  padding: 0.75rem 1rem;
+}
+
+.fieldSource {
+  margin: 0;
+  color: var(--accent-ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+}
+
+.registerLayout,
+.registerQueue,
+.registerDetail {
+  display: grid;
+  min-width: 0;
+  gap: 0.875rem;
+  align-content: start;
+}
+
+.detailBackdrop {
+  display: none;
+}
+
+.kpiGrid {
+  order: 1;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.625rem;
+}
+
+@media (max-width: 68.75rem) {
+  .kpiGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 43.75rem) {
+  .kpiGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.kpiCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 10px);
+  background: var(--surface);
+  padding: 0.625rem 0.875rem;
+  box-shadow: var(--lift);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  min-height: 3rem;
+  position: relative;
+  user-select: none;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.kpiCard:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+  transform: translateY(-1px);
+}
+
+.kpiCard:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.kpiCardActive {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+
+.kpiHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.375rem;
+}
+
+.kpiLabel {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.kpiDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.kpiDotAccent {
+  background: var(--accent);
+}
+.kpiDotDanger {
+  background: var(--danger);
+}
+.kpiDotWarn {
+  background: var(--warn);
+}
+.kpiDotCoord {
+  background: var(--svc-north);
+}
+.kpiDotGood {
+  background: var(--good);
+}
+
+.kpiValue {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-5, 1.5rem);
+  font-weight: 700;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  margin: 0.125rem 0;
+}
+
+.kpiValueDanger {
+  color: var(--danger);
+}
+
+.kpiValueGood {
+  color: var(--good);
+}
+
+.kpiValueWarn {
+  color: var(--warn);
+}
+
+.kpiSub {
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.35;
+}
+
+.screen[data-referral-view="register"] .registerLayout {
+  order: 3;
+}
+
+.registerToolbar {
+  order: 2;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0.625rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.75rem;
+}
+
+.toolbarTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  width: 100%;
+}
+
+.toolbarSubRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  width: 100%;
+  padding-top: 0.375rem;
+}
+
+.searchWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 14rem;
+  max-width: 24rem;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.75rem;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  min-height: 2.125rem;
+  padding: 0 2rem 0 2.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.searchInput:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+  border-color: var(--accent);
+}
+
+@media (max-width: 51.25rem), (pointer: coarse) {
+  .searchInput {
+    min-height: var(--ward-tap, 3rem);
+  }
+}
+
+.searchClearBtn {
+  position: absolute;
+  right: 0.375rem;
+  background: none;
+  border: none;
+  font-size: 1.125rem;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  min-height: 1.75rem;
+  min-width: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  transition: all 0.12s ease;
+}
+
+.searchClearBtn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.chipGroup {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.chipLabel {
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-right: 0.25rem;
+}
+
+.filterChip,
+.filterChipActive {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.875rem;
+  padding: 0 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filterChip:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+  background: var(--surface-2);
+}
+
+.filterChipActive {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-weight: 600;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+@media (max-width: 51.25rem), (pointer: coarse) {
+  .filterChip,
+  .filterChipActive {
+    min-height: var(--ward-tap, 3rem);
+  }
+}
+
+.clinicalCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0.5rem 0 0.875rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 10px);
+  background: var(--surface-2);
+}
+
+.clinicalCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.clinicalTitle {
+  margin: 0;
+  font-size: var(--t-1);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.clinicalOriginBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: var(--t-0);
+  font-weight: 600;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--accent-ink);
+}
+
+.synopsisText {
+  margin: 0;
+  font-size: var(--t-0);
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.clinicalMetaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.625rem;
+  padding: 0.75rem;
+  background: var(--surface);
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--line);
+}
+
+.clinicalMetaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.metaLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.metaValue {
+  font-size: var(--t-0);
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.clinicalBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.acuityBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 4px;
+  font-size: var(--t-0);
+  font-weight: 600;
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border: 1px solid var(--danger);
+}
+
+.legalBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 4px;
+  font-size: var(--t-0);
+  font-weight: 600;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent);
+}
+
+.secureBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 4px;
+  font-size: var(--t-0);
+  font-weight: 600;
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+}
+
+.transportBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 4px;
+  font-size: var(--t-0);
+  font-weight: 600;
+  background: var(--good-soft);
+  color: var(--good);
+  border: 1px solid var(--good);
+}
+
+.statutoryCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--surface);
+}
+
+.statutoryHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--t-0);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.statutoryIcon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.statutoryText {
+  margin: 0;
+  font-size: var(--t-0);
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.searchEmptyBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2.5rem 1rem;
+  text-align: center;
+}
+
+.resetFilterBtn {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ward-tap, 3rem);
+  padding: 0 1.125rem;
+  border-radius: 9999px;
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: var(--t-0);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.emptyIconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+
+.boardFooter {
+  order: 4;
+  margin-top: var(--ward-space-16);
+  padding-top: var(--ward-space-8);
+}
+
+.filterGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filterPill,
+.filterPillActive {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.125rem;
+  border: 1px solid var(--line);
+  border-radius: 9999px;
+  background: var(--surface);
+  padding: 0 0.875rem;
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+@media (max-width: 51.25rem), (pointer: coarse) {
+  .filterPill,
+  .filterPillActive {
+    min-height: var(--ward-tap, 3rem);
+  }
+}
+
+.filterPill:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.filterPillActive {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.filterPillCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 9999px;
+  background: var(--sunk);
+  padding: 0 0.375rem;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  transition: all 0.15s ease;
+}
+
+.filterPillActive .filterPillCount {
+  background: color-mix(in srgb, var(--surface) 25%, transparent);
+  color: var(--surface);
+}
+
+.toolbarActions {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+  margin-left: auto;
+}
+
+.denseToggle,
+.denseToggleActive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ward-space-6);
+  min-height: 2.125rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  background: var(--surface);
+  padding: 0 var(--ward-space-12);
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+@media (max-width: 51.25rem), (pointer: coarse) {
+  .denseToggle,
+  .denseToggleActive {
+    min-height: var(--ward-tap, 3rem);
+  }
+}
+
+.denseToggle:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.denseToggleActive {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.denseToggleIcon {
+  flex-shrink: 0;
+}
+
+.patientTableMeta {
+  display: block;
+  font-size: var(--t-0);
+  margin-top: 0.2rem;
+  color: var(--ink);
+}
+
+.patientTableUmrn {
+  color: var(--muted);
+}
+
+.patientCardName {
+  display: block;
+  font-weight: 600;
+  font-size: var(--t-1);
+  color: var(--ink);
+}
+
+.patientCardUmrn {
+  display: block;
+  font-size: var(--t-0);
+  font-weight: normal;
+  color: var(--muted);
+}
+
+.inspectorHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 10px);
+  background: var(--surface-2);
+  padding: 0.625rem 0.875rem;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 4px 6px -1px color-mix(in srgb, var(--ink) 4%, transparent), 0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
+}
+
+.ph {
+  box-shadow: 0 4px 6px -1px color-mix(in srgb, var(--ink) 4%, transparent), 0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
+}
+
+.inspectorHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+}
+
+.inspectorId {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.inspectorTier {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm, 0.25rem);
+  background: var(--surface);
+  padding: 0.15rem 0.45rem;
+  color: var(--accent-ink);
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.inspectorHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
+
+.inspectorPinButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: var(--ward-tap, 3rem);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  background: var(--surface);
+  padding: 0 0.75rem;
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.inspectorPinButton:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.jumpToWardBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: var(--ward-tap, 3rem);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  background: var(--surface);
+  padding: 0 0.75rem;
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.jumpToWardBtn:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong, var(--line));
+  color: var(--ink);
+}
+
+.inspectorCloseButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--ward-tap, 3rem);
+  min-height: var(--ward-tap, 3rem);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.inspectorCloseButton:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.jumpIcon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  stroke: currentColor;
+}
+
+.inspectorIcon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.timelineCard {
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 10px);
+  background: var(--surface);
+  padding: 0.75rem 0.875rem;
+  margin-bottom: 0.5rem;
+  box-shadow: var(--lift);
+}
+
+.timelineHeading {
+  margin: 0 0 0.625rem 0;
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.timelineList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timelineItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+}
+
+.timelineDot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  margin-top: 0.25rem;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timelineDotComplete {
+  background: var(--good);
+  border-radius: 50%;
+}
+
+.timelineDotActive {
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.timelineDotNeutral {
+  background: var(--muted);
+  border-radius: 50%;
+}
+
+.timelineGlyph {
+  font-size: 0.5rem;
+  line-height: 1;
+  color: var(--surface);
+}
+
+.timelineContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.timelineTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.timelineEvent {
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+}
+
+.timelineTime {
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.timelineMeta {
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.4;
+}
+
+.registerEmptyCount {
+  margin: 0;
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: var(--t-1);
+}
+
+.screen[data-referral-view="register"] .section,
+.screen[data-referral-view="register"] .matchPanel,
+.screen[data-referral-view="register"] .registerEmpty {
+  overflow: hidden;
+  margin: 0;
+  padding: 0.875rem 1rem;
+  box-shadow: var(--lift);
+}
+
+.screen[data-referral-view="register"] .sectionLive {
+  border-color: var(--line-strong);
+  background: var(--surface);
+}
+
+.screen[data-referral-view="register"] .selectedRow,
+.screen[data-referral-view="register"] .cardSelectButtonSelected {
+  background: var(--accent-soft);
+}
+
+/* The served register drawing uses the existing rich-row card anatomy at desk width too. The
+ * table remains mounted for its established print contract, while the readable selectable card
+ * carries the same id, wait, tier, request facts and onSelect handler in the live workspace. */
+.screen[data-referral-view="register"] .tableScroll {
+  display: none;
+}
+
+.screen[data-referral-view="register"] .cardList {
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  background: var(--surface);
+}
+
+.screen[data-referral-view="register"] .card {
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--surface);
+}
+
+.screen[data-referral-view="register"] .card:first-child {
+  border-top: 0;
+}
+
+.screen[data-referral-view="register"] .cardSelectButton,
+.screen[data-referral-view="register"] .cardSelectButtonSelected {
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 4.5rem;
+  gap: 0.35rem 1rem;
+  border-radius: 0;
+  padding: 0.75rem 0.875rem;
+}
+
+.screen[data-referral-view="register"] .cardTop {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  justify-content: start;
+  gap: 0.5rem;
+}
+
+/* Owner ruling, Answer 13 (2026-09-17, second round): the Tier cell goes back to bold, dark
+   text — the same heading ink `.matchTier` carries on the match view, which the queued
+   `<table>`'s `.tierCell` above also carries but that table is `display: none` in this view (kept
+   mounted only for its print contract). The card list is the live, visible representation, so the
+   heading treatment belongs here now. */
+.screen[data-referral-view="register"] .cardTier {
+  overflow: hidden;
+  color: var(--ink);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.screen[data-referral-view="register"] .waitBadge {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-weight: 500;
+}
+
+.screen[data-referral-view="register"] .cardService {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: var(--t-1);
+}
+
+.screen[data-referral-view="register"] .cardSelectButtonSelected {
+  background: var(--accent-soft);
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.screen[data-referral-view="register"] .cardBody {
+  gap: 0.35rem;
+  border-radius: 0;
+  padding: 0.75rem 0.875rem;
+}
+
+.screen[data-referral-view="intake"] .form {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.screen[data-referral-view="intake"] .intakeQuestions,
+.screen[data-referral-view="intake"] .intakeDecision {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+  align-content: start;
+}
+
+@media (min-width: 48.0625rem) and (max-width: 63.999rem) {
+  .screen[data-referral-view="register"] .registerQueue {
+    grid-auto-rows: max-content;
+    max-height: 34rem;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    scrollbar-color: var(--line-strong) var(--surface-2);
+  }
+
+  .screen[data-referral-view="register"] .registerQueue::-webkit-scrollbar {
+    width: 0.75rem;
+  }
+
+  .screen[data-referral-view="register"] .registerQueue::-webkit-scrollbar-track {
+    background: var(--surface-2);
+  }
+
+  .screen[data-referral-view="register"] .registerQueue::-webkit-scrollbar-thumb {
+    border: 0.1875rem solid var(--surface-2);
+    border-radius: 999px;
+    background: var(--line-strong);
+  }
+}
+
+@media (min-width: 64rem) {
+  .screen[data-referral-view="intake"] .intakeLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The questions read as one vertical sequence. Destination choice and Send use the second
+   * work column, so explanatory progress cards no longer displace the action below the fold. */
+  .screen[data-referral-view="intake"] .form {
+    grid-template-columns: minmax(30rem, 1fr) minmax(22rem, 26rem);
+    gap: 1rem;
+  }
+
+  .screen[data-referral-view="intake"] .intakeAside {
+    position: static;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .screen[data-referral-view="register"] .registerLayout {
+    grid-template-columns: minmax(30rem, 1.1fr) minmax(24rem, 0.9fr);
+  }
+
+  .screen[data-referral-view="register"] .registerQueue,
+  .screen[data-referral-view="register"] .registerDetail {
+    max-height: calc(100dvh - 7rem);
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .screen[data-referral-view="register"][data-dense-view="true"] .tableScroll {
+    display: block;
+  }
+
+  .screen[data-referral-view="register"][data-dense-view="true"] .cardList {
+    display: none;
+  }
+}
+
+@media (max-width: 63.9375rem) {
+  .detailBackdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: var(--scrim);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 990;
+    animation: referralDetailFadeIn 0.2s ease-out forwards;
+  }
+
+  .screen[data-referral-view="register"] .registerDetail[data-has-selection="false"] {
+    display: none;
+  }
+
+  .screen[data-referral-view="register"] .registerDetail[data-has-selection="true"] {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(100vw, 36rem);
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    z-index: 1000;
+    background: var(--surface);
+    box-shadow: -0.25rem 0 1.5rem var(--scrim);
+    border-left: 0.0625rem solid var(--ward-border);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--ward-space-16);
+    box-sizing: border-box;
+    animation: referralDetailSlideOver 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+@keyframes referralDetailSlideOver {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes referralDetailFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen[data-referral-view="register"] .registerDetail[data-has-selection="true"],
+  .detailBackdrop {
+    animation: none;
+  }
+}
+
+@media (max-width: 48rem) {
+  .screen[data-referral-view] .main {
+    padding: 0.75rem;
+  }
+
+  .screen[data-referral-view] .stepSection > :not(.stepLegend) {
+    margin-right: 0.75rem;
+    margin-left: 0.75rem;
+  }
+
+  .screen[data-referral-view="intake"] [data-testid="ward-referral-intake-history-section"] > .historyWarning {
+    clear: both;
+    margin-top: var(--ward-space-8);
+  }
+}
+
+@media (max-width: 32rem) {
+  .screen[data-referral-view="register"] .cardSelectButton,
+  .screen[data-referral-view="register"] .cardSelectButtonSelected {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .screen[data-referral-view="register"] .waitBadge {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: start;
+  }
+}
+
+/* F04 r17 density correction: keep the intake questions readable as a two-column field grid at
+   wide widths while retaining one column on phones. The question values and controls stay mounted;
+   only the surrounding card paint is removed to match the unboxed drawing. Destination options
+   remain boxed below. */
+@media (min-width: 64rem) {
+  .screen[data-referral-view="intake"] .form {
+    grid-template-columns: minmax(30rem, 2.4fr) minmax(22rem, 1fr);
+  }
+
+  .screen[data-referral-view="intake"] .stepSection {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .screen[data-referral-view="intake"] .stepSection > .stepLegend {
+    grid-column: 1 / -1;
+  }
+
+  .screen[data-referral-view="intake"] .fieldCard {
+    align-self: start;
+    align-content: start;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding: 0.25rem 0;
+  }
+
+  .screen[data-referral-view="intake"] .fieldCard .select,
+  .screen[data-referral-view="intake"] .fieldCard .historyField {
+    min-height: var(--ward-tap);
+  }
+
+  .screen[data-referral-view="intake"] .choiceCard {
+    align-self: start;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding: 0.25rem 0;
+  }
+}
+
+/* Q003: the referral register becomes one matched wide workspace once both minimum columns fit.
+ * Each queue section and the selected detail own their scrolling so the section heading remains visible.
+ * Fixed structure: container height is fixed and only the longer side scrolls down, eliminating trailing gray areas. */
+@media (min-width: 62.5625rem) {
+  .screen[data-referral-view="register"] .registerLayout {
+    display: grid;
+    grid-template-columns: minmax(24rem, 1.15fr) minmax(28rem, 1.35fr);
+    grid-template-rows: minmax(0, 1fr);
+    min-height: 0;
+    height: clamp(38rem, calc(100dvh - 17.5rem), 56rem);
+    max-height: clamp(38rem, calc(100dvh - 17.5rem), 56rem);
+    gap: var(--ward-space-16);
+    align-items: stretch;
+  }
+
+  .screen[data-referral-view="register"] .registerQueue,
+  .screen[data-referral-view="register"] .registerDetail {
+    min-height: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r1, 10px);
+    box-shadow: var(--lift);
+  }
+
+  /* The detail column scrolls as a whole, so its cards keep their natural height, as the queue's
+     sections do below. Without this the column's flex layout shrank the match panel (overflow
+     hidden, so its minimum height resolves to 0) to a ~30px strip and hid every "Accept at" button
+     (live walkthrough, 25 Sept 2026, finding 1). */
+  .screen[data-referral-view="register"] .registerDetail > * {
+    flex-shrink: 0;
+  }
+
+  .screen[data-referral-view="register"] .registerQueue > .section {
+    flex-shrink: 0;
+    min-height: min-content;
+    max-height: none;
+    overflow: visible;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .screen[data-referral-view="register"] .registerDetail[data-has-selection="false"] {
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow-y: auto;
+  }
+
+  .screen[data-referral-view="register"] .registerDetail > .registerEmpty {
+    height: 100%;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--ward-space-24);
+  }
+
+  .screen[data-referral-view="register"] .sectionHeading,
+  .screen[data-referral-view="register"] .matchHeading {
+    position: sticky;
+    z-index: 2;
+    top: 0;
+  }
+
+  .screen[data-referral-view="register"] .matchHeading {
+    margin: -0.875rem -1rem 0;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface-2);
+    padding: 0.75rem 1rem;
+  }
+
+  .screen[data-referral-view="intake"] .intakeLayout {
+    grid-template-columns: minmax(0, 1fr) minmax(21rem, 24rem);
+  }
+
+  .screen[data-referral-view="intake"] .form,
+  .screen[data-referral-view="intake"] .stepSection {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .screen[data-referral-view="intake"] .identityStep {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .screen[data-referral-view="intake"] .intakeAside {
+    position: sticky;
+    top: var(--ward-sticky-top, 4.5rem);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .screen[data-referral-view="intake"] [data-testid="ward-referral-intake-history-section"] {
+    border: 1px solid var(--line);
+    border-bottom-color: var(--line-strong);
+    border-radius: var(--r1);
+    background: var(--surface-2);
+    padding: 1rem;
+  }
+}
+
+/* The register drawing uses a quiet surface header and rows that reach the queue panel edges.
+   Scope these changes to the register view so the intake form's question anatomy is untouched. */
+.screen[data-referral-view="register"] .registerDetail > .matchPanel {
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: max-content;
+  align-content: start;
+}
+
+.screen[data-referral-view="register"] .registerDetail > .matchPanel > * {
+  grid-column: 1;
+  grid-row: auto;
+}
+
+.screen[data-referral-view="register"] .sectionHeading {
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  padding: 0.625rem 0.875rem;
+  color: var(--accent-ink);
+}
+
+.screen[data-referral-view="register"] .sectionLive {
+  padding: 0;
+}
+
+.screen[data-referral-view="register"] .sectionLive > :not(.sectionHeading) {
+  margin-right: 0.875rem;
+  margin-left: 0.875rem;
+}
+
+.screen[data-referral-view="register"] .sectionLive .tableScroll,
+.screen[data-referral-view="register"] .sectionLive .cardList {
+  margin-right: 0;
+  margin-left: 0;
+  border-right: 0;
+  border-left: 0;
+  border-radius: 0;
+}
+
+@media (max-width: 40rem) {
+  .registerToolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .screen[data-referral-view="register"] .registerDetail[data-has-selection="true"] {
+    left: 0;
+    width: auto;
+    max-width: none;
+    padding: 0.75rem;
+  }
+
+  .screen[data-referral-view="register"] .inspectorHeader {
+    align-items: flex-start;
+  }
+
+  .screen[data-referral-view="register"] .clinicalCardHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .screen[data-referral-view="register"] .clinicalMetaGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .screen[data-referral-view="register"] .clinicalBadges > * {
+    max-width: 100%;
+    white-space: normal;
+  }
+}
+
+@media print {
+  .screen[data-referral-view],
+  .screen[data-referral-view] * {
+    color: CanvasText !important;
+    background-color: Canvas !important;
+  }
+
+  .screen[data-referral-view] .main,
+  .screen[data-referral-view] .registerLayout {
+    display: block;
+    height: auto;
+    max-height: none;
+    padding: 0;
+  }
+
+  .screen[data-referral-view] .registerQueue,
+  .screen[data-referral-view] .registerDetail {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .screen[data-referral-view="register"] .registerQueue > .section,
+  .screen[data-referral-view="register"] .registerDetail > .matchPanel,
+  .screen[data-referral-view="register"] .registerDetail > .registerEmpty {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .screen[data-referral-view="register"] .sectionHeading,
+  .screen[data-referral-view="register"] .matchHeading,
+  .screen[data-referral-view="intake"] .intakeAside {
+    position: static;
+  }
+
+  .screen[data-referral-view="register"] .tableScroll {
+    display: block;
+  }
+
+  .screen[data-referral-view="register"] .cardList {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   Third Edition Sovereign Person Card, Rapid Search & Quick-Add Modal
+   ========================================================================== */
+
+.personPanel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  margin-bottom: 20px;
+  overflow: visible;
+  box-shadow: var(--lift);
+  position: relative;
+}
+
+.personHeaderStrip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--ground-hi);
+  border-radius: var(--r2) var(--r2) 0 0;
+}
+
+.personTitleGroup {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.personTitle {
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.personSubtitle {
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.personControlsRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.personModeSwitch {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--pill);
+  padding: 2px;
+}
+
+.modeBtn {
+  font-size: var(--t-0);
+  padding: 4px 12px;
+  border-radius: var(--pill);
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.modeBtn:hover {
+  color: var(--ink);
+}
+
+.modeBtn[data-active="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 700;
+  box-shadow: var(--lift);
+}
+
+.addPatientHeaderBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--pill);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 28px;
+}
+
+.addPatientHeaderBtn:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+}
+
+/* Rapid Search Input & Dropdown */
+.personSearchBox {
+  position: relative;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.searchBarContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.searchIconWrap {
+  position: absolute;
+  left: 12px;
+  color: var(--muted);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rapidSearchInput {
+  width: 100%;
+  padding: 8px 36px 8px 38px;
+  border-radius: var(--r1);
+  border: 1px solid var(--line);
+  background: var(--ground);
+  color: var(--ink);
+  font-size: var(--t-1);
+  transition: all 0.15s ease;
+  min-height: 40px;
+}
+
+.rapidSearchInput:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.clearSearchBtn {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.clearSearchBtn:hover {
+  color: var(--ink);
+}
+
+.searchResultsDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 16px;
+  right: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+  z-index: 100;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.searchDropdownHeader {
+  padding: 8px 12px;
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--ground-hi);
+  border-bottom: 1px solid var(--line);
+}
+
+.searchResultItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.searchResultItem:last-child {
+  border-bottom: none;
+}
+
+.searchResultItem:hover,
+.searchResultItem[data-active="true"] {
+  background: var(--ground-hi);
+}
+
+.searchResultLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.searchResultAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--pill);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-weight: 700;
+  font-size: var(--t-0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.searchResultInfo {
+  min-width: 0;
+}
+
+.searchResultNameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.searchResultName {
+  font-weight: 600;
+  font-size: var(--t-1);
+  color: var(--ink);
+}
+
+.searchResultSub {
+  font-size: var(--t-0);
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.searchResultEmpty {
+  padding: 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--t-0);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.searchResultEmptyBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--pill);
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  font-size: var(--t-0);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.searchResultEmptyBtn:hover {
+  filter: brightness(1.08);
+}
+
+/* Active Sovereign Person Card Body */
+.personCardBody {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  flex-wrap: wrap;
+}
+
+.personAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--pill);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: var(--t-2);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid var(--accent);
+}
+
+.personAvatar[data-mode="unlinked"] {
+  background: var(--ground-hi);
+  color: var(--muted);
+  border-color: var(--line);
+}
+
+.personMetaGroup {
+  flex: 1;
+  min-width: 240px;
+}
+
+.personPrimaryRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.personName {
+  font-size: var(--t-3);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.personIdPill {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  padding: 2px 8px;
+  border-radius: var(--pill);
+  background: var(--ground-hi);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  font-weight: 600;
+}
+
+.personStatusPill {
+  font-size: var(--t-0);
+  padding: 2px 8px;
+  border-radius: var(--pill);
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.personStatusPill[data-tone="voluntary"] {
+  background: var(--good-soft);
+  color: var(--good-ink);
+  border-color: var(--good);
+}
+
+.personStatusPill[data-tone="unlinked"] {
+  background: var(--warn-soft);
+  color: var(--warn-ink);
+  border-color: var(--warn);
+}
+
+.personDetailSentence {
+  margin: 4px 0 8px;
+  font-size: var(--t-1);
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.personDuplicateCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--t-0);
+  color: var(--good-ink);
+  background: var(--good-soft);
+  padding: 3px 10px;
+  border-radius: var(--pill);
+  border: 1px solid var(--good);
+}
+
+.personDuplicateCheck[data-warning="true"] {
+  color: var(--warn-ink);
+  background: var(--warn-soft);
+  border-color: var(--warn);
+}
+
+.personActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.actionBtn {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  border-radius: var(--pill);
+  padding: 6px 14px;
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.12s ease;
+  min-height: 36px;
+  text-decoration: none;
+}
+
+.actionBtn:hover {
+  background: var(--surface);
+  border-color: var(--line-strong);
+}
+
+/* Interpreter Alert & Chip */
+.interpreterAlert {
+  margin: 12px 16px 16px;
+  padding: 12px 16px;
+  border-radius: var(--r2);
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  color: var(--ink);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.interpreterAlertTitle {
+  font-weight: 700;
+  font-size: var(--t-1);
+  color: var(--warn-ink);
+  margin-bottom: 2px;
+}
+
+.interpreterAlertDesc {
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.interpreterChip {
+  background: var(--warn-soft) !important;
+  color: var(--warn-ink) !important;
+  border-color: var(--warn) !important;
+  font-weight: 600;
+}
+
+/* Quick Add Patient Modal */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modalDialog {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  box-shadow: var(--lift);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--ground-hi);
+  border-radius: var(--r2) var(--r2) 0 0;
+}
+
+.modalTitle {
+  font-size: var(--t-3);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.modalSubtitle {
+  font-size: var(--t-0);
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+.modalCloseBtn {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  color: var(--muted);
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+  min-height: 32px;
+  min-width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalCloseBtn:hover {
+  color: var(--ink);
+}
+
+.modalBody {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modalRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.modalField {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modalLabel {
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.modalInput,
+.modalSelect {
+  padding: 8px 12px;
+  border-radius: var(--r1);
+  border: 1px solid var(--line);
+  background: var(--ground);
+  color: var(--ink);
+  font-size: var(--t-1);
+  min-height: 38px;
+}
+
+.modalInput:focus,
+.modalSelect:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.modalFooter {
+  padding: 16px 20px;
+  border-top: 1px solid var(--line);
+  background: var(--ground-hi);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  border-radius: 0 0 var(--r2) var(--r2);
+}
+
+.modalCancelBtn {
+  padding: 8px 16px;
+  border-radius: var(--pill);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 38px;
+}
+
+.modalCancelBtn:hover {
+  background: var(--surface-2);
+}
+
+.modalSubmitBtn {
+  padding: 8px 18px;
+  border-radius: var(--pill);
+  border: none;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 38px;
+}
+
+.modalSubmitBtn:hover {
+  filter: brightness(1.08);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .personHeaderStrip {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .personControlsRight {
+    justify-content: space-between;
+  }
+
+  .personCardBody {
+    flex-direction: column;
+  }
+
+  .personActions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .modalRow {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .modalField {
+    min-width: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  .modeBtn,
+  .addPatientHeaderBtn {
+    min-height: 44px;
+    height: auto;
+    padding-block: 10px;
+  }
+
+  .actionBtn,
+  .modalCloseBtn,
+  .modalCancelBtn,
+  .modalSubmitBtn {
+    min-height: 44px;
+    height: auto;
+  }
+
+  .rapidSearchInput,
+  .modalSelect,
+  .modalInput {
+    min-height: 44px;
+  }
+
+  .suburbQuickBtn {
+    min-height: 44px;
+    padding-inline: 14px;
+  }
+}
+
+.suburbQuickRow {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+}
+
+.suburbQuickBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--pill);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px dashed var(--line-strong);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  min-height: 28px;
+}
+
+.suburbQuickBtn:hover {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--accent);
+}
+
+.suburbQuickBtn[data-active="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  border-style: solid;
+}
+
+.suburbQuickDot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--pill);
+  background: currentColor;
+}

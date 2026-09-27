@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "id": "65dc4224-d20c-4e71-8899-d9e5e7fa5b1d",
+  "createdOn": "2026-09-10",
+  "action": "done",
+  "payload": {
+    "id": "#Q6WD1M",
+    "outcome": "CLOSED with evidence 2026-09-10 by Ward Builder Three. The row's NEXT ACTION (a reducer-level pull-path test whose only failing gate is cohort, asserting 'failed gate cohort:') was ALREADY DONE at c6790c8eb3 as tests/ward-pull-judgement-gate.test.ts; the row was never closed. 3 tests, 3 executed, green. The row's own rule was 'do not close on the wiring alone', so I applied it one level up and did not close on the TEST'S EXISTENCE alone: I bypassed the pull-path eligibilityRefusal() call (line 1616, set to null = the pre-#2571 unwired state), and the proof went RED — 'expected [] to have a length of 1' — then restored from a pristine copy held outside the worktree and re-proved green (cmp identical, git unmodified, 3/3 green). The guard discriminates; the fix is real and now has proof that the proof is real. ONE RESIDUE, recorded rather than left: of the three cases, 'lets a recorded reason through the same gate' PASSES against a build with no gate at all, because an override and an absent gate both let the pull through. It is a correct test of the override ruling and cannot detect this mutation - not a defect, but it should not be counted as part of the discrimination. The grading note is now moot: the row asked for a missing proof, not a live hazard, and the proof exists.",
+    "baseRowFingerprint": "d822bd0ac35e0069de66a6b2bf5661251acdc32de306b9af5f6d27b79b379cf4"
+  }
+}

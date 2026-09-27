@@ -1,0 +1,66 @@
+// Shared between `src/proxy.ts` and the Server Components it signals to
+// (`src/app/mockups/layout.tsx`, `DeveloperAreaGate`). Pure string constants only
+// — no side effects, no stateful singletons — so this is safe to import from a
+// Proxy file per its "no shared modules/globals" guidance.
+//
+// Deliberately not under `src/lib/mockups/**` or anything matching `*mockup*`:
+// this is real production authorization code (it runs in `src/proxy.ts` on
+// every request), and `no-restricted-imports` forbids production code from
+// depending on anything path-matched as mockup/design-scratch.
+
+/** Set to "1" by proxy.ts only for the gated prefixes below; stripped from every
+ *  other /mockups/** request so a client cannot spoof it and read a hidden
+ *  design-scratch mockup by sending the header itself. */
+export const DEVELOPER_AREA_HEADER = "x-developer-area";
+
+/** The exact requested path+query, so a sign-in redirect can return the visitor
+ *  to the specific page they asked for (e.g. a deep Caring Contact route), not
+ *  just the area root. */
+export const DEVELOPER_AREA_PATH_HEADER = "x-developer-area-path";
+
+/** Trusted request marker for Ward Flow's database-free runtime. `src/proxy.ts`
+ * strips any client-supplied copy and restores it only for the exact Ward Flow
+ * subtree before the root layout reads it. */
+export const WARD_FLOW_OFFLINE_HEADER = "x-ward-flow-offline";
+
+/** Ward Flow remains inside the repository for shared Next.js/design tooling,
+ * but it is a standalone synthetic prototype rather than a Clinical KB surface. */
+export const WARD_FLOW_PATH_PREFIX = "/mockups/ward-flow";
+
+export function isWardFlowPath(pathname: string): boolean {
+  return pathname === WARD_FLOW_PATH_PREFIX || pathname.startsWith(`${WARD_FLOW_PATH_PREFIX}/`);
+}
+
+/** Exact prefixes only. A path that merely begins with the same characters —
+ *  `/mockups/care-plan-archive`, say — is not a match and stays behind the
+ *  blanket production block, because `isDeveloperGatedPath` requires either an
+ *  exact hit or a following `/`. Add a prefix here one subtree at a time; never
+ *  widen this to `/mockups`.
+ *
+ *  ⚠️ `/mockups/ward-flow-sign-in` is listed SEPARATELY for exactly that reason: it is a sibling
+ *  of the ward-flow subtree, not a child, so the `/mockups/ward-flow` entry does not cover it —
+ *  the next character is a hyphen, not a slash. It cannot simply move under `/mockups/ward-flow/`
+ *  either, because that segment's layout mounts the rail, bar and provider around every nested
+ *  route with no per-route opt-out, and a sign-in screen is specified to have none of them. Any
+ *  future `/mockups/ward-flow-*` sibling needs its own line here; a new directory INSIDE
+ *  `/mockups/ward-flow/` does not.
+ *
+ *  🔴 Keep this note ABOVE the array and never inside it. `readDeveloperGatedPrefixes` in
+ *  `scripts/check-mockup-retirement.mjs` extracts every quoted or backticked span between the
+ *  brackets, so a comment placed among the entries turns each of its code spans into a phantom
+ *  prefix — measured 2026-09-12, when doing so reddened two retirement gates at once. */
+export const DEVELOPER_GATED_PATH_PREFIXES = ["/mockups/ward-flow", "/mockups/ward-flow-sign-in"] as const;
+
+/**
+ * Whether a pathname is inside one of the gated subtrees. Exact-or-slash, so a
+ * look-alike such as `/mockups/care-plan-archive` is NOT a match.
+ *
+ * Lives here, beside the prefixes, because two callers need it and they cannot
+ * share code any other way: `src/proxy.ts` runs on the server, and
+ * `link-access-shared.ts` is reachable from a Client Component. A second copy of
+ * this predicate is exactly the duplicate that drifts — and one of its callers
+ * is a security guard, where drifting means failing open.
+ */
+export function isDeveloperGatedPath(pathname: string): boolean {
+  return DEVELOPER_GATED_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}

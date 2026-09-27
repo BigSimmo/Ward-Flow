@@ -1,0 +1,2363 @@
+<!doctype html>
+<html lang="en-AU" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow · Outstanding Work &amp; Tasks Drawer (Mockup 2)</title>
+    <script>
+      (function () {
+        document.documentElement.lang = "en-AU";
+        try {
+          var v = localStorage.getItem("ward-flow-appearance") || localStorage.getItem("ward-flow-theme");
+          if (v === "light" || v === "dark") {
+            document.documentElement.setAttribute("data-theme", v);
+          } else if (v === "auto" && window.matchMedia) {
+            document.documentElement.setAttribute(
+              "data-theme",
+              window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
+            );
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap"
+    />
+    <style>
+      /* ═══════════════════════════════════════════════════════════════════════
+         WARD FLOW DESIGN SYSTEM (THIRD EDITION) — SOVEREIGN CLINICAL CONSOLE
+         Mockup 2: Perfected Outstanding Work & Tasks Drawer
+         WCAG 2.1 AA Compliant (Contrast >= 4.5:1, Zero Fonts < 12px, Tabular Figures)
+         ═══════════════════════════════════════════════════════════════════════ */
+      :root {
+        color-scheme: light;
+        --display: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --body: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+        --t-0: 12px;
+        --t-1: 13px;
+        --t-2: 13.5px;
+        --t-3: 14.5px;
+        --t-4: 16px;
+        --t-5: 20px;
+        --t-6: 26px;
+
+        --r1: 12px;
+        --r1i: 10px;
+        --r2: 8px;
+        --r3: 6px;
+        --pill: 9999px;
+
+        /* Light Palette (Platinum Raised Cool) */
+        --ground-hi: #ecf0f4;
+        --ground: #e6eaef;
+        --ground-2: #e1e6ec;
+
+        --surface: #ffffff;
+        --surface-2: #f4f7fa;
+        --surface-3: #eaf0f6;
+        --sunk: #edf2f7;
+
+        --ink: #161a20;
+        --ink-soft: #3d4754;
+        --muted: #596473;
+
+        --line: rgba(22, 30, 40, 0.09);
+        --line-strong: rgba(22, 30, 40, 0.22);
+        --card-border: rgba(22, 30, 40, 0.08);
+        --card-border-hover: rgba(47, 76, 102, 0.35);
+
+        --accent: #2f4c66;
+        --accent-ink: #20354b;
+        --accent-press: #1a2a3c;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+
+        --gilt: #7d612a;
+        --gilt-soft: #f1ebdf;
+
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --good-ink: #165639;
+
+        --warn: #825d10;
+        --warn-soft: #f6eeda;
+        --warn-ink: #634606;
+
+        --danger: #b03b2e;
+        --danger-soft: #fbeae7;
+        --danger-ink: #8b2b20;
+
+        --svc-east: #2f4c66;
+        --svc-north: #685a94;
+        --svc-south: #356a70;
+        --svc-wachs: #8c5a3c;
+
+        --card-lift: 0 1px 3px rgba(22, 30, 40, 0.04), 0 4px 12px rgba(22, 30, 40, 0.03);
+        --card-lift-hover: 0 4px 16px rgba(47, 76, 102, 0.1), 0 1px 4px rgba(22, 30, 40, 0.06);
+        --drawer-shadow: -8px 0 32px rgba(22, 30, 40, 0.16), -2px 0 6px rgba(22, 30, 40, 0.06);
+        --scrim: rgba(22, 30, 40, 0.45);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          color-scheme: dark;
+          --ground-hi: #14181d;
+          --ground: #0f1216;
+          --ground-2: #0a0d10;
+
+          --surface: #171b21;
+          --surface-2: #1c2128;
+          --surface-3: #222831;
+          --sunk: #12151a;
+
+          --ink: #e8ecf1;
+          --ink-soft: #b8c1cc;
+          --muted: #8a93a0;
+
+          --line: rgba(255, 255, 255, 0.08);
+          --line-strong: rgba(255, 255, 255, 0.2);
+          --card-border: rgba(255, 255, 255, 0.08);
+          --card-border-hover: rgba(167, 188, 210, 0.35);
+
+          --accent: #a7bcd2;
+          --accent-ink: #c9d8e7;
+          --accent-press: #8fa8c2;
+          --accent-soft: #1e2834;
+          --on-accent: #0f1216;
+          --stripe: #3a5a78;
+
+          --gilt: #d3b77e;
+          --gilt-soft: #2c2518;
+
+          --good: #6fd39b;
+          --good-soft: #142a1f;
+          --good-ink: #8ae3b1;
+
+          --warn: #e3bc5e;
+          --warn-soft: #2c2414;
+          --warn-ink: #edd28c;
+
+          --danger: #ff8b76;
+          --danger-soft: #341f1a;
+          --danger-ink: #ffa493;
+
+          --svc-east: #a7bcd2;
+          --svc-north: #b1a2d6;
+          --svc-south: #7fb2b8;
+          --svc-wachs: #d89a78;
+
+          --card-lift: 0 2px 6px rgba(0, 0, 0, 0.35), 0 6px 18px rgba(0, 0, 0, 0.28);
+          --card-lift-hover: 0 6px 22px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(167, 188, 210, 0.15);
+          --drawer-shadow: -10px 0 40px rgba(0, 0, 0, 0.75), -2px 0 10px rgba(0, 0, 0, 0.4);
+          --scrim: rgba(0, 0, 0, 0.65);
+        }
+      }
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --ground-hi: #14181d;
+        --ground: #0f1216;
+        --ground-2: #0a0d10;
+
+        --surface: #171b21;
+        --surface-2: #1c2128;
+        --surface-3: #222831;
+        --sunk: #12151a;
+
+        --ink: #e8ecf1;
+        --ink-soft: #b8c1cc;
+        --muted: #8a93a0;
+
+        --line: rgba(255, 255, 255, 0.08);
+        --line-strong: rgba(255, 255, 255, 0.2);
+        --card-border: rgba(255, 255, 255, 0.08);
+        --card-border-hover: rgba(167, 188, 210, 0.35);
+
+        --accent: #a7bcd2;
+        --accent-ink: #c9d8e7;
+        --accent-press: #8fa8c2;
+        --accent-soft: #1e2834;
+        --on-accent: #0f1216;
+        --stripe: #3a5a78;
+
+        --gilt: #d3b77e;
+        --gilt-soft: #2c2518;
+
+        --good: #6fd39b;
+        --good-soft: #142a1f;
+        --good-ink: #8ae3b1;
+
+        --warn: #e3bc5e;
+        --warn-soft: #2c2414;
+        --warn-ink: #edd28c;
+
+        --danger: #ff8b76;
+        --danger-soft: #341f1a;
+        --danger-ink: #ffa493;
+
+        --svc-east: #a7bcd2;
+        --svc-north: #b1a2d6;
+        --svc-south: #7fb2b8;
+        --svc-wachs: #d89a78;
+
+        --card-lift: 0 2px 6px rgba(0, 0, 0, 0.35), 0 6px 18px rgba(0, 0, 0, 0.28);
+        --card-lift-hover: 0 6px 22px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(167, 188, 210, 0.15);
+        --drawer-shadow: -10px 0 40px rgba(0, 0, 0, 0.75), -2px 0 10px rgba(0, 0, 0, 0.4);
+        --scrim: rgba(0, 0, 0, 0.65);
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         RESET & GLOBAL TYPOGRAPHY
+         ═══════════════════════════════════════════════════════════════════════ */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: var(--body);
+        font-size: var(--t-2);
+        line-height: 1.45;
+        color: var(--ink);
+        background: var(--ground);
+        min-height: 100vh;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      button {
+        font-family: inherit;
+        font-size: inherit;
+        border: none;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      .mono {
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Top Sovereign Brand Stripe */
+      .brandStripe {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 1000;
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         TOP PREVIEW CONTROLS TOOLBAR (PROTOTYPE CHROME)
+         ═══════════════════════════════════════════════════════════════════════ */
+      .previewBar {
+        position: sticky;
+        top: 3px;
+        left: 0;
+        right: 0;
+        height: 48px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        z-index: 50;
+        font-size: var(--t-1);
+      }
+
+      .previewLeft {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .previewBadge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--sunk);
+        padding: 3px 8px;
+        border-radius: var(--r3);
+        border: 1px solid var(--line);
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--ink-soft);
+      }
+
+      .previewTitle {
+        font-weight: 600;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .previewRight {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btnThemeToggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        border-radius: var(--r3);
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        color: var(--ink);
+        font-size: var(--t-1);
+        font-weight: 500;
+        transition: all 0.15s ease;
+      }
+      .btnThemeToggle:hover {
+        background: var(--sunk);
+        border-color: var(--accent);
+      }
+
+      .btnDrawerToggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: var(--r3);
+        background: var(--accent);
+        color: var(--on-accent);
+        font-weight: 600;
+        font-size: var(--t-1);
+        transition: all 0.15s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+      }
+      .btnDrawerToggle:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+      }
+
+      .btnReset {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 10px;
+        border-radius: var(--r3);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        color: var(--ink-soft);
+        font-size: var(--t-1);
+        font-weight: 500;
+        transition: all 0.15s ease;
+      }
+      .btnReset:hover {
+        color: var(--ink);
+        background: var(--sunk);
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         SIMULATED CLINICAL CONSOLE CANVAS (UNDER THE DRAWER)
+         ═══════════════════════════════════════════════════════════════════════ */
+      .appCanvas {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        min-height: calc(100vh - 51px);
+        background: var(--ground);
+      }
+
+      /* Simulated Sidebar Rail */
+      .appRail {
+        background: var(--surface-2);
+        border-right: 1px solid var(--line);
+        padding: 16px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .railBrand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 8px;
+      }
+      .railLogo {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        background: var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--on-accent);
+        font-weight: 700;
+        font-size: 13px;
+        font-family: var(--mono);
+      }
+      .railTitle {
+        font-weight: 700;
+        font-size: 15px;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+      }
+
+      .railNavSection {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .railNavHeading {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        padding: 6px 8px 4px;
+      }
+      .railNavItem {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 7px 10px;
+        border-radius: var(--r3);
+        color: var(--ink-soft);
+        font-weight: 500;
+        font-size: var(--t-2);
+        cursor: pointer;
+        transition: all 0.12s ease;
+      }
+      .railNavItem:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .railNavItem.active {
+        background: var(--surface);
+        color: var(--ink);
+        font-weight: 600;
+        border: 1px solid var(--line);
+        position: relative;
+      }
+      .railNavItem.active::before {
+        content: "";
+        position: absolute;
+        left: -12px;
+        top: 6px;
+        bottom: 6px;
+        width: 3px;
+        background: var(--gilt);
+        border-radius: 0 2px 2px 0;
+      }
+
+      /* Simulated Console Body */
+      .appMain {
+        padding: 24px 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        max-width: 1400px;
+      }
+
+      .consoleHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--line);
+      }
+      .consoleTitleBlock h1 {
+        font-size: var(--t-5);
+        font-weight: 700;
+        color: var(--ink);
+        letter-spacing: -0.02em;
+      }
+      .consoleTitleBlock p {
+        font-size: var(--t-1);
+        color: var(--muted);
+        margin-top: 2px;
+      }
+
+      .consoleActions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .btnTasksLauncher {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: var(--r2);
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        color: var(--ink);
+        font-size: var(--t-2);
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        transition: all 0.15s ease;
+      }
+      .btnTasksLauncher:hover {
+        background: var(--sunk);
+        border-color: var(--accent);
+        transform: translateY(-1px);
+      }
+      .launcherPill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border: 1px solid rgba(176, 59, 46, 0.25);
+        padding: 1px 7px;
+        border-radius: var(--pill);
+        font-family: var(--mono);
+        font-size: 11.5px;
+        font-weight: 700;
+      }
+
+      /* Simulated Metric Cards Grid */
+      .metricsGrid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+      }
+      .metricCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 16px;
+        box-shadow: var(--card-lift);
+      }
+      .metricLabel {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+      }
+      .metricValue {
+        font-family: var(--mono);
+        font-size: var(--t-6);
+        font-weight: 700;
+        color: var(--ink);
+        margin: 6px 0 4px;
+      }
+      .metricSub {
+        font-size: var(--t-0);
+        color: var(--ink-soft);
+      }
+
+      /* Simulated Patient Queue Table */
+      .queuePanel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 18px 20px;
+        box-shadow: var(--card-lift);
+      }
+      .queueHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+      }
+      .queueHead h2 {
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .simTable {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--t-1);
+      }
+      .simTable th {
+        text-align: left;
+        padding: 8px 12px;
+        font-size: var(--t-0);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        border-bottom: 1px solid var(--line-strong);
+      }
+      .simTable td {
+        padding: 12px;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink);
+      }
+      .simTable tr:last-child td {
+        border-bottom: none;
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         BACKDROP SCRIM OVERLAY
+         ═══════════════════════════════════════════════════════════════════════ */
+      .drawerScrim {
+        position: fixed;
+        inset: 0;
+        background: var(--scrim);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        z-index: 100;
+        opacity: 1;
+        transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .drawerScrim.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         PERFECTED OUTSTANDING WORK / TASKS DRAWER (WIDTH ~420px, FULL HEIGHT)
+         ═══════════════════════════════════════════════════════════════════════ */
+      .tasksDrawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 440px;
+        max-width: 100vw;
+        height: 100vh;
+        background: var(--surface);
+        border-left: 1px solid var(--line-strong);
+        box-shadow: var(--drawer-shadow);
+        z-index: 110;
+        display: flex;
+        flex-direction: column;
+        transform: translateX(0);
+        transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+        user-select: none;
+      }
+      .tasksDrawer.closed {
+        transform: translateX(100%);
+      }
+
+      /* ── 1. Shell & Header ── */
+      .drawerHeader {
+        padding: 18px 20px 14px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        flex-shrink: 0;
+      }
+
+      .drawerTopRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+      }
+
+      .drawerTitleGroup {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .drawerTitle {
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        color: var(--ink);
+      }
+
+      /* High-contrast Active Badge Pill */
+      .headerPendingBadge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 9px;
+        border-radius: var(--pill);
+        background: var(--danger);
+        color: #ffffff;
+        font-family: var(--mono);
+        font-size: 11.5px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        box-shadow: 0 1px 3px rgba(176, 59, 46, 0.3);
+        transition: all 0.2s ease;
+      }
+      .headerPendingBadge.zero {
+        background: var(--good);
+        box-shadow: 0 1px 3px rgba(34, 117, 80, 0.3);
+      }
+      .pulseDotSmall {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #ffffff;
+        animation: pulseAlert 1.6s infinite ease-in-out;
+      }
+      @keyframes pulseAlert {
+        0%,
+        100% {
+          opacity: 0.5;
+          transform: scale(0.85);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1.15);
+        }
+      }
+
+      /* Close Button: Esc [ ✕ ] */
+      .drawerCloseBtn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 9px;
+        border-radius: var(--r3);
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        color: var(--ink-soft);
+        font-size: var(--t-1);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .drawerCloseBtn:hover {
+        background: var(--sunk);
+        color: var(--ink);
+        border-color: var(--accent);
+      }
+      .drawerCloseBtn kbd {
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 600;
+        background: var(--sunk);
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        padding: 1px 4px;
+        color: var(--muted);
+      }
+
+      /* Category Filter Pills */
+      .filterPillTrack {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+      }
+      .filterPill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: var(--pill);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        color: var(--ink-soft);
+        font-size: var(--t-1);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        white-space: nowrap;
+      }
+      .filterPill:hover {
+        background: var(--sunk);
+        color: var(--ink);
+        border-color: var(--line-strong);
+      }
+      .filterPill.active {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+      }
+      .pillCount {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: var(--pill);
+        background: rgba(22, 30, 40, 0.08);
+        color: inherit;
+      }
+      .filterPill.active .pillCount {
+        background: rgba(255, 255, 255, 0.22);
+        color: var(--on-accent);
+      }
+
+      /* ── 2. Section Header: Shield Icon + "RECORDED FORMS" + 7 Pending ── */
+      .sectionHeaderStrip {
+        padding: 14px 20px 8px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .sectionTitleLeft {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .shieldIconBox {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .sectionTitleText {
+        font-size: 11.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ink-soft);
+      }
+
+      .sectionPendingBadge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 2px 8px;
+        border-radius: var(--pill);
+        background: var(--sunk);
+        color: var(--ink-soft);
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 700;
+        border: 1px solid var(--line);
+      }
+      .sectionPendingBadge.has-urgent {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border-color: rgba(176, 59, 46, 0.22);
+      }
+
+      /* ── 3. Scrollable Task Cards Container ── */
+      .drawerBodyScroll {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background: var(--surface-2);
+      }
+
+      /* ── Task Cards (Redesigned & Elevated) ── */
+      .taskCard {
+        background: var(--surface);
+        border: 1px solid var(--card-border);
+        border-radius: 12px;
+        box-shadow: var(--card-lift);
+        padding: 14px 16px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow: hidden;
+      }
+
+      .taskCard:hover {
+        border-color: var(--card-border-hover);
+        box-shadow: var(--card-lift-hover);
+        transform: translateY(-1px);
+      }
+
+      /* Severity Accent Strip on Left Edge */
+      .taskCard::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3.5px;
+        background: var(--line);
+        transition: background 0.2s ease;
+      }
+      .taskCard.critical::before {
+        background: var(--danger);
+      }
+      .taskCard.review::before {
+        background: var(--warn);
+      }
+      .taskCard.acknowledged::before {
+        background: var(--good);
+      }
+
+      /* Acknowledged Card Style */
+      .taskCard.acknowledged {
+        background: var(--surface-3);
+        opacity: 0.85;
+      }
+      .taskCard.acknowledged:hover {
+        opacity: 1;
+      }
+
+      /* Card Top Row: Avatar + Title & Urgency */
+      .cardTopRow {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      /* Avatar / Code Badge Squircle */
+      .cardAvatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: 0.02em;
+        flex-shrink: 0;
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+      }
+
+      .cardAvatar.critical {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border-color: rgba(176, 59, 46, 0.25);
+      }
+
+      .cardAvatar.review {
+        background: var(--warn-soft);
+        color: var(--warn-ink);
+        border-color: rgba(130, 93, 16, 0.25);
+      }
+
+      .cardAvatar.done {
+        background: var(--good-soft);
+        color: var(--good-ink);
+        border-color: rgba(34, 117, 80, 0.25);
+      }
+
+      .cardMainContent {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .cardTitleRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .cardTitle {
+        font-size: 14.5px;
+        font-weight: 600;
+        color: var(--ink);
+        line-height: 1.3;
+      }
+
+      /* Urgency Badges */
+      .urgencyPill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 2.5px 8px;
+        border-radius: var(--pill);
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      /* Glowing Red Pill */
+      .urgencyPill.critical {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border: 1px solid rgba(176, 59, 46, 0.35);
+        box-shadow: 0 0 8px rgba(176, 59, 46, 0.15);
+      }
+
+      /* Warm Amber Pill */
+      .urgencyPill.review {
+        background: var(--warn-soft);
+        color: var(--warn-ink);
+        border: 1px solid rgba(130, 93, 16, 0.3);
+      }
+
+      /* Verified Green Pill */
+      .urgencyPill.done {
+        background: var(--good-soft);
+        color: var(--good-ink);
+        border: 1px solid rgba(34, 117, 80, 0.3);
+      }
+
+      /* Subtitle Metadata */
+      .cardSubtitle {
+        font-family: var(--mono);
+        font-size: 11.5px;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+
+      .cardSubtitle b {
+        color: var(--ink-soft);
+        font-weight: 600;
+      }
+
+      /* Clinical Context Detail Note */
+      .cardContextNote {
+        font-size: 12px;
+        color: var(--ink-soft);
+        background: var(--sunk);
+        padding: 6px 10px;
+        border-radius: var(--r3);
+        border: 1px solid var(--line);
+        line-height: 1.4;
+        margin-top: 2px;
+      }
+
+      /* Card Action Buttons Row */
+      .cardActionRow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 4px;
+        padding-top: 10px;
+        border-top: 1px solid var(--line);
+      }
+
+      /* Button: [ ✓ Acknowledge ] */
+      .btnAcknowledge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 13px;
+        border-radius: var(--r3);
+        background: var(--surface-2);
+        border: 1px solid var(--line-strong);
+        color: var(--ink);
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .btnAcknowledge:hover {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+      }
+      .btnAcknowledge:active {
+        transform: scale(0.98);
+      }
+      .btnAcknowledge.is-acked {
+        background: var(--good-soft);
+        color: var(--good-ink);
+        border-color: rgba(34, 117, 80, 0.35);
+        cursor: default;
+      }
+
+      /* Button: [ Open movement → ] */
+      .btnOpenMovement {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: var(--r3);
+        background: transparent;
+        border: 1px solid var(--line);
+        color: var(--ink-soft);
+        font-size: 12.5px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .btnOpenMovement:hover {
+        background: var(--sunk);
+        color: var(--ink);
+        border-color: var(--line-strong);
+      }
+
+      /* ── 4. Sticky Footer ── */
+      .drawerStickyFooter {
+        position: sticky;
+        bottom: 0;
+        background: var(--surface);
+        border-top: 1px solid var(--line-strong);
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+        z-index: 10;
+        flex-shrink: 0;
+      }
+
+      .footerSummaryText {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+
+      .btnAckAllFacts {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 16px;
+        border-radius: var(--r2);
+        background: var(--accent);
+        color: var(--on-accent);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+        transition: all 0.15s ease;
+      }
+      .btnAckAllFacts:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+      }
+      .btnAckAllFacts:active {
+        transform: scale(0.98);
+      }
+      .btnAckAllFacts.all-done {
+        background: var(--good);
+        cursor: default;
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         CLINICAL TOAST NOTIFICATION
+         ═══════════════════════════════════════════════════════════════════════ */
+      .clinicalToast {
+        position: fixed;
+        bottom: 24px;
+        left: 24px;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        padding: 12px 18px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink);
+        z-index: 200;
+        transform: translateY(120px);
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        pointer-events: none;
+      }
+      .clinicalToast.show {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .toastIcon {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--good-soft);
+        color: var(--good-ink);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+      }
+
+      /* Empty State in Filter */
+      .emptyFilterNotice {
+        padding: 36px 16px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+      .emptyFilterNotice.visible {
+        display: flex;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Top Sovereign Brand Stripe -->
+    <div class="brandStripe" aria-hidden="true"></div>
+
+    <!-- Top Preview Control Bar (Prototype Navigation & Theme Toggles) -->
+    <header class="previewBar" role="banner">
+      <div class="previewLeft">
+        <span class="previewBadge">WARD FLOW · MOCKUP 2</span>
+        <div class="previewTitle">
+          <span>Outstanding Work &amp; Tasks Drawer</span>
+          <span style="color: var(--muted); font-weight: 400">· Sovereign Clinical Console</span>
+        </div>
+      </div>
+      <div class="previewRight">
+        <button type="button" class="btnReset" onclick="resetAllCards()" title="Reset all acknowledged cards">
+          <svg
+            viewBox="0 0 24 24"
+            width="13"
+            height="13"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+          </svg>
+          <span>Reset Cards (7)</span>
+        </button>
+
+        <div class="seg" role="group" aria-label="Theme selector" style="display: flex; gap: 4px">
+          <button type="button" class="btnThemeToggle" id="themeBtnLight" onclick="setTheme('light')">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5" />
+              <line x1="12" y1="1" x2="12" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="23" />
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+              <line x1="1" y1="12" x2="3" y2="12" />
+              <line x1="21" y1="12" x2="23" y2="12" />
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+            </svg>
+            <span>Light</span>
+          </button>
+          <button type="button" class="btnThemeToggle" id="themeBtnDark" onclick="setTheme('dark')">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            </svg>
+            <span>Dark</span>
+          </button>
+        </div>
+
+        <button type="button" class="btnDrawerToggle" id="btnToggleDrawer" onclick="toggleDrawer()">
+          <svg
+            viewBox="0 0 24 24"
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <line x1="15" y1="3" x2="15" y2="21" />
+          </svg>
+          <span id="toggleDrawerLabel">Toggle Drawer (Esc)</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Simulated App Canvas (Provides Context Behind the Drawer) -->
+    <div class="appCanvas">
+      <!-- Left Navigation Rail -->
+      <aside class="appRail" aria-label="Clinical Navigation">
+        <div class="railBrand">
+          <div class="railLogo">WF</div>
+          <span class="railTitle">Ward Flow</span>
+        </div>
+
+        <div class="railNavSection">
+          <span class="railNavHeading">Operations</span>
+          <div class="railNavItem active">
+            <span>Command Overview</span>
+            <span class="mono" style="font-size: 11px; color: var(--muted)">18</span>
+          </div>
+          <div class="railNavItem">
+            <span>Bed Board</span>
+            <span class="mono" style="font-size: 11px; color: var(--muted)">62</span>
+          </div>
+          <div class="railNavItem">
+            <span>Movements</span>
+            <span class="mono" style="font-size: 11px; color: var(--muted)">18</span>
+          </div>
+          <div class="railNavItem">
+            <span>Delays</span>
+            <span class="mono" style="font-size: 11px; color: var(--danger); font-weight: 700">2</span>
+          </div>
+          <div class="railNavItem">
+            <span>Capacity Horizon</span>
+            <span class="mono" style="font-size: 11px; color: var(--muted)">48h</span>
+          </div>
+        </div>
+
+        <div class="railNavSection">
+          <span class="railNavHeading">Care Coordination</span>
+          <div class="railNavItem">
+            <span>Priority Queue</span>
+            <span class="mono" style="font-size: 11px; color: var(--muted)">9</span>
+          </div>
+          <div class="railNavItem">
+            <span>Referrals</span>
+            <span class="mono" style="font-size: 11px; color: var(--muted)">14</span>
+          </div>
+          <div class="railNavItem">
+            <span>Clinical Handover</span>
+          </div>
+        </div>
+
+        <div class="railNavSection" style="margin-top: auto">
+          <span class="railNavHeading">Oversight</span>
+          <div class="railNavItem">
+            <span>Legal Orders &amp; Form 1A</span>
+          </div>
+          <div class="railNavItem">
+            <span>Quality &amp; Safety</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Clinical Dashboard Canvas -->
+      <main class="appMain" role="main">
+        <div class="consoleHeader">
+          <div class="consoleTitleBlock">
+            <h1>Statewide Psychiatric Bed Coordination</h1>
+            <p>Day Shift · Handover 15:30 AWST · Perth Metropolitan &amp; Country Network</p>
+          </div>
+          <div class="consoleActions">
+            <button type="button" class="btnTasksLauncher" onclick="openDrawer()">
+              <svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              <span>Outstanding Work</span>
+              <span class="launcherPill" id="canvasTasksBadge">7 Pending</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Metric Snapshot Cards -->
+        <div class="metricsGrid">
+          <div class="metricCard">
+            <div class="metricLabel">Active Movements</div>
+            <div class="metricValue">18</div>
+            <div class="metricSub">Across 4 health services</div>
+          </div>
+          <div class="metricCard" style="border-left: 3px solid var(--danger)">
+            <div class="metricLabel">ED Wait &gt;24h Breach</div>
+            <div class="metricValue" style="color: var(--danger)">2</div>
+            <div class="metricSub">Peel (1) · Armadale (1)</div>
+          </div>
+          <div class="metricCard">
+            <div class="metricLabel">Available Beds</div>
+            <div class="metricValue">14</div>
+            <div class="metricSub">6 adult open · 3 secure</div>
+          </div>
+          <div class="metricCard">
+            <div class="metricLabel">Awaiting Transport</div>
+            <div class="metricValue" style="color: var(--warn)">5</div>
+            <div class="metricSub">PTS &amp; SJA booked</div>
+          </div>
+        </div>
+
+        <!-- Queue Summary Table -->
+        <section class="queuePanel" aria-label="Priority Movements Queue">
+          <div class="queueHead">
+            <h2>Priority Bed Allocations &amp; Transit Status</h2>
+            <span class="mono" style="font-size: 12px; color: var(--muted)">Live WebSocket Connected</span>
+          </div>
+          <table class="simTable">
+            <thead>
+              <tr>
+                <th>Patient / ID</th>
+                <th>Origin ED</th>
+                <th>Proposed Destination</th>
+                <th>Urgency / Cause</th>
+                <th>Elapsed</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b>WF-004</b> · Dermot Hawthorn</td>
+                <td>Peel Health Campus ED</td>
+                <td>SCGH Adult Open (Bed 04)</td>
+                <td><span style="color: var(--danger); font-weight: 600">Bed pull expired (14m)</span></td>
+                <td class="mono">18.4h</td>
+                <td><span class="urgencyPill critical">Breach Critical</span></td>
+              </tr>
+              <tr>
+                <td><b>WF-009</b> · Tobias Wren</td>
+                <td>Armadale Health Service ED</td>
+                <td>5 Units Searched (Declined)</td>
+                <td><span style="color: var(--danger); font-weight: 600">Multiple Declines</span></td>
+                <td class="mono">26.8h</td>
+                <td><span class="urgencyPill critical">Breach Critical</span></td>
+              </tr>
+              <tr>
+                <td><b>WF-014</b> · Callum Finch</td>
+                <td>Armadale ED</td>
+                <td>Bentley Adult Open</td>
+                <td>Transport awaiting departure</td>
+                <td class="mono">4.2h</td>
+                <td><span class="urgencyPill review">Review Due</span></td>
+              </tr>
+              <tr>
+                <td><b>WF-018</b> · Evelyn Vance</td>
+                <td>Fiona Stanley Hospital ED</td>
+                <td>Graylands Hospital Unit</td>
+                <td>Transport awaiting departure</td>
+                <td class="mono">6.5h</td>
+                <td><span class="urgencyPill review">Review Due</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </main>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         BACKDROP SCRIM (CLOSES DRAWER ON CLICK)
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="drawerScrim" id="drawerScrim" onclick="closeDrawer()" aria-label="Close drawer backdrop"></div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         PERFECTED OUTSTANDING WORK / TASKS DRAWER (RIGHT OFF-CANVAS)
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <aside class="tasksDrawer" id="tasksDrawer" role="dialog" aria-modal="true" aria-label="Outstanding work drawer">
+      <!-- ── 1. Shell & Header ── -->
+      <div class="drawerHeader">
+        <div class="drawerTopRow">
+          <div class="drawerTitleGroup">
+            <h2 class="drawerTitle">Outstanding work</h2>
+            <span class="headerPendingBadge" id="headerBadge">
+              <span class="pulseDotSmall" id="headerPulse"></span>
+              <span id="headerBadgeText">7 Pending</span>
+            </span>
+          </div>
+          <button
+            type="button"
+            class="drawerCloseBtn"
+            onclick="closeDrawer()"
+            aria-label="Close outstanding work drawer"
+          >
+            <kbd>Esc</kbd>
+            <svg
+              viewBox="0 0 24 24"
+              width="13"
+              height="13"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Category Filter Pills -->
+        <div class="filterPillTrack" role="tablist" aria-label="Filter tasks by status">
+          <button
+            type="button"
+            class="filterPill active"
+            id="pillAll"
+            onclick="setFilter('all')"
+            role="tab"
+            aria-selected="true"
+          >
+            <span>All</span>
+            <span class="pillCount" id="countAll">7</span>
+          </button>
+          <button
+            type="button"
+            class="filterPill"
+            id="pillCritical"
+            onclick="setFilter('critical')"
+            role="tab"
+            aria-selected="false"
+          >
+            <span>Breach / Critical</span>
+            <span class="pillCount" id="countCritical" style="color: var(--danger-ink)">2</span>
+          </button>
+          <button
+            type="button"
+            class="filterPill"
+            id="pillReview"
+            onclick="setFilter('review')"
+            role="tab"
+            aria-selected="false"
+          >
+            <span>Review Due</span>
+            <span class="pillCount" id="countReview" style="color: var(--warn-ink)">5</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── 2. Section Header: Shield Icon + "RECORDED FORMS" + 7 Pending ── -->
+      <div class="sectionHeaderStrip">
+        <div class="sectionTitleLeft">
+          <div class="shieldIconBox" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              width="13"
+              height="13"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </div>
+          <span class="sectionTitleText">RECORDED FORMS</span>
+        </div>
+        <span class="sectionPendingBadge has-urgent" id="sectionBadge">7 Pending</span>
+      </div>
+
+      <!-- ── 3. Scrollable Elevated Task Cards ── -->
+      <div class="drawerBodyScroll" id="cardContainer">
+        <!-- CARD 1: Bed pull expired (Critical) -->
+        <article class="taskCard critical" id="card-wf-004" data-category="critical" data-id="WF-004">
+          <div class="cardTopRow">
+            <div class="cardAvatar critical" title="Bed Expired (BE)">BE</div>
+            <div class="cardMainContent">
+              <div class="cardTitleRow">
+                <h3 class="cardTitle">Bed pull expired</h3>
+                <span class="urgencyPill critical">
+                  <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor">
+                    <circle cx="12" cy="12" r="6" />
+                  </svg>
+                  <span>ED Breach / Critical</span>
+                </span>
+              </div>
+              <div class="cardSubtitle"><b>WF-004</b> · 14m overdue · Flow coordinator</div>
+            </div>
+          </div>
+          <div class="cardContextNote">
+            Bed reservation at SCGH Adult Open (Bed 04) lapsed without patient transit initiated from Peel ED.
+          </div>
+          <div class="cardActionRow">
+            <button
+              type="button"
+              class="btnAcknowledge"
+              onclick="acknowledgeCard('card-wf-004', 'WF-004: Bed pull expired')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="13"
+                height="13"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>Acknowledge</span>
+            </button>
+            <button
+              type="button"
+              class="btnOpenMovement"
+              onclick="openMovementModal('WF-004', 'Bed pull expired', 'Peel ED → SCGH Adult Open')"
+            >
+              <span>Open movement</span>
+              <svg
+                viewBox="0 0 24 24"
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </button>
+          </div>
+        </article>
+
+        <!-- CARD 2: Multiple destinations declined (Critical) -->
+        <article class="taskCard critical" id="card-wf-009" data-category="critical" data-id="WF-009">
+          <div class="cardTopRow">
+            <div class="cardAvatar critical" title="Multiple Declines (MD)">MD</div>
+            <div class="cardMainContent">
+              <div class="cardTitleRow">
+                <h3 class="cardTitle">Multiple destinations declined</h3>
+                <span class="urgencyPill critical">
+                  <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor">
+                    <circle cx="12" cy="12" r="6" />
+                  </svg>
+                  <span>ED Breach / Critical</span>
+                </span>
+              </div>
+              <div class="cardSubtitle"><b>WF-009</b> · 5 destinations have declined · Flow coordinator</div>
+            </div>
+          </div>
+          <div class="cardContextNote">
+            FSH, RPH, SCGH, Rockingham and Armadale have all declined intake. Immediate statewide escalation required.
+          </div>
+          <div class="cardActionRow">
+            <button
+              type="button"
+              class="btnAcknowledge"
+              onclick="acknowledgeCard('card-wf-009', 'WF-009: Multiple destinations declined')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="13"
+                height="13"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>Acknowledge</span>
+            </button>
+            <button
+              type="button"
+              class="btnOpenMovement"
+              onclick="openMovementModal('WF-009', 'Multiple destinations declined', 'Armadale ED → Statewide Search')"
+            >
+              <span>Open movement</span>
+              <svg
+                viewBox="0 0 24 24"
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </button>
+          </div>
+        </article>
+
+        <!-- CARD 3: Transport awaiting departure (Review) -->
+        <article class="taskCard review" id="card-wf-014" data-category="review" data-id="WF-014">
+          <div class="cardTopRow">
+            <div class="cardAvatar review" title="Transport Departure (TD)">TD</div>
+            <div class="cardMainContent">
+              <div class="cardTitleRow">
+                <h3 class="cardTitle">Transport awaiting departure</h3>
+                <span class="urgencyPill review">Review Due</span>
+              </div>
+              <div class="cardSubtitle"><b>WF-014</b> · Accepted 42m ago · Ward 4B Nurse / Flow coordinator</div>
+            </div>
+          </div>
+          <div class="cardContextNote">
+            PTS Crew 104 dispatch confirmed. Patient staged at Armadale ED transit bay awaiting transport arrival.
+          </div>
+          <div class="cardActionRow">
+            <button
+              type="button"
+              class="btnAcknowledge"
+              onclick="acknowledgeCard('card-wf-014', 'WF-014: Transport awaiting departure')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="13"
+                height="13"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>Acknowledge</span>
+            </button>
+            <button
+              type="button"
+              class="btnOpenMovement"
+              onclick="openMovementModal('WF-014', 'Transport awaiting departure', 'Armadale ED → Bentley Adult Open')"
+            >
+              <span>Open movement</span>
+              <svg
+                viewBox="0 0 24 24"
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </button>
+          </div>
+        </article>
+
+        <!-- CARD 4: Transport awaiting departure (Review) -->
+        <article class="taskCard review" id="card-wf-018" data-category="review" data-id="WF-018">
+          <div class="cardTopRow">
+            <div class="cardAvatar review" title="Transport Departure (TD)">TD</div>
+            <div class="cardMainContent">
+              <div class="cardTitleRow">
+                <h3 class="cardTitle">Transport awaiting departure</h3>
+                <span class="urgencyPill review">Review Due</span>
+              </div>
+              <div class="cardSubtitle"><b>WF-018</b> · Accepted 55m ago · Fiona Stanley ED Coordinator</div>
+            </div>
+          </div>
+          <div class="cardContextNote">
+            Form 4A statutory documents verified. SJA vehicle assigned, escort clinician confirmed ready for dispatch.
+          </div>
+          <div class="cardActionRow">
+            <button
+              type="button"
+              class="btnAcknowledge"
+              onclick="acknowledgeCard('card-wf-018', 'WF-018: Transport awaiting departure')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="13"
+                height="13"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>Acknowledge</span>
+            </button>
+            <button
+              type="button"
+              class="btnOpenMovement"
+              onclick="openMovementModal('WF-018', 'Transport awaiting departure', 'FSH ED → Graylands Hospital')"
+            >
+              <span>Open movement</span>
+              <svg
+                viewBox="0 0 24 24"
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </button>
+          </div>
+        </article>
+
+        <!-- CARD 5: Transport awaiting departure (Review) -->
+        <article class="taskCard review" id="card-wf-021" data-category="review" data-id="WF-021">
+          <div class="cardTopRow">
+            <div class="cardAvatar review" title="Transport Departure (TD)">TD</div>
+            <div class="cardMainContent">
+              <div class="cardTitleRow">
+                <h3 class="cardTitle">Transport awaiting departure</h3>
+                <span class="urgencyPill review">Review Due</span>
+              </div>
+              <div class="cardSubtitle"><b>WF-021</b> · Accepted 1h 12m ago · Royal Perth Liaison Nurse</div>
+            </div>
+          </div>
+          <div class="cardContextNote">
+            Priority 3 PTS vehicle delayed by metropolitan traffic. Receiving ward notified; bed hold confirmed
+            extended.
+          </div>
+          <div class="cardActionRow">
+            <button
+              type="button"
+              class="btnAcknowledge"
+              onclick="acknowledgeCard('card-wf-021', 'WF-021: Transport awaiting departure')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="13"
+                height="13"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>Acknowledge</span>
+            </button>
+            <button
+              type="button"
+              class="btnOpenMovement"
+              onclick="openMovementModal('WF-021', 'Transport awaiting departure', 'RPH ED → Graylands Unit')"
+            >
+              <span>Open movement</span>
+              <svg
+                viewBox="0 0 24 24"
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </button>
+          </div>
+        </article>
+
+        <!-- CARD 6: Transport awaiting departure (Review) -->
+        <article class="taskCard review" id="card-wf-025" data-category="review" data-id="WF-025">
+          <div class="cardTopRow">
+            <div class="cardAvatar review" title="Transport Departure (TD)">TD</div>
+            <div class="cardMainContent">
+              <div class="cardTitleRow">
+                <h3 class="cardTitle">Transport awaiting departure</h3>
+                <span class="urgencyPill review">Review Due</span>
+              </div>
+              <div class="cardSubtitle"><b>WF-025</b> · Accepted 1h 28m ago · SCGH Transit Nurse</div>
+            </div>
+          </div>
+          <div class="cardContextNote">
+            Vehicle en route (ETA 12m). Handover package prepared; Bed 14 at Joondalup Adult Open held and ready.
+          </div>
+          <div class="cardActionRow">
+            <button
+              type="button"
+              class="btnAcknowledge"
+              onclick="acknowledgeCard('card-wf-025', 'WF-025: Transport awaiting departure')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="13"
+                height="13"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>Acknowledge</span>
+            </button>
+            <button
+              type="button"
+              class="btnOpenMovement"
+              onclick="openMovementModal('WF-025', 'Transport awaiting departure', 'SCGH ED → Joondalup Adult Open')"
+            >
+              <span>Open movement</span>
+              <svg
+                viewBox="0 0 24 24"
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </button>
+          </div>
+        </article>
+
+        <!-- CARD 7: Transport awaiting departure (Review) -->
+        <article class="taskCard review" id="card-wf-033" data-category="review" data-id="WF-033">
+          <div class="cardTopRow">
+            <div class="cardAvatar review" title="Transport Departure (TD)">TD</div>
+            <div class="cardMainContent">
+              <div class="cardTitleRow">
+                <h3 class="cardTitle">Transport awaiting departure</h3>
+                <span class="urgencyPill review">Review Due</span>
+              </div>
+              <div class="cardSubtitle"><b>WF-033</b> · Accepted 1h 45m ago · Graylands Forensic Liaison</div>
+            </div>
+          </div>
+          <div class="cardContextNote">
+            Secure custody transport under Form 1A. Central depot departure clearance confirmed; ETA 30m.
+          </div>
+          <div class="cardActionRow">
+            <button
+              type="button"
+              class="btnAcknowledge"
+              onclick="acknowledgeCard('card-wf-033', 'WF-033: Transport awaiting departure')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="13"
+                height="13"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>Acknowledge</span>
+            </button>
+            <button
+              type="button"
+              class="btnOpenMovement"
+              onclick="openMovementModal('WF-033', 'Transport awaiting departure', 'FSH ED → Frankland Secure Unit')"
+            >
+              <span>Open movement</span>
+              <svg
+                viewBox="0 0 24 24"
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </button>
+          </div>
+        </article>
+
+        <!-- Empty Filter Notice -->
+        <div class="emptyFilterNotice" id="emptyNotice">
+          <svg
+            viewBox="0 0 24 24"
+            width="28"
+            height="28"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <span style="font-weight: 600; color: var(--ink)">All items in this view acknowledged</span>
+          <span style="font-size: 12px">Switch filters or click Reset Cards to test again.</span>
+        </div>
+      </div>
+
+      <!-- ── 4. Sticky Footer ── -->
+      <div class="drawerStickyFooter">
+        <span class="footerSummaryText" id="footerSummary">7 Facts Pending · 0 Commitments Open</span>
+        <button type="button" class="btnAckAllFacts" id="btnAckAll" onclick="acknowledgeAllFacts()">
+          <svg
+            viewBox="0 0 24 24"
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <span id="btnAckAllText">Acknowledge All Facts</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         CLINICAL FEEDBACK TOAST
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="clinicalToast" id="toastBox" role="status" aria-live="polite">
+      <div class="toastIcon">✓</div>
+      <span id="toastMsg">Action completed</span>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         INTERACTIVE ENGINE SCRIPT
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <script>
+      (function () {
+        "use strict";
+
+        // State Machine
+        var state = {
+          drawerOpen: true,
+          currentFilter: "all",
+          cards: {
+            "card-wf-004": { id: "WF-004", title: "Bed pull expired", category: "critical", acked: false },
+            "card-wf-009": {
+              id: "WF-009",
+              title: "Multiple destinations declined",
+              category: "critical",
+              acked: false,
+            },
+            "card-wf-014": { id: "WF-014", title: "Transport awaiting departure", category: "review", acked: false },
+            "card-wf-018": { id: "WF-018", title: "Transport awaiting departure", category: "review", acked: false },
+            "card-wf-021": { id: "WF-021", title: "Transport awaiting departure", category: "review", acked: false },
+            "card-wf-025": { id: "WF-025", title: "Transport awaiting departure", category: "review", acked: false },
+            "card-wf-033": { id: "WF-033", title: "Transport awaiting departure", category: "review", acked: false },
+          },
+        };
+
+        // Theme management
+        window.setTheme = function (theme) {
+          document.documentElement.setAttribute("data-theme", theme);
+          try {
+            localStorage.setItem("ward-flow-appearance", theme);
+            localStorage.setItem("ward-flow-theme", theme);
+          } catch (e) {}
+          updateThemeButtons(theme);
+          showToast("Theme switched to " + theme.toUpperCase());
+        };
+
+        function updateThemeButtons(theme) {
+          var lightBtn = document.getElementById("themeBtnLight");
+          var darkBtn = document.getElementById("themeBtnDark");
+          if (!lightBtn || !darkBtn) return;
+          lightBtn.style.borderColor = theme === "light" ? "var(--accent)" : "var(--line)";
+          lightBtn.style.background = theme === "light" ? "var(--sunk)" : "var(--surface)";
+          darkBtn.style.borderColor = theme === "dark" ? "var(--accent)" : "var(--line)";
+          darkBtn.style.background = theme === "dark" ? "var(--sunk)" : "var(--surface)";
+        }
+
+        // Drawer open / close / toggle
+        window.openDrawer = function () {
+          state.drawerOpen = true;
+          document.getElementById("tasksDrawer").classList.remove("closed");
+          document.getElementById("drawerScrim").classList.remove("hidden");
+          var lbl = document.getElementById("toggleDrawerLabel");
+          if (lbl) lbl.textContent = "Close Drawer (Esc)";
+        };
+
+        window.closeDrawer = function () {
+          state.drawerOpen = false;
+          document.getElementById("tasksDrawer").classList.add("closed");
+          document.getElementById("drawerScrim").classList.add("hidden");
+          var lbl = document.getElementById("toggleDrawerLabel");
+          if (lbl) lbl.textContent = "Open Drawer (Esc)";
+        };
+
+        window.toggleDrawer = function () {
+          if (state.drawerOpen) {
+            window.closeDrawer();
+          } else {
+            window.openDrawer();
+          }
+        };
+
+        // Filter Switching
+        window.setFilter = function (filterKey) {
+          state.currentFilter = filterKey;
+          var pills = ["pillAll", "pillCritical", "pillReview"];
+          pills.forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) el.classList.remove("active");
+          });
+
+          if (filterKey === "all") document.getElementById("pillAll").classList.add("active");
+          if (filterKey === "critical") document.getElementById("pillCritical").classList.add("active");
+          if (filterKey === "review") document.getElementById("pillReview").classList.add("active");
+
+          applyFilterToCards();
+        };
+
+        function applyFilterToCards() {
+          var visibleCount = 0;
+          Object.keys(state.cards).forEach(function (cardId) {
+            var cardData = state.cards[cardId];
+            var el = document.getElementById(cardId);
+            if (!el) return;
+
+            var matches = false;
+            if (state.currentFilter === "all") {
+              matches = true;
+            } else if (state.currentFilter === "critical" && cardData.category === "critical") {
+              matches = true;
+            } else if (state.currentFilter === "review" && cardData.category === "review") {
+              matches = true;
+            }
+
+            if (matches) {
+              el.style.display = "flex";
+              visibleCount++;
+            } else {
+              el.style.display = "none";
+            }
+          });
+
+          var emptyNotice = document.getElementById("emptyNotice");
+          if (emptyNotice) {
+            if (visibleCount === 0) {
+              emptyNotice.classList.add("visible");
+            } else {
+              emptyNotice.classList.remove("visible");
+            }
+          }
+        }
+
+        // Single Card Acknowledgement
+        window.acknowledgeCard = function (cardId, label) {
+          var cardData = state.cards[cardId];
+          if (!cardData) return;
+
+          // Toggle or set acknowledged
+          cardData.acked = !cardData.acked;
+          var cardEl = document.getElementById(cardId);
+          if (!cardEl) return;
+
+          var avatar = cardEl.querySelector(".cardAvatar");
+          var btn = cardEl.querySelector(".btnAcknowledge");
+          var pill = cardEl.querySelector(".urgencyPill");
+
+          if (cardData.acked) {
+            cardEl.classList.add("acknowledged");
+            if (avatar) {
+              avatar.className = "cardAvatar done";
+              avatar.textContent = "✓";
+            }
+            if (btn) {
+              btn.classList.add("is-acked");
+              btn.innerHTML =
+                '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg><span>Acknowledged</span>';
+            }
+            if (pill) {
+              pill.className = "urgencyPill done";
+              pill.textContent = "✓ Acknowledged";
+            }
+            showToast("✓ " + (label || cardData.id) + " acknowledged");
+          } else {
+            cardEl.classList.remove("acknowledged");
+            if (avatar) {
+              avatar.className = "cardAvatar " + cardData.category;
+              avatar.textContent = cardData.id === "WF-004" ? "BE" : cardData.id === "WF-009" ? "MD" : "TD";
+            }
+            if (btn) {
+              btn.classList.remove("is-acked");
+              btn.innerHTML =
+                '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg><span>Acknowledge</span>';
+            }
+            if (pill) {
+              pill.className = "urgencyPill " + cardData.category;
+              pill.textContent = cardData.category === "critical" ? "ED Breach / Critical" : "Review Due";
+            }
+            showToast("Reset " + cardData.id + " to pending");
+          }
+
+          updateCounts();
+        };
+
+        // Acknowledge All Facts
+        window.acknowledgeAllFacts = function () {
+          var unackedCount = 0;
+          Object.keys(state.cards).forEach(function (cardId) {
+            if (!state.cards[cardId].acked) unackedCount++;
+          });
+
+          if (unackedCount === 0) {
+            showToast("All facts are already acknowledged");
+            return;
+          }
+
+          Object.keys(state.cards).forEach(function (cardId, index) {
+            setTimeout(function () {
+              if (!state.cards[cardId].acked) {
+                window.acknowledgeCard(cardId, state.cards[cardId].id);
+              }
+            }, index * 40);
+          });
+
+          showToast("✓ All 7 recorded facts acknowledged by Flow Coordinator");
+        };
+
+        // Reset All Cards
+        window.resetAllCards = function () {
+          Object.keys(state.cards).forEach(function (cardId) {
+            if (state.cards[cardId].acked) {
+              window.acknowledgeCard(cardId, state.cards[cardId].id);
+            }
+          });
+          window.setFilter("all");
+          showToast("All 7 cards restored to pending status");
+        };
+
+        // Update Dynamic Badges and Summaries
+        function updateCounts() {
+          var totalPending = 0;
+          var criticalPending = 0;
+          var reviewPending = 0;
+
+          Object.keys(state.cards).forEach(function (cardId) {
+            var c = state.cards[cardId];
+            if (!c.acked) {
+              totalPending++;
+              if (c.category === "critical") criticalPending++;
+              if (c.category === "review") reviewPending++;
+            }
+          });
+
+          // Drawer Header Badge
+          var headerBadge = document.getElementById("headerBadge");
+          var headerText = document.getElementById("headerBadgeText");
+          var headerPulse = document.getElementById("headerPulse");
+          if (headerText) headerText.textContent = totalPending + " Pending";
+          if (headerBadge) {
+            if (totalPending === 0) {
+              headerBadge.className = "headerPendingBadge zero";
+              if (headerPulse) headerPulse.style.display = "none";
+            } else {
+              headerBadge.className = "headerPendingBadge";
+              if (headerPulse) headerPulse.style.display = "inline-block";
+            }
+          }
+
+          // Filter Pill Counts
+          var countAll = document.getElementById("countAll");
+          var countCritical = document.getElementById("countCritical");
+          var countReview = document.getElementById("countReview");
+          if (countAll) countAll.textContent = totalPending;
+          if (countCritical) countCritical.textContent = criticalPending;
+          if (countReview) countReview.textContent = reviewPending;
+
+          // Section Header Badge
+          var sectionBadge = document.getElementById("sectionBadge");
+          if (sectionBadge) {
+            sectionBadge.textContent = totalPending + " Pending";
+            if (criticalPending > 0) {
+              sectionBadge.className = "sectionPendingBadge has-urgent";
+            } else {
+              sectionBadge.className = "sectionPendingBadge";
+            }
+          }
+
+          // Sticky Footer Summary
+          var footerSum = document.getElementById("footerSummary");
+          if (footerSum) {
+            footerSum.textContent = totalPending + " Facts Pending · 0 Commitments Open";
+          }
+
+          // Canvas Launcher Badge
+          var canvasBadge = document.getElementById("canvasTasksBadge");
+          if (canvasBadge) {
+            canvasBadge.textContent = totalPending + " Pending";
+            if (totalPending === 0) {
+              canvasBadge.style.background = "var(--good-soft)";
+              canvasBadge.style.color = "var(--good-ink)";
+              canvasBadge.style.borderColor = "rgba(34, 117, 80, 0.25)";
+            } else {
+              canvasBadge.style.background = "var(--danger-soft)";
+              canvasBadge.style.color = "var(--danger-ink)";
+              canvasBadge.style.borderColor = "rgba(176, 59, 46, 0.25)";
+            }
+          }
+
+          // Footer Primary Button
+          var btnAckAll = document.getElementById("btnAckAll");
+          var btnAckAllText = document.getElementById("btnAckAllText");
+          if (btnAckAll && btnAckAllText) {
+            if (totalPending === 0) {
+              btnAckAll.classList.add("all-done");
+              btnAckAllText.textContent = "✓ All Facts Acknowledged";
+            } else {
+              btnAckAll.classList.remove("all-done");
+              btnAckAllText.textContent = "Acknowledge All Facts";
+            }
+          }
+        }
+
+        // Open Movement Modal Simulation
+        window.openMovementModal = function (id, title, corridor) {
+          showToast("Opening movement record " + id + " (" + corridor + ")");
+        };
+
+        // Toast Feedback System
+        var toastTimer = null;
+        function showToast(msg) {
+          var toast = document.getElementById("toastBox");
+          var text = document.getElementById("toastMsg");
+          if (!toast || !text) return;
+          text.textContent = msg;
+          toast.classList.add("show");
+          if (toastTimer) clearTimeout(toastTimer);
+          toastTimer = setTimeout(function () {
+            toast.classList.remove("show");
+          }, 3200);
+        }
+
+        // Keyboard navigation
+        document.addEventListener("keydown", function (e) {
+          // Esc to close drawer
+          if (e.key === "Escape") {
+            if (state.drawerOpen) {
+              window.closeDrawer();
+            }
+          }
+          // 't' or 'T' to toggle drawer (when not in input)
+          if ((e.key === "t" || e.key === "T") && !e.target.matches("input, textarea")) {
+            window.toggleDrawer();
+          }
+          // '1', '2', '3' for filters
+          if (!e.target.matches("input, textarea")) {
+            if (e.key === "1") window.setFilter("all");
+            if (e.key === "2") window.setFilter("critical");
+            if (e.key === "3") window.setFilter("review");
+          }
+        });
+
+        // Initialize Theme & UI
+        var currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
+        updateThemeButtons(currentTheme);
+        updateCounts();
+      })();
+    </script>
+  </body>
+</html>

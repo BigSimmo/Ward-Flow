@@ -1,0 +1,21 @@
+{
+  // Ward Flow fold-gate type check (Josh, 25 September 2026, R34): the same compiler options as
+  // tsconfig.typecheck.json, rooted at Ward Flow's own code and tests. TypeScript still checks every
+  // file those roots import (shared code included), so a break in shared code that Ward Flow uses
+  // is caught; only code Ward Flow never reaches (the retiring PsychSift app) is left out. The
+  // full-app check (tsconfig.typecheck.json) runs every night, and a nightly error blocks the next
+  // fold until it is fixed.
+  "extends": "./tsconfig.typecheck.json",
+  "include": [
+    "next-env.typecheck.d.ts",
+    "**/*.d.ts",
+    "src/app/mockups/ward-flow/**/*",
+    "src/app/mockups/ward-flow-sign-in/**/*",
+    "src/app/mockups/ward-flow-digest/**/*",
+    "src/components/ward-management/**/*",
+    "src/lib/**/ward*",
+    "src/lib/**/ward*/**/*",
+    "tests/ward-*",
+    "tests/setup/**/*"
+  ]
+}

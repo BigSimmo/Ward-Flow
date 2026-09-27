@@ -1,0 +1,97 @@
+.circle {
+  position: relative;
+  width: 0.4375rem; /* 7px */
+  height: 0.4375rem; /* 7px */
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Core semantic colors */
+.live {
+  background: var(--good, var(--ward-success, #10b981));
+}
+
+.syncing {
+  background: var(--warn, var(--ward-warning, #f59e0b));
+}
+
+.error {
+  background: var(--danger-solid, var(--danger, #ef4444));
+}
+
+.static {
+  background: var(--neutral-400, #94a3b8);
+}
+
+/* Halo ring */
+.circle::after {
+  content: "";
+  position: absolute;
+  inset: -0.125rem; /* -2px extends halo around the 7px circle */
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.live::after {
+  border: 1px solid var(--good, var(--ward-success, #10b981));
+  box-shadow: 0 0 0.375rem var(--good, var(--ward-success, rgba(16, 185, 129, 0.6)));
+  animation: metroPulse 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.syncing::after {
+  border: 1px solid var(--warn, var(--ward-warning, #f59e0b));
+  box-shadow: 0 0 0.375rem var(--warn, var(--ward-warning, rgba(245, 158, 11, 0.6)));
+  animation: metroPulse 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.error::after {
+  border: 1px solid var(--danger-solid, var(--danger, #ef4444));
+  box-shadow: 0 0 0.375rem var(--danger-solid, var(--danger, rgba(239, 68, 68, 0.6)));
+  animation: metroPulse 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.static::after,
+.noPulse::after {
+  animation: none !important;
+  opacity: 0 !important;
+}
+
+@keyframes metroPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(html:not([data-motion="full"])) .circle::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+:global(html[data-motion="reduced"]) .circle::after {
+  animation: none;
+  opacity: 0;
+}
+
+@media (forced-colors: active) {
+  .circle {
+    background: CanvasText !important;
+  }
+  .circle::after {
+    border-color: CanvasText !important;
+    box-shadow: none !important;
+  }
+}

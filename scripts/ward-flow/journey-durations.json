@@ -1,0 +1,17 @@
+{
+  "source": "batch 2 gate journeys, 25 Sept 2026 (steward's b2-e2e.log): summed test time per spec file, in seconds",
+  "seconds": {
+    "ui-ward-coordinator.spec.ts": 129.0,
+    "ui-ward-roles.spec.ts": 112.6,
+    "ui-ward-search.spec.ts": 64.7,
+    "ui-ward-chrome-header.spec.ts": 62.5,
+    "ui-ward-forced-colors.spec.ts": 40.4,
+    "ui-ward-management.spec.ts": 39.6,
+    "ui-ward-table-thresholds.spec.ts": 32.3,
+    "ui-ward-referrals.spec.ts": 22.1,
+    "ui-ward-statistics-journey.spec.ts": 12.6,
+    "ui-ward-capacity-morning-moved.spec.ts": 5.0,
+    "ui-ward-statistics-compare.spec.ts": 4.6,
+    "ui-ward-discharges.spec.ts": 3.6
+  }
+}

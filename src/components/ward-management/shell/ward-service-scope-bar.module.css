@@ -1,0 +1,70 @@
+/*
+ * `ward-service-scope-bar.tsx` — the fixed-wording strip a scoped screen mounts while a health
+ * service is chosen (build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §3 "Scope
+ * bar"). Tokens only, no hex. No coloured edge bar and no top highlight — the same owner ruling
+ * `ward-bar.module.css`'s own header cites, applied here rather than re-argued.
+ */
+
+.bar {
+  /* This component is never a descendant of `.bar`/`.rail` in `shell/` — a scoped screen mounts it
+   * directly in its own subtree — so it cannot inherit the third-edition token layer through an
+   * ancestor's `composes:` the way `.servicePanel`/`.serviceOption` inside `ward-bar.module.css` do.
+   * It has to compose `wardShellTokens` itself, exactly as `ward-bar.module.css`'s own top-level
+   * `.bar` (and its portalled panels) already do. Skipping this would still pass
+   * `ward-css-token-references-resolve.test.ts` — that guard only checks that a name is declared
+   * SOMEWHERE in the ward tree, never that the declaring rule's class is actually present on an
+   * ancestor of the element using it — and would fail silently at runtime instead: every `var()`
+   * below resolving to nothing, painting the inherited value on a clinical screen. */
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border-radius: var(--r1);
+  border: 0.0625rem solid var(--line);
+  background: var(--surface);
+  padding: 0.625rem 0.75rem;
+}
+
+.line {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.625rem;
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--t-1);
+}
+
+.clear {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ward-tap);
+  padding: 0 0.75rem;
+  border-radius: var(--r2);
+  border: 0.0625rem solid var(--line-strong);
+  background: var(--surface);
+  color: var(--accent-ink);
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: var(--t-0);
+  cursor: pointer;
+}
+
+.clear:hover,
+.clear:active {
+  background: var(--sunk);
+}
+
+.clear:focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: 0.125rem;
+}
+
+.note {
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--body);
+  font-size: var(--t-0);
+  line-height: 1.4;
+}

@@ -1,0 +1,684 @@
+.body {
+  gap: 0.75rem;
+  padding: 0.75rem 1rem 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+  font-variant-numeric: tabular-nums;
+}
+
+.subjectHeader {
+  gap: 0.625rem;
+  border: 0.0625rem solid var(--line);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--surface) 96%, var(--sunk));
+  padding: 0.75rem;
+}
+
+.subjectId {
+  display: grid;
+  gap: 0.0625rem;
+  font-family: var(--mono);
+  font-size: var(--t-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.subjectId small {
+  color: var(--muted);
+  font-family: inherit;
+  font-size: var(--t-0);
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.subjectBadges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.375rem;
+}
+
+.movementBadge,
+.urgentBadge {
+  display: inline-flex;
+  min-height: 1.5rem;
+  align-items: center;
+  border: 0.0625rem solid var(--line);
+  border-radius: 999px;
+  padding: 0 0.5rem;
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.movementBadge {
+  color: var(--muted);
+}
+
+.urgentBadge {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.factGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 0.75rem;
+}
+
+.fact {
+  display: grid;
+  min-width: 0;
+  gap: 0.0625rem;
+}
+
+.fact small {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.fact strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 600;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
+.fact[data-urgent="true"] strong {
+  color: var(--danger);
+  font-weight: 750;
+}
+
+.recordActions,
+.infoDisclosure {
+  border: 0.0625rem solid var(--line);
+  border-radius: 0.625rem;
+  background: var(--surface);
+}
+
+.recordActions > summary,
+.infoDisclosure > summary {
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0 0.625rem;
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.recordActions > summary::-webkit-details-marker,
+.infoDisclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.recordActions > summary::before,
+.infoDisclosure > summary::before {
+  content: "+";
+  width: 1rem;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-2);
+  line-height: 1;
+}
+
+.recordActions[open] > summary::before,
+.infoDisclosure[open] > summary::before {
+  content: "−";
+}
+
+.recordActions > section {
+  border-top: 0.0625rem solid var(--line);
+  padding: 0.625rem;
+}
+
+.recordActions > section + section {
+  margin-top: 0;
+}
+
+.infoDisclosure > p,
+.infoDisclosure > div {
+  margin: 0;
+  border-top: 0.0625rem solid var(--line);
+  padding: 0.625rem;
+}
+
+.candidatesSection {
+  border-top: 0;
+  border-radius: 0.75rem;
+  background: var(--sunk);
+  padding: 0.75rem;
+}
+
+.candidateHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.candidateCounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-bottom: 0.75rem;
+}
+
+.candidateCounts > span {
+  border-radius: 999px;
+  background: var(--surface);
+  padding: 0.1875rem 0.5rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+}
+
+.candidateCounts > span[data-tone="good"] {
+  color: var(--good);
+  background: var(--good-soft);
+}
+
+.candidateCounts > span[data-tone="warn"] {
+  color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.candidateHeaderToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  padding: 0.25rem 0;
+  cursor: pointer;
+  text-align: left;
+  border-radius: var(--r2);
+}
+
+.candidateHeaderToggle:hover .toggleChevron {
+  color: var(--ink);
+}
+
+.toggleChevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+
+.toggleChevron svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.detailDisclosure {
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.detailDisclosure > summary {
+  min-height: 2.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 650;
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+  list-style: none;
+}
+
+.detailDisclosure[open] > summary {
+  border-bottom-color: var(--line);
+}
+
+.detailDisclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.detailDisclosure > summary::after {
+  content: "▾";
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.detailDisclosure[open] > summary::after {
+  content: "▴";
+}
+
+.detailDisclosure > summary + * {
+  margin-top: 0.5rem;
+}
+
+.detailDisclosure > :not(summary) {
+  margin-inline: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.escalationSection {
+  display: grid;
+  gap: 0.625rem;
+}
+
+.candidateLead {
+  margin: -0.125rem 0 0.5rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.4;
+}
+
+.candidatesSection > .infoDisclosure {
+  margin-bottom: 0.625rem;
+  background: transparent;
+}
+
+.candidateRow {
+  min-height: 2.75rem;
+  gap: 0.25rem;
+  border-radius: 0.625rem;
+  padding: 0.625rem;
+  box-shadow: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.candidateTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.candidateState {
+  flex: 0 0 auto;
+  border: 0.0625rem solid var(--line);
+  border-radius: 999px;
+  padding: 0.0625rem 0.4375rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.candidateRow[aria-pressed="true"] .candidateState {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.candidateRow[data-eligible="false"] .candidateState {
+  border-style: dashed;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.body > section:not(.candidatesSection),
+.body > footer,
+.body > details:not(.recordActions) {
+  border-top: 0.0625rem solid var(--line);
+  padding-top: 0.75rem;
+}
+
+.body > section h4,
+.recordActions h4 {
+  margin-bottom: 0.5rem;
+}
+
+.body button,
+.body select {
+  border-radius: 0.5rem;
+  min-height: 2.75rem;
+}
+
+/* Command's shortlist becomes an internally scrolling column at 1400px. Below that,
+   both the one-column and two-column layouts keep it in natural document flow. */
+@media (min-width: 87.5rem) {
+  .actionToolbar {
+    position: sticky;
+    top: -0.75rem;
+    z-index: 1;
+    flex-shrink: 0;
+    background: var(--surface);
+    padding-bottom: 0.75rem;
+    border-bottom: 0.0625rem solid var(--line);
+  }
+}
+
+@media (width < 87.5rem) {
+  .body {
+    overflow: visible;
+  }
+
+  /* One owner for the primary decision only. Its bottom anchor cannot cover the global
+     header, and record-editing rows keep their normal position in the document. */
+  .actionToolbar {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    order: 1;
+    flex-shrink: 0;
+    max-height: min(50dvh, 24rem);
+    overflow-y: auto;
+    background: var(--surface);
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line-strong);
+  }
+}
+
+@media print {
+  .actionToolbar {
+    position: static;
+    order: 0;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 27rem) {
+  .factGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .subjectBadges {
+    justify-content: flex-start;
+  }
+}
+
+@media (forced-colors: active) {
+  .subjectHeader,
+  .candidatesSection,
+  .recordActions,
+  .infoDisclosure {
+    background: Canvas;
+  }
+}
+
+/* Elevation: dark theme crisp borders (Rule 2) */
+:global([data-theme="dark"]) .panel,
+:global([data-theme="dark"]) .card,
+:global([data-theme="dark"]) .subjectHeader,
+:global([data-theme="dark"]) .recordActions,
+:global([data-theme="dark"]) .infoDisclosure,
+:global([data-theme="dark"]) .candidateRow,
+:global([data-theme="dark"]) .candidatesSection {
+  border-color: var(--line-strong);
+}
+
+/* Tier & priority badges with WCAG AA contrast (>4.5:1) in light and dark themes */
+.tierBadge,
+.queueTier {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.125rem 0.5rem;
+  font-size: var(--t-0);
+  font-weight: 700;
+  line-height: 1;
+  border: 0.0625rem solid var(--line);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tierBadge[data-tier="1"],
+.queueTier[data-tier="1"] {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.tierBadge[data-tier="2"],
+.queueTier[data-tier="2"] {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.tierBadge[data-tier="3"],
+.queueTier[data-tier="3"] {
+  border-color: var(--line-strong);
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+:global([data-theme="dark"]) .tierBadge[data-tier="1"],
+:global([data-theme="dark"]) .queueTier[data-tier="1"] {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+:global([data-theme="dark"]) .tierBadge[data-tier="2"],
+:global([data-theme="dark"]) .queueTier[data-tier="2"] {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+:global([data-theme="dark"]) .tierBadge[data-tier="3"],
+:global([data-theme="dark"]) .queueTier[data-tier="3"] {
+  border-color: var(--line-strong);
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.queueFlagHighContrast {
+  border: 0.0625rem solid var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+:global([data-theme="dark"]) .queueFlagHighContrast {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* Touch targets: 44px minimum for allocation buttons, toggles, controls */
+.allocationButtonTouch,
+.drawerToggleTouch,
+.drawerTabTouch,
+.triageControlTouch {
+  min-height: 2.75rem;
+  touch-action: manipulation;
+}
+
+.queueRowTouch,
+.exceptionRowTouch {
+  min-height: 2.75rem;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+/* Tabular numbers and timestamps */
+.tabularNum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.tabularTimestamp {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  white-space: nowrap;
+}
+
+/* Clear tone badge styling (danger / warning / accent / good) */
+.toneBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.4375rem;
+  border-radius: 9999px;
+  font-size: var(--t-0);
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  border: 0.0625rem solid var(--line);
+}
+
+.toneBadge[data-tone="danger"] {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.toneBadge[data-tone="warning"],
+.toneBadge[data-tone="warn"] {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.toneBadge[data-tone="accent"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.toneBadge[data-tone="good"] {
+  border-color: var(--good);
+  background: var(--good-soft);
+  color: var(--good);
+}
+
+:global([data-theme="dark"]) .toneBadge[data-tone="danger"] {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+:global([data-theme="dark"]) .toneBadge[data-tone="warning"],
+:global([data-theme="dark"]) .toneBadge[data-tone="warn"] {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+:global([data-theme="dark"]) .toneBadge[data-tone="accent"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.exceptionHeaderRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+/*
+ * Mobile sheet presentation on viewports < 48rem:
+ * Ensure .shortlistRegion provides a sticky bottom action bar or sheet presentation
+ * with gesture/close buttons so mobile coordinators don't have to scroll past 50 queue rows to see candidate matches.
+ */
+.shortlistBackdrop {
+  display: none;
+}
+
+.sheetHandle {
+  display: none;
+}
+
+@media (max-width: 48rem) {
+  .shortlistBackdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: var(--scrim);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 940;
+    animation: shortlistFadeIn 0.2s ease-out forwards;
+  }
+
+  .sheetHandle {
+    display: block;
+    width: 2.5rem;
+    height: 0.25rem;
+    margin: 0.5rem auto 0.25rem;
+    border-radius: 9999px;
+    background: var(--line-strong);
+    flex-shrink: 0;
+  }
+
+  .shortlistColumn {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 950;
+    width: 100%;
+    margin: 0;
+    pointer-events: none;
+  }
+
+  .shortlistRegion {
+    pointer-events: auto;
+    position: relative;
+    max-height: 85dvh;
+    border-top: 0.0625rem solid var(--line-strong);
+    border-radius: var(--radius-lg, 0.75rem) var(--radius-lg, 0.75rem) 0 0;
+    background: var(--surface);
+    box-shadow: 0 -0.25rem 1.5rem var(--scrim);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: shortlistSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .shortlistBody,
+  .body {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    max-height: calc(85dvh - 3.5rem);
+  }
+}
+
+@keyframes shortlistSlideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes shortlistFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shortlistRegion,
+  .shortlistBackdrop {
+    animation: none;
+  }
+}

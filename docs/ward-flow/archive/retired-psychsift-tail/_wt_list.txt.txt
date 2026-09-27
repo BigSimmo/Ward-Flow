@@ -1,0 +1,460 @@
+﻿worktree D:/Repos/Database
+HEAD a2c8f45fbd33852d3b6214c282e1226412320c64
+branch refs/heads/codex/isolate-sidebar-prototypes
+
+worktree C:/Users/joshs/.codex/worktrees/1076/Database
+HEAD b7e0247d2b4d401a8b012ac3fe7d7271f6377928
+branch refs/heads/codex/fix-pr-batch-concurrency
+
+worktree C:/Users/joshs/.codex/worktrees/1d5e/Database
+HEAD 3d167e7fad8097ddb23e4de2dcde4dc507b68dae
+detached
+locked initializing
+
+worktree C:/Users/joshs/.codex/worktrees/5456/Database
+HEAD 1371df42ceceb77ce9f8b4a24e0c7469d546a3ee
+detached
+locked initializing
+
+worktree C:/Users/joshs/.codex/worktrees/pr2760-merge-verification-20260909/Database
+HEAD f9d31e3ef61a4a8c261c5082ee0aaf51a17c0f51
+branch refs/heads/codex/chat-secret-scan-fix-pr2760-merge-verification-20260909
+
+worktree C:/Users/joshs/.codex/worktrees/rag-answer-quality-local-20260823/Database
+HEAD f9d31e3ef61a4a8c261c5082ee0aaf51a17c0f51
+branch refs/heads/codex/rag-answer-quality-programme-local-20260823
+
+worktree C:/Users/joshs/.codex/worktrees/rag-answer-quality-local-20260823/task4-c9-red
+HEAD 3c2bd23a68e18200dbeace2e9839b585c1ae1802
+detached
+
+worktree C:/Users/joshs/.codex/worktrees/rag-local-build-20260822/Database
+HEAD 38552bafe0a82a5df2a4467afd5ba211aee5b966
+branch refs/heads/codex/rag-local-build-20260822
+
+worktree C:/Users/joshs/.codex/worktrees/restore-model-picker-control/Database
+HEAD 77afaa82ee340d337c78675db12e57e932d37009
+branch refs/heads/codex/restore-model-picker-control
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/audit_update_task_ledger
+HEAD ffbf019ce73987f8802c0409fed14649c91f8624
+branch refs/heads/audit_update_task_ledger
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/caring_contacts_clinical_safety
+HEAD 4b1c7628c8aa63aeaac7101963a130b9b78e586b
+branch refs/heads/caring_contacts_clinical_safety
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/caring_contacts_governance_deployment
+HEAD 62638c172a8187e15f2c749d461bea406778a611
+branch refs/heads/task/caring-contacts-governance-and-frontdoor
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/caring_contacts_sovereign_workspace
+HEAD edfd0553c62155a3ca703c88e109260599687b08
+branch refs/heads/caring_contacts_sovereign_workspace
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/cleanup_cursor_gemini_worktrees
+HEAD a2c8f45fbd33852d3b6214c282e1226412320c64
+branch refs/heads/cleanup_cursor_gemini_worktrees
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/db_drift_ledger_reconciliation
+HEAD a177cf36c7d575335c5466fb24eb6354e392b5af
+branch refs/heads/codex/db-drift-ledger-tooling
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/desktop_commander_cli
+HEAD a2c8f45fbd33852d3b6214c282e1226412320c64
+branch refs/heads/desktop_commander_cli
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/download_offline_repo_skills
+HEAD cc0a97618c360fb8e6bff8852584418bed3dadb2
+branch refs/heads/task/reconcile-ledger-20260913
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/engineering_maintenance_governance_sweep
+HEAD 9af47eceeb4b1ebe3e082e02bd9abdbe6482e153
+branch refs/heads/gemini/engineering-maintenance-governance-sweep
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/evaluate_new_skills
+HEAD a2c8f45fbd33852d3b6214c282e1226412320c64
+branch refs/heads/evaluate_new_skills
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/explore_learning_pathway_docs
+HEAD 73b1e71a0f2705e731eadaed7cdb085a9bc24e64
+branch refs/heads/explore_learning_pathway_docs
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/fetch_ledger_tasks_summary
+HEAD 69f92eb25ae168fe5a1885ba53d623c7de6004e2
+branch refs/heads/fetch_ledger_tasks_summary
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/fix_docker_file_path
+HEAD b3fb19e8abb51fd61f5287530acd3b189c9503a5
+branch refs/heads/fix_docker_file_path
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/fix_ui_stability_tokens
+HEAD 452ce33665a2be7759dc6e49226bb418382240a3
+branch refs/heads/codex/ui-stability-cls-tokens
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/full_page_screenshot
+HEAD a2c8f45fbd33852d3b6214c282e1226412320c64
+branch refs/heads/full_page_screenshot
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/glowing_jet_dips_22h54
+HEAD a2c8f45fbd33852d3b6214c282e1226412320c64
+branch refs/heads/glowing_jet_dips_22h54
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/harden_data_contracts_security
+HEAD 669b80b2ef598ff48084f4aaa2f0b1be027a8e16
+branch refs/heads/codex/data-contracts-security-sanitization
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/harden_git_hooks_ci
+HEAD cb300b0950c983acdc070c70587d0ec255755f09
+branch refs/heads/codex/tooling-hooks-ci-invariants
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/multi_agent_thorough_audit
+HEAD 79ff6074912e16aafede44f2bba28cbf6a3815ab
+branch refs/heads/gemini/audit-remediations-29-tasks
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/optimize_nodejs_dev_environment
+HEAD d29d561d0af706a816b81af5c5786731589a2652
+branch refs/heads/optimize_nodejs_dev_environment
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/optimize_system_performance_audit
+HEAD c7a74a898e420f5ddf83aa2c754c2cdbc81cfc8d
+branch refs/heads/optimize_system_performance_audit
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/perf_browser_matrix_consolidation
+HEAD de2ae2bd13b3e1f9fa896fe7ad1e4ab0ad64ca95
+branch refs/heads/codex/perf-browser-matrix-consolidation
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/playwright_ui_hydration_audit
+HEAD 73b1e71a0f2705e731eadaed7cdb085a9bc24e64
+branch refs/heads/playwright_ui_hydration_audit
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/repo_maturity_assessment_audit
+HEAD d73fb018fdcb9072a028c712dd402b4ce1345cd0
+branch refs/heads/repo_maturity_assessment_audit
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/resolve_repository_audit_findings
+HEAD b6bb3b5f869602a04bb437cb3f686f6ac190d5ce
+branch refs/heads/resolve_repository_audit_findings
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/run_additional_skills
+HEAD a2c8f45fbd33852d3b6214c282e1226412320c64
+branch refs/heads/run_additional_skills
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/system_health_status_audit
+HEAD 6c2aac18486dd970c1f854a0037339414a078d95
+branch refs/heads/system_health_status_audit
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/tier3_engineering_quality_sweep
+HEAD 7db16eb82c3abafb5ee87f07b5db31ec7692497f
+branch refs/heads/tier3_engineering_quality_sweep
+
+worktree C:/Users/joshs/.gemini/antigravity/worktrees/Database/ui_maintenance_dev_hub
+HEAD 0c052c08df58974aa059fc52a4987e62afe0be10
+branch refs/heads/ui_maintenance_dev_hub
+
+worktree C:/Users/joshs/Documents/Codex/2026-08-26/for-bigsimmo-database-reproduce-the-mobile/work/Database-mobile-root-control
+HEAD ca4f23cdee0d04f8b0e4355fb31ea8b75130f3f4
+branch refs/heads/codex/mobile-root-control-20260826
+
+worktree D:/Repos/Database/.claude/worktrees/agent-abcc3122b5a4407a7
+HEAD 65393e4402ac355195a3b92bb6d070da2a88cd36
+branch refs/heads/worktree-agent-abcc3122b5a4407a7
+
+worktree D:/Repos/Database/.claude/worktrees/browser-test-gate-handoff-d5c1db
+HEAD 408c2c53acf8ca29310928cedab2a6b557987f4e
+branch refs/heads/claude/developer-hub-supabase-auth-0561e3
+
+worktree D:/Repos/Database/.claude/worktrees/caring-contacts-phase-2b-32c39b
+HEAD 1a2e469d1181621d1e88442ba610a909d34e4a50
+detached
+
+worktree D:/Repos/Database/.claude/worktrees/database-worktree-cleanup-ad0dc3
+HEAD 06d165d01dce7ff6656fb38903f09ab237e28f7d
+detached
+
+worktree D:/Repos/Database/.claude/worktrees/developer-hub-phase-1-resume-c4f0c3
+HEAD 70a050752f979388858863ee80cd9ab92e44fb70
+detached
+
+worktree D:/Repos/Database/.claude/worktrees/ds-group-2-medium
+HEAD 28d9a139f306006140f01ccd99021bae21d94e38
+branch refs/heads/ds-group-2-medium
+
+worktree D:/Repos/Database/.claude/worktrees/ds-hazard-3-6
+HEAD 3171249cb95f9a126d7c3e157942e8164d4ad7eb
+branch refs/heads/claude/ds-hazard-3-6
+
+worktree D:/Repos/Database/.claude/worktrees/nostalgic-vaughan-7ee231
+HEAD 68e501e5fc725542e090a0698a87519ac242804b
+branch refs/heads/claude/ward-flow-print-fixes
+
+worktree D:/Repos/Database/.claude/worktrees/phone-dictionary-header-9180ee
+HEAD d7025947e2f98c8135ca1dfd984ef734edf84ed7
+detached
+
+worktree D:/Repos/Database/.claude/worktrees/youthful-robinson-941c8f
+HEAD 40a3e9ce7a77bb2dc4ab53e53f3dabdf10d48d71
+branch refs/heads/claude/wardflow-design-review-43df97
+
+worktree D:/Repos/Database/.claude/worktrees/zbac9d-public-marker-filter
+HEAD 4da6b8d4937067f20e7617c37d6a64a594134a6c
+branch refs/heads/claude/zbac9d-public-marker-filter
+
+worktree D:/Repos/Database/.worktrees/pr-2394
+HEAD db48aef0c2667301a02bc9398efc05cd38fd084b
+detached
+
+worktree D:/Repos/Database/.worktrees/pr-2397
+HEAD 99eb69196b5d0f7802c5486dbcff77e03efda622
+detached
+
+worktree D:/Repos/Database/.worktrees/pr-2397-tip
+HEAD addef8aaddda7b7d6050d6c596cd9be24b2df720
+detached
+
+worktree D:/Repos/Database/.worktrees/pr-2398
+HEAD fe8f4640a5927d46c20e7a5de29d9d0256ce5f40
+detached
+
+worktree D:/Repos/Database/.worktrees/pr-2398-tip
+HEAD 765bbf21c6a49f3de636dcb1403ec4c23bba74f0
+detached
+
+worktree D:/Repos/Database/.worktrees/pr-2403
+HEAD 92a943b76a6b95050d654fcf7c96de54d81e1e20
+detached
+
+worktree D:/Repos/Database/.worktrees/run-pr-2296
+HEAD eb96f48fe197dd7b0022470bfa99934bb3bc2ae9
+branch refs/heads/claude/audit-fix-p16
+
+worktree D:/Repos/Database/.worktrees/run-pr-2297
+HEAD f6288e3680d9a098eab6c24ee05964bfaef3cd4e
+branch refs/heads/run-pr-2297
+
+worktree D:/Repos/Database/.worktrees/run-pr-2397-fix
+HEAD addef8aaddda7b7d6050d6c596cd9be24b2df720
+branch refs/heads/run-pr-2397-fix
+locked initializing
+
+worktree D:/Repos/Database/.worktrees/run-pr-2399
+HEAD 418c87c7e5797aaedd1d2111e763488eb1b80baa
+branch refs/heads/run-pr-2399
+
+worktree D:/Repos/Database/.worktrees/run-pr-2400
+HEAD 375f1446ef22231021aa433bd86082989e584873
+branch refs/heads/run-pr-2400
+
+worktree D:/Repos/Database/.worktrees/run-pr-2401
+HEAD 717c9f16d59bf7279f23660a8f7b399a317015fe
+branch refs/heads/run-pr-2401
+
+worktree D:/Repos/Database/.worktrees/run-pr-2402
+HEAD d2c61c8cbddfb096e7b86e4dae1983dd1266a356
+branch refs/heads/run-pr-2402
+
+worktree D:/Repos/Database-dsm-compare-ci
+HEAD c81ada2afb83e96b33dfbff6265b298c9b9da4cb
+branch refs/heads/claude/dsm-compare-ci-fix
+
+worktree D:/Repos/Database-pr2399
+HEAD c736a42c546f5a004507beb060e01217ffa2e563
+detached
+
+worktree D:/Repos/Database-wt-therapy-compare-phone
+HEAD 667f42100e1076333d96dd92df528687d8126da2
+branch refs/heads/codex/therapy-compare-phone-ux
+
+worktree D:/Worktrees/Database/agent-docs-overhaul-20260913
+HEAD 1ef9ed3975078b789e9b5d70b3f000c64edc3809
+branch refs/heads/codex/agent-docs-overhaul-20260913
+
+worktree D:/Worktrees/Database/auth-callback-fix
+HEAD c95c17d4d460a24645f7377665d9f3202e3c6619
+branch refs/heads/claude/auth-callback-origin-fix
+
+worktree D:/Worktrees/Database/care-plan-impl
+HEAD 87b7b65a15ac6171396fb3e737fb0e364618e7ea
+branch refs/heads/claude/care-plan-stage-b-9-11
+
+worktree D:/Worktrees/Database/care-plan-next
+HEAD 16efba47730cb094049d6a817bf663f5db8c7a9b
+branch refs/heads/claude/care-plan-next
+
+worktree D:/Worktrees/Database/cc-message-name
+HEAD 61acf531c7b288edeb326377f28257d0ed2dfe5b
+branch refs/heads/claude/caring-contacts-message-name
+
+worktree D:/Worktrees/Database/cc-plan-detail
+HEAD 45a8842433a33b0841eb60994030504125d94668
+branch refs/heads/claude/caring-contacts-plan-detail
+
+worktree D:/Worktrees/Database/cc-schedule
+HEAD 213e62eb8ff9057cff349c439a95aa206614e56e
+branch refs/heads/claude/caring-contacts-schedule
+
+worktree D:/Worktrees/Database/cc-templates
+HEAD 31bdf21425f946737489b383e385a3a9bdc04b42
+branch refs/heads/claude/caring-contacts-demo-seed
+
+worktree D:/Worktrees/Database/clinical-governance-signoff
+HEAD 8fc644dc89b5dba5376342c0225c1c4280665790
+branch refs/heads/codex/clinical-governance-signoff
+
+worktree D:/Worktrees/Database/dev-hub-clinical-failures
+HEAD 579937cce9318a5cf19e53bfd5b7929f392870ca
+branch refs/heads/claude/dev-hub-clinical-answer-failures
+
+worktree D:/Worktrees/Database/dev-hub-environment-strip
+HEAD e5b55fffc5c567d72211eab32df352cb6bafd439
+branch refs/heads/claude/dev-hub-environment-strip
+
+worktree D:/Worktrees/Database/dev-hub-phase-1
+HEAD 8bff84479182cb719529714f27cb20c450334947
+branch refs/heads/claude/dev-hub-handoff-accuracy
+
+worktree D:/Worktrees/Database/docs-pr-publication-20260913
+HEAD ab90da53160ea1455b4817404d87b0c387e689b0
+branch refs/heads/codex/documentation-overhaul-20260913
+
+worktree D:/Worktrees/Database/documentation-guidance-pr-20260913
+HEAD 47e99c1c4ef0deda3c27e923a8f1438c89f5e0cd
+branch refs/heads/codex/documentation-guidance-overhaul-20260913
+
+worktree D:/Worktrees/Database/dsm-search-ux-elevation
+HEAD 70e1681263ed071032b39f6ae3a841ab8be33bef
+branch refs/heads/codex/dsm-search-ux-elevation
+
+worktree D:/Worktrees/Database/governed-skills
+HEAD a341832af63a6a24f545b90a710ab77b0f66bc02
+branch refs/heads/codex/governed-skill-capabilities
+
+worktree D:/Worktrees/Database/ledger-reconcile-20260902
+HEAD 94af8ef6aaa6245f3c050f71b55d5961a94d7122
+branch refs/heads/claude/ledger-reconcile-2026-09-02
+
+worktree D:/Worktrees/Database/mha-forms-clozapine-signoff
+HEAD 273a2414ee67eea6814592587400b3caeae3a8d7
+branch refs/heads/codex/mha-forms-clozapine-signoff
+
+worktree D:/Worktrees/Database/ops-no-activity
+HEAD c53f36e8deb8326d36dbb248e84d130f5e5d7a55
+branch refs/heads/codex/ops-no-activity
+
+worktree D:/Worktrees/Database/pr-2386-babysit
+HEAD 43c84b3c698eb85712105081b64043eaca52d5e1
+branch refs/heads/claude/answer-page-redesign-review-4ufdl5
+
+worktree D:/Worktrees/Database/pr-2390-fix
+HEAD 5db2f02fc6f0d04eed3425bc74b0adad438b7ea7
+branch refs/heads/claude/ward-flow-phases-6-7-design
+
+worktree D:/Worktrees/Database/pr-2401-babysit
+HEAD 038448e717aae6d540481002a0ca292175f201b1
+branch refs/heads/codex/reduce-warning-for-paste-due-date-sources
+
+worktree D:/Worktrees/Database/pr-2909-fix
+HEAD ce96abf8e7c7a17eba70ddd071f631b36b47b929
+branch refs/heads/claude/repo-maturity-review-8o0dos
+
+worktree D:/Worktrees/Database/pr-2922-ci-fix
+HEAD bddbc7477c17a181ffc7fda2e5b1e995914e087a
+branch refs/heads/claude/intelligent-albattani-aid2kl
+
+worktree D:/Worktrees/Database/pr-consolidation-bundles
+HEAD 3d8428c6a97bdf865bd7769b64b38072422473e3
+branch refs/heads/codex/consolidate-caring-20260910
+
+worktree D:/Worktrees/Database/pr-consolidation-dependencies
+HEAD f5be02380afa3d71aee801d7fd66f3da62054f61
+branch refs/heads/codex/consolidate-dependencies-20260910
+
+worktree D:/Worktrees/Database/pr-consolidation-differentials
+HEAD 571b7e07c07408d8b281404e655942493349fce7
+branch refs/heads/codex/consolidate-differentials-20260910
+
+worktree D:/Worktrees/Database/pr-consolidation-governance
+HEAD 7822e6190f38e5efd48716ae337b36cb802b8110
+branch refs/heads/codex/consolidate-governance-20260910
+
+worktree D:/Worktrees/Database/pr-consolidation-lighthouse
+HEAD 455e0a86c73cc5473b5ea18534800fd3ad82dbbd
+branch refs/heads/codex/consolidate-lighthouse-20260910
+
+worktree D:/Worktrees/Database/pr-consolidation-search
+HEAD 61bd00fb42d1f331e69a49077b00ee7a2a0911d0
+branch refs/heads/codex/consolidate-search-20260910
+
+worktree D:/Worktrees/Database/pr-consolidation-snapshot
+HEAD cbf798b59fb0108b7d5b3a5c5a39851e58e9fe08
+branch refs/heads/codex/consolidate-snapshot-20260910
+
+worktree D:/Worktrees/Database/pr-consolidation-sources
+HEAD 9d84ed5d3b705c13950d3f690ad63ff422f04c7d
+branch refs/heads/codex/consolidate-sources-20260910
+
+worktree D:/Worktrees/Database/privacy-governance-closeout
+HEAD 6436c83190f1ba3f599ad9985d41df74586bf178
+branch refs/heads/codex/privacy-owner-attestations-20260901
+
+worktree D:/Worktrees/Database/psychsift-auth-setup
+HEAD ef582b110f2bf36b0ccb840995e709f1f3947c8e
+branch refs/heads/codex/psychsift-auth-setup-20260911
+
+worktree D:/Worktrees/Database/rag-readiness-fix-20260913
+HEAD a02c2bd0e5474cb99613103e565fdf02daa412ea
+branch refs/heads/codex/rag-adaptive-coverage-20260913
+
+worktree D:/Worktrees/Database/repair-no-reread
+HEAD 64bd051acc12d17aa837d9255e6a8b33f74ea8db
+branch refs/heads/fix/repair-enrichment-no-reingest
+
+worktree D:/Worktrees/Database/review-fix-pr-2290
+HEAD ec750808add4206763ec26a4780bd855bddf800c
+branch refs/heads/codex/review-fix-pr-2290
+
+worktree D:/Worktrees/Database/specifiers-nav-search
+HEAD 1bb6b235c7f18e3a48397cc6b4fbbcc97b4bf00f
+branch refs/heads/codex/specifiers-nav-search-pr
+
+worktree D:/Worktrees/Database/therapy-pathways-redesign
+HEAD 48be4c291cfc60c83eb9516fadaa64dbcaddd178
+branch refs/heads/codex/therapy-pathways-redesign
+
+worktree D:/Worktrees/Database/therapy-recommend-redesign
+HEAD 0ff0dd088b89694cbf213d37a48cd09ab26267b2
+branch refs/heads/codex/therapy-recommend-redesign
+
+worktree D:/Worktrees/Database/tooling-schema-hygiene
+HEAD e15534b830b43501f07b51c0413188ced5c07e3b
+branch refs/heads/codex/tooling-schema-hygiene
+
+worktree D:/Worktrees/Database/ward-audit-fixes
+HEAD f10ca39fbdb4f2903eeb87bf067946a6353dd9f3
+branch refs/heads/ward/audit-fixes-20260916
+
+worktree D:/Worktrees/Database/ward-audit-realdata-20260918
+HEAD 2ed6b7196ab90858a7cabe6c3f9bf27de98b7ca0
+branch refs/heads/ward/audit-and-real-data-20260918
+
+worktree D:/Worktrees/Database/ward-baseline-20260918
+HEAD cfff5dd54e36419255573cffa1beedb898554fd6
+detached
+
+worktree D:/Worktrees/Database/ward-journey-tooling
+HEAD 3073f8c17dd86dd284809dc2efab7be24246a513
+branch refs/heads/ward/journey-tooling-20260918
+
+worktree D:/Worktrees/Database/ward-lead
+HEAD 497b6a55dcd02a88df30268e4500748e8c28e48a
+branch refs/heads/fix/ward-flow-p0-chrome-strip
+
+worktree D:/Worktrees/Database/ward-lead-elevation
+HEAD 4ffbfde57478d9c000e8f8a846df6018aa287c64
+branch refs/heads/fix/ward-flow-elevation-waves-abcd
+locked initializing
+
+worktree D:/Worktrees/Database/ward-remeasure-20260918
+HEAD b28290f35a8c14e181764e61f4a896c3f9508849
+branch refs/heads/claude/ward-owner-rulings-20260919
+

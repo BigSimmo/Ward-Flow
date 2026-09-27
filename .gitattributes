@@ -1,0 +1,33 @@
+* text=auto eol=lf
+*.json text eol=lf
+tests/fixtures/** text eol=lf
+scripts/fixtures/** text eol=lf
+eval/docling/fixtures/** text eol=lf
+worker/python/fixtures/** text eol=lf
+
+*.gif binary
+*.ico binary
+*.jpeg binary
+*.jpg binary
+*.pdf binary
+*.png binary
+*.webp binary
+*.woff2 binary
+
+# Ward Flow preservation copies are byte-for-byte evidence of another checkout's
+# uncommitted work, and `durableDirtyArtifactManifest` re-verifies each committed
+# blob against the live original with `originalBytes.equals(preserved.bytes)`.
+# The `* text=auto eol=lf` rule above would silently rewrite CRLF sources on the
+# way in — measured 2026-08-31: 2 of Ward Board's 139 temporary files were CRLF
+# and staged with different hashes than the files they were copied from. Store
+# this tree verbatim so a preservation copy cannot be normalised into a lie.
+docs/ward-flow/control/evidence/artifacts/** -text
+
+# Recovery bundles are hash-critical evidence and must never be filtered on the way in or out.
+docs/ward-flow/control/evidence/bundles/** -text
+
+# The versioned lesson copy is compared BYTE-FOR-BYTE against a machine-local store.
+# Line-ending normalisation would make every CRLF lesson differ on a fresh checkout and
+# leave `sync-lessons.mjs --check` permanently red — and a check that can never pass gets
+# switched off, which is one of the lessons in these very files.
+docs/ward-flow/lessons/** -text

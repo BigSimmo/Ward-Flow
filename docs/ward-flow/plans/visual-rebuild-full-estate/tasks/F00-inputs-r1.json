@@ -1,0 +1,39 @@
+{
+  "head": "1ef9ed3975078b789e9b5d70b3f000c64edc3809",
+  "planSha256": "2194350e1ad66ed47049cf7eaa115db7789d8bebae18ab06c465559b253b4155",
+  "sourceSnapshot": ".superpowers/sdd/2026-09-13-visual-rebuild-full-estate/before-F00",
+  "files": [
+    {
+      "path": "src/components/ward-management/shell/ward-bar.tsx",
+      "sha256": "68777072a9b6dab1512fa99dca8d641ff20da4d9ae6bfc5377af03fcf1f9a270"
+    },
+    {
+      "path": "src/components/ward-management/shell/ward-bar.module.css",
+      "sha256": "8d662564d7a080c02263351cfddacf2648a979c487dbedd5802289871c5ce6d0"
+    },
+    {
+      "path": "src/components/ward-management/ward-global-search.tsx",
+      "sha256": "33a51587c2970c13b4c518d756ac3519352c01d30200dbada1b2465c3b3d4f31"
+    },
+    {
+      "path": "src/components/ward-management/ward-global-search.module.css",
+      "sha256": "2d587790d788a5826bf8d1e667a06e11c7abd033112bde5a15badab6499bf37c"
+    },
+    {
+      "path": "src/components/ward-management/ward-tasks-drawer.tsx",
+      "sha256": "ceb15977c06faacc1b1690362e81bdf652735b425251402961044b30022a89bb"
+    },
+    {
+      "path": "src/components/ward-management/ward-tasks-drawer.module.css",
+      "sha256": "244c6d58e9ca5ee55579baf1af91b01826b1fa14d0db076938c7aec48787b539"
+    },
+    {
+      "path": "src/components/ward-management/capacity/capacity-screen.tsx",
+      "sha256": "a3068364dba46357bfb092f2f8001b84ba9df6b79847b23c549e04930287b580"
+    },
+    {
+      "path": "src/components/ward-management/capacity/capacity.module.css",
+      "sha256": "81a9d86d6d273c415eb277603313dcc0986a72c98d391d8d30edd244e9b32a5b"
+    }
+  ]
+}

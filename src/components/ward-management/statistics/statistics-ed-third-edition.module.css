@@ -1,0 +1,595 @@
+.pageGrid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas:
+    "switcher switcher"
+    "identity identity"
+    "urgency urgency"
+    "diurnal diurnal"
+    "bands trend"
+    "waiting destinations"
+    "weat weat"
+    "declines limits"
+    "comparison comparison"
+    "measures measures"
+    "about about";
+  gap: 0.875rem;
+  align-items: start;
+}
+
+.pageGrid > :global([data-testid="ward-statistics-ed-identity"]) {
+  grid-area: identity;
+}
+
+.departmentSwitcher {
+  grid-area: switcher;
+  display: flex;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  background: var(--surface-2);
+}
+.departmentSwitcher a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  flex: 0 0 auto;
+  padding: 0.5rem 0.875rem;
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+.departmentSwitcher a[aria-current="page"] {
+  color: var(--ink);
+  background: var(--surface);
+  border-bottom-color: var(--gilt);
+}
+.departmentSwitcher a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+.departmentSwitcher a span {
+  border: 1px solid var(--line);
+  background: var(--sunk);
+  padding: 0 0.375rem;
+  border-radius: var(--radius-pill);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+.bandValue {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.bandValue > span:last-child {
+  min-width: 2.5rem;
+  text-align: right;
+}
+.bandTrack {
+  flex: 1;
+  min-width: 5rem;
+  height: 0.25rem;
+  background: var(--sunk);
+  border-radius: var(--radius-pill);
+}
+.bandTrack > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+}
+
+.pageGrid > :global([data-testid="ward-statistics-ed-measures"]) {
+  grid-area: measures;
+}
+
+.pageGrid > :global([data-testid="ward-statistics-ed-urgency"]) {
+  grid-area: urgency;
+}
+
+.pageGrid > :global([data-testid="ward-statistics-ed-diurnal"]) {
+  grid-area: diurnal;
+}
+
+.pageGrid > :global([data-testid="ward-statistics-ed-weat"]) {
+  grid-area: weat;
+}
+
+.pageGrid > :global([data-testid="ward-statistics-ed-wait"]) {
+  grid-area: waiting;
+}
+
+.pageGrid > :global([data-testid="ward-statistics-ed-bands"]) {
+  grid-area: bands;
+}
+
+.pageGrid > :global([data-testid="ward-statistics-ed-declines"]) {
+  grid-area: declines;
+}
+
+.pageGrid > :global([data-testid="ward-statistics-ed-not-built"]) {
+  grid-area: limits;
+}
+
+.pageGrid > :global([data-testid="ward-stat-ed-trend"]) {
+  grid-area: trend;
+}
+
+.pageGrid > :global([data-testid="ward-stat-ed-destinations"]) {
+  grid-area: destinations;
+}
+
+.pageGrid > :global([data-testid="ward-stat-ed-comparison"]) {
+  grid-area: comparison;
+}
+
+.pageGrid > :global([data-testid="ward-statistics-ed-about"]) {
+  grid-area: about;
+}
+
+.pageGrid > :global([data-testid="ward-statistics-ed-unresolved"]) {
+  grid-column: 1 / -1;
+}
+
+.kpiBand {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+
+.kpiBand > div {
+  min-width: 0;
+  padding: 0.875rem 1rem;
+  border-right: 1px solid var(--line);
+}
+.kpiBand > div:last-child {
+  border-right: 0;
+}
+.kpiBand dt {
+  font-size: var(--t-0);
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.kpiBand dd {
+  margin: 0.375rem 0;
+  font-family: var(--mono);
+  font-size: var(--t-5);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.kpiBand .kpiCaption {
+  margin: 0;
+  font-family: var(--body);
+  font-size: var(--t-1);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.measurementDetails > summary {
+  padding: 0.625rem 0.875rem;
+  min-height: 3rem;
+  align-content: center;
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+}
+.measurementDetails > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+
+@media (max-width: 62.5rem) {
+  .pageGrid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "switcher"
+      "identity"
+      "urgency"
+      "diurnal"
+      "bands"
+      "waiting"
+      "weat"
+      "trend"
+      "destinations"
+      "declines"
+      "limits"
+      "comparison"
+      "measures"
+      "about";
+  }
+  .kpiBand {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .kpiBand > div {
+    border-bottom: 1px solid var(--line);
+  }
+}
+
+@media (min-width: 62.5625rem) {
+  .pageGrid {
+    align-items: start;
+  }
+
+  .pageGrid > :global([data-ward-primitive="panel"]) {
+    display: flex;
+    height: auto;
+    max-height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .pageGrid > :global([data-testid="ward-statistics-ed-identity"]),
+  .pageGrid > :global([data-testid="ward-statistics-ed-measures"]),
+  .pageGrid > :global([data-testid="ward-statistics-ed-about"]),
+  .pageGrid > :global([data-testid="ward-statistics-ed-urgency"]),
+  .pageGrid > :global([data-testid="ward-statistics-ed-diurnal"]),
+  .pageGrid > :global([data-testid="ward-statistics-ed-weat"]) {
+    display: block;
+    height: auto;
+    max-height: none;
+  }
+
+  .pageGrid > :global([data-testid="ward-stat-ed-comparison"]) {
+    max-height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
+  }
+}
+
+@media print {
+  .pageGrid {
+    display: block;
+  }
+
+  .pageGrid > * {
+    margin-bottom: 0.75rem;
+  }
+
+  .pageGrid > :global([data-ward-primitive="panel"]) {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+/* ─── Floating Clinical Tooltip Card ─── */
+.chartTooltipCard {
+  position: absolute;
+  pointer-events: none;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  padding: 10px 14px;
+  font-size: 12px;
+  font-family: var(--body);
+  box-shadow: 0 4px 18px rgb(var(--ward-shadow-rgb) / 0.16);
+  z-index: 100;
+  min-width: 180px;
+  max-width: 280px;
+  transition: transform 0.04s ease-out, opacity 0.15s ease;
+  line-height: 1.45;
+}
+:global([data-theme="dark"]) .chartTooltipCard {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+  box-shadow: 0 6px 22px rgb(var(--ward-shadow-rgb) / 0.55);
+}
+.tipHeader {
+  font-weight: 600;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.tipRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 3px 0;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.tipDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+.tipDelta {
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--line);
+  font-weight: 600;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.tipSurge {
+  color: var(--warn);
+}
+.tipRelief {
+  color: var(--good);
+}
+
+/* ─── ATS 1-5 High-Contrast Clinical Cards ─── */
+.timelineCardGrid {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px;
+}
+.timelineCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.03);
+}
+:global([data-theme="dark"]) .timelineCard {
+  background: var(--surface-2);
+  border-color: var(--line);
+}
+.timelineCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.timelineCardTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.urgencyPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--mono);
+  background: var(--sunk);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+.urgencyPill[data-urg="1"] {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border-color: var(--danger);
+}
+.urgencyPill[data-urg="2"] {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.urgencyPill[data-urg="3"] {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-color: var(--warn);
+}
+.urgencyPill[data-urg="4"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+.urgencyPill[data-urg="5"] {
+  background: var(--good-soft);
+  color: var(--good);
+  border-color: var(--good);
+}
+.timelineCatName {
+  font-size: var(--t-2);
+  font-weight: 600;
+  color: var(--ink);
+}
+.timelineCardBadges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-family: var(--mono);
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+}
+.chip[data-tone="good"] {
+  background: var(--good-soft);
+  color: var(--good);
+  border-color: var(--good);
+}
+.chip[data-tone="warn"] {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-color: var(--warn);
+}
+.timelineMetricsRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-radius: var(--r2);
+  border: 1px solid var(--line);
+}
+:global([data-theme="dark"]) .timelineMetricsRow {
+  background: var(--sunk);
+}
+.timelineMetricItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.timelineMetricLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-weight: 600;
+}
+.timelineMetricVal {
+  font-family: var(--mono);
+  font-size: var(--t-2);
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.valGood {
+  color: var(--good);
+}
+.valWarn {
+  color: var(--warn);
+}
+.valDanger {
+  color: var(--danger);
+}
+
+.timelineVisualBar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.timelineBarTrack {
+  height: 14px;
+  background: var(--sunk);
+  border-radius: 7px;
+  position: relative;
+  overflow: visible;
+  border: 1px solid var(--line);
+}
+.timelineActualBar {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+.barGood {
+  background: var(--good);
+}
+.barWarn {
+  background: var(--warn);
+}
+.barDanger {
+  background: var(--danger);
+}
+.timelineTargetMarker {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  width: 3px;
+  background: var(--gilt);
+  border-radius: 2px;
+  z-index: 2;
+  box-shadow: 0 0 4px rgb(var(--ward-shadow-rgb) / 0.3);
+}
+.timelineTargetMarker::after {
+  content: attr(data-label);
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--gilt);
+  white-space: nowrap;
+}
+.timelineScaleLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--muted);
+  padding: 0 2px;
+}
+
+/* ─── Chart containers and legends ─── */
+.chartContainer {
+  position: relative;
+  width: 100%;
+  padding: 14px 16px;
+  overflow: hidden;
+}
+.chartSvg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.chartLegend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+  font-size: 12px;
+  color: var(--muted);
+}
+.chartLegendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.legendSwatch {
+  width: 14px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+/* ─── Rule D4 Floating Toast Notification ─── */
+.actionToast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  max-width: 400px;
+  padding: 12px 18px;
+  background: var(--ink);
+  color: var(--surface);
+  border-radius: var(--r2);
+  font-size: var(--t-1);
+  font-family: var(--body);
+  box-shadow: 0 6px 24px rgb(var(--ward-shadow-rgb) / 0.3);
+  z-index: 99999;
+  border-left: 4px solid var(--gilt);
+}
+
+@media (max-width: 768px) {
+  .timelineMetricsRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 500px) {
+  .timelineMetricsRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .timelineCardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+

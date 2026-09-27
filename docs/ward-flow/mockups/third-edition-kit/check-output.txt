@@ -1,0 +1,1584 @@
+### check.mjs command
+PASS  fonts light 1920x1080  Geist, Geist Mono
+PASS  weights light 1920x1080  all loaded
+PASS  errors light 1920x1080
+PASS  reconcile light 1920x1080  0
+PASS  overflow light 1920x1080  0px
+PASS  typefloor light 1920x1080  min 12px html, 10.5px svg
+PASS  contrast light 1920x1080  0 low of 669 in 14 scroll steps, 109 svg text nodes not sampled
+PASS  errors light 1600x1000
+PASS  reconcile light 1600x1000  0
+PASS  overflow light 1600x1000  0px
+PASS  typefloor light 1600x1000  min 12px html, 10.5px svg
+PASS  contrast light 1600x1000  0 low of 666 in 18 scroll steps, 109 svg text nodes not sampled
+PASS  errors light 1440x900
+PASS  reconcile light 1440x900  0
+PASS  overflow light 1440x900  0px
+PASS  typefloor light 1440x900  min 12px html, 10.5px svg
+PASS  contrast light 1440x900  0 low of 671 in 22 scroll steps, 109 svg text nodes not sampled
+PASS  diagram light 1440x900  331px tall, sideways overflow 432px
+PASS  errors light 1280x800
+PASS  reconcile light 1280x800  0
+PASS  overflow light 1280x800  0px
+PASS  typefloor light 1280x800  min 12px html, 10.5px svg
+PASS  contrast light 1280x800  0 low of 718 in 20 scroll steps, 109 svg text nodes not sampled
+PASS  errors light 1200x900
+PASS  reconcile light 1200x900  0
+PASS  overflow light 1200x900  0px
+PASS  typefloor light 1200x900  min 12px html, 10.5px svg
+PASS  contrast light 1200x900  0 low of 727 in 18 scroll steps, 109 svg text nodes not sampled
+PASS  errors light 1100x800
+PASS  reconcile light 1100x800  0
+PASS  overflow light 1100x800  0px
+PASS  typefloor light 1100x800  min 12px html, 10.5px svg
+PASS  contrast light 1100x800  0 low of 712 in 20 scroll steps, 109 svg text nodes not sampled
+PASS  errors light 390x844
+PASS  reconcile light 390x844  0
+PASS  overflow light 390x844  0px
+PASS  typefloor light 390x844  min 12px html, 10.5px svg
+PASS  contrast light 390x844  0 low of 737 in 28 scroll steps, 109 svg text nodes not sampled
+PASS  errors light 320x568
+PASS  reconcile light 320x568  0
+PASS  overflow light 320x568  0px
+PASS  typefloor light 320x568  min 12px html, 10.5px svg
+PASS  contrast light 320x568  0 low of 740 in 50 scroll steps, 109 svg text nodes not sampled
+PASS  fonts dark 1920x1080  Geist, Geist Mono
+PASS  weights dark 1920x1080  all loaded
+PASS  errors dark 1920x1080
+PASS  reconcile dark 1920x1080  0
+PASS  overflow dark 1920x1080  0px
+PASS  typefloor dark 1920x1080  min 12px html, 10.5px svg
+PASS  contrast dark 1920x1080  0 low of 669 in 14 scroll steps, 109 svg text nodes not sampled
+PASS  errors dark 1600x1000
+PASS  reconcile dark 1600x1000  0
+PASS  overflow dark 1600x1000  0px
+PASS  typefloor dark 1600x1000  min 12px html, 10.5px svg
+PASS  contrast dark 1600x1000  0 low of 666 in 18 scroll steps, 109 svg text nodes not sampled
+PASS  errors dark 1440x900
+PASS  reconcile dark 1440x900  0
+PASS  overflow dark 1440x900  0px
+PASS  typefloor dark 1440x900  min 12px html, 10.5px svg
+PASS  contrast dark 1440x900  0 low of 671 in 22 scroll steps, 109 svg text nodes not sampled
+PASS  diagram dark 1440x900  331px tall, sideways overflow 432px
+PASS  errors dark 1280x800
+PASS  reconcile dark 1280x800  0
+PASS  overflow dark 1280x800  0px
+PASS  typefloor dark 1280x800  min 12px html, 10.5px svg
+PASS  contrast dark 1280x800  0 low of 718 in 20 scroll steps, 109 svg text nodes not sampled
+PASS  errors dark 1200x900
+PASS  reconcile dark 1200x900  0
+PASS  overflow dark 1200x900  0px
+PASS  typefloor dark 1200x900  min 12px html, 10.5px svg
+PASS  contrast dark 1200x900  0 low of 727 in 18 scroll steps, 109 svg text nodes not sampled
+PASS  errors dark 1100x800
+PASS  reconcile dark 1100x800  0
+PASS  overflow dark 1100x800  0px
+PASS  typefloor dark 1100x800  min 12px html, 10.5px svg
+PASS  contrast dark 1100x800  0 low of 712 in 20 scroll steps, 109 svg text nodes not sampled
+PASS  errors dark 390x844
+PASS  reconcile dark 390x844  0
+PASS  overflow dark 390x844  0px
+PASS  typefloor dark 390x844  min 12px html, 10.5px svg
+PASS  contrast dark 390x844  0 low of 737 in 28 scroll steps, 109 svg text nodes not sampled
+PASS  errors dark 320x568
+PASS  reconcile dark 320x568  0
+PASS  overflow dark 320x568  0px
+PASS  typefloor dark 320x568  min 12px html, 10.5px svg
+PASS  contrast dark 320x568  0 low of 740 in 50 scroll steps, 109 svg text nodes not sampled
+PASS  appearance first click  rgb(15, 18, 22) -> rgb(230, 234, 239) data-theme=light
+PASS  keyboard focus ring  toolItem
+fonts stubbed from D:\Repos\Database\.claude\worktrees\ward-flow-phase-5-resume-166ecb\docs\ward-flow\mockups\third-edition-kit\fonts
+ALL GREEN
+exit 0
+### check.mjs delays
+PASS  fonts light 1920x1080  Geist, Geist Mono
+PASS  weights light 1920x1080  all loaded
+PASS  errors light 1920x1080
+PASS  reconcile light 1920x1080  not a Command page (absent)
+PASS  overflow light 1920x1080  0px
+PASS  typefloor light 1920x1080  min 12px html, nullpx svg
+PASS  contrast light 1920x1080  0 low of 615 in 8 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1600x1000
+PASS  reconcile light 1600x1000  not a Command page (absent)
+PASS  overflow light 1600x1000  0px
+PASS  typefloor light 1600x1000  min 12px html, nullpx svg
+PASS  contrast light 1600x1000  0 low of 607 in 9 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1440x900
+PASS  reconcile light 1440x900  not a Command page (absent)
+PASS  overflow light 1440x900  0px
+PASS  typefloor light 1440x900  min 12px html, nullpx svg
+PASS  contrast light 1440x900  0 low of 583 in 9 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1280x800
+PASS  reconcile light 1280x800  not a Command page (absent)
+PASS  overflow light 1280x800  0px
+PASS  typefloor light 1280x800  min 12px html, nullpx svg
+PASS  contrast light 1280x800  0 low of 610 in 9 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1200x900
+PASS  reconcile light 1200x900  not a Command page (absent)
+PASS  overflow light 1200x900  0px
+PASS  typefloor light 1200x900  min 12px html, nullpx svg
+PASS  contrast light 1200x900  0 low of 600 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1100x800
+PASS  reconcile light 1100x800  not a Command page (absent)
+PASS  overflow light 1100x800  0px
+PASS  typefloor light 1100x800  min 12px html, nullpx svg
+PASS  contrast light 1100x800  0 low of 605 in 9 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 390x844
+PASS  reconcile light 390x844  not a Command page (absent)
+PASS  overflow light 390x844  0px
+PASS  typefloor light 390x844  min 12px html, nullpx svg
+PASS  contrast light 390x844  0 low of 582 in 16 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 320x568
+PASS  reconcile light 320x568  not a Command page (absent)
+PASS  overflow light 320x568  0px
+PASS  typefloor light 320x568  min 12px html, nullpx svg
+PASS  contrast light 320x568  0 low of 585 in 27 scroll steps, 0 svg text nodes not sampled
+PASS  fonts dark 1920x1080  Geist, Geist Mono
+PASS  weights dark 1920x1080  all loaded
+PASS  errors dark 1920x1080
+PASS  reconcile dark 1920x1080  not a Command page (absent)
+PASS  overflow dark 1920x1080  0px
+PASS  typefloor dark 1920x1080  min 12px html, nullpx svg
+PASS  contrast dark 1920x1080  0 low of 615 in 8 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1600x1000
+PASS  reconcile dark 1600x1000  not a Command page (absent)
+PASS  overflow dark 1600x1000  0px
+PASS  typefloor dark 1600x1000  min 12px html, nullpx svg
+PASS  contrast dark 1600x1000  0 low of 607 in 9 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1440x900
+PASS  reconcile dark 1440x900  not a Command page (absent)
+PASS  overflow dark 1440x900  0px
+PASS  typefloor dark 1440x900  min 12px html, nullpx svg
+PASS  contrast dark 1440x900  0 low of 583 in 9 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1280x800
+PASS  reconcile dark 1280x800  not a Command page (absent)
+PASS  overflow dark 1280x800  0px
+PASS  typefloor dark 1280x800  min 12px html, nullpx svg
+PASS  contrast dark 1280x800  0 low of 610 in 9 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1200x900
+PASS  reconcile dark 1200x900  not a Command page (absent)
+PASS  overflow dark 1200x900  0px
+PASS  typefloor dark 1200x900  min 12px html, nullpx svg
+PASS  contrast dark 1200x900  0 low of 600 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1100x800
+PASS  reconcile dark 1100x800  not a Command page (absent)
+PASS  overflow dark 1100x800  0px
+PASS  typefloor dark 1100x800  min 12px html, nullpx svg
+PASS  contrast dark 1100x800  0 low of 605 in 9 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 390x844
+PASS  reconcile dark 390x844  not a Command page (absent)
+PASS  overflow dark 390x844  0px
+PASS  typefloor dark 390x844  min 12px html, nullpx svg
+PASS  contrast dark 390x844  0 low of 582 in 16 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 320x568
+PASS  reconcile dark 320x568  not a Command page (absent)
+PASS  overflow dark 320x568  0px
+PASS  typefloor dark 320x568  min 12px html, nullpx svg
+PASS  contrast dark 320x568  0 low of 585 in 27 scroll steps, 0 svg text nodes not sampled
+PASS  appearance first click  rgb(15, 18, 22) -> rgb(230, 234, 239) data-theme=light
+PASS  keyboard focus ring  toolItem
+fonts stubbed from D:\Repos\Database\.claude\worktrees\ward-flow-phase-5-resume-166ecb\docs\ward-flow\mockups\third-edition-kit\fonts
+ALL GREEN
+exit 0
+### check.mjs statistics-community
+PASS  fonts light 1920x1080  Geist, Geist Mono
+PASS  weights light 1920x1080  all loaded
+PASS  errors light 1920x1080
+PASS  reconcile light 1920x1080  not a Command page (absent)
+PASS  overflow light 1920x1080  0px
+PASS  typefloor light 1920x1080  min 12px html, 12px svg
+PASS  contrast light 1920x1080  0 low of 372 in 2 scroll steps, 5 svg text nodes not sampled
+PASS  errors light 1600x1000
+PASS  reconcile light 1600x1000  not a Command page (absent)
+PASS  overflow light 1600x1000  0px
+PASS  typefloor light 1600x1000  min 12px html, 12px svg
+PASS  contrast light 1600x1000  0 low of 352 in 3 scroll steps, 5 svg text nodes not sampled
+PASS  errors light 1440x900
+PASS  reconcile light 1440x900  not a Command page (absent)
+PASS  overflow light 1440x900  0px
+PASS  typefloor light 1440x900  min 12px html, 12px svg
+PASS  contrast light 1440x900  0 low of 318 in 3 scroll steps, 5 svg text nodes not sampled
+PASS  errors light 1280x800
+PASS  reconcile light 1280x800  not a Command page (absent)
+PASS  overflow light 1280x800  0px
+PASS  typefloor light 1280x800  min 12px html, 12px svg
+PASS  contrast light 1280x800  0 low of 500 in 7 scroll steps, 5 svg text nodes not sampled
+PASS  errors light 1200x900
+PASS  reconcile light 1200x900  not a Command page (absent)
+PASS  overflow light 1200x900  0px
+PASS  typefloor light 1200x900  min 12px html, 12px svg
+PASS  contrast light 1200x900  0 low of 505 in 7 scroll steps, 5 svg text nodes not sampled
+PASS  errors light 1100x800
+PASS  reconcile light 1100x800  not a Command page (absent)
+PASS  overflow light 1100x800  0px
+PASS  typefloor light 1100x800  min 12px html, 12px svg
+PASS  contrast light 1100x800  0 low of 489 in 7 scroll steps, 5 svg text nodes not sampled
+PASS  errors light 390x844
+PASS  reconcile light 390x844  not a Command page (absent)
+PASS  overflow light 390x844  0px
+PASS  typefloor light 390x844  min 12px html, 12px svg
+PASS  contrast light 390x844  0 low of 475 in 14 scroll steps, 5 svg text nodes not sampled
+PASS  errors light 320x568
+PASS  reconcile light 320x568  not a Command page (absent)
+PASS  overflow light 320x568  0px
+PASS  typefloor light 320x568  min 12px html, 12px svg
+PASS  contrast light 320x568  0 low of 472 in 26 scroll steps, 5 svg text nodes not sampled
+PASS  fonts dark 1920x1080  Geist, Geist Mono
+PASS  weights dark 1920x1080  all loaded
+PASS  errors dark 1920x1080
+PASS  reconcile dark 1920x1080  not a Command page (absent)
+PASS  overflow dark 1920x1080  0px
+PASS  typefloor dark 1920x1080  min 12px html, 12px svg
+PASS  contrast dark 1920x1080  0 low of 372 in 2 scroll steps, 5 svg text nodes not sampled
+PASS  errors dark 1600x1000
+PASS  reconcile dark 1600x1000  not a Command page (absent)
+PASS  overflow dark 1600x1000  0px
+PASS  typefloor dark 1600x1000  min 12px html, 12px svg
+PASS  contrast dark 1600x1000  0 low of 352 in 3 scroll steps, 5 svg text nodes not sampled
+PASS  errors dark 1440x900
+PASS  reconcile dark 1440x900  not a Command page (absent)
+PASS  overflow dark 1440x900  0px
+PASS  typefloor dark 1440x900  min 12px html, 12px svg
+PASS  contrast dark 1440x900  0 low of 318 in 3 scroll steps, 5 svg text nodes not sampled
+PASS  errors dark 1280x800
+PASS  reconcile dark 1280x800  not a Command page (absent)
+PASS  overflow dark 1280x800  0px
+PASS  typefloor dark 1280x800  min 12px html, 12px svg
+PASS  contrast dark 1280x800  0 low of 500 in 7 scroll steps, 5 svg text nodes not sampled
+PASS  errors dark 1200x900
+PASS  reconcile dark 1200x900  not a Command page (absent)
+PASS  overflow dark 1200x900  0px
+PASS  typefloor dark 1200x900  min 12px html, 12px svg
+PASS  contrast dark 1200x900  0 low of 505 in 7 scroll steps, 5 svg text nodes not sampled
+PASS  errors dark 1100x800
+PASS  reconcile dark 1100x800  not a Command page (absent)
+PASS  overflow dark 1100x800  0px
+PASS  typefloor dark 1100x800  min 12px html, 12px svg
+PASS  contrast dark 1100x800  0 low of 489 in 7 scroll steps, 5 svg text nodes not sampled
+PASS  errors dark 390x844
+PASS  reconcile dark 390x844  not a Command page (absent)
+PASS  overflow dark 390x844  0px
+PASS  typefloor dark 390x844  min 12px html, 12px svg
+PASS  contrast dark 390x844  0 low of 475 in 14 scroll steps, 5 svg text nodes not sampled
+PASS  errors dark 320x568
+PASS  reconcile dark 320x568  not a Command page (absent)
+PASS  overflow dark 320x568  0px
+PASS  typefloor dark 320x568  min 12px html, 12px svg
+PASS  contrast dark 320x568  0 low of 472 in 26 scroll steps, 5 svg text nodes not sampled
+PASS  appearance first click  rgb(15, 18, 22) -> rgb(230, 234, 239) data-theme=light
+PASS  keyboard focus ring  toolItem
+fonts stubbed from D:\Repos\Database\.claude\worktrees\ward-flow-phase-5-resume-166ecb\docs\ward-flow\mockups\third-edition-kit\fonts
+ALL GREEN
+exit 0
+### check.mjs statistics
+PASS  fonts light 1920x1080  Geist, Geist Mono
+PASS  weights light 1920x1080  all loaded
+PASS  errors light 1920x1080
+PASS  reconcile light 1920x1080  not a Command page (absent)
+PASS  overflow light 1920x1080  0px
+PASS  typefloor light 1920x1080  min 12px html, 12px svg
+PASS  contrast light 1920x1080  0 low of 650 in 6 scroll steps, 12 svg text nodes not sampled
+PASS  errors light 1600x1000
+PASS  reconcile light 1600x1000  not a Command page (absent)
+PASS  overflow light 1600x1000  0px
+PASS  typefloor light 1600x1000  min 12px html, 12px svg
+PASS  contrast light 1600x1000  0 low of 632 in 7 scroll steps, 12 svg text nodes not sampled
+PASS  errors light 1440x900
+PASS  reconcile light 1440x900  not a Command page (absent)
+PASS  overflow light 1440x900  0px
+PASS  typefloor light 1440x900  min 12px html, 12px svg
+PASS  contrast light 1440x900  0 low of 652 in 9 scroll steps, 12 svg text nodes not sampled
+PASS  errors light 1280x800
+PASS  reconcile light 1280x800  not a Command page (absent)
+PASS  overflow light 1280x800  0px
+PASS  typefloor light 1280x800  min 12px html, 12px svg
+PASS  contrast light 1280x800  0 low of 644 in 11 scroll steps, 12 svg text nodes not sampled
+PASS  errors light 1200x900
+PASS  reconcile light 1200x900  not a Command page (absent)
+PASS  overflow light 1200x900  0px
+PASS  typefloor light 1200x900  min 12px html, 12px svg
+PASS  contrast light 1200x900  0 low of 659 in 11 scroll steps, 12 svg text nodes not sampled
+PASS  errors light 1100x800
+PASS  reconcile light 1100x800  not a Command page (absent)
+PASS  overflow light 1100x800  0px
+PASS  typefloor light 1100x800  min 12px html, 12px svg
+PASS  contrast light 1100x800  0 low of 658 in 13 scroll steps, 12 svg text nodes not sampled
+PASS  errors light 390x844
+PASS  reconcile light 390x844  not a Command page (absent)
+PASS  overflow light 390x844  0px
+PASS  typefloor light 390x844  min 12px html, 12px svg
+PASS  contrast light 390x844  0 low of 627 in 18 scroll steps, 10 svg text nodes not sampled
+PASS  errors light 320x568
+PASS  reconcile light 320x568  not a Command page (absent)
+PASS  overflow light 320x568  0px
+PASS  typefloor light 320x568  min 12px html, 12px svg
+PASS  contrast light 320x568  0 low of 633 in 32 scroll steps, 10 svg text nodes not sampled
+PASS  fonts dark 1920x1080  Geist, Geist Mono
+PASS  weights dark 1920x1080  all loaded
+PASS  errors dark 1920x1080
+PASS  reconcile dark 1920x1080  not a Command page (absent)
+PASS  overflow dark 1920x1080  0px
+PASS  typefloor dark 1920x1080  min 12px html, 12px svg
+PASS  contrast dark 1920x1080  0 low of 650 in 6 scroll steps, 12 svg text nodes not sampled
+PASS  errors dark 1600x1000
+PASS  reconcile dark 1600x1000  not a Command page (absent)
+PASS  overflow dark 1600x1000  0px
+PASS  typefloor dark 1600x1000  min 12px html, 12px svg
+PASS  contrast dark 1600x1000  0 low of 632 in 7 scroll steps, 12 svg text nodes not sampled
+PASS  errors dark 1440x900
+PASS  reconcile dark 1440x900  not a Command page (absent)
+PASS  overflow dark 1440x900  0px
+PASS  typefloor dark 1440x900  min 12px html, 12px svg
+PASS  contrast dark 1440x900  0 low of 652 in 9 scroll steps, 12 svg text nodes not sampled
+PASS  errors dark 1280x800
+PASS  reconcile dark 1280x800  not a Command page (absent)
+PASS  overflow dark 1280x800  0px
+PASS  typefloor dark 1280x800  min 12px html, 12px svg
+PASS  contrast dark 1280x800  0 low of 644 in 11 scroll steps, 12 svg text nodes not sampled
+PASS  errors dark 1200x900
+PASS  reconcile dark 1200x900  not a Command page (absent)
+PASS  overflow dark 1200x900  0px
+PASS  typefloor dark 1200x900  min 12px html, 12px svg
+PASS  contrast dark 1200x900  0 low of 659 in 11 scroll steps, 12 svg text nodes not sampled
+PASS  errors dark 1100x800
+PASS  reconcile dark 1100x800  not a Command page (absent)
+PASS  overflow dark 1100x800  0px
+PASS  typefloor dark 1100x800  min 12px html, 12px svg
+PASS  contrast dark 1100x800  0 low of 658 in 13 scroll steps, 12 svg text nodes not sampled
+PASS  errors dark 390x844
+PASS  reconcile dark 390x844  not a Command page (absent)
+PASS  overflow dark 390x844  0px
+PASS  typefloor dark 390x844  min 12px html, 12px svg
+PASS  contrast dark 390x844  0 low of 627 in 18 scroll steps, 10 svg text nodes not sampled
+PASS  errors dark 320x568
+PASS  reconcile dark 320x568  not a Command page (absent)
+PASS  overflow dark 320x568  0px
+PASS  typefloor dark 320x568  min 12px html, 12px svg
+PASS  contrast dark 320x568  0 low of 633 in 32 scroll steps, 10 svg text nodes not sampled
+PASS  appearance first click  rgb(15, 18, 22) -> rgb(230, 234, 239) data-theme=light
+PASS  keyboard focus ring  toolItem
+fonts stubbed from D:\Repos\Database\.claude\worktrees\ward-flow-phase-5-resume-166ecb\docs\ward-flow\mockups\third-edition-kit\fonts
+ALL GREEN
+exit 0
+### check.mjs capacity
+PASS  fonts light 1920x1080  Geist, Geist Mono
+PASS  weights light 1920x1080  all loaded
+PASS  errors light 1920x1080
+PASS  reconcile light 1920x1080  not a Command page (absent)
+PASS  overflow light 1920x1080  0px
+PASS  typefloor light 1920x1080  min 12px html, nullpx svg
+PASS  contrast light 1920x1080  0 low of 412 in 2 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1600x1000
+PASS  reconcile light 1600x1000  not a Command page (absent)
+PASS  overflow light 1600x1000  0px
+PASS  typefloor light 1600x1000  min 12px html, nullpx svg
+PASS  contrast light 1600x1000  0 low of 579 in 4 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1440x900
+PASS  reconcile light 1440x900  not a Command page (absent)
+PASS  overflow light 1440x900  0px
+PASS  typefloor light 1440x900  min 12px html, nullpx svg
+PASS  contrast light 1440x900  0 low of 513 in 4 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1280x800
+PASS  reconcile light 1280x800  not a Command page (absent)
+PASS  overflow light 1280x800  0px
+PASS  typefloor light 1280x800  min 12px html, nullpx svg
+PASS  contrast light 1280x800  0 low of 498 in 6 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1200x900
+PASS  reconcile light 1200x900  not a Command page (absent)
+PASS  overflow light 1200x900  0px
+PASS  typefloor light 1200x900  min 12px html, nullpx svg
+PASS  contrast light 1200x900  0 low of 525 in 6 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1100x800
+PASS  reconcile light 1100x800  not a Command page (absent)
+PASS  overflow light 1100x800  0px
+PASS  typefloor light 1100x800  min 12px html, nullpx svg
+PASS  contrast light 1100x800  0 low of 620 in 8 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 390x844
+PASS  reconcile light 390x844  not a Command page (absent)
+PASS  overflow light 390x844  0px
+PASS  typefloor light 390x844  min 12px html, nullpx svg
+PASS  contrast light 390x844  0 low of 648 in 12 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 320x568
+PASS  reconcile light 320x568  not a Command page (absent)
+PASS  overflow light 320x568  0px
+PASS  typefloor light 320x568  min 12px html, nullpx svg
+PASS  contrast light 320x568  0 low of 654 in 20 scroll steps, 0 svg text nodes not sampled
+PASS  fonts dark 1920x1080  Geist, Geist Mono
+PASS  weights dark 1920x1080  all loaded
+PASS  errors dark 1920x1080
+PASS  reconcile dark 1920x1080  not a Command page (absent)
+PASS  overflow dark 1920x1080  0px
+PASS  typefloor dark 1920x1080  min 12px html, nullpx svg
+PASS  contrast dark 1920x1080  0 low of 412 in 2 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1600x1000
+PASS  reconcile dark 1600x1000  not a Command page (absent)
+PASS  overflow dark 1600x1000  0px
+PASS  typefloor dark 1600x1000  min 12px html, nullpx svg
+PASS  contrast dark 1600x1000  0 low of 579 in 4 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1440x900
+PASS  reconcile dark 1440x900  not a Command page (absent)
+PASS  overflow dark 1440x900  0px
+PASS  typefloor dark 1440x900  min 12px html, nullpx svg
+PASS  contrast dark 1440x900  0 low of 513 in 4 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1280x800
+PASS  reconcile dark 1280x800  not a Command page (absent)
+PASS  overflow dark 1280x800  0px
+PASS  typefloor dark 1280x800  min 12px html, nullpx svg
+PASS  contrast dark 1280x800  0 low of 498 in 6 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1200x900
+PASS  reconcile dark 1200x900  not a Command page (absent)
+PASS  overflow dark 1200x900  0px
+PASS  typefloor dark 1200x900  min 12px html, nullpx svg
+PASS  contrast dark 1200x900  0 low of 525 in 6 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1100x800
+PASS  reconcile dark 1100x800  not a Command page (absent)
+PASS  overflow dark 1100x800  0px
+PASS  typefloor dark 1100x800  min 12px html, nullpx svg
+PASS  contrast dark 1100x800  0 low of 620 in 8 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 390x844
+PASS  reconcile dark 390x844  not a Command page (absent)
+PASS  overflow dark 390x844  0px
+PASS  typefloor dark 390x844  min 12px html, nullpx svg
+PASS  contrast dark 390x844  0 low of 648 in 12 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 320x568
+PASS  reconcile dark 320x568  not a Command page (absent)
+PASS  overflow dark 320x568  0px
+PASS  typefloor dark 320x568  min 12px html, nullpx svg
+PASS  contrast dark 320x568  0 low of 654 in 20 scroll steps, 0 svg text nodes not sampled
+PASS  appearance first click  rgb(15, 18, 22) -> rgb(230, 234, 239) data-theme=light
+PASS  keyboard focus ring  toolItem
+fonts stubbed from D:\Repos\Database\.claude\worktrees\ward-flow-phase-5-resume-166ecb\docs\ward-flow\mockups\third-edition-kit\fonts
+ALL GREEN
+exit 0
+### check.mjs ward
+PASS  fonts light 1920x1080  Geist, Geist Mono
+PASS  weights light 1920x1080  all loaded
+PASS  errors light 1920x1080
+PASS  reconcile light 1920x1080  not a Command page (absent)
+PASS  overflow light 1920x1080  0px
+PASS  typefloor light 1920x1080  min 12px html, nullpx svg
+PASS  contrast light 1920x1080  0 low of 411 in 0 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1600x1000
+PASS  reconcile light 1600x1000  not a Command page (absent)
+PASS  overflow light 1600x1000  0px
+PASS  typefloor light 1600x1000  min 12px html, nullpx svg
+PASS  contrast light 1600x1000  0 low of 388 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1440x900
+PASS  reconcile light 1440x900  not a Command page (absent)
+PASS  overflow light 1440x900  0px
+PASS  typefloor light 1440x900  min 12px html, nullpx svg
+PASS  contrast light 1440x900  0 low of 368 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1280x800
+PASS  reconcile light 1280x800  not a Command page (absent)
+PASS  overflow light 1280x800  0px
+PASS  typefloor light 1280x800  min 12px html, nullpx svg
+PASS  contrast light 1280x800  0 low of 328 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1200x900
+PASS  reconcile light 1200x900  not a Command page (absent)
+PASS  overflow light 1200x900  0px
+PASS  typefloor light 1200x900  min 12px html, nullpx svg
+PASS  contrast light 1200x900  0 low of 350 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1100x800
+PASS  reconcile light 1100x800  not a Command page (absent)
+PASS  overflow light 1100x800  0px
+PASS  typefloor light 1100x800  min 12px html, nullpx svg
+PASS  contrast light 1100x800  0 low of 301 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 390x844
+PASS  reconcile light 390x844  not a Command page (absent)
+PASS  overflow light 390x844  0px
+PASS  typefloor light 390x844  min 12px html, nullpx svg
+PASS  contrast light 390x844  0 low of 106 in 0 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 320x568
+PASS  reconcile light 320x568  not a Command page (absent)
+PASS  overflow light 320x568  0px
+PASS  typefloor light 320x568  min 12px html, nullpx svg
+PASS  contrast light 320x568  0 low of 23 in 0 scroll steps, 0 svg text nodes not sampled
+PASS  fonts dark 1920x1080  Geist, Geist Mono
+PASS  weights dark 1920x1080  all loaded
+PASS  errors dark 1920x1080
+PASS  reconcile dark 1920x1080  not a Command page (absent)
+PASS  overflow dark 1920x1080  0px
+PASS  typefloor dark 1920x1080  min 12px html, nullpx svg
+PASS  contrast dark 1920x1080  0 low of 411 in 0 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1600x1000
+PASS  reconcile dark 1600x1000  not a Command page (absent)
+PASS  overflow dark 1600x1000  0px
+PASS  typefloor dark 1600x1000  min 12px html, nullpx svg
+PASS  contrast dark 1600x1000  0 low of 388 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1440x900
+PASS  reconcile dark 1440x900  not a Command page (absent)
+PASS  overflow dark 1440x900  0px
+PASS  typefloor dark 1440x900  min 12px html, nullpx svg
+PASS  contrast dark 1440x900  0 low of 368 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1280x800
+PASS  reconcile dark 1280x800  not a Command page (absent)
+PASS  overflow dark 1280x800  0px
+PASS  typefloor dark 1280x800  min 12px html, nullpx svg
+PASS  contrast dark 1280x800  0 low of 328 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1200x900
+PASS  reconcile dark 1200x900  not a Command page (absent)
+PASS  overflow dark 1200x900  0px
+PASS  typefloor dark 1200x900  min 12px html, nullpx svg
+PASS  contrast dark 1200x900  0 low of 350 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1100x800
+PASS  reconcile dark 1100x800  not a Command page (absent)
+PASS  overflow dark 1100x800  0px
+PASS  typefloor dark 1100x800  min 12px html, nullpx svg
+PASS  contrast dark 1100x800  0 low of 301 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 390x844
+PASS  reconcile dark 390x844  not a Command page (absent)
+PASS  overflow dark 390x844  0px
+PASS  typefloor dark 390x844  min 12px html, nullpx svg
+PASS  contrast dark 390x844  0 low of 106 in 0 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 320x568
+PASS  reconcile dark 320x568  not a Command page (absent)
+PASS  overflow dark 320x568  0px
+PASS  typefloor dark 320x568  min 12px html, nullpx svg
+PASS  contrast dark 320x568  0 low of 23 in 0 scroll steps, 0 svg text nodes not sampled
+PASS  appearance first click  rgb(15, 18, 22) -> rgb(230, 234, 239) data-theme=light
+PASS  keyboard focus ring  toolItem
+fonts stubbed from D:\Repos\Database\.claude\worktrees\ward-flow-phase-5-resume-166ecb\docs\ward-flow\mockups\third-edition-kit\fonts
+ALL GREEN
+exit 0
+### check.mjs bed-board
+PASS  fonts light 1920x1080  Geist, Geist Mono
+PASS  weights light 1920x1080  all loaded
+PASS  errors light 1920x1080
+PASS  reconcile light 1920x1080  not a Command page (absent)
+PASS  overflow light 1920x1080  0px
+PASS  typefloor light 1920x1080  min 12px html, nullpx svg
+PASS  contrast light 1920x1080  0 low of 521 in 5 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1600x1000
+PASS  reconcile light 1600x1000  not a Command page (absent)
+PASS  overflow light 1600x1000  0px
+PASS  typefloor light 1600x1000  min 12px html, nullpx svg
+PASS  contrast light 1600x1000  0 low of 546 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1440x900
+PASS  reconcile light 1440x900  not a Command page (absent)
+PASS  overflow light 1440x900  0px
+PASS  typefloor light 1440x900  min 12px html, nullpx svg
+PASS  contrast light 1440x900  0 low of 533 in 8 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1280x800
+PASS  reconcile light 1280x800  not a Command page (absent)
+PASS  overflow light 1280x800  0px
+PASS  typefloor light 1280x800  min 12px html, nullpx svg
+PASS  contrast light 1280x800  0 low of 574 in 10 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1200x900
+PASS  reconcile light 1200x900  not a Command page (absent)
+PASS  overflow light 1200x900  0px
+PASS  typefloor light 1200x900  min 12px html, nullpx svg
+PASS  contrast light 1200x900  0 low of 583 in 9 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1100x800
+PASS  reconcile light 1100x800  not a Command page (absent)
+PASS  overflow light 1100x800  0px
+PASS  typefloor light 1100x800  min 12px html, nullpx svg
+PASS  contrast light 1100x800  0 low of 667 in 12 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 390x844
+PASS  reconcile light 390x844  not a Command page (absent)
+PASS  overflow light 390x844  0px
+PASS  typefloor light 390x844  min 12px html, nullpx svg
+PASS  contrast light 390x844  0 low of 631 in 17 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 320x568
+PASS  reconcile light 320x568  not a Command page (absent)
+PASS  overflow light 320x568  0px
+PASS  typefloor light 320x568  min 12px html, nullpx svg
+PASS  contrast light 320x568  0 low of 640 in 30 scroll steps, 0 svg text nodes not sampled
+PASS  fonts dark 1920x1080  Geist, Geist Mono
+PASS  weights dark 1920x1080  all loaded
+PASS  errors dark 1920x1080
+PASS  reconcile dark 1920x1080  not a Command page (absent)
+PASS  overflow dark 1920x1080  0px
+PASS  typefloor dark 1920x1080  min 12px html, nullpx svg
+PASS  contrast dark 1920x1080  0 low of 521 in 5 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1600x1000
+PASS  reconcile dark 1600x1000  not a Command page (absent)
+PASS  overflow dark 1600x1000  0px
+PASS  typefloor dark 1600x1000  min 12px html, nullpx svg
+PASS  contrast dark 1600x1000  0 low of 546 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1440x900
+PASS  reconcile dark 1440x900  not a Command page (absent)
+PASS  overflow dark 1440x900  0px
+PASS  typefloor dark 1440x900  min 12px html, nullpx svg
+PASS  contrast dark 1440x900  0 low of 533 in 8 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1280x800
+PASS  reconcile dark 1280x800  not a Command page (absent)
+PASS  overflow dark 1280x800  0px
+PASS  typefloor dark 1280x800  min 12px html, nullpx svg
+PASS  contrast dark 1280x800  0 low of 574 in 10 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1200x900
+PASS  reconcile dark 1200x900  not a Command page (absent)
+PASS  overflow dark 1200x900  0px
+PASS  typefloor dark 1200x900  min 12px html, nullpx svg
+PASS  contrast dark 1200x900  0 low of 583 in 9 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1100x800
+PASS  reconcile dark 1100x800  not a Command page (absent)
+PASS  overflow dark 1100x800  0px
+PASS  typefloor dark 1100x800  min 12px html, nullpx svg
+PASS  contrast dark 1100x800  0 low of 667 in 12 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 390x844
+PASS  reconcile dark 390x844  not a Command page (absent)
+PASS  overflow dark 390x844  0px
+PASS  typefloor dark 390x844  min 12px html, nullpx svg
+PASS  contrast dark 390x844  0 low of 631 in 17 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 320x568
+PASS  reconcile dark 320x568  not a Command page (absent)
+PASS  overflow dark 320x568  0px
+PASS  typefloor dark 320x568  min 12px html, nullpx svg
+PASS  contrast dark 320x568  0 low of 640 in 30 scroll steps, 0 svg text nodes not sampled
+PASS  appearance first click  rgb(15, 18, 22) -> rgb(230, 234, 239) data-theme=light
+PASS  keyboard focus ring  toolItem
+fonts stubbed from D:\Repos\Database\.claude\worktrees\ward-flow-phase-5-resume-166ecb\docs\ward-flow\mockups\third-edition-kit\fonts
+ALL GREEN
+exit 0
+### check.mjs search-hub
+PASS  fonts light 1920x1080  Geist, Geist Mono
+PASS  weights light 1920x1080  all loaded
+PASS  errors light 1920x1080
+PASS  reconcile light 1920x1080  not a Command page (absent)
+PASS  overflow light 1920x1080  0px
+PASS  typefloor light 1920x1080  min 12px html, nullpx svg
+PASS  contrast light 1920x1080  0 low of 417 in 4 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1600x1000
+PASS  reconcile light 1600x1000  not a Command page (absent)
+PASS  overflow light 1600x1000  0px
+PASS  typefloor light 1600x1000  min 12px html, nullpx svg
+PASS  contrast light 1600x1000  0 low of 382 in 4 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1440x900
+PASS  reconcile light 1440x900  not a Command page (absent)
+PASS  overflow light 1440x900  0px
+PASS  typefloor light 1440x900  min 12px html, nullpx svg
+PASS  contrast light 1440x900  0 low of 402 in 6 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1280x800
+PASS  reconcile light 1280x800  not a Command page (absent)
+PASS  overflow light 1280x800  0px
+PASS  typefloor light 1280x800  min 12px html, nullpx svg
+PASS  contrast light 1280x800  0 low of 226 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1200x900
+PASS  reconcile light 1200x900  not a Command page (absent)
+PASS  overflow light 1200x900  0px
+PASS  typefloor light 1200x900  min 12px html, nullpx svg
+PASS  contrast light 1200x900  0 low of 240 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1100x800
+PASS  reconcile light 1100x800  not a Command page (absent)
+PASS  overflow light 1100x800  0px
+PASS  typefloor light 1100x800  min 12px html, nullpx svg
+PASS  contrast light 1100x800  0 low of 221 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 390x844
+PASS  reconcile light 390x844  not a Command page (absent)
+PASS  overflow light 390x844  0px
+PASS  typefloor light 390x844  min 12px html, nullpx svg
+PASS  contrast light 390x844  0 low of 320 in 10 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 320x568
+PASS  reconcile light 320x568  not a Command page (absent)
+PASS  overflow light 320x568  0px
+PASS  typefloor light 320x568  min 12px html, nullpx svg
+PASS  contrast light 320x568  0 low of 209 in 11 scroll steps, 0 svg text nodes not sampled
+PASS  fonts dark 1920x1080  Geist, Geist Mono
+PASS  weights dark 1920x1080  all loaded
+PASS  errors dark 1920x1080
+PASS  reconcile dark 1920x1080  not a Command page (absent)
+PASS  overflow dark 1920x1080  0px
+PASS  typefloor dark 1920x1080  min 12px html, nullpx svg
+PASS  contrast dark 1920x1080  0 low of 417 in 4 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1600x1000
+PASS  reconcile dark 1600x1000  not a Command page (absent)
+PASS  overflow dark 1600x1000  0px
+PASS  typefloor dark 1600x1000  min 12px html, nullpx svg
+PASS  contrast dark 1600x1000  0 low of 382 in 4 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1440x900
+PASS  reconcile dark 1440x900  not a Command page (absent)
+PASS  overflow dark 1440x900  0px
+PASS  typefloor dark 1440x900  min 12px html, nullpx svg
+PASS  contrast dark 1440x900  0 low of 402 in 6 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1280x800
+PASS  reconcile dark 1280x800  not a Command page (absent)
+PASS  overflow dark 1280x800  0px
+PASS  typefloor dark 1280x800  min 12px html, nullpx svg
+PASS  contrast dark 1280x800  0 low of 226 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1200x900
+PASS  reconcile dark 1200x900  not a Command page (absent)
+PASS  overflow dark 1200x900  0px
+PASS  typefloor dark 1200x900  min 12px html, nullpx svg
+PASS  contrast dark 1200x900  0 low of 240 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1100x800
+PASS  reconcile dark 1100x800  not a Command page (absent)
+PASS  overflow dark 1100x800  0px
+PASS  typefloor dark 1100x800  min 12px html, nullpx svg
+PASS  contrast dark 1100x800  0 low of 221 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 390x844
+PASS  reconcile dark 390x844  not a Command page (absent)
+PASS  overflow dark 390x844  0px
+PASS  typefloor dark 390x844  min 12px html, nullpx svg
+PASS  contrast dark 390x844  0 low of 320 in 10 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 320x568
+PASS  reconcile dark 320x568  not a Command page (absent)
+PASS  overflow dark 320x568  0px
+PASS  typefloor dark 320x568  min 12px html, nullpx svg
+PASS  contrast dark 320x568  0 low of 209 in 11 scroll steps, 0 svg text nodes not sampled
+PASS  appearance first click  rgb(15, 18, 22) -> rgb(230, 234, 239) data-theme=light
+PASS  keyboard focus ring  toolItem
+fonts stubbed from D:\Repos\Database\.claude\worktrees\ward-flow-phase-5-resume-166ecb\docs\ward-flow\mockups\third-edition-kit\fonts
+ALL GREEN
+exit 0
+### check.mjs raise-a-referral
+PASS  fonts light 1920x1080  Geist, Geist Mono
+PASS  weights light 1920x1080  all loaded
+PASS  errors light 1920x1080
+PASS  reconcile light 1920x1080  not a Command page (absent)
+PASS  overflow light 1920x1080  0px
+PASS  typefloor light 1920x1080  min 12px html, nullpx svg
+PASS  contrast light 1920x1080  0 low of 370 in 0 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1600x1000
+PASS  reconcile light 1600x1000  not a Command page (absent)
+PASS  overflow light 1600x1000  0px
+PASS  typefloor light 1600x1000  min 12px html, nullpx svg
+PASS  contrast light 1600x1000  0 low of 356 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1440x900
+PASS  reconcile light 1440x900  not a Command page (absent)
+PASS  overflow light 1440x900  0px
+PASS  typefloor light 1440x900  min 12px html, nullpx svg
+PASS  contrast light 1440x900  0 low of 337 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1280x800
+PASS  reconcile light 1280x800  not a Command page (absent)
+PASS  overflow light 1280x800  0px
+PASS  typefloor light 1280x800  min 12px html, nullpx svg
+PASS  contrast light 1280x800  0 low of 308 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1200x900
+PASS  reconcile light 1200x900  not a Command page (absent)
+PASS  overflow light 1200x900  0px
+PASS  typefloor light 1200x900  min 12px html, nullpx svg
+PASS  contrast light 1200x900  0 low of 334 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1100x800
+PASS  reconcile light 1100x800  not a Command page (absent)
+PASS  overflow light 1100x800  0px
+PASS  typefloor light 1100x800  min 12px html, nullpx svg
+PASS  contrast light 1100x800  0 low of 278 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 390x844
+PASS  reconcile light 390x844  not a Command page (absent)
+PASS  overflow light 390x844  0px
+PASS  typefloor light 390x844  min 12px html, nullpx svg
+PASS  contrast light 390x844  0 low of 104 in 0 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 320x568
+PASS  reconcile light 320x568  not a Command page (absent)
+PASS  overflow light 320x568  0px
+PASS  typefloor light 320x568  min 12px html, nullpx svg
+PASS  contrast light 320x568  0 low of 23 in 0 scroll steps, 0 svg text nodes not sampled
+PASS  fonts dark 1920x1080  Geist, Geist Mono
+PASS  weights dark 1920x1080  all loaded
+PASS  errors dark 1920x1080
+PASS  reconcile dark 1920x1080  not a Command page (absent)
+PASS  overflow dark 1920x1080  0px
+PASS  typefloor dark 1920x1080  min 12px html, nullpx svg
+PASS  contrast dark 1920x1080  0 low of 370 in 0 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1600x1000
+PASS  reconcile dark 1600x1000  not a Command page (absent)
+PASS  overflow dark 1600x1000  0px
+PASS  typefloor dark 1600x1000  min 12px html, nullpx svg
+PASS  contrast dark 1600x1000  0 low of 356 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1440x900
+PASS  reconcile dark 1440x900  not a Command page (absent)
+PASS  overflow dark 1440x900  0px
+PASS  typefloor dark 1440x900  min 12px html, nullpx svg
+PASS  contrast dark 1440x900  0 low of 337 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1280x800
+PASS  reconcile dark 1280x800  not a Command page (absent)
+PASS  overflow dark 1280x800  0px
+PASS  typefloor dark 1280x800  min 12px html, nullpx svg
+PASS  contrast dark 1280x800  0 low of 308 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1200x900
+PASS  reconcile dark 1200x900  not a Command page (absent)
+PASS  overflow dark 1200x900  0px
+PASS  typefloor dark 1200x900  min 12px html, nullpx svg
+PASS  contrast dark 1200x900  0 low of 334 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1100x800
+PASS  reconcile dark 1100x800  not a Command page (absent)
+PASS  overflow dark 1100x800  0px
+PASS  typefloor dark 1100x800  min 12px html, nullpx svg
+PASS  contrast dark 1100x800  0 low of 278 in 1 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 390x844
+PASS  reconcile dark 390x844  not a Command page (absent)
+PASS  overflow dark 390x844  0px
+PASS  typefloor dark 390x844  min 12px html, nullpx svg
+PASS  contrast dark 390x844  0 low of 104 in 0 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 320x568
+PASS  reconcile dark 320x568  not a Command page (absent)
+PASS  overflow dark 320x568  0px
+PASS  typefloor dark 320x568  min 12px html, nullpx svg
+PASS  contrast dark 320x568  0 low of 23 in 0 scroll steps, 0 svg text nodes not sampled
+PASS  appearance first click  rgb(15, 18, 22) -> rgb(230, 234, 239) data-theme=light
+PASS  keyboard focus ring  toolItem
+fonts stubbed from D:\Repos\Database\.claude\worktrees\ward-flow-phase-5-resume-166ecb\docs\ward-flow\mockups\third-edition-kit\fonts
+ALL GREEN
+exit 0
+### check.mjs patient-search
+PASS  fonts light 1920x1080  Geist, Geist Mono
+PASS  weights light 1920x1080  all loaded
+PASS  errors light 1920x1080
+PASS  reconcile light 1920x1080  not a Command page (absent)
+PASS  overflow light 1920x1080  0px
+PASS  typefloor light 1920x1080  min 12px html, nullpx svg
+PASS  contrast light 1920x1080  0 low of 344 in 3 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1600x1000
+PASS  reconcile light 1600x1000  not a Command page (absent)
+PASS  overflow light 1600x1000  0px
+PASS  typefloor light 1600x1000  min 12px html, nullpx svg
+PASS  contrast light 1600x1000  0 low of 348 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1440x900
+PASS  reconcile light 1440x900  not a Command page (absent)
+PASS  overflow light 1440x900  0px
+PASS  typefloor light 1440x900  min 12px html, nullpx svg
+PASS  contrast light 1440x900  0 low of 338 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1280x800
+PASS  reconcile light 1280x800  not a Command page (absent)
+PASS  overflow light 1280x800  0px
+PASS  typefloor light 1280x800  min 12px html, nullpx svg
+PASS  contrast light 1280x800  0 low of 389 in 5 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1200x900
+PASS  reconcile light 1200x900  not a Command page (absent)
+PASS  overflow light 1200x900  0px
+PASS  typefloor light 1200x900  min 12px html, nullpx svg
+PASS  contrast light 1200x900  0 low of 408 in 5 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1100x800
+PASS  reconcile light 1100x800  not a Command page (absent)
+PASS  overflow light 1100x800  0px
+PASS  typefloor light 1100x800  min 12px html, nullpx svg
+PASS  contrast light 1100x800  0 low of 383 in 5 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 390x844
+PASS  reconcile light 390x844  not a Command page (absent)
+PASS  overflow light 390x844  0px
+PASS  typefloor light 390x844  min 12px html, nullpx svg
+PASS  contrast light 390x844  0 low of 370 in 9 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 320x568
+PASS  reconcile light 320x568  not a Command page (absent)
+PASS  overflow light 320x568  0px
+PASS  typefloor light 320x568  min 12px html, nullpx svg
+PASS  contrast light 320x568  0 low of 395 in 17 scroll steps, 0 svg text nodes not sampled
+PASS  fonts dark 1920x1080  Geist, Geist Mono
+PASS  weights dark 1920x1080  all loaded
+PASS  errors dark 1920x1080
+PASS  reconcile dark 1920x1080  not a Command page (absent)
+PASS  overflow dark 1920x1080  0px
+PASS  typefloor dark 1920x1080  min 12px html, nullpx svg
+PASS  contrast dark 1920x1080  0 low of 344 in 3 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1600x1000
+PASS  reconcile dark 1600x1000  not a Command page (absent)
+PASS  overflow dark 1600x1000  0px
+PASS  typefloor dark 1600x1000  min 12px html, nullpx svg
+PASS  contrast dark 1600x1000  0 low of 348 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1440x900
+PASS  reconcile dark 1440x900  not a Command page (absent)
+PASS  overflow dark 1440x900  0px
+PASS  typefloor dark 1440x900  min 12px html, nullpx svg
+PASS  contrast dark 1440x900  0 low of 338 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1280x800
+PASS  reconcile dark 1280x800  not a Command page (absent)
+PASS  overflow dark 1280x800  0px
+PASS  typefloor dark 1280x800  min 12px html, nullpx svg
+PASS  contrast dark 1280x800  0 low of 389 in 5 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1200x900
+PASS  reconcile dark 1200x900  not a Command page (absent)
+PASS  overflow dark 1200x900  0px
+PASS  typefloor dark 1200x900  min 12px html, nullpx svg
+PASS  contrast dark 1200x900  0 low of 408 in 5 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1100x800
+PASS  reconcile dark 1100x800  not a Command page (absent)
+PASS  overflow dark 1100x800  0px
+PASS  typefloor dark 1100x800  min 12px html, nullpx svg
+PASS  contrast dark 1100x800  0 low of 383 in 5 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 390x844
+PASS  reconcile dark 390x844  not a Command page (absent)
+PASS  overflow dark 390x844  0px
+PASS  typefloor dark 390x844  min 12px html, nullpx svg
+PASS  contrast dark 390x844  0 low of 370 in 9 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 320x568
+PASS  reconcile dark 320x568  not a Command page (absent)
+PASS  overflow dark 320x568  0px
+PASS  typefloor dark 320x568  min 12px html, nullpx svg
+PASS  contrast dark 320x568  0 low of 395 in 17 scroll steps, 0 svg text nodes not sampled
+PASS  appearance first click  rgb(15, 18, 22) -> rgb(230, 234, 239) data-theme=light
+PASS  keyboard focus ring  toolItem
+fonts stubbed from D:\Repos\Database\.claude\worktrees\ward-flow-phase-5-resume-166ecb\docs\ward-flow\mockups\third-edition-kit\fonts
+ALL GREEN
+exit 0
+### check.mjs community-team
+PASS  fonts light 1920x1080  Geist, Geist Mono
+PASS  weights light 1920x1080  all loaded
+PASS  errors light 1920x1080
+PASS  reconcile light 1920x1080  not a Command page (absent)
+PASS  overflow light 1920x1080  0px
+PASS  typefloor light 1920x1080  min 12px html, nullpx svg
+PASS  contrast light 1920x1080  0 low of 495 in 4 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1600x1000
+PASS  reconcile light 1600x1000  not a Command page (absent)
+PASS  overflow light 1600x1000  0px
+PASS  typefloor light 1600x1000  min 12px html, nullpx svg
+PASS  contrast light 1600x1000  0 low of 489 in 5 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1440x900
+PASS  reconcile light 1440x900  not a Command page (absent)
+PASS  overflow light 1440x900  0px
+PASS  typefloor light 1440x900  min 12px html, nullpx svg
+PASS  contrast light 1440x900  0 low of 465 in 5 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1280x800
+PASS  reconcile light 1280x800  not a Command page (absent)
+PASS  overflow light 1280x800  0px
+PASS  typefloor light 1280x800  min 12px html, nullpx svg
+PASS  contrast light 1280x800  0 low of 476 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1200x900
+PASS  reconcile light 1200x900  not a Command page (absent)
+PASS  overflow light 1200x900  0px
+PASS  typefloor light 1200x900  min 12px html, nullpx svg
+PASS  contrast light 1200x900  0 low of 490 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1100x800
+PASS  reconcile light 1100x800  not a Command page (absent)
+PASS  overflow light 1100x800  0px
+PASS  typefloor light 1100x800  min 12px html, nullpx svg
+PASS  contrast light 1100x800  0 low of 465 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 390x844
+PASS  reconcile light 390x844  not a Command page (absent)
+PASS  overflow light 390x844  0px
+PASS  typefloor light 390x844  min 12px html, nullpx svg
+PASS  contrast light 390x844  0 low of 442 in 11 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 320x568
+PASS  reconcile light 320x568  not a Command page (absent)
+PASS  overflow light 320x568  0px
+PASS  typefloor light 320x568  min 12px html, nullpx svg
+PASS  contrast light 320x568  0 low of 467 in 21 scroll steps, 0 svg text nodes not sampled
+PASS  fonts dark 1920x1080  Geist, Geist Mono
+PASS  weights dark 1920x1080  all loaded
+PASS  errors dark 1920x1080
+PASS  reconcile dark 1920x1080  not a Command page (absent)
+PASS  overflow dark 1920x1080  0px
+PASS  typefloor dark 1920x1080  min 12px html, nullpx svg
+PASS  contrast dark 1920x1080  0 low of 495 in 4 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1600x1000
+PASS  reconcile dark 1600x1000  not a Command page (absent)
+PASS  overflow dark 1600x1000  0px
+PASS  typefloor dark 1600x1000  min 12px html, nullpx svg
+PASS  contrast dark 1600x1000  0 low of 489 in 5 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1440x900
+PASS  reconcile dark 1440x900  not a Command page (absent)
+PASS  overflow dark 1440x900  0px
+PASS  typefloor dark 1440x900  min 12px html, nullpx svg
+PASS  contrast dark 1440x900  0 low of 465 in 5 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1280x800
+PASS  reconcile dark 1280x800  not a Command page (absent)
+PASS  overflow dark 1280x800  0px
+PASS  typefloor dark 1280x800  min 12px html, nullpx svg
+PASS  contrast dark 1280x800  0 low of 476 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1200x900
+PASS  reconcile dark 1200x900  not a Command page (absent)
+PASS  overflow dark 1200x900  0px
+PASS  typefloor dark 1200x900  min 12px html, nullpx svg
+PASS  contrast dark 1200x900  0 low of 490 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1100x800
+PASS  reconcile dark 1100x800  not a Command page (absent)
+PASS  overflow dark 1100x800  0px
+PASS  typefloor dark 1100x800  min 12px html, nullpx svg
+PASS  contrast dark 1100x800  0 low of 465 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 390x844
+PASS  reconcile dark 390x844  not a Command page (absent)
+PASS  overflow dark 390x844  0px
+PASS  typefloor dark 390x844  min 12px html, nullpx svg
+PASS  contrast dark 390x844  0 low of 442 in 11 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 320x568
+PASS  reconcile dark 320x568  not a Command page (absent)
+PASS  overflow dark 320x568  0px
+PASS  typefloor dark 320x568  min 12px html, nullpx svg
+PASS  contrast dark 320x568  0 low of 467 in 21 scroll steps, 0 svg text nodes not sampled
+PASS  appearance first click  rgb(15, 18, 22) -> rgb(230, 234, 239) data-theme=light
+PASS  keyboard focus ring  toolItem
+fonts stubbed from D:\Repos\Database\.claude\worktrees\ward-flow-phase-5-resume-166ecb\docs\ward-flow\mockups\third-edition-kit\fonts
+ALL GREEN
+exit 0
+### check.mjs statistics-ward
+PASS  fonts light 1920x1080  Geist, Geist Mono
+PASS  weights light 1920x1080  all loaded
+PASS  errors light 1920x1080
+PASS  reconcile light 1920x1080  not a Command page (absent)
+PASS  overflow light 1920x1080  0px
+PASS  typefloor light 1920x1080  min 12px html, 12px svg
+PASS  contrast light 1920x1080  0 low of 369 in 0 scroll steps, 7 svg text nodes not sampled
+PASS  errors light 1600x1000
+PASS  reconcile light 1600x1000  not a Command page (absent)
+PASS  overflow light 1600x1000  0px
+PASS  typefloor light 1600x1000  min 12px html, 12px svg
+PASS  contrast light 1600x1000  0 low of 358 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors light 1440x900
+PASS  reconcile light 1440x900  not a Command page (absent)
+PASS  overflow light 1440x900  0px
+PASS  typefloor light 1440x900  min 12px html, 12px svg
+PASS  contrast light 1440x900  0 low of 343 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors light 1280x800
+PASS  reconcile light 1280x800  not a Command page (absent)
+PASS  overflow light 1280x800  0px
+PASS  typefloor light 1280x800  min 12px html, 12px svg
+PASS  contrast light 1280x800  0 low of 312 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors light 1200x900
+PASS  reconcile light 1200x900  not a Command page (absent)
+PASS  overflow light 1200x900  0px
+PASS  typefloor light 1200x900  min 12px html, 12px svg
+PASS  contrast light 1200x900  0 low of 320 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors light 1100x800
+PASS  reconcile light 1100x800  not a Command page (absent)
+PASS  overflow light 1100x800  0px
+PASS  typefloor light 1100x800  min 12px html, 12px svg
+PASS  contrast light 1100x800  0 low of 270 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors light 390x844
+PASS  reconcile light 390x844  not a Command page (absent)
+PASS  overflow light 390x844  0px
+PASS  typefloor light 390x844  min 12px html, 12px svg
+PASS  contrast light 390x844  0 low of 105 in 0 scroll steps, 7 svg text nodes not sampled
+PASS  errors light 320x568
+PASS  reconcile light 320x568  not a Command page (absent)
+PASS  overflow light 320x568  0px
+PASS  typefloor light 320x568  min 12px html, 12px svg
+PASS  contrast light 320x568  0 low of 23 in 0 scroll steps, 7 svg text nodes not sampled
+PASS  fonts dark 1920x1080  Geist, Geist Mono
+PASS  weights dark 1920x1080  all loaded
+PASS  errors dark 1920x1080
+PASS  reconcile dark 1920x1080  not a Command page (absent)
+PASS  overflow dark 1920x1080  0px
+PASS  typefloor dark 1920x1080  min 12px html, 12px svg
+PASS  contrast dark 1920x1080  0 low of 369 in 0 scroll steps, 7 svg text nodes not sampled
+PASS  errors dark 1600x1000
+PASS  reconcile dark 1600x1000  not a Command page (absent)
+PASS  overflow dark 1600x1000  0px
+PASS  typefloor dark 1600x1000  min 12px html, 12px svg
+PASS  contrast dark 1600x1000  0 low of 358 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors dark 1440x900
+PASS  reconcile dark 1440x900  not a Command page (absent)
+PASS  overflow dark 1440x900  0px
+PASS  typefloor dark 1440x900  min 12px html, 12px svg
+PASS  contrast dark 1440x900  0 low of 343 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors dark 1280x800
+PASS  reconcile dark 1280x800  not a Command page (absent)
+PASS  overflow dark 1280x800  0px
+PASS  typefloor dark 1280x800  min 12px html, 12px svg
+PASS  contrast dark 1280x800  0 low of 312 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors dark 1200x900
+PASS  reconcile dark 1200x900  not a Command page (absent)
+PASS  overflow dark 1200x900  0px
+PASS  typefloor dark 1200x900  min 12px html, 12px svg
+PASS  contrast dark 1200x900  0 low of 320 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors dark 1100x800
+PASS  reconcile dark 1100x800  not a Command page (absent)
+PASS  overflow dark 1100x800  0px
+PASS  typefloor dark 1100x800  min 12px html, 12px svg
+PASS  contrast dark 1100x800  0 low of 270 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors dark 390x844
+PASS  reconcile dark 390x844  not a Command page (absent)
+PASS  overflow dark 390x844  0px
+PASS  typefloor dark 390x844  min 12px html, 12px svg
+PASS  contrast dark 390x844  0 low of 105 in 0 scroll steps, 7 svg text nodes not sampled
+PASS  errors dark 320x568
+PASS  reconcile dark 320x568  not a Command page (absent)
+PASS  overflow dark 320x568  0px
+PASS  typefloor dark 320x568  min 12px html, 12px svg
+PASS  contrast dark 320x568  0 low of 23 in 0 scroll steps, 7 svg text nodes not sampled
+PASS  appearance first click  rgb(15, 18, 22) -> rgb(230, 234, 239) data-theme=light
+PASS  keyboard focus ring  toolItem
+fonts stubbed from D:\Repos\Database\.claude\worktrees\ward-flow-phase-5-resume-166ecb\docs\ward-flow\mockups\third-edition-kit\fonts
+ALL GREEN
+exit 0
+### check.mjs movement
+PASS  fonts light 1920x1080  Geist, Geist Mono
+PASS  weights light 1920x1080  all loaded
+PASS  errors light 1920x1080
+PASS  reconcile light 1920x1080  not a Command page (absent)
+PASS  overflow light 1920x1080  0px
+PASS  typefloor light 1920x1080  min 12px html, 12px svg
+PASS  contrast light 1920x1080  0 low of 499 in 6 scroll steps, 88 svg text nodes not sampled
+PASS  errors light 1600x1000
+PASS  reconcile light 1600x1000  not a Command page (absent)
+PASS  overflow light 1600x1000  0px
+PASS  typefloor light 1600x1000  min 12px html, 12px svg
+PASS  contrast light 1600x1000  0 low of 477 in 7 scroll steps, 88 svg text nodes not sampled
+PASS  errors light 1440x900
+PASS  reconcile light 1440x900  not a Command page (absent)
+PASS  overflow light 1440x900  0px
+PASS  typefloor light 1440x900  min 12px html, 12px svg
+PASS  contrast light 1440x900  0 low of 447 in 7 scroll steps, 88 svg text nodes not sampled
+PASS  errors light 1280x800
+PASS  reconcile light 1280x800  not a Command page (absent)
+PASS  overflow light 1280x800  0px
+PASS  typefloor light 1280x800  min 12px html, 12px svg
+PASS  contrast light 1280x800  0 low of 401 in 7 scroll steps, 88 svg text nodes not sampled
+PASS  errors light 1200x900
+PASS  reconcile light 1200x900  not a Command page (absent)
+PASS  overflow light 1200x900  0px
+PASS  typefloor light 1200x900  min 12px html, 12px svg
+PASS  contrast light 1200x900  0 low of 410 in 7 scroll steps, 88 svg text nodes not sampled
+PASS  errors light 1100x800
+PASS  reconcile light 1100x800  not a Command page (absent)
+PASS  overflow light 1100x800  0px
+PASS  typefloor light 1100x800  min 12px html, 12px svg
+PASS  contrast light 1100x800  0 low of 459 in 10 scroll steps, 88 svg text nodes not sampled
+PASS  errors light 390x844
+PASS  reconcile light 390x844  not a Command page (absent)
+PASS  overflow light 390x844  0px
+PASS  typefloor light 390x844  min 12px html, 12px svg
+PASS  contrast light 390x844  0 low of 432 in 17 scroll steps, 88 svg text nodes not sampled
+PASS  errors light 320x568
+PASS  reconcile light 320x568  not a Command page (absent)
+PASS  overflow light 320x568  0px
+PASS  typefloor light 320x568  min 12px html, 12px svg
+PASS  contrast light 320x568  0 low of 459 in 26 scroll steps, 88 svg text nodes not sampled
+PASS  fonts dark 1920x1080  Geist, Geist Mono
+PASS  weights dark 1920x1080  all loaded
+PASS  errors dark 1920x1080
+PASS  reconcile dark 1920x1080  not a Command page (absent)
+PASS  overflow dark 1920x1080  0px
+PASS  typefloor dark 1920x1080  min 12px html, 12px svg
+PASS  contrast dark 1920x1080  0 low of 499 in 6 scroll steps, 88 svg text nodes not sampled
+PASS  errors dark 1600x1000
+PASS  reconcile dark 1600x1000  not a Command page (absent)
+PASS  overflow dark 1600x1000  0px
+PASS  typefloor dark 1600x1000  min 12px html, 12px svg
+PASS  contrast dark 1600x1000  0 low of 477 in 7 scroll steps, 88 svg text nodes not sampled
+PASS  errors dark 1440x900
+PASS  reconcile dark 1440x900  not a Command page (absent)
+PASS  overflow dark 1440x900  0px
+PASS  typefloor dark 1440x900  min 12px html, 12px svg
+PASS  contrast dark 1440x900  0 low of 447 in 7 scroll steps, 88 svg text nodes not sampled
+PASS  errors dark 1280x800
+PASS  reconcile dark 1280x800  not a Command page (absent)
+PASS  overflow dark 1280x800  0px
+PASS  typefloor dark 1280x800  min 12px html, 12px svg
+PASS  contrast dark 1280x800  0 low of 401 in 7 scroll steps, 88 svg text nodes not sampled
+PASS  errors dark 1200x900
+PASS  reconcile dark 1200x900  not a Command page (absent)
+PASS  overflow dark 1200x900  0px
+PASS  typefloor dark 1200x900  min 12px html, 12px svg
+PASS  contrast dark 1200x900  0 low of 410 in 7 scroll steps, 88 svg text nodes not sampled
+PASS  errors dark 1100x800
+PASS  reconcile dark 1100x800  not a Command page (absent)
+PASS  overflow dark 1100x800  0px
+PASS  typefloor dark 1100x800  min 12px html, 12px svg
+PASS  contrast dark 1100x800  0 low of 459 in 10 scroll steps, 88 svg text nodes not sampled
+PASS  errors dark 390x844
+PASS  reconcile dark 390x844  not a Command page (absent)
+PASS  overflow dark 390x844  0px
+PASS  typefloor dark 390x844  min 12px html, 12px svg
+PASS  contrast dark 390x844  0 low of 432 in 17 scroll steps, 88 svg text nodes not sampled
+PASS  errors dark 320x568
+PASS  reconcile dark 320x568  not a Command page (absent)
+PASS  overflow dark 320x568  0px
+PASS  typefloor dark 320x568  min 12px html, 12px svg
+PASS  contrast dark 320x568  0 low of 459 in 26 scroll steps, 88 svg text nodes not sampled
+PASS  appearance first click  rgb(15, 18, 22) -> rgb(230, 234, 239) data-theme=light
+PASS  keyboard focus ring  toolItem
+fonts stubbed from D:\Repos\Database\.claude\worktrees\ward-flow-phase-5-resume-166ecb\docs\ward-flow\mockups\third-edition-kit\fonts
+ALL GREEN
+exit 0
+### check.mjs emergency-department
+PASS  fonts light 1920x1080  Geist, Geist Mono
+PASS  weights light 1920x1080  all loaded
+PASS  errors light 1920x1080
+PASS  reconcile light 1920x1080  not a Command page (absent)
+PASS  overflow light 1920x1080  0px
+PASS  typefloor light 1920x1080  min 12px html, nullpx svg
+PASS  contrast light 1920x1080  0 low of 378 in 2 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1600x1000
+PASS  reconcile light 1600x1000  not a Command page (absent)
+PASS  overflow light 1600x1000  0px
+PASS  typefloor light 1600x1000  min 12px html, nullpx svg
+PASS  contrast light 1600x1000  0 low of 559 in 5 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1440x900
+PASS  reconcile light 1440x900  not a Command page (absent)
+PASS  overflow light 1440x900  0px
+PASS  typefloor light 1440x900  min 12px html, nullpx svg
+PASS  contrast light 1440x900  0 low of 505 in 5 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1280x800
+PASS  reconcile light 1280x800  not a Command page (absent)
+PASS  overflow light 1280x800  0px
+PASS  typefloor light 1280x800  min 12px html, nullpx svg
+PASS  contrast light 1280x800  0 low of 560 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1200x900
+PASS  reconcile light 1200x900  not a Command page (absent)
+PASS  overflow light 1200x900  0px
+PASS  typefloor light 1200x900  min 12px html, nullpx svg
+PASS  contrast light 1200x900  0 low of 564 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 1100x800
+PASS  reconcile light 1100x800  not a Command page (absent)
+PASS  overflow light 1100x800  0px
+PASS  typefloor light 1100x800  min 12px html, nullpx svg
+PASS  contrast light 1100x800  0 low of 542 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 390x844
+PASS  reconcile light 390x844  not a Command page (absent)
+PASS  overflow light 390x844  0px
+PASS  typefloor light 390x844  min 12px html, nullpx svg
+PASS  contrast light 390x844  0 low of 530 in 10 scroll steps, 0 svg text nodes not sampled
+PASS  errors light 320x568
+PASS  reconcile light 320x568  not a Command page (absent)
+PASS  overflow light 320x568  0px
+PASS  typefloor light 320x568  min 12px html, nullpx svg
+PASS  contrast light 320x568  0 low of 533 in 18 scroll steps, 0 svg text nodes not sampled
+PASS  fonts dark 1920x1080  Geist, Geist Mono
+PASS  weights dark 1920x1080  all loaded
+PASS  errors dark 1920x1080
+PASS  reconcile dark 1920x1080  not a Command page (absent)
+PASS  overflow dark 1920x1080  0px
+PASS  typefloor dark 1920x1080  min 12px html, nullpx svg
+PASS  contrast dark 1920x1080  0 low of 378 in 2 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1600x1000
+PASS  reconcile dark 1600x1000  not a Command page (absent)
+PASS  overflow dark 1600x1000  0px
+PASS  typefloor dark 1600x1000  min 12px html, nullpx svg
+PASS  contrast dark 1600x1000  0 low of 559 in 5 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1440x900
+PASS  reconcile dark 1440x900  not a Command page (absent)
+PASS  overflow dark 1440x900  0px
+PASS  typefloor dark 1440x900  min 12px html, nullpx svg
+PASS  contrast dark 1440x900  0 low of 505 in 5 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1280x800
+PASS  reconcile dark 1280x800  not a Command page (absent)
+PASS  overflow dark 1280x800  0px
+PASS  typefloor dark 1280x800  min 12px html, nullpx svg
+PASS  contrast dark 1280x800  0 low of 560 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1200x900
+PASS  reconcile dark 1200x900  not a Command page (absent)
+PASS  overflow dark 1200x900  0px
+PASS  typefloor dark 1200x900  min 12px html, nullpx svg
+PASS  contrast dark 1200x900  0 low of 564 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 1100x800
+PASS  reconcile dark 1100x800  not a Command page (absent)
+PASS  overflow dark 1100x800  0px
+PASS  typefloor dark 1100x800  min 12px html, nullpx svg
+PASS  contrast dark 1100x800  0 low of 542 in 7 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 390x844
+PASS  reconcile dark 390x844  not a Command page (absent)
+PASS  overflow dark 390x844  0px
+PASS  typefloor dark 390x844  min 12px html, nullpx svg
+PASS  contrast dark 390x844  0 low of 530 in 10 scroll steps, 0 svg text nodes not sampled
+PASS  errors dark 320x568
+PASS  reconcile dark 320x568  not a Command page (absent)
+PASS  overflow dark 320x568  0px
+PASS  typefloor dark 320x568  min 12px html, nullpx svg
+PASS  contrast dark 320x568  0 low of 533 in 18 scroll steps, 0 svg text nodes not sampled
+PASS  appearance first click  rgb(15, 18, 22) -> rgb(230, 234, 239) data-theme=light
+PASS  keyboard focus ring  toolItem
+fonts stubbed from D:\Repos\Database\.claude\worktrees\ward-flow-phase-5-resume-166ecb\docs\ward-flow\mockups\third-edition-kit\fonts
+ALL GREEN
+exit 0
+### check.mjs statistics-emergency-department
+PASS  fonts light 1920x1080  Geist, Geist Mono
+PASS  weights light 1920x1080  all loaded
+PASS  errors light 1920x1080
+PASS  reconcile light 1920x1080  not a Command page (absent)
+PASS  overflow light 1920x1080  0px
+PASS  typefloor light 1920x1080  min 12px html, 12px svg
+PASS  contrast light 1920x1080  0 low of 372 in 0 scroll steps, 7 svg text nodes not sampled
+PASS  errors light 1600x1000
+PASS  reconcile light 1600x1000  not a Command page (absent)
+PASS  overflow light 1600x1000  0px
+PASS  typefloor light 1600x1000  min 12px html, 12px svg
+PASS  contrast light 1600x1000  0 low of 357 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors light 1440x900
+PASS  reconcile light 1440x900  not a Command page (absent)
+PASS  overflow light 1440x900  0px
+PASS  typefloor light 1440x900  min 12px html, 12px svg
+PASS  contrast light 1440x900  0 low of 328 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors light 1280x800
+PASS  reconcile light 1280x800  not a Command page (absent)
+PASS  overflow light 1280x800  0px
+PASS  typefloor light 1280x800  min 12px html, 12px svg
+PASS  contrast light 1280x800  0 low of 289 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors light 1200x900
+PASS  reconcile light 1200x900  not a Command page (absent)
+PASS  overflow light 1200x900  0px
+PASS  typefloor light 1200x900  min 12px html, 12px svg
+PASS  contrast light 1200x900  0 low of 312 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors light 1100x800
+PASS  reconcile light 1100x800  not a Command page (absent)
+PASS  overflow light 1100x800  0px
+PASS  typefloor light 1100x800  min 12px html, 12px svg
+PASS  contrast light 1100x800  0 low of 272 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors light 390x844
+PASS  reconcile light 390x844  not a Command page (absent)
+PASS  overflow light 390x844  0px
+PASS  typefloor light 390x844  min 12px html, 12px svg
+PASS  contrast light 390x844  0 low of 110 in 0 scroll steps, 7 svg text nodes not sampled
+PASS  errors light 320x568
+PASS  reconcile light 320x568  not a Command page (absent)
+PASS  overflow light 320x568  0px
+PASS  typefloor light 320x568  min 12px html, 12px svg
+PASS  contrast light 320x568  0 low of 23 in 0 scroll steps, 7 svg text nodes not sampled
+PASS  fonts dark 1920x1080  Geist, Geist Mono
+PASS  weights dark 1920x1080  all loaded
+PASS  errors dark 1920x1080
+PASS  reconcile dark 1920x1080  not a Command page (absent)
+PASS  overflow dark 1920x1080  0px
+PASS  typefloor dark 1920x1080  min 12px html, 12px svg
+PASS  contrast dark 1920x1080  0 low of 372 in 0 scroll steps, 7 svg text nodes not sampled
+PASS  errors dark 1600x1000
+PASS  reconcile dark 1600x1000  not a Command page (absent)
+PASS  overflow dark 1600x1000  0px
+PASS  typefloor dark 1600x1000  min 12px html, 12px svg
+PASS  contrast dark 1600x1000  0 low of 357 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors dark 1440x900
+PASS  reconcile dark 1440x900  not a Command page (absent)
+PASS  overflow dark 1440x900  0px
+PASS  typefloor dark 1440x900  min 12px html, 12px svg
+PASS  contrast dark 1440x900  0 low of 328 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors dark 1280x800
+PASS  reconcile dark 1280x800  not a Command page (absent)
+PASS  overflow dark 1280x800  0px
+PASS  typefloor dark 1280x800  min 12px html, 12px svg
+PASS  contrast dark 1280x800  0 low of 289 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors dark 1200x900
+PASS  reconcile dark 1200x900  not a Command page (absent)
+PASS  overflow dark 1200x900  0px
+PASS  typefloor dark 1200x900  min 12px html, 12px svg
+PASS  contrast dark 1200x900  0 low of 312 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors dark 1100x800
+PASS  reconcile dark 1100x800  not a Command page (absent)
+PASS  overflow dark 1100x800  0px
+PASS  typefloor dark 1100x800  min 12px html, 12px svg
+PASS  contrast dark 1100x800  0 low of 272 in 1 scroll steps, 7 svg text nodes not sampled
+PASS  errors dark 390x844
+PASS  reconcile dark 390x844  not a Command page (absent)
+PASS  overflow dark 390x844  0px
+PASS  typefloor dark 390x844  min 12px html, 12px svg
+PASS  contrast dark 390x844  0 low of 110 in 0 scroll steps, 7 svg text nodes not sampled
+PASS  errors dark 320x568
+PASS  reconcile dark 320x568  not a Command page (absent)
+PASS  overflow dark 320x568  0px
+PASS  typefloor dark 320x568  min 12px html, 12px svg
+PASS  contrast dark 320x568  0 low of 23 in 0 scroll steps, 7 svg text nodes not sampled
+PASS  appearance first click  rgb(15, 18, 22) -> rgb(230, 234, 239) data-theme=light
+PASS  keyboard focus ring  toolItem
+fonts stubbed from D:\Repos\Database\.claude\worktrees\ward-flow-phase-5-resume-166ecb\docs\ward-flow\mockups\third-edition-kit\fonts
+ALL GREEN
+exit 0
+### check.mjs patient-now
+PASS  fonts light 1920x1080  Geist, Geist Mono
+PASS  weights light 1920x1080  all loaded
+PASS  errors light 1920x1080
+PASS  reconcile light 1920x1080  not a Command page (absent)
+PASS  overflow light 1920x1080  0px
+PASS  typefloor light 1920x1080  min 12px html, 12px svg
+PASS  contrast light 1920x1080  0 low of 420 in 2 scroll steps, 9 svg text nodes not sampled
+PASS  errors light 1600x1000
+PASS  reconcile light 1600x1000  not a Command page (absent)
+PASS  overflow light 1600x1000  0px
+PASS  typefloor light 1600x1000  min 12px html, 12px svg
+PASS  contrast light 1600x1000  0 low of 425 in 4 scroll steps, 9 svg text nodes not sampled
+PASS  errors light 1440x900
+PASS  reconcile light 1440x900  not a Command page (absent)
+PASS  overflow light 1440x900  0px
+PASS  typefloor light 1440x900  min 12px html, 12px svg
+PASS  contrast light 1440x900  0 low of 418 in 5 scroll steps, 9 svg text nodes not sampled
+PASS  errors light 1280x800
+PASS  reconcile light 1280x800  not a Command page (absent)
+PASS  overflow light 1280x800  0px
+PASS  typefloor light 1280x800  min 12px html, 12px svg
+PASS  contrast light 1280x800  0 low of 495 in 7 scroll steps, 9 svg text nodes not sampled
+PASS  errors light 1200x900
+PASS  reconcile light 1200x900  not a Command page (absent)
+PASS  overflow light 1200x900  0px
+PASS  typefloor light 1200x900  min 12px html, 12px svg
+PASS  contrast light 1200x900  0 low of 502 in 7 scroll steps, 9 svg text nodes not sampled
+PASS  errors light 1100x800
+PASS  reconcile light 1100x800  not a Command page (absent)
+PASS  overflow light 1100x800  0px
+PASS  typefloor light 1100x800  min 12px html, 12px svg
+PASS  contrast light 1100x800  0 low of 502 in 9 scroll steps, 9 svg text nodes not sampled
+PASS  errors light 390x844
+PASS  reconcile light 390x844  not a Command page (absent)
+PASS  overflow light 390x844  0px
+PASS  typefloor light 390x844  min 12px html, 12px svg
+PASS  contrast light 390x844  0 low of 476 in 12 scroll steps, 9 svg text nodes not sampled
+PASS  errors light 320x568
+PASS  reconcile light 320x568  not a Command page (absent)
+PASS  overflow light 320x568  0px
+PASS  typefloor light 320x568  min 12px html, 12px svg
+PASS  contrast light 320x568  0 low of 474 in 20 scroll steps, 9 svg text nodes not sampled
+PASS  fonts dark 1920x1080  Geist, Geist Mono
+PASS  weights dark 1920x1080  all loaded
+PASS  errors dark 1920x1080
+PASS  reconcile dark 1920x1080  not a Command page (absent)
+PASS  overflow dark 1920x1080  0px
+PASS  typefloor dark 1920x1080  min 12px html, 12px svg
+PASS  contrast dark 1920x1080  0 low of 420 in 2 scroll steps, 9 svg text nodes not sampled
+PASS  errors dark 1600x1000
+PASS  reconcile dark 1600x1000  not a Command page (absent)
+PASS  overflow dark 1600x1000  0px
+PASS  typefloor dark 1600x1000  min 12px html, 12px svg
+PASS  contrast dark 1600x1000  0 low of 425 in 4 scroll steps, 9 svg text nodes not sampled
+PASS  errors dark 1440x900
+PASS  reconcile dark 1440x900  not a Command page (absent)
+PASS  overflow dark 1440x900  0px
+PASS  typefloor dark 1440x900  min 12px html, 12px svg
+PASS  contrast dark 1440x900  0 low of 418 in 5 scroll steps, 9 svg text nodes not sampled
+PASS  errors dark 1280x800
+PASS  reconcile dark 1280x800  not a Command page (absent)
+PASS  overflow dark 1280x800  0px
+PASS  typefloor dark 1280x800  min 12px html, 12px svg
+PASS  contrast dark 1280x800  0 low of 495 in 7 scroll steps, 9 svg text nodes not sampled
+PASS  errors dark 1200x900
+PASS  reconcile dark 1200x900  not a Command page (absent)
+PASS  overflow dark 1200x900  0px
+PASS  typefloor dark 1200x900  min 12px html, 12px svg
+PASS  contrast dark 1200x900  0 low of 502 in 7 scroll steps, 9 svg text nodes not sampled
+PASS  errors dark 1100x800
+PASS  reconcile dark 1100x800  not a Command page (absent)
+PASS  overflow dark 1100x800  0px
+PASS  typefloor dark 1100x800  min 12px html, 12px svg
+PASS  contrast dark 1100x800  0 low of 502 in 9 scroll steps, 9 svg text nodes not sampled
+PASS  errors dark 390x844
+PASS  reconcile dark 390x844  not a Command page (absent)
+PASS  overflow dark 390x844  0px
+PASS  typefloor dark 390x844  min 12px html, 12px svg
+PASS  contrast dark 390x844  0 low of 476 in 12 scroll steps, 9 svg text nodes not sampled
+PASS  errors dark 320x568
+PASS  reconcile dark 320x568  not a Command page (absent)
+PASS  overflow dark 320x568  0px
+PASS  typefloor dark 320x568  min 12px html, 12px svg
+PASS  contrast dark 320x568  0 low of 474 in 20 scroll steps, 9 svg text nodes not sampled
+PASS  appearance first click  rgb(15, 18, 22) -> rgb(230, 234, 239) data-theme=light
+PASS  keyboard focus ring  toolItem
+fonts stubbed from D:\Repos\Database\.claude\worktrees\ward-flow-phase-5-resume-166ecb\docs\ward-flow\mockups\third-edition-kit\fonts
+ALL GREEN
+exit 0
+### check-shell.mjs command
+PASS  service chosen  Showing 4 of 14, in South Metropolitan.Show all
+PASS  escape keeps the service  Nothing more to clear. The service stays South Metropolitan. Choose All services in the selector to widen the 
+PASS  hit says the service will change  Flint, OonaWF-014, Tier 1, 3h 34mRoyal Perth Hospital Emergency Department. No deadline recorded. Outside South Metropol
+PASS  pick moves the service to the person's, never to all  Showing 6 of 14, in East Metropolitan.Back to South MetropolitanShow all
+PASS  the way back is offered  Back to South Metropolitan
+PASS  the pick is announced with the way back  Flint, Oona, WF-014, selected in the queue. No deadline recorded. Service set to East Metropolitan, this person's service, from South Metropolitan. Restore it f
+PASS  restore returns to the previous service  Showing 4 of 14, in South Metropolitan.Show all
+PASS  drawer is a dialog  {"role":"dialog","modal":"true","railInert":true,"liveInert":false,"focusInside":true}
+PASS  surroundings are inert, the live region is not
+PASS  focus starts inside
+PASS  tab wraps inside the drawer  40 presses stayed inside
+PASS  escape closes it, lifts inert and returns focus  {"open":false,"railInert":false,"onSummary":true}
+PASS  an unbuilt screen opens the live tally  Capacity is not part of this prototype. Its figures are in the live tally, now open.
+PASS  the activity line says snapshot, never live  Synthetic snapshot at 10:42, figures reconcile, last event 10:10, 32 minutes ago
+PASS  no page errors  none
+PASS  prototype mark visible at 1920  178x26 "Synthetic prototype", overflow 0px
+PASS  prototype mark visible at 1440  99x26 "Synthetic prototype", overflow 0px
+PASS  prototype mark visible at 1280  99x26 "Synthetic prototype", overflow 0px
+PASS  prototype mark visible at 1200  99x26 "Synthetic prototype", overflow 0px
+PASS  prototype mark visible at 1100  99x26 "Synthetic prototype", overflow 0px
+PASS  prototype mark visible at 1000  99x26 "Synthetic prototype", overflow 0px
+PASS  prototype mark visible at 768  99x26 "Synthetic prototype", overflow 0px
+PASS  prototype mark visible at 390  99x26 "Synthetic prototype", overflow 0px
+PASS  prototype mark visible at 320  99x26 "Synthetic prototype", overflow 0px
+PASS  nothing clipped with the rail open at 1920  none
+PASS  closed strip words fit at 1920  84px wide, sideways overflow 0px
+PASS  nothing clipped with the rail closed at 1920  none
+PASS  nothing clipped with the rail open at 1280  none
+PASS  closed strip words fit at 1280  84px wide, sideways overflow 0px
+PASS  nothing clipped with the rail closed at 1280  none
+ALL GREEN
+exit 0
+### check-standard.mjs design system
+PASS  fonts light 1920x1080  Geist, Geist Mono
+PASS  weights light 1920x1080  all loaded
+PASS  errors light 1920x1080  none
+PASS  overflow light 1920x1080  0px
+PASS  typefloor light 1920x1080  min 12px html, 10.5px svg
+PASS  contrast light 1920x1080  0 low of 3020 sampled in 53 scroll steps
+PASS  contrastCheck light 1920x1080  Recomputed for the light theme on load: 69 pairs, all match the printed figures, none below 4.5:1, the lowest 4.50:1.
+PASS  railCheck light 1920x1080  Figures reconcile: 69 contrast pairs recomputed
+PASS  kpis light 1920x1080  10, 30, 36, 69, 20
+PASS  rail targets light 1920x1080  15 links
+PASS  demo heights light 1920x1080  36 demos, all above 40px
+PASS  demo containment light 1920x1080  every image and svg inside its .g-demo
+PASS  errors light 1440x900  none
+PASS  overflow light 1440x900  0px
+PASS  typefloor light 1440x900  min 12px html, 10.5px svg
+PASS  contrast light 1440x900  0 low of 3014 sampled in 65 scroll steps
+PASS  errors light 1280x800  none
+PASS  overflow light 1280x800  0px
+PASS  typefloor light 1280x800  min 12px html, 10.5px svg
+PASS  contrast light 1280x800  0 low of 3011 sampled in 76 scroll steps
+PASS  errors light 390x844  none
+PASS  overflow light 390x844  0px
+PASS  typefloor light 390x844  min 12px html, 10.5px svg
+PASS  contrast light 390x844  0 low of 2997 sampled in 31 scroll steps
+PASS  fonts dark 1920x1080  Geist, Geist Mono
+PASS  weights dark 1920x1080  all loaded
+PASS  errors dark 1920x1080  none
+PASS  overflow dark 1920x1080  0px
+PASS  typefloor dark 1920x1080  min 12px html, 10.5px svg
+PASS  contrast dark 1920x1080  0 low of 3020 sampled in 53 scroll steps
+PASS  contrastCheck dark 1920x1080  Recomputed for the dark theme on load: 69 pairs, all match the printed figures, none below 4.5:1, the lowest 4.63:1.
+PASS  railCheck dark 1920x1080  Figures reconcile: 69 contrast pairs recomputed
+PASS  kpis dark 1920x1080  10, 30, 36, 69, 20
+PASS  rail targets dark 1920x1080  15 links
+PASS  demo heights dark 1920x1080  36 demos, all above 40px
+PASS  demo containment dark 1920x1080  every image and svg inside its .g-demo
+PASS  errors dark 1440x900  none
+PASS  overflow dark 1440x900  0px
+PASS  typefloor dark 1440x900  min 12px html, 10.5px svg
+PASS  contrast dark 1440x900  0 low of 3014 sampled in 65 scroll steps
+PASS  errors dark 1280x800  none
+PASS  overflow dark 1280x800  0px
+PASS  typefloor dark 1280x800  min 12px html, 10.5px svg
+PASS  contrast dark 1280x800  0 low of 3010 sampled in 76 scroll steps
+PASS  errors dark 390x844  none
+PASS  overflow dark 390x844  0px
+PASS  typefloor dark 390x844  min 12px html, 10.5px svg
+PASS  contrast dark 390x844  0 low of 2998 sampled in 31 scroll steps
+PASS  appearance first click  rgb(15, 18, 22) -> rgb(230, 234, 239) data-theme=light
+PASS  contrastCheck after the click  Recomputed for the light theme on load: 69 pairs, all match the printed figures, none below 4.5:1, the lowest 4.50:1.
+PASS  keyboard focus ring  g-code
+fonts stubbed from D:\Repos\Database\.claude\worktrees\ward-flow-phase-5-resume-166ecb\docs\ward-flow\mockups\third-edition-kit\fonts
+ALL GREEN
+exit 0
+### summary
+1:### check.mjs command
+91:ALL GREEN
+--
+93:### check.mjs delays
+181:ALL GREEN
+--
+183:### check.mjs statistics-community
+271:ALL GREEN
+--
+273:### check.mjs statistics
+361:ALL GREEN
+--
+363:### check.mjs capacity
+451:ALL GREEN
+--
+453:### check.mjs ward
+541:ALL GREEN
+--
+543:### check.mjs bed-board
+631:ALL GREEN
+--
+633:### check.mjs search-hub
+721:ALL GREEN
+--
+723:### check.mjs raise-a-referral
+811:ALL GREEN
+--
+813:### check.mjs patient-search
+901:ALL GREEN
+--
+903:### check.mjs community-team
+991:ALL GREEN
+--
+993:### check.mjs statistics-ward
+1081:ALL GREEN
+--
+1083:### check.mjs movement
+1171:ALL GREEN
+--
+1173:### check.mjs emergency-department
+1261:ALL GREEN
+--
+1263:### check.mjs statistics-emergency-department
+1351:ALL GREEN
+--
+1353:### check.mjs patient-now
+1441:ALL GREEN
+--
+1443:### check-shell.mjs command
+1474:ALL GREEN
+--
+1476:### check-standard.mjs design system
+1529:ALL GREEN

@@ -1,0 +1,467 @@
+/* src/components/ward-management/ward/ward-notification-center.module.css */
+
+.panel {
+  composes: wardTokens from "../ward-tokens.module.css";
+  --border-line: var(--ward-border, var(--line));
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-16);
+  color: var(--ink);
+  border: 1px solid var(--border-line);
+  border-radius: var(--radius-md, 0.5rem);
+  box-shadow: var(--lift);
+  padding: var(--ward-space-16);
+  font-size: var(--t-1, 0.875rem);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--ward-leading-ui, 1.3);
+  transition: border-color var(--duration-fast, 150ms);
+}
+
+@keyframes urgentBuzzGlow {
+  0% {
+    border-color: var(--ward-danger);
+    box-shadow: 0 0 0 0 var(--ward-danger-soft);
+  }
+  50% {
+    border-color: var(--ward-danger);
+    box-shadow: 0 0 16px 2px var(--ward-danger);
+  }
+  100% {
+    border-color: var(--ward-danger);
+    box-shadow: 0 0 0 0 var(--ward-danger-soft);
+  }
+}
+
+.urgentBuzzPulse {
+  border-color: var(--ward-danger);
+  animation: urgentBuzzGlow 1.8s infinite ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .urgentBuzzPulse {
+    animation: none;
+    border-color: var(--ward-danger);
+    box-shadow: none;
+  }
+}
+
+.telemetryStrip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-16);
+  flex-wrap: wrap;
+  padding-bottom: var(--ward-space-12);
+  border-bottom: 1px solid var(--border-line);
+}
+
+.titleArea {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-12);
+  flex-wrap: wrap;
+}
+
+.heading {
+  margin: 0;
+  font-size: var(--t-2, 1rem);
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.alertBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ward-space-4);
+  padding: var(--ward-space-2) var(--ward-space-8);
+  border-radius: var(--ward-radius-round, 50%);
+  background: var(--ward-danger-soft);
+  color: var(--ward-danger);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 700;
+  border: 1px solid var(--ward-danger);
+}
+
+.alertBadge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: var(--ward-radius-round, 50%);
+  background: var(--ward-danger);
+  flex-shrink: 0;
+}
+
+.alertBadgeMuted {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ward-space-4);
+  padding: var(--ward-space-2) var(--ward-space-8);
+  border-radius: var(--ward-radius-round, 50%);
+  background: var(--ward-subtle);
+  color: var(--ward-muted);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  border: 1px solid var(--border-line);
+}
+
+.soundToggle {
+  min-height: var(--ward-tap, 48px);
+  min-width: var(--ward-tap, 48px);
+  padding: var(--ward-space-8) var(--ward-space-12);
+  border: 1px solid var(--border-line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  border-radius: var(--radius-sm, 0.375rem);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ward-space-6);
+  transition:
+    background var(--duration-fast, 150ms),
+    border-color var(--duration-fast, 150ms);
+}
+
+.soundToggle:hover {
+  background: var(--surface-2);
+  border-color: var(--ward-border-strong);
+}
+
+.soundToggle:focus-visible {
+  outline: 2px solid var(--ward-blue);
+  outline-offset: 2px;
+}
+
+.closeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--ward-tap, 48px);
+  min-height: var(--ward-tap, 48px);
+  padding: var(--ward-space-8);
+  border: 1px solid var(--border-line);
+  border-radius: var(--radius-sm, 0.375rem);
+  background: var(--surface);
+  color: var(--ward-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background var(--duration-fast, 150ms),
+    color var(--duration-fast, 150ms),
+    border-color var(--duration-fast, 150ms);
+}
+
+.closeButton:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: var(--ward-border-strong);
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid var(--ward-blue);
+  outline-offset: 2px;
+}
+
+.closeButton svg {
+  display: block;
+}
+
+.tabList {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-4);
+  background: var(--ward-subtle);
+  padding: var(--ward-space-2);
+  border-radius: var(--radius-md, 0.5rem);
+  border: 1px solid var(--border-line);
+}
+
+.tabButton {
+  min-height: var(--ward-tap, 48px);
+  min-width: var(--ward-tap, 48px);
+  padding: var(--ward-space-8) var(--ward-space-14);
+  border: none;
+  background: transparent;
+  color: var(--ward-muted);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  border-radius: var(--radius-sm, 0.375rem);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ward-space-6);
+  transition:
+    background var(--duration-fast, 150ms),
+    color var(--duration-fast, 150ms);
+}
+
+.tabButton:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.tabButton[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--lift);
+  font-weight: 700;
+}
+
+.tabCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ward-space-1) var(--ward-space-5);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 700;
+  border-radius: var(--ward-radius-round, 50%);
+  background: var(--ward-subtle);
+  color: var(--ward-text);
+  border: 1px solid var(--border-line);
+}
+
+.tabButton[aria-selected="true"] .tabCount {
+  background: var(--ward-blue-soft);
+  color: var(--ward-blue);
+  border-color: var(--ward-blue-border);
+}
+
+.tabPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-16);
+  outline: none;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-8);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--t-1, 0.875rem);
+  font-weight: 700;
+  color: var(--ward-text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+}
+
+.sectionCount {
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  color: var(--ward-muted);
+  text-transform: none;
+}
+
+.feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-8);
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-16);
+  padding: var(--ward-space-12) var(--ward-space-16);
+  border: 1px solid var(--border-line);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--surface);
+}
+
+.cardUrgent {
+  border-color: var(--ward-warning);
+  background: var(--ward-warning-soft);
+}
+
+.cardDanger {
+  border-color: var(--ward-danger);
+  background: var(--ward-danger-soft);
+}
+
+.cardSuccess {
+  border-color: var(--ward-success);
+  background: var(--ward-success-soft);
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-4);
+  min-width: 0;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+  flex-wrap: wrap;
+}
+
+.cardTime {
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 700;
+  color: var(--ward-muted);
+}
+
+.cardRole {
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  color: var(--ward-text);
+}
+
+.urgentFlag {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--ward-space-1) var(--ward-space-6);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: var(--ward-radius-round, 50%);
+  background: var(--ward-danger);
+  color: var(--surface);
+}
+
+.cardMessage {
+  margin: 0;
+  font-size: var(--t-1, 0.875rem);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.cardDetail {
+  margin: 0;
+  font-size: var(--t-0, 0.75rem);
+  color: var(--ward-muted);
+}
+
+.censusBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-16);
+  padding: var(--ward-space-12) var(--ward-space-16);
+  background: var(--ward-danger-soft);
+  border: 1px solid var(--ward-danger);
+  border-radius: var(--radius-md, 0.5rem);
+  color: var(--ward-danger);
+}
+
+.censusText {
+  font-size: var(--t-1, 0.875rem);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+}
+
+.actionButton {
+  min-height: var(--ward-tap, 48px);
+  min-width: var(--ward-tap, 48px);
+  padding: var(--ward-space-8) var(--ward-space-16);
+  border: 1px solid var(--border-line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  border-radius: var(--radius-sm, 0.375rem);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  transition:
+    background var(--duration-fast, 150ms),
+    border-color var(--duration-fast, 150ms);
+}
+
+.actionButton:hover {
+  background: var(--ward-subtle);
+  border-color: var(--ward-border-strong);
+}
+
+.confirmButton {
+  min-height: var(--ward-tap, 48px);
+  min-width: var(--ward-tap, 48px);
+  padding: var(--ward-space-8) var(--ward-space-16);
+  border: 1px solid var(--ward-danger);
+  background: var(--ward-danger);
+  color: var(--surface);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 700;
+  border-radius: var(--radius-sm, 0.375rem);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  transition: opacity var(--duration-fast, 150ms);
+}
+
+.confirmButton:hover {
+  opacity: 0.9;
+}
+
+.readBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--ward-space-4) var(--ward-space-8);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  color: var(--ward-muted);
+}
+
+.emptyState {
+  margin: 0;
+  padding: var(--ward-space-12) var(--ward-space-16);
+  border: 1px dashed var(--border-line);
+  border-radius: var(--radius-md, 0.5rem);
+  color: var(--ward-muted);
+  font-size: var(--t-0, 0.75rem);
+  font-style: italic;
+  background: var(--ward-subtle);
+}
+
+@media (max-width: 768px) {
+  .panel {
+    padding: var(--ward-space-12);
+  }
+
+  .telemetryStrip {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tabList {
+    overflow-x: auto;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tabButton {
+    flex: 1 0 auto;
+    white-space: nowrap;
+  }
+
+  .card,
+  .censusBanner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--ward-space-12);
+  }
+
+  .actionButton,
+  .confirmButton {
+    width: 100%;
+  }
+}

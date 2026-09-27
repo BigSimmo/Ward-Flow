@@ -1,0 +1,1432 @@
+.screen {
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  min-width: 0;
+  min-height: 100%;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  display: block;
+
+  --text: var(--ink);
+  --text-heading: var(--ink);
+  --text-muted: var(--muted);
+  --surface-subtle: var(--surface-2);
+  --surface-chrome: var(--surface-2);
+
+  /* `--gap` is read below but was never ported into `ward-flow-shell-tokens.module.css` (out of
+   * this task's scope). 14px is not a guess — every third-edition mockup's own `:root` declares
+   * exactly this value for `--gap`, with no exception found across the design source. */
+  --gap: 14px;
+}
+
+.main {
+  grid-column: auto;
+  display: grid;
+  min-width: 0;
+  gap: 0.875rem;
+  padding: 0.875rem 1.5rem 1.5rem;
+}
+
+.main > :global(header:first-of-type) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.main > :global([data-testid="ward-statistics-governance"]) {
+  min-height: 3rem;
+  padding: 0.5rem 0.75rem;
+  border-color: var(--line);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font-family: var(--body);
+  font-size: var(--t-1);
+}
+
+.main > :global([data-testid="ward-statistics-access"]) {
+  border-color: var(--warn);
+  border-radius: var(--r2);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-family: var(--body);
+  font-size: var(--t-1);
+}
+
+.main > :global([data-testid="ward-statistics-index"]) {
+  border-color: var(--line);
+  border-radius: var(--r1);
+  background: var(--surface-2);
+}
+
+.main > * {
+  min-width: 0;
+}
+
+.landingRegions {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.875rem;
+  align-items: start;
+}
+
+.landingRegions > :global([data-testid="ward-statistics-system"]),
+.landingRegions > :global([data-testid="ward-statistics-patients"]) {
+  grid-column: 1 / -1;
+}
+
+.communityRegion,
+.landingBody {
+  min-width: 0;
+}
+
+.disclosure,
+.measurementDetails {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  background: var(--surface);
+  color: var(--ink-soft);
+}
+
+.disclosure > summary,
+.measurementDetails > summary {
+  min-height: 3rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-size: var(--t-1);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.disclosure > summary:focus-visible,
+.measurementDetails > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.measurementDetails {
+  border-width: 1px 0 0;
+  border-radius: 0;
+}
+
+.acrossContext,
+.acrossIndex {
+  min-width: 0;
+}
+
+.acrossContext {
+  border-bottom: 1px solid var(--line);
+  background: var(--warn-soft);
+}
+
+.acrossIndex {
+  border-top: 1px solid var(--line);
+}
+
+.acrossContext .disclosure,
+.acrossIndex .disclosure {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.acrossContext .disclosure > summary,
+.acrossIndex .disclosure > summary {
+  min-height: 2.75rem;
+  padding-block: 0.625rem;
+}
+
+.acrossContext :global([data-testid="ward-statistics-access"]) {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.acrossIndex :global([data-testid="ward-statistics-index"]) {
+  border-color: var(--line);
+  background: var(--surface-2);
+}
+
+.summaryIntro {
+  padding: 0.75rem 1rem;
+}
+.summaryIntro p {
+  max-width: 75ch;
+  margin: 0 0 0.625rem;
+  color: var(--ink-soft);
+}
+.metricBand {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+.metricBand > div {
+  padding: 0.875rem 1rem;
+  border-right: 1px solid var(--line);
+}
+.metricBand > div:last-child {
+  border-right: 0;
+}
+.metricBand dt {
+  color: var(--muted);
+  font-size: var(--t-1);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.metricBand dd {
+  margin: 0.25rem 0;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-5);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.metricBand .metricCaption {
+  margin: 0.375rem 0 0;
+  color: var(--muted);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  line-height: 1.5;
+}
+
+.metricBand > div[data-tone="warn"] dd:not(.metricCaption) {
+  color: var(--warn);
+}
+
+.metricBand > div[data-tone="danger"] dd:not(.metricCaption) {
+  color: var(--danger);
+}
+
+.rangeSummary {
+  padding: 1rem;
+}
+
+.rangeEyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rangeSummary h3 {
+  max-width: 42rem;
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--t-3);
+  font-weight: 600;
+}
+
+.rangeGraphic {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+}
+
+.rangeGraphic::before {
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  right: 12%;
+  left: 12%;
+  height: 0.125rem;
+  background: var(--line-strong);
+  content: "";
+}
+
+.rangeGraphic > div {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  background: var(--surface);
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.rangeGraphic .rangeAverage {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.rangeGraphic dt {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.rangeGraphic dd {
+  margin: 0.25rem 0 0;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-5);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.noSpread {
+  margin: 0.75rem 0 0;
+  border-left: 0.1875rem solid var(--line-strong);
+  padding-left: 0.75rem;
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  font-weight: 600;
+}
+
+.rangeFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 1rem;
+  margin: 0.875rem 0 0;
+  padding: 0;
+  color: var(--muted);
+  font-size: var(--t-1);
+  list-style: none;
+}
+
+.rangeFacts li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rangeFacts li::before {
+  width: 0.375rem;
+  height: 0.375rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--line-strong);
+  content: "";
+}
+
+.rangeUnavailable {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+  margin-top: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  background: var(--sunk);
+  padding: 0.875rem 1rem;
+  color: var(--ink-soft);
+}
+
+.rangeUnavailable strong {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-4);
+  font-variant-numeric: tabular-nums;
+}
+
+.flowDetails {
+  margin-top: 0;
+}
+
+.provenanceFooter {
+  min-height: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  background: var(--surface-2);
+  padding: 0.625rem 0.75rem;
+}
+
+@media (max-width: 75rem) {
+  .metricBand {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .metricBand > div:nth-child(3n) {
+    border-right: 0;
+  }
+  .metricBand > div:nth-child(n + 4) {
+    border-top: 1px solid var(--line);
+  }
+}
+
+@media (min-width: 62.5625rem) {
+  .landingRegions {
+    align-items: stretch;
+  }
+
+  .landingRegions > :global([data-ward-primitive="panel"]),
+  .landingRegions > .communityRegion > :global([data-ward-primitive="panel"]) {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+    max-height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
+    overflow: hidden;
+  }
+
+  .landingRegions > .communityRegion > :global([data-ward-primitive="panel"]) {
+    height: 100%;
+  }
+
+  .landingRegions > :global([data-ward-primitive="panel"]) > :global([data-ward-primitive="panel-header"]),
+  .landingRegions
+    > .communityRegion
+    > :global([data-ward-primitive="panel"])
+    > :global([data-ward-primitive="panel-header"]) {
+    flex: none;
+  }
+
+  .landingRegions > :global([data-ward-primitive="panel"]) > .landingBody,
+  .landingRegions > .communityRegion > :global([data-ward-primitive="panel"]) > .landingBody {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+}
+
+@media (max-width: 40rem) {
+  .metricBand {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .metricBand > div:nth-child(3n) {
+    border-right: 1px solid var(--line);
+  }
+  .metricBand > div:nth-child(2n) {
+    border-right: 0;
+  }
+  .metricBand > div:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
+  }
+}
+
+.main :global([data-ward-primitive="panel"]) {
+  border-color: var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+
+.main :global([data-ward-primitive="panel-header"]) {
+  border-color: var(--line);
+  background: var(--surface-2);
+}
+
+.screen :global([data-testid^="ward-statistics-index-entry-"]),
+.screen :global([data-testid^="ward-statistics-community-link-"]),
+.screen :global([data-testid^="ward-statistics-service-link-"]) {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.screen :global([data-testid^="ward-statistics-index-entry-"] > span),
+.screen :global([data-testid^="ward-statistics-community-link-"] > span),
+.screen :global([data-testid^="ward-statistics-service-link-"] > span) {
+  color: var(--ink);
+}
+
+.screen :global([data-testid^="ward-statistics-index-entry-"]:hover),
+.screen :global([data-testid^="ward-statistics-community-link-"]:hover),
+.screen :global([data-testid^="ward-statistics-service-link-"]:hover) {
+  border-color: var(--accent);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.screen :global([data-testid="ward-statistics-referral-join-absent"]) {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.screen :global([data-testid="ward-statistics-referral-join-absent"] strong) {
+  color: var(--ink);
+}
+
+.screen :global(p),
+.screen :global(li),
+.screen :global(td),
+.screen :global(th),
+.screen :global(a),
+.screen :global(button) {
+  font-family: var(--body);
+  font-size: var(--t-1);
+  line-height: 1.5;
+}
+
+.screen :global(h2),
+.screen :global(h3) {
+  font-family: var(--display);
+}
+
+.screen :global([data-testid="ward-statistics-governance"] p),
+.screen :global([data-testid="ward-statistics-governance"] span) {
+  font-size: var(--t-0);
+}
+
+@media (max-width: 40rem) {
+  .screen {
+    padding-top: 0;
+  }
+
+  .main {
+    padding: 0.875rem;
+  }
+
+  .landingRegions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .landingRegions > :global([data-testid="ward-statistics-system"]),
+  .landingRegions > :global([data-testid="ward-statistics-patients"]) {
+    grid-column: auto;
+  }
+
+  .rangeGraphic {
+    gap: 0.375rem;
+  }
+
+  .rangeGraphic > div {
+    padding: 0.625rem 0.375rem;
+  }
+
+  .rangeGraphic dd {
+    font-size: var(--t-3);
+  }
+}
+
+.screen :global([data-testid="ward-statistics-declines-withheld"]) {
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  padding: 0.875rem 1rem;
+  color: var(--ink-soft);
+}
+
+.screen :global([data-testid="ward-statistics-declines-withheld"] strong) {
+  color: var(--ink);
+}
+
+@media print {
+  .screen,
+  .screen *,
+  .screen *::before,
+  .screen *::after {
+    background-color: Canvas !important;
+    color: CanvasText !important;
+    box-shadow: none !important;
+  }
+
+  .main,
+  .landingRegions {
+    display: block;
+    padding: 0;
+  }
+
+  .landingRegions > :global([data-ward-primitive="panel"]),
+  .landingRegions > .communityRegion > :global([data-ward-primitive="panel"]) {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .landingRegions :global([data-ward-primitive="panel-header"]) {
+    position: static;
+  }
+
+  .landingRegions > :global([data-ward-primitive="panel"]) > .landingBody,
+  .landingRegions > .communityRegion > :global([data-ward-primitive="panel"]) > .landingBody {
+    overflow: visible;
+  }
+
+  .main > *,
+  .landingRegions > * {
+    margin-bottom: 0.75rem;
+  }
+
+  .rangeGraphic::before {
+    border-top: 1px solid CanvasText;
+    background: transparent !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   THIRD EDITION SOVEREIGN EXECUTIVE DASHBOARD STYLES
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.statsNavStrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+  margin-bottom: 1rem;
+}
+
+.segTrack {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  background: var(--sunk);
+  padding: 0.25rem;
+  border-radius: var(--r2);
+  border: 1px solid var(--line);
+  gap: 0.25rem;
+}
+
+.mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.segBtn {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0.5rem 0.875rem;
+  min-height: 44px;
+  min-width: 44px;
+  border-radius: calc(var(--r2) - 1px);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  font-weight: 500;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  text-decoration: none;
+  touch-action: manipulation;
+}
+
+.segBtn:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+
+:global([data-theme="dark"]) .segBtn:hover {
+  background: var(--surface-2);
+}
+
+.segBtn.active {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: var(--lift);
+  border: 1px solid var(--line-strong);
+}
+
+.segBtn .mono {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+  background: var(--surface-2);
+  padding: 0.125rem 0.375rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+}
+
+.segBtn.active .mono {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: transparent;
+}
+
+.timeWindowTrack {
+  display: inline-flex;
+  background: var(--sunk);
+  padding: 0.25rem;
+  border-radius: var(--r2);
+  border: 1px solid var(--line);
+  gap: 0.25rem;
+}
+
+.timeWindowTrack .segBtn {
+  padding: 0.375rem 0.75rem;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.kpiCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  padding: 0.875rem 1rem;
+  box-shadow: var(--lift);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.kpiTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.kpiLabel {
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.kpiValRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.kpiVal {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-5);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.kpiSub {
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.kpiSpark {
+  margin-top: 0.375rem;
+  height: 1.375rem;
+  width: 100%;
+}
+
+.visualMetricsGrid {
+  display: grid;
+  grid-template-columns: minmax(min(17.5rem, 100%), 20rem) minmax(0, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 58rem) {
+  .visualMetricsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gaugeCard,
+.waterfallCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.gaugeHeader,
+.waterfallHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.gaugeHeader h3,
+.waterfallHeader h3 {
+  font-size: var(--t-2);
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.gaugeStatusBadge {
+  font-size: var(--t-0);
+  font-weight: 600;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--r2);
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.gaugeBody {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 0.625rem 0;
+}
+
+.gaugeSvg {
+  width: 14.375rem;
+  height: 8.125rem;
+  overflow: visible;
+}
+
+.gaugeArcBg {
+  fill: none;
+  stroke: var(--sunk);
+  stroke-width: 14;
+  stroke-linecap: round;
+}
+
+.gaugeArcVal {
+  fill: none;
+  stroke: var(--warn);
+  stroke-width: 14;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
+}
+
+.gaugeCenterText {
+  position: absolute;
+  bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.gaugeNum {
+  font-size: var(--t-6);
+  font-weight: 700;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.gaugeDesc {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
+.gaugeThresholds {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-family: var(--mono);
+  padding: 6px 4px 0;
+  border-top: 1px solid var(--line);
+  width: 100%;
+}
+
+.badgeTarget {
+  color: var(--gilt);
+  font-weight: 600;
+}
+
+.badgeAlert {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.waterfallBar {
+  display: flex;
+  height: 2rem;
+  border-radius: var(--r2);
+  overflow: hidden;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  margin: 0.5rem 0;
+}
+
+.wfSegment {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--on-accent);
+  font-size: var(--t-0);
+  font-weight: 600;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+  padding-inline: 0.25rem;
+  transition: opacity 0.2s ease, filter 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+}
+
+.wfSegmentHighlighted {
+  filter: brightness(1.15);
+  transform: scaleY(1.04);
+  z-index: 1;
+}
+
+.wfSegmentDimmed {
+  opacity: 0.35;
+}
+
+.wfLegend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(8rem, 100%), 1fr));
+  gap: 0.5rem;
+  font-size: var(--t-1);
+}
+
+.wfLegendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--r2);
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.wfLegendItemHighlighted {
+  background: var(--surface-2);
+  font-weight: 600;
+}
+
+.wfLegendItemDimmed {
+  opacity: 0.35;
+}
+
+.wfColorBox {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 0.125rem;
+  flex-shrink: 0;
+}
+
+.summarySection {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.summaryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.summaryHeader h2 {
+  font-size: var(--t-3);
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.summaryHeader .count {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.summaryBody {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.lede {
+  font-size: var(--t-2);
+  color: var(--ink-soft);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.factsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin: 0.375rem 0;
+}
+
+.factChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  font-size: var(--t-0);
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.factChip strong {
+  font-weight: 600;
+  margin-right: 0.25rem;
+}
+
+.reconLine {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--t-1);
+  color: var(--good);
+  margin: 0.25rem 0;
+}
+
+.reconDot {
+  position: relative;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  background: var(--good);
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.reconDot::after {
+  content: "";
+  position: absolute;
+  inset: -0.125rem;
+  border-radius: 50%;
+  pointer-events: none;
+  border: 1px solid var(--good);
+  box-shadow: 0 0 0.375rem var(--good);
+  animation: statisticsMetroPulse 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes statisticsMetroPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reconDot::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .reconDot {
+    background: CanvasText;
+  }
+  .reconDot::after {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+}
+
+.exportRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.exportBtn {
+  appearance: none;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 1px solid transparent;
+  border-radius: var(--r2);
+  padding: 0.5rem 1rem;
+  min-height: var(--ward-tap, 44px);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  touch-action: manipulation;
+}
+
+.exportBtn:hover {
+  background: var(--accent-press);
+}
+
+.exportHint {
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.tableControlsBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.tableSearchBox {
+  position: relative;
+  max-width: 18.75rem;
+  width: 100%;
+}
+
+.tableSearchBox svg {
+  position: absolute;
+  left: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.875rem;
+  height: 0.875rem;
+  stroke: var(--muted);
+  pointer-events: none;
+}
+
+.tableSearchInput {
+  width: 100%;
+  height: 2.25rem;
+  min-height: var(--ward-tap, 44px);
+  padding: 0 0.625rem 0 1.75rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  font-family: var(--body);
+  font-size: var(--t-1);
+  color: var(--ink);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.tableSearchInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.tableFilterCount {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.tableWrap {
+  min-width: 0;
+  overflow-x: auto;
+  border-top: 1px solid var(--line);
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.tableWrap::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+.tableWrap::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 9px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.dataTable {
+  composes: table from "../ward-table/ward-table.module.css";
+  width: 100%;
+  font-size: var(--t-2);
+}
+
+.dataTable th {
+  text-align: left;
+  font-size: var(--t-0);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+
+.dataTable td {
+  color: var(--ink-soft);
+  vertical-align: middle;
+  line-height: 1.45;
+}
+
+.dataTable tr:hover td {
+  background: var(--surface-2);
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortIcon {
+  font-size: var(--t-0);
+  opacity: 0.5;
+  margin-left: 0.25rem;
+  line-height: 1;
+}
+
+.sortActive .sortIcon {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.sortBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: inherit;
+}
+
+.sortBtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r2);
+}
+
+.chartKey {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+  padding: 0.5rem 1rem;
+}
+
+.chartKeyItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.chartKeyDot {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+}
+
+.chartBox {
+  position: relative;
+  width: 100%;
+  min-height: 13.5rem;
+  overflow: visible;
+  padding: 0.5rem 1rem 1rem;
+  box-sizing: border-box;
+}
+
+.flowChartSvg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.chartCrosshair {
+  stroke: var(--ink);
+  stroke-opacity: 0.35;
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+
+.chartTooltip {
+  position: absolute;
+  display: none;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  box-shadow: var(--lift);
+  padding: 0.5rem 0.75rem;
+  font-size: var(--t-0);
+  pointer-events: none;
+  z-index: 10;
+  min-width: 9rem;
+  transition: opacity 0.1s ease;
+}
+
+.ttDate {
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 0.25rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.125rem;
+  font-size: var(--t-0);
+}
+
+.ttRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.125rem;
+  font-size: var(--t-0);
+}
+
+.ttLabel {
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--body);
+  font-size: var(--t-0);
+}
+
+.ttDot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.chartAreaAdm {
+  opacity: 0.85;
+}
+
+.chartAreaDis {
+  opacity: 0.85;
+}
+
+.chartRefLine {
+  stroke: var(--line-strong);
+  stroke-dasharray: 4 4;
+  stroke-width: 1.2;
+}
+
+.chartDotInteractive {
+  cursor: pointer;
+  transition: r 0.15s ease;
+}
+
+.chartDotInteractive:hover {
+  r: 6;
+}
+
+/*
+ * 5-Domain Chooser Cards (.domainChooser / .sectionCards)
+ * On viewports < 480px (mobile phones), clamp cards so they wrap cleanly without causing horizontal scrolling.
+ */
+.domainChooser {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.sectionCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(16rem, 100%), 1fr));
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 479.98px) {
+  .domainChooser {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .sectionCards {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .statsNavStrip {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .segTrack {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 0.25rem;
+  }
+
+  .segBtn {
+    min-height: 44px;
+    min-width: 44px;
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
+.sortBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: inherit;
+}
+
+.sortBtn:hover {
+  color: var(--accent);
+}
+
+.sortIcon {
+  font-size: 0.75rem;
+  opacity: 0.4;
+  user-select: none;
+}
+
+.sortActive {
+  opacity: 1;
+  color: var(--accent);
+}

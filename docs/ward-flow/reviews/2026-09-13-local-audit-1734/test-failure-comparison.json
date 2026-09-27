@@ -1,0 +1,338 @@
+[
+  {
+    "file": "ward-announced-figures-carry-their-marker.test.ts",
+    "initialFailures": 1,
+    "latestFailures": 0,
+    "latestFirstFailure": null
+  },
+  {
+    "file": "ward-chrome-owner.test.ts",
+    "initialFailures": 2,
+    "latestFailures": 0,
+    "latestFirstFailure": null
+  },
+  {
+    "file": "ward-community-corrected-claims.test.ts",
+    "initialFailures": 3,
+    "latestFailures": 3,
+    "latestFirstFailure": "AssertionError: expected 'Synthetic prototypeNot a medical devi…' to contain 'This screen states how long ago someb…'"
+  },
+  {
+    "file": "ward-community-index.test.ts",
+    "initialFailures": 2,
+    "latestFailures": 2,
+    "latestFirstFailure": "AssertionError: expected '<div class=\"_screen_57939b\" data-ward…' to contain 'Whether follow-up has been arranged i…'"
+  },
+  {
+    "file": "ward-design-language-contract.test.ts",
+    "initialFailures": 2,
+    "latestFailures": 2,
+    "latestFirstFailure": "AssertionError: new font-family(s) not in KNOWN_FONT_BACKLOG: src\\components\\ward-management\\coordinator\\shortlist-panel.module.css: expected [ Array(1) ] to deeply equal []"
+  },
+  {
+    "file": "ward-event-permissions.test.ts",
+    "initialFailures": 1,
+    "latestFailures": 1,
+    "latestFirstFailure": "AssertionError: expected [ 'ACCEPT_IN_PRINCIPLE', …(56) ] to deeply equal [ 'ACCEPT_IN_PRINCIPLE', …(53) ]"
+  },
+  {
+    "file": "ward-facade-agrees-with-screens.test.ts",
+    "initialFailures": 9,
+    "latestFailures": 9,
+    "latestFirstFailure": "TypeError: Cannot read properties of null (reading 'unitId')"
+  },
+  {
+    "file": "ward-board-selection.dom.test.tsx",
+    "initialFailures": 5,
+    "latestFailures": 0,
+    "latestFirstFailure": null
+  },
+  {
+    "file": "ward-board-triage.dom.test.tsx",
+    "initialFailures": 1,
+    "latestFailures": 0,
+    "latestFirstFailure": null
+  },
+  {
+    "file": "ward-capacity-absorbed-morning-coverage.dom.test.tsx",
+    "initialFailures": 2,
+    "latestFailures": 2,
+    "latestFirstFailure": "AssertionError: the caption for the Capacity disclosure banner no longer says \"invented\". Got: \"Latest ward confirmation: 10:32 · Demo dataWhere the mismatch is43 waiting, 27 beds that fitWhat's neededWaitingBeds that fitGapWhat that meansA"
+  },
+  {
+    "file": "ward-capacity-network-fold-empty-service.dom.test.tsx",
+    "initialFailures": 1,
+    "latestFailures": 1,
+    "latestFirstFailure": "Error: North Metro lost its fold button once a sibling service emptied: \u001b[2mexpect(\u001b[22m\u001b[31melement\u001b[39m\u001b[2m).toHaveAttribute(\u001b[22m\u001b[32m\u001b[32m\"aria-expanded\"\u001b[32m\u001b[39m\u001b[2m, \u001b[22m\u001b[32m\u001b[32m\"false\"\u001b[32m\u001b[39m\u001b[2m) // element.getAttribute(\"aria"
+  },
+  {
+    "file": "ward-capacity-network-fold.dom.test.tsx",
+    "initialFailures": 4,
+    "latestFailures": 4,
+    "latestFirstFailure": "Error: North Metro has no fold button: \u001b[2mexpect(\u001b[22m\u001b[31melement\u001b[39m\u001b[2m).toHaveAttribute(\u001b[22m\u001b[32m\u001b[32m\"aria-expanded\"\u001b[32m\u001b[39m\u001b[2m, \u001b[22m\u001b[32m\u001b[32m\"false\"\u001b[32m\u001b[39m\u001b[2m) // element.getAttribute(\"aria-expanded\") === \"false\"\u001b[22m"
+  },
+  {
+    "file": "ward-change-audit-enumeration.dom.test.tsx",
+    "initialFailures": 2,
+    "latestFailures": 2,
+    "latestFirstFailure": "TestingLibraryElementError: Unable to find an element by: [data-testid=\"ward-governance-change-audit\"]"
+  },
+  {
+    "file": "ward-command-third-edition.dom.test.tsx",
+    "initialFailures": 3,
+    "latestFailures": 3,
+    "latestFirstFailure": "AssertionError: expected exactly the four headed top-level panels, found a different count: expected 3 to be 4 // Object.is equality"
+  },
+  {
+    "file": "ward-community-governance-claims.dom.test.tsx",
+    "initialFailures": 8,
+    "latestFailures": 8,
+    "latestFirstFailure": "AssertionError: the community team page no longer states this: \"no team has agreed to be represented here\": expected 'Synthetic prototypeNot a medical devi…' to contain 'no team has agreed to be represented …'"
+  },
+  {
+    "file": "ward-community-hub.dom.test.tsx",
+    "initialFailures": 8,
+    "latestFailures": 8,
+    "latestFirstFailure": "AssertionError: expected 'Matches use the destination team writ…' to contain 'a referral named Albany as a destinat…'"
+  },
+  {
+    "file": "ward-community-third-edition-headings.dom.test.tsx",
+    "initialFailures": 1,
+    "latestFailures": 1,
+    "latestFirstFailure": "AssertionError: the main column's panels are in a different order from the drawing — order is what a coordinator reads as priority. A panel ADDED to this screen also fails here, deliberately: it must be decided about rather than silently ac"
+  },
+  {
+    "file": "ward-daily-return-rows.dom.test.tsx",
+    "initialFailures": 1,
+    "latestFailures": 0,
+    "latestFirstFailure": null
+  },
+  {
+    "file": "ward-daily-sheet.dom.test.tsx",
+    "initialFailures": 2,
+    "latestFailures": 0,
+    "latestFirstFailure": null
+  },
+  {
+    "file": "ward-delays-nobody-waiting.dom.test.tsx",
+    "initialFailures": 1,
+    "latestFailures": 1,
+    "latestFirstFailure": "AssertionError: the duration band no longer states the total and all three derived bands exactly: expected [ [ 'Waiting', '2 people' ], …(3) ] to deeply equal [ [ 'Waiting', '2 people' ], …(3) ]"
+  },
+  {
+    "file": "ward-delays-screen.dom.test.tsx",
+    "initialFailures": 1,
+    "latestFailures": 1,
+    "latestFirstFailure": "Error: \u001b[2mexpect(\u001b[22m\u001b[31melement\u001b[39m\u001b[2m).toHaveTextContent()\u001b[22m"
+  },
+  {
+    "file": "ward-delays-third-edition.dom.test.tsx",
+    "initialFailures": 3,
+    "latestFailures": 3,
+    "latestFirstFailure": "AssertionError: expected [ 'Who is holding people up', …(7) ] to deeply equal [ 'Who is holding people up', …(7) ]"
+  },
+  {
+    "file": "ward-discharge-blocked-emphasis.dom.test.tsx",
+    "initialFailures": 2,
+    "latestFailures": 2,
+    "latestFirstFailure": "AssertionError: no section carries the elevated class — either the class was renamed, or the seeded state has stopped containing a blocked release and every assertion below is about nothing: expected +0 to be 1 // Object.is equality"
+  },
+  {
+    "file": "ward-discharge-column-contract.dom.test.tsx",
+    "initialFailures": 3,
+    "latestFailures": 3,
+    "latestFirstFailure": "AssertionError: blocked rendered no table — the seed has stopped populating it and this suite is asserting over fewer groups than it names: expected null to be truthy"
+  },
+  {
+    "file": "ward-error-boundaries.dom.test.tsx",
+    "initialFailures": 2,
+    "latestFailures": 2,
+    "latestFirstFailure": "AssertionError: expected '\"use client\";\\n\\nimport { WardFlowErr…' not to contain 'reset'"
+  },
+  {
+    "file": "ward-flow-clock-consistency.dom.test.tsx",
+    "initialFailures": 2,
+    "latestFailures": 2,
+    "latestFirstFailure": "TestingLibraryElementError: Unable to find an accessible element with the role \"region\" and name `/^Every movement today/u`"
+  },
+  {
+    "file": "ward-flow-single-source.test.ts",
+    "initialFailures": 1,
+    "latestFailures": 1,
+    "latestFirstFailure": "AssertionError: WardFlowState carries admissions, so a patient who arrives during a session is recorded - and the out-of-area board's provenance paragraph must say so. It previously told the reader that nothing on these screens adds anyone "
+  },
+  {
+    "file": "ward-governance-claims.test.ts",
+    "initialFailures": 3,
+    "latestFailures": 3,
+    "latestFirstFailure": "AssertionError: no governance card headed \"Minimum data\" — this guard is checking a card that moved: expected -1 to be greater than -1"
+  },
+  {
+    "file": "ward-nav.test.ts",
+    "initialFailures": 3,
+    "latestFailures": 3,
+    "latestFirstFailure": "AssertionError: expected [ …(8) ] to deeply equal [ …(6) ]"
+  },
+  {
+    "file": "ward-patient-link-default-deny.test.ts",
+    "initialFailures": 1,
+    "latestFailures": 1,
+    "latestFirstFailure": "AssertionError: a ward-management file outside the D-14 allowlist reads .patientId — a ward learning where else a patient has been is exactly what this guard exists to stop. Hand this back to Ward Lead rather than deciding it is fine and wi"
+  },
+  {
+    "file": "ward-patient-sensitive-adjacency-css.test.ts",
+    "initialFailures": 1,
+    "latestFailures": 1,
+    "latestFirstFailure": "AssertionError: the placement fact list can lay out in more than one column. At two columns — which is a 375px phone — Aboriginal or Torres Strait Islander status renders DIRECTLY ABOVE interpreter / preferred language, and the placement ru"
+  },
+  {
+    "file": "ward-primitives-shared.test.ts",
+    "initialFailures": 1,
+    "latestFailures": 0,
+    "latestFirstFailure": null
+  },
+  {
+    "file": "ward-prototype-disclosure.test.ts",
+    "initialFailures": 1,
+    "latestFailures": 1,
+    "latestFirstFailure": "AssertionError: these ward screens show invented bed counts, patient journeys and named hospitals with nothing on the page saying the data is fictional. The convention is a `prototypeBadge` in a governance banner, carried by every other war"
+  },
+  {
+    "file": "ward-provenance-sentences-carry-their-own-marker.test.ts",
+    "initialFailures": 2,
+    "latestFailures": 2,
+    "latestFirstFailure": "AssertionError: no provenance headings found — the heading walk itself is measuring nothing: expected 2 to be greater than or equal to 3"
+  },
+  {
+    "file": "ward-governance-enumerations.dom.test.tsx",
+    "initialFailures": 1,
+    "latestFailures": 1,
+    "latestFirstFailure": "AssertionError: the word \"every\" is bold in this paragraph, so the scope it is every-of must be stated or the emphasis makes the claim wider than the filter: expected 'Synthetic prototypeAll outstanding jo…' to contain 'open movement'"
+  },
+  {
+    "file": "ward-handover-filters.dom.test.tsx",
+    "initialFailures": 9,
+    "latestFailures": 0,
+    "latestFirstFailure": null
+  },
+  {
+    "file": "ward-handover.dom.test.tsx",
+    "initialFailures": 9,
+    "latestFailures": 0,
+    "latestFirstFailure": null
+  },
+  {
+    "file": "ward-hub-screen.dom.test.tsx",
+    "initialFailures": 1,
+    "latestFailures": 0,
+    "latestFirstFailure": null
+  },
+  {
+    "file": "ward-legal-forms-screen.dom.test.tsx",
+    "initialFailures": 1,
+    "latestFailures": 1,
+    "latestFirstFailure": "AssertionError: the subtitle is empty - this case now proves nothing: expected 16 to be greater than 20"
+  },
+  {
+    "file": "ward-network-referral-placement.dom.test.tsx",
+    "initialFailures": 1,
+    "latestFailures": 1,
+    "latestFirstFailure": "AssertionError: a disclosure element is back on the diagram, so a band group can fold wards out of the picture: expected <details …(2)>…(2)</details>"
+  },
+  {
+    "file": "ward-on-call-screen.dom.test.tsx",
+    "initialFailures": 1,
+    "latestFailures": 1,
+    "latestFirstFailure": "TestingLibraryElementError: Unable to find an element with the text: /Every role and shift on this screen is invented/iu. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your te"
+  },
+  {
+    "file": "ward-out-of-area-upgrade.dom.test.tsx",
+    "initialFailures": 1,
+    "latestFailures": 1,
+    "latestFirstFailure": "AssertionError: expected 'This is not a live statewide count. I…' to contain 'Nothing on these screens takes anyone…'"
+  },
+  {
+    "file": "ward-pull-vocabulary.dom.test.tsx",
+    "initialFailures": 2,
+    "latestFailures": 2,
+    "latestFirstFailure": "AssertionError: expected 'Synthetic prototypeScoped to RPH Adul…' to contain 'it is not a bed pulled for a named pa…'"
+  },
+  {
+    "file": "ward-sidebar-phone-contract.test.ts",
+    "initialFailures": 2,
+    "latestFailures": 0,
+    "latestFirstFailure": null
+  },
+  {
+    "file": "ward-specs-never-navigate-into-redirect-stubs.test.ts",
+    "initialFailures": 1,
+    "latestFailures": 1,
+    "latestFirstFailure": "AssertionError: a wait on a panel name Movements really renders was reported as a defect — `title=` literals are not reaching the renderable-name set, so every panel-scoped assertion is now accused: expected [ Array(1) ] to deeply equal []"
+  },
+  {
+    "file": "ward-statistics-claims.test.ts",
+    "initialFailures": 1,
+    "latestFailures": 1,
+    "latestFirstFailure": "AssertionError: 18 claim(s) can no longer be located on the page that makes them:"
+  },
+  {
+    "file": "ward-table-min-width.test.ts",
+    "initialFailures": 1,
+    "latestFailures": 0,
+    "latestFirstFailure": null
+  },
+  {
+    "file": "ward-table-single-source.test.ts",
+    "initialFailures": 2,
+    "latestFailures": 2,
+    "latestFirstFailure": "AssertionError: expected only the canonical file plus the known backlog to declare .table th/.table td padding or border, found: src/components/ward-management/discharges/discharges-third-edition.module.css, src/components/ward-management/e"
+  },
+  {
+    "file": "ward-referral-screens.dom.test.tsx",
+    "initialFailures": 2,
+    "latestFailures": 2,
+    "latestFirstFailure": "AssertionError: the caption for the session-arrivals note no longer says \"during this session\" or \"while this session\" or \"this session\". Got: \"This is not a live statewide count. It uses this prototype's seeded records. People who have lef"
+  },
+  {
+    "file": "ward-screen-handover-link.dom.test.tsx",
+    "initialFailures": 1,
+    "latestFailures": 0,
+    "latestFirstFailure": null
+  },
+  {
+    "file": "ward-screen-overview-and-entry.dom.test.tsx",
+    "initialFailures": 3,
+    "latestFailures": 0,
+    "latestFirstFailure": null
+  },
+  {
+    "file": "ward-statistics-community-provenance.dom.test.tsx",
+    "initialFailures": 2,
+    "latestFailures": 2,
+    "latestFirstFailure": "AssertionError: expected 'Data provenanceEvery figure on this p…' not to contain 'are real'"
+  },
+  {
+    "file": "ward-statistics-overview-invented.dom.test.tsx",
+    "initialFailures": 2,
+    "latestFailures": 2,
+    "latestFirstFailure": "AssertionError: expected 'Every figure here is invented and des…' to contain 'Every figure here is invented.'"
+  },
+  {
+    "file": "ward-statistics-sections.dom.test.tsx",
+    "initialFailures": 4,
+    "latestFailures": 4,
+    "latestFirstFailure": "AssertionError: the page no longer says the ward is named only when a ward accepts: expected 'The home page publishes no ward-attri…' to match /only when a ward accepts/i"
+  },
+  {
+    "file": "ward-statistics-service-screen.dom.test.tsx",
+    "initialFailures": 1,
+    "latestFailures": 1,
+    "latestFirstFailure": "TestingLibraryElementError: Unable to find an accessible element with the role \"heading\" and name \"Invented figures\""
+  },
+  {
+    "file": "ward-statistics.dom.test.tsx",
+    "initialFailures": 2,
+    "latestFailures": 2,
+    "latestFirstFailure": "AssertionError: the caption for the withheld declines figure no longer carries concept(s) it must: got \"No ward-attributable decline measure. Referral and movement declines describe different populations, so no per-ward number is shown.\". R"
+  }
+]

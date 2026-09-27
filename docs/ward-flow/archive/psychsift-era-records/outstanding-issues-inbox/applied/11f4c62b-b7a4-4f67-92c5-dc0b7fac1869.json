@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "id": "11f4c62b-b7a4-4f67-92c5-dc0b7fac1869",
+  "createdOn": "2026-09-10",
+  "action": "add",
+  "payload": {
+    "pri": "P3",
+    "type": "issue",
+    "summary": "Ward Flow provenance guards: two residual holes in the statistics helper, and three that belong to text analysis itself",
+    "detail": "VERIFIED FIRST, not assumed: bad20426c9 (tests/helpers/ward-invented-figures.ts) genuinely closes all 8 previously reported defects including all four negations, with 0 of 6 honest statistics items reddened. Collapsing two copies into one helper, and the MENTIONS_A_FIGURE gate (only a clause naming a figure must carry a claim), are both better than the source-scanning guard's equivalents. Do not undo any of it. TWO HOLES REMAIN THAT ARE THEIRS ALONE, both with a fix already present in tests/ward-provenance-sentences-carry-their-own-marker.test.ts: (1) no retraction check — 'The bed counts were invented until recently.' passes; 'used to be synthetic' is caught only by accident, because it happens not to contain a listed claim, and an accident is not coverage. The RETRACTED regex transfers as-is. (2) MENTIONS_A_FIGURE is a WHITELIST of figure nouns, so a clause with a spelled-out number and an unlisted noun is skipped entirely and never examined — 'The bed occupancy is invented; the wait is eleven hours.' passes because 'wait' is not on the list. This is a list standing where a shape should be, one level along from the bare-word defect, and it is the more dangerous kind because it makes clauses UNEXAMINED rather than wrongly examined. THREE MORE ARE SHARED BY BOTH GUARDS AND ARE PROBABLY NOT FIXABLE: a colon, an 'and', and a comma each hide a bystander inside a single clause ('The referral count is invented and the wait time is 11 hours.'). Splitting on any of them shreds honest prose — hub-screen's real sentence contains two commas and an 'and' inside one claim — so chasing them would redden correct work until the guard is switched off. RECOMMENDATION: document these three as a limit in BOTH files rather than fix them. A residual shared by two independent implementations is a property of the approach, not a bug in either, and reporting it against whichever was measured second is how a sound design gets churned. ALSO OUTSTANDING: the source-scanning guard's own 'what this does not prove' section documents the colon hole and omits the conjunction ones — a limits list is a population and was never floored.",
+    "source": "Ward Builder Four, 2026-09-10, read-only verification of a peer's fix claim plus new probes aimed at its design; no file touched, routed to Ward Lead",
+    "issueUlid": "01M258PQCWJAK0QM49WCN4S8P1"
+  }
+}

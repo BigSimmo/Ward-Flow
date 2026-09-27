@@ -1,0 +1,10 @@
+# Task 1 hover/focus card closure
+
+Plan SHA256: `7714BAF3D8FCFFBAAE58BD03346A755C0F116912CD4FB34F605833D7B4B72E67`.
+HEAD: `1ef9ed3975078b789e9b5d70b3f000c64edc3809`. Sol medium implements; controller runs tests/browser. This closes the explicitly recorded shell design gap.
+
+Exclusive write scope: `src/components/ui/tooltip.tsx`, `src/components/ward-management/shell/ward-rail.tsx`, `src/components/ward-management/shell/ward-rail.module.css`, relevant assertions in `tests/ui-v2-components.dom.test.tsx` and `tests/ward-shell-third-edition.dom.test.tsx`, plus `task-1-hover-card-report-r1.md` here. Preserve existing dirty edits in these files. No other source writes.
+
+Use the existing OverlayPortal-backed Tooltip; do not duplicate its positioning/lifecycle. Add optional right placement, presentation-only mode (no duplicate accessible description), and wrapper sizing without changing existing defaults. Preserve existing top/bottom geometry and handlers. The card should match `mockups/third-edition-kit/shell/shell.css` lines 1644–1715: right gap 10px, top offset 2px, 15.5rem width, compact padding, hairline/stronger bottom border, surface, r1, lift, small type, pointer-events none. Portal content must carry its own Ward token scope. Keep viewport clamping and Escape dismissal. Disable it in open rail and at widths up to 1000px; do not destabilize links/focus across rail state changes. Preserve the link's complete accessible name and truthful live count. Do not copy drawing-only purpose/state prose unsupported by the registry. Keep print/forced-colour behavior explicit. Document any functional design adaptation.
+
+Add focused tests for right positioning, presentation-only description behavior and closed desktop rail activation, reusing existing test infrastructure. No tests or browser runs by worker; no staging/commit/push/provider/delete/move. Read applicable source guidance and installed Next docs if needed. Acknowledge before editing. Return exact hashes and report; controller performs independent source review, two-theme closed-state browser/keyboard checks and affected-only tests.

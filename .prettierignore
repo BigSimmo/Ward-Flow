@@ -1,0 +1,59 @@
+node_modules/
+.next/
+out/
+build/
+coverage/
+test-results/
+test-results-codex-remediation/
+playwright-report/
+sample-documents/
+dev-server*.log
+package-lock.json
+public/demo-documents/
+.tmp-visual/
+scratch/
+.claude/worktrees/
+.impeccable/
+# Ward Flow's records kept from PsychSift's retired issue list and review records, copied word
+# for word on 26 September 2026 (see that folder's README.md). They are history, so no formatter
+# may rewrite them.
+docs/ward-flow/archive/psychsift-era-records/
+
+# Content-addressed Ward Flow control-plane records. THE FILENAME IS THE SHA-256 OF THE FILE'S OWN
+# CANONICAL JSON, so reformatting the content breaks the content-address and the record no longer
+# hashes to its own name. Prettier collapsed two multi-line arrays on 2026-09-03 and
+# tests/ward-flow-chat-control.test.ts went red with "is not canonical JSON". These are records,
+# not source: they are written once by scripts/ward-flow/chat-control.mjs and never edited by hand.
+docs/ward-flow/control/assignments/*.assignment.json
+docs/ward-flow/control/assignments/*.handover.json
+docs/ward-flow/control/assignments/*.certificate.json
+docs/ward-flow/control/evidence/receipts/*.json
+
+# The work-claims register is an APPEND-ONLY table five live chats write to at once, and prettier
+# reformats all 63 rows as pure whitespace padding — which collides with every one of them.
+# Owner-approved exemption, 2026-09-09. It is not avoidable by care: the chat that first reported
+# the hazard hit it twice in one session, the second time while formatting its own changed files,
+# which is correct practice. A rule that makes the right thing cheap keeps working when nobody is
+# feeling scrupulous; five chats each remembering is not a control.
+docs/ward-flow/control/work-claims.md
+
+# Byte-pinned Ward Flow design prototypes.
+# `tests/ward-statistics-v3-language.test.ts` and `-v4-` compare each mockup HTML against
+# `statistics-language-*.css` BYTE FOR BYTE. Prettier formats CSS as CSS and HTML as HTML, so a
+# whole-tree format pass reflows the two differently and the embedded copy stops matching. Measured
+# 2026-09-10: `npm run format` broke 10 of these tests at once. These files are artefacts, not code.
+docs/ward-flow/design/prototypes/
+
+# The ward journey map's GENERATED output. `npm run ward:journey` rewrites each of these from
+# `src/components/ward-management/`, so a whole-tree format pass and the generator reformat the
+# same file two different ways and the pre-push format guard flip-flops between them. The
+# generator's own sources next to them (`*.mjs`, `explorer-template.html`, `actions.json`,
+# `machines.json`, `README.md`) are ordinary code and stay formatted.
+docs/ward-flow/journey/vocabularies.json
+docs/ward-flow/journey/stages.json
+docs/ward-flow/journey/ward-journey-explorer.html
+docs/ward-flow/journey/ward-patient-journey.bpmn
+docs/ward-flow/journey/MAP-INVENTORY.md
+docs/ward-flow/journey/map-snapshot.json
+docs/ward-flow/journey/WHAT-CHANGED.md
+docs/ward-flow/journey/refusal-coverage.json

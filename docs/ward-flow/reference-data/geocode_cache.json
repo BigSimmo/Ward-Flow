@@ -1,0 +1,265 @@
+{
+  "ahs": {
+    "lat": -32.1326658,
+    "lon": 116.0200583,
+    "display_name": "Armadale Kelmscott District Memorial Hospital, 3056, Albany Highway, Mount Nasura, Western Australia, 6112, Australia",
+    "query": "Armadale Hospital Western Australia",
+    "source": "nominatim"
+  },
+  "bentley": {
+    "lat": -32.0059936,
+    "lon": 115.9278836,
+    "display_name": "Bentley Health Service, 18-56, Mills Street, Bentley, Perth, Western Australia, 6102, Australia",
+    "query": "Bentley Health Service, Bentley WA",
+    "source": "nominatim"
+  },
+  "fre": {
+    "lat": -32.0574608,
+    "lon": 115.7533679,
+    "display_name": "Fremantle Hospital and Health Service, Alma Street, Fremantle, Western Australia, 6160, Australia",
+    "query": "Fremantle Hospital, Alma Street, Fremantle WA",
+    "source": "nominatim"
+  },
+  "fsh": {
+    "lat": -32.0695563,
+    "lon": 115.8476646,
+    "display_name": "Fiona Stanley Hospital, 11, Robin Warren Drive, Murdoch, Perth, Western Australia, 6150, Australia",
+    "query": "Fiona Stanley Hospital, Murdoch WA",
+    "source": "nominatim"
+  },
+  "gray": {
+    "lat": -31.9626627,
+    "lon": 115.7889055,
+    "display_name": "Graylands Hospital, 1, Brockway Road, Mount Claremont, Perth, Western Australia, 6010, Australia",
+    "query": "Graylands Hospital, Mount Claremont WA",
+    "source": "nominatim"
+  },
+  "hollywood": {
+    "lat": -31.968899,
+    "lon": 115.8094853,
+    "display_name": "Hollywood Private Hospital, Monash Avenue, Nedlands, Perth, Western Australia, 6009, Australia",
+    "query": "Hollywood Private Hospital, Nedlands WA",
+    "source": "nominatim"
+  },
+  "jhc": {
+    "lat": -31.7384364,
+    "lon": 115.7723599,
+    "display_name": "Joondalup Health Campus, 60, Shenton Avenue, Joondalup, Western Australia, 6027, Australia",
+    "query": "Joondalup Health Campus, Joondalup WA",
+    "source": "nominatim"
+  },
+  "kemh": {
+    "lat": -31.9494293,
+    "lon": 115.8184994,
+    "display_name": "King Edward Memorial Hospital, 374, Bagot Road, Subiaco, Perth, Western Australia, 6008, Australia",
+    "query": "King Edward Memorial Hospital, Subiaco WA",
+    "source": "nominatim"
+  },
+  "mlh": {
+    "lat": -31.9366453,
+    "lon": 115.8848151,
+    "display_name": "St John of God Mt Lawley Hospital, Thirlmere Road, Mount Lawley, Perth, Western Australia, 6050, Australia",
+    "query": "St John of God Hospital Mount Lawley Thirlmere Road",
+    "source": "nominatim"
+  },
+  "pch": {
+    "lat": -31.9693254,
+    "lon": 115.8170862,
+    "display_name": "Perth Children's Hospital, Winthrop Avenue, Nedlands, Perth, Western Australia, 6009, Australia",
+    "query": "Perth Children's Hospital Nedlands",
+    "source": "nominatim"
+  },
+  "peel": {
+    "lat": -32.5329543,
+    "lon": 115.7646451,
+    "display_name": "Peel Health Campus, 110, Lakes Road, Greenfields, Mandurah, Western Australia, 6210, Australia",
+    "query": "Peel Health Campus, Mandurah WA",
+    "source": "nominatim"
+  },
+  "rgh": {
+    "lat": -32.2907702,
+    "lon": 115.7709419,
+    "display_name": "Rockingham General Hospital, Elanora Drive, Cooloongup, Western Australia, 6168, Australia",
+    "query": "Rockingham General Hospital, Cooloongup WA",
+    "source": "nominatim"
+  },
+  "rph": {
+    "lat": -31.954677,
+    "lon": 115.8678268,
+    "display_name": "Royal Perth Hospital, 187, Wellington Street, Perth, Western Australia, 6000, Australia",
+    "query": "Royal Perth Hospital, Wellington Street, Perth WA",
+    "source": "nominatim"
+  },
+  "scgh": {
+    "lat": -31.967636,
+    "lon": 115.8152839,
+    "display_name": "Sir Charles Gairdner Hospital, Bandak Loop, Nedlands, Perth, Western Australia, 6009, Australia",
+    "query": "Sir Charles Gairdner Hospital, Nedlands WA",
+    "source": "nominatim"
+  },
+  "sjgm": {
+    "lat": -31.8948638,
+    "lon": 116.0089669,
+    "display_name": "St John of God Midland Public and Private Hospitals, Lloyd Street Shared Path, Midland, Perth, Western Australia, 6056, Australia",
+    "query": "Midland Public Hospital WA",
+    "source": "nominatim"
+  },
+  "sjog-murdoch": {
+    "lat": -32.0680409,
+    "lon": 115.8448426,
+    "display_name": "Saint John of God Murdoch Hospital, Barry Marshall Parade, Murdoch, Perth, Western Australia, 6150, Australia",
+    "query": "St John of God Murdoch Hospital, Murdoch WA",
+    "source": "nominatim"
+  },
+  "points": {
+    "rph": {
+      "query": "Royal Perth Hospital, Perth, Western Australia",
+      "lat": -31.954677,
+      "lon": 115.8678268,
+      "display_name": "Royal Perth Hospital, 187, Wellington Street, Perth, Western Australia, 6000, Australia",
+      "place_id": 426712786,
+      "source_url": "https://nominatim.openstreetmap.org/search?q=Royal%20Perth%20Hospital%2C%20Perth%2C%20Western%20Australia&format=jsonv2&limit=1",
+      "provider": "Nominatim",
+      "retrieved_on": "2026-09-17"
+    },
+    "scgh": {
+      "query": "Sir Charles Gairdner Hospital, Nedlands, Western Australia",
+      "lat": -31.967636,
+      "lon": 115.8152839,
+      "display_name": "Sir Charles Gairdner Hospital, Bandak Loop, Nedlands, Perth, Western Australia, 6009, Australia",
+      "place_id": 33775066,
+      "source_url": "https://nominatim.openstreetmap.org/search?q=Sir%20Charles%20Gairdner%20Hospital%2C%20Nedlands%2C%20Western%20Australia&format=jsonv2&limit=1",
+      "provider": "Nominatim",
+      "retrieved_on": "2026-09-17"
+    },
+    "fsh": {
+      "query": "Fiona Stanley Hospital, Murdoch, Western Australia",
+      "lat": -32.0695563,
+      "lon": 115.8476646,
+      "display_name": "Fiona Stanley Hospital, 11, Robin Warren Drive, Murdoch, Perth, Western Australia, 6150, Australia",
+      "place_id": 33950347,
+      "source_url": "https://nominatim.openstreetmap.org/search?q=Fiona%20Stanley%20Hospital%2C%20Murdoch%2C%20Western%20Australia&format=jsonv2&limit=1",
+      "provider": "Nominatim",
+      "retrieved_on": "2026-09-17"
+    },
+    "ahs": {
+      "query": "Armadale Health Service, Mount Nasura, Western Australia",
+      "lat": -32.133222,
+      "lon": 116.0194918,
+      "display_name": "Hospital Rd Armadale Health Service, Haslemere Drive, Mount Nasura, Western Australia, 6112, Australia",
+      "place_id": 33644069,
+      "source_url": "https://nominatim.openstreetmap.org/search?q=Armadale%20Health%20Service%2C%20Mount%20Nasura%2C%20Western%20Australia&format=jsonv2&limit=1",
+      "provider": "Nominatim",
+      "retrieved_on": "2026-09-17"
+    },
+    "jhc": {
+      "query": "Joondalup Health Campus, Joondalup, Western Australia",
+      "lat": -31.7384364,
+      "lon": 115.7723599,
+      "display_name": "Joondalup Health Campus, 60, Shenton Avenue, Joondalup, Western Australia, 6027, Australia",
+      "place_id": 33633120,
+      "source_url": "https://nominatim.openstreetmap.org/search?q=Joondalup%20Health%20Campus%2C%20Joondalup%2C%20Western%20Australia&format=jsonv2&limit=1",
+      "provider": "Nominatim",
+      "retrieved_on": "2026-09-17"
+    },
+    "peel": {
+      "query": "Peel Health Campus, Mandurah, Western Australia",
+      "lat": -32.5329543,
+      "lon": 115.7646451,
+      "display_name": "Peel Health Campus, 110, Lakes Road, Greenfields, Mandurah, Western Australia, 6210, Australia",
+      "place_id": 33871395,
+      "source_url": "https://nominatim.openstreetmap.org/search?q=Peel%20Health%20Campus%2C%20Mandurah%2C%20Western%20Australia&format=jsonv2&limit=1",
+      "provider": "Nominatim",
+      "retrieved_on": "2026-09-17"
+    },
+    "kemh": {
+      "query": "King Edward Memorial Hospital, Subiaco, Western Australia",
+      "lat": -31.9494293,
+      "lon": 115.8184994,
+      "display_name": "King Edward Memorial Hospital, 374, Bagot Road, Subiaco, Perth, Western Australia, 6008, Australia",
+      "place_id": 33778987,
+      "source_url": "https://nominatim.openstreetmap.org/search?q=King%20Edward%20Memorial%20Hospital%2C%20Subiaco%2C%20Western%20Australia&format=jsonv2&limit=1",
+      "provider": "Nominatim",
+      "retrieved_on": "2026-09-17"
+    },
+    "pch": {
+      "query": "Perth Children's Hospital, Nedlands, Western Australia",
+      "lat": -31.9693254,
+      "lon": 115.8170862,
+      "display_name": "Perth Children's Hospital, Winthrop Avenue, Nedlands, Perth, Western Australia, 6009, Australia",
+      "place_id": 33668635,
+      "source_url": "https://nominatim.openstreetmap.org/search?q=Perth%20Children%27s%20Hospital%2C%20Nedlands%2C%20Western%20Australia&format=jsonv2&limit=1",
+      "provider": "Nominatim",
+      "retrieved_on": "2026-09-17"
+    },
+    "bhs": {
+      "query": "Bentley Health Service, Bentley, Western Australia",
+      "lat": -32.0059936,
+      "lon": 115.9278836,
+      "display_name": "Bentley Health Service, 18-56, Mills Street, Bentley, Perth, Western Australia, 6102, Australia",
+      "place_id": 33650561,
+      "source_url": "https://nominatim.openstreetmap.org/search?q=Bentley%20Health%20Service%2C%20Bentley%2C%20Western%20Australia&format=jsonv2&limit=1",
+      "provider": "Nominatim",
+      "retrieved_on": "2026-09-17"
+    },
+    "fre": {
+      "query": "Fremantle Hospital, Fremantle, Western Australia",
+      "lat": -32.0574608,
+      "lon": 115.7533679,
+      "display_name": "Fremantle Hospital and Health Service, Alma Street, Fremantle, Western Australia, 6160, Australia",
+      "place_id": 33656755,
+      "source_url": "https://nominatim.openstreetmap.org/search?q=Fremantle%20Hospital%2C%20Fremantle%2C%20Western%20Australia&format=jsonv2&limit=1",
+      "provider": "Nominatim",
+      "retrieved_on": "2026-09-17"
+    },
+    "gray": {
+      "query": "Graylands Hospital, Mount Claremont, Western Australia",
+      "lat": -31.9626627,
+      "lon": 115.7889055,
+      "display_name": "Graylands Hospital, 1, Brockway Road, Mount Claremont, Perth, Western Australia, 6010, Australia",
+      "place_id": 33519896,
+      "source_url": "https://nominatim.openstreetmap.org/search?q=Graylands%20Hospital%2C%20Mount%20Claremont%2C%20Western%20Australia&format=jsonv2&limit=1",
+      "provider": "Nominatim",
+      "retrieved_on": "2026-09-17"
+    },
+    "mid": {
+      "query": "Midland Public Hospital, Western Australia",
+      "lat": -31.8948638,
+      "lon": 116.0089669,
+      "display_name": "St John of God Midland Public and Private Hospitals, Lloyd Street Shared Path, Midland, Perth, Western Australia, 6056, Australia",
+      "place_id": 33532414,
+      "source_url": "https://nominatim.openstreetmap.org/search?q=Midland%20Public%20Hospital%2C%20Western%20Australia&format=jsonv2&limit=1",
+      "provider": "Nominatim",
+      "retrieved_on": "2026-09-17"
+    },
+    "rgh": {
+      "query": "Rockingham General Hospital, Elanora Drive, Cooloongup, Western Australia",
+      "lat": -32.2907702,
+      "lon": 115.7709419,
+      "display_name": "Rockingham General Hospital, Elanora Drive, Cooloongup, Western Australia, 6168, Australia",
+      "place_id": 33938075,
+      "source_url": "https://nominatim.openstreetmap.org/search?q=Rockingham%20General%20Hospital%2C%20Elanora%20Drive%2C%20Cooloongup%2C%20Western%20Australia&format=jsonv2&limit=1",
+      "provider": "Nominatim",
+      "retrieved_on": "2026-09-17"
+    },
+    "cock": {
+      "lat": -32.1296832,
+      "lon": 115.8532401,
+      "display_name": "Cockburn Health Community, 11, Wentworth Parade, Success, Western Australia, 6164, Australia"
+    }
+  },
+  "mid": {
+    "lat": -31.8948638,
+    "lon": 116.0089669,
+    "display_name": "St John of God Midland Public and Private Hospitals, Lloyd Street Shared Path, Midland, Perth, Western Australia, 6056, Australia",
+    "query": "Midland Public Hospital WA",
+    "source": "nominatim"
+  },
+  "mur": {
+    "lat": -32.0680409,
+    "lon": 115.8448426,
+    "display_name": "Saint John of God Murdoch Hospital, Barry Marshall Parade, Murdoch, Perth, Western Australia, 6150, Australia",
+    "query": "St John of God Murdoch Hospital, Murdoch WA",
+    "source": "nominatim"
+  }
+}

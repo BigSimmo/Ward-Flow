@@ -1,0 +1,429 @@
+.trafficSplit {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
+  align-items: stretch;
+}
+
+.diagramColumn {
+  display: grid;
+  min-width: 0;
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.diagramViewport {
+  min-width: 0;
+  max-height: 32rem;
+  overflow: auto;
+  background: var(--sunk);
+  scrollbar-gutter: stable;
+}
+
+.diagramViewport:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.diagramCanvas {
+  position: relative;
+  width: 51.25rem;
+  min-width: 51.25rem;
+  height: var(--diagram-height);
+  min-height: 11rem;
+  overflow: hidden;
+  background:
+    linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px),
+    var(--sunk);
+  background-size: 2.5rem 2.5rem;
+}
+
+.columnHeading {
+  position: absolute;
+  z-index: 3;
+  top: 1rem;
+  color: var(--muted);
+  font-family: var(--body);
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.columnHeading[data-column="origins"] {
+  left: 1.25rem;
+}
+
+.columnHeading[data-column="destinations"] {
+  left: 76.5%;
+}
+
+.corridors {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.corridor {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition:
+    opacity 0.15s ease,
+    stroke-width 0.15s ease;
+  cursor: pointer;
+}
+
+.corridor[data-kind="accepted"] {
+  stroke: var(--accent);
+  opacity: 0.66;
+}
+
+.corridor[data-kind="refused"] {
+  stroke: var(--warn);
+  stroke-dasharray: 4 6;
+  opacity: 0.72;
+}
+
+/* Dark mode elevations: ensure accepted paths (--accent) and declined paths (--warn)
+ * maintain minimum 4.5:1 contrast against dark ground (#0d1117).
+ * At opacity 0.85, --accent (#a7bcd2) achieves 7.27:1 and --warn (#e3bc5e) achieves 7.82:1 against #0d1117.
+ */
+:global([data-theme="dark"]) .corridor[data-kind="accepted"] {
+  stroke: var(--accent);
+  opacity: 0.85;
+}
+
+:global([data-theme="dark"]) .corridor[data-kind="refused"] {
+  stroke: var(--warn);
+  opacity: 0.85;
+}
+
+/* Hover isolation styling: active paths highlighted, inactive paths dimmed to 0.2 */
+.corridor.corridorActive,
+.corridor[data-active="true"] {
+  opacity: 1;
+}
+
+:global([data-theme="dark"]) .corridor.corridorActive,
+:global([data-theme="dark"]) .corridor[data-active="true"] {
+  opacity: 1;
+}
+
+.corridor.corridorDimmed,
+.corridor[data-dimmed="true"] {
+  opacity: 0.2;
+}
+
+:global([data-theme="dark"]) .corridor.corridorDimmed,
+:global([data-theme="dark"]) .corridor[data-dimmed="true"] {
+  opacity: 0.2;
+}
+
+.endpointNode {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  width: 23%;
+  min-height: 3.25rem;
+  align-content: center;
+  gap: 0.125rem;
+  padding: 0.35rem 0.625rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  box-shadow: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+  cursor: pointer;
+}
+
+.endpointNode:hover,
+.endpointNode.endpointActive,
+.endpointNode[data-active="true"] {
+  border-color: var(--accent);
+  box-shadow: var(--lift);
+}
+
+.endpointNode.endpointDimmed,
+.endpointNode[data-dimmed="true"] {
+  opacity: 0.6;
+}
+
+.railItemActive {
+  background: var(--surface-2);
+}
+
+.endpointNode[data-side="origin"] {
+  left: 1.5%;
+}
+
+.endpointNode[data-side="destination"] {
+  left: 75.5%;
+}
+
+.endpointNode span {
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.endpointNode strong {
+  color: var(--ink);
+  font-size: var(--t-1);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.endpointNode small {
+  color: var(--muted);
+  font-size: 0.6875rem;
+  line-height: 1.15;
+}
+
+.diagramFoot {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.875rem;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.legend span {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 650;
+}
+
+.legend i {
+  width: 1.5rem;
+  border-top: 3px solid var(--accent);
+}
+
+.legend i[data-kind="refused"] {
+  border-top-color: var(--warn);
+  border-top-style: dashed;
+}
+
+.key {
+  position: relative;
+}
+
+.key summary {
+  color: var(--accent-ink);
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.keyBody {
+  display: grid;
+  gap: 0.45rem;
+  max-width: 32rem;
+  margin-top: 0.5rem;
+}
+
+.keyBody p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.corridorRail {
+  min-width: 0;
+  border-left: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.corridorRailHeader {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.75rem 0.875rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.corridorRailHeader h3 {
+  margin: 0;
+  color: var(--accent-ink);
+  font-family: var(--display);
+  font-size: var(--t-3);
+  font-weight: 600;
+}
+
+.corridorTabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.corridorTabs button {
+  display: flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  color: var(--muted);
+  background: var(--surface);
+  font: inherit;
+  font-size: var(--t-0);
+  cursor: pointer;
+}
+
+.corridorTabs button[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+}
+
+.corridorTabs span {
+  font-family: var(--mono);
+  font-weight: 700;
+}
+
+.corridorRanks {
+  max-height: 27rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.corridorRanks li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.corridorRanks li > span {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.corridorRanks li > span {
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.corridorRanks small {
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+}
+
+.corridorRanks li > strong {
+  color: var(--accent-ink);
+  font-family: var(--mono);
+  font-size: var(--t-2);
+  font-weight: 600;
+}
+
+.foot,
+.absent {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  line-height: 1.5;
+}
+
+.railEmpty {
+  margin: 0;
+  padding: 1rem;
+  color: var(--muted);
+  font-size: var(--t-1);
+  line-height: 1.5;
+}
+
+.foot {
+  padding: 0.875rem 1rem 1rem;
+}
+
+.foot strong {
+  color: var(--ink);
+}
+
+.absent {
+  padding: 1rem;
+}
+
+@media (max-width: 64rem) {
+  .trafficSplit {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .corridorRail {
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+
+  .corridorRanks {
+    max-height: 24rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .endpointNode,
+  .corridorRail {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+
+  .corridor {
+    stroke: CanvasText;
+    opacity: 1;
+  }
+}
+
+@media print {
+  .trafficSplit,
+  .trafficSplit * {
+    color: CanvasText !important;
+    background: Canvas !important;
+    box-shadow: none !important;
+  }
+
+  .trafficSplit {
+    display: block;
+  }
+
+  .diagramViewport,
+  .corridorRanks {
+    overflow: visible;
+  }
+
+  .diagramCanvas {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .corridor {
+    stroke: CanvasText;
+    opacity: 1;
+  }
+
+  .corridorRail {
+    margin-top: 1rem;
+    border: 1px solid CanvasText;
+  }
+}

@@ -1,0 +1,2077 @@
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Where The System Is Stuck</title>
+
+<style>/* ═══════════════════════════════════════════════════════════════════════════
+   STATISTICS LANGUAGE — FOURTH EDITION. THE SOURCE OF RECORD.
+
+   ⚠️ THIS FILE IS THE LANGUAGE. Every v3 statistics mockup copies this file's
+   whole content as the FIRST thing inside its <style> element, byte for byte,
+   then appends its own page rules below a marker. `tests/ward-statistics-v4-
+   language.test.ts` checks that byte-identity and will name the exact character
+   where a copy diverges. Do not hand-patch a copy: edit here and re-cut.
+
+   ═══ WHY A THIRD EDITION, AND WHAT CHANGED ═══
+
+   The owner's brief, 2026-09-06: "utilise the design system like other pages and
+   keep it crisp and white like the same database design system colour scheme …
+   fix those boxes at the top and make them more sophisticated, stylish and not
+   blocky and tacky … live diagrams that are easy to interpret simply, ideally
+   lines or circles, rather than bar charts."
+
+   THE SECOND EDITION WAS ITS OWN COLOUR SCHEME AND THAT IS THE DEFECT IT FIXES.
+   It invented `--ground: #f1f4f8`, `--surface: #ffffff`, `--ink: #0d1421` and a
+   dozen more names that existed nowhere in the product. The application's real
+   system — `src/app/ckb-v2-tokens.css`, the system of record — says
+   `--background: #ffffff` and `--surface: #ffffff`: a genuinely WHITE page, not
+   a grey ground with white cards floating on it. So a statistics screen and the
+   application it belongs to did not look like one product, and the mockup was
+   the thing engineers copy from.
+
+   EVERY VALUE BELOW IS LIFTED FROM THE LIVE SYSTEM, NOT CHOSEN HERE. Each is
+   named with the token it came from so a reader can check it rather than trust
+   it, and so the next person knows this file is a MIRROR and not an author.
+
+   ═══ WHAT THIS EDITION KEEPS FROM THE SECOND, BECAUSE IT IS CLINICAL ═══
+
+     · State is a WORD first. Colour only ever reinforces a word already there.
+     · Absence is stated, never blank.
+     · Figures are tabular. Anything compared down a column lines up.
+     · Every invented figure is listed at the foot of the page.
+     · Contrast floor 4.5:1.
+     · forced-colors and print are handled here, once, for every carrier.
+
+   ═══ WHAT IS DELIBERATELY DIFFERENT ═══
+
+     · WHITE, not a grey ground. Separation is a hairline and a shadow, never a
+       change of fill. `--surface-subtle` (#fbfcfd) is as far as a fill goes.
+     · THE FIGURE STRIP IS NOT A ROW OF BOXES. The owner called the old tiles
+       blocky and tacky, and they were: five bordered cards in a row, each with
+       its own edge, reading as five competing objects. A figure is now a column
+       in one continuous band, separated by a hairline rule rather than by a box.
+       Nothing is nested inside anything.
+     · CHARTS ARE LINES AND ARCS. No bars anywhere in this language. A trend is a
+       line; a proportion is an arc; a single value against a target is a ring.
+       Bars were the second edition's default and they are the least readable
+       shape for "is this going up or down", which is the question these screens
+       are for.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  color-scheme: light;
+
+  /* ── Surfaces. From ckb-v2-tokens.css, light block. The page is WHITE. ──── */
+  --background: #ffffff;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-subtle: #fbfcfd; /* table headers, quiet rows */
+  --surface-wash: #f8fafc; /* footers, quiet strips */
+  --surface-inset: #f4f7fa; /* recessed wells, inputs, chart grounds */
+
+  /* ── Edges. A hairline is how this system separates things. ────────────── */
+  --border: #e6ebf2;
+  --border-strong: #d3dbe5;
+  --border-lux: #dde4ee;
+
+  /* ── Ink. --text-soft is deprecated upstream and deliberately absent. ──── */
+  --text-heading: #0a1220;
+  --text: #1b2533;
+  --text-muted: #55627a;
+
+  /* ── Primary. --primary-500, and the two darker rungs for hover/hold. ──── */
+  --primary: #1d6fb8;
+  --primary-600: #1a66a8;
+  --primary-700: #185c99;
+  --primary-100: #d9e8f8;
+  --primary-soft: #f2f8fe;
+  --primary-contrast: #ffffff;
+
+  /* ── Status. Text/border/bg triples, exactly as the live system pairs them.
+        These are the ONLY hues on the page besides primary. ──────────────── */
+  --success: #0c6b41;
+  --success-bg: #ecfdf3;
+  --success-border: #abefc6;
+  --warning: #8a4d05;
+  --warning-bg: #fffcf6;
+  --warning-border: #f5d9a8;
+  --danger: #a3190f;
+  --danger-bg: #fef3f2;
+  --danger-border: #fda29b;
+
+  /* ── Elevation ladder --e0..--e4 verbatim, plus the hairline ring. ─────── */
+  --e0: none;
+  --e1: 0 1px 2px rgb(13 40 71 / 5%);
+  --e2:
+    0 1px 2px rgb(13 40 71 / 4%), 0 8px 16px -8px rgb(13 40 71 / 9%);
+  --e3:
+    0 2px 4px rgb(13 40 71 / 4%), 0 16px 28px -12px rgb(13 40 71 / 11%);
+  --e4:
+    0 4px 8px rgb(13 40 71 / 5%), 0 32px 56px -20px rgb(13 40 71 / 15%);
+  --ring-hairline: 0 0 0 1px rgb(13 40 71 / 7%);
+
+  /* ── Radius ladder from @theme in globals.css, verbatim. ──────────────── */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-pill: 9999px;
+
+  /* ── Type scale from ckb-v2-tokens.css. --text-2xs is the Chip compact
+        compatibility step; it is NOT a new step to invent against. ───────── */
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-body: 0.9375rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-hero: clamp(1.75rem, 1.2rem + 2vw, 2.25rem);
+
+  /* ── The design system's ONE tap knob (--spacing-tap). Never reduced. ──── */
+  --tap: 3rem;
+
+  /* ── Spacing, 4px grid. ───────────────────────────────────────────────── */
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1rem;
+  --s5: 1.125rem;
+  --s6: 1.5rem;
+  --s7: 2rem;
+  --s8: 2.5rem;
+}
+
+/* The dark block mirrors ckb-v2-tokens.css's own dark values. Written to
+   `:root:not([data-theme="light"])` so an explicit light choice always wins, and
+   repeated under `[data-theme="dark"]` so an explicit dark choice wins too. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --background: #0b0e11;
+    --surface: #12161a;
+    --surface-raised: #1c2126;
+    --surface-subtle: #1c2126;
+    --surface-wash: #161a1e;
+    --surface-inset: #0a0c0e;
+    --border: #333a41;
+    --border-strong: #47505a;
+    --border-lux: #3a424a;
+    --text-heading: #fbfcfd;
+    --text: #f4f6f8;
+    --text-muted: #a8b2bd;
+    --primary: #74bdf0;
+    --primary-600: #92cdf5;
+    --primary-700: #92cdf5;
+    --primary-100: #0d2b48;
+    --primary-soft: #123556;
+    --primary-contrast: #0b0e11;
+    --success: #7de0a3;
+    --success-bg: #0f2119;
+    --success-border: #1f4d35;
+    --warning: #e0a63f;
+    --warning-bg: #241c0e;
+    --warning-border: #5a4520;
+    --danger: #f0755c;
+    --danger-bg: #26130f;
+    --danger-border: #6b2a20;
+    --e1: 0 1px 2px rgb(0 0 0 / 40%);
+    --e2:
+      0 1px 2px rgb(0 0 0 / 50%), 0 8px 16px -8px rgb(0 0 0 / 55%);
+    --e3:
+      0 2px 4px rgb(0 0 0 / 50%), 0 16px 28px -12px rgb(0 0 0 / 60%);
+    --e4:
+      0 4px 8px rgb(0 0 0 / 50%), 0 32px 56px -20px rgb(0 0 0 / 65%);
+    --ring-hairline: 0 0 0 1px rgb(255 255 255 / 9%);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0b0e11;
+  --surface: #12161a;
+  --surface-raised: #1c2126;
+  --surface-subtle: #1c2126;
+  --surface-wash: #161a1e;
+  --surface-inset: #0a0c0e;
+  --border: #333a41;
+  --border-strong: #47505a;
+  --border-lux: #3a424a;
+  --text-heading: #fbfcfd;
+  --text: #f4f6f8;
+  --text-muted: #a8b2bd;
+  --primary: #74bdf0;
+  --primary-600: #92cdf5;
+  --primary-700: #92cdf5;
+  --primary-100: #0d2b48;
+  --primary-soft: #123556;
+  --primary-contrast: #0b0e11;
+  --success: #7de0a3;
+  --success-bg: #0f2119;
+  --success-border: #1f4d35;
+  --warning: #e0a63f;
+  --warning-bg: #241c0e;
+  --warning-border: #5a4520;
+  --danger: #f0755c;
+  --danger-bg: #26130f;
+  --danger-border: #6b2a20;
+  --e1: 0 1px 2px rgb(0 0 0 / 40%);
+  --e2:
+    0 1px 2px rgb(0 0 0 / 50%), 0 8px 16px -8px rgb(0 0 0 / 55%);
+  --e3:
+    0 2px 4px rgb(0 0 0 / 50%), 0 16px 28px -12px rgb(0 0 0 / 60%);
+  --e4:
+    0 4px 8px rgb(0 0 0 / 50%), 0 32px 56px -20px rgb(0 0 0 / 65%);
+  --ring-hairline: 0 0 0 1px rgb(255 255 255 / 9%);
+}
+
+/* ─── base ──────────────────────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--text);
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv02", "cv03", "cv04";
+}
+h1,
+h2,
+h3,
+h4,
+p,
+dl,
+dd,
+dt,
+ul,
+ol,
+figure {
+  margin: 0;
+}
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+a {
+  color: inherit;
+}
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.skip {
+  position: absolute;
+  left: var(--s2);
+  top: var(--s2);
+  z-index: 100;
+  padding: 0.5rem 0.85rem;
+  background: var(--primary);
+  color: var(--primary-contrast);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+.skip:focus {
+  transform: none;
+}
+/* Tabular figures everywhere a reader compares. Not a separate font family —
+   the second edition switched to JetBrains Mono for every number, which made
+   figures read as code on a clinical page. One family, tabular numerals. */
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ─── application bar ───────────────────────────────────────────────────── */
+.appbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  flex-wrap: wrap;
+  padding: var(--s3) var(--s5);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  backdrop-filter: saturate(1.4) blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 650;
+  font-size: var(--text-sm);
+  letter-spacing: -0.011em;
+  color: var(--text-heading);
+  white-space: nowrap;
+}
+.mark .dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--primary);
+  flex: none;
+}
+.appbar .spacer {
+  flex: 1 1 2rem;
+}
+
+/* ─── page frame. Symmetrical: the shell has equal gutters, and every band
+       inside it shares one inline padding. The owner asked for symmetry and the
+       second edition did not have it — panels carried their own padding and the
+       page edge moved from row to row. ──────────────────────────────────── */
+.shell {
+  --gutter: clamp(1rem, 0.4rem + 2vw, 2.5rem);
+  max-width: 96rem;
+  margin: 0 auto;
+  padding: var(--s5) var(--gutter) var(--s8);
+}
+.prototype {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.6rem;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: var(--s3);
+}
+
+.masthead {
+  display: grid;
+  gap: var(--s3);
+  padding-bottom: var(--s5);
+}
+.masthead h1 {
+  font-size: var(--text-hero);
+  font-weight: 660;
+  letter-spacing: -0.024em;
+  line-height: 1.12;
+  color: var(--text-heading);
+  text-wrap: balance;
+}
+.eyebrow {
+  font-size: var(--text-2xs);
+  font-weight: 650;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--primary-700);
+}
+.lede {
+  font-size: var(--text-body);
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 58ch;
+}
+.masthead-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s4);
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.liveness {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.pip {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: var(--radius-pill);
+  background: var(--success);
+  flex: none;
+}
+
+/* ⚠️ THE CONVENIENCE NOTICE — owner ruling 17. Every carrier states it once.
+   A rule on the left rather than a tinted card: it is a standing condition, not
+   an alert, and a coloured box would make it compete with the page's own
+   warnings. */
+.scope {
+  border-left: 2px solid var(--primary);
+  padding: var(--s1) 0 var(--s1) var(--s4);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin-bottom: var(--s5);
+}
+.scope strong {
+  color: var(--text-heading);
+  font-weight: 600;
+}
+
+/* ═══ THE FIGURE BAND — this is the "boxes at the top", rebuilt ═══════════
+   ⚠️ THE OWNER CALLED THE OLD TILES BLOCKY AND TACKY. They were five bordered
+   cards in a row, each with its own edge, its own shadow and its own padding —
+   five competing objects where there is one fact per column.
+
+   This is ONE band. Columns are divided by a hairline, not boxed. There is no
+   per-tile border, no per-tile shadow, and no per-tile fill. The figure leads,
+   the label sits under it in the quiet ink, and the trend line — where a column
+   has one — sits at the bottom as a sparkline rather than as a coloured chip.
+
+   Equal columns, so it is symmetrical at every breakpoint: 2 up on a phone,
+   then 3, then all of them. A final odd column spans the full width on the
+   two-column step, so a lone tile never reads as a dropped one. */
+.band {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--e1);
+  overflow: hidden;
+  margin-bottom: var(--s5);
+}
+.band > * {
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+  padding: var(--s4) var(--s4) var(--s3);
+  display: grid;
+  gap: var(--s1);
+  align-content: start;
+  min-width: 0;
+}
+.band > :nth-child(-n + 2) {
+  border-top: 0;
+}
+.band > :nth-child(2n + 1) {
+  border-left: 0;
+}
+.band > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+@media (min-width: 48rem) {
+  .band {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .band > * {
+    border-top: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+  }
+  .band > :nth-child(-n + 3) {
+    border-top: 0;
+  }
+  .band > :nth-child(2n + 1) {
+    border-left: 1px solid var(--border);
+  }
+  .band > :nth-child(3n + 1) {
+    border-left: 0;
+  }
+  .band > :last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+}
+@media (min-width: 78rem) {
+  .band[data-cols="4"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .band[data-cols="4"] > :nth-child(-n + 4) {
+    border-top: 0;
+  }
+  .band[data-cols="4"] > :nth-child(3n + 1) {
+    border-left: 1px solid var(--border);
+  }
+  .band[data-cols="4"] > :nth-child(4n + 1) {
+    border-left: 0;
+  }
+  .band[data-cols="5"] {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  .band[data-cols="5"] > :nth-child(-n + 5) {
+    border-top: 0;
+  }
+  .band[data-cols="5"] > :nth-child(3n + 1) {
+    border-left: 1px solid var(--border);
+  }
+  .band[data-cols="5"] > :nth-child(5n + 1) {
+    border-left: 0;
+  }
+}
+.stat-figure {
+  font-size: 1.625rem;
+  font-weight: 640;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--text-heading);
+  font-variant-numeric: tabular-nums;
+}
+.stat-figure .unit {
+  font-size: var(--text-md);
+  font-weight: 550;
+  letter-spacing: -0.01em;
+  color: var(--text-muted);
+  margin-left: 0.15rem;
+}
+.stat-label {
+  font-size: var(--text-xs);
+  font-weight: 550;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.stat-note {
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+/* Tone is the FIGURE, never a fill and never an edge. The label already says
+   what the column is; colour reinforces and never carries alone. */
+.stat-figure[data-tone="good"] {
+  color: var(--success);
+}
+.stat-figure[data-tone="warn"] {
+  color: var(--warning);
+}
+.stat-figure[data-tone="crit"] {
+  color: var(--danger);
+}
+.stat-figure[data-tone="primary"] {
+  color: var(--primary-700);
+}
+/* A word beside a figure, for the columns whose value is a name rather than a
+   number — "WF-013, 31h" reads as one fact, not as a truncated statistic. */
+.stat-figure--word {
+  font-size: var(--text-lg);
+  letter-spacing: -0.018em;
+  line-height: 1.25;
+}
+.spark {
+  display: block;
+  width: 100%;
+  height: 1.75rem;
+  margin-top: var(--s2);
+  overflow: visible;
+}
+
+/* ─── panels. One radius, one hairline, one shadow rung. ────────────────── */
+.grid {
+  display: grid;
+  gap: var(--s5);
+  align-items: start;
+}
+@media (min-width: 62rem) {
+  .grid[data-cols="2"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .grid[data-cols="1-2"] {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  }
+  .grid[data-cols="2-1"] {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  }
+}
+.col {
+  display: grid;
+  gap: var(--s5);
+  min-width: 0;
+}
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--e1);
+  overflow: hidden;
+}
+.panel > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+  flex-wrap: wrap;
+  padding: var(--s4) var(--s5);
+  border-bottom: 1px solid var(--border);
+}
+.panel-title {
+  font-size: var(--text-body);
+  font-weight: 620;
+  letter-spacing: -0.012em;
+  color: var(--text-heading);
+}
+.panel-sub {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.panel-body {
+  padding: var(--s4);
+  display: grid;
+  gap: var(--s4);
+}
+.panel-foot {
+  padding: var(--s3) var(--s5);
+  border-top: 1px solid var(--border);
+  background: var(--surface-wash);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.blurb {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ═══ CHARTS — LINES AND ARCS ONLY. NO BARS IN THIS LANGUAGE. ════════════
+   The owner asked for diagrams that show a trend simply and are easy to read:
+   lines and circles, not bar charts. A bar chart answers "how big is each"; a
+   line answers "which way is this going", and that is what every one of these
+   screens is for.
+
+   ⚠️ EVERY CHART CARRIES role="img" WITH A REAL LABEL AND A WRITTEN CAPTION
+   STATING THE SAME NUMBERS IN WORDS. Colour is never the only carrier: a
+   greyscale printout and a reader with no colour perception both get the
+   reading from the caption. */
+.chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.chart-caption {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.chart-caption b {
+  color: var(--text-heading);
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+}
+/* Chart primitives, so five screens draw one chart rather than five. */
+.c-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+  fill: none;
+}
+.c-axis {
+  fill: var(--text-muted);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+.c-line {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.c-line[data-series="b"] {
+  stroke: var(--text-muted);
+  stroke-dasharray: 4 3;
+}
+.c-line[data-tone="good"] {
+  stroke: var(--success);
+}
+.c-line[data-tone="warn"] {
+  stroke: var(--warning);
+}
+.c-line[data-tone="crit"] {
+  stroke: var(--danger);
+}
+.c-area {
+  fill: var(--primary-soft);
+  stroke: none;
+}
+.c-dot {
+  fill: var(--surface);
+  stroke: var(--primary);
+  stroke-width: 2;
+}
+.c-dot[data-tone="crit"] {
+  stroke: var(--danger);
+}
+.c-dot[data-tone="good"] {
+  stroke: var(--success);
+}
+.c-dot--solid {
+  fill: var(--primary);
+  stroke: none;
+}
+.c-threshold {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  fill: none;
+}
+.c-label {
+  fill: var(--text-heading);
+  font-size: 10px;
+  font-weight: 600;
+}
+.c-label--quiet {
+  fill: var(--text-muted);
+  font-weight: 500;
+}
+/* The ring: one value against its whole, drawn as an arc. Replaces every
+   "N of M" bar in the second edition. `pathLength="100"` lets a dash offset be
+   written as a percentage directly, so the markup states the number it draws. */
+.c-ring-track {
+  fill: none;
+  stroke: var(--surface-inset);
+  stroke-width: 10;
+}
+.c-ring-value {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+.c-ring-value[data-tone="good"] {
+  stroke: var(--success);
+}
+.c-ring-value[data-tone="warn"] {
+  stroke: var(--warning);
+}
+.c-ring-value[data-tone="crit"] {
+  stroke: var(--danger);
+}
+.c-ring-centre {
+  fill: var(--text-heading);
+  font-size: 15px;
+  font-weight: 640;
+  font-variant-numeric: tabular-nums;
+  text-anchor: middle;
+}
+.c-ring-sub {
+  fill: var(--text-muted);
+  font-size: 8px;
+  text-anchor: middle;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s5);
+}
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.legend .key {
+  width: 1.1rem;
+  height: 0;
+  border-top: 2px solid var(--primary);
+  flex: none;
+}
+.legend .key[data-series="b"] {
+  border-top-style: dashed;
+  border-top-color: var(--text-muted);
+}
+.legend .key[data-tone="good"] {
+  border-top-color: var(--success);
+}
+.legend .key[data-tone="warn"] {
+  border-top-color: var(--warning);
+}
+.legend .key[data-tone="crit"] {
+  border-top-color: var(--danger);
+}
+.legend b {
+  color: var(--text-heading);
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── tables. No zebra: alternating fills read as meaning on a page where
+       every other fill means something, and a printer drops them. ───────── */
+.table-wrap {
+  overflow-x: auto;
+}
+.dtable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-xs);
+}
+.dtable th,
+.dtable td {
+  padding: 0.6rem var(--s5);
+  text-align: left;
+  vertical-align: baseline;
+  border-bottom: 1px solid var(--border);
+}
+.dtable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-subtle);
+  font-size: var(--text-2xs);
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.dtable tbody th {
+  font-weight: 600;
+  color: var(--text-heading);
+  white-space: nowrap;
+}
+.dtable td {
+  color: var(--text);
+}
+.dtable .n,
+.dtable th.n {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.dtable tbody tr:last-child th,
+.dtable tbody tr:last-child td {
+  border-bottom: 0;
+}
+.dtable tbody tr:hover th,
+.dtable tbody tr:hover td {
+  background: var(--surface-subtle);
+}
+.dtable tfoot th,
+.dtable tfoot td {
+  border-top: 1px solid var(--border-strong);
+  border-bottom: 0;
+  font-weight: 650;
+  color: var(--text-heading);
+  background: var(--surface-subtle);
+}
+
+/* ─── chips. A word first; the fill only reinforces it. ─────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+  font-size: var(--text-2xs);
+  font-weight: 620;
+  letter-spacing: 0.02em;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  background: var(--surface);
+}
+.chip[data-tone="good"] {
+  color: var(--success);
+  border-color: var(--success-border);
+  background: var(--success-bg);
+}
+.chip[data-tone="warn"] {
+  color: var(--warning);
+  border-color: var(--warning-border);
+  background: var(--warning-bg);
+}
+.chip[data-tone="crit"] {
+  color: var(--danger);
+  border-color: var(--danger-border);
+  background: var(--danger-bg);
+}
+.chip[data-tone="primary"] {
+  color: var(--primary-700);
+  border-color: var(--primary-100);
+  background: var(--primary-soft);
+}
+
+/* ─── controls. Nothing stretches; the tap floor grows the box, not the type. */
+.btn {
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.8rem;
+  cursor: pointer;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-heading);
+  white-space: nowrap;
+  justify-self: start;
+  text-decoration: none;
+}
+.btn:hover {
+  background: var(--surface-subtle);
+}
+.btn--primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-contrast);
+}
+.btn--primary:hover {
+  background: var(--primary-600);
+  border-color: var(--primary-600);
+}
+.field {
+  font: inherit;
+  font-size: var(--text-sm);
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-heading);
+  min-width: 0;
+}
+@media (pointer: coarse), (max-width: 40rem) {
+  .btn,
+  .field,
+  .switcher > summary {
+    min-height: var(--tap);
+  }
+}
+
+/* ─── the switcher, for screens that pick one entity from many ──────────── */
+.switcher {
+  position: relative;
+}
+.switcher > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--e1);
+}
+.switcher > summary::-webkit-details-marker {
+  display: none;
+}
+.switcher[open] > summary {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+.sw-eyebrow {
+  font-size: var(--text-2xs);
+  font-weight: 620;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: block;
+  line-height: 1.3;
+}
+.sw-name {
+  font-size: var(--text-sm);
+  font-weight: 620;
+  color: var(--text-heading);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.sw-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  z-index: 60;
+  width: min(24rem, calc(100vw - 2rem));
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--e3);
+  overflow: hidden;
+  padding: var(--s2) 0;
+}
+.sw-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: 0.5rem var(--s4);
+  margin: 0 var(--s2);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+.sw-item:hover {
+  background: var(--surface-subtle);
+}
+.sw-item[aria-current="true"] {
+  background: var(--primary-soft);
+  color: var(--primary-700);
+  font-weight: 620;
+}
+
+/* ─── record rows and absence ───────────────────────────────────────────── */
+.rows > li {
+  padding: var(--s4) var(--s5);
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  gap: 0.3rem;
+}
+.rows > li:last-child {
+  border-bottom: 0;
+}
+.row-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  align-items: center;
+}
+.rid {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-heading);
+  font-size: var(--text-sm);
+}
+.row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.6rem;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.row-meta b {
+  color: var(--text);
+  font-weight: 600;
+}
+/* ⚠️ Absence is STATED. This is the style for the sentence that says so — it is
+   never an empty cell and never a dash. */
+.absent {
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.note {
+  font-size: var(--text-xs);
+  line-height: 1.55;
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-subtle);
+  color: var(--text);
+}
+.note[data-tone="crit"] {
+  border-color: var(--danger-border);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.note[data-tone="warn"] {
+  border-color: var(--warning-border);
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+.note[data-tone="good"] {
+  border-color: var(--success-border);
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+/* ─── footnote ──────────────────────────────────────────────────────────── */
+.footnote {
+  margin-top: var(--s7);
+  padding-top: var(--s5);
+  border-top: 1px solid var(--border);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+.footnote h2 {
+  font-size: var(--text-2xs);
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin: var(--s5) 0 var(--s2);
+}
+.footnote h2:first-child {
+  margin-top: 0;
+}
+.footnote li {
+  padding-left: 1rem;
+  position: relative;
+  margin-bottom: 0.3rem;
+}
+.footnote li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 4px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--border-strong);
+}
+.footnote b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ─── high contrast. Every semantic hue collapses to a system colour, which is
+       survivable only because every state already carries its own WORD. ──── */
+@media (forced-colors: active) {
+  :root {
+    --background: Canvas;
+    --surface: Canvas;
+    --surface-raised: Canvas;
+    --surface-subtle: Canvas;
+    --surface-wash: Canvas;
+    --surface-inset: Canvas;
+    --border: CanvasText;
+    --border-strong: CanvasText;
+    --border-lux: CanvasText;
+    --text-heading: CanvasText;
+    --text: CanvasText;
+    --text-muted: CanvasText;
+    --primary: LinkText;
+    --primary-600: LinkText;
+    --primary-700: LinkText;
+    --primary-100: Canvas;
+    --primary-soft: Canvas;
+    --primary-contrast: Canvas;
+    --success: CanvasText;
+    --success-bg: Canvas;
+    --success-border: CanvasText;
+    --warning: CanvasText;
+    --warning-bg: Canvas;
+    --warning-border: CanvasText;
+    --danger: CanvasText;
+    --danger-bg: Canvas;
+    --danger-border: CanvasText;
+    --e1: none;
+    --e2: none;
+    --e3: none;
+    --e4: none;
+  }
+  .panel,
+  .band,
+  .chip,
+  .btn,
+  .field,
+  .note,
+  .switcher > summary {
+    border: 1px solid CanvasText;
+  }
+  .btn--primary {
+    border-width: 2px;
+  }
+  /* A dashed series is the only thing distinguishing two lines once every hue
+     collapses, so the dash must survive. */
+  .c-line,
+  .c-ring-value,
+  .c-ring-track,
+  .c-threshold,
+  .c-dot {
+    forced-color-adjust: none;
+  }
+}
+
+/* ─── print. Forced to the light palette on all three root forms, because the
+       dark block is written to `:root:not([data-theme="light"])` and would
+       otherwise beat a bare `:root` for every reader who has never touched the
+       theme control — which is the default, not an edge case. ───────────── */
+@media print {
+  :root,
+  :root[data-theme="dark"],
+  :root:not([data-theme="light"]) {
+    --background: #ffffff;
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+    --surface-subtle: #ffffff;
+    --surface-wash: #ffffff;
+    --surface-inset: #ffffff;
+    --border: #999999;
+    --border-strong: #666666;
+    --border-lux: #999999;
+    --text-heading: #000000;
+    --text: #1a1a1a;
+    --text-muted: #333333;
+    --primary: #1d6fb8;
+    --primary-600: #1a66a8;
+    --primary-700: #185c99;
+    --primary-100: #d9e8f8;
+    --primary-soft: #f2f8fe;
+    --primary-contrast: #ffffff;
+    --success: #0c6b41;
+    --success-bg: #ecfdf3;
+    --success-border: #abefc6;
+    --warning: #8a4d05;
+    --warning-bg: #fffcf6;
+    --warning-border: #f5d9a8;
+    --danger: #a3190f;
+    --danger-bg: #fef3f2;
+    --danger-border: #fda29b;
+    --e1: none;
+    --e2: none;
+    --e3: none;
+    --e4: none;
+  }
+  body {
+    background: #ffffff;
+  }
+  .appbar {
+    position: static;
+    backdrop-filter: none;
+  }
+  .panel,
+  .band {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+  .table-wrap {
+    overflow-x: visible;
+  }
+  .dtable thead {
+    display: table-header-group;
+  }
+  .dtable tr {
+    break-inside: avoid;
+  }
+  .btn,
+  .switcher,
+  .skip {
+    display: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FOURTH EDITION ADDITIONS — THE NUMBERS COME FORWARD, THE CHARTS STEP BACK
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Owner brief, 2026-09-06: "you now have too many diagrams. Please focus on
+   core useful ones then state the stats as well for me clearly in data or
+   tables and popup options."
+
+   The third edition answered "which way is this going" well, then answered it
+   five more times on the same page. A coordinator reading a screen mid-shift
+   wants the number, exactly, and wants the working available without leaving
+   the page. So this edition inverts the ratio: AT MOST THREE CHARTS, and every
+   figure a chart implies is also written as a number somebody can read off.
+
+   NOTHING ABOVE THIS LINE CHANGED. The palette, the band, the panels and the
+   line/arc primitives are the third edition's, unaltered, because the owner
+   approved that look. These are additions, not a replacement.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── DISCLOSURES: the "popup options" ────────────────────────────────────────
+
+   Detail that would crowd the page, one click away, with NO JavaScript — a
+   native details/summary works with a keyboard, survives printing (forced open
+   below), and cannot break. `.switcher` above is the page-level version of the
+   same element; this is the in-panel one.
+
+   The summary must say what is inside it, never "more". A coordinator deciding
+   whether to open it is the whole audience for that line.                     */
+
+.reveal {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.reveal + .reveal {
+  margin-top: var(--s3);
+}
+
+.reveal > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  min-height: var(--tap);
+  padding: var(--s2) var(--s4);
+  cursor: pointer;
+  list-style: none;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-heading);
+  background: var(--surface-subtle);
+}
+
+.reveal > summary::-webkit-details-marker {
+  display: none;
+}
+
+.reveal > summary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.reveal > summary::after {
+  content: "";
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform 120ms ease;
+}
+
+.reveal[open] > summary::after {
+  transform: rotate(-135deg) translate(-2px, -2px);
+}
+
+.reveal[open] > summary {
+  border-bottom: 1px solid var(--border);
+}
+
+.reveal-body {
+  padding: var(--s3) var(--s4);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.reveal-body > * + * {
+  margin-top: var(--s3);
+}
+
+.reveal-count {
+  font-weight: 500;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── KEY/VALUE ROWS: a table when a table would only be two columns ───────── */
+
+.kv {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  margin: 0;
+}
+
+.kv > dt {
+  padding: var(--s2) 0;
+  font-size: var(--text-sm);
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+.kv > dd {
+  margin: 0;
+  padding: var(--s2) 0 var(--s2) var(--s4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: right;
+  color: var(--text-heading);
+  font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── A FIGURE ROW INSIDE A PANEL ─────────────────────────────────────────────
+
+   `.band` is the page-level strip and draws its own edge. Two separate builders
+   needed a borderless figure row INSIDE a panel and each invented a name for it;
+   that is what a missing primitive looks like, so it has a name now.          */
+
+.figs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s5);
+}
+
+.figs > div {
+  min-width: 6rem;
+}
+
+/* ── SEVERITY, ENCODED IN FORM AS WELL AS IN NUMBER ──────────────────────────
+
+   A row needing attention must be findable without reading every number and
+   without relying on hue alone — a stripe has width, so it survives greyscale
+   and colour vision deficiency both.                                          */
+
+.dtable tbody tr[data-tone] > :first-child {
+  box-shadow: inset 3px 0 0 0 var(--text-muted);
+}
+
+.dtable tbody tr[data-tone="crit"] > :first-child {
+  box-shadow: inset 3px 0 0 0 var(--danger);
+}
+
+.dtable tbody tr[data-tone="warn"] > :first-child {
+  box-shadow: inset 3px 0 0 0 var(--warning);
+}
+
+.dtable tbody tr[data-tone="good"] > :first-child {
+  box-shadow: inset 3px 0 0 0 var(--success);
+}
+
+.dtable td,
+.dtable th.n,
+.stat-figure,
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── A DELTA, STATED IN WORDS AS WELL AS IN DIRECTION ───────────────────────── */
+
+.delta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.delta[data-dir="up"] {
+  color: var(--danger);
+}
+
+.delta[data-dir="down"] {
+  color: var(--success);
+}
+
+.delta[data-dir="flat"] {
+  color: var(--text-muted);
+}
+
+/* The arrow is decoration; the word beside it carries the meaning, because "up"
+   is good on one row and bad on the next and an arrow cannot say which.       */
+.delta .word {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* ── PRINT AND ACCESSIBILITY ─────────────────────────────────────────────────
+
+   A closed disclosure prints as nothing at all, which loses the working on a
+   page whose whole purpose is showing it. Forced open on paper.               */
+
+@media print {
+  .reveal {
+    break-inside: avoid;
+  }
+
+  .reveal > summary::after {
+    display: none;
+  }
+
+  .reveal-body {
+    display: block !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .reveal,
+  .reveal[open] > summary {
+    border-color: CanvasText;
+  }
+
+  .dtable tbody tr[data-tone] > :first-child {
+    box-shadow: none;
+    border-left: 3px solid CanvasText;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal > summary::after {
+    transition: none;
+  }
+}
+
+/* ═══ v4 STATEWIDE OVERVIEW — PAGE RULES, BELOW THE LANGUAGE ═══
+   Everything above this marker is statistics-language-v4.css, copied whole and
+   unedited. Below is only what this one screen needs and the language has no
+   name for.
+
+   Two small compatibility aliases first: the language's own `.reveal`, `.kv`
+   and `.delta` rules reference `--r2`, `--t-sm` and `--t-xs`, three custom
+   properties the language's `:root` never defines (it defines `--radius-lg`,
+   `--text-sm`, `--text-xs` instead). This is a defect IN THE LANGUAGE FILE,
+   which this page must never edit — so the alias is added here, in the one
+   place a page is allowed to add rules, rather than left broken. */
+:root {
+  --r2: var(--radius-lg);
+  --t-sm: var(--text-sm);
+  --t-xs: var(--text-xs);
+}
+.ring-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s5);
+  flex-wrap: wrap;
+}
+.ring-copy {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 14rem;
+  flex: 1 1 14rem;
+}
+.ring-copy .ring-figure {
+  font-size: var(--text-lg);
+  font-weight: 640;
+  color: var(--text-heading);
+  letter-spacing: -0.014em;
+}
+/* A disclosure's own summary line needs the panel-title weight, not the plain
+   `.reveal > summary` default, when it sits directly under a panel header
+   rather than stacked with siblings. Kept generic rather than one-off. */
+.reveal-title {
+  font-size: var(--text-sm);
+  font-weight: 620;
+  color: var(--text-heading);
+}
+</style>
+
+<header class="appbar">
+  <span class="mark"><span class="dot" aria-hidden="true"></span>Ward Flow</span>
+  <span class="spacer"></span>
+</header>
+
+<div class="shell" role="main">
+  <p class="prototype">
+    <span>Synthetic prototype</span><span aria-hidden="true">&middot;</span><span>No real patient data</span
+    ><span aria-hidden="true">&middot;</span><span>Every invented figure listed at the foot</span>
+  </p>
+
+  <!-- ══════════ THE HEADING ══════════ -->
+  <header class="masthead">
+    <span class="eyebrow">System overview, statewide</span>
+    <h1>Where the system is stuck, right now</h1>
+    <p class="lede">
+      Every referral, bed and movement across <b>EMHS</b>, <b>SMHS</b>, <b>NMHS</b> and <b>WACHS</b>, plus private
+      capacity, in <b>23 units</b> across <b>15 hospitals</b>. Read-only: each figure belongs to the ward or team
+      that owns it.
+    </p>
+    <span class="liveness">
+      <span class="pip" aria-hidden="true"></span>Live <span aria-hidden="true">&middot;</span> confirmed 10:42 by
+      14 of 15 hospitals
+    </span>
+  </header>
+
+  <p class="scope">
+    <strong>This board is a convenience, not a source of truth (R17)</strong> &mdash; nothing here can be edited
+    or confirmed. Confirm the bed with the ward by phone before acting on anything here.
+  </p>
+
+  <!-- ══════════ THE FIVE HEADLINE FIGURES ══════════ -->
+  <div class="band" data-cols="5">
+    <div>
+      <span class="stat-figure" data-tone="primary">47</span>
+      <span class="stat-label">Waiting for a bed</span>
+      <span class="stat-note">Across all four services &middot; <b>+5</b> on yesterday</span>
+      <svg class="spark" viewBox="0 0 100 28" aria-hidden="true">
+        <path class="c-line" d="M4,19 L34,11.5 L64,16.5 L96,6.5" />
+        <circle class="c-dot c-dot--solid" cx="96" cy="6.5" r="3" />
+      </svg>
+    </div>
+    <div>
+      <span class="stat-figure stat-figure--word" data-tone="crit">WF-013 <span class="unit">31h</span></span>
+      <span class="stat-label">Longest wait</span>
+      <span class="stat-note">Royal Perth Hospital ED</span>
+    </div>
+    <div>
+      <span class="stat-figure" data-tone="warn">9</span>
+      <span class="stat-label">No bed available</span>
+      <span class="stat-note">May change this afternoon</span>
+    </div>
+    <div>
+      <span class="stat-figure">5</span>
+      <span class="stat-label">Not a match for any bed</span>
+      <span class="stat-note">Clinical, legal or cohort reason &mdash; capacity will not change it</span>
+    </div>
+    <div>
+      <span class="stat-figure" data-tone="good">12</span>
+      <span class="stat-label">Ready</span>
+      <span class="stat-note">1 unit unconfirmed, not counted</span>
+    </div>
+  </div>
+
+  <p class="chart-caption">
+    Waiting for a bed rose today from an estimated 42 this morning to <b>47</b> now, after a small mid-morning
+    dip.
+  </p>
+
+  <p class="note">
+    <strong>9</strong> have no free bed right now &mdash; may change today. <strong>5</strong> are not a clinical,
+    legal or cohort match for any bed. Never summed.
+  </p>
+
+  <!-- ══════════ THE CENTREPIECE: WHERE THE SYSTEM IS STUCK ══════════ -->
+  <section class="panel">
+    <header>
+      <h2 class="panel-title">Where the system is stuck</h2>
+      <span class="panel-sub">7 stages &middot; 49 people in the pipeline right now</span>
+    </header>
+    <div class="panel-body">
+      <p class="blurb">
+        Every movement passes through seven stages in order. The line shows how many people sit at each stage now;
+        the dashed line marks the busiest stage.
+      </p>
+      <figure>
+        <svg
+          class="chart"
+          viewBox="0 0 860 400"
+          role="img"
+          aria-label="Line chart of the seven movement stages and how many people sit at each right now, in process order. Placement requested 8 people. Destination review 5 people. Accepted, awaiting bed 21 people — the bottleneck, holding more people than any other stage, with a typical wait of 14 hours, and including the single longest current wait in the network, 31 hours, for WF-013 at Royal Perth Hospital ED. Bed pulled 6 people. Handover ready 4 people. Moving 3 people. Arrived 2 people."
+        >
+          <line class="c-grid" x1="70" y1="310" x2="800" y2="310" />
+          <line class="c-grid" x1="70" y1="242.5" x2="800" y2="242.5" />
+          <line class="c-grid" x1="70" y1="175" x2="800" y2="175" />
+          <line class="c-grid" x1="70" y1="107.5" x2="800" y2="107.5" />
+          <line class="c-grid" x1="70" y1="40" x2="800" y2="40" />
+          <text x="60" y="313" text-anchor="end" class="c-axis">0</text>
+          <text x="60" y="245.5" text-anchor="end" class="c-axis">6</text>
+          <text x="60" y="178" text-anchor="end" class="c-axis">12</text>
+          <text x="60" y="110.5" text-anchor="end" class="c-axis">18</text>
+          <text x="60" y="43" text-anchor="end" class="c-axis">24 people</text>
+
+          <line class="c-threshold" x1="70" y1="73.75" x2="800" y2="73.75" />
+
+          <path
+            class="c-area"
+            d="M70,220 L192,253.75 L313,73.75 L435,242.5 L557,265 L678,276.25 L800,287.5 L800,310 L70,310 Z"
+          />
+          <path class="c-line" d="M70,220 L192,253.75 L313,73.75 L435,242.5 L557,265 L678,276.25 L800,287.5" />
+
+          <circle class="c-dot" cx="70" cy="220" r="4.5" />
+          <text x="70" y="206" text-anchor="middle" class="c-label">8</text>
+          <text x="70" y="236" text-anchor="middle" class="c-label--quiet">1h median</text>
+
+          <circle class="c-dot" cx="192" cy="253.75" r="4.5" />
+          <text x="192" y="240" text-anchor="middle" class="c-label">5</text>
+          <text x="192" y="270" text-anchor="middle" class="c-label--quiet">2h median</text>
+
+          <circle class="c-dot" cx="313" cy="73.75" r="5.5" data-tone="crit" />
+          <text x="313" y="58" text-anchor="middle" class="c-label">21 &mdash; bottleneck</text>
+          <text x="313" y="93" text-anchor="middle" class="c-label--quiet">14h median &middot; longest hold</text>
+
+          <circle class="c-dot" cx="435" cy="242.5" r="4.5" />
+          <text x="435" y="229" text-anchor="middle" class="c-label">6</text>
+          <text x="435" y="259" text-anchor="middle" class="c-label--quiet">3h median</text>
+
+          <circle class="c-dot" cx="557" cy="265" r="4.5" />
+          <text x="557" y="251" text-anchor="middle" class="c-label">4</text>
+          <text x="557" y="281" text-anchor="middle" class="c-label--quiet">1.5h median</text>
+
+          <circle class="c-dot" cx="678" cy="276.25" r="4.5" />
+          <text x="678" y="263" text-anchor="middle" class="c-label">3</text>
+          <text x="678" y="293" text-anchor="middle" class="c-label--quiet">45m median</text>
+
+          <circle class="c-dot" cx="800" cy="287.5" r="4.5" />
+          <text x="800" y="274" text-anchor="middle" class="c-label">2</text>
+          <text x="800" y="304" text-anchor="middle" class="c-label--quiet">20m median</text>
+
+          <text x="70" y="326" text-anchor="middle" class="c-axis">
+            <tspan x="70">Placement</tspan><tspan x="70" dy="1.15em">requested</tspan>
+          </text>
+          <text x="192" y="326" text-anchor="middle" class="c-axis">
+            <tspan x="192">Destination</tspan><tspan x="192" dy="1.15em">review</tspan>
+          </text>
+          <text x="313" y="326" text-anchor="middle" class="c-axis">
+            <tspan x="313">Accepted,</tspan><tspan x="313" dy="1.15em">awaiting bed</tspan>
+          </text>
+          <text x="435" y="326" text-anchor="middle" class="c-axis">
+            <tspan x="435">Bed</tspan><tspan x="435" dy="1.15em">pulled</tspan>
+          </text>
+          <text x="557" y="326" text-anchor="middle" class="c-axis">
+            <tspan x="557">Handover</tspan><tspan x="557" dy="1.15em">ready</tspan>
+          </text>
+          <text x="678" y="326" text-anchor="middle" class="c-axis">Moving</text>
+          <text x="800" y="326" text-anchor="middle" class="c-axis">Arrived</text>
+        </svg>
+        <p class="chart-caption">
+          <b>47</b> people sit between placement requested and moving. Bottleneck: accepted, awaiting bed &mdash;
+          <b>21</b> people, <b>14-hour</b> typical wait, including WF-013's <b>31-hour</b> wait, the longest in the
+          network.
+        </p>
+      </figure>
+
+      <details class="reveal">
+        <summary>
+          <span>Full stage-by-stage medians, all seven stages</span>
+          <span class="reveal-count">7 stages</span>
+        </summary>
+        <div class="reveal-body">
+          <dl class="kv">
+            <dt>Placement requested</dt>
+            <dd>8 people &middot; 1h median</dd>
+            <dt>Destination review</dt>
+            <dd>5 people &middot; 2h median</dd>
+            <dt>Accepted, awaiting bed &mdash; bottleneck</dt>
+            <dd>21 people &middot; 14h median</dd>
+            <dt>Bed pulled</dt>
+            <dd>6 people &middot; 3h median</dd>
+            <dt>Handover ready</dt>
+            <dd>4 people &middot; 1.5h median</dd>
+            <dt>Moving</dt>
+            <dd>3 people &middot; 45m median</dd>
+            <dt>Arrived</dt>
+            <dd>2 people &middot; 20m median</dd>
+          </dl>
+          <p class="blurb">
+            Median, not average &mdash; a few long waits, like WF-013's 31 hours, would skew it.
+          </p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ══════════ READY BEDS ══════════ -->
+  <div class="grid" data-cols="2">
+    <div class="col">
+      <section class="panel">
+        <header>
+          <h2 class="panel-title">Ready beds, by service and cohort</h2>
+          <span class="panel-sub">12 confirmed &middot; 1 unconfirmed</span>
+        </header>
+        <div class="panel-body">
+          <div class="ring-row">
+            <svg
+              class="chart"
+              viewBox="0 0 120 120"
+              role="img"
+              aria-label="Ring showing 12 of 23 units in the network are Ready right now, 52 per cent."
+              style="width: 7rem; height: 7rem; flex: none"
+            >
+              <circle class="c-ring-track" cx="60" cy="60" r="50" pathLength="100" />
+              <circle
+                class="c-ring-value"
+                data-tone="good"
+                cx="60"
+                cy="60"
+                r="50"
+                pathLength="100"
+                stroke-dasharray="52.2 100"
+              />
+              <text x="60" y="56" class="c-ring-centre">52%</text>
+              <text x="60" y="72" class="c-ring-sub">12 of 23 units</text>
+            </svg>
+            <div class="ring-copy">
+              <span class="ring-figure">12 of 23 units are Ready</span>
+              <p class="chart-caption">
+                12 of 23 units are Ready (52%) &mdash; the smaller of staffed and empty (R-B-09).
+              </p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="dtable">
+              <caption class="sr">Ready beds by health service and cohort</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Service</th>
+                  <th scope="col" class="n">Adult</th>
+                  <th scope="col" class="n">Older adult</th>
+                  <th scope="col" class="n">Youth</th>
+                  <th scope="col" class="n">Ready</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">EMHS &mdash; East Metro</th>
+                  <td class="n">1</td>
+                  <td class="n">0</td>
+                  <td class="n">0</td>
+                  <td class="n">1</td>
+                </tr>
+                <tr>
+                  <th scope="row">SMHS &mdash; South Metro</th>
+                  <td class="n">3</td>
+                  <td class="n">1</td>
+                  <td class="n">no unit</td>
+                  <td class="n">4</td>
+                </tr>
+                <tr data-tone="warn">
+                  <th scope="row">
+                    NMHS &mdash; North Metro <span class="chip" data-tone="warn">Unconfirmed</span>
+                  </th>
+                  <td class="n">2</td>
+                  <td class="n">unknown</td>
+                  <td class="n">no unit</td>
+                  <td class="n">2</td>
+                </tr>
+                <tr>
+                  <th scope="row">WACHS &mdash; country</th>
+                  <td class="n">4</td>
+                  <td class="n">no unit</td>
+                  <td class="n">no unit</td>
+                  <td class="n">4</td>
+                </tr>
+                <tr>
+                  <th scope="row">Private (contracted)</th>
+                  <td class="n">1</td>
+                  <td class="n">no unit</td>
+                  <td class="n">no unit</td>
+                  <td class="n">1</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th scope="row">All services</th>
+                  <td class="n">11</td>
+                  <td class="n">1</td>
+                  <td class="n">0</td>
+                  <td class="n">12</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <p class="panel-foot">
+            <strong>Graylands hasn't confirmed since 05:42</strong>, over 3 hours stale &mdash; excluded from every
+            total. <strong>Ready is at least 12</strong>, possibly 13 once it confirms.
+          </p>
+          <details class="reveal">
+            <summary><span>What &ldquo;Ready&rdquo; means, and why Graylands reads as unknown</span></summary>
+            <div class="reveal-body">
+              <p class="blurb">
+                Ready is the smaller of staffed and empty (R-B-09). Sex mix, nursing and age band fail the same
+                way: stale or unconfirmed reads as Unknown, never a carried-forward number (R16).
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+    </div>
+
+    <!-- ══════════ FLOW AND OUT-OF-AREA, TODAY ══════════ -->
+    <div class="col">
+      <section class="panel">
+        <header>
+          <h2 class="panel-title">Flow and placements, today versus yesterday</h2>
+          <span class="panel-sub">All four services</span>
+        </header>
+        <div class="panel-body">
+          <p class="blurb">
+            Completed events today versus yesterday &mdash; different from &ldquo;waiting now&rdquo; above, which
+            counts the pipeline regardless of referral day.
+          </p>
+          <div class="figs">
+            <div>
+              <span class="stat-figure">27</span>
+              <span class="stat-label">Referrals raised</span>
+              <span class="delta" data-dir="up">+3 <span class="word">on yesterday</span></span>
+            </div>
+            <div>
+              <span class="stat-figure" data-tone="good">19</span>
+              <span class="stat-label">Placements accepted</span>
+              <span class="delta" data-dir="down">&minus;2 <span class="word">on yesterday</span></span>
+            </div>
+            <div>
+              <span class="stat-figure">14</span>
+              <span class="stat-label">Arrivals completed</span>
+              <span class="delta" data-dir="down">&minus;3 <span class="word">on yesterday</span></span>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="dtable">
+              <caption class="sr">
+                Referrals raised, placed, sent out of area and still open today, by home health service
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Home service</th>
+                  <th scope="col" class="n">Raised</th>
+                  <th scope="col" class="n">Placed</th>
+                  <th scope="col" class="n">Sent out of area</th>
+                  <th scope="col" class="n">Still open</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">EMHS &mdash; East Metro</th>
+                  <td class="n">9</td>
+                  <td class="n">7</td>
+                  <td class="n">2</td>
+                  <td class="n">2</td>
+                </tr>
+                <tr>
+                  <th scope="row">NMHS &mdash; North Metro</th>
+                  <td class="n">7</td>
+                  <td class="n">5</td>
+                  <td class="n">1</td>
+                  <td class="n">2</td>
+                </tr>
+                <tr data-tone="warn">
+                  <th scope="row">SMHS &mdash; South Metro</th>
+                  <td class="n">6</td>
+                  <td class="n">3</td>
+                  <td class="n">0</td>
+                  <td class="n">3</td>
+                </tr>
+                <tr data-tone="crit">
+                  <th scope="row">
+                    WACHS &mdash; country <span class="chip" data-tone="crit">Watch</span>
+                  </th>
+                  <td class="n">5</td>
+                  <td class="n">4</td>
+                  <td class="n">4</td>
+                  <td class="n">1</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th scope="row">All four services</th>
+                  <td class="n">27</td>
+                  <td class="n">19</td>
+                  <td class="n">7</td>
+                  <td class="n">8</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <p class="panel-foot">
+            <strong>SMHS has the largest still-open share</strong> (3 of 6). <strong>WACHS has the equity
+            gap</strong>: all 4 accepted placements went metropolitan &mdash; no country bed was ready.
+          </p>
+          <details class="reveal">
+            <summary>
+              <span>Out-of-area breakdown, by home service</span>
+              <span class="reveal-count">4 services</span>
+            </summary>
+            <div class="reveal-body">
+              <p class="blurb">
+                Out-of-area means the ward sits outside the patient's own service, counted at acceptance. Rate is
+                a share of accepted placements, not referrals raised.
+              </p>
+              <div class="table-wrap">
+                <table class="dtable">
+                  <caption class="sr">In-area versus out-of-area placements today, by home health service</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Home service</th>
+                      <th scope="col" class="n">In area</th>
+                      <th scope="col" class="n">Out of area</th>
+                      <th scope="col" class="n">Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row">EMHS</th>
+                      <td class="n">5</td>
+                      <td class="n">2</td>
+                      <td class="n">29%</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">NMHS</th>
+                      <td class="n">4</td>
+                      <td class="n">1</td>
+                      <td class="n">20%</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">SMHS</th>
+                      <td class="n">3</td>
+                      <td class="n">0</td>
+                      <td class="n">0%</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">WACHS</th>
+                      <td class="n">0</td>
+                      <td class="n">4</td>
+                      <td class="n">100%</td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th scope="row">All four services</th>
+                      <td class="n">12</td>
+                      <td class="n">7</td>
+                      <td class="n">37%</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          </details>
+          <details class="reveal">
+            <summary><span>Why 9 and 5 are never combined into one number</span></summary>
+            <div class="reveal-body">
+              <p class="blurb">
+                <b>&ldquo;No bed available&rdquo;</b> (9) is a supply gap that can flip this afternoon.
+                <b>&ldquo;Not a match for any bed&rdquo;</b> (5) is a clinical, legal or cohort exclusion capacity
+                won't fix. Never summed.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="footnote">
+    <h2>What is real, taken from the repository</h2>
+    <ul>
+      <li>
+        <b>23 units across 15 hospitals &mdash; 16 Adult, 6 Older adult, 1 Youth</b> &mdash; from
+        <code>ward-sites.ts</code>. EMHS, SMHS, NMHS and WACHS hold 21; St John of God Subiaco's 2 are private
+        capacity, its own row.
+      </li>
+      <li>
+        <b>Graylands (North Metro's Older Adult unit) is genuinely stale in the source model</b> &mdash; confirmed
+        over 3 hours past its window. That's why its Ready count reads Unknown, not a number.
+      </li>
+      <li>
+        <b>The seven movement stages</b>, and the ruled distinction between &ldquo;no bed available&rdquo; and
+        &ldquo;not a match for any bed&rdquo;, are the domain model this page is built to.
+      </li>
+      <li>
+        <b>The visual language above the marker</b> &mdash; colours, spacing, panels, tables, chips, rings, charts
+        &mdash; is <code>statistics-language-v4.css</code>, copied unedited, mirroring the app's
+        <code>ckb-v2-tokens.css</code>.
+      </li>
+    </ul>
+
+    <h2>What is invented</h2>
+    <ul>
+      <li>
+        <b>Every count on this page</b> &mdash; the 47 waiting, the seven stage counts and medians, WF-013's
+        31-hour wait, every Ready-bed count except the stale one, and today's referral, placement and arrival
+        figures.
+      </li>
+      <li>
+        <b>The per-service split</b>, and the in-area/rate breakdown behind its disclosure, reuse the same totals
+        shown elsewhere (27 raised, 19 placed, 7 out of area, 8 still open) &mdash; not a second data set.
+      </li>
+      <li>
+        <b>Every sparkline's shape</b> is illustrative movement, not a recorded series.
+      </li>
+      <li>
+        <b>The &ldquo;confirmed 10:42 by 14 of 15 hospitals&rdquo; liveness marker</b> at the top of the page.
+      </li>
+    </ul>
+
+    <h2>What this screen deliberately does not do</h2>
+    <ul>
+      <li>
+        <b>No switcher, no action that changes a record</b> &mdash; the top of the hierarchy every switcher routes
+        out of. A built version would link each figure onward, not act here.
+      </li>
+      <li>
+        <b>&ldquo;No bed available&rdquo; and &ldquo;not a match for any bed&rdquo;</b> stay separate &mdash;
+        different problems, different fixes, never read as one cause.
+      </li>
+      <li>
+        Every zero is real and measured. A missing unit says so in words, not a zero. An unconfirmed figure says
+        &ldquo;unknown&rdquo;, never its last known number.
+      </li>
+      <li>
+        <b>It draws two charts, not the third edition's several</b>: the stage line and the Ready ring. Every
+        other proportion is an exact number, in a table or behind a disclosure.
+      </li>
+    </ul>
+  </div>
+</div>

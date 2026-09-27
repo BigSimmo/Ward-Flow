@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "id": "2a5a1cba-6989-4e1a-b104-c63367543c1b",
+  "createdOn": "2026-09-06",
+  "action": "add",
+  "payload": {
+    "pri": "P2",
+    "type": "issue",
+    "summary": "ui-phone-scroll-page-owned fails reproducibly: phoneScrollOwner stays 'pending' on the phone search-results view",
+    "detail": "Reproduced 2/2 on separate runs, quiet machine, at claude/ward-builder-two-modes bf7e8b781. tests/ui-phone-scroll-page-owned.spec.ts:60 expects main's data-phone-scroll-owner to be 'document'; it reads 'pending', which is the initial useState value in src/components/clinical-dashboard/use-active-scroll-owner.ts before its requestAnimationFrame effect resolves. So the owner never settles, or settles after the assertion. NOT caused by the ward statistics work on this branch: the spec and every file it exercises (src/components/clinical-dashboard/**, ClinicalDashboard.tsx, DocumentViewer.tsx, globals.css) are byte-identical between this branch's session base 3abcb7414 and HEAD -- verified with git diff --stat, empty output. Not present in tests/flake-ledger.json, tests/ward-expected-reds.json, or the issue ledger. This branch is 136 commits behind origin/main, so it may already be fixed upstream; check against current main before investigating. Found by npm run verify:phone-chrome, which exits 1 at stage focused-browser (1 failed, 11 passed); the vitest stage is clean at 9 files / 135 tests.",
+    "issueUlid": "01M1VXE8A49SK0CJ3VBM2XTBMG"
+  }
+}

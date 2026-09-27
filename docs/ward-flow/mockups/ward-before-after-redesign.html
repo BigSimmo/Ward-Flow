@@ -1,0 +1,904 @@
+<!doctype html>
+<html lang="en-AU" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow · Before &amp; After Style Comparison</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap"
+    />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem("ward-flow-theme");
+          if (saved === "light" || saved === "dark") {
+            document.documentElement.setAttribute("data-theme", saved);
+          } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            document.documentElement.setAttribute("data-theme", "dark");
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <style>
+      :root {
+        color-scheme: light;
+        --display: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --body: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --mono: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+
+        --t-0: 12px;
+        --t-1: 13px;
+        --t-2: 13.5px;
+        --t-3: 14.5px;
+        --t-4: 16px;
+        --t-5: 20px;
+        --t-6: 24px;
+
+        --r1: 12px;
+        --r2: 8px;
+        --r3: 6px;
+        --pill: 9999px;
+
+        /* Light Palette */
+        --ground-hi: #ecf0f4;
+        --ground: #e6eaef;
+        --ground-2: #e1e6ec;
+        --surface: #fdfdfe;
+        --surface-2: #f4f7fa;
+        --surface-3: #eef2f6;
+        --sunk: #e9edf2;
+
+        --ink: #161a20;
+        --ink-soft: #3d4754;
+        --muted: #596473;
+
+        --line: rgba(22, 30, 40, 0.1);
+        --line-strong: rgba(22, 30, 40, 0.22);
+
+        --accent: #2f4c66;
+        --accent-ink: #1e354a;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+
+        --gilt: #7d612a;
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --good-ink: #165639;
+
+        --warn: #825d10;
+        --warn-soft: #fbf5e6;
+        --warn-ink: #684906;
+
+        --danger: #b03b2e;
+        --danger-soft: #fcf0ee;
+        --danger-ink: #8f291e;
+
+        --card-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.02);
+      }
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --ground-hi: #14181d;
+        --ground: #0f1216;
+        --ground-2: #0a0d10;
+        --surface: #171b21;
+        --surface-2: #1b2026;
+        --surface-3: #222932;
+        --sunk: #12161b;
+        --ink: #e8ecf1;
+        --ink-soft: #b8c1cc;
+        --muted: #8a929d;
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.2);
+        --accent: #a7bcd2;
+        --accent-ink: #c8d8e8;
+        --accent-soft: #1f2a36;
+        --on-accent: #0f1216;
+        --stripe: #3a5a78;
+        --gilt: #d3b77e;
+        --good: #6fd39b;
+        --good-soft: #152b20;
+        --good-ink: #8ae3b1;
+        --warn: #e3bc5e;
+        --warn-soft: #2a2315;
+        --warn-ink: #f0cf7e;
+        --danger: #ff8b76;
+        --danger-soft: #321a16;
+        --danger-ink: #ffb4a6;
+        --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: var(--body);
+        font-size: var(--t-2);
+        line-height: 1.45;
+        color: var(--ink);
+        background: var(--ground);
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 999;
+      }
+
+      button {
+        font-family: inherit;
+        font-size: inherit;
+        border: none;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      .mono {
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Comparison Toolbar */
+      .comp-toolbar {
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        gap: 12px;
+      }
+
+      .comp-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .badge-tag {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        padding: 2px 8px;
+        border-radius: var(--pill);
+        font-size: var(--t-0);
+        font-weight: 700;
+        font-family: var(--mono);
+      }
+
+      .segmented-btns {
+        display: inline-flex;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r3);
+        padding: 2px;
+        gap: 2px;
+      }
+
+      .seg-btn {
+        padding: 5px 12px;
+        font-size: var(--t-1);
+        font-weight: 500;
+        color: var(--muted);
+        border-radius: 4px;
+        transition: all 0.15s ease;
+      }
+
+      .seg-btn:hover {
+        color: var(--ink);
+      }
+
+      .seg-btn.active {
+        background: var(--surface);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+      }
+
+      /* View Container */
+      .views-container {
+        padding: 24px;
+        max-width: 1600px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+      }
+
+      /* Dual Split Layout */
+      .split-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+
+      .view-column {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .column-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        padding-bottom: 6px;
+        border-bottom: 2px solid var(--line);
+      }
+
+      .column-header h2 {
+        font-size: var(--t-4);
+        font-weight: 700;
+      }
+
+      .column-header span {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         BEFORE: SIMULATED CURRENT LIVE INTERFACE
+         ═══════════════════════════════════════════════════════════════════════ */
+      .before-frame {
+        background: #eef2f5;
+        border: 1px solid #7a869a;
+        border-radius: 4px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        color: #172b4d;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+
+      .before-nav {
+        background: #dfe1e6;
+        border-bottom: 1px solid #97a0af;
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .before-nav-tabs {
+        display: flex;
+        gap: 2px;
+      }
+
+      .before-tab {
+        background: #ebecf0;
+        border: 1px solid #97a0af;
+        border-bottom: none;
+        padding: 4px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        border-radius: 3px 3px 0 0;
+      }
+
+      .before-tab.active {
+        background: #ffffff;
+        border-bottom: 1px solid #ffffff;
+        margin-bottom: -1px;
+      }
+
+      .before-banner {
+        background: #fff0ed;
+        border: 1px dashed #de350b;
+        margin: 12px;
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-radius: 2px;
+      }
+
+      .before-banner-text {
+        font-size: 12px;
+        font-weight: 600;
+        color: #de350b;
+      }
+
+      .before-btn-danger {
+        background: #de350b;
+        color: #ffffff;
+        padding: 6px 16px;
+        font-size: 12px;
+        font-weight: 700;
+        border-radius: 3px;
+        border: 1px solid #bf2600;
+      }
+
+      .before-table-box {
+        margin: 0 12px 12px;
+        background: #ffffff;
+        border: 1px solid #7a869a;
+      }
+
+      .before-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      .before-table th {
+        background: #ebecf0;
+        border: 1px solid #7a869a;
+        padding: 6px 8px;
+        text-align: left;
+        font-weight: 700;
+        font-size: 11px;
+        text-transform: uppercase;
+      }
+
+      .before-table td {
+        border: 1px solid #7a869a;
+        padding: 8px;
+      }
+
+      .before-badge-box {
+        display: inline-block;
+        padding: 2px 6px;
+        font-weight: 700;
+        font-size: 11px;
+        border: 1px solid currentColor;
+      }
+
+      .before-badge-green {
+        color: #006644;
+        background: #e3fcef;
+        border-color: #006644;
+      }
+      .before-badge-amber {
+        color: #ff8b00;
+        background: #fffae6;
+        border-color: #ff8b00;
+      }
+      .before-badge-red {
+        color: #de350b;
+        background: #ffebe6;
+        border-color: #de350b;
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         AFTER: REFINED MODERN INTERFACE
+         ═══════════════════════════════════════════════════════════════════════ */
+      .after-frame {
+        background: var(--ground);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: var(--card-shadow);
+      }
+
+      /* 2. Standardized Clean Header Bar */
+      .after-header {
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .after-header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .ward-select-capsule {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: var(--r3);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        font-weight: 700;
+        font-size: var(--t-2);
+      }
+
+      .after-search-wrap {
+        flex: 1;
+        max-width: 320px;
+        position: relative;
+      }
+
+      .after-search-input {
+        width: 100%;
+        padding: 6px 12px 6px 30px;
+        border-radius: var(--r2);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        font-size: var(--t-1);
+        color: var(--ink);
+        outline: none;
+      }
+
+      .after-search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .after-header-right {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .shift-clock-box {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+      }
+
+      .shift-label {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+
+      .shift-time {
+        font-family: var(--mono);
+        font-weight: 700;
+        font-size: var(--t-2);
+      }
+
+      .bell-capsule-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: var(--pill);
+        background: var(--danger-soft);
+        border: 1px solid rgba(176, 59, 46, 0.25);
+        color: var(--danger-ink);
+        font-weight: 700;
+        font-size: var(--t-1);
+      }
+
+      /* 1. Soft Surface Layering Workspace */
+      .after-workspace {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .cards-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      /* 3. Action Grouping & 4. Status Capsule Badges */
+      .bed-row-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        transition: all 0.15s ease;
+      }
+
+      .bed-row-card:hover {
+        border-color: var(--line-strong);
+        transform: translateY(-1px);
+        box-shadow: var(--card-shadow);
+      }
+
+      .bed-main-info {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .bed-tag-num {
+        font-family: var(--mono);
+        font-weight: 700;
+        font-size: var(--t-3);
+        min-width: 60px;
+      }
+
+      .patient-details {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .patient-name-bold {
+        font-weight: 600;
+        font-size: var(--t-2);
+        color: var(--ink);
+      }
+
+      .patient-sub-meta {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+
+      /* 4. Unified Status Capsule Badge */
+      .status-capsule {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 10px;
+        border-radius: var(--pill);
+        font-family: var(--mono);
+        font-size: 11.5px;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        border: 1px solid transparent;
+      }
+
+      .dot-signal {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+      }
+
+      .status-capsule.allocatable {
+        background: var(--good-soft);
+        color: var(--good-ink);
+        border-color: rgba(34, 117, 80, 0.2);
+      }
+      .status-capsule.allocatable .dot-signal {
+        background: var(--good);
+      }
+
+      .status-capsule.discharge {
+        background: var(--warn-soft);
+        color: var(--warn-ink);
+        border-color: rgba(130, 93, 16, 0.2);
+      }
+      .status-capsule.discharge .dot-signal {
+        background: var(--warn);
+      }
+
+      .status-capsule.occupied {
+        background: var(--surface-2);
+        color: var(--ink-soft);
+        border-color: var(--line);
+      }
+      .status-capsule.occupied .dot-signal {
+        background: var(--muted);
+      }
+
+      /* 3. Grouped Inline Actions */
+      .action-cluster {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-row-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 12px;
+        border-radius: var(--r3);
+        background: var(--surface-2);
+        border: 1px solid var(--line-strong);
+        color: var(--ink);
+        font-size: var(--t-1);
+        font-weight: 600;
+        transition: all 0.12s ease;
+      }
+
+      .btn-row-action:hover {
+        background: var(--sunk);
+      }
+
+      .btn-row-primary {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+      }
+
+      .btn-row-primary:hover {
+        opacity: 0.92;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Top Comparison Navigation -->
+    <header class="comp-toolbar">
+      <div class="comp-title">
+        <span class="badge-tag">Design Study</span>
+        <strong>Ward Flow · Before &amp; After Visual Comparison</strong>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px">
+        <div class="segmented-btns" role="group" aria-label="View Mode">
+          <button type="button" class="seg-btn active" id="btn-split" onclick="setViewMode('split')">
+            Side-by-Side
+          </button>
+          <button type="button" class="seg-btn" id="btn-before" onclick="setViewMode('before')">Before Only</button>
+          <button type="button" class="seg-btn" id="btn-after" onclick="setViewMode('after')">After Only</button>
+        </div>
+        <button type="button" class="seg-btn" style="border: 1px solid var(--line-strong)" onclick="toggleTheme()">
+          Toggle Theme
+        </button>
+      </div>
+    </header>
+
+    <main class="views-container">
+      <div class="split-layout" id="layout-split">
+        <!-- ════════ BEFORE COLUMN ════════ -->
+        <div class="view-column" id="col-before">
+          <div class="column-header">
+            <h2>BEFORE · Current Interface</h2>
+            <span>Heavy borders · Stranded buttons · Unstyled banners</span>
+          </div>
+
+          <div class="before-frame">
+            <!-- Crowded Tab Bar -->
+            <div class="before-nav">
+              <div class="before-nav-tabs">
+                <div class="before-tab active">WARD OVERVIEW</div>
+                <div class="before-tab">PATIENT RECORDS</div>
+                <div class="before-tab">STAFF ROSTER</div>
+                <div class="before-tab">REPORTS</div>
+              </div>
+              <span style="font-size: 11px; color: #505f79">Ward 2K · Acute Med</span>
+            </div>
+
+            <!-- Full-width Stranded Alert Banner -->
+            <div class="before-banner">
+              <span class="before-banner-text"
+                >09:30 Morning Census Overdue — Confirm discharges and allocatable beds</span
+              >
+              <button type="button" class="before-btn-danger">Confirm Now</button>
+            </div>
+
+            <!-- Heavy Grid Table -->
+            <div class="before-table-box">
+              <table class="before-table">
+                <thead>
+                  <tr>
+                    <th>Bed</th>
+                    <th>Patient Name</th>
+                    <th>Admit Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><b>Bed 01</b></td>
+                    <td>Margaret Higgins</td>
+                    <td>22/09/2026</td>
+                    <td><span class="before-badge-box before-badge-amber">DISCHARGE PENDING</span></td>
+                    <td style="text-align: right">
+                      <button type="button" style="padding: 2px 6px; font-size: 11px; border: 1px solid #7a869a">
+                        Process
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><b>Bed 02</b></td>
+                    <td>David Kelly</td>
+                    <td>19/09/2026</td>
+                    <td><span class="before-badge-box before-badge-green">ADMITTED</span></td>
+                    <td style="text-align: right">
+                      <button type="button" style="padding: 2px 6px; font-size: 11px; border: 1px solid #7a869a">
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><b>Bed 03</b></td>
+                    <td>Allocatable</td>
+                    <td>-</td>
+                    <td><span class="before-badge-box before-badge-green">VACANT</span></td>
+                    <td style="text-align: right">
+                      <button type="button" style="padding: 2px 6px; font-size: 11px; border: 1px solid #7a869a">
+                        Assign
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><b>Bed 04</b></td>
+                    <td>Held for Inbound ED</td>
+                    <td>-</td>
+                    <td><span class="before-badge-box before-badge-red">OVERDUE ARRIVAL</span></td>
+                    <td style="text-align: right">
+                      <button type="button" style="padding: 2px 6px; font-size: 11px; border: 1px solid #7a869a">
+                        Contact ED
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════════ AFTER COLUMN ════════ -->
+        <div class="view-column" id="col-after">
+          <div class="column-header">
+            <h2 style="color: var(--accent)">AFTER · Refined Modern Interface</h2>
+            <span>Layered surfaces · Inline actions · Unified capsules</span>
+          </div>
+
+          <div class="after-frame">
+            <!-- 2. Clean 4-Item Header Bar -->
+            <header class="after-header">
+              <div class="after-header-left">
+                <div class="ward-select-capsule">
+                  <span>Ward 2K</span>
+                  <span style="font-size: var(--t-0); color: var(--muted); font-weight: 500">Acute Medical</span>
+                </div>
+              </div>
+
+              <div class="after-search-wrap">
+                <span class="after-search-icon">🔍</span>
+                <input type="text" class="after-search-input" placeholder="Search patient or bed... (⌘K)" />
+              </div>
+
+              <div class="after-header-right">
+                <div class="shift-clock-box">
+                  <span class="shift-label">Morning Shift</span>
+                  <span class="shift-time">10:18 AM</span>
+                </div>
+                <!-- 1. Alert in Header Bell -->
+                <button type="button" class="bell-capsule-btn" title="Open Notification & Buzzer Center">
+                  <span>🔔</span>
+                  <span>2 Alerts</span>
+                </button>
+              </div>
+            </header>
+
+            <!-- 1. Soft Surface Layering & 3. Grouped Inline Actions -->
+            <div class="after-workspace">
+              <div class="cards-grid">
+                <!-- Bed 01 -->
+                <div class="bed-row-card">
+                  <div class="bed-main-info">
+                    <span class="bed-tag-num">Bed 01</span>
+                    <div class="patient-details">
+                      <span class="patient-name-bold">Margaret Higgins</span>
+                      <span class="patient-sub-meta">Admitted 22 Sep · Dr. Chen · Ready for transport 14:00</span>
+                    </div>
+                  </div>
+                  <div class="action-cluster">
+                    <!-- 4. Capsule Badge -->
+                    <span class="status-capsule discharge">
+                      <span class="dot-signal"></span>
+                      Pending Discharge
+                    </span>
+                    <button type="button" class="btn-row-action btn-row-primary">Process Discharge</button>
+                    <button type="button" class="btn-row-action">Meds Check</button>
+                  </div>
+                </div>
+
+                <!-- Bed 02 -->
+                <div class="bed-row-card">
+                  <div class="bed-main-info">
+                    <span class="bed-tag-num">Bed 02</span>
+                    <div class="patient-details">
+                      <span class="patient-name-bold">David Kelly</span>
+                      <span class="patient-sub-meta">Admitted 19 Sep · Dr. Lee · Allied health review today</span>
+                    </div>
+                  </div>
+                  <div class="action-cluster">
+                    <span class="status-capsule occupied">
+                      <span class="dot-signal"></span>
+                      Occupied
+                    </span>
+                    <button type="button" class="btn-row-action">Review Care</button>
+                  </div>
+                </div>
+
+                <!-- Bed 03 -->
+                <div class="bed-row-card" style="background: var(--surface-2)">
+                  <div class="bed-main-info">
+                    <span class="bed-tag-num" style="color: var(--good)">Bed 03</span>
+                    <div class="patient-details">
+                      <span class="patient-name-bold" style="color: var(--good-ink)">Allocatable Bed</span>
+                      <span class="patient-sub-meta">Cleaned &amp; inspected 09:45 · Female / Male flex bay</span>
+                    </div>
+                  </div>
+                  <div class="action-cluster">
+                    <span class="status-capsule allocatable">
+                      <span class="dot-signal"></span>
+                      Allocatable
+                    </span>
+                    <button type="button" class="btn-row-action btn-row-primary">Assign Patient</button>
+                  </div>
+                </div>
+
+                <!-- Bed 04 -->
+                <div class="bed-row-card" style="border-left: 3px solid var(--warn)">
+                  <div class="bed-main-info">
+                    <span class="bed-tag-num" style="color: var(--warn-ink)">Bed 04</span>
+                    <div class="patient-details">
+                      <span class="patient-name-bold">Held for Inbound ED Transfer</span>
+                      <span class="patient-sub-meta">Unknown Patient (ETA was 09:12, &gt;60m overdue)</span>
+                    </div>
+                  </div>
+                  <div class="action-cluster">
+                    <span class="status-capsule discharge" style="background: var(--warn-soft); color: var(--warn-ink)">
+                      <span class="dot-signal"></span>
+                      Delayed Arrival
+                    </span>
+                    <button type="button" class="btn-row-action">Contact ED</button>
+                    <button type="button" class="btn-row-action">Update ETA</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      function setViewMode(mode) {
+        const splitLayout = document.getElementById("layout-split");
+        const colBefore = document.getElementById("col-before");
+        const colAfter = document.getElementById("col-after");
+
+        document.getElementById("btn-split").classList.toggle("active", mode === "split");
+        document.getElementById("btn-before").classList.toggle("active", mode === "before");
+        document.getElementById("btn-after").classList.toggle("active", mode === "after");
+
+        if (mode === "split") {
+          splitLayout.style.gridTemplateColumns = "1fr 1fr";
+          colBefore.style.display = "flex";
+          colAfter.style.display = "flex";
+        } else if (mode === "before") {
+          splitLayout.style.gridTemplateColumns = "1fr";
+          colBefore.style.display = "flex";
+          colAfter.style.display = "none";
+        } else if (mode === "after") {
+          splitLayout.style.gridTemplateColumns = "1fr";
+          colBefore.style.display = "none";
+          colAfter.style.display = "flex";
+        }
+      }
+
+      function toggleTheme() {
+        const root = document.documentElement;
+        const current = root.getAttribute("data-theme") || "light";
+        const next = current === "light" ? "dark" : "light";
+        root.setAttribute("data-theme", next);
+        try {
+          localStorage.setItem("ward-flow-theme", next);
+        } catch (e) {}
+      }
+    </script>
+  </body>
+</html>

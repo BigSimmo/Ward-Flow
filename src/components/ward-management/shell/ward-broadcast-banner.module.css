@@ -1,0 +1,193 @@
+.banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  border-bottom: 2px solid var(--line-strong);
+  position: relative;
+  z-index: 30;
+  transition: all 0.2s ease-in-out;
+}
+
+.banner[data-severity="critical"] {
+  background: var(--danger-soft);
+  border-bottom-color: var(--danger);
+  color: var(--danger-ink);
+}
+
+.banner[data-severity="warning"] {
+  background: var(--warn-soft);
+  border-bottom-color: var(--warn);
+  color: var(--ink);
+}
+
+.banner[data-severity="advisory"] {
+  background: var(--accent-soft);
+  border-bottom-color: var(--accent);
+  color: var(--ink);
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.titleArea {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.pulseDot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: var(--pill);
+  background: var(--danger);
+  flex-shrink: 0;
+}
+
+.banner[data-severity="warning"] .pulseDot {
+  background: var(--warn);
+}
+
+.banner[data-severity="advisory"] .pulseDot {
+  background: var(--accent);
+}
+
+.severityBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--pill);
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+}
+
+.banner[data-severity="critical"] .severityBadge {
+  color: var(--danger-ink);
+  border-color: var(--danger);
+}
+
+.banner[data-severity="warning"] .severityBadge {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.banner[data-severity="advisory"] .severityBadge {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.scopeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--r2);
+  font-size: var(--t-0);
+  font-weight: 600;
+  background: var(--surface);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+
+.headline {
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.actionsArea {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.metaTime {
+  font-size: var(--t-0);
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.ackCountBadge {
+  font-size: var(--t-0);
+  font-family: var(--mono);
+  color: var(--ink-soft);
+  background: var(--surface);
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--r2);
+  border: 1px solid var(--line);
+}
+
+.btnSm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 1.85rem;
+  padding: 0 0.65rem;
+  border-radius: var(--r2);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  transition: all 0.12s ease;
+  text-decoration: none;
+}
+
+.btnSm:hover {
+  background: var(--surface-2);
+}
+
+.btnAck {
+  background: var(--surface);
+  border-color: var(--line-strong);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.btnAck:hover {
+  background: var(--surface-2);
+}
+
+.ackDone {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--r2);
+  font-size: var(--t-0);
+  font-weight: 600;
+  background: var(--good-soft);
+  color: var(--good);
+  border: 1px solid var(--good);
+}
+
+.messageBody {
+  font-size: var(--t-1);
+  line-height: 1.45;
+  color: var(--ink);
+  margin: 0;
+  padding: 0.25rem 0 0.1rem 0;
+}
+
+.dispatchedBy {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-style: italic;
+}

@@ -1,0 +1,1488 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow · Clinical Role Authentication &amp; Shift Sign-In</title>
+    <script>
+      /* Runs before the stylesheet: names the page's language, and stamps a remembered Light or Dark
+       choice on the root, so the first paint is already in that theme. The appearance control itself
+       is wired at the end of the page under the same key. */
+      (function () {
+        document.documentElement.lang = "en-AU";
+        try {
+          var v = localStorage.getItem("ward-flow-sign-in-appearance");
+          if (v === "light" || v === "dark") document.documentElement.setAttribute("data-theme", v);
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+    />
+    <style>
+      :root {
+        color-scheme: light;
+
+        --ground-hi: #ecf0f4;
+        --ground: #e6eaef;
+        --ground-2: #e1e6ec;
+
+        --surface: #fdfdfe;
+        --surface-2: #f4f7fa;
+        --sunk: #eef2f6;
+
+        --ink: #161a20;
+        --ink-soft: #414953;
+        --muted: #5f6873;
+
+        --line: rgba(22, 30, 40, 0.11);
+        --line-strong: rgba(22, 30, 40, 0.26);
+
+        --accent: #2f4c66;
+        --accent-ink: #27405a;
+        --accent-press: #27405a;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+
+        --gilt: #7d612a;
+        --gilt-soft: #f1ebdf;
+
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --warn: #825d10;
+        --warn-soft: #f6eeda;
+
+        --danger: #b03b2e;
+        --danger-soft: #f8e6e2;
+        --danger-ink: #973121;
+
+        --svc-east: #2f4c66;
+        --svc-north: #685a94;
+        --svc-south: #356a70;
+        --svc-wachs: #8c5a3c;
+
+        --lift: 0 1px 1px rgba(30, 48, 66, 0.05), 0 14px 30px -22px rgba(30, 48, 66, 0.45);
+        --hl: rgba(255, 255, 255, 0.9);
+        --hl-on-accent: rgba(255, 255, 255, 0.14);
+        --edge-shade: rgba(30, 48, 66, 0.16);
+        --scrim: rgba(30, 48, 66, 0.32);
+
+        --r1: 10px;
+        --r1i: 9px;
+        --r2: 6px;
+        --pill: 9999px;
+
+        --t-0: 12px;
+        --t-1: 13px;
+        --t-2: 13.5px;
+        --t-3: 14px;
+        --t-4: 16px;
+        --t-5: 20px;
+        --t-6: 26px;
+
+        --display: "Geist", "Segoe UI", system-ui, sans-serif;
+        --body: "Geist", "Segoe UI", system-ui, sans-serif;
+        --mono: "Geist Mono", ui-monospace, Consolas, monospace;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          color-scheme: dark;
+          --ground-hi: #14181d;
+          --ground: #0f1216;
+          --ground-2: #0c0f12;
+
+          --surface: #171b21;
+          --surface-2: #1b2026;
+          --sunk: #13171c;
+
+          --ink: #e8ecf1;
+          --ink-soft: #b2bac5;
+          --muted: #8a929d;
+
+          --line: rgba(255, 255, 255, 0.09);
+          --line-strong: rgba(255, 255, 255, 0.21);
+
+          --accent: #a7bcd2;
+          --accent-ink: #bfd0e2;
+          --accent-press: #8ea6bf;
+          --accent-soft: #1f2a36;
+          --on-accent: #0f1216;
+          --stripe: #3a5a78;
+
+          --gilt: #d3b77e;
+          --gilt-soft: #2a251b;
+
+          --good: #6fd39b;
+          --good-soft: #15291f;
+          --warn: #e3bc5e;
+          --warn-soft: #2b2415;
+
+          --danger: #ff8b76;
+          --danger-soft: #33201b;
+          --danger-ink: #ffa08e;
+
+          --svc-east: #a7bcd2;
+          --svc-north: #b1a2d6;
+          --svc-south: #7fb2b8;
+          --svc-wachs: #d89a78;
+
+          --lift: 0 1px 1px rgba(0, 0, 0, 0.4), 0 16px 34px -22px rgba(0, 0, 0, 0.95);
+          --hl: rgba(255, 255, 255, 0.06);
+          --hl-on-accent: rgba(255, 255, 255, 0.28);
+          --edge-shade: rgba(0, 0, 0, 0.55);
+          --scrim: rgba(0, 0, 0, 0.6);
+        }
+      }
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --ground-hi: #14181d;
+        --ground: #0f1216;
+        --ground-2: #0c0f12;
+
+        --surface: #171b21;
+        --surface-2: #1b2026;
+        --sunk: #13171c;
+
+        --ink: #e8ecf1;
+        --ink-soft: #b2bac5;
+        --muted: #8a929d;
+
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.21);
+
+        --accent: #a7bcd2;
+        --accent-ink: #bfd0e2;
+        --accent-press: #8ea6bf;
+        --accent-soft: #1f2a36;
+        --on-accent: #0f1216;
+        --stripe: #3a5a78;
+
+        --gilt: #d3b77e;
+        --gilt-soft: #2a251b;
+
+        --good: #6fd39b;
+        --good-soft: #15291f;
+        --warn: #e3bc5e;
+        --warn-soft: #2b2415;
+
+        --danger: #ff8b76;
+        --danger-soft: #33201b;
+        --danger-ink: #ffa08e;
+
+        --svc-east: #a7bcd2;
+        --svc-north: #b1a2d6;
+        --svc-south: #7fb2b8;
+        --svc-wachs: #d89a78;
+
+        --lift: 0 1px 1px rgba(0, 0, 0, 0.4), 0 16px 34px -22px rgba(0, 0, 0, 0.95);
+        --hl: rgba(255, 255, 255, 0.06);
+        --hl-on-accent: rgba(255, 255, 255, 0.28);
+        --edge-shade: rgba(0, 0, 0, 0.55);
+        --scrim: rgba(0, 0, 0, 0.6);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          transition: none !important;
+          animation: none !important;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        background: var(--ground);
+      }
+
+      body {
+        margin: 0;
+        background:
+          linear-gradient(180deg, var(--ground-hi) 0%, var(--ground) 55%, var(--ground-2) 100%) fixed,
+          var(--ground);
+        color: var(--ink);
+        font-family: var(--body);
+        font-size: var(--t-3);
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+        font-variant-numeric: tabular-nums;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 32px 16px 48px;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 45;
+        pointer-events: none;
+      }
+
+      .portalWrap {
+        width: 100%;
+        max-width: 1020px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      /* Top Masthead Bar */
+      .portalMasthead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        padding: 4px 4px 8px;
+      }
+
+      .brandBlock {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .brandGov {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .brandGov .waBadge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--t-0);
+        font-weight: 700;
+        color: var(--gilt);
+        background: var(--gilt-soft);
+        padding: 1px 6px;
+        border-radius: var(--pill);
+        letter-spacing: 0.06em;
+        border: 1px solid var(--line);
+      }
+
+      .brandTitleRow {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+      }
+
+      .brandTitle {
+        font-family: var(--display);
+        font-size: var(--t-6);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+        margin: 0;
+        line-height: 1.2;
+      }
+
+      .brandSub {
+        font-size: var(--t-1);
+        color: var(--muted);
+        font-weight: 500;
+      }
+
+      .mastheadControls {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .statusPill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        border-radius: var(--pill);
+        font-size: var(--t-0);
+        font-weight: 600;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        color: var(--ink-soft);
+        box-shadow: none;
+      }
+
+      .statusPill.good {
+        background: var(--good-soft);
+        color: var(--good);
+        border-color: var(--line-strong);
+      }
+
+      .statusDot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+
+      .themeGroup {
+        display: inline-flex;
+        align-items: center;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 2px;
+        gap: 2px;
+      }
+
+      .themeBtn {
+        appearance: none;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        font-family: var(--body);
+        font-size: var(--t-0);
+        font-weight: 500;
+        color: var(--muted);
+        padding: 3px 8px;
+        cursor: pointer;
+      }
+
+      .themeBtn:hover {
+        color: var(--ink);
+        background: var(--sunk);
+      }
+
+      .themeBtn[aria-pressed="true"] {
+        background: var(--surface-2);
+        color: var(--ink);
+        font-weight: 600;
+        border-color: var(--line-strong);
+      }
+
+      /* Main Elevation Card */
+      .portalCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-bottom-color: var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Operational Context Bar (Catchment & Shift) */
+      .contextStrip {
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        padding: 18px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .contextCol {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .contextColLabel {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .pillGroup {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .contextBtn {
+        appearance: none;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 6px 12px;
+        font-family: var(--body);
+        font-size: var(--t-1);
+        font-weight: 500;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition:
+          background 0.12s ease,
+          border-color 0.12s ease,
+          color 0.12s ease;
+      }
+
+      .contextBtn:hover {
+        background: var(--sunk);
+        color: var(--ink);
+        border-color: var(--line-strong);
+      }
+
+      .contextBtn[aria-pressed="true"] {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+        font-weight: 600;
+        box-shadow: inset 0 0 0 1px var(--accent);
+      }
+
+      .svcNorth[aria-pressed="true"] {
+        color: var(--svc-north);
+        border-color: var(--svc-north);
+        box-shadow: inset 0 0 0 1px var(--svc-north);
+      }
+      .svcSouth[aria-pressed="true"] {
+        color: var(--svc-south);
+        border-color: var(--svc-south);
+        box-shadow: inset 0 0 0 1px var(--svc-south);
+      }
+      .svcWachs[aria-pressed="true"] {
+        color: var(--svc-wachs);
+        border-color: var(--svc-wachs);
+        box-shadow: inset 0 0 0 1px var(--svc-wachs);
+      }
+
+      /* Portal Card Body */
+      .cardBody {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .sectionHeader {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .sectionTitle {
+        font-size: var(--t-4);
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+        letter-spacing: -0.01em;
+      }
+
+      .sectionSub {
+        font-size: var(--t-1);
+        color: var(--muted);
+        margin-top: 2px;
+      }
+
+      .sectionMeta {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 500;
+        color: var(--accent-ink);
+        background: var(--accent-soft);
+        padding: 2px 8px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line);
+      }
+
+      /* Role Cards Grid */
+      .roleGrid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+
+      .roleCard {
+        appearance: none;
+        text-align: left;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 16px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        font-family: var(--body);
+        position: relative;
+        transition:
+          background 0.12s ease,
+          border-color 0.12s ease,
+          transform 0.12s ease;
+      }
+
+      .roleCard:hover {
+        background: var(--surface-2);
+        border-color: var(--line-strong);
+      }
+
+      .roleCard[aria-pressed="true"] {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+        box-shadow: inset 0 0 0 1px var(--accent);
+      }
+
+      .roleBadgeRow {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .roleScopeBadge {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+
+      .roleCard[aria-pressed="true"] .roleScopeBadge {
+        color: var(--accent-ink);
+      }
+
+      .roleActiveIndicator {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: transparent;
+        border: 1px solid var(--line-strong);
+      }
+
+      .roleCard[aria-pressed="true"] .roleActiveIndicator {
+        background: var(--gilt);
+        border-color: var(--gilt);
+      }
+
+      .roleTitle {
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--ink);
+        line-height: 1.3;
+      }
+
+      .roleDesc {
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        line-height: 1.4;
+        flex-grow: 1;
+      }
+
+      .roleCard[aria-pressed="true"] .roleDesc {
+        color: var(--ink);
+      }
+
+      .roleTargetChip {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 500;
+        color: var(--muted);
+        background: var(--surface-2);
+        padding: 4px 8px;
+        border-radius: 4px;
+        border: 1px solid var(--line);
+        align-self: flex-start;
+        margin-top: 4px;
+      }
+
+      .roleCard[aria-pressed="true"] .roleTargetChip {
+        background: var(--surface);
+        color: var(--accent-ink);
+        border-color: var(--line-strong);
+        font-weight: 600;
+      }
+
+      /* Permissions Inspector */
+      .permInspector {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .permHeader {
+        padding: 12px 18px;
+        background: var(--sunk);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .permHeaderTitle {
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .permHeaderTarget {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--accent-ink);
+        background: var(--surface);
+        padding: 2px 8px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line);
+      }
+
+      .permGrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .permCol {
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .permCol:first-child {
+        border-right: 1px solid var(--line);
+      }
+
+      .permColHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .permColLabel {
+        font-size: var(--t-1);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .permColLabel.good {
+        color: var(--good);
+      }
+
+      .permColLabel.boundary {
+        color: var(--warn);
+      }
+
+      .permBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line);
+      }
+
+      .permBadge.good {
+        background: var(--good-soft);
+        color: var(--good);
+        border-color: var(--good);
+      }
+
+      .permBadge.boundary {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border-color: var(--warn);
+      }
+
+      .permItems {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .permItem {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: var(--t-1);
+        line-height: 1.45;
+        color: var(--ink-soft);
+      }
+
+      .permIcon {
+        flex-shrink: 0;
+        margin-top: 3px;
+        width: 13px;
+        height: 13px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: var(--t-0);
+        line-height: 1;
+        border-radius: 50%;
+      }
+
+      .permIcon.good {
+        color: var(--good);
+        background: var(--good-soft);
+      }
+
+      .permIcon.boundary {
+        color: var(--warn);
+        background: var(--warn-soft);
+      }
+
+      /* Card Footer & Action CTA */
+      .cardFooter {
+        padding: 18px 24px;
+        border-top: 1px solid var(--line);
+        background: var(--surface-2);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .footerSessionInfo {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .sessionMetaLine {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .sessionDetailLine {
+        font-family: var(--mono);
+        font-size: var(--t-1);
+        color: var(--ink);
+        font-weight: 500;
+      }
+
+      .btnPrimary {
+        appearance: none;
+        background: var(--accent);
+        color: var(--on-accent);
+        border: 1px solid var(--accent);
+        border-radius: var(--r2);
+        height: 42px;
+        padding: 0 24px;
+        font-family: var(--body);
+        font-size: var(--t-3);
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        transition:
+          background 0.12s ease,
+          border-color 0.12s ease;
+      }
+
+      .btnPrimary:hover {
+        background: var(--accent-press);
+        border-color: var(--accent-press);
+      }
+
+      .btnPrimary:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      /* Prototype Disclosure */
+      .prototypeNotice {
+        text-align: center;
+        padding: 12px 16px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .prototypeNotice p {
+        margin: 0;
+        font-size: var(--t-0);
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .auditMeta {
+        font-family: var(--mono);
+        color: var(--muted);
+        letter-spacing: 0.02em;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      @media (max-width: 860px) {
+        .roleGrid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .permGrid {
+          grid-template-columns: 1fr;
+        }
+        .permCol:first-child {
+          border-right: none;
+          border-bottom: 1px solid var(--line);
+        }
+        .cardFooter {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .btnPrimary {
+          width: 100%;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .roleGrid {
+          grid-template-columns: 1fr;
+        }
+        body {
+          padding: 16px 8px 32px;
+        }
+        .cardBody {
+          padding: 16px;
+        }
+        .contextStrip {
+          padding: 14px 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="portalWrap">
+      <!-- Masthead Bar -->
+      <header class="portalMasthead">
+        <div class="brandBlock">
+          <div class="brandGov">
+            <span>Government of Western Australia</span>
+            <span>·</span>
+            <span>Department of Health</span>
+            <span class="waBadge">WA</span>
+          </div>
+          <div class="brandTitleRow">
+            <h1 class="brandTitle">Ward Flow</h1>
+            <span class="brandSub">Statewide Mental Health Bed Coordination</span>
+          </div>
+        </div>
+
+        <div class="mastheadControls">
+          <span class="statusPill good">
+            <span class="statusDot"></span>
+            <span>SSO Verified</span>
+          </span>
+          <span class="statusPill">
+            <span>All 4 Health Services Synchronized · 23 Acute Units Online</span>
+          </span>
+          <div class="themeGroup" role="group" aria-label="Appearance Mode">
+            <button
+              type="button"
+              class="themeBtn"
+              data-set-theme="light"
+              aria-pressed="false"
+              onclick="setTheme('light')"
+            >
+              Light
+            </button>
+            <button
+              type="button"
+              class="themeBtn"
+              data-set-theme="dark"
+              aria-pressed="false"
+              onclick="setTheme('dark')"
+            >
+              Dark
+            </button>
+            <button type="button" class="themeBtn" data-set-theme="auto" aria-pressed="true" onclick="setTheme('auto')">
+              Auto
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Portal Card -->
+      <div class="portalCard">
+        <!-- Operational Context Setup: Catchment & Shift -->
+        <section class="contextStrip" aria-label="Operational Shift Context">
+          <div class="contextCol">
+            <span class="contextColLabel">Health Service Catchment</span>
+            <div class="pillGroup" role="group" aria-label="Health Service Catchment">
+              <button
+                type="button"
+                class="contextBtn svcNorth"
+                data-catchment="NMHS"
+                aria-pressed="false"
+                onclick="setCatchment(this, 'North Metropolitan Health Service (NMHS)')"
+              >
+                North Metropolitan (NMHS)
+              </button>
+              <button
+                type="button"
+                class="contextBtn svcSouth"
+                data-catchment="SMHS"
+                aria-pressed="false"
+                onclick="setCatchment(this, 'South Metropolitan Health Service (SMHS)')"
+              >
+                South Metropolitan (SMHS)
+              </button>
+              <button
+                type="button"
+                class="contextBtn"
+                data-catchment="EMHS"
+                aria-pressed="false"
+                onclick="setCatchment(this, 'East Metropolitan Health Service (EMHS)')"
+              >
+                East Metropolitan (EMHS)
+              </button>
+              <button
+                type="button"
+                class="contextBtn svcWachs"
+                data-catchment="WACHS"
+                aria-pressed="false"
+                onclick="setCatchment(this, 'WA Country Health Service (WACHS)')"
+              >
+                Country Health (WACHS)
+              </button>
+              <button
+                type="button"
+                class="contextBtn"
+                data-catchment="Statewide"
+                aria-pressed="true"
+                onclick="setCatchment(this, 'Statewide Directorate')"
+              >
+                Statewide Directorate
+              </button>
+            </div>
+          </div>
+
+          <div class="contextCol">
+            <span class="contextColLabel">Active Shift Roster</span>
+            <div class="pillGroup" role="group" aria-label="Active Shift Roster">
+              <button
+                type="button"
+                class="contextBtn"
+                data-shift="Morning"
+                aria-pressed="true"
+                onclick="setShift(this, 'Morning Shift (07:00 - 15:30)')"
+              >
+                Morning Shift (07:00 - 15:30)
+              </button>
+              <button
+                type="button"
+                class="contextBtn"
+                data-shift="Afternoon"
+                aria-pressed="false"
+                onclick="setShift(this, 'Afternoon Shift (14:30 - 22:30)')"
+              >
+                Afternoon Shift (14:30 - 22:30)
+              </button>
+              <button
+                type="button"
+                class="contextBtn"
+                data-shift="Night"
+                aria-pressed="false"
+                onclick="setShift(this, 'Night Shift (22:00 - 07:30)')"
+              >
+                Night Shift (22:00 - 07:30)
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Role Selection Grid -->
+        <section class="cardBody" aria-label="Clinical Shift Role Selection">
+          <div class="sectionHeader">
+            <div>
+              <h2 class="sectionTitle">Select Operational Shift Role</h2>
+              <div class="sectionSub">
+                Select your verified role to view operational scope and open your dedicated workspace.
+              </div>
+            </div>
+            <span class="sectionMeta" id="roleGridTally">6 Roles Registered · 1 Selected</span>
+          </div>
+
+          <div class="roleGrid" id="roleGrid" role="group" aria-label="Clinical Shift Roles">
+            <!-- Role 1: State Bed Flow Coordinator -->
+            <button
+              type="button"
+              class="roleCard"
+              data-role="coordinator"
+              aria-pressed="true"
+              onclick="selectRole('coordinator')"
+            >
+              <div class="roleBadgeRow">
+                <span class="roleScopeBadge">Statewide Command</span>
+                <span class="roleActiveIndicator"></span>
+              </div>
+              <div class="roleTitle">State Bed Flow Coordinator</div>
+              <div class="roleDesc">
+                Statewide demand and capacity oversight, allocation triage, and priority trajectory across all 23 acute
+                units.
+              </div>
+              <div class="roleTargetChip">command-third-edition.html</div>
+            </button>
+
+            <!-- Role 2: ED Mental Health Liaison Nurse -->
+            <button type="button" class="roleCard" data-role="ed" aria-pressed="false" onclick="selectRole('ed')">
+              <div class="roleBadgeRow">
+                <span class="roleScopeBadge">Emergency Liaison</span>
+                <span class="roleActiveIndicator"></span>
+              </div>
+              <div class="roleTitle">ED Mental Health Liaison Nurse</div>
+              <div class="roleDesc">
+                Emergency department acute assessment, patient registration, Form 1A verification, and referral triage.
+              </div>
+              <div class="roleTargetChip">patient-now-third-edition.html</div>
+            </button>
+
+            <!-- Role 3: Acute Inpatient NUM / Shift Lead -->
+            <button type="button" class="roleCard" data-role="ward" aria-pressed="false" onclick="selectRole('ward')">
+              <div class="roleBadgeRow">
+                <span class="roleScopeBadge">Inpatient Ward</span>
+                <span class="roleActiveIndicator"></span>
+              </div>
+              <div class="roleTitle">Acute Inpatient NUM / Shift Lead</div>
+              <div class="roleDesc">
+                Unit bed availability, referral acceptance, bed reservation holds, census management, and departure
+                planning.
+              </div>
+              <div class="roleTargetChip">ward-answer-third-edition.html</div>
+            </button>
+
+            <!-- Role 4: Community Mental Health Clinician -->
+            <button
+              type="button"
+              class="roleCard"
+              data-role="community"
+              aria-pressed="false"
+              onclick="selectRole('community')"
+            >
+              <div class="roleBadgeRow">
+                <span class="roleScopeBadge">Ambulatory Team</span>
+                <span class="roleActiveIndicator"></span>
+              </div>
+              <div class="roleTitle">Community Mental Health Clinician</div>
+              <div class="roleDesc">
+                Urgent post-discharge follow-up, step-down coordination, crisis diversion, and community contact logs.
+              </div>
+              <div class="roleTargetChip">community-team-third-edition.html</div>
+            </button>
+
+            <!-- Role 5: On-Call Consultant Psychiatrist -->
+            <button
+              type="button"
+              class="roleCard"
+              data-role="consultant"
+              aria-pressed="false"
+              onclick="selectRole('consultant')"
+            >
+              <div class="roleBadgeRow">
+                <span class="roleScopeBadge">Specialist On-Call</span>
+                <span class="roleActiveIndicator"></span>
+              </div>
+              <div class="roleTitle">On-Call Consultant Psychiatrist</div>
+              <div class="roleDesc">
+                Statutory Mental Health Act 2014 Form 3B orders, clinical exception reviews, HDU placements, and
+                telehealth consults.
+              </div>
+              <div class="roleTargetChip">on-call-third-edition.html</div>
+            </button>
+
+            <!-- Role 6: Clinical Governance & Review Officer -->
+            <button
+              type="button"
+              class="roleCard"
+              data-role="governance"
+              aria-pressed="false"
+              onclick="selectRole('governance')"
+            >
+              <div class="roleBadgeRow">
+                <span class="roleScopeBadge">Clinical Governance</span>
+                <span class="roleActiveIndicator"></span>
+              </div>
+              <div class="roleTitle">Clinical Governance &amp; Review Officer</div>
+              <div class="roleDesc">
+                Audit trail inspection, catchment override reviews, clinical threshold breaches, and statutory
+                compliance manifests.
+              </div>
+              <div class="roleTargetChip">governance-third-edition.html</div>
+            </button>
+          </div>
+
+          <!-- Interactive Permissions Inspector -->
+          <div class="permInspector" id="permInspector">
+            <div class="permHeader">
+              <div class="permHeaderTitle">
+                <span>Operational Authority Scope</span>
+                <span>·</span>
+                <span id="permRoleTitle" style="color: var(--accent-ink); font-weight: 700"
+                  >State Bed Flow Coordinator</span
+                >
+              </div>
+              <span class="permHeaderTarget" id="permTargetBadge">Workspace: command-third-edition.html</span>
+            </div>
+
+            <div class="permGrid">
+              <!-- What this role can do -->
+              <div class="permCol">
+                <div class="permColHead">
+                  <span class="permColLabel good">What this role can do</span>
+                  <span class="permBadge good" id="canBadge">4 actions</span>
+                </div>
+                <ul class="permItems" id="canList">
+                  <li class="permItem">
+                    <span class="permIcon good">✓</span>
+                    <span>Statewide visibility across all 23 adult, older adult, and forensic mental health units</span>
+                  </li>
+                  <li class="permItem">
+                    <span class="permIcon good">✓</span>
+                    <span>Allocate acute bed placements across metropolitan and country health service boundaries</span>
+                  </li>
+                  <li class="permItem">
+                    <span class="permIcon good">✓</span>
+                    <span>Declare network bed reservation holds and coordinate system capacity actions</span>
+                  </li>
+                  <li class="permItem">
+                    <span class="permIcon good">✓</span>
+                    <span>Direct clinical escalation bridge to Executive Director on Call</span>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- What this role cannot do -->
+              <div class="permCol">
+                <div class="permColHead">
+                  <span class="permColLabel boundary">What this role cannot do</span>
+                  <span class="permBadge boundary" id="cannotBadge">3 boundaries</span>
+                </div>
+                <ul class="permItems" id="cannotList">
+                  <li class="permItem">
+                    <span class="permIcon boundary">✕</span>
+                    <span>Direct clinical examination or discharge of individual ward inpatients</span>
+                  </li>
+                  <li class="permItem">
+                    <span class="permIcon boundary">✕</span>
+                    <span>Single-handed override of statutory Mental Health Act 2014 legal orders</span>
+                  </li>
+                  <li class="permItem">
+                    <span class="permIcon boundary">✕</span>
+                    <span>Direct modification of local ward nursing staffing rosters</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Card Action Footer -->
+        <footer class="cardFooter">
+          <div class="footerSessionInfo">
+            <div class="sessionMetaLine">
+              <span>Identity and Audit Validation</span>
+              <span>·</span>
+              <span>WA Health Directory Active</span>
+            </div>
+            <div class="sessionDetailLine">
+              <span id="summaryCatchment">Statewide Directorate</span>
+              <span>·</span>
+              <span id="summaryShift">Morning Shift (07:00 - 15:30)</span>
+            </div>
+          </div>
+
+          <button type="button" class="btnPrimary" id="enterWorkspaceBtn" onclick="enterWorkspace()">
+            Enter Ward Flow Workspace
+          </button>
+        </footer>
+      </div>
+
+      <!-- Mandatory Prototype Disclosure -->
+      <aside class="prototypeNotice" aria-label="Prototype Disclosure">
+        <p>
+          Every ward state, movement, referral, clock and figure on these screens is invented. Not a medical device and
+          not clinical decision support.
+        </p>
+        <p class="auditMeta">
+          Western Australia Health Mental Health Directorate · Prototype Third Edition · Reference Model
+        </p>
+      </aside>
+
+      <!-- Screen Reader Status Announcer -->
+      <div id="statusAnnouncer" class="sr-only" role="status"></div>
+    </main>
+
+    <script>
+      /* ═══════════════════════════════════════════════════════════════════════
+       WARD FLOW SHIFT PORTAL ENGINE
+       Interactive selection and permissions matrix for clinical shift sign-in.
+       Zero credentials typed, zero input tags, verified role workspace routing.
+       ═══════════════════════════════════════════════════════════════════════ */
+      var ROLES = {
+        coordinator: {
+          id: "coordinator",
+          name: "State Bed Flow Coordinator",
+          target: "command-third-edition.html",
+          can: [
+            "Statewide visibility across all 23 adult, older adult, and forensic mental health units",
+            "Allocate acute bed placements across metropolitan and country health service boundaries",
+            "Declare network bed reservation holds and coordinate system capacity actions",
+            "Direct clinical escalation bridge to Executive Director on Call",
+          ],
+          cannot: [
+            "Direct clinical examination or discharge of individual ward inpatients",
+            "Single-handed override of statutory Mental Health Act 2014 legal orders",
+            "Direct modification of local ward nursing staffing rosters",
+          ],
+        },
+        ed: {
+          id: "ed",
+          name: "ED Mental Health Liaison Nurse",
+          target: "patient-now-third-edition.html",
+          can: [
+            "Intake registration of acute emergency department mental health presentations",
+            "Statutory Form 1A verification and examination clock tracking",
+            "Dispatch referral placement requests to up to 3 candidate catchment wards",
+            "Record emergency department clinical updates and boarding delay reasons",
+          ],
+          cannot: [
+            "Finalize admission bed allocations without receiving ward NUM acceptance",
+            "Declare network-wide bed reservation holds outside emergency transit",
+            "Authorize involuntary treatment orders under Mental Health Act 2014",
+          ],
+        },
+        ward: {
+          id: "ward",
+          name: "Acute Inpatient NUM / Shift Lead",
+          target: "ward-answer-third-edition.html",
+          can: [
+            "Record bed answers (Accept, Decline with clinical reason code, or Bed Hold)",
+            "Manage ward census, expected departures, and staffing specialling ratios",
+            "Log departure barriers and coordinate transport readiness",
+            "Reserve designated beds for incoming accepted transfers",
+          ],
+          cannot: [
+            "Force placement into another hospital or out-of-catchment facility",
+            "Modify regional emergency department intake priorities",
+            "Edit clinical governance audit logs or systemic review flags",
+          ],
+        },
+        community: {
+          id: "community",
+          name: "Community Mental Health Clinician",
+          target: "community-team-third-edition.html",
+          can: [
+            "Coordinate urgent post-discharge community follow-up and 7-day contact checks",
+            "Review step-down placement referrals from acute inpatient units",
+            "Flag community crisis team support to divert avoidable emergency presentations",
+            "Record community clinical contact logs and shared management plans",
+          ],
+          cannot: [
+            "Directly hold acute inpatient psychiatric beds without coordinator agreement",
+            "Overrule emergency department involuntary detention orders",
+            "Access statewide command transport dispatch controls",
+          ],
+        },
+        consultant: {
+          id: "consultant",
+          name: "On-Call Consultant Psychiatrist",
+          target: "on-call-third-edition.html",
+          can: [
+            "Execute statutory Mental Health Act 2014 Form 3B involuntary inpatient treatment orders",
+            "Review and endorse clinical exception placements for high-dependency units",
+            "Conduct emergency telehealth consults for regional WACHS emergency departments",
+            "Tier 2 clinical escalation and clinical safety risk determinations",
+          ],
+          cannot: [
+            "Operational bed cleaning or physical ward bed occupancy assignments",
+            "Authorize vehicle routing or fleet dispatch for transport services",
+            "Directly edit nursing staffing rosters or shift allocations",
+          ],
+        },
+        governance: {
+          id: "governance",
+          name: "Clinical Governance & Review Officer",
+          target: "governance-third-edition.html",
+          can: [
+            "Inspect complete immutable audit trail of all placements, declines, and overrides",
+            "Audit clinical threshold breaches, long delays, and out-of-catchment justifications",
+            "Review statutory compliance with Mental Health Act 2014 documentation",
+            "Generate clinical governance safety reports and risk manifests",
+          ],
+          cannot: [
+            "Modify active bed reservations or alter clinical queues",
+            "Authorize patient movement or order patient transport vehicles",
+            "Decline or cancel medical admissions or referrals",
+          ],
+        },
+      };
+
+      var currentRole = "coordinator";
+      var currentTarget = "command-third-edition.html";
+      var currentCatchment = "Statewide Directorate";
+      var currentShift = "Morning Shift (07:00 - 15:30)";
+
+      function announce(words) {
+        var el = document.getElementById("statusAnnouncer");
+        if (el) el.textContent = words;
+      }
+
+      function selectRole(roleKey) {
+        if (!ROLES[roleKey]) return;
+        currentRole = roleKey;
+        var role = ROLES[roleKey];
+        currentTarget = role.target;
+
+        var cards = document.querySelectorAll(".roleCard");
+        for (var i = 0; i < cards.length; i++) {
+          var card = cards[i];
+          var isSelected = card.getAttribute("data-role") === roleKey;
+          card.setAttribute("aria-pressed", isSelected ? "true" : "false");
+        }
+
+        var permRoleTitle = document.getElementById("permRoleTitle");
+        if (permRoleTitle) permRoleTitle.textContent = role.name;
+
+        var permTargetBadge = document.getElementById("permTargetBadge");
+        if (permTargetBadge) permTargetBadge.textContent = "Workspace: " + role.target;
+
+        var canBadge = document.getElementById("canBadge");
+        if (canBadge) canBadge.textContent = role.can.length + " actions";
+
+        var cannotBadge = document.getElementById("cannotBadge");
+        if (cannotBadge) cannotBadge.textContent = role.cannot.length + " boundaries";
+
+        var canList = document.getElementById("canList");
+        if (canList) {
+          var canHtml = "";
+          for (var c = 0; c < role.can.length; c++) {
+            canHtml += '<li class="permItem"><span class="permIcon good">✓</span><span>' + role.can[c] + "</span></li>";
+          }
+          canList.innerHTML = canHtml;
+        }
+
+        var cannotList = document.getElementById("cannotList");
+        if (cannotList) {
+          var cannotHtml = "";
+          for (var k = 0; k < role.cannot.length; k++) {
+            cannotHtml +=
+              '<li class="permItem"><span class="permIcon boundary">✕</span><span>' + role.cannot[k] + "</span></li>";
+          }
+          cannotList.innerHTML = cannotHtml;
+        }
+
+        announce("Role selected: " + role.name + ". Target workspace: " + role.target);
+      }
+
+      function setCatchment(btn, label) {
+        var group = btn.parentElement;
+        if (group) {
+          var btns = group.querySelectorAll("button");
+          for (var i = 0; i < btns.length; i++) btns[i].setAttribute("aria-pressed", "false");
+        }
+        btn.setAttribute("aria-pressed", "true");
+        currentCatchment = label;
+        var sum = document.getElementById("summaryCatchment");
+        if (sum) sum.textContent = label;
+        announce("Catchment set to: " + label);
+      }
+
+      function setShift(btn, label) {
+        var group = btn.parentElement;
+        if (group) {
+          var btns = group.querySelectorAll("button");
+          for (var i = 0; i < btns.length; i++) btns[i].setAttribute("aria-pressed", "false");
+        }
+        btn.setAttribute("aria-pressed", "true");
+        currentShift = label;
+        var sum = document.getElementById("summaryShift");
+        if (sum) sum.textContent = label;
+        announce("Shift set to: " + label);
+      }
+
+      function enterWorkspace() {
+        announce("Opening " + currentTarget);
+        window.location.href = currentTarget;
+      }
+
+      /* Appearance theme toggle */
+      var THEME_KEY = "ward-flow-sign-in-appearance";
+      function setTheme(mode) {
+        var root = document.documentElement;
+        if (mode === "auto") {
+          root.removeAttribute("data-theme");
+          try {
+            localStorage.removeItem(THEME_KEY);
+          } catch (e) {}
+        } else {
+          root.setAttribute("data-theme", mode);
+          try {
+            localStorage.setItem(THEME_KEY, mode);
+          } catch (e) {}
+        }
+        reflectTheme();
+        announce("Theme set to: " + mode);
+      }
+
+      function reflectTheme() {
+        var cur = document.documentElement.getAttribute("data-theme") || "auto";
+        var btns = document.querySelectorAll(".themeBtn");
+        for (var i = 0; i < btns.length; i++) {
+          btns[i].setAttribute("aria-pressed", btns[i].getAttribute("data-set-theme") === cur ? "true" : "false");
+        }
+      }
+
+      reflectTheme();
+    </script>
+  </body>
+</html>

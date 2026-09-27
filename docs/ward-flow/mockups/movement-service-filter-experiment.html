@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="en-AU" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <title>Movement Gantt — Service Switcher & Compaction Experiment</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --surface: #ffffff;
+        --surface-2: #f8fafc;
+        --surface-3: #f1f5f9;
+        --sunk: #e2e8f0;
+        --line: #e2e8f0;
+        --line-strong: #cbd5e1;
+        --ink: #0f172a;
+        --ink-soft: #334155;
+        --muted: #64748b;
+        --accent: #1d4ed8;
+        --accent-soft: #eff6ff;
+        --accent-ink: #1e40af;
+        --danger: #dc2626;
+        --danger-soft: #fef2f2;
+        --danger-ink: #991b1b;
+        --good: #16a34a;
+        --svc-east: #0284c7;
+        --svc-south: #0d9488;
+        --svc-north: #7c3aed;
+        --svc-wachs: #ea580c;
+        --svc-private: #475569;
+        --lift: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --lift-high: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        --r1: 8px;
+        --r2: 6px;
+        --body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --mono: ui-monospace, SFMono-Regular, Consolas, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: var(--body);
+        background: #f1f5f9;
+        color: var(--ink);
+        line-height: 1.4;
+      }
+
+      /* EXPERIMENT CONTROLS DOCK */
+      .labDock {
+        background: #1e293b;
+        color: #f8fafc;
+        border-radius: var(--r1);
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        box-shadow: var(--lift-high);
+      }
+      .labHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        padding-bottom: 8px;
+      }
+      .labTitle {
+        font-weight: 700;
+        font-size: 14px;
+        letter-spacing: 0.02em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .labBadge {
+        background: #38bdf8;
+        color: #0f172a;
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      .labGrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 14px;
+        font-size: 12px;
+      }
+      .labCol label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 11px;
+      }
+      .labButtonGroup {
+        display: flex;
+        background: #0f172a;
+        padding: 3px;
+        border-radius: var(--r2);
+        gap: 2px;
+      }
+      .labBtn {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        font-size: 11.5px;
+        font-weight: 600;
+        padding: 5px 9px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        flex: 1;
+        text-align: center;
+      }
+      .labBtn:hover {
+        color: #fff;
+      }
+      .labBtn.active {
+        background: #3b82f6;
+        color: #ffffff;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      }
+
+      /* THE GANTT CONTAINER */
+      .ganttCard {
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        overflow: hidden;
+      }
+
+      /* TOP TOOLBAR */
+      .panelSubHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface);
+        flex-wrap: wrap;
+      }
+      .subHeaderLeft {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .subHeaderRight {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .zoomGroup {
+        display: inline-flex;
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        background: var(--surface-2);
+        padding: 2px;
+        gap: 2px;
+      }
+      .zmBtn {
+        background: transparent;
+        border: none;
+        font-family: var(--mono);
+        font-size: 12px;
+        padding: 5px 10px;
+        color: var(--muted);
+        cursor: pointer;
+        border-radius: 4px;
+      }
+      .zmBtn.active {
+        background: var(--surface);
+        color: var(--ink);
+        font-weight: 700;
+        box-shadow: var(--lift);
+      }
+
+      .phBtn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 5px 12px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        cursor: pointer;
+      }
+
+      /* PLACEMENT 1: SERVICE FILTER IN TOP BAR */
+      .serviceFilterTopBar {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-right: 6px;
+        border-right: 1px solid var(--line);
+        padding-right: 12px;
+      }
+      .filterSelect {
+        background: var(--surface-2);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink);
+        outline: none;
+        cursor: pointer;
+      }
+      .topBarPills {
+        display: inline-flex;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 2px;
+        gap: 2px;
+      }
+      .topBarPill {
+        background: transparent;
+        border: none;
+        padding: 4px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        border-radius: 4px;
+        cursor: pointer;
+        color: var(--muted);
+      }
+      .topBarPill.active {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      /* PLACEMENT 2: DEDICATED FILTER STRIP */
+      .dedicatedFilterStrip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--surface-3);
+        padding: 6px 16px;
+        border-bottom: 1px solid var(--line);
+        font-size: 12px;
+      }
+      .filterStripLeft {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .stripLabel {
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        font-size: 10.5px;
+        letter-spacing: 0.05em;
+        margin-right: 4px;
+      }
+      .stripPill {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        color: var(--ink-soft);
+        padding: 3px 9px;
+        border-radius: 999px;
+        font-size: 11.5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.12s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .stripPill:hover {
+        border-color: var(--line-strong);
+        background: #fff;
+      }
+      .stripPill.active {
+        background: var(--accent-ink);
+        color: #ffffff;
+        border-color: var(--accent-ink);
+      }
+      .stripPillCount {
+        font-family: var(--mono);
+        font-size: 10px;
+        opacity: 0.8;
+      }
+
+      /* CONTROLS BAR (Scrubber & Legend) */
+      .ganttControlsBar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface-2);
+        font-size: 12px;
+      }
+      .scrubberWrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .scrubLabel {
+        font-family: var(--mono);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .scrubBadge {
+        font-family: var(--mono);
+        font-size: 11px;
+        background: var(--sunk);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 600;
+      }
+      .legend {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 11.5px;
+        color: var(--ink-soft);
+      }
+      .legendItem {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .swatch {
+        width: 10px;
+        height: 8px;
+        border-radius: 2px;
+      }
+      .swatchAdmit {
+        background: var(--accent);
+      }
+      .swatchTransit {
+        background: var(--svc-north);
+      }
+      .swatchDelay {
+        background: var(--danger);
+      }
+
+      /* TIMELINE GRID & LANES */
+      .timelineWrapper {
+        position: relative;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        overflow-x: auto;
+      }
+      .timelineWrapper.capped {
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .ganttGridTable {
+        min-width: 960px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* HEADER ROW */
+      .ganttHeaderRow {
+        display: flex;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface-2);
+        position: sticky;
+        top: 0;
+        z-index: 20;
+      }
+      .ganttColWard {
+        width: 250px;
+        min-width: 250px;
+        padding: 9px 14px;
+        font-family: var(--mono);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        font-weight: 700;
+        border-right: 1px solid var(--line);
+        background: var(--surface-2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .ganttColTicks {
+        flex: 1;
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+      }
+      .ganttTick {
+        padding: 9px 4px;
+        text-align: center;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--ink-soft);
+        border-right: 1px solid var(--line);
+        white-space: nowrap;
+      }
+      .ganttTick.now {
+        font-weight: 700;
+        color: var(--accent-ink);
+        background: var(--accent-soft);
+      }
+
+      /* WARD ROWS */
+      .laneRow {
+        display: flex;
+        border-bottom: 1px solid var(--line);
+        align-items: stretch;
+        transition: background 0.1s ease;
+      }
+      .laneRow:hover {
+        background: #f8fafc;
+      }
+      .laneLabel {
+        width: 250px;
+        min-width: 250px;
+        padding: 8px 14px;
+        border-right: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        background: var(--surface);
+      }
+      .laneName {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--ink);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .svcBadge {
+        font-family: var(--mono);
+        font-size: 9.5px;
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-weight: 700;
+        flex-shrink: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .svcBadge.EastMetro {
+        background: #e0f2fe;
+        color: #0369a1;
+        border: 1px solid #bae6fd;
+      }
+      .svcBadge.SouthMetro {
+        background: #ccfbf1;
+        color: #0f766e;
+        border: 1px solid #99f6e4;
+      }
+      .svcBadge.WACHS {
+        background: #ffedd5;
+        color: #c2410c;
+        border: 1px solid #fed7aa;
+      }
+      .svcBadge.NorthMetro {
+        background: #f3e8ff;
+        color: #6b21a8;
+        border: 1px solid #e9d5ff;
+      }
+      .svcBadge.Private {
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+      }
+
+      .laneTrack {
+        flex: 1;
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        position: relative;
+        background: repeating-linear-gradient(
+          to right,
+          transparent,
+          transparent calc(12.5% - 1px),
+          var(--line) calc(12.5% - 1px),
+          var(--line) 12.5%
+        );
+      }
+
+      /* PATIENT BARS */
+      .barItem {
+        position: absolute;
+        left: 0;
+        border-radius: 5px;
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 700;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        padding: 0 8px;
+        box-shadow: var(--lift);
+        cursor: pointer;
+        white-space: nowrap;
+        transition: transform 0.1s ease;
+      }
+      .barItem:hover {
+        transform: translateY(-1px);
+        z-index: 10;
+      }
+      .barAdmit {
+        background: #23415c;
+      }
+      .barTransit {
+        background: #63538f;
+      }
+      .barDelay {
+        background: #b33325;
+      }
+
+      /* DENSITY VARIATIONS */
+      .standardDensity .barItem {
+        height: 34px;
+      }
+      .standardDensity .laneRow {
+        min-height: 50px;
+      }
+
+      .compactDensity .barItem {
+        height: 24px;
+        font-size: 10px;
+        padding: 0 6px;
+      }
+      .compactDensity .laneRow {
+        min-height: 38px;
+      }
+      .compactDensity .laneLabel {
+        padding: 4px 12px;
+      }
+
+      /* FOOTER INFO */
+      .ganttFooter {
+        padding: 8px 16px;
+        background: var(--surface-2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 11.5px;
+        color: var(--muted);
+      }
+      .emptyNotice {
+        padding: 30px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ==================== EXPERIMENT DASHBOARD ==================== -->
+    <aside class="labDock" aria-label="Interactive Controls">
+      <div class="labHeader">
+        <div class="labTitle">
+          <span>Movement Timeline Compaction Lab</span>
+          <span class="labBadge">Interactive Prototype</span>
+        </div>
+        <div style="font-size: 11.5px; color: #94a3b8">Test layout placements & height caps live below</div>
+      </div>
+      <div class="labGrid">
+        <div class="labCol">
+          <label>1. Service Filter Placement</label>
+          <div class="labButtonGroup">
+            <button type="button" class="labBtn active" onclick="setPlacement('top-bar')">Top Bar (Near Hide)</button>
+            <button type="button" class="labBtn" onclick="setPlacement('dedicated-strip')">Dedicated Sub-Bar</button>
+            <button type="button" class="labBtn" onclick="setPlacement('column-header')">Ward Header</button>
+          </div>
+        </div>
+        <div class="labCol">
+          <label>2. Height Limit (Vertical Compaction)</label>
+          <div class="labButtonGroup">
+            <button type="button" class="labBtn active" id="btnHeightCapped" onclick="setHeightMode('capped')">
+              Capped 400px (Scrollable)
+            </button>
+            <button type="button" class="labBtn" id="btnHeightUncapped" onclick="setHeightMode('uncapped')">
+              Uncapped (~950px)
+            </button>
+          </div>
+        </div>
+        <div class="labCol">
+          <label>3. Patient Bar Density</label>
+          <div class="labButtonGroup">
+            <button type="button" class="labBtn active" id="btnDenseCompact" onclick="setDensity('compact')">
+              Compact (24px)
+            </button>
+            <button type="button" class="labBtn" id="btnDenseStandard" onclick="setDensity('standard')">
+              Standard (34px)
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ==================== THE COMPACTED GANTT COMPONENT ==================== -->
+    <section class="ganttCard" id="ganttContainer">
+      <!-- SUBHEADER / TOOLBAR -->
+      <header class="panelSubHeader">
+        <div class="subHeaderLeft">
+          <span>48-Hour Bed Movement Horizon</span>
+          <span style="font-size: 11px; font-weight: normal; color: var(--muted)" id="showingWardsCount"
+            >Showing 14 of 14 wards</span
+          >
+        </div>
+
+        <div class="subHeaderRight">
+          <!-- PLACEMENT OPTION 1: Top Bar beside Hide/Enlarge (User's suggested location!) -->
+          <div id="topBarFilterContainer" class="serviceFilterTopBar">
+            <label
+              for="topServiceSelect"
+              style="font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase"
+              >Service:</label
+            >
+            <select id="topServiceSelect" class="filterSelect" onchange="filterByService(this.value)">
+              <option value="ALL">All Services (14)</option>
+              <option value="East Metro">East Metro (5)</option>
+              <option value="South Metro">South Metro (3)</option>
+              <option value="WACHS">Country / WACHS (4)</option>
+              <option value="North Metro">North Metro (1)</option>
+              <option value="Private">Private (1)</option>
+            </select>
+          </div>
+
+          <!-- Zoom Group -->
+          <div class="zoomGroup" role="group" aria-label="Zoom">
+            <button type="button" class="zmBtn">12h</button>
+            <button type="button" class="zmBtn">24h</button>
+            <button type="button" class="zmBtn active">48h</button>
+          </div>
+
+          <button type="button" class="phBtn">Enlarge</button>
+          <button type="button" class="phBtn">Hide</button>
+        </div>
+      </header>
+
+      <!-- PLACEMENT OPTION 2: Dedicated Filter Strip -->
+      <nav id="dedicatedFilterStrip" class="dedicatedFilterStrip" style="display: none" aria-label="Service Filters">
+        <div class="filterStripLeft">
+          <span class="stripLabel">Filter Service:</span>
+          <button type="button" class="stripPill active" data-svc="ALL" onclick="filterByService('ALL')">
+            All <span class="stripPillCount">(14)</span>
+          </button>
+          <button type="button" class="stripPill" data-svc="East Metro" onclick="filterByService('East Metro')">
+            East Metro <span class="stripPillCount">(5)</span>
+          </button>
+          <button type="button" class="stripPill" data-svc="South Metro" onclick="filterByService('South Metro')">
+            South Metro <span class="stripPillCount">(3)</span>
+          </button>
+          <button type="button" class="stripPill" data-svc="WACHS" onclick="filterByService('WACHS')">
+            Country / WACHS <span class="stripPillCount">(4)</span>
+          </button>
+          <button type="button" class="stripPill" data-svc="North Metro" onclick="filterByService('North Metro')">
+            North Metro <span class="stripPillCount">(1)</span>
+          </button>
+          <button type="button" class="stripPill" data-svc="Private" onclick="filterByService('Private')">
+            Private <span class="stripPillCount">(1)</span>
+          </button>
+        </div>
+        <div style="font-size: 11px; color: var(--muted)" id="stripFeedback">Showing statewide</div>
+      </nav>
+
+      <!-- CONTROLS BAR (Scrubber + Legend) -->
+      <div class="ganttControlsBar">
+        <div class="scrubberWrap">
+          <span class="scrubLabel">Timeline:</span>
+          <span class="scrubBadge">NOW (+0h)</span>
+          <span style="font-size: 11px; color: var(--muted)">Live bed churn</span>
+        </div>
+        <div class="legend">
+          <div class="legendItem"><span class="swatch swatchAdmit"></span><span>Admit</span></div>
+          <div class="legendItem"><span class="swatch swatchTransit"></span><span>In Transit</span></div>
+          <div class="legendItem"><span class="swatch swatchDelay"></span><span>Delay / Hold</span></div>
+        </div>
+      </div>
+
+      <!-- THE TIMELINE SCROLL AREA -->
+      <div class="timelineWrapper capped compactDensity" id="timelineWrapper">
+        <div class="ganttGridTable">
+          <!-- HEADER ROW -->
+          <div class="ganttHeaderRow">
+            <div class="ganttColWard" id="wardColumnHeader">
+              <span>Ward / Receiving Unit</span>
+              <!-- PLACEMENT OPTION 3: In Column Header -->
+              <select
+                id="colHeaderSelect"
+                class="filterSelect"
+                style="display: none; font-size: 10px; padding: 2px 4px"
+                onchange="filterByService(this.value)"
+              >
+                <option value="ALL">All Services</option>
+                <option value="East Metro">East Metro</option>
+                <option value="South Metro">South Metro</option>
+                <option value="WACHS">Country (WACHS)</option>
+                <option value="North Metro">North Metro</option>
+                <option value="Private">Private</option>
+              </select>
+            </div>
+            <div class="ganttColTicks">
+              <div class="ganttTick now">NOW (20:44)</div>
+              <div class="ganttTick">+6h (02:44)</div>
+              <div class="ganttTick">+12h (08:44)</div>
+              <div class="ganttTick">+18h (14:44)</div>
+              <div class="ganttTick">+24h (20:44)</div>
+              <div class="ganttTick">+30h (02:44)</div>
+              <div class="ganttTick">+36h (08:44)</div>
+              <div class="ganttTick">+42h (14:44)</div>
+            </div>
+          </div>
+
+          <!-- LANES (RENDERED BY JS) -->
+          <div id="lanesBody"></div>
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <footer class="ganttFooter">
+        <span>Tip: Click any patient badge to view journey details</span>
+        <span id="activeFilterNote">Service: Statewide (14 wards active)</span>
+      </footer>
+    </section>
+
+    <script>
+      // Live Ward Fixture Data from your screenshot
+      const WARDS_DATA = [
+        {
+          id: "bunbury",
+          name: "Bunbury Acute Psychiatric Unit",
+          service: "WACHS",
+          events: [
+            { id: "WF-023", type: "transit" },
+            { id: "WF-026", type: "admit" },
+            { id: "WF-327", type: "admit" },
+          ],
+        },
+        {
+          id: "sjg-m",
+          name: "SJGM Adult Open",
+          service: "East Metro",
+          events: [
+            { id: "WF-016", type: "transit" },
+            { id: "WF-303", type: "transit" },
+            { id: "WF-311", type: "transit" },
+          ],
+        },
+        {
+          id: "sjg-s",
+          name: "SJGS Adult Open",
+          service: "Private",
+          events: [
+            { id: "WF-029", type: "transit" },
+            { id: "WF-030", type: "transit" },
+            { id: "WF-031", type: "admit" },
+          ],
+        },
+        {
+          id: "bty-sec",
+          name: "BTY Adult Secure",
+          service: "East Metro",
+          events: [
+            { id: "WF-004", type: "delay" },
+            { id: "WF-313", type: "admit" },
+          ],
+        },
+        {
+          id: "great-southern",
+          name: "Great Southern Acute Psych",
+          service: "WACHS",
+          events: [
+            { id: "WF-306", type: "admit" },
+            { id: "WF-325", type: "transit" },
+          ],
+        },
+        {
+          id: "kununurra",
+          name: "Kununurra Adult Open",
+          service: "WACHS",
+          events: [
+            { id: "WF-025", type: "transit" },
+            { id: "WF-317", type: "transit" },
+          ],
+        },
+        {
+          id: "ward-2k",
+          name: "Ward 2K",
+          service: "East Metro",
+          events: [
+            { id: "WF-003", type: "transit" },
+            { id: "WF-014", type: "admit" },
+          ],
+        },
+        { id: "bty-oa", name: "BTY Older Adult", service: "East Metro", events: [{ id: "WF-304", type: "transit" }] },
+        {
+          id: "emyu",
+          name: "East Metro Youth Unit (EMYU)",
+          service: "East Metro",
+          events: [{ id: "WF-021", type: "transit" }],
+        },
+        { id: "fsh-oa", name: "FSH Older Adult", service: "South Metro", events: [{ id: "WF-320", type: "admit" }] },
+        { id: "geraldton", name: "Geraldton Adult Open", service: "WACHS", events: [{ id: "WF-318", type: "admit" }] },
+        {
+          id: "maali",
+          name: "Maali (Ward 4.2) — open",
+          service: "South Metro",
+          events: [{ id: "WF-005", type: "transit" }],
+        },
+        { id: "moodjar", name: "Moodjar", service: "East Metro", events: [{ id: "WF-310", type: "transit" }] },
+        { id: "rgh-sec", name: "RGH Adult Secure", service: "South Metro", events: [{ id: "WF-006", type: "admit" }] },
+      ];
+
+      let currentService = "ALL";
+      let currentDensity = "compact";
+      let currentHeightMode = "capped";
+
+      function renderLanes() {
+        const container = document.getElementById("lanesBody");
+        const filtered = currentService === "ALL" ? WARDS_DATA : WARDS_DATA.filter((w) => w.service === currentService);
+
+        document.getElementById("showingWardsCount").textContent =
+          `Showing ${filtered.length} of ${WARDS_DATA.length} wards`;
+
+        document.getElementById("activeFilterNote").textContent =
+          currentService === "ALL"
+            ? "Service: Statewide (14 wards active)"
+            : `Service: ${currentService} (${filtered.length} wards active)`;
+
+        if (filtered.length === 0) {
+          container.innerHTML = `<div class="emptyNotice">No open movements accepted into ${currentService} wards.</div>`;
+          return;
+        }
+
+        const barHeight = currentDensity === "compact" ? 24 : 34;
+        const barGap = currentDensity === "compact" ? 4 : 6;
+        const topPad = currentDensity === "compact" ? 4 : 8;
+
+        let html = "";
+        filtered.forEach((ward) => {
+          const laneHeight = topPad + ward.events.length * (barHeight + barGap);
+          const svcClass = ward.service.replace(/[\s\/]/g, "");
+
+          let barsHtml = "";
+          ward.events.forEach((ev, idx) => {
+            const top = topPad + idx * (barHeight + barGap);
+            const swatchClass = ev.type === "transit" ? "barTransit" : ev.type === "delay" ? "barDelay" : "barAdmit";
+            barsHtml += `
+            <div class="barItem ${swatchClass}" style="top: ${top}px; width: 78px;" title="${ev.id} · ${ev.type}">
+              ${ev.id}
+            </div>
+          `;
+          });
+
+          html += `
+          <div class="laneRow" style="height: ${laneHeight}px;">
+            <div class="laneLabel">
+              <span class="laneName" title="${ward.name}">${ward.name}</span>
+              <span class="svcBadge ${svcClass}">${ward.service}</span>
+            </div>
+            <div class="laneTrack">
+              ${barsHtml}
+            </div>
+          </div>
+        `;
+        });
+
+        container.innerHTML = html;
+      }
+
+      function filterByService(service) {
+        currentService = service;
+        // Sync dropdowns
+        const topSelect = document.getElementById("topServiceSelect");
+        if (topSelect) topSelect.value = service;
+        const colSelect = document.getElementById("colHeaderSelect");
+        if (colSelect) colSelect.value = service;
+
+        // Sync strip pills
+        document.querySelectorAll(".stripPill").forEach((pill) => {
+          pill.classList.toggle("active", pill.getAttribute("data-svc") === service);
+        });
+
+        const stripFeedback = document.getElementById("stripFeedback");
+        if (stripFeedback) {
+          stripFeedback.textContent = service === "ALL" ? "Showing statewide" : `Showing ${service} only`;
+        }
+
+        renderLanes();
+      }
+
+      function setPlacement(placement) {
+        document.querySelectorAll(".labCol:nth-child(1) .labBtn").forEach((btn) => btn.classList.remove("active"));
+        event.target.classList.add("active");
+
+        const topBarFilter = document.getElementById("topBarFilterContainer");
+        const dedicatedStrip = document.getElementById("dedicatedFilterStrip");
+        const colSelect = document.getElementById("colHeaderSelect");
+
+        if (placement === "top-bar") {
+          topBarFilter.style.display = "flex";
+          dedicatedStrip.style.display = "none";
+          colSelect.style.display = "none";
+        } else if (placement === "dedicated-strip") {
+          topBarFilter.style.display = "none";
+          dedicatedStrip.style.display = "flex";
+          colSelect.style.display = "none";
+        } else if (placement === "column-header") {
+          topBarFilter.style.display = "none";
+          dedicatedStrip.style.display = "none";
+          colSelect.style.display = "inline-block";
+        }
+      }
+
+      function setHeightMode(mode) {
+        currentHeightMode = mode;
+        document.getElementById("btnHeightCapped").classList.toggle("active", mode === "capped");
+        document.getElementById("btnHeightUncapped").classList.toggle("active", mode === "uncapped");
+
+        const wrapper = document.getElementById("timelineWrapper");
+        if (mode === "capped") {
+          wrapper.classList.add("capped");
+        } else {
+          wrapper.classList.remove("capped");
+        }
+      }
+
+      function setDensity(density) {
+        currentDensity = density;
+        document.getElementById("btnDenseCompact").classList.toggle("active", density === "compact");
+        document.getElementById("btnDenseStandard").classList.toggle("active", density === "standard");
+
+        const wrapper = document.getElementById("timelineWrapper");
+        wrapper.classList.toggle("compactDensity", density === "compact");
+        wrapper.classList.toggle("standardDensity", density === "standard");
+
+        renderLanes();
+      }
+
+      // Initialize
+      renderLanes();
+    </script>
+  </body>
+</html>

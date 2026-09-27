@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "id": "bdf5f079-d1bc-4ff0-b240-a1936f4b1182",
+  "createdOn": "2026-09-12",
+  "action": "cancel",
+  "payload": {
+    "requestId": "03f090b7-60ef-4824-b4fc-b82c676c37da",
+    "reason": "Superseded by 297e9dcf-26ef-48b7-94fc-f50158fac22d, the latest of four ULID-ordered records of one 2026-09-10 run of the ward mockups suite. THIS RECORD CARRIES THE SAME FALSE COUNT its successor retracts by name - diff-line counts read as defect counts. Applying it would create a third issue for one event. The only claim of it still live (the suite is selected by neither verify:ui path) is already tracked by 43847026-36f7-422a-8185-c14d5a7b252b, which is being applied. Cancelled by Ward Verifier 2026-09-12."
+  }
+}

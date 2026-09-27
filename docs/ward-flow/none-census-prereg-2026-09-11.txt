@@ -1,0 +1,33 @@
+PRE-REGISTRATION — the "none" census. Written BEFORE any number is read.
+Ward Verifier, 2026-09-11.
+
+WHAT I EXPECT, and why:
+
+  TRUE-ZERO-WORD    THE LARGEST bucket. Reason: the owner's ruling says "none" KEEPS its
+                    true-zero meaning, which implies that is the dominant existing use,
+                    and three families are already named (capacity, bed-map, delays).
+
+  CHECKED-EMPTY     SECOND, and MORE than the four sites the ruling names. Reason: the
+                    ruling's four came from ONE lane sweeping ITS OWN family. A list of
+                    what somebody found is a floor, never a population.
+
+  TRUE-ZERO-DIGIT   FEWEST. Reason: only one screen family is named for it
+                    (statistics-compare), and a digit is not the word "none" at all — it
+                    will only appear where a sibling renders the word.
+
+  NOT ONE OF THESE  I EXPECT AT LEAST ONE, and I expect it to be a compound label rather
+                    than a figure — the model vocabulary carries values like
+                    "None - cleared", "None - in transit", "None - handover complete".
+                    Those are STATE NAMES, not counts of anything.
+
+FALSIFIERS, stated now:
+  - If CHECKED-EMPTY comes back as exactly the four the ruling names, I should suspect I
+    have reproduced the ruling's own list rather than enumerated the population.
+  - If NOT-ONE-OF-THESE is zero, I have probably forced rows into the three offered
+    buckets. A fourth bucket offered and never used is a warning, not a clean result.
+  - If the render finds FEWER occurrences than the source read, the difference is
+    UNRENDERED-BY-DEFAULT, not absent — and must be reported as unwalked.
+
+CONTROL REQUIREMENT, per my own sentence back to Ward Lead:
+  I must carry a known specimen for EACH class. If I cannot find a real specimen for a
+  class, that arm is reported UNMEASURED, not zero.

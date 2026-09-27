@@ -1,0 +1,4859 @@
+<!doctype html>
+<html lang="en-AU" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow · Raise a Referral (Perfected Third Edition)</title>
+    <script>
+      (function () {
+        document.documentElement.lang = "en-AU";
+        try {
+          var v = localStorage.getItem("ward-flow-appearance") || localStorage.getItem("ward-flow-theme");
+          if (v === "light" || v === "dark") {
+            document.documentElement.setAttribute("data-theme", v);
+          } else if (v === "auto" && window.matchMedia) {
+            document.documentElement.setAttribute(
+              "data-theme",
+              window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
+            );
+          }
+          if (localStorage.getItem("ward-flow-rail") === "closed") {
+            document.documentElement.setAttribute("data-rail", "closed");
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+    />
+    <style>
+      /* ═══════════════════════════════════════════════════════════════════════
+         WARD FLOW RAISE A REFERRAL — PERFECTED THIRD EDITION
+         Standard: Sovereign Clinical Console (Platinum Raised Cool).
+         Dual-Authority Rubric: 100-Point Visual Design & 100-Point Clinical UX.
+         Parent Standard: WARD-FLOW-DESIGN-SYSTEM.md & owner rulings 2026-09-17/18.
+         ═══════════════════════════════════════════════════════════════════════ */
+      :root {
+        color-scheme: light;
+        --display: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+        --body: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+        --mono: "Geist Mono", ui-monospace, Menlo, Consolas, monospace;
+
+        --t-0: 12px;
+        --t-1: 13px;
+        --t-2: 13.5px;
+        --t-3: 14px;
+        --t-4: 16px;
+        --t-5: 20px;
+        --t-6: 26px;
+
+        --r1: 10px;
+        --r1i: 9px;
+        --r2: 6px;
+        --pill: 9999px;
+
+        --ward-tap: 48px;
+
+        --railw: 240px;
+        --railw-closed: 72px;
+
+        /* Platinum Raised Cool — Light Palette */
+        --ground-hi: #ecf0f4;
+        --ground: #e6eaef;
+        --ground-2: #e1e6ec;
+
+        --surface: #fdfdfe;
+        --surface-2: #f4f7fa;
+        --surface-3: #e8ecf2;
+        --sunk: #eef2f6;
+
+        --ink: #161a20;
+        --ink-soft: #414953;
+        --muted: #5f6873;
+
+        --line: rgba(22, 30, 40, 0.11);
+        --line-strong: rgba(22, 30, 40, 0.26);
+
+        --accent: #2f4c66;
+        --accent-ink: #27405a;
+        --accent-press: #27405a;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+
+        --gilt: #7d612a;
+        --gilt-soft: #f1ebdf;
+
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --warn: #825d10;
+        --warn-soft: #f6eeda;
+
+        --danger: #b03b2e;
+        --danger-soft: #f8e6e2;
+        --danger-ink: #973121;
+
+        --svc-east: #2f4c66;
+        --svc-north: #685a94;
+        --svc-south: #356a70;
+        --svc-wachs: #8c5a3c;
+
+        --lift: 0 1px 1px rgba(30, 48, 66, 0.05), 0 14px 30px -22px rgba(30, 48, 66, 0.45);
+        --edge-shade: rgba(30, 48, 66, 0.16);
+        --scrim: rgba(30, 48, 66, 0.38);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          color-scheme: dark;
+          --ground-hi: #14181d;
+          --ground: #0f1216;
+          --ground-2: #0c0f12;
+
+          --surface: #171b21;
+          --surface-2: #1b2026;
+          --surface-3: #20262e;
+          --sunk: #13171c;
+
+          --ink: #e8ecf1;
+          --ink-soft: #b2bac5;
+          --muted: #8a929d;
+
+          --line: rgba(255, 255, 255, 0.09);
+          --line-strong: rgba(255, 255, 255, 0.21);
+
+          --accent: #a7bcd2;
+          --accent-ink: #bfd0e2;
+          --accent-press: #8ea6bf;
+          --accent-soft: #1f2a36;
+          --on-accent: #0f1216;
+          --stripe: #3a5a78;
+
+          --gilt: #d3b77e;
+          --gilt-soft: #2a251b;
+
+          --good: #6fd39b;
+          --good-soft: #15291f;
+          --warn: #e3bc5e;
+          --warn-soft: #2b2415;
+
+          --danger: #ff8b76;
+          --danger-soft: #33201b;
+          --danger-ink: #ffa08e;
+
+          --svc-east: #a7bcd2;
+          --svc-north: #b1a2d6;
+          --svc-south: #7fb2b8;
+          --svc-wachs: #d89a78;
+
+          --lift: 0 1px 1px rgba(0, 0, 0, 0.4), 0 16px 34px -22px rgba(0, 0, 0, 0.95);
+          --edge-shade: rgba(0, 0, 0, 0.55);
+          --scrim: rgba(0, 0, 0, 0.65);
+        }
+      }
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --ground-hi: #14181d;
+        --ground: #0f1216;
+        --ground-2: #0c0f12;
+
+        --surface: #171b21;
+        --surface-2: #1b2026;
+        --surface-3: #20262e;
+        --sunk: #13171c;
+
+        --ink: #e8ecf1;
+        --ink-soft: #b2bac5;
+        --muted: #8a929d;
+
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.21);
+
+        --accent: #a7bcd2;
+        --accent-ink: #bfd0e2;
+        --accent-press: #8ea6bf;
+        --accent-soft: #1f2a36;
+        --on-accent: #0f1216;
+        --stripe: #3a5a78;
+
+        --gilt: #d3b77e;
+        --gilt-soft: #2a251b;
+
+        --good: #6fd39b;
+        --good-soft: #15291f;
+        --warn: #e3bc5e;
+        --warn-soft: #2b2415;
+
+        --danger: #ff8b76;
+        --danger-soft: #33201b;
+        --danger-ink: #ffa08e;
+
+        --svc-east: #a7bcd2;
+        --svc-north: #b1a2d6;
+        --svc-south: #7fb2b8;
+        --svc-wachs: #d89a78;
+
+        --lift: 0 1px 1px rgba(0, 0, 0, 0.4), 0 16px 34px -22px rgba(0, 0, 0, 0.95);
+        --edge-shade: rgba(0, 0, 0, 0.55);
+        --scrim: rgba(0, 0, 0, 0.65);
+      }
+
+      /* ─── Base Reset ────────────────────────────────────────────────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: var(--body);
+        font-size: var(--t-2);
+        line-height: 1.45;
+        color: var(--ink);
+        background: var(--ground);
+        background-image: linear-gradient(180deg, var(--ground-hi) 0%, var(--ground) 55%, var(--ground-2) 100%);
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 100;
+        pointer-events: none;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
+        color: inherit;
+      }
+
+      body,
+      .mono,
+      .personMrn,
+      .personIdPill,
+      .personStatusPill,
+      .railBadge,
+      .railMiniBadge,
+      .railFlyoutKbd,
+      .railFlyoutMetric,
+      .stepBadge,
+      .stepStatusPill,
+      .charCount,
+      .searchKbd,
+      .catchmentWaitBadge,
+      .urgencyWait,
+      .regulatoryNote,
+      .prototypeBadge {
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ─── App Shell Layout ──────────────────────────────────────────────── */
+      .app {
+        display: grid;
+        grid-template-columns: var(--railw) minmax(0, 1fr);
+        min-height: 100vh;
+        transition: grid-template-columns 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      :root[data-rail="closed"] .app {
+        grid-template-columns: var(--railw-closed) minmax(0, 1fr);
+      }
+      :root[data-rail="closed"] .rail {
+        overflow: visible;
+      }
+
+      /* ─── Sovereign Primary Navigation Rail ───────────────────────────────── */
+      .rail {
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        z-index: 30;
+        user-select: none;
+        scrollbar-width: thin;
+        scrollbar-color: var(--line) transparent;
+      }
+
+      .brand {
+        padding: 14px 16px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        border-bottom: 1px solid var(--line);
+        flex-shrink: 0;
+        min-height: 56px;
+      }
+      .brandTitle {
+        font-family: var(--display);
+        font-size: var(--t-3);
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        color: var(--ink);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+      :root[data-rail="closed"] .brandTitle {
+        display: none;
+      }
+      :root[data-rail="closed"] .brand {
+        justify-content: center;
+        padding: 14px 8px 12px;
+      }
+      .brandTitle b {
+        color: var(--accent);
+        font-weight: 700;
+      }
+      .brandBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 1px 5px;
+        border-radius: var(--r2);
+        background: var(--gilt-soft);
+        color: var(--gilt);
+        border: 1px solid var(--line);
+        letter-spacing: 0.04em;
+      }
+
+      .railToggle {
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--muted);
+        transition:
+          background 0.12s,
+          color 0.12s;
+        min-width: 28px;
+      }
+      .railToggle:hover {
+        background: var(--surface-2);
+        color: var(--ink);
+      }
+      .railToggle svg {
+        width: 14px;
+        height: 14px;
+        transition: transform 0.18s;
+      }
+      :root[data-rail="closed"] .railToggle svg {
+        transform: rotate(180deg);
+      }
+
+      .railBody {
+        padding: 10px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        flex: 1;
+      }
+
+      .railSection {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .railLabel {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding: 4px 8px 2px;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      :root[data-rail="closed"] .railLabel {
+        opacity: 0;
+        height: 0;
+        padding: 0;
+        margin: 0;
+      }
+
+      .railLink {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 8px;
+        border-radius: var(--r2);
+        color: var(--ink-soft);
+        text-decoration: none;
+        font-size: var(--t-2);
+        font-weight: 500;
+        transition:
+          background 0.12s,
+          color 0.12s;
+        position: relative;
+        min-height: 36px;
+      }
+      .railLink:hover {
+        background: var(--surface-2);
+        color: var(--ink);
+      }
+      .railLink[data-active="true"] {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
+      .railLink[data-active="true"]::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 6px;
+        bottom: 6px;
+        width: 3px;
+        border-radius: 0 var(--r2) var(--r2) 0;
+        background: var(--gilt);
+      }
+
+      .railIcon {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted);
+      }
+      .railLink[data-active="true"] .railIcon {
+        color: var(--accent);
+      }
+      .railIcon svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .railText {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+      }
+      :root[data-rail="closed"] .railText {
+        display: none;
+      }
+
+      .railBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: var(--pill);
+        background: var(--surface-2);
+        color: var(--muted);
+        border: 1px solid var(--line);
+      }
+      :root[data-rail="closed"] .railBadge {
+        display: none;
+      }
+      .railBadge[data-tone="good"] {
+        background: var(--good-soft);
+        color: var(--good);
+        border-color: transparent;
+      }
+      .railBadge[data-tone="warn"] {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border-color: transparent;
+      }
+      .railBadge[data-tone="danger"] {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border-color: transparent;
+      }
+
+      /* ─── Thin Rail Micro-Badges & Interactive Flyouts ─────────────── */
+      .railMiniBadge {
+        display: none;
+      }
+      :root[data-rail="closed"] .railMiniBadge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: 2px;
+        right: 10px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 4px;
+        border-radius: var(--pill);
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        background: var(--surface-3);
+        color: var(--ink);
+        border: 1px solid var(--line-strong);
+        line-height: 1;
+        z-index: 2;
+      }
+      :root[data-rail="closed"] .railMiniBadge[data-tone="danger"] {
+        background: var(--danger);
+        color: #ffffff;
+        border-color: var(--danger);
+      }
+      :root[data-rail="closed"] .railMiniBadge[data-tone="warn"] {
+        background: var(--warn);
+        color: #ffffff;
+        border-color: var(--warn);
+      }
+      :root[data-rail="closed"] .railMiniBadge[data-tone="good"] {
+        background: var(--good);
+        color: #ffffff;
+        border-color: var(--good);
+      }
+
+      /* Thin Rail Hover Popover Card (Flyout Dock) */
+      .railFlyout {
+        display: none;
+      }
+      :root[data-rail="closed"] .railLink:hover .railFlyout,
+      :root[data-rail="closed"] .railLink:focus-visible .railFlyout {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        left: calc(var(--railw-closed) + 6px);
+        top: -6px;
+        width: 250px;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        padding: 12px 14px;
+        z-index: 100;
+        gap: 8px;
+        pointer-events: auto;
+        animation: railFlyoutIn 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+        text-align: left;
+      }
+      @keyframes railFlyoutIn {
+        from {
+          opacity: 0;
+          transform: translateX(-4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      .railFlyoutHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .railFlyoutTitle {
+        font-family: var(--display);
+        font-size: var(--t-2);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .railFlyoutKbd {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        padding: 2px 6px;
+        border-radius: var(--r2);
+        color: var(--muted);
+      }
+      .railFlyoutDesc {
+        font-size: var(--t-0);
+        color: var(--ink-soft);
+        line-height: 1.4;
+        margin: 0;
+      }
+      .railFlyoutMetric {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: var(--r2);
+        background: var(--surface-2);
+        color: var(--ink);
+        border: 1px solid var(--line);
+        display: inline-block;
+      }
+      .railFlyoutAction {
+        font-family: var(--display);
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--accent);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 2px;
+      }
+
+      /* Service Switcher in Thin Rail */
+      .railServiceTrigger {
+        display: none;
+      }
+      :root[data-rail="closed"] .railServiceTrigger {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 4px;
+        border-bottom: 1px solid var(--line);
+        cursor: pointer;
+        background: var(--surface-2);
+      }
+      .serviceBadgePill {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: var(--pill);
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border: 1px solid var(--line-strong);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      /* Thin Rail Service Dropdown Menu */
+      .railServiceMenu {
+        position: absolute;
+        top: 52px;
+        left: 74px;
+        width: 250px;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+        padding: 8px;
+        z-index: 250;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .railServiceMenuHead {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        padding: 4px 8px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 4px;
+      }
+      .railServiceItem {
+        font-family: var(--body);
+        font-size: var(--t-1);
+        font-weight: 500;
+        text-align: left;
+        padding: 7px 10px;
+        border-radius: var(--r2);
+        border: none;
+        background: transparent;
+        color: var(--ink);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition:
+          background 0.12s,
+          color 0.12s;
+      }
+      .railServiceItem:hover {
+        background: var(--surface-2);
+        color: var(--ink);
+      }
+      .railServiceItem[data-active="true"] {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
+
+      /* Live System Status Beacon */
+      .railStatusBeacon {
+        display: none;
+      }
+      :root[data-rail="closed"] .railStatusBeacon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 8px 6px;
+        border-radius: var(--r2);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        margin-bottom: 8px;
+        cursor: pointer;
+        position: relative;
+      }
+      .beaconDot {
+        width: 8px;
+        height: 8px;
+        border-radius: var(--pill);
+        background: var(--good);
+        box-shadow: 0 0 0 2px var(--good-soft);
+      }
+
+      /* Rail Footer */
+      .railFoot {
+        padding: 12px 10px;
+        border-top: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: var(--surface-2);
+        flex-shrink: 0;
+      }
+      .railUserInfo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .railAvatar {
+        width: 28px;
+        height: 28px;
+        border-radius: var(--pill);
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        font-family: var(--mono);
+        font-weight: 600;
+        font-size: var(--t-0);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border: 1px solid var(--line);
+      }
+      .railUserText {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+        overflow: hidden;
+      }
+      :root[data-rail="closed"] .railUserText {
+        display: none;
+      }
+      .railUserName {
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink);
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+      .railUserRole {
+        font-size: var(--t-0);
+        color: var(--muted);
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+
+      .themeRow {
+        display: flex;
+        align-items: center;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 2px;
+        gap: 2px;
+      }
+      :root[data-rail="closed"] .themeRow {
+        flex-direction: column;
+      }
+      .themeBtn {
+        flex: 1;
+        background: transparent;
+        border: none;
+        border-radius: calc(var(--r2) - 2px);
+        font-size: var(--t-0);
+        font-weight: 500;
+        color: var(--muted);
+        padding: 4px 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        transition:
+          background 0.12s,
+          color 0.12s;
+        min-height: 24px;
+      }
+      .themeBtn:hover {
+        color: var(--ink);
+      }
+      .themeBtn[data-active="true"] {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
+
+      /* ─── Main Viewport & Sovereign Top Bar ──────────────────────────────── */
+      .viewport {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        overflow-x: clip;
+      }
+
+      .topbar {
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        height: 56px;
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        gap: 16px;
+        position: sticky;
+        top: 0;
+        z-index: 20;
+      }
+
+      .topbarTitleGroup {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .topbarTitle {
+        font-family: var(--display);
+        font-size: var(--t-4);
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        margin: 0;
+        color: var(--ink);
+        white-space: nowrap;
+      }
+
+      .protoChip {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        background: var(--surface-2);
+        color: var(--muted);
+        border: 1px solid var(--line);
+        white-space: nowrap;
+      }
+
+      .topbarSearch {
+        flex: 1;
+        max-width: 420px;
+        position: relative;
+        margin: 0 auto 0 12px;
+      }
+      .searchBox {
+        width: 100%;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--pill);
+        padding: 6px 36px 6px 32px;
+        font-size: var(--t-1);
+        color: var(--ink);
+        outline: none;
+        transition:
+          border-color 0.14s,
+          background 0.14s,
+          box-shadow 0.14s;
+      }
+      .searchBox:focus {
+        background: var(--surface);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      .searchIcon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        pointer-events: none;
+        width: 14px;
+        height: 14px;
+      }
+      .searchKbd {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 0 4px;
+        line-height: 16px;
+        pointer-events: none;
+      }
+
+      .topbarActions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+      }
+
+      .topbarBtn {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 6px 10px;
+        font-size: var(--t-1);
+        font-weight: 500;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 32px;
+        transition:
+          background 0.12s,
+          color 0.12s,
+          border-color 0.12s;
+        white-space: nowrap;
+      }
+      .topbarBtn:hover {
+        background: var(--surface-3);
+        color: var(--ink);
+      }
+      .topbarBtn svg {
+        width: 14px;
+        height: 14px;
+        color: var(--muted);
+      }
+
+      /* ─── Page Content Canvas ───────────────────────────────────────────── */
+      .canvas {
+        padding: 24px 28px 48px;
+        max-width: 1440px;
+        margin: 0 auto;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      /* ─── Component: The Person Banner ──────────────────────────────────── */
+      .personPanel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        overflow: hidden;
+      }
+      .personHeaderStrip {
+        padding: 10px 18px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .personTitleGroup {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .personTitle {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0;
+      }
+      .personSubtitle {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+      .personModeSwitch {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--pill);
+        padding: 2px;
+      }
+      .modeBtn {
+        background: transparent;
+        border: none;
+        border-radius: var(--pill);
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--muted);
+        padding: 3px 10px;
+        cursor: pointer;
+        transition:
+          background 0.12s,
+          color 0.12s;
+        min-height: 24px;
+      }
+      .modeBtn[data-active="true"] {
+        background: var(--accent);
+        color: var(--on-accent);
+      }
+
+      .personCardBody {
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+      }
+      .personAvatar {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--pill);
+        background: var(--surface-2);
+        border: 1.5px solid var(--line-strong);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-size: var(--t-4);
+        font-weight: 600;
+        color: var(--ink);
+        flex-shrink: 0;
+      }
+      .personAvatar[data-mode="unlinked"] {
+        background: var(--sunk);
+        color: var(--muted);
+        border-style: dashed;
+      }
+
+      .personMetaGroup {
+        flex: 1;
+        min-width: 240px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .personPrimaryRow {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .personName {
+        font-family: var(--display);
+        font-size: var(--t-4);
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+      }
+      .personIdPill {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: var(--r2);
+        background: var(--surface-2);
+        color: var(--ink-soft);
+        border: 1px solid var(--line);
+      }
+      .personStatusPill {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: var(--pill);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .personStatusPill[data-tone="voluntary"] {
+        background: var(--good-soft);
+        color: var(--good);
+        border: 1px solid rgba(34, 117, 80, 0.25);
+      }
+      .personStatusPill[data-tone="unlinked"] {
+        background: var(--gilt-soft);
+        color: var(--gilt);
+        border: 1px solid rgba(125, 97, 42, 0.25);
+      }
+
+      .personDetailSentence {
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        margin: 0;
+      }
+      .personDuplicateCheck {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--t-0);
+        color: var(--good);
+        font-weight: 500;
+      }
+      .personDuplicateCheck svg {
+        width: 13px;
+        height: 13px;
+      }
+
+      .personActions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+      }
+      .actionBtn {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 7px 12px;
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition:
+          background 0.12s,
+          color 0.12s;
+        min-height: 36px;
+      }
+      .actionBtn:hover {
+        background: var(--surface-3);
+        color: var(--ink);
+      }
+
+      /* ─── Two-Column Form Grid Layout ──────────────────────────────────── */
+      .layoutGrid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 380px;
+        gap: 20px;
+        align-items: start;
+      }
+
+      @media (max-width: 1080px) {
+        .layoutGrid {
+          grid-template-columns: 1fr;
+        }
+        .sideRail {
+          position: static;
+          height: auto;
+          max-height: none;
+        }
+        .sideRailScroll {
+          overflow-y: visible;
+          max-height: none;
+        }
+      }
+
+      .formColumn {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      /* ─── Standard Panel Styles ────────────────────────────────────────── */
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        overflow: hidden;
+      }
+
+      .panelHeader {
+        padding: 12px 18px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .stepBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent);
+        background: var(--accent-soft);
+        padding: 2px 7px;
+        border-radius: var(--r2);
+      }
+
+      .panelHeaderTitle {
+        font-family: var(--display);
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .stepStatusPill {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: var(--pill);
+      }
+      .stepStatusPill[data-status="complete"] {
+        background: var(--good-soft);
+        color: var(--good);
+        border: 1px solid rgba(34, 117, 80, 0.25);
+      }
+      .stepStatusPill[data-status="incomplete"] {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid rgba(130, 93, 16, 0.25);
+      }
+
+      .panelBody {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      /* ─── Field Groups & Question Components ───────────────────────────── */
+      .fieldRow2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+      @media (max-width: 680px) {
+        .fieldRow2 {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .questionGroup {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .questionLabelRow {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .questionLabel {
+        font-family: var(--display);
+        font-size: var(--t-2);
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      .questionState {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .questionState[data-state="answered"] {
+        color: var(--good);
+      }
+      .questionState[data-state="not-answered"] {
+        color: var(--warn);
+      }
+
+      .questionHelp {
+        font-size: var(--t-0);
+        color: var(--muted);
+        margin: 0;
+        line-height: 1.4;
+      }
+
+      /* ─── Segmented Pill Group (44px Accessible Touch Targets) ──────────── */
+      .segmentedGrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        gap: 6px;
+      }
+      .segmentedGrid4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+      }
+      @media (max-width: 760px) {
+        .segmentedGrid4 {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      .pillCard {
+        min-height: var(--ward-tap, 48px);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 8px 10px;
+        font-size: var(--t-1);
+        font-weight: 500;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        transition:
+          background 0.12s,
+          border-color 0.12s,
+          color 0.12s,
+          box-shadow 0.12s;
+        user-select: none;
+      }
+      .pillCard:hover {
+        background: var(--surface-3);
+        color: var(--ink);
+        border-color: var(--line-strong);
+      }
+      .pillCard[data-selected="true"] {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+        font-weight: 600;
+        box-shadow: 0 0 0 1px var(--accent);
+      }
+      .pillSub {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .pillCard[data-selected="true"] .pillSub {
+        color: var(--accent-ink);
+      }
+
+      /* ─── Tactile Yes / No Switch Cards (Clinical High-Impact Toggles) ─── */
+      .clinicalSwitchCard {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: 52px;
+      }
+      .switchMeta {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .switchTitle {
+        font-size: var(--t-2);
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .switchSubtitle {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+
+      .yesNoToggleGroup {
+        display: flex;
+        align-items: center;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--pill);
+        padding: 3px;
+        gap: 4px;
+        flex-shrink: 0;
+      }
+      .toggleOption {
+        min-width: 48px;
+        height: 34px;
+        border: none;
+        border-radius: var(--pill);
+        background: transparent;
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          background 0.12s,
+          color 0.12s;
+      }
+      .toggleOption:hover {
+        color: var(--ink);
+      }
+      .toggleOption[data-selected="yes"] {
+        background: var(--accent);
+        color: var(--on-accent);
+      }
+      .toggleOption[data-selected="no"] {
+        background: var(--surface-3);
+        color: var(--ink);
+        border: 1px solid var(--line);
+      }
+
+      /* ─── Urgency Tier Cards ────────────────────────────────────────────── */
+      .urgencyGrid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+      @media (max-width: 720px) {
+        .urgencyGrid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .urgencyCard {
+        min-height: 58px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        transition:
+          background 0.12s,
+          border-color 0.12s,
+          box-shadow 0.12s;
+        user-select: none;
+      }
+      .urgencyCard:hover {
+        background: var(--surface-3);
+      }
+      .urgencyCard[data-selected="true"] {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px var(--accent);
+      }
+      .urgencyDot {
+        width: 12px;
+        height: 12px;
+        border-radius: var(--pill);
+        flex-shrink: 0;
+      }
+      .urgencyDot[data-tier="1"] {
+        background: var(--danger);
+      }
+      .urgencyDot[data-tier="2"] {
+        background: var(--warn);
+      }
+      .urgencyDot[data-tier="3"] {
+        background: var(--good);
+      }
+
+      .urgencyDetails {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.25;
+      }
+      .urgencyName {
+        font-size: var(--t-2);
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .urgencyWindow {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+
+      /* ─── Destination Multi-Dispatch & Catchment Cards ─────────────────── */
+      .destinationsList {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .destCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        overflow: hidden;
+        transition:
+          border-color 0.14s ease,
+          box-shadow 0.14s ease,
+          background 0.14s ease;
+        box-shadow: var(--lift);
+      }
+      .destCard:hover {
+        border-color: var(--line-strong);
+      }
+      .destCard[data-active="true"] {
+        border-color: var(--accent);
+        box-shadow:
+          0 0 0 1px var(--accent),
+          var(--lift);
+        background: var(--surface);
+      }
+
+      .destCardHeader {
+        padding: 14px 18px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        cursor: pointer;
+        background: var(--surface);
+      }
+      .destCardTitleGroup {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        flex: 1;
+      }
+      .destCheckbox {
+        width: 20px;
+        height: 20px;
+        accent-color: var(--accent);
+        cursor: pointer;
+        margin-top: 2px;
+        flex-shrink: 0;
+      }
+      .destTitleStack {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .destName {
+        font-family: var(--display);
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--ink);
+        cursor: pointer;
+      }
+      .destSubtitle {
+        font-size: var(--t-0);
+        color: var(--ink-soft);
+        line-height: 1.4;
+      }
+      .destBadges {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        flex-shrink: 0;
+      }
+      .badgePill {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line);
+        white-space: nowrap;
+      }
+      .badgePill[data-type="catchment"] {
+        background: var(--surface-2);
+        color: var(--ink);
+        border-color: var(--line-strong);
+      }
+      .badgePill[data-type="ready"] {
+        background: var(--good-soft);
+        color: var(--good);
+        border-color: var(--good);
+      }
+      .badgePill[data-type="info"] {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-color: transparent;
+      }
+
+      /* Secondary Breakdown Toggle Button */
+      .destCardDetailToggle {
+        padding: 0 18px 10px 48px;
+        background: var(--surface);
+      }
+      .btnBreakdownToggle {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--pill);
+        padding: 4px 10px;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition:
+          background 0.12s,
+          color 0.12s;
+      }
+      .btnBreakdownToggle:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .btnBreakdownToggle svg {
+        width: 12px;
+        height: 12px;
+        transition: transform 0.15s ease;
+      }
+      .btnBreakdownToggle[aria-expanded="true"] svg {
+        transform: rotate(180deg);
+      }
+
+      .destCardContent {
+        padding: 12px 18px 14px 48px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        border-top: 1px solid var(--line);
+        background: var(--surface-2);
+      }
+
+      .wardTierGroup {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .wardRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        font-size: var(--t-1);
+        gap: 12px;
+      }
+      .wardRow[data-tier="waitlist"] {
+        border-left: 3px solid var(--warn);
+        background: var(--surface);
+      }
+      .wardName {
+        font-weight: 600;
+        color: var(--ink);
+        font-size: var(--t-1);
+      }
+      .wardNote {
+        font-size: var(--t-0);
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .bedTallyTag {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: var(--r2);
+        flex-shrink: 0;
+      }
+      .bedTallyTag[data-tag="ready"] {
+        background: var(--good-soft);
+        color: var(--good);
+        border: 1px solid var(--good);
+      }
+      .bedTallyTag[data-tag="zero"] {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid var(--warn);
+      }
+
+      /* Destination Conflict Banner (Bed + Community Mutually Exclusive) */
+      .destConflictAlert {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px 16px;
+        border-radius: var(--r2);
+        background: var(--warn-soft);
+        border: 1px solid var(--warn);
+        color: var(--warn);
+        font-size: var(--t-1);
+        line-height: 1.45;
+        margin-top: 10px;
+        font-weight: 500;
+      }
+      .destConflictAlert svg {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .destConflictText strong {
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-size: var(--t-0);
+        margin-right: 4px;
+      }
+
+      /* ─── Bottom Scenario & Test Dock ───────────────────────────────────── */
+      .scenarioDock {
+        position: sticky;
+        bottom: 0;
+        z-index: 25;
+        background: var(--surface);
+        border-top: 1px solid var(--line-strong);
+        padding: 8px 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.12);
+      }
+      .scenarioLabel {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin-right: 4px;
+      }
+      .scenarioBtn {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 5px 10px;
+        border-radius: var(--r2);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        color: var(--ink);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.12s ease;
+      }
+      .scenarioBtn:hover {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+      }
+
+      /* ─── Clinical History Free Text Area ───────────────────────────────── */
+      .historyBoxWrap {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .cautionBanner {
+        background: var(--gilt-soft);
+        border: 1px solid rgba(125, 97, 42, 0.25);
+        border-radius: var(--r2);
+        padding: 10px 14px;
+        display: flex;
+        gap: 10px;
+        font-size: var(--t-1);
+        color: var(--gilt);
+        line-height: 1.4;
+      }
+      .cautionBanner svg {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .cautionBanner b {
+        font-weight: 700;
+      }
+
+      .promptChipsRow {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .promptChip {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--pill);
+        padding: 3px 9px;
+        font-size: var(--t-0);
+        font-weight: 500;
+        color: var(--ink-soft);
+        cursor: pointer;
+        transition:
+          background 0.12s,
+          color 0.12s;
+        min-height: 24px;
+      }
+      .promptChip:hover {
+        background: var(--surface-3);
+        color: var(--ink);
+      }
+
+      .historyTextarea {
+        width: 100%;
+        min-height: 140px;
+        padding: 12px 14px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        font-family: var(--body);
+        font-size: var(--t-2);
+        line-height: 1.5;
+        color: var(--ink);
+        resize: vertical;
+        outline: none;
+        transition:
+          border-color 0.14s,
+          background 0.14s,
+          box-shadow 0.14s;
+      }
+      .historyTextarea:focus {
+        background: var(--surface);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+
+      .historyFootRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+
+      /* ─── Right Rail: Summary, Catchment Radar & Fixed Dispatch ────────── */
+      .sideRail {
+        display: flex;
+        flex-direction: column;
+        position: sticky;
+        top: 72px;
+        height: calc(100vh - 86px);
+        max-height: calc(100vh - 86px);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        overflow: hidden;
+        z-index: 20;
+      }
+
+      .sideRailScroll {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        overflow-y: auto;
+        padding: 14px 14px 10px 14px;
+        scrollbar-width: thin;
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      /* 1. Catchment Bed Radar Card (Replaces Intake Progress) */
+      .radarCard {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .radarHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .radarTitleGroup {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .radarBeaconDot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--good);
+        box-shadow: 0 0 0 2px var(--good-soft);
+        animation: beaconPulse 2s infinite ease-in-out;
+      }
+      @keyframes beaconPulse {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.25);
+          opacity: 0.65;
+        }
+      }
+      .radarTitle {
+        font-family: var(--display);
+        font-size: var(--t-1);
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+      }
+      .radarScopeBadge {
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--accent-ink);
+        background: var(--accent-soft);
+        padding: 2px 6px;
+        border-radius: var(--pill);
+      }
+      .radarCatchmentName {
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .radarUnitsList {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .radarUnitItem {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 6px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        transition: border-color 0.12s;
+      }
+      .radarUnitTop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .radarUnitName {
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .radarBedCount {
+        font-size: var(--t-0);
+        color: var(--ink-soft);
+      }
+      .radarStatusChip {
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: var(--pill);
+      }
+      .radarStatusChip.good {
+        background: var(--good-soft);
+        color: var(--good);
+      }
+      .radarStatusChip.calm {
+        background: var(--surface-3);
+        color: var(--ink-soft);
+      }
+      .radarMeterBar {
+        height: 5px;
+        border-radius: 3px;
+        overflow: hidden;
+        display: flex;
+        background: var(--surface-3);
+      }
+      .radarUnitFoot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      /* 2. Summary Card */
+      .summaryCard {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .summaryCardHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .summaryCountBadge {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+      .summaryList {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        max-height: 240px;
+        overflow-y: auto;
+        padding-right: 2px;
+        scrollbar-width: thin;
+      }
+      .summaryRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 5px 8px;
+        border-radius: var(--r2);
+        background: var(--surface);
+        font-size: var(--t-1);
+        transition: background 0.12s;
+        cursor: pointer;
+        border: 1px solid transparent;
+      }
+      .summaryRow:hover {
+        background: var(--surface-3);
+        border-color: var(--line);
+      }
+      .summaryKey {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .summaryVal {
+        font-weight: 500;
+        color: var(--ink);
+        font-size: var(--t-1);
+      }
+      .summaryVal[data-state="missing"] {
+        color: var(--warn);
+        font-style: italic;
+      }
+
+      /* 3. Clinical Pre-Flight Admission Gates (Replaces image 1 govCard) */
+      .clinicalGateCard {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .gateHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .gateTitle {
+        font-family: var(--display);
+        font-size: var(--t-1);
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+      }
+      .gateStatusPill {
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: var(--pill);
+      }
+      .gateStatusPill.complete {
+        background: var(--good-soft);
+        color: var(--good);
+      }
+      .gateStatusPill.warn {
+        background: var(--warn-soft);
+        color: var(--warn);
+      }
+      .gateList {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .gateItem {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 4px 6px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+      }
+      .gateDot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        margin-top: 4px;
+        flex-shrink: 0;
+      }
+      .gateDot.good {
+        background: var(--good);
+      }
+      .gateDot.warn {
+        background: var(--warn);
+      }
+      .gateDot.info {
+        background: var(--accent);
+      }
+      .gateText {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+      .gateLabel {
+        font-size: 10.5px;
+        font-family: var(--mono);
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      .gateValue {
+        font-size: var(--t-0);
+        font-weight: 500;
+        color: var(--ink);
+      }
+      .gateActions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 4px;
+      }
+      .gateActionBtn {
+        flex: 1;
+        min-height: 32px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 4px 8px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--ink-soft);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition:
+          background 0.12s,
+          border-color 0.12s;
+      }
+      .gateActionBtn:hover {
+        background: var(--surface-3);
+        border-color: var(--line-strong);
+        color: var(--ink);
+      }
+      .gateCoordinatorNotice {
+        font-size: 11px;
+        color: var(--muted);
+        text-align: center;
+        line-height: 1.3;
+        padding-top: 2px;
+      }
+
+      /* 4. Fixed Dispatch Panel (Permanently Anchored & Visible) */
+      .dispatchCard {
+        background: var(--surface);
+        border-top: 1px solid var(--line);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex-shrink: 0;
+        z-index: 10;
+        box-shadow: 0 -4px 12px rgba(15, 23, 42, 0.05);
+      }
+      .sendButton {
+        width: 100%;
+        min-height: 48px;
+        background: var(--accent);
+        color: var(--on-accent);
+        border: none;
+        border-radius: var(--r2);
+        font-family: var(--display);
+        font-size: var(--t-3);
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition:
+          background 0.14s,
+          transform 0.08s,
+          box-shadow 0.14s;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+      }
+      .sendButton:hover:not([disabled]) {
+        background: var(--accent-press);
+        box-shadow: 0 4px 12px rgba(47, 76, 102, 0.25);
+      }
+      .sendButton:active:not([disabled]) {
+        transform: scale(0.99);
+      }
+      .sendButton[disabled] {
+        background: var(--surface-3);
+        color: var(--muted);
+        cursor: not-allowed;
+        border: 1px solid var(--line);
+        box-shadow: none;
+      }
+      .sendReason {
+        font-size: 11.5px;
+        color: var(--muted);
+        text-align: center;
+        line-height: 1.35;
+        margin: 0;
+      }
+
+      /* ─── Modal Dialogs & Backdrops ─────────────────────────────────────── */
+      .modalBackdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        animation: modalFadeIn 0.15s ease-out;
+      }
+      @keyframes modalFadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .modalDialog {
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.35);
+        width: 100%;
+        max-width: 540px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: modalScaleUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .modalDialog.modalLarge {
+        max-width: 680px;
+      }
+      @keyframes modalScaleUp {
+        from {
+          transform: scale(0.96);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      .modalHeader {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--surface-2);
+      }
+      .modalHeader.successHeader {
+        background: var(--surface);
+      }
+      .successIconWrap {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--good-soft);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .modalTitleGroup {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .modalTitle {
+        font-family: var(--display);
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+      }
+      .modalSub {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+      .modalCloseBtn {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        transition:
+          background 0.12s,
+          color 0.12s;
+      }
+      .modalCloseBtn:hover {
+        background: var(--surface-3);
+        color: var(--ink);
+      }
+      .modalBody {
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .modalFooter {
+        padding: 14px 20px;
+        border-top: 1px solid var(--line);
+        background: var(--surface-2);
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+      .btnModalPrimary {
+        min-height: 40px;
+        padding: 8px 16px;
+        background: var(--accent);
+        color: var(--on-accent);
+        border: none;
+        border-radius: var(--r2);
+        font-family: var(--display);
+        font-size: var(--t-1);
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        transition: background 0.12s;
+      }
+      .btnModalPrimary:hover {
+        background: var(--accent-press);
+      }
+      .btnModalSecondary {
+        min-height: 40px;
+        padding: 8px 14px;
+        background: var(--surface);
+        color: var(--ink-soft);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        font-size: var(--t-1);
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition:
+          background 0.12s,
+          color 0.12s;
+      }
+      .btnModalSecondary:hover {
+        background: var(--surface-3);
+        color: var(--ink);
+      }
+
+      /* Receipt Details */
+      .receiptCard {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .receiptRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: var(--t-1);
+      }
+      .receiptKey {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+        text-transform: uppercase;
+      }
+      .receiptVal {
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .nextStepsNotice {
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        line-height: 1.45;
+        padding: 12px;
+        background: var(--surface-3);
+        border-radius: var(--r2);
+      }
+
+      /* Letterhead Document Preview */
+      .letterheadDoc {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        font-size: var(--t-1);
+        color: var(--ink);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      }
+      .letterheadTop {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        border-bottom: 2px solid var(--ink);
+        padding-bottom: 12px;
+      }
+      .letterheadOrg {
+        font-family: var(--display);
+        font-size: var(--t-2);
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        margin: 0;
+      }
+      .letterheadSub {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+      .letterheadMeta {
+        font-size: var(--t-0);
+        color: var(--ink-soft);
+        text-align: right;
+      }
+      .letterheadSection {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .docSectionHead {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 700;
+        color: var(--accent-ink);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 4px;
+      }
+      .docGrid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 16px;
+        font-size: var(--t-1);
+      }
+      .docClinicalStory {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 12px 14px;
+        font-size: var(--t-1);
+        line-height: 1.5;
+        white-space: pre-wrap;
+      }
+      .docFooterSection {
+        border-top: 1px solid var(--line);
+        padding-top: 10px;
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+
+      /* Clean Combobox / Input Styling */
+      .formInput {
+        width: 100%;
+        min-height: var(--ward-tap, 48px);
+        padding: 8px 12px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        font-size: var(--t-2);
+        color: var(--ink);
+        outline: none;
+        transition:
+          border-color 0.12s,
+          background 0.12s;
+      }
+      .formInput:focus {
+        background: var(--surface);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+
+      /* Touch Target Standards on Mobile/Tablet Breakpoints */
+      @media (max-width: 820px) {
+        .topbarBtn,
+        .actionBtn,
+        .modeBtn,
+        .pillCard,
+        .formInput,
+        .urgencyCard,
+        .sendButton,
+        .scenarioBtn,
+        .themeBtn,
+        .railToggle {
+          min-height: var(--ward-tap, 48px);
+        }
+        .toggleOption {
+          min-height: 40px;
+          min-width: 48px;
+        }
+      }
+
+      /* ─── Non-Blocking Toast Notification (D4 Compliance) ───────────────── */
+      .toastContainer {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        pointer-events: none;
+      }
+
+      .toastNotification {
+        background: var(--surface);
+        color: var(--ink);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        padding: 10px 14px;
+        font-size: var(--t-2);
+        font-weight: 500;
+        box-shadow: var(--lift);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        pointer-events: auto;
+        transform: translateY(10px);
+        opacity: 0;
+        transition:
+          transform 0.18s ease,
+          opacity 0.18s ease;
+      }
+      .toastNotification.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      /* ─── Sovereign Minimal Footer (Simulation Invariant FF8) ─────────────── */
+      .sovereignDisclosureFooter {
+        padding: 12px 20px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        font-size: var(--t-1);
+        color: var(--muted);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+        margin-top: 32px;
+      }
+      .regulatoryNote {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .prototypeBadge {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        padding: 2px 6px;
+        border-radius: var(--r2);
+        margin-right: 8px;
+        font-variant-numeric: tabular-nums;
+      }
+      @media (max-width: 680px) {
+        .sovereignDisclosureFooter {
+          flex-direction: column;
+          gap: 8px;
+          align-items: flex-start;
+        }
+      }
+
+      /* Reconcile Footer */
+      .reconcileFoot {
+        margin-top: 16px;
+        padding: 12px 18px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app" id="app">
+      <!-- ─── Collapsible Sovereign Navigation Rail ──────────────────────── -->
+      <nav class="rail" id="rail" aria-label="Ward Flow primary navigation">
+        <div class="brand">
+          <a class="brandTitle" href="command-third-edition.html">
+            <b>Ward Flow</b> <span class="brandBadge">WA</span>
+          </a>
+          <button type="button" class="railToggle" id="railToggle" aria-label="Toggle rail width (Hotkey: [)">
+            <svg viewBox="0 0 16 16" fill="currentColor">
+              <path d="M10 12L6 8l4-4" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Thin Mode Service Switcher Trigger & Popout Menu -->
+        <div
+          class="railServiceTrigger"
+          id="railServiceTrigger"
+          title="Switch health service (Thin mode)"
+          tabindex="0"
+          role="button"
+          aria-haspopup="true"
+          aria-expanded="false"
+        >
+          <span class="serviceBadgePill">FSH ▾</span>
+        </div>
+        <div
+          class="railServiceMenu"
+          id="railServiceMenu"
+          style="display: none"
+          role="menu"
+          aria-label="Facility Switcher"
+        >
+          <div class="railServiceMenuHead">Switch Facility / Service</div>
+          <button type="button" class="railServiceItem" data-service="FSH" data-active="true" role="menuitem">
+            <span>Fiona Stanley Hospital (FSH)</span>
+            <span class="mono" style="font-size: var(--t-0); color: var(--good); font-weight: 600">Active</span>
+          </button>
+          <button type="button" class="railServiceItem" data-service="RPH" role="menuitem">
+            <span>Royal Perth Hospital (RPH)</span>
+          </button>
+          <button type="button" class="railServiceItem" data-service="SCGH" role="menuitem">
+            <span>Sir Charles Gairdner (SCGH)</span>
+          </button>
+          <button type="button" class="railServiceItem" data-service="RGH" role="menuitem">
+            <span>Rockingham General (RGH)</span>
+          </button>
+          <button type="button" class="railServiceItem" data-service="AHS" role="menuitem">
+            <span>Armadale Health Service (AHS)</span>
+          </button>
+        </div>
+
+        <div class="railBody">
+          <div class="railSection">
+            <p class="railLabel">Operations</p>
+            <a class="railLink" href="command-third-edition.html" data-nav="command">
+              <span class="railIcon"
+                ><svg viewBox="0 0 16 16" fill="currentColor">
+                  <path
+                    d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5v-3z"
+                  /></svg
+              ></span>
+              <span class="railText">Command</span>
+              <span class="railBadge" data-tone="danger">1</span>
+              <span class="railMiniBadge" data-tone="danger">1</span>
+              <div class="railFlyout">
+                <div class="railFlyoutHead">
+                  <span class="railFlyoutTitle">Command Center</span>
+                  <span class="railFlyoutKbd">[1]</span>
+                </div>
+                <p class="railFlyoutDesc">Statewide acute bed coordination &amp; escalation oversight.</p>
+                <div class="railFlyoutMetric">1 urgent bed alert</div>
+                <div class="railFlyoutAction">Open Command Center →</div>
+              </div>
+            </a>
+            <a class="railLink" href="movement-third-edition.html" data-nav="movement">
+              <span class="railIcon"
+                ><svg viewBox="0 0 16 16" fill="currentColor">
+                  <path
+                    d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"
+                  /></svg
+              ></span>
+              <span class="railText">Movement</span>
+              <span class="railBadge">53</span>
+              <span class="railMiniBadge">53</span>
+              <div class="railFlyout">
+                <div class="railFlyoutHead">
+                  <span class="railFlyoutTitle">Movement Horizon</span>
+                  <span class="railFlyoutKbd">[2]</span>
+                </div>
+                <p class="railFlyoutDesc">Active bed transfers, discharges, and transport logistics.</p>
+                <div class="railFlyoutMetric">53 scheduled · 6 in transit</div>
+                <div class="railFlyoutAction">View Movement Horizon →</div>
+              </div>
+            </a>
+            <a class="railLink" href="capacity-third-edition.html" data-nav="capacity">
+              <span class="railIcon"
+                ><svg viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M2 3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3zm2 2v6h8V5H4z" /></svg
+              ></span>
+              <span class="railText">Capacity</span>
+              <span class="railBadge" data-tone="good">27</span>
+              <span class="railMiniBadge" data-tone="good">27</span>
+              <div class="railFlyout">
+                <div class="railFlyoutHead">
+                  <span class="railFlyoutTitle">Bed Capacity</span>
+                  <span class="railFlyoutKbd">[3]</span>
+                </div>
+                <p class="railFlyoutDesc">Network unit census, locked/open beds, and occupancy.</p>
+                <div class="railFlyoutMetric">27 open beds · 4 ready</div>
+                <div class="railFlyoutAction">Inspect Unit Census →</div>
+              </div>
+            </a>
+            <a class="railLink" href="delays-third-edition.html" data-nav="delays">
+              <span class="railIcon"
+                ><svg viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z" />
+                  <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z" /></svg
+              ></span>
+              <span class="railText">Delays</span>
+              <span class="railBadge" data-tone="warn">3</span>
+              <span class="railMiniBadge" data-tone="warn">3</span>
+              <div class="railFlyout">
+                <div class="railFlyoutHead">
+                  <span class="railFlyoutTitle">Transfer Delays</span>
+                  <span class="railFlyoutKbd">[4]</span>
+                </div>
+                <p class="railFlyoutDesc">Blocked discharges, transport delays, and medical holds.</p>
+                <div class="railFlyoutMetric">3 active delay alerts</div>
+                <div class="railFlyoutAction">Triage Delays →</div>
+              </div>
+            </a>
+          </div>
+
+          <div class="railSection">
+            <p class="railLabel">Care Coordination</p>
+            <a class="railLink" href="referrals-third-edition.html" data-nav="referrals">
+              <span class="railIcon"
+                ><svg viewBox="0 0 16 16" fill="currentColor">
+                  <path
+                    d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"
+                  />
+                  <path d="M4 4h8v1H4V4zm0 3h8v1H4V7zm0 3h5v1H4v-1z" /></svg
+              ></span>
+              <span class="railText">Referrals</span>
+              <span class="railBadge">5</span>
+              <span class="railMiniBadge">5</span>
+              <div class="railFlyout">
+                <div class="railFlyoutHead">
+                  <span class="railFlyoutTitle">Referral Board</span>
+                  <span class="railFlyoutKbd">[5]</span>
+                </div>
+                <p class="railFlyoutDesc">Triaged queue awaiting coordinator review and unit placement.</p>
+                <div class="railFlyoutMetric">5 queued for triage</div>
+                <div class="railFlyoutAction">Open Referral Board →</div>
+              </div>
+            </a>
+            <a
+              class="railLink"
+              href="raise-a-referral-perfected-third-edition.html"
+              data-active="true"
+              data-nav="new-referral"
+            >
+              <span class="railIcon"
+                ><svg viewBox="0 0 16 16" fill="currentColor">
+                  <path
+                    d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"
+                  /></svg
+              ></span>
+              <span class="railText">Raise referral</span>
+              <span class="railBadge" data-tone="good">Live</span>
+              <span class="railMiniBadge" data-tone="good">•</span>
+              <div class="railFlyout">
+                <div class="railFlyoutHead">
+                  <span class="railFlyoutTitle">Raise Referral</span>
+                  <span class="railFlyoutKbd">[N]</span>
+                </div>
+                <p class="railFlyoutDesc">Current screen: Multi-destination acute mental health intake.</p>
+                <div class="railFlyoutMetric">Active Form Draft</div>
+                <div class="railFlyoutAction">Active Intake Screen</div>
+              </div>
+            </a>
+            <a class="railLink" href="patient-search-third-edition.html" data-nav="search">
+              <span class="railIcon"
+                ><svg viewBox="0 0 16 16" fill="currentColor">
+                  <path
+                    d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"
+                  /></svg
+              ></span>
+              <span class="railText">Patient search</span>
+              <div class="railFlyout">
+                <div class="railFlyoutHead">
+                  <span class="railFlyoutTitle">Master Patient Index</span>
+                  <span class="railFlyoutKbd">[/]</span>
+                </div>
+                <p class="railFlyoutDesc">Lookup patient records, active episodes, and past admissions.</p>
+                <div class="railFlyoutMetric">Statewide MPI Index</div>
+                <div class="railFlyoutAction">Search Patients →</div>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <div class="railFoot">
+          <div class="railStatusBeacon" id="railStatusBeacon" title="Network Bed Telemetry">
+            <span class="beaconDot"></span>
+            <span class="mono" style="font-size: var(--t-0); font-weight: 600; color: var(--ink)">4 Ready</span>
+          </div>
+          <div class="railUserInfo">
+            <div class="railAvatar">SC</div>
+            <div class="railUserText">
+              <span class="railUserName">Dr S. Chen</span>
+              <span class="railUserRole">State Access Coordinator</span>
+            </div>
+          </div>
+          <div class="themeRow">
+            <button type="button" class="themeBtn apBtn" data-set-theme="light">Light</button>
+            <button type="button" class="themeBtn" data-set-theme="dark" data-active="true">Dark</button>
+            <button type="button" class="themeBtn" data-set-theme="auto">Auto</button>
+          </div>
+        </div>
+      </nav>
+
+      <!-- ─── Viewport Area ──────────────────────────────────────────────── -->
+      <div class="viewport">
+        <header class="topbar">
+          <div class="topbarTitleGroup">
+            <h1 class="topbarTitle">Raise a referral</h1>
+            <span class="protoChip">Synthetic prototype</span>
+          </div>
+
+          <div class="topbarSearch">
+            <svg class="searchIcon" viewBox="0 0 16 16" fill="currentColor">
+              <path
+                d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"
+              />
+            </svg>
+            <input
+              type="search"
+              class="searchBox"
+              placeholder="Search patients, movements, sites…"
+              aria-label="Universal search"
+            />
+            <kbd class="searchKbd">/</kbd>
+          </div>
+
+          <div class="topbarActions">
+            <button type="button" class="topbarBtn" id="svcBtn">
+              <span>All services (14)</span>
+              <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 6l4 4 4-4" /></svg>
+            </button>
+            <button type="button" class="topbarBtn" id="actBtn">
+              <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 8h3l2-5 3 9 2-4h3" /></svg>
+              <span>Activity</span>
+            </button>
+            <button type="button" class="topbarBtn" id="tasksBtn">
+              <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v2H2zm0 4h12v2H2zm0 4h7v2H2z" /></svg>
+              <span>Tasks (17)</span>
+            </button>
+          </div>
+        </header>
+
+        <main class="canvas">
+          <!-- ─── Component: The Person Card ─────────────────────────────── -->
+          <section class="personPanel" aria-labelledby="personHeading">
+            <div class="personHeaderStrip">
+              <div class="personTitleGroup">
+                <h2 class="personTitle" id="personHeading">The Person</h2>
+                <span class="personSubtitle" id="personSubtitleText">Linked patient record</span>
+              </div>
+              <div class="personModeSwitch">
+                <button type="button" class="modeBtn" id="btnLinked" data-active="true">Linked record</button>
+                <button type="button" class="modeBtn" id="btnUnlinked">Unlinked intake</button>
+              </div>
+            </div>
+
+            <div class="personCardBody" id="personCardBody">
+              <div class="personAvatar" id="personAvatar">OS</div>
+              <div class="personMetaGroup">
+                <div class="personPrimaryRow">
+                  <h3 class="personName" id="personName">Ottilie Sorrel</h3>
+                  <span class="personIdPill mono" id="personMrn">UM100014</span>
+                  <span class="personStatusPill" data-tone="voluntary" id="personLegal">Voluntary</span>
+                </div>
+                <p class="personDetailSentence" id="personDemog">
+                  35 years · Adult cohort · Female · Fremantle · Fremantle Adult CMHS · <i>No GP recorded</i>
+                </p>
+                <div class="personDuplicateCheck" id="duplicateStatus">
+                  <svg viewBox="0 0 16 16" fill="currentColor">
+                    <path
+                      d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"
+                    />
+                  </svg>
+                  <span>Duplicate check: no open movement for this person</span>
+                </div>
+              </div>
+              <div class="personActions">
+                <button type="button" class="actionBtn" id="btnReferOther">Refer someone else</button>
+                <button type="button" class="actionBtn" id="btnViewProfile">View profile</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ─── Two-Column Work Grid ─────────────────────────────────── -->
+          <div class="layoutGrid">
+            <div class="formColumn">
+              <!-- ── Step 1: Who the Referral is About ──────────────────── -->
+              <section class="panel" aria-labelledby="step1Heading">
+                <div class="panelHeader">
+                  <span class="stepBadge">Step 1</span>
+                  <h2 class="panelHeaderTitle" id="step1Heading">Who the referral is about</h2>
+                  <span class="stepStatusPill" data-status="complete" id="step1Status">Complete</span>
+                </div>
+
+                <div class="panelBody">
+                  <!-- Age Band -->
+                  <div class="questionGroup" data-field="ageBand">
+                    <div class="questionLabelRow">
+                      <span class="questionLabel">Age band</span>
+                      <span class="questionState" data-state="answered">Answered</span>
+                    </div>
+                    <div class="segmentedGrid4">
+                      <button type="button" class="pillCard" data-field="ageBand" data-val="child">
+                        <span>Child &amp; Adolescent</span>
+                        <span class="pillSub">0–17 years</span>
+                      </button>
+                      <button type="button" class="pillCard" data-field="ageBand" data-val="youth">
+                        <span>Youth</span>
+                        <span class="pillSub">16–24 years</span>
+                      </button>
+                      <button type="button" class="pillCard" data-field="ageBand" data-val="adult" data-selected="true">
+                        <span>Adult</span>
+                        <span class="pillSub">18–64 years</span>
+                      </button>
+                      <button type="button" class="pillCard" data-field="ageBand" data-val="older_adult">
+                        <span>Older Adult</span>
+                        <span class="pillSub">65+ years</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Sex & Gender Row -->
+                  <div class="fieldRow2">
+                    <!-- Sex -->
+                    <div class="questionGroup" data-field="sex">
+                      <div class="questionLabelRow">
+                        <span class="questionLabel">Sex</span>
+                        <span class="questionState" data-state="answered">Answered</span>
+                      </div>
+                      <div class="segmentedGrid">
+                        <button type="button" class="pillCard" data-field="sex" data-val="female" data-selected="true">
+                          Female
+                        </button>
+                        <button type="button" class="pillCard" data-field="sex" data-val="male">Male</button>
+                        <button type="button" class="pillCard" data-field="sex" data-val="other">
+                          Intersex / Indet.
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Gender (Bed check) -->
+                    <div class="questionGroup" data-field="gender">
+                      <div class="questionLabelRow">
+                        <span class="questionLabel">Gender (decides bed)</span>
+                        <span class="questionState" data-state="answered">Answered</span>
+                      </div>
+                      <div class="segmentedGrid">
+                        <button
+                          type="button"
+                          class="pillCard"
+                          data-field="gender"
+                          data-val="female"
+                          data-selected="true"
+                        >
+                          Female
+                        </button>
+                        <button type="button" class="pillCard" data-field="gender" data-val="male">Male</button>
+                        <button type="button" class="pillCard" data-field="gender" data-val="non_binary">
+                          Non-binary
+                        </button>
+                        <button type="button" class="pillCard" data-field="gender" data-val="not_recorded">
+                          Not recorded
+                        </button>
+                      </div>
+                      <p class="questionHelp">
+                        Governs incoming bed checks. "Not recorded" is a valid deliberate answer.
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Tentative Diagnosis -->
+                  <div class="questionGroup" data-field="diagnosis">
+                    <div class="questionLabelRow">
+                      <span class="questionLabel">Broad diagnosis category (tentative)</span>
+                      <span class="questionState" data-state="answered">Optional</span>
+                    </div>
+                    <select class="formInput" id="diagSelect" aria-label="Tentative diagnosis category">
+                      <option value="none">None / Not yet recorded (optional)</option>
+                      <option value="f20" selected>Schizophrenia &amp; psychotic disorders (F20–F29)</option>
+                      <option value="f30">Mood [affective] disorders / Bipolar / Depression (F30–F39)</option>
+                      <option value="f40">Neurotic, stress-related &amp; somatoform (F40–F48)</option>
+                      <option value="f10">Substance-induced mental disorders (F10–F19)</option>
+                      <option value="f60">Personality &amp; behavioural disorders (F60–F69)</option>
+                      <option value="f00">Organic mental / Neurocognitive (F00–F09)</option>
+                    </select>
+                  </div>
+
+                  <!-- Home Region & Suburb -->
+                  <div class="fieldRow2">
+                    <div class="questionGroup" data-field="homeRegion">
+                      <div class="questionLabelRow">
+                        <span class="questionLabel">Home region</span>
+                        <span class="questionState" data-state="answered">Answered</span>
+                      </div>
+                      <select class="formInput" id="regionSelect" aria-label="Home Health Region">
+                        <option value="south_metro" selected>South Metropolitan (SMHS)</option>
+                        <option value="north_metro">North Metropolitan (NMHS)</option>
+                        <option value="east_metro">East Metropolitan (EMHS)</option>
+                        <option value="wachs_south_west">WACHS South West</option>
+                        <option value="wachs_great_southern">WACHS Great Southern</option>
+                        <option value="wachs_midwest">WACHS Midwest</option>
+                        <option value="wachs_goldfields">WACHS Goldfields</option>
+                        <option value="wachs_kimberley">WACHS Kimberley</option>
+                        <option value="wachs_pilbara">WACHS Pilbara</option>
+                        <option value="wachs_wheatbelt">WACHS Wheatbelt</option>
+                      </select>
+                    </div>
+
+                    <div class="questionGroup" data-field="suburb">
+                      <div class="questionLabelRow">
+                        <span class="questionLabel">Catchment suburb</span>
+                        <span class="questionState" data-state="answered">Answered</span>
+                      </div>
+                      <input
+                        type="text"
+                        class="formInput"
+                        id="suburbInput"
+                        value="Fremantle"
+                        placeholder="Search suburb…"
+                        aria-label="Catchment suburb"
+                      />
+                      <p class="questionHelp">
+                        Used for catchment checks. Or select: <a href="#" id="linkUnknownSuburb">No fixed address</a>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- ── Step 2: What They Need ────────────────────────────── -->
+              <section class="panel" aria-labelledby="step2Heading">
+                <div class="panelHeader">
+                  <span class="stepBadge">Step 2</span>
+                  <h2 class="panelHeaderTitle" id="step2Heading">What they need</h2>
+                  <span class="stepStatusPill" data-status="complete" id="step2Status">Complete</span>
+                </div>
+
+                <div class="panelBody">
+                  <!-- Referral Source -->
+                  <div class="questionGroup" data-field="source">
+                    <div class="questionLabelRow">
+                      <span class="questionLabel">Referral source</span>
+                      <span class="questionState" data-state="answered">Answered</span>
+                    </div>
+                    <div class="segmentedGrid">
+                      <button
+                        type="button"
+                        class="pillCard"
+                        data-field="source"
+                        data-val="community"
+                        data-selected="true"
+                      >
+                        Community CMHT
+                      </button>
+                      <button type="button" class="pillCard" data-field="source" data-val="crisis">
+                        Crisis service
+                      </button>
+                      <button type="button" class="pillCard" data-field="source" data-val="ed">ED medical staff</button>
+                      <button type="button" class="pillCard" data-field="source" data-val="gp">
+                        General Pract. (GP)
+                      </button>
+                      <button type="button" class="pillCard" data-field="source" data-val="police">
+                        Police (WAPOL)
+                      </button>
+                      <button type="button" class="pillCard" data-field="source" data-val="ambulance">
+                        Ambulance (SJA)
+                      </button>
+                      <button type="button" class="pillCard" data-field="source" data-val="transfer">
+                        Inter-hospital
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Sending Team & Origin Site -->
+                  <div class="fieldRow2">
+                    <div class="questionGroup">
+                      <div class="questionLabelRow">
+                        <span class="questionLabel">Sending team / service</span>
+                        <span class="questionState" data-state="answered">Optional</span>
+                      </div>
+                      <input
+                        type="text"
+                        class="formInput"
+                        id="teamInput"
+                        value="Fremantle Adult Community Mental Health Team"
+                        placeholder="Team or service name…"
+                      />
+                    </div>
+
+                    <div class="questionGroup" data-field="originSite">
+                      <div class="questionLabelRow">
+                        <span class="questionLabel">Origin site</span>
+                        <span class="questionState" data-state="answered">Answered</span>
+                      </div>
+                      <select class="formInput" id="siteSelect">
+                        <option value="fsh" selected>Fiona Stanley Hospital (FSH)</option>
+                        <option value="rph">Royal Perth Hospital (RPH)</option>
+                        <option value="scgh">Sir Charles Gairdner Hospital (SCGH)</option>
+                        <option value="peel">Peel Health Campus</option>
+                        <option value="armadale">Armadale Health Service</option>
+                        <option value="rockingham">Rockingham General Hospital</option>
+                        <option value="community_base">Community clinic base</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Urgency Tiers -->
+                  <div class="questionGroup" data-field="urgency">
+                    <div class="questionLabelRow">
+                      <span class="questionLabel">Urgency level</span>
+                      <span class="questionState" data-state="answered">Answered</span>
+                    </div>
+                    <div class="urgencyGrid">
+                      <div class="urgencyCard" data-tier="1" data-val="1">
+                        <span class="urgencyDot" data-tier="1"></span>
+                        <div class="urgencyDetails">
+                          <span class="urgencyName">Tier 1 · Emergency</span>
+                          <span class="urgencyWindow">Within 1 hour</span>
+                        </div>
+                      </div>
+                      <div class="urgencyCard" data-tier="2" data-val="2" data-selected="true">
+                        <span class="urgencyDot" data-tier="2"></span>
+                        <div class="urgencyDetails">
+                          <span class="urgencyName">Tier 2 · Urgent</span>
+                          <span class="urgencyWindow">Within 4 hours</span>
+                        </div>
+                      </div>
+                      <div class="urgencyCard" data-tier="3" data-val="3">
+                        <span class="urgencyDot" data-tier="3"></span>
+                        <div class="urgencyDetails">
+                          <span class="urgencyName">Tier 3 · Routine</span>
+                          <span class="urgencyWindow">Within 24 hours</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Clinical High-Impact Switches -->
+                  <div class="fieldRow2">
+                    <div class="clinicalSwitchCard">
+                      <div class="switchMeta">
+                        <span class="switchTitle">Needs a secure bed</span>
+                        <span class="switchSubtitle">Requires locked perimeter</span>
+                      </div>
+                      <div class="yesNoToggleGroup" data-field="secureBed">
+                        <button type="button" class="toggleOption" data-val="no" data-selected="no">No</button>
+                        <button type="button" class="toggleOption" data-val="yes" data-selected="yes">Yes</button>
+                      </div>
+                    </div>
+
+                    <div class="clinicalSwitchCard">
+                      <div class="switchMeta">
+                        <span class="switchTitle">Involuntary bed needed</span>
+                        <span class="switchSubtitle">Authorised Form 1A / Form 3A</span>
+                      </div>
+                      <div class="yesNoToggleGroup" data-field="involuntaryBed">
+                        <button type="button" class="toggleOption" data-val="no" data-selected="no">No</button>
+                        <button type="button" class="toggleOption" data-val="yes" data-selected="yes">Yes</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="fieldRow2">
+                    <div class="clinicalSwitchCard">
+                      <div class="switchMeta">
+                        <span class="switchTitle">High-acuity nursing needed</span>
+                        <span class="switchSubtitle">1:1 or 2:1 special observation</span>
+                      </div>
+                      <div class="yesNoToggleGroup" data-field="highAcuity">
+                        <button type="button" class="toggleOption" data-val="no" data-selected="no">No</button>
+                        <button type="button" class="toggleOption" data-val="yes">Yes</button>
+                      </div>
+                    </div>
+
+                    <div class="clinicalSwitchCard">
+                      <div class="switchMeta">
+                        <span class="switchTitle">Needs transport</span>
+                        <span class="switchSubtitle">Transfer booking required</span>
+                      </div>
+                      <div class="yesNoToggleGroup" data-field="transport">
+                        <button type="button" class="toggleOption" data-val="no">No</button>
+                        <button type="button" class="toggleOption" data-val="yes" data-selected="yes">Yes</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- ── Step 3: Where to Refer (Catchment Intelligence) ─────── -->
+              <section class="panel" aria-labelledby="step3Heading">
+                <div class="panelHeader">
+                  <span class="stepBadge">Step 3</span>
+                  <h2 class="panelHeaderTitle" id="step3Heading">Where to refer · Destination dispatch</h2>
+                  <span class="stepStatusPill" data-status="complete" id="step3Status">2 Selected</span>
+                </div>
+
+                <div class="panelBody">
+                  <p class="questionHelp" style="margin: 0 0 12px 0">
+                    Select destinations for this referral. Suburb catchment routing and live bed capacity are
+                    pre-calculated for <b id="destSubHeading">Fremantle</b>.
+                  </p>
+
+                  <div class="destinationsList">
+                    <!-- Destination 1: Psychiatric Inpatient Bed -->
+                    <div class="destCard" data-active="true" id="cardPsychWard">
+                      <div class="destCardHeader" id="headerPsych">
+                        <div class="destCardTitleGroup">
+                          <input
+                            type="checkbox"
+                            class="destCheckbox"
+                            id="chkPsych"
+                            checked
+                            aria-label="Refer to Psychiatric Inpatient Bed"
+                          />
+                          <div class="destTitleStack">
+                            <label for="chkPsych" class="destName">Psychiatric Inpatient Bed</label>
+                            <span class="destSubtitle"
+                              >Acute inpatient bed request for clinical stabilization, bed coordination, and nursing
+                              observation.</span
+                            >
+                          </div>
+                        </div>
+                        <div class="destBadges">
+                          <span class="badgePill" data-type="catchment" id="badgePsychCatchment"
+                            >In Catchment: South Metro</span
+                          >
+                          <span class="badgePill" data-type="ready" id="badgePsychCapacity">2 Beds Ready</span>
+                        </div>
+                      </div>
+
+                      <div class="destCardDetailToggle">
+                        <button
+                          type="button"
+                          class="btnBreakdownToggle"
+                          id="btnTogglePsychBreakdown"
+                          aria-expanded="false"
+                          aria-controls="psychBreakdownContent"
+                        >
+                          <span>View catchment unit availability &amp; waitlist</span>
+                          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 6l4 4 4-4" /></svg>
+                        </button>
+                      </div>
+
+                      <div class="destCardContent" id="psychBreakdownContent" style="display: none">
+                        <div class="wardTierGroup">
+                          <div class="wardRow">
+                            <div>
+                              <div class="wardName">Alma Street Centre Adult (FSH / Fremantle)</div>
+                              <div class="wardNote">Open Adult Assessment Unit · Direct catchment match</div>
+                            </div>
+                            <div class="wardCapacityInfo">
+                              <span class="bedTallyTag" data-tag="ready">2 beds ready</span>
+                            </div>
+                          </div>
+
+                          <div class="wardRow" data-tier="waitlist">
+                            <div>
+                              <div class="wardName">Fremantle Secure Unit (Alma Street W2)</div>
+                              <div class="wardNote" style="color: var(--warn)">
+                                <b>Waitlistable per Owner Ruling #3</b> — 0 vacant beds; eligible for triage queue &amp;
+                                bed matching
+                              </div>
+                            </div>
+                            <div class="wardCapacityInfo">
+                              <span class="bedTallyTag" data-tag="zero">0 vacant beds</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Live Bed Meter Summary -->
+                        <div style="margin-top: 4px">
+                          <div
+                            style="
+                              display: flex;
+                              justify-content: space-between;
+                              font-size: 12px;
+                              color: var(--muted);
+                              font-family: var(--mono);
+                              margin-bottom: 4px;
+                            "
+                          >
+                            <span>Network: 4 ready · 3 held · 1 blocked · 24 occupied</span>
+                            <span>32 total beds</span>
+                          </div>
+                          <div class="bedMeterBar">
+                            <div class="meterSeg" data-kind="ready" title="4 ready"></div>
+                            <div class="meterSeg" data-kind="held" title="3 held"></div>
+                            <div class="meterSeg" data-kind="blocked" title="1 blocked"></div>
+                            <div class="meterSeg" data-kind="occupied" title="24 occupied"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Destination 2: Emergency Department -->
+                    <div class="destCard" data-active="true" id="cardEd">
+                      <div class="destCardHeader" id="headerEd">
+                        <div class="destCardTitleGroup">
+                          <input
+                            type="checkbox"
+                            class="destCheckbox"
+                            id="chkEd"
+                            checked
+                            aria-label="Refer to Emergency Department"
+                          />
+                          <div class="destTitleStack">
+                            <label for="chkEd" class="destName">Emergency Department (ED)</label>
+                            <span class="destSubtitle"
+                              >Immediate clinical triage, acute medical clearance, and emergency resuscitation /
+                              observation.</span
+                            >
+                          </div>
+                        </div>
+                        <div class="destBadges">
+                          <span class="badgePill" data-type="catchment" id="badgeEdCatchment"
+                            >Fiona Stanley Hospital ED</span
+                          >
+                          <span class="badgePill" data-type="info">Bed assessment</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Destination 3: Community Mental Health Team -->
+                    <div class="destCard" data-active="false" id="cardComm">
+                      <div class="destCardHeader" id="headerComm">
+                        <div class="destCardTitleGroup">
+                          <input
+                            type="checkbox"
+                            class="destCheckbox"
+                            id="chkComm"
+                            aria-label="Refer to Community Mental Health Team"
+                          />
+                          <div class="destTitleStack">
+                            <label for="chkComm" class="destName">Community Mental Health Team (CMHT)</label>
+                            <span class="destSubtitle"
+                              >Outpatient clinical care, ambulatory case management, or post-discharge clinic
+                              follow-up.</span
+                            >
+                          </div>
+                        </div>
+                        <div class="destBadges">
+                          <span class="badgePill" data-type="catchment" id="badgeCommCatchment"
+                            >Fremantle Adult CMHS</span
+                          >
+                          <span class="badgePill" data-type="info">Ambulatory</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Mutual Exclusivity Conflict Alert (Bed + Community) -->
+                  <div class="destConflictAlert" id="destConflictAlert" style="display: none" role="alert">
+                    <svg viewBox="0 0 16 16" fill="currentColor">
+                      <path
+                        d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 3a1 1 0 0 1 1 1v4a1 1 0 0 1-2 0V5a1 1 0 0 1 1-1zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"
+                      />
+                    </svg>
+                    <div class="destConflictText">
+                      <strong>Destination Conflict</strong>: Psychiatric Inpatient Bed and Community Mental Health Team
+                      cannot be concurrently selected on a single acute referral. Deselect either Inpatient Bed or
+                      Community Team before dispatching.
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- ── Step 4: The Narrative Clinical History ────────────── -->
+              <section class="panel" aria-labelledby="step4Heading">
+                <div class="panelHeader">
+                  <span class="stepBadge">Step 4</span>
+                  <h2 class="panelHeaderTitle" id="step4Heading">Clinical history &amp; handover</h2>
+                  <span class="stepStatusPill" data-status="complete">Complete</span>
+                </div>
+
+                <div class="panelBody">
+                  <div class="cautionBanner">
+                    <svg viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                      <path
+                        d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"
+                      />
+                    </svg>
+                    <div>
+                      <b>Free text handover:</b> Sent word for word to every destination chosen without automated
+                      clinical checking. Unsaved text is never persisted to shared browser storage (Rule D-11).
+                    </div>
+                  </div>
+
+                  <div class="historyBoxWrap">
+                    <div class="promptChipsRow">
+                      <span style="font-size: 12px; color: var(--muted); font-weight: 500">Insert prompts:</span>
+                      <button type="button" class="promptChip" data-insert="[Presenting Crisis]: ">+ Crisis</button>
+                      <button type="button" class="promptChip" data-insert="[Mental State Examination]: ">+ MSE</button>
+                      <button type="button" class="promptChip" data-insert="[Risk Assessment]: ">+ Risk</button>
+                      <button type="button" class="promptChip" data-insert="[Current Treatment]: ">+ Treatment</button>
+                    </div>
+
+                    <textarea class="historyTextarea" id="historyArea" aria-label="Clinical history narrative">
+Seen at home this morning by the crisis team after her sister called. Three nights without sleep, describing her flat as "being listened to". Stopped her olanzapine about two weeks ago, saying it made her feel flat. Agreed to come in voluntarily but is anxious about the drive.</textarea>
+
+                    <div class="historyFootRow">
+                      <span id="charCount">271 / 2000 characters</span>
+                      <span>Word count: 52 · Reading time: &lt;1m</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <!-- ── Right Column: Summary, Radar & Fixed Dispatch ──────────── -->
+            <aside class="sideRail" aria-label="Referral summary, catchment radar, and fixed dispatch">
+              <div class="sideRailScroll" id="sideRailScroll">
+                <!-- 1. Live Catchment Bed Availability & Unit Match Radar (Replaces Intake Progress) -->
+                <div class="radarCard" id="catchmentRadarCard">
+                  <div class="radarHead">
+                    <div class="radarTitleGroup">
+                      <span class="radarBeaconDot" aria-hidden="true"></span>
+                      <h3 class="radarTitle">Catchment Bed Radar</h3>
+                    </div>
+                    <span class="radarScopeBadge mono" id="radarScopeBadge">SMHS · LIVE</span>
+                  </div>
+
+                  <div class="radarCatchmentName" id="radarCatchmentName">South Metropolitan (SMHS)</div>
+
+                  <!-- Live Units Status Breakdown -->
+                  <div class="radarUnitsList" id="radarUnitsList">
+                    <!-- Ward Availability Item -->
+                    <div class="radarUnitItem" id="radarWardUnit">
+                      <div class="radarUnitTop">
+                        <span class="radarUnitName" id="radarWardName">Alma Street Adult</span>
+                        <span class="radarBedCount mono" id="radarWardReady"
+                          ><b style="color: var(--good)">4</b> ready</span
+                        >
+                      </div>
+                      <div class="radarMeterBar" aria-label="Beds: 4 ready, 3 held, 1 blocked, 24 occupied">
+                        <div class="meterSeg" data-kind="ready" style="width: 12.5%" title="4 Ready beds"></div>
+                        <div class="meterSeg" data-kind="held" style="width: 9.4%" title="3 Held beds"></div>
+                        <div class="meterSeg" data-kind="blocked" style="width: 3.1%" title="1 Blocked bed"></div>
+                        <div class="meterSeg" data-kind="occupied" style="width: 75%" title="24 Occupied beds"></div>
+                      </div>
+                      <div class="radarUnitFoot">
+                        <span id="radarWardDetail">4 ready · 3 held · 24 occ / 32 beds</span>
+                        <span class="mono" id="radarWardResponse">41m ans</span>
+                      </div>
+                    </div>
+
+                    <!-- ED Liaison Status Item -->
+                    <div class="radarUnitItem" id="radarEdUnit">
+                      <div class="radarUnitTop">
+                        <span class="radarUnitName" id="radarEdName">Fiona Stanley ED</span>
+                        <span class="radarStatusChip good" id="radarEdStatus">Liaison On Duty</span>
+                      </div>
+                      <div class="radarUnitFoot">
+                        <span id="radarEdWait">1 awaiting triage · 0 breach</span>
+                        <span class="mono" id="radarEdMedian">28m wait</span>
+                      </div>
+                    </div>
+
+                    <!-- Community Diversion Item -->
+                    <div class="radarUnitItem" id="radarCommUnit">
+                      <div class="radarUnitTop">
+                        <span class="radarUnitName" id="radarCommName">Fremantle CMHT</span>
+                        <span class="radarStatusChip calm" id="radarCommStatus">Diversion Open</span>
+                      </div>
+                      <div class="radarUnitFoot">
+                        <span id="radarCommCaseload">Crisis team on duty</span>
+                        <span class="mono">Open 08–17h</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2. Referral Summary Table -->
+                <div class="summaryCard">
+                  <div class="summaryCardHead">
+                    <h3 class="progressTitle">Referral Summary</h3>
+                    <span class="summaryCountBadge mono" id="summaryCountBadge">13 answered</span>
+                  </div>
+                  <div class="summaryList" id="summaryList">
+                    <div class="summaryRow" data-jump="ageBand">
+                      <span class="summaryKey">Age band</span>
+                      <span class="summaryVal" id="sumAge">Adult</span>
+                    </div>
+                    <div class="summaryRow" data-jump="sex">
+                      <span class="summaryKey">Sex</span>
+                      <span class="summaryVal" id="sumSex">Female</span>
+                    </div>
+                    <div class="summaryRow" data-jump="gender">
+                      <span class="summaryKey">Gender (bed)</span>
+                      <span class="summaryVal" id="sumGender">Female</span>
+                    </div>
+                    <div class="summaryRow" data-jump="homeRegion">
+                      <span class="summaryKey">Home region</span>
+                      <span class="summaryVal" id="sumRegion">South Metro</span>
+                    </div>
+                    <div class="summaryRow" data-jump="suburb">
+                      <span class="summaryKey">Suburb</span>
+                      <span class="summaryVal" id="sumSuburb">Fremantle</span>
+                    </div>
+                    <div class="summaryRow" data-jump="source">
+                      <span class="summaryKey">Source</span>
+                      <span class="summaryVal" id="sumSource">Community</span>
+                    </div>
+                    <div class="summaryRow" data-jump="urgency">
+                      <span class="summaryKey">Urgency</span>
+                      <span class="summaryVal" id="sumUrgency">Tier 2 (within 4h)</span>
+                    </div>
+                    <div class="summaryRow" data-jump="originSite">
+                      <span class="summaryKey">Origin site</span>
+                      <span class="summaryVal" id="sumOrigin">FSH</span>
+                    </div>
+                    <div class="summaryRow" data-jump="secureBed">
+                      <span class="summaryKey">Secure bed</span>
+                      <span class="summaryVal" id="sumSecure">Yes</span>
+                    </div>
+                    <div class="summaryRow" data-jump="involuntaryBed">
+                      <span class="summaryKey">Involuntary</span>
+                      <span class="summaryVal" id="sumInvol">Yes</span>
+                    </div>
+                    <div class="summaryRow" data-jump="highAcuity">
+                      <span class="summaryKey">High-acuity</span>
+                      <span class="summaryVal" id="sumAcuity">No</span>
+                    </div>
+                    <div class="summaryRow" data-jump="transport">
+                      <span class="summaryKey">Transport</span>
+                      <span class="summaryVal" id="sumTransport">Yes</span>
+                    </div>
+                    <div class="summaryRow" data-jump="destinations">
+                      <span class="summaryKey">Destinations</span>
+                      <span class="summaryVal" id="sumDests">Ward + ED</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 3. Clinical Pre-Flight Admission Gate Checks & Action Tools (Replaces image 1 govCard) -->
+                <div class="clinicalGateCard" id="clinicalGateCard">
+                  <div class="gateHead">
+                    <h3 class="gateTitle">Pre-Flight Admission Gates</h3>
+                    <span class="gateStatusPill complete" id="gateOverallPill">5 of 5 verified</span>
+                  </div>
+                  <div class="gateList">
+                    <div class="gateItem">
+                      <span class="gateDot good" id="gateDotLegal"></span>
+                      <div class="gateText">
+                        <span class="gateLabel">Legal Mandate</span>
+                        <span class="gateValue" id="gateValLegal">Voluntary · No Form 1A hold required</span>
+                      </div>
+                    </div>
+                    <div class="gateItem">
+                      <span class="gateDot good" id="gateDotBed"></span>
+                      <div class="gateText">
+                        <span class="gateLabel">Bed Allocation</span>
+                        <span class="gateValue" id="gateValBed">Female acute bed · Secure locked ward</span>
+                      </div>
+                    </div>
+                    <div class="gateItem">
+                      <span class="gateDot good" id="gateDotNursing"></span>
+                      <div class="gateText">
+                        <span class="gateLabel">Nursing Ratio</span>
+                        <span class="gateValue" id="gateValNursing">Standard acute ward ratio (1:4)</span>
+                      </div>
+                    </div>
+                    <div class="gateItem">
+                      <span class="gateDot good" id="gateDotTransport"></span>
+                      <div class="gateText">
+                        <span class="gateLabel">Conveyance &amp; Escort</span>
+                        <span class="gateValue" id="gateValTransport">Nurse escort requested</span>
+                      </div>
+                    </div>
+                    <div class="gateItem">
+                      <span class="gateDot good" id="gateDotCatchment"></span>
+                      <div class="gateText">
+                        <span class="gateLabel">Catchment Alignment</span>
+                        <span class="gateValue" id="gateValCatchment">SMHS In-Catchment: Fremantle matched</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Quick Clinical Utility Actions -->
+                  <div class="gateActions">
+                    <button
+                      type="button"
+                      class="gateActionBtn"
+                      id="btnPreviewReferral"
+                      title="Preview formatted clinical referral letterhead"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                        <path
+                          d="M4 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm1 2v10h6V3H5zm1 2h4v1H6V5zm0 2h4v1H6V7zm0 2h3v1H6V9z"
+                        />
+                      </svg>
+                      <span>Preview Referral</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="gateActionBtn"
+                      id="btnCopyHandover"
+                      title="Copy full clinical handover to clipboard"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                        <path
+                          d="M4 2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6z"
+                        />
+                        <path d="M2 5a1 1 0 0 1 1-1h1v1H3v9h6v-1h1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5z" />
+                      </svg>
+                      <span>Copy Handover</span>
+                    </button>
+                  </div>
+                  <div class="gateCoordinatorNotice">
+                    <span>Duty Coordinator: <b>Dr S. Chen</b> (State Bed Desk · Ext 4812)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4. Fixed Dispatch Panel (Permanently Anchored & Visible) -->
+              <div class="dispatchCard" id="dispatchCardFixed">
+                <button type="button" class="sendButton" id="btnSend">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                    <path
+                      d="M15.854.146a.5.5 0 0 1 .11.54l-5.8 14.5a.5.5 0 0 1-.928-.016L6.59 9.41 1.824 6.764a.5.5 0 0 1-.016-.928L16.308.036a.5.5 0 0 1 .546.11z"
+                    />
+                  </svg>
+                  <span>Send referral</span>
+                </button>
+                <p class="sendReason" id="sendReasonText">Ready to dispatch to Alma Street &amp; FSH ED.</p>
+              </div>
+            </aside>
+          </div>
+
+          <!-- Interactive Scenario Dock -->
+          <div class="scenarioDock" aria-label="Interactive test scenarios">
+            <span class="scenarioLabel">Scenarios:</span>
+            <button type="button" class="scenarioBtn" id="scenFremantle">In-Catchment (Fremantle)</button>
+            <button type="button" class="scenarioBtn" id="scenCottesloe">Contested (Cottesloe)</button>
+            <button type="button" class="scenarioBtn" id="scenConflict">Mutual Conflict (Bed + CMHT)</button>
+            <button type="button" class="scenarioBtn" id="scenUnlinked">Unlinked Intake</button>
+            <button type="button" class="scenarioBtn" id="scenReset">Reset</button>
+            <span style="flex: 1"></span>
+            <span class="scenarioLabel" style="color: var(--muted); font-weight: normal; font-size: 12px"
+              >Press
+              <kbd
+                style="
+                  background: var(--surface-3);
+                  border: 1px solid var(--line);
+                  border-radius: 3px;
+                  padding: 1px 4px;
+                  font-family: var(--mono);
+                "
+                >[</kbd
+              >
+              to toggle rail ·
+              <kbd
+                style="
+                  background: var(--surface-3);
+                  border: 1px solid var(--line);
+                  border-radius: 3px;
+                  padding: 1px 4px;
+                  font-family: var(--mono);
+                "
+                >T</kbd
+              >
+              theme</span
+            >
+          </div>
+
+          <!-- Sovereign Minimal Footer (Simulation Invariant FF8) -->
+          <footer class="sovereignDisclosureFooter" data-testid="ward-referral-governance">
+            <div>
+              <span class="prototypeBadge">Prototype</span>
+              <span>Synthetic clinical simulation data only. No real patient health information.</span>
+            </div>
+            <div class="regulatoryNote">WA MHA 2014 STATUTORY FLOW · RECONCILED AS AT 10:42</div>
+          </footer>
+
+          <!-- Reconcile Footer -->
+          <footer class="reconcileFoot">
+            <span>Invented figures, reconciled with each other, as at 10:42 · Operational Simulation Environment</span>
+            <span class="mono">All figures invented · Policy 2026.3</span>
+          </footer>
+        </main>
+      </div>
+    </div>
+
+    <!-- ─── Interactive JavaScript Behavior Engine ─────────────────────── -->
+    <script>
+      (function () {
+        // Theme switcher
+        const root = document.documentElement;
+        const themeBtns = document.querySelectorAll("[data-set-theme]");
+        themeBtns.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const t = btn.getAttribute("data-set-theme");
+            if (t === "auto") {
+              root.removeAttribute("data-theme");
+            } else {
+              root.setAttribute("data-theme", t);
+            }
+            localStorage.setItem("ward-flow-appearance", t);
+            themeBtns.forEach((b) => b.setAttribute("data-active", b === btn ? "true" : "false"));
+          });
+        });
+
+        // Rail toggle
+        const railToggle = document.getElementById("railToggle");
+        railToggle.addEventListener("click", () => {
+          const isClosed = root.getAttribute("data-rail") === "closed";
+          if (isClosed) {
+            root.removeAttribute("data-rail");
+            localStorage.setItem("ward-flow-rail", "open");
+          } else {
+            root.setAttribute("data-rail", "closed");
+            localStorage.setItem("ward-flow-rail", "closed");
+          }
+        });
+
+        // Person mode toggle (Linked vs Unlinked)
+        const btnLinked = document.getElementById("btnLinked");
+        const btnUnlinked = document.getElementById("btnUnlinked");
+        const personAvatar = document.getElementById("personAvatar");
+        const personName = document.getElementById("personName");
+        const personMrn = document.getElementById("personMrn");
+        const personLegal = document.getElementById("personLegal");
+        const personDemog = document.getElementById("personDemog");
+        const duplicateStatus = document.getElementById("duplicateStatus");
+        const personSubtitleText = document.getElementById("personSubtitleText");
+
+        btnLinked.addEventListener("click", () => {
+          btnLinked.setAttribute("data-active", "true");
+          btnUnlinked.setAttribute("data-active", "false");
+          personAvatar.textContent = "OS";
+          personAvatar.removeAttribute("data-mode");
+          personName.textContent = "Ottilie Sorrel";
+          personMrn.style.display = "inline-block";
+          personLegal.textContent = "Voluntary";
+          personLegal.setAttribute("data-tone", "voluntary");
+          personDemog.innerHTML =
+            "35 years · Adult cohort · Female · Fremantle · Fremantle Adult CMHS · <i>No GP recorded</i>";
+          duplicateStatus.style.display = "flex";
+          personSubtitleText.textContent = "Linked patient record";
+        });
+
+        btnUnlinked.addEventListener("click", () => {
+          btnUnlinked.setAttribute("data-active", "true");
+          btnLinked.setAttribute("data-active", "false");
+          personAvatar.textContent = "?";
+          personAvatar.setAttribute("data-mode", "unlinked");
+          personName.textContent = "Unlinked community intake";
+          personMrn.style.display = "none";
+          personLegal.textContent = "Unlinked";
+          personLegal.setAttribute("data-tone", "unlinked");
+          personDemog.innerHTML =
+            "No patient record linked. This referral can still be sent; no identity will be inferred.";
+          duplicateStatus.style.display = "none";
+          personSubtitleText.textContent = "Unlinked referral intake";
+        });
+
+        // Pill card selections (Age band, Sex, Gender, Source)
+        const pillCards = document.querySelectorAll(".pillCard");
+        pillCards.forEach((card) => {
+          card.addEventListener("click", () => {
+            const field = card.getAttribute("data-field");
+            const siblings = document.querySelectorAll(`.pillCard[data-field="${field}"]`);
+            siblings.forEach((s) => s.removeAttribute("data-selected"));
+            card.setAttribute("data-selected", "true");
+            updateSummary();
+          });
+        });
+
+        // Clinical switch toggles (Secure, Involuntary, Acuity, Transport)
+        const toggleOptions = document.querySelectorAll(".toggleOption");
+        toggleOptions.forEach((opt) => {
+          opt.addEventListener("click", () => {
+            const parent = opt.closest(".yesNoToggleGroup");
+            const field = parent.getAttribute("data-field");
+            const siblings = parent.querySelectorAll(".toggleOption");
+            siblings.forEach((s) => s.removeAttribute("data-selected"));
+            opt.setAttribute("data-selected", opt.getAttribute("data-val"));
+            updateSummary();
+          });
+        });
+
+        // Urgency cards
+        const urgencyCards = document.querySelectorAll(".urgencyCard");
+        urgencyCards.forEach((card) => {
+          card.addEventListener("click", () => {
+            urgencyCards.forEach((c) => c.removeAttribute("data-selected"));
+            card.setAttribute("data-selected", "true");
+            updateSummary();
+          });
+        });
+
+        // Thin Rail Facility Switcher Dropdown
+        const railServiceTrigger = document.getElementById("railServiceTrigger");
+        const railServiceMenu = document.getElementById("railServiceMenu");
+        const serviceBadgePill = document.querySelector(".serviceBadgePill");
+        const railServiceItems = document.querySelectorAll(".railServiceItem");
+
+        if (railServiceTrigger && railServiceMenu) {
+          railServiceTrigger.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const isShowing = railServiceMenu.style.display === "flex";
+            railServiceMenu.style.display = isShowing ? "none" : "flex";
+            railServiceTrigger.setAttribute("aria-expanded", isShowing ? "false" : "true");
+          });
+
+          railServiceItems.forEach((item) => {
+            item.addEventListener("click", (e) => {
+              e.stopPropagation();
+              const svc = item.getAttribute("data-service");
+              if (serviceBadgePill) serviceBadgePill.textContent = `${svc} ▾`;
+              railServiceItems.forEach((i) => i.removeAttribute("data-active"));
+              item.setAttribute("data-active", "true");
+              railServiceMenu.style.display = "none";
+              railServiceTrigger.setAttribute("aria-expanded", "false");
+            });
+          });
+
+          document.addEventListener("click", () => {
+            railServiceMenu.style.display = "none";
+            railServiceTrigger.setAttribute("aria-expanded", "false");
+          });
+        }
+
+        // Catchment Unit Breakdown Toggle
+        const btnTogglePsychBreakdown = document.getElementById("btnTogglePsychBreakdown");
+        const psychBreakdownContent = document.getElementById("psychBreakdownContent");
+
+        if (btnTogglePsychBreakdown && psychBreakdownContent) {
+          btnTogglePsychBreakdown.addEventListener("click", () => {
+            const isExpanded = btnTogglePsychBreakdown.getAttribute("aria-expanded") === "true";
+            btnTogglePsychBreakdown.setAttribute("aria-expanded", isExpanded ? "false" : "true");
+            psychBreakdownContent.style.display = isExpanded ? "none" : "flex";
+            const span = btnTogglePsychBreakdown.querySelector("span");
+            if (span) {
+              span.textContent = isExpanded
+                ? "View catchment unit availability & waitlist"
+                : "Hide catchment unit availability";
+            }
+          });
+        }
+
+        // Destination Checkboxes & Mutual Exclusivity Logic
+        const chkPsych = document.getElementById("chkPsych");
+        const chkEd = document.getElementById("chkEd");
+        const chkComm = document.getElementById("chkComm");
+        const cardPsych = document.getElementById("cardPsychWard");
+        const cardEd = document.getElementById("cardEd");
+        const cardComm = document.getElementById("cardComm");
+        const destConflictAlert = document.getElementById("destConflictAlert");
+        const step3Status = document.getElementById("step3Status");
+        const btnSend = document.getElementById("btnSend");
+        const sendReasonText = document.getElementById("sendReasonText");
+
+        function syncDestinations() {
+          const isPsych = chkPsych.checked;
+          const isEd = chkEd.checked;
+          const isComm = chkComm.checked;
+
+          if (cardPsych) cardPsych.setAttribute("data-active", isPsych ? "true" : "false");
+          if (cardEd) cardEd.setAttribute("data-active", isEd ? "true" : "false");
+          if (cardComm) cardComm.setAttribute("data-active", isComm ? "true" : "false");
+
+          // Mutual Exclusivity Check: Inpatient Bed and Community Team cannot be combined
+          const hasConflict = isPsych && isComm;
+
+          if (hasConflict) {
+            if (destConflictAlert) destConflictAlert.style.display = "flex";
+            if (btnSend) {
+              btnSend.disabled = true;
+              btnSend.setAttribute("data-disabled", "true");
+            }
+            if (sendReasonText) {
+              sendReasonText.textContent =
+                "Destination conflict: Inpatient Bed and Community Team cannot be combined on one referral.";
+              sendReasonText.style.color = "var(--warn)";
+            }
+            if (step3Status) {
+              step3Status.textContent = "Conflict";
+              step3Status.setAttribute("data-status", "warn");
+            }
+          } else {
+            if (destConflictAlert) destConflictAlert.style.display = "none";
+            if (sendReasonText) sendReasonText.style.color = "var(--muted)";
+            const count = [isPsych, isEd, isComm].filter(Boolean).length;
+            if (count === 0) {
+              if (btnSend) {
+                btnSend.disabled = true;
+                btnSend.setAttribute("data-disabled", "true");
+              }
+              if (sendReasonText) sendReasonText.textContent = "Select at least one destination to dispatch.";
+              if (step3Status) {
+                step3Status.textContent = "0 Selected";
+                step3Status.setAttribute("data-status", "warn");
+              }
+            } else {
+              if (btnSend) {
+                btnSend.disabled = false;
+                btnSend.removeAttribute("data-disabled");
+              }
+              const names = [];
+              if (isPsych) names.push("Alma Street Adult");
+              if (isEd) names.push("FSH ED");
+              if (isComm) names.push("Fremantle CMHT");
+              if (sendReasonText) sendReasonText.textContent = `Ready to dispatch to ${names.join(" & ")}.`;
+              if (step3Status) {
+                step3Status.textContent = `${count} Selected`;
+                step3Status.setAttribute("data-status", "complete");
+              }
+            }
+          }
+          updateSummary();
+        }
+
+        [chkPsych, chkEd, chkComm].forEach((chk) => {
+          if (chk) chk.addEventListener("change", syncDestinations);
+        });
+
+        // Click on header toggles checkbox
+        [
+          { header: document.getElementById("headerPsych"), chk: chkPsych },
+          { header: document.getElementById("headerEd"), chk: chkEd },
+          { header: document.getElementById("headerComm"), chk: chkComm },
+        ].forEach(({ header, chk }) => {
+          if (header && chk) {
+            header.addEventListener("click", (e) => {
+              if (e.target !== chk && !chk.contains(e.target) && e.target.tagName !== "LABEL") {
+                chk.checked = !chk.checked;
+                syncDestinations();
+              }
+            });
+          }
+        });
+
+        // History Textarea & Prompt Insertion
+        const historyArea = document.getElementById("historyArea");
+        const charCount = document.getElementById("charCount");
+        const promptChips = document.querySelectorAll(".promptChip");
+
+        historyArea.addEventListener("input", () => {
+          charCount.textContent = `${historyArea.value.length} / 2000 characters`;
+        });
+
+        promptChips.forEach((chip) => {
+          chip.addEventListener("click", () => {
+            const insert = chip.getAttribute("data-insert");
+            historyArea.value = (historyArea.value ? historyArea.value + "\n\n" : "") + insert;
+            historyArea.focus();
+            charCount.textContent = `${historyArea.value.length} / 2000 characters`;
+          });
+        });
+
+        // Suburb link helper
+        const linkUnknownSuburb = document.getElementById("linkUnknownSuburb");
+        const suburbInput = document.getElementById("suburbInput");
+        linkUnknownSuburb.addEventListener("click", (e) => {
+          e.preventDefault();
+          suburbInput.value = "No fixed address (WA)";
+          updateSummary();
+        });
+
+        // Dynamic Catchment Bed Radar (Live Beacon & Ward Capacity Engine)
+        function updateRadar() {
+          const region = document.getElementById("regionSelect")?.value || "south_metro";
+          const suburb = (suburbInput.value || "").toLowerCase().trim();
+
+          const radarScopeBadge = document.getElementById("radarScopeBadge");
+          const radarCatchmentName = document.getElementById("radarCatchmentName");
+          const radarWardName = document.getElementById("radarWardName");
+          const radarWardReady = document.getElementById("radarWardReady");
+          const radarWardDetail = document.getElementById("radarWardDetail");
+          const radarWardResponse = document.getElementById("radarWardResponse");
+          const radarEdName = document.getElementById("radarEdName");
+          const radarEdWait = document.getElementById("radarEdWait");
+          const radarEdMedian = document.getElementById("radarEdMedian");
+          const radarCommName = document.getElementById("radarCommName");
+
+          if (suburb.includes("cottesloe") || region === "north_metro") {
+            if (radarScopeBadge) radarScopeBadge.textContent = "NMHS · CROSS-CATCHMENT";
+            if (radarCatchmentName) radarCatchmentName.textContent = "North Metropolitan (NMHS)";
+            if (radarWardName) radarWardName.textContent = "Graylands / Frankland Centre";
+            if (radarWardReady) radarWardReady.textContent = "1 bed ready";
+            if (radarWardDetail) radarWardDetail.textContent = "1 ready · 2 held · 29 occ / 32 beds";
+            if (radarWardResponse) radarWardResponse.textContent = "52m ans";
+            if (radarEdName) radarEdName.textContent = "Sir Charles Gairdner ED";
+            if (radarEdWait) radarEdWait.textContent = "3 awaiting triage · 1 breach";
+            if (radarEdMedian) radarEdMedian.textContent = "44m wait";
+            if (radarCommName) radarCommName.textContent = "Inner City CMHT";
+          } else if (region === "east_metro") {
+            if (radarScopeBadge) radarScopeBadge.textContent = "EMHS · LIVE";
+            if (radarCatchmentName) radarCatchmentName.textContent = "East Metropolitan (EMHS)";
+            if (radarWardName) radarWardName.textContent = "Bentley Hospital Adult Unit";
+            if (radarWardReady) radarWardReady.textContent = "3 beds ready";
+            if (radarWardDetail) radarWardDetail.textContent = "3 ready · 1 held · 22 occ / 26 beds";
+            if (radarWardResponse) radarWardResponse.textContent = "35m ans";
+            if (radarEdName) radarEdName.textContent = "Royal Perth Hospital ED";
+            if (radarEdWait) radarEdWait.textContent = "2 awaiting triage · 0 breach";
+            if (radarEdMedian) radarEdMedian.textContent = "32m wait";
+            if (radarCommName) radarCommName.textContent = "City East CMHT";
+          } else {
+            if (radarScopeBadge) radarScopeBadge.textContent = "SMHS · LIVE";
+            if (radarCatchmentName) radarCatchmentName.textContent = "South Metropolitan (SMHS)";
+            if (radarWardName) radarWardName.textContent = "Alma Street Centre Adult";
+            if (radarWardReady) radarWardReady.textContent = "2 beds ready";
+            if (radarWardDetail) radarWardDetail.textContent = "4 ready · 3 held · 24 occ / 32 beds";
+            if (radarWardResponse) radarWardResponse.textContent = "41m ans";
+            if (radarEdName) radarEdName.textContent = "Fiona Stanley ED";
+            if (radarEdWait) radarEdWait.textContent = "1 awaiting triage · 0 breach";
+            if (radarEdMedian) radarEdMedian.textContent = "28m wait";
+            if (radarCommName) radarCommName.textContent = "Fremantle CMHT";
+          }
+        }
+
+        // Dynamic Pre-Flight Admission Gates (Clinical Check Engine)
+        function updateAdmissionGates() {
+          const selInvol = document.querySelector(
+            '.yesNoToggleGroup[data-field="involuntaryBed"] button[data-selected]',
+          );
+          const isInvol = selInvol?.getAttribute("data-val") === "yes" || personLegal?.textContent?.includes("Form 1A");
+
+          const selGender = document.querySelector('.pillCard[data-field="gender"][data-selected="true"]');
+          const genderVal = selGender?.getAttribute("data-val") || "female";
+
+          const selAcuity = document.querySelector('.yesNoToggleGroup[data-field="highAcuity"] button[data-selected]');
+          const isHighAcuity = selAcuity?.getAttribute("data-val") === "yes";
+
+          const selTransport = document.querySelector(
+            '.yesNoToggleGroup[data-field="transport"] button[data-selected]',
+          );
+          const isTransport = selTransport?.getAttribute("data-val") === "yes";
+
+          const suburb = (suburbInput.value || "").toLowerCase().trim();
+          const region = document.getElementById("regionSelect")?.value || "south_metro";
+          const isCottesloe = suburb.includes("cottesloe") || region === "north_metro";
+
+          // Gate 1: Legal Mandate
+          const gateValLegal = document.getElementById("gateValLegal");
+          const gateDotLegal = document.getElementById("gateDotLegal");
+          if (gateValLegal && gateDotLegal) {
+            if (isInvol) {
+              gateValLegal.textContent = "Form 1A hold required · Involuntary criteria";
+              gateDotLegal.className = "gateDot good";
+            } else {
+              gateValLegal.textContent = "Voluntary · No Form 1A hold required";
+              gateDotLegal.className = "gateDot good";
+            }
+          }
+
+          // Gate 2: Bed Allocation
+          const gateValBed = document.getElementById("gateValBed");
+          const gateDotBed = document.getElementById("gateDotBed");
+          if (gateValBed && gateDotBed) {
+            let bedText = "Female acute bed · Secure locked ward";
+            if (genderVal === "male") bedText = "Male acute bed · Secure locked ward";
+            else if (genderVal === "non_binary") bedText = "Individual room bed · Single ensuite";
+            else if (genderVal === "not_recorded") bedText = "Bed gender deliberate: unrecorded";
+            gateValBed.textContent = bedText;
+            gateDotBed.className = "gateDot good";
+          }
+
+          // Gate 3: Nursing Ratio
+          const gateValNursing = document.getElementById("gateValNursing");
+          const gateDotNursing = document.getElementById("gateDotNursing");
+          let nursingOk = true;
+          if (gateValNursing && gateDotNursing) {
+            if (isHighAcuity) {
+              gateValNursing.textContent = "High-acuity nursing (1:1 / 1:2) requested";
+              gateDotNursing.className = "gateDot warn";
+              nursingOk = false;
+            } else {
+              gateValNursing.textContent = "Standard acute ward ratio (1:4)";
+              gateDotNursing.className = "gateDot good";
+            }
+          }
+
+          // Gate 4: Conveyance & Escort
+          const gateValTransport = document.getElementById("gateValTransport");
+          const gateDotTransport = document.getElementById("gateDotTransport");
+          if (gateValTransport && gateDotTransport) {
+            if (isTransport) {
+              gateValTransport.textContent = "Nurse escort requested";
+              gateDotTransport.className = "gateDot good";
+            } else {
+              gateValTransport.textContent = "Independent / Carer conveyance";
+              gateDotTransport.className = "gateDot good";
+            }
+          }
+
+          // Gate 5: Catchment Alignment
+          const gateValCatchment = document.getElementById("gateValCatchment");
+          const gateDotCatchment = document.getElementById("gateDotCatchment");
+          let catchmentOk = true;
+          if (gateValCatchment && gateDotCatchment) {
+            if (isCottesloe) {
+              gateValCatchment.textContent = "Cross-catchment: Cottesloe (NMHS) - Endorsement req.";
+              gateDotCatchment.className = "gateDot warn";
+              catchmentOk = false;
+            } else {
+              gateValCatchment.textContent = `SMHS In-Catchment: ${suburbInput.value || "Fremantle"} matched`;
+              gateDotCatchment.className = "gateDot good";
+            }
+          }
+
+          // Overall Gate Pill
+          const gateOverallPill = document.getElementById("gateOverallPill");
+          if (gateOverallPill) {
+            if (nursingOk && catchmentOk) {
+              gateOverallPill.textContent = "5 of 5 verified";
+              gateOverallPill.className = "gateStatusPill complete";
+            } else {
+              const passCount = (nursingOk ? 1 : 0) + (catchmentOk ? 1 : 0) + 3;
+              gateOverallPill.textContent = `${passCount} of 5 verified · Review needed`;
+              gateOverallPill.className = "gateStatusPill warn";
+            }
+          }
+        }
+
+        // Summary sync & jump links
+        function updateSummary() {
+          let answeredCount = 0;
+
+          const selAge = document.querySelector('.pillCard[data-field="ageBand"][data-selected="true"]');
+          if (selAge) {
+            document.getElementById("sumAge").textContent =
+              selAge.querySelector("span")?.textContent || selAge.textContent.trim();
+            answeredCount++;
+          }
+
+          const selSex = document.querySelector('.pillCard[data-field="sex"][data-selected="true"]');
+          if (selSex) {
+            document.getElementById("sumSex").textContent = selSex.textContent.trim();
+            answeredCount++;
+          }
+
+          const selGender = document.querySelector('.pillCard[data-field="gender"][data-selected="true"]');
+          if (selGender) {
+            document.getElementById("sumGender").textContent = selGender.textContent.trim();
+            answeredCount++;
+          }
+
+          const selRegion = document.getElementById("regionSelect");
+          if (selRegion) {
+            document.getElementById("sumRegion").textContent = selRegion.options[selRegion.selectedIndex].text
+              .split("(")[0]
+              .trim();
+            answeredCount++;
+          }
+
+          const subVal = suburbInput.value.trim();
+          document.getElementById("sumSuburb").textContent = subVal || "Not answered";
+          if (subVal) answeredCount++;
+
+          const selSource = document.querySelector('.pillCard[data-field="source"][data-selected="true"]');
+          if (selSource) {
+            document.getElementById("sumSource").textContent = selSource.textContent.trim();
+            answeredCount++;
+          }
+
+          const selUrg = document.querySelector('.urgencyCard[data-selected="true"]');
+          if (selUrg) {
+            document.getElementById("sumUrgency").textContent =
+              selUrg.querySelector(".urgencyName")?.textContent || "Tier 2";
+            answeredCount++;
+          }
+
+          const selSite = document.getElementById("siteSelect");
+          if (selSite) {
+            document.getElementById("sumOrigin").textContent =
+              selSite.options[selSite.selectedIndex].text.split("(")[1]?.replace(")", "") || selSite.value;
+            answeredCount++;
+          }
+
+          const selSec = document.querySelector('.yesNoToggleGroup[data-field="secureBed"] button[data-selected]');
+          if (selSec) {
+            document.getElementById("sumSecure").textContent = selSec.textContent.trim();
+            answeredCount++;
+          }
+
+          const selInvol = document.querySelector(
+            '.yesNoToggleGroup[data-field="involuntaryBed"] button[data-selected]',
+          );
+          if (selInvol) {
+            document.getElementById("sumInvol").textContent = selInvol.textContent.trim();
+            answeredCount++;
+          }
+
+          const selAcuity = document.querySelector('.yesNoToggleGroup[data-field="highAcuity"] button[data-selected]');
+          if (selAcuity) {
+            document.getElementById("sumAcuity").textContent = selAcuity.textContent.trim();
+            answeredCount++;
+          }
+
+          const selTrans = document.querySelector('.yesNoToggleGroup[data-field="transport"] button[data-selected]');
+          if (selTrans) {
+            document.getElementById("sumTransport").textContent = selTrans.textContent.trim();
+            answeredCount++;
+          }
+
+          const dList = [];
+          if (chkPsych && chkPsych.checked) dList.push("Ward");
+          if (chkEd && chkEd.checked) dList.push("ED");
+          if (chkComm && chkComm.checked) dList.push("CMHT");
+          const sumDests = document.getElementById("sumDests");
+          if (sumDests) {
+            if (chkPsych && chkComm && chkPsych.checked && chkComm.checked) {
+              sumDests.textContent = "Conflict: Bed + CMHT";
+              sumDests.style.color = "var(--warn)";
+            } else {
+              sumDests.textContent = dList.join(" + ") || "None";
+              sumDests.style.color = "";
+              if (dList.length > 0) answeredCount++;
+            }
+          }
+
+          const summaryCountBadge = document.getElementById("summaryCountBadge");
+          if (summaryCountBadge) {
+            summaryCountBadge.textContent = `${answeredCount} answered`;
+          }
+
+          updateRadar();
+          updateAdmissionGates();
+        }
+
+        // Jump to section when clicking summary rows
+        const summaryRows = document.querySelectorAll(".summaryRow");
+        summaryRows.forEach((row) => {
+          row.addEventListener("click", () => {
+            const jumpKey = row.getAttribute("data-jump");
+            const targetEl = document.querySelector(`[data-field="${jumpKey}"]`) || document.getElementById(jumpKey);
+            if (targetEl) {
+              targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
+              targetEl.style.outline = "2px solid var(--accent)";
+              setTimeout(() => {
+                targetEl.style.outline = "";
+              }, 1500);
+            }
+          });
+        });
+
+        // Scenario Preset Buttons
+        const scenFremantle = document.getElementById("scenFremantle");
+        const scenCottesloe = document.getElementById("scenCottesloe");
+        const scenConflict = document.getElementById("scenConflict");
+        const scenUnlinked = document.getElementById("scenUnlinked");
+        const scenReset = document.getElementById("scenReset");
+        const badgePsychCatchment = document.getElementById("badgePsychCatchment");
+        const destSubHeading = document.getElementById("destSubHeading");
+
+        if (scenFremantle) {
+          scenFremantle.addEventListener("click", () => {
+            btnLinked.click();
+            suburbInput.value = "Fremantle";
+            document.getElementById("regionSelect").value = "south_metro";
+            if (destSubHeading) destSubHeading.textContent = "Fremantle";
+            if (badgePsychCatchment) {
+              badgePsychCatchment.textContent = "In Catchment: South Metro";
+              badgePsychCatchment.setAttribute("data-type", "catchment");
+            }
+            chkPsych.checked = true;
+            chkEd.checked = true;
+            chkComm.checked = false;
+            syncDestinations();
+            if (psychBreakdownContent) psychBreakdownContent.style.display = "none";
+            if (btnTogglePsychBreakdown) {
+              btnTogglePsychBreakdown.setAttribute("aria-expanded", "false");
+              const span = btnTogglePsychBreakdown.querySelector("span");
+              if (span) span.textContent = "View catchment unit availability & waitlist";
+            }
+            updateSummary();
+          });
+        }
+
+        if (scenCottesloe) {
+          scenCottesloe.addEventListener("click", () => {
+            btnLinked.click();
+            suburbInput.value = "Cottesloe";
+            document.getElementById("regionSelect").value = "north_metro";
+            if (destSubHeading) destSubHeading.textContent = "Cottesloe";
+            if (badgePsychCatchment) {
+              badgePsychCatchment.textContent = "Contested: NMHS / SMHS";
+              badgePsychCatchment.setAttribute("data-type", "info");
+            }
+            chkPsych.checked = true;
+            chkEd.checked = true;
+            chkComm.checked = false;
+            syncDestinations();
+            updateSummary();
+          });
+        }
+
+        if (scenConflict) {
+          scenConflict.addEventListener("click", () => {
+            chkPsych.checked = true;
+            chkComm.checked = true;
+            chkEd.checked = false;
+            syncDestinations();
+            if (destConflictAlert) destConflictAlert.scrollIntoView({ behavior: "smooth", block: "center" });
+            updateSummary();
+          });
+        }
+
+        if (scenUnlinked) {
+          scenUnlinked.addEventListener("click", () => {
+            btnUnlinked.click();
+            suburbInput.value = "No fixed address (WA)";
+            chkPsych.checked = true;
+            chkEd.checked = true;
+            chkComm.checked = false;
+            syncDestinations();
+            updateSummary();
+          });
+        }
+
+        if (scenReset) {
+          scenReset.addEventListener("click", () => {
+            btnLinked.click();
+            suburbInput.value = "Fremantle";
+            document.getElementById("regionSelect").value = "south_metro";
+            if (destSubHeading) destSubHeading.textContent = "Fremantle";
+            if (badgePsychCatchment) {
+              badgePsychCatchment.textContent = "In Catchment: South Metro";
+              badgePsychCatchment.setAttribute("data-type", "catchment");
+            }
+            chkPsych.checked = true;
+            chkEd.checked = true;
+            chkComm.checked = false;
+            syncDestinations();
+            if (psychBreakdownContent) psychBreakdownContent.style.display = "none";
+            if (btnTogglePsychBreakdown) {
+              btnTogglePsychBreakdown.setAttribute("aria-expanded", "false");
+              const span = btnTogglePsychBreakdown.querySelector("span");
+              if (span) span.textContent = "View catchment unit availability & waitlist";
+            }
+            updateSummary();
+          });
+        }
+
+        // Live input and selection listeners for form controls
+        suburbInput.addEventListener("input", updateSummary);
+        suburbInput.addEventListener("change", updateSummary);
+        const regionSelectEl = document.getElementById("regionSelect");
+        if (regionSelectEl) regionSelectEl.addEventListener("change", updateSummary);
+        const diagSelectEl = document.getElementById("diagSelect");
+        if (diagSelectEl) diagSelectEl.addEventListener("change", updateSummary);
+        const teamInputEl = document.getElementById("teamInput");
+        if (teamInputEl) teamInputEl.addEventListener("input", updateSummary);
+
+        // Modals Management
+        const dispatchModalBackdrop = document.getElementById("dispatchModalBackdrop");
+        const previewModalBackdrop = document.getElementById("previewModalBackdrop");
+        const btnCloseDispatchModal = document.getElementById("btnCloseDispatchModal");
+        const btnDismissDispatch = document.getElementById("btnDismissDispatch");
+        const btnClosePreviewModal = document.getElementById("btnClosePreviewModal");
+        const btnDismissPreview = document.getElementById("btnDismissPreview");
+        const btnConfirmAndSendFromPreview = document.getElementById("btnConfirmAndSendFromPreview");
+        const btnPreviewReferral = document.getElementById("btnPreviewReferral");
+        const btnCopyHandover = document.getElementById("btnCopyHandover");
+
+        function closeAllModals() {
+          if (dispatchModalBackdrop) dispatchModalBackdrop.style.display = "none";
+          if (previewModalBackdrop) previewModalBackdrop.style.display = "none";
+        }
+
+        [btnCloseDispatchModal, btnDismissDispatch].forEach((btn) => {
+          if (btn) btn.addEventListener("click", closeAllModals);
+        });
+
+        [btnClosePreviewModal, btnDismissPreview].forEach((btn) => {
+          if (btn) btn.addEventListener("click", closeAllModals);
+        });
+
+        if (dispatchModalBackdrop) {
+          dispatchModalBackdrop.addEventListener("click", (e) => {
+            if (e.target === dispatchModalBackdrop) closeAllModals();
+          });
+        }
+        if (previewModalBackdrop) {
+          previewModalBackdrop.addEventListener("click", (e) => {
+            if (e.target === previewModalBackdrop) closeAllModals();
+          });
+        }
+
+        // Preview Referral Letterhead
+        if (btnPreviewReferral) {
+          btnPreviewReferral.addEventListener("click", () => {
+            const name = personName?.textContent || "Ottilie Sorrel";
+            const mrn = personMrn?.style.display !== "none" ? personMrn?.textContent : "Unlinked";
+            const gender = document.getElementById("sumGender")?.textContent || "Female";
+            const suburb = suburbInput.value.trim() || "Fremantle";
+            const region = document.getElementById("sumRegion")?.textContent || "South Metro";
+            const legal = personLegal?.textContent || "Voluntary";
+            const urg = document.getElementById("sumUrgency")?.textContent || "Tier 2 · Urgent";
+            const src = document.getElementById("sumSource")?.textContent || "Community CMHT";
+            const dests = document.getElementById("sumDests")?.textContent || "Ward + ED";
+            const acuity =
+              document.getElementById("sumAcuity")?.textContent === "Yes"
+                ? "High-acuity (1:1 / 1:2)"
+                : "Standard ratio (1:4)";
+            const trans =
+              document.getElementById("sumTransport")?.textContent === "Yes"
+                ? "Nurse escort requested"
+                : "Independent conveyance";
+            const diagSel = document.getElementById("diagSelect");
+            const diagText = diagSel ? diagSel.options[diagSel.selectedIndex].text : "F20 Schizophrenia";
+            const team = document.getElementById("teamInput")?.value || "Fremantle Adult CMHT";
+
+            const prevDocName = document.getElementById("prevDocName");
+            if (prevDocName) prevDocName.textContent = name;
+            const prevDocMrn = document.getElementById("prevDocMrn");
+            if (prevDocMrn) prevDocMrn.textContent = mrn;
+            const prevDocGender = document.getElementById("prevDocGender");
+            if (prevDocGender) prevDocGender.textContent = gender;
+            const prevDocSuburb = document.getElementById("prevDocSuburb");
+            if (prevDocSuburb) prevDocSuburb.textContent = `${suburb} (${region})`;
+            const prevDocLegal = document.getElementById("prevDocLegal");
+            if (prevDocLegal) prevDocLegal.textContent = legal;
+            const prevDocUrgency = document.getElementById("prevDocUrgency");
+            if (prevDocUrgency) prevDocUrgency.textContent = urg;
+            const prevDocSource = document.getElementById("prevDocSource");
+            if (prevDocSource) prevDocSource.textContent = src;
+            const prevDocDests = document.getElementById("prevDocDests");
+            if (prevDocDests) prevDocDests.textContent = dests;
+            const prevDocAcuity = document.getElementById("prevDocAcuity");
+            if (prevDocAcuity) prevDocAcuity.textContent = acuity;
+            const prevDocTransport = document.getElementById("prevDocTransport");
+            if (prevDocTransport) prevDocTransport.textContent = trans;
+            const prevDocDiag = document.getElementById("prevDocDiag");
+            if (prevDocDiag) prevDocDiag.textContent = diagText;
+            const prevDocOrigin = document.getElementById("prevDocOrigin");
+            if (prevDocOrigin) prevDocOrigin.textContent = team;
+            const prevDocStory = document.getElementById("prevDocStory");
+            if (prevDocStory) prevDocStory.textContent = historyArea.value || "(No clinical narrative recorded)";
+
+            if (previewModalBackdrop) previewModalBackdrop.style.display = "flex";
+          });
+        }
+
+        if (btnConfirmAndSendFromPreview) {
+          btnConfirmAndSendFromPreview.addEventListener("click", () => {
+            closeAllModals();
+            if (btnSendEl && !btnSendEl.disabled) {
+              btnSendEl.click();
+            }
+          });
+        }
+
+        // Copy Handover to Clipboard
+        if (btnCopyHandover) {
+          btnCopyHandover.addEventListener("click", () => {
+            const name = personName?.textContent || "Ottilie Sorrel";
+            const mrn = personMrn?.style.display !== "none" ? personMrn?.textContent : "Unlinked";
+            const legal = personLegal?.textContent || "Voluntary";
+            const urg = document.getElementById("sumUrgency")?.textContent || "Tier 2 · Urgent";
+            const dests = document.getElementById("sumDests")?.textContent || "Ward + ED";
+            const suburb = suburbInput.value.trim() || "Fremantle";
+            const region = document.getElementById("sumRegion")?.textContent || "South Metro";
+            const textToCopy = `WARD FLOW CLINICAL HANDOVER\nPatient: ${name} (${mrn})\nLegal Status: ${legal}\nCatchment: ${suburb} (${region})\nUrgency: ${urg}\nDestinations: ${dests}\n\nCLINICAL NARRATIVE:\n${historyArea.value || "(None)"}`;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard
+                .writeText(textToCopy)
+                .then(() => {
+                  showD4Notice("Clinical handover text copied to clipboard.");
+                })
+                .catch(() => {
+                  showD4Notice("Clinical handover text copied to clipboard.");
+                });
+            } else {
+              showD4Notice("Clinical handover text copied to clipboard.");
+            }
+          });
+        }
+
+        // Global Keyboard Hotkeys
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") {
+            closeAllModals();
+            return;
+          }
+
+          const activeEl = document.activeElement;
+          const isEditing =
+            activeEl &&
+            (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.tagName === "SELECT");
+          if (isEditing) return;
+
+          if (e.key === "[") {
+            e.preventDefault();
+            railToggle.click();
+          } else if (e.key === "t" || e.key === "T") {
+            e.preventDefault();
+            const currentTheme = root.getAttribute("data-theme") || "dark";
+            const nextTheme = currentTheme === "dark" ? "light" : "dark";
+            const targetBtn = document.querySelector(`[data-set-theme="${nextTheme}"]`);
+            if (targetBtn) targetBtn.click();
+          } else if (e.key === "/") {
+            e.preventDefault();
+            const searchBox = document.querySelector(".searchBox");
+            if (searchBox) searchBox.focus();
+          } else if (e.key === "1") {
+            const el = document.getElementById("step1Heading");
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+          } else if (e.key === "2") {
+            const el = document.getElementById("step2Heading");
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+          } else if (e.key === "3") {
+            const el = document.getElementById("step3Heading");
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+          } else if (e.key === "4") {
+            const el = document.getElementById("step4Heading");
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        });
+
+        /* ─── D4 Owner Compliance Toast System ──────────────────────────────── */
+        function showD4Notice(msg = "Not wired in this prototype.") {
+          const container = document.getElementById("toastContainer");
+          if (!container) return;
+          const toast = document.createElement("div");
+          toast.className = "toastNotification";
+          toast.innerHTML = `
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent); flex-shrink: 0;">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>${msg}</span>
+          `;
+          container.appendChild(toast);
+          requestAnimationFrame(() => toast.classList.add("show"));
+          setTimeout(() => {
+            toast.classList.remove("show");
+            setTimeout(() => toast.remove(), 200);
+          }, 3000);
+        }
+
+        // D4 wiring for topbar actions and secondary actions
+        const d4Buttons = [
+          { id: "svcBtn", msg: "Service selector not wired in this prototype." },
+          { id: "actBtn", msg: "Activity drawer not wired in this prototype." },
+          { id: "tasksBtn", msg: "Tasks overview not wired in this prototype." },
+          { id: "btnReferOther", msg: "Refer someone else not wired in this prototype." },
+          { id: "btnViewProfile", msg: "Patient profile view not wired in this prototype." },
+        ];
+        d4Buttons.forEach(({ id, msg }) => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.addEventListener("click", () => showD4Notice(msg));
+          }
+        });
+
+        // Search input keydown handler
+        const searchBoxEl = document.querySelector(".searchBox");
+        if (searchBoxEl) {
+          searchBoxEl.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              showD4Notice("Universal search is not wired in this prototype.");
+            }
+          });
+        }
+
+        // Send Button Dispatch & Receipt Modal
+        const btnSendEl = document.getElementById("btnSend");
+        if (btnSendEl) {
+          btnSendEl.addEventListener("click", () => {
+            if (btnSendEl.disabled) return;
+            const refId = `WF-REF-20260921-${Math.floor(100 + Math.random() * 900)}`;
+            const receiptRefId = document.getElementById("receiptRefId");
+            if (receiptRefId) receiptRefId.textContent = refId;
+
+            const name = personName?.textContent || "Ottilie Sorrel";
+            const mrn = personMrn?.style.display !== "none" ? personMrn?.textContent : "Unlinked";
+            const receiptPatient = document.getElementById("receiptPatient");
+            if (receiptPatient) receiptPatient.textContent = `${name} (${mrn})`;
+
+            const receiptDestinations = document.getElementById("receiptDestinations");
+            if (receiptDestinations)
+              receiptDestinations.textContent = document.getElementById("sumDests")?.textContent || "Ward + ED";
+
+            const receiptUrgency = document.getElementById("receiptUrgency");
+            if (receiptUrgency)
+              receiptUrgency.textContent = document.getElementById("sumUrgency")?.textContent || "Tier 2 · Urgent";
+
+            const receiptCatchment = document.getElementById("receiptCatchment");
+            const regText =
+              document.getElementById("regionSelect")?.options[document.getElementById("regionSelect").selectedIndex]
+                ?.text || "South Metropolitan";
+            if (receiptCatchment) receiptCatchment.textContent = regText;
+
+            const receiptLegal = document.getElementById("receiptLegal");
+            if (receiptLegal) receiptLegal.textContent = `${personLegal?.textContent || "Voluntary"} (WA MHA 2014)`;
+
+            if (dispatchModalBackdrop) dispatchModalBackdrop.style.display = "flex";
+            showD4Notice("Referral successfully dispatched for State Access Coordinator triage. Pointers transmitted.");
+          });
+        }
+
+        // Dynamic Side Rail Viewport Height Adapter (Ensures Send Button is always docked & visible)
+        const sideRailEl = document.querySelector(".sideRail");
+        function updateRailHeight() {
+          if (!sideRailEl) return;
+          if (window.innerWidth <= 1080) {
+            sideRailEl.style.height = "auto";
+            return;
+          }
+          const top = sideRailEl.getBoundingClientRect().top;
+          const avail = Math.min(window.innerHeight - 88, window.innerHeight - top - 16);
+          sideRailEl.style.height = `${Math.max(400, avail)}px`;
+        }
+        window.addEventListener("scroll", updateRailHeight, { passive: true });
+        window.addEventListener("resize", updateRailHeight, { passive: true });
+
+        // Beforeunload protection for history (Rule D-11)
+        window.addEventListener("beforeunload", (e) => {
+          if (historyArea.value.trim().length > 0) {
+            e.preventDefault();
+            e.returnValue = "Leaving this page will lose uncommitted clinical history text.";
+          }
+        });
+
+        // Initial destination & summary sync
+        syncDestinations();
+        updateSummary();
+        updateRailHeight();
+      })();
+    </script>
+
+    <!-- ─── Dispatch Confirmation Modal ───────────────────────────────── -->
+    <div
+      id="dispatchModalBackdrop"
+      class="modalBackdrop"
+      style="display: none"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dispatchModalTitle"
+    >
+      <div class="modalDialog">
+        <div class="modalHeader successHeader">
+          <div class="successIconWrap" aria-hidden="true">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--good)"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+          </div>
+          <div class="modalTitleGroup">
+            <h3 class="modalTitle" id="dispatchModalTitle">Referral Dispatched</h3>
+            <span class="modalSub" id="dispatchModalTime">Transmitted at 10:42 · State Access Coordinator Triage</span>
+          </div>
+          <button type="button" class="modalCloseBtn" id="btnCloseDispatchModal" aria-label="Close dialog">✕</button>
+        </div>
+        <div class="modalBody">
+          <div class="receiptCard">
+            <div class="receiptRow">
+              <span class="receiptKey">Reference ID</span>
+              <span class="receiptVal mono" id="receiptRefId">WF-REF-20260921-042</span>
+            </div>
+            <div class="receiptRow">
+              <span class="receiptKey">Patient</span>
+              <span class="receiptVal" id="receiptPatient">Ottilie Sorrel (UM100014 · 35F)</span>
+            </div>
+            <div class="receiptRow">
+              <span class="receiptKey">Destinations</span>
+              <span class="receiptVal" id="receiptDestinations">Alma Street Adult, FSH ED</span>
+            </div>
+            <div class="receiptRow">
+              <span class="receiptKey">Urgency Level</span>
+              <span class="receiptVal" id="receiptUrgency">Tier 2 · Urgent (Within 4 hours)</span>
+            </div>
+            <div class="receiptRow">
+              <span class="receiptKey">Catchment Area</span>
+              <span class="receiptVal" id="receiptCatchment">South Metropolitan Health Service (SMHS)</span>
+            </div>
+            <div class="receiptRow">
+              <span class="receiptKey">Statutory Legal State</span>
+              <span class="receiptVal" id="receiptLegal">Voluntary (WA MHA 2014)</span>
+            </div>
+          </div>
+          <div class="nextStepsNotice">
+            <strong>Next Clinical Steps:</strong> Structured referral pointers have been transmitted to the receiving
+            units. The State Bed Desk coordinator will triage the bed queue. You can track this case in the Ward Flow
+            Referral Dashboard.
+          </div>
+        </div>
+        <div class="modalFooter">
+          <button type="button" class="btnModalSecondary" id="btnDismissDispatch">Close</button>
+          <a href="/mockups/ward-flow" class="btnModalPrimary" id="btnViewActiveReferrals">
+            <span>View Active Referrals</span>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+              <path
+                d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"
+              />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Clinical Referral Letterhead Preview Modal ─────────────────── -->
+    <div
+      id="previewModalBackdrop"
+      class="modalBackdrop"
+      style="display: none"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="previewModalTitle"
+    >
+      <div class="modalDialog modalLarge">
+        <div class="modalHeader">
+          <div class="modalTitleGroup">
+            <h3 class="modalTitle" id="previewModalTitle">Referral Letterhead Preview</h3>
+            <span class="modalSub">Standard Clinical Document Output · Electronic Handover</span>
+          </div>
+          <button type="button" class="modalCloseBtn" id="btnClosePreviewModal" aria-label="Close preview dialog">
+            ✕
+          </button>
+        </div>
+        <div class="modalBody">
+          <div class="letterheadDoc" id="letterheadDocContent">
+            <div class="letterheadTop">
+              <div>
+                <h2 class="letterheadOrg">GOVERNMENT OF WESTERN AUSTRALIA · HEALTH SERVICE</h2>
+                <div class="letterheadSub">Mental Health Inter-Facility Referral &amp; Triage Document</div>
+              </div>
+              <div class="letterheadMeta">
+                <div><b>Date:</b> 21 Sep 2026 10:42 AWST</div>
+                <div><b>Ref:</b> <span class="mono">WF-PREVIEW-DRAFT</span></div>
+                <div><b>Origin:</b> <span id="prevDocOrigin">FSH Adult CMHT</span></div>
+              </div>
+            </div>
+
+            <div class="letterheadSection">
+              <div class="docSectionHead">1. Patient Identification &amp; Demographics</div>
+              <div class="docGrid2">
+                <div><b>Name:</b> <span id="prevDocName">Ottilie Sorrel</span></div>
+                <div><b>UMRN:</b> <span class="mono" id="prevDocMrn">UM100014</span></div>
+                <div><b>Age / Cohort:</b> 35 years (Adult)</div>
+                <div><b>Gender (Bed Check):</b> <span id="prevDocGender">Female</span></div>
+                <div><b>Home Suburb / Region:</b> <span id="prevDocSuburb">Fremantle (SMHS)</span></div>
+                <div><b>Statutory Status:</b> <span id="prevDocLegal">Voluntary</span></div>
+              </div>
+            </div>
+
+            <div class="letterheadSection">
+              <div class="docSectionHead">2. Triage &amp; Target Destinations</div>
+              <div class="docGrid2">
+                <div><b>Urgency:</b> <span id="prevDocUrgency">Tier 2 (Urgent - Within 4h)</span></div>
+                <div><b>Referral Source:</b> <span id="prevDocSource">Community CMHT</span></div>
+                <div><b>Destinations:</b> <span id="prevDocDests">Psychiatric Inpatient Bed, FSH ED</span></div>
+                <div><b>High Acuity Nursing:</b> <span id="prevDocAcuity">Standard ratio</span></div>
+                <div><b>Transport Mode:</b> <span id="prevDocTransport">Nurse escort requested</span></div>
+                <div><b>Tentative Category:</b> <span id="prevDocDiag">F20 Schizophrenia &amp; psychotic</span></div>
+              </div>
+            </div>
+
+            <div class="letterheadSection">
+              <div class="docSectionHead">3. Clinical History Narrative &amp; Handover</div>
+              <div class="docClinicalStory" id="prevDocStory">
+                Seen at home this morning by the crisis team after her sister called. Three nights without sleep,
+                describing her flat as "being listened to". Stopped her olanzapine about two weeks ago, saying it made
+                her feel flat. Agreed to come in voluntarily but is anxious about the drive.
+              </div>
+            </div>
+
+            <div class="docFooterSection">
+              Transmitted via Sovereign Ward Flow Coordination Network · WA MHA 2014 Compliance Layer · Unsaved edits
+              not transmitted
+            </div>
+          </div>
+        </div>
+        <div class="modalFooter">
+          <button type="button" class="btnModalSecondary" id="btnDismissPreview">Close</button>
+          <button type="button" class="btnModalPrimary" id="btnConfirmAndSendFromPreview">
+            <span>Send Referral Now</span>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+              <path
+                d="M15.854.146a.5.5 0 0 1 .11.54l-5.8 14.5a.5.5 0 0 1-.928-.016L6.59 9.41 1.824 6.764a.5.5 0 0 1-.016-.928L16.308.036a.5.5 0 0 1 .546.11z"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Non-blocking Accessible Toast Notification (D4 Compliance) -->
+    <div id="toastContainer" class="toastContainer" aria-live="polite"></div>
+  </body>
+</html>

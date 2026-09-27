@@ -1,0 +1,269 @@
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("next/link", () => ({
+  default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
+import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
+import { EdScreen } from "@/components/ward-management/ed/ed-screen";
+import { OfficerScreen } from "@/components/ward-management/officer/officer-screen";
+import { WardModeWorkspace } from "@/components/ward-management/ward-management-modes";
+import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
+
+describe("Issue 3: Movement Drawer Browser Back Sync", () => {
+  function renderMovements() {
+    return render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <MovementsScreen />
+      </WardFlowProvider>,
+    );
+  }
+
+  function openDrawer(id: string) {
+    // Rows show the patient's name (owner, 26 Sept 2026); find them by their hidden key.
+    const rowNodes = document.querySelectorAll(`[data-ward-primitive='record-row'][data-record-key='${id}']`);
+    for (const node of rowNodes) {
+      const row = node;
+      if (!row) continue;
+      const trigger = within(row as HTMLElement).queryByRole("button", { name: /What is recorded/u });
+      if (trigger) {
+        fireEvent.click(trigger);
+        return screen.getByRole("dialog");
+      }
+    }
+    throw new Error(`could not find trigger for ${id}`);
+  }
+
+  it("pushes history state when MovementDrawer opens, and popstate closes drawer", () => {
+    const pushSpy = vi.spyOn(window.history, "pushState");
+    renderMovements();
+
+    const drawer = openDrawer("WF-001");
+    expect(drawer).toBeInTheDocument();
+    expect(pushSpy).toHaveBeenCalledWith({ wardMovementDetail: "WF-001" }, "");
+
+    // Fire popstate to simulate browser back
+    fireEvent(window, new PopStateEvent("popstate", { state: null }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("manual drawer close calls history.back() when history state exists, and setDetailId(null)", () => {
+    const backSpy = vi.spyOn(window.history, "back");
+    renderMovements();
+
+    const drawer = openDrawer("WF-001");
+    expect(drawer).toBeInTheDocument();
+
+    // Verify history state present
+    window.history.replaceState({ wardMovementDetail: "WF-001" }, "");
+
+    const closeBtn = within(drawer).getByRole("button", { name: "Close" });
+    fireEvent.click(closeBtn);
+
+    expect(backSpy).toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("manual drawer close without history state still closes drawer", () => {
+    const backSpy = vi.spyOn(window.history, "back");
+    renderMovements();
+
+    const drawer = openDrawer("WF-001");
+    expect(drawer).toBeInTheDocument();
+
+    window.history.replaceState(null, "");
+    backSpy.mockClear();
+
+    const closeBtn = within(drawer).getByRole("button", { name: "Close" });
+    fireEvent.click(closeBtn);
+
+    expect(backSpy).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+});
+
+describe("Issue 4: Dialog Focus Trap & Restoration", () => {
+  describe("ED Screen Transport Booking Dialog", () => {
+    it("captures trigger button on open and restores focus on closeTransportDialog", () => {
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <EdScreen edId="fsh-ed" />
+        </WardFlowProvider>,
+      );
+
+      // Find an available book transport button
+      const buttons = screen.getAllByRole("button", { name: /Transport booked/i });
+      const trigger = buttons.find((btn) => !btn.hasAttribute("aria-disabled"));
+      expect(trigger).toBeDefined();
+
+      trigger!.focus();
+      expect(document.activeElement).toBe(trigger);
+
+      fireEvent.click(trigger!);
+
+      // Dialog opens
+      const dialog = screen.getByRole("dialog", { name: /Log the transport booking/i });
+      expect(dialog).toBeInTheDocument();
+
+      // Cancel button inside dialog
+      const cancelBtn = within(dialog).getByRole("button", { name: "Cancel" });
+      fireEvent.click(cancelBtn);
+
+      // Dialog closed and focus restored to trigger button
+      expect(screen.queryByRole("dialog", { name: /Log the transport booking/i })).toBeNull();
+      expect(document.activeElement).toBe(trigger);
+    });
+  });
+
+  describe("Governance Registers Endorse Modal", () => {
+    it("captures trigger, sets initial focus, traps tab, and restores focus on close", () => {
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <WardModeWorkspace mode="governance" />
+        </WardFlowProvider>,
+      );
+
+      const trigger = document.getElementById("btnEndorseHeader") as HTMLElement;
+      expect(trigger).toBeInTheDocument();
+      trigger.focus();
+      expect(document.activeElement).toBe(trigger);
+
+      fireEvent.click(trigger);
+
+      const modal = document.getElementById("endorseModal") as HTMLElement;
+      expect(modal).toBeInTheDocument();
+      expect(modal.style.display).not.toBe("none");
+
+      // Initial focus inside modal (e.g. close button or first actionable element)
+      expect(modal.contains(document.activeElement)).toBe(true);
+
+      const focusable = Array.from(
+        modal.querySelectorAll<HTMLElement>(
+          'button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => !el.hasAttribute("disabled"));
+      expect(focusable.length).toBeGreaterThanOrEqual(2);
+
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+
+      // Shift+Tab on first element wraps to last
+      first.focus();
+      fireEvent.keyDown(modal, { key: "Tab", shiftKey: true });
+      expect(document.activeElement).toBe(last);
+
+      // Tab on last element wraps to first
+      fireEvent.keyDown(modal, { key: "Tab", shiftKey: false });
+      expect(document.activeElement).toBe(first);
+
+      // Close modal restores focus to trigger
+      const closeBtn = within(modal).getByRole("button", { name: "Close modal" });
+      fireEvent.click(closeBtn);
+
+      expect(modal.style.display).toBe("none");
+      expect(document.activeElement).toBe(trigger);
+    });
+
+    it("restores focus on Escape key dismissal of endorseModal", () => {
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <WardModeWorkspace mode="governance" />
+        </WardFlowProvider>,
+      );
+
+      const trigger = document.getElementById("btnEndorseHeader") as HTMLElement;
+      trigger.focus();
+      fireEvent.click(trigger);
+
+      const modal = document.getElementById("endorseModal") as HTMLElement;
+      expect(modal.style.display).not.toBe("none");
+
+      // Press Escape
+      fireEvent.keyDown(window, { key: "Escape" });
+
+      expect(modal.style.display).toBe("none");
+      expect(document.activeElement).toBe(trigger);
+    });
+  });
+
+  describe("Officer Screen Modals", () => {
+    it("captures trigger, sets initial focus, traps tab, and restores focus on close for formModal", () => {
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <OfficerScreen />
+        </WardFlowProvider>,
+      );
+
+      // Trigger form modal
+      const formButtons = screen.getAllByRole("button", { name: /Form/i });
+      expect(formButtons.length).toBeGreaterThan(0);
+      const trigger = formButtons[0]!;
+      trigger.focus();
+
+      fireEvent.click(trigger);
+
+      const dialog = screen.getByRole("dialog", { name: /Verification/i });
+      expect(dialog).toBeInTheDocument();
+
+      // Initial focus inside modal
+      expect(dialog.contains(document.activeElement)).toBe(true);
+
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => !el.hasAttribute("disabled"));
+
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+
+      // Shift+Tab from first wraps to last
+      first.focus();
+      fireEvent.keyDown(dialog, { key: "Tab", shiftKey: true });
+      expect(document.activeElement).toBe(last);
+
+      // Tab from last wraps to first
+      fireEvent.keyDown(dialog, { key: "Tab", shiftKey: false });
+      expect(document.activeElement).toBe(first);
+
+      // Close modal
+      const closeBtn = within(dialog).getByRole("button", { name: /Close form verification dialog/i });
+      fireEvent.click(closeBtn);
+
+      expect(screen.queryByRole("dialog", { name: /Verification/i })).toBeNull();
+      expect(document.activeElement).toBe(trigger);
+    });
+
+    it("restores focus on Escape key dismissal for officer modals", () => {
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <OfficerScreen />
+        </WardFlowProvider>,
+      );
+
+      const formButtons = screen.getAllByRole("button", { name: /Form/i });
+      const trigger = formButtons[0]!;
+      trigger.focus();
+      fireEvent.click(trigger);
+
+      expect(screen.getByRole("dialog", { name: /Verification/i })).toBeInTheDocument();
+
+      fireEvent.keyDown(window, { key: "Escape" });
+
+      expect(screen.queryByRole("dialog", { name: /Verification/i })).toBeNull();
+      expect(document.activeElement).toBe(trigger);
+    });
+  });
+});

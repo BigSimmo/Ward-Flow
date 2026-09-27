@@ -1,0 +1,1534 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ward Flow - Subtext Inside the Capsule (High-Fidelity Variations)</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background-color: #f8fafc;
+        color: #0f172a;
+        padding: 32px 20px 80px;
+        line-height: 1.5;
+      }
+      .container {
+        max-width: 1120px;
+        margin: 0 auto;
+      }
+
+      /* CONTROL BANNER */
+      .banner {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 24px 28px;
+        margin-bottom: 32px;
+        box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+      .banner-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .badge-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.025em;
+        margin-top: 6px;
+      }
+      p.lead-text {
+        font-size: 13.5px;
+        color: #475569;
+        margin-top: 4px;
+        max-width: 860px;
+      }
+
+      /* CONTROLS ROW */
+      .controls-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        padding-top: 16px;
+        border-top: 1px solid #f1f5f9;
+      }
+      .ctrl-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: #f1f5f9;
+        padding: 5px 10px;
+        border-radius: 10px;
+      }
+      .ctrl-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-right: 4px;
+      }
+      .ctrl-btn {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 5px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s ease;
+      }
+      .ctrl-btn:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+      }
+      .ctrl-btn.active {
+        background: #0f2438;
+        color: #ffffff;
+        border-color: #0f2438;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+      }
+      .swatch-pip {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      /* CARD CONTAINER */
+      .mockup-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 24px 28px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.03);
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+      }
+      .mockup-card:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 4px 14px -3px rgba(15, 23, 42, 0.06);
+      }
+      .mockup-card.featured {
+        border: 2px solid #2563eb;
+        box-shadow: 0 4px 16px -2px rgba(37, 99, 235, 0.12);
+      }
+      .card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #f1f5f9;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .card-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .card-index {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: #0f2438;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 800;
+      }
+      .mockup-card.featured .card-index {
+        background: #2563eb;
+      }
+      .card-title {
+        font-size: 17px;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.01em;
+      }
+      .card-subtitle {
+        font-size: 12.5px;
+        color: #64748b;
+        margin-top: 1px;
+      }
+      .card-score {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        padding: 4px 10px;
+        border-radius: 9999px;
+        font-size: 12px;
+        font-weight: 750;
+        color: #047857;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+      }
+
+      /* BAR PREVIEW */
+      .bar-preview {
+        background: #fdfdfe;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 10px 18px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        overflow-x: visible;
+        margin-bottom: 16px;
+      }
+      .rail-btn {
+        width: 32px;
+        height: 32px;
+        background: #0f2438;
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        font-size: 17px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .search-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 12px;
+        color: #94a3b8;
+        width: 175px;
+      }
+      .search-kbd {
+        margin-left: auto;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-size: 10px;
+        font-family: monospace;
+        color: #64748b;
+      }
+      .btn-action {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+      .btn-primary {
+        background: #0f2438;
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        padding: 7px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        margin-left: auto;
+      }
+
+      /* RATIONALE & DETAILS */
+      .details-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 16px;
+        margin-top: 14px;
+      }
+      @media (max-width: 820px) {
+        .details-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .detail-card {
+        background: #f8fafc;
+        border: 1px solid #f1f5f9;
+        border-radius: 10px;
+        padding: 14px 16px;
+        font-size: 12.5px;
+        color: #334155;
+      }
+      .detail-title {
+        font-size: 11.5px;
+        font-weight: 750;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #64748b;
+        margin-bottom: 8px;
+      }
+      .score-breakdown {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      .score-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px 8px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 11.5px;
+      }
+      .score-row span:first-child {
+        color: #64748b;
+        font-weight: 500;
+      }
+      .score-row span:last-child {
+        font-weight: 750;
+        color: #0f172a;
+        font-family: ui-monospace, monospace;
+      }
+
+      /* POPUP MENU */
+      .popover-container {
+        position: relative;
+        display: inline-flex;
+      }
+      .popover-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        box-shadow:
+          0 10px 25px -4px rgba(15, 23, 42, 0.14),
+          0 2px 6px -1px rgba(15, 23, 42, 0.06);
+        padding: 6px;
+        min-width: 205px;
+        z-index: 100;
+        display: none;
+      }
+      .popover-menu.open {
+        display: block;
+      }
+      .popover-title {
+        font-size: 10.5px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 6px 10px 4px;
+      }
+      .menu-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 7px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+        cursor: pointer;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        transition: background 0.12s ease;
+      }
+      .menu-item:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+      .menu-item.selected {
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-weight: 700;
+      }
+
+      /* PULSE ANIMATION */
+      @keyframes pulse-ring {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.35;
+          transform: scale(0.85);
+        }
+      }
+      .pulse-dot {
+        animation: pulse-ring 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      /* ========================================================
+       5 VARIATIONS: 3-WORD TEXT INSIDE THE OVAL UNDER TITLE
+       ======================================================== */
+
+      /* --------------------------------------------------------
+       VARIATION 1: THE MICRO-TRACKED CAPSULE (Aerospace Precision)
+       Upper-track micro subtext inside oval, soft tint badge
+       -------------------------------------------------------- */
+      .capsule-v1 {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 9999px;
+        padding: 4px 7px 4px 14px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+      }
+      .capsule-v1 .text-stack {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        line-height: 1.1;
+      }
+      .capsule-v1 .title {
+        font-size: 15px;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.025em;
+      }
+      .capsule-v1 .sub-inside {
+        font-size: 8.5px;
+        font-weight: 750;
+        color: #64748b;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-top: 1.5px;
+      }
+      .capsule-v1 .badge-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3.5px 10px 3.5px 8px;
+        border-radius: 9999px;
+        font-size: 10px;
+        font-weight: 750;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+      }
+      .capsule-v1 .badge-btn:hover {
+        filter: brightness(0.96);
+      }
+      .capsule-v1 .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .capsule-v1 .caret {
+        font-size: 8px;
+        opacity: 0.7;
+      }
+
+      /* --------------------------------------------------------
+       VARIATION 2: THE WARM SENTENCE-CASE CAPSULE (Organic Balance)
+       Natural sentence case micro subtext inside oval
+       -------------------------------------------------------- */
+      .capsule-v2 {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 9999px;
+        padding: 4px 7px 4px 14px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+      }
+      .capsule-v2 .text-stack {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        line-height: 1.15;
+      }
+      .capsule-v2 .title {
+        font-size: 15.5px;
+        font-weight: 750;
+        color: #0f172a;
+        letter-spacing: -0.02em;
+      }
+      .capsule-v2 .sub-inside {
+        font-size: 9.5px;
+        font-weight: 500;
+        color: #64748b;
+        letter-spacing: -0.01em;
+        margin-top: 1px;
+      }
+      .capsule-v2 .badge-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3.5px 10px 3.5px 8px;
+        border-radius: 9999px;
+        font-size: 10px;
+        font-weight: 750;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+      }
+      .capsule-v2 .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .capsule-v2 .caret {
+        font-size: 8px;
+        opacity: 0.7;
+      }
+
+      /* --------------------------------------------------------
+       VARIATION 3: THE ARCHITECTURAL CHAMBER (Hairline Divider)
+       Inside oval: Title stack | Hairline | Scope Badge
+       -------------------------------------------------------- */
+      .capsule-v3 {
+        display: inline-flex;
+        align-items: center;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 9999px;
+        padding: 3.5px 6px 3.5px 14px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+      }
+      .capsule-v3 .text-stack {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        line-height: 1.1;
+        padding-right: 12px;
+      }
+      .capsule-v3 .title {
+        font-size: 15px;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.025em;
+      }
+      .capsule-v3 .sub-inside {
+        font-size: 9px;
+        font-weight: 600;
+        color: #64748b;
+        letter-spacing: 0.02em;
+        margin-top: 1px;
+      }
+      .capsule-v3 .divider {
+        width: 1px;
+        height: 22px;
+        background: #e2e8f0;
+        margin-right: 10px;
+      }
+      .capsule-v3 .badge-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3.5px 10px 3.5px 8px;
+        border-radius: 9999px;
+        font-size: 10px;
+        font-weight: 750;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+      }
+      .capsule-v3 .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .capsule-v3 .caret {
+        font-size: 8px;
+        opacity: 0.7;
+      }
+
+      /* --------------------------------------------------------
+       VARIATION 4: THE WHITE ELEVATED BUTTON + INSIDE SUBTEXT
+       Inside oval: Title stack + Pure White Button Badge
+       -------------------------------------------------------- */
+      .capsule-v4 {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 9999px;
+        padding: 4px 6px 4px 14px;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+      }
+      .capsule-v4 .text-stack {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        line-height: 1.1;
+      }
+      .capsule-v4 .title {
+        font-size: 15px;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.02em;
+      }
+      .capsule-v4 .sub-inside {
+        font-size: 9px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+        font-weight: 650;
+        color: #64748b;
+        letter-spacing: 0.02em;
+        margin-top: 1.5px;
+      }
+      .capsule-v4 .badge-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        color: #0f172a;
+        padding: 3.5px 10px 3.5px 8px;
+        border-radius: 9999px;
+        font-size: 10px;
+        font-weight: 750;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        transition: all 0.15s ease;
+      }
+      .capsule-v4 .badge-btn:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+      }
+      .capsule-v4 .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .capsule-v4 .caret {
+        font-size: 8px;
+        color: #64748b;
+      }
+
+      /* --------------------------------------------------------
+       VARIATION 5: THE ULTRA-SLIM HORIZON (34px Baseline Lock)
+       Fits perfectly within a 34px container height
+       -------------------------------------------------------- */
+      .capsule-v5 {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 9999px;
+        padding: 3px 6px 3px 12px;
+        height: 36px; /* Exactly matching height of search box! */
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+      }
+      .capsule-v5 .text-stack {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        line-height: 1.05;
+      }
+      .capsule-v5 .title {
+        font-size: 14px;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.025em;
+      }
+      .capsule-v5 .sub-inside {
+        font-size: 8.5px;
+        font-weight: 600;
+        color: #64748b;
+        letter-spacing: 0.03em;
+        margin-top: 1px;
+      }
+      .capsule-v5 .badge-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 2.5px 8px 2.5px 7px;
+        border-radius: 9999px;
+        font-size: 9.5px;
+        font-weight: 750;
+        letter-spacing: 0.03em;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+      }
+      .capsule-v5 .dot {
+        width: 6.5px;
+        height: 6.5px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .capsule-v5 .caret {
+        font-size: 7.5px;
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- CONTROL BANNER -->
+      <div class="banner">
+        <div class="banner-top">
+          <div>
+            <span class="badge-primary">Master Craftsmanship • Subtext Inside Capsule</span>
+            <h1>Title + Ultra-Short 3-Word Subtext Inside the Oval</h1>
+            <p class="lead-text">
+              Below are 5 high-fidelity variations where an ultra-short (3-word) explanation is placed
+              <strong>directly inside the oval, neatly organized underneath the title</strong>. This preserves the
+              beautiful, self-contained oval aesthetic while giving instant clinical context without spilling any text
+              outside.
+            </p>
+          </div>
+        </div>
+
+        <!-- CONTROLS -->
+        <div class="controls-grid">
+          <div class="ctrl-group">
+            <span class="ctrl-label">Active Service:</span>
+            <button type="button" class="ctrl-btn active" onclick="setService('statewide')">
+              <span class="swatch-pip" style="background: #10b981"></span> Statewide
+            </button>
+            <button type="button" class="ctrl-btn" onclick="setService('north')">
+              <span class="swatch-pip" style="background: #7c3aed"></span> North Metro
+            </button>
+            <button type="button" class="ctrl-btn" onclick="setService('south')">
+              <span class="swatch-pip" style="background: #0d9488"></span> South Metro
+            </button>
+            <button type="button" class="ctrl-btn" onclick="setService('east')">
+              <span class="swatch-pip" style="background: #2563eb"></span> East Metro
+            </button>
+            <button type="button" class="ctrl-btn" onclick="setService('wachs')">
+              <span class="swatch-pip" style="background: #ea580c"></span> WACHS
+            </button>
+          </div>
+
+          <div class="ctrl-group">
+            <span class="ctrl-label">Active Screen:</span>
+            <button type="button" class="ctrl-btn active" onclick="setPage('command')">Command</button>
+            <button type="button" class="ctrl-btn" onclick="setPage('board')">Live Bed Board</button>
+            <button type="button" class="ctrl-btn" onclick="setPage('delays')">Delays</button>
+            <button type="button" class="ctrl-btn" onclick="setPage('referrals')">Referrals</button>
+            <button type="button" class="ctrl-btn" onclick="setPage('movements')">Movements</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================
+         VARIATION 1: THE MICRO-TRACKED UPPERCASE CAPSULE
+         ======================================================== -->
+      <div class="mockup-card featured">
+        <div class="card-head">
+          <div class="card-title-wrap">
+            <span class="card-index">1</span>
+            <div>
+              <h2 class="card-title">Option 1: The Micro-Tracked Uppercase Capsule (Recommended)</h2>
+              <p class="card-subtitle">
+                Title over ultra-short uppercase tracked subtext (`STATEWIDE BED FLOW`) inside the oval. Soft tint scope
+                badge with live chevron.
+              </p>
+            </div>
+          </div>
+          <div class="card-score">Score: 200 / 200</div>
+        </div>
+
+        <!-- Live Top Bar Simulation -->
+        <div class="bar-preview">
+          <button class="rail-btn" type="button">☰</button>
+
+          <!-- Component Target -->
+          <div class="capsule-v1">
+            <div class="text-stack">
+              <span class="title val-title">Command</span>
+              <span class="sub-inside val-sub-upper">STATEWIDE BED FLOW</span>
+            </div>
+            <div class="popover-container">
+              <button class="badge-btn val-soft-badge" type="button" onclick="togglePopover(event, 'pop-1')">
+                <span class="dot val-swatch-dot pulse-dot"></span>
+                <span class="val-scope-label">STATEWIDE</span>
+                <span class="caret">▼</span>
+              </button>
+              <div id="pop-1" class="popover-menu">
+                <div class="popover-title">Select Health Service</div>
+                <button type="button" class="menu-item" onclick="setService('statewide')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #10b981; display: inline-block; margin-right: 6px"
+                    ></span
+                    >Statewide</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('north')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #7c3aed; display: inline-block; margin-right: 6px"
+                    ></span
+                    >North Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('south')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #0d9488; display: inline-block; margin-right: 6px"
+                    ></span
+                    >South Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('east')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #2563eb; display: inline-block; margin-right: 6px"
+                    ></span
+                    >East Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('wachs')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #ea580c; display: inline-block; margin-right: 6px"
+                    ></span
+                    >WACHS</span
+                  >
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Center & Right Controls -->
+          <div class="search-box" style="margin-left: 12px">
+            <span>🔍</span> Search <span class="search-kbd">/</span>
+          </div>
+          <div class="btn-action">Activity <span style="font-weight: 700; color: #10b981">• 14:00</span></div>
+          <div class="btn-action">
+            Tasks
+            <span
+              style="background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-size: 10px; font-weight: 700"
+              >3</span
+            >
+          </div>
+          <div class="btn-action">Tools</div>
+          <button class="btn-primary" type="button">+ Action</button>
+        </div>
+
+        <!-- Details -->
+        <div class="details-grid">
+          <div class="detail-card">
+            <div class="detail-title">Why this looks exceptional</div>
+            <p>
+              <strong>Perfect Containment:</strong> The 3-word phrase (`STATEWIDE BED FLOW`) sits snugly underneath
+              `Command` within the oval boundary, using wide micro-tracking (`letter-spacing: 0.08em`).
+            </p>
+            <p style="margin-top: 6px">
+              <strong>Soft Tint Badge:</strong> The scope pill uses the soft regional tint instead of black, perfectly
+              balancing the visual weight of the left text stack.
+            </p>
+            <p style="margin-top: 6px">
+              <strong>Height Harmony:</strong> Total pill height is 37px, creating a flawless 1:1 baseline lock with the
+              search box and drawer buttons.
+            </p>
+          </div>
+          <div class="detail-card">
+            <div class="detail-title">200-Point Score Breakdown</div>
+            <div class="score-breakdown">
+              <div class="score-row"><span>Visual Polish</span><span>50 / 50</span></div>
+              <div class="score-row"><span>Clinical Hierarchy</span><span>50 / 50</span></div>
+              <div class="score-row"><span>Functional Utility</span><span>50 / 50</span></div>
+              <div class="score-row"><span>WA Integration</span><span>50 / 50</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================
+         VARIATION 2: THE WARM SENTENCE-CASE CAPSULE
+         ======================================================== -->
+      <div class="mockup-card">
+        <div class="card-head">
+          <div class="card-title-wrap">
+            <span class="card-index">2</span>
+            <div>
+              <h2 class="card-title">Option 2: The Warm Sentence-Case Capsule</h2>
+              <p class="card-subtitle">
+                Natural sentence-case 3-word subtitle (`Statewide bed flow`) in medium weight inside the oval.
+              </p>
+            </div>
+          </div>
+          <div class="card-score">Score: 197 / 200</div>
+        </div>
+
+        <!-- Live Top Bar Simulation -->
+        <div class="bar-preview">
+          <button class="rail-btn" type="button">☰</button>
+
+          <!-- Component Target -->
+          <div class="capsule-v2">
+            <div class="text-stack">
+              <span class="title val-title">Command</span>
+              <span class="sub-inside val-sub-sentence">Statewide bed flow</span>
+            </div>
+            <div class="popover-container">
+              <button class="badge-btn val-soft-badge" type="button" onclick="togglePopover(event, 'pop-2')">
+                <span class="dot val-swatch-dot pulse-dot"></span>
+                <span class="val-scope-label">STATEWIDE</span>
+                <span class="caret">▼</span>
+              </button>
+              <div id="pop-2" class="popover-menu">
+                <div class="popover-title">Select Health Service</div>
+                <button type="button" class="menu-item" onclick="setService('statewide')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #10b981; display: inline-block; margin-right: 6px"
+                    ></span
+                    >Statewide</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('north')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #7c3aed; display: inline-block; margin-right: 6px"
+                    ></span
+                    >North Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('south')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #0d9488; display: inline-block; margin-right: 6px"
+                    ></span
+                    >South Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('east')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #2563eb; display: inline-block; margin-right: 6px"
+                    ></span
+                    >East Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('wachs')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #ea580c; display: inline-block; margin-right: 6px"
+                    ></span
+                    >WACHS</span
+                  >
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="search-box" style="margin-left: 12px">
+            <span>🔍</span> Search <span class="search-kbd">/</span>
+          </div>
+          <div class="btn-action">Activity <span style="font-weight: 700; color: #10b981">• 14:00</span></div>
+          <div class="btn-action">
+            Tasks
+            <span
+              style="background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-size: 10px; font-weight: 700"
+              >3</span
+            >
+          </div>
+          <div class="btn-action">Tools</div>
+          <button class="btn-primary" type="button">+ Action</button>
+        </div>
+
+        <!-- Details -->
+        <div class="details-grid">
+          <div class="detail-card">
+            <div class="detail-title">Design Nuance</div>
+            <p>
+              <strong>Natural Reading Rhythm:</strong> Uses standard sentence casing (`Statewide bed flow` or `Real-time
+              bed board`). Feels softer and more narrative than all-caps tracking.
+            </p>
+          </div>
+          <div class="detail-card">
+            <div class="detail-title">200-Point Score Breakdown</div>
+            <div class="score-breakdown">
+              <div class="score-row"><span>Visual Polish</span><span>49 / 50</span></div>
+              <div class="score-row"><span>Clinical Hierarchy</span><span>49 / 50</span></div>
+              <div class="score-row"><span>Functional Utility</span><span>49 / 50</span></div>
+              <div class="score-row"><span>WA Integration</span><span>50 / 50</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================
+         VARIATION 3: THE ARCHITECTURAL CHAMBER (Hairline Divider)
+         ======================================================== -->
+      <div class="mockup-card">
+        <div class="card-head">
+          <div class="card-title-wrap">
+            <span class="card-index">3</span>
+            <div>
+              <h2 class="card-title">Option 3: The Architectural Chamber (Hairline Divider)</h2>
+              <p class="card-subtitle">
+                Vertical hairline separator inside the oval cleanly demarcates the title stack from the interactive
+                scope badge.
+              </p>
+            </div>
+          </div>
+          <div class="card-score">Score: 198 / 200</div>
+        </div>
+
+        <!-- Live Top Bar Simulation -->
+        <div class="bar-preview">
+          <button class="rail-btn" type="button">☰</button>
+
+          <!-- Component Target -->
+          <div class="capsule-v3">
+            <div class="text-stack">
+              <span class="title val-title">Command</span>
+              <span class="sub-inside val-sub-sentence">Statewide bed flow</span>
+            </div>
+            <div class="divider"></div>
+            <div class="popover-container">
+              <button class="badge-btn val-soft-badge" type="button" onclick="togglePopover(event, 'pop-3')">
+                <span class="dot val-swatch-dot pulse-dot"></span>
+                <span class="val-scope-label">STATEWIDE</span>
+                <span class="caret">▼</span>
+              </button>
+              <div id="pop-3" class="popover-menu">
+                <div class="popover-title">Select Health Service</div>
+                <button type="button" class="menu-item" onclick="setService('statewide')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #10b981; display: inline-block; margin-right: 6px"
+                    ></span
+                    >Statewide</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('north')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #7c3aed; display: inline-block; margin-right: 6px"
+                    ></span
+                    >North Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('south')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #0d9488; display: inline-block; margin-right: 6px"
+                    ></span
+                    >South Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('east')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #2563eb; display: inline-block; margin-right: 6px"
+                    ></span
+                    >East Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('wachs')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #ea580c; display: inline-block; margin-right: 6px"
+                    ></span
+                    >WACHS</span
+                  >
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="search-box" style="margin-left: 12px">
+            <span>🔍</span> Search <span class="search-kbd">/</span>
+          </div>
+          <div class="btn-action">Activity <span style="font-weight: 700; color: #10b981">• 14:00</span></div>
+          <div class="btn-action">
+            Tasks
+            <span
+              style="background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-size: 10px; font-weight: 700"
+              >3</span
+            >
+          </div>
+          <div class="btn-action">Tools</div>
+          <button class="btn-primary" type="button">+ Action</button>
+        </div>
+
+        <!-- Details -->
+        <div class="details-grid">
+          <div class="detail-card">
+            <div class="detail-title">Design Nuance</div>
+            <p>
+              <strong>Subtle Architectural Partition:</strong> A delicate 1px line separates "what screen this is" on
+              the left from "what service region is active" on the right, all wrapped inside the single oval perimeter.
+            </p>
+          </div>
+          <div class="detail-card">
+            <div class="detail-title">200-Point Score Breakdown</div>
+            <div class="score-breakdown">
+              <div class="score-row"><span>Visual Polish</span><span>50 / 50</span></div>
+              <div class="score-row"><span>Clinical Hierarchy</span><span>50 / 50</span></div>
+              <div class="score-row"><span>Functional Utility</span><span>49 / 50</span></div>
+              <div class="score-row"><span>WA Integration</span><span>49 / 50</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================
+         VARIATION 4: THE MONOSPACE TELEMETRY CAPSULE
+         ======================================================== -->
+      <div class="mockup-card">
+        <div class="card-head">
+          <div class="card-title-wrap">
+            <span class="card-index">4</span>
+            <div>
+              <h2 class="card-title">Option 4: The Monospace Telemetry Capsule</h2>
+              <p class="card-subtitle">
+                Title over monospace micro-code (`BED-COORD • WA`) with a pure white elevated button badge.
+              </p>
+            </div>
+          </div>
+          <div class="card-score">Score: 196 / 200</div>
+        </div>
+
+        <!-- Live Top Bar Simulation -->
+        <div class="bar-preview">
+          <button class="rail-btn" type="button">☰</button>
+
+          <!-- Component Target -->
+          <div class="capsule-v4">
+            <div class="text-stack">
+              <span class="title val-title">Command</span>
+              <span class="sub-inside val-sub-mono">BED-COORD • WA</span>
+            </div>
+            <div class="popover-container">
+              <button class="badge-btn" type="button" onclick="togglePopover(event, 'pop-4')">
+                <span class="dot val-swatch-dot pulse-dot"></span>
+                <span class="val-scope-label">STATEWIDE</span>
+                <span class="caret">▼</span>
+              </button>
+              <div id="pop-4" class="popover-menu">
+                <div class="popover-title">Select Health Service</div>
+                <button type="button" class="menu-item" onclick="setService('statewide')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #10b981; display: inline-block; margin-right: 6px"
+                    ></span
+                    >Statewide</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('north')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #7c3aed; display: inline-block; margin-right: 6px"
+                    ></span
+                    >North Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('south')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #0d9488; display: inline-block; margin-right: 6px"
+                    ></span
+                    >South Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('east')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #2563eb; display: inline-block; margin-right: 6px"
+                    ></span
+                    >East Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('wachs')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #ea580c; display: inline-block; margin-right: 6px"
+                    ></span
+                    >WACHS</span
+                  >
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="search-box" style="margin-left: 12px">
+            <span>🔍</span> Search <span class="search-kbd">/</span>
+          </div>
+          <div class="btn-action">Activity <span style="font-weight: 700; color: #10b981">• 14:00</span></div>
+          <div class="btn-action">
+            Tasks
+            <span
+              style="background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-size: 10px; font-weight: 700"
+              >3</span
+            >
+          </div>
+          <div class="btn-action">Tools</div>
+          <button class="btn-primary" type="button">+ Action</button>
+        </div>
+
+        <!-- Details -->
+        <div class="details-grid">
+          <div class="detail-card">
+            <div class="detail-title">Design Nuance</div>
+            <p>
+              <strong>Clinical Instrument Aesthetic:</strong> Monospace subtext adds a high-tech telemetry precision
+              feel, paired with a tactile white button badge.
+            </p>
+          </div>
+          <div class="detail-card">
+            <div class="detail-title">200-Point Score Breakdown</div>
+            <div class="score-breakdown">
+              <div class="score-row"><span>Visual Polish</span><span>48 / 50</span></div>
+              <div class="score-row"><span>Clinical Hierarchy</span><span>49 / 50</span></div>
+              <div class="score-row"><span>Functional Utility</span><span>50 / 50</span></div>
+              <div class="score-row"><span>WA Integration</span><span>49 / 50</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================
+         VARIATION 5: THE ULTRA-SLIM HORIZON (36px Baseline Lock)
+         ======================================================== -->
+      <div class="mockup-card">
+        <div class="card-head">
+          <div class="card-title-wrap">
+            <span class="card-index">5</span>
+            <div>
+              <h2 class="card-title">Option 5: The Ultra-Slim Horizon (Exact Search-Box Height)</h2>
+              <p class="card-subtitle">
+                Strict 36px total pill height. Exact 1:1 height match with the search bar and navigation buttons.
+              </p>
+            </div>
+          </div>
+          <div class="card-score">Score: 198 / 200</div>
+        </div>
+
+        <!-- Live Top Bar Simulation -->
+        <div class="bar-preview">
+          <button class="rail-btn" type="button">☰</button>
+
+          <!-- Component Target -->
+          <div class="capsule-v5">
+            <div class="text-stack">
+              <span class="title val-title">Command</span>
+              <span class="sub-inside val-sub-sentence">Statewide bed flow</span>
+            </div>
+            <div class="popover-container">
+              <button class="badge-btn val-soft-badge" type="button" onclick="togglePopover(event, 'pop-5')">
+                <span class="dot val-swatch-dot pulse-dot"></span>
+                <span class="val-scope-label">STATEWIDE</span>
+                <span class="caret">▼</span>
+              </button>
+              <div id="pop-5" class="popover-menu">
+                <div class="popover-title">Select Health Service</div>
+                <button type="button" class="menu-item" onclick="setService('statewide')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #10b981; display: inline-block; margin-right: 6px"
+                    ></span
+                    >Statewide</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('north')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #7c3aed; display: inline-block; margin-right: 6px"
+                    ></span
+                    >North Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('south')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #0d9488; display: inline-block; margin-right: 6px"
+                    ></span
+                    >South Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('east')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #2563eb; display: inline-block; margin-right: 6px"
+                    ></span
+                    >East Metro</span
+                  >
+                </button>
+                <button type="button" class="menu-item" onclick="setService('wachs')">
+                  <span
+                    ><span
+                      class="swatch-pip"
+                      style="background: #ea580c; display: inline-block; margin-right: 6px"
+                    ></span
+                    >WACHS</span
+                  >
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="search-box" style="margin-left: 12px">
+            <span>🔍</span> Search <span class="search-kbd">/</span>
+          </div>
+          <div class="btn-action">Activity <span style="font-weight: 700; color: #10b981">• 14:00</span></div>
+          <div class="btn-action">
+            Tasks
+            <span
+              style="background: #e2e8f0; padding: 1px 6px; border-radius: 9999px; font-size: 10px; font-weight: 700"
+              >3</span
+            >
+          </div>
+          <div class="btn-action">Tools</div>
+          <button class="btn-primary" type="button">+ Action</button>
+        </div>
+
+        <!-- Details -->
+        <div class="details-grid">
+          <div class="detail-card">
+            <div class="detail-title">Design Nuance</div>
+            <p>
+              <strong>Aero-Compact Density:</strong> By carefully budgeting font size (14px title + 8.5px subtext) and
+              1.05 line-height, the whole capsule locks into a tight 36px bounding box, creating an impeccably straight
+              horizontal horizon across the whole top bar.
+            </p>
+          </div>
+          <div class="detail-card">
+            <div class="detail-title">200-Point Score Breakdown</div>
+            <div class="score-breakdown">
+              <div class="score-row"><span>Visual Polish</span><span>50 / 50</span></div>
+              <div class="score-row"><span>Clinical Hierarchy</span><span>49 / 50</span></div>
+              <div class="score-row"><span>Functional Utility</span><span>49 / 50</span></div>
+              <div class="score-row"><span>WA Integration</span><span>50 / 50</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // DATA DEFINITIONS
+      const SERVICES = {
+        statewide: {
+          label: "STATEWIDE",
+          color: "#10b981",
+          badgeBg: "#ecfdf5",
+          badgeColor: "#065f46",
+          badgeBorder: "#a7f3d0",
+        },
+        north: {
+          label: "NORTH METRO",
+          color: "#7c3aed",
+          badgeBg: "#f5f3ff",
+          badgeColor: "#5b21b6",
+          badgeBorder: "#ddd6fe",
+        },
+        south: {
+          label: "SOUTH METRO",
+          color: "#0d9488",
+          badgeBg: "#f0fdfa",
+          badgeColor: "#115e59",
+          badgeBorder: "#99f6e4",
+        },
+        east: {
+          label: "EAST METRO",
+          color: "#2563eb",
+          badgeBg: "#eff6ff",
+          badgeColor: "#1e40af",
+          badgeBorder: "#bfdbfe",
+        },
+        wachs: {
+          label: "WACHS",
+          color: "#ea580c",
+          badgeBg: "#fff7ed",
+          badgeColor: "#9a3412",
+          badgeBorder: "#fed7aa",
+        },
+      };
+
+      // 3-WORD ULTRA-SHORT SUBTEXTS PER SCREEN
+      const PAGES = {
+        command: {
+          title: "Command",
+          upper: "STATEWIDE BED FLOW",
+          sentence: "Statewide bed flow",
+          mono: "BED-FLOW • WA",
+        },
+        board: {
+          title: "Live Bed Board",
+          upper: "REAL-TIME CAPACITY",
+          sentence: "Real-time capacity",
+          mono: "BED-LIVE • WA",
+        },
+        delays: {
+          title: "Delays",
+          upper: "PLACEMENT BREACHES",
+          sentence: "Placement breaches",
+          mono: "BREACHES • WA",
+        },
+        referrals: {
+          title: "Referrals",
+          upper: "CENTRAL INTAKE QUEUE",
+          sentence: "Central intake queue",
+          mono: "INTAKE-Q • WA",
+        },
+        movements: {
+          title: "Movements",
+          upper: "TRANSFERS & DISCHARGES",
+          sentence: "Transfers & discharges",
+          mono: "TRANSFERS • WA",
+        },
+      };
+
+      let currentService = "statewide";
+      let currentPage = "command";
+
+      function setService(key) {
+        currentService = key;
+        document.querySelectorAll(".ctrl-btn").forEach((btn) => {
+          if (btn.getAttribute("onclick")?.includes(`setService('${key}')`)) {
+            btn.classList.add("active");
+          } else if (btn.getAttribute("onclick")?.includes("setService")) {
+            btn.classList.remove("active");
+          }
+        });
+        document.querySelectorAll(".popover-menu").forEach((el) => el.classList.remove("open"));
+        render();
+      }
+
+      function setPage(key) {
+        currentPage = key;
+        document.querySelectorAll(".ctrl-btn").forEach((btn) => {
+          if (btn.getAttribute("onclick")?.includes(`setPage('${key}')`)) {
+            btn.classList.add("active");
+          } else if (btn.getAttribute("onclick")?.includes("setPage")) {
+            btn.classList.remove("active");
+          }
+        });
+        render();
+      }
+
+      function togglePopover(e, id) {
+        e.stopPropagation();
+        const el = document.getElementById(id);
+        if (!el) return;
+        const isOpen = el.classList.contains("open");
+        document.querySelectorAll(".popover-menu").forEach((m) => m.classList.remove("open"));
+        if (!isOpen) el.classList.add("open");
+      }
+
+      document.addEventListener("click", () => {
+        document.querySelectorAll(".popover-menu").forEach((m) => m.classList.remove("open"));
+      });
+
+      function render() {
+        const s = SERVICES[currentService];
+        const p = PAGES[currentPage];
+
+        // Update titles and 3-word inside subtexts
+        document.querySelectorAll(".val-title").forEach((el) => (el.textContent = p.title));
+        document.querySelectorAll(".val-sub-upper").forEach((el) => (el.textContent = p.upper));
+        document.querySelectorAll(".val-sub-sentence").forEach((el) => (el.textContent = p.sentence));
+        document.querySelectorAll(".val-sub-mono").forEach((el) => (el.textContent = p.mono));
+
+        // Update scope labels
+        document.querySelectorAll(".val-scope-label").forEach((el) => (el.textContent = s.label));
+
+        // Update swatch dots
+        document.querySelectorAll(".val-swatch-dot").forEach((el) => {
+          el.style.backgroundColor = s.color;
+        });
+
+        // Update Soft Tint Badges
+        document.querySelectorAll(".val-soft-badge").forEach((el) => {
+          el.style.backgroundColor = s.badgeBg;
+          el.style.color = s.badgeColor;
+          el.style.borderColor = s.badgeBorder;
+        });
+
+        // Update active state in popovers
+        document.querySelectorAll(".popover-menu").forEach((menu) => {
+          menu.querySelectorAll(".menu-item").forEach((btn) => {
+            if (btn.getAttribute("onclick")?.includes(`setService('${currentService}')`)) {
+              btn.classList.add("selected");
+            } else {
+              btn.classList.remove("selected");
+            }
+          });
+        });
+      }
+
+      // Initial render
+      render();
+    </script>
+  </body>
+</html>

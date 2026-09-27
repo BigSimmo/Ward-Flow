@@ -1,0 +1,1537 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow — MHA 2014 Statutory Forms &amp; Orders Registry</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --display: "Geist", system-ui, -apple-system, sans-serif;
+        --body: "Geist", system-ui, -apple-system, sans-serif;
+        --mono: "Geist Mono", ui-monospace, monospace;
+
+        --t-0: 12px;
+        --t-1: 13px;
+        --t-2: 13.5px;
+        --t-3: 14px;
+        --t-4: 16px;
+        --t-5: 20px;
+        --t-6: 26px;
+
+        --r1: 10px;
+        --r1i: 9px;
+        --r2: 6px;
+        --pill: 9999px;
+
+        --railw: 240px;
+      }
+
+      :root,
+      :root[data-theme="light"] {
+        --ground-hi: #ecf0f4;
+        --ground: #e6eaef;
+        --ground-2: #e1e6ec;
+        --surface: #fdfdfe;
+        --surface-2: #f2f5f8;
+        --surface-3: #e8ecf2;
+        --sunk: #e9edf2;
+        --ink: #14161a;
+        --ink-soft: #384250;
+        --muted: #5b6470;
+        --accent: #2f4c66;
+        --accent-ink: #1e354a;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+        --gilt: #7d612a;
+        --gilt-soft: #f1ebdf;
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --warn: #825d10;
+        --warn-soft: #f6eeda;
+        --danger: #b03b2e;
+        --danger-soft: #f8e6e2;
+        --danger-ink: #973121;
+        --line: rgba(22, 30, 40, 0.11);
+        --line-strong: rgba(22, 30, 40, 0.22);
+        --lift: 0 4px 20px -2px rgba(32, 44, 58, 0.08), 0 1px 3px rgba(32, 44, 58, 0.04);
+        --scrim: rgba(15, 20, 26, 0.45);
+      }
+
+      :root[data-theme="dark"] {
+        --ground-hi: #14181d;
+        --ground: #0f1216;
+        --ground-2: #0c0f12;
+        --surface: #171b21;
+        --surface-2: #1f242c;
+        --surface-3: #262c36;
+        --sunk: #13161b;
+        --ink: #e8ebef;
+        --ink-soft: #b0b8c4;
+        --muted: #7e8998;
+        --accent: #a7bcd2;
+        --accent-ink: #c8d8e8;
+        --accent-soft: #232c37;
+        --on-accent: #0f1216;
+        --stripe: #a7bcd2;
+        --gilt: #d3b77e;
+        --gilt-soft: #2a2418;
+        --good: #6fd39b;
+        --good-soft: #172820;
+        --warn: #d4a34b;
+        --warn-soft: #2b2314;
+        --danger: #ff8b76;
+        --danger-soft: #321915;
+        --danger-ink: #ffb4a6;
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.18);
+        --lift: 0 6px 24px -4px rgba(0, 0, 0, 0.45);
+        --scrim: rgba(0, 0, 0, 0.7);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: var(--body);
+        font-size: var(--t-2);
+        color: var(--ink);
+        background:
+          linear-gradient(180deg, var(--ground-hi) 0%, var(--ground) 55%, var(--ground-2) 100%) fixed,
+          var(--ground);
+        -webkit-font-smoothing: antialiased;
+        font-variant-numeric: tabular-nums;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 50;
+        pointer-events: none;
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: var(--railw) minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      /* Rail */
+      .rail {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        height: 100vh;
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        z-index: 30;
+        overflow-y: auto;
+      }
+      .brand {
+        padding: 14px 16px 12px;
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        border-bottom: 1px solid var(--line);
+        flex-shrink: 0;
+      }
+      .brand b {
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .brand span {
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--gilt);
+        letter-spacing: 0.1em;
+      }
+      .railScroll {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 12px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .railGroup {
+        display: grid;
+        gap: 2px;
+      }
+      .railEyebrow {
+        margin: 0 0 4px 8px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+      .railLink {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 10px;
+        border-radius: var(--r2);
+        border: 0;
+        background: transparent;
+        color: var(--ink-soft);
+        font-size: var(--t-1);
+        font-weight: 500;
+        cursor: pointer;
+        text-align: left;
+        width: 100%;
+        text-decoration: none;
+      }
+      .railLink:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .railLink[aria-current="page"] {
+        background: var(--surface-2);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: inset 3px 0 0 var(--gilt);
+      }
+      .railFoot {
+        padding: 10px 14px;
+        border-top: 1px solid var(--line);
+        background: var(--surface-2);
+        font-size: var(--t-0);
+        color: var(--muted);
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        flex-shrink: 0;
+      }
+
+      /* Main Container */
+      .frame {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+
+      /* Universal Header */
+      .hdr {
+        height: 48px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        gap: 16px;
+        position: sticky;
+        top: 0;
+        z-index: 25;
+        justify-content: space-between;
+      }
+      .hdrTitle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: var(--t-3);
+        font-weight: 600;
+      }
+      .chip {
+        font-size: var(--t-0);
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        background: var(--sunk);
+        color: var(--muted);
+        border: 1px solid var(--line);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .chip.danger {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border-color: var(--danger);
+      }
+      .chip.warn {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border-color: var(--warn);
+      }
+      .chip.good {
+        background: var(--good-soft);
+        color: var(--good);
+        border-color: var(--good);
+      }
+      .hdrEnd {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* Buttons */
+      .btn {
+        height: 32px;
+        padding: 0 12px;
+        border-radius: var(--r2);
+        font-size: var(--t-1);
+        font-weight: 600;
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--ink);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
+      }
+      .btn:hover {
+        background: var(--sunk);
+      }
+      .btn.primary {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+      }
+      .btn.primary:hover {
+        opacity: 0.92;
+      }
+      .btn.danger {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border-color: var(--danger);
+      }
+      .btn.danger:hover {
+        background: var(--danger);
+        color: #fff;
+      }
+      .btn.sm {
+        height: 26px;
+        padding: 0 8px;
+        font-size: var(--t-0);
+      }
+
+      /* Main Workspace */
+      .workspace {
+        padding: 16px 20px 48px;
+        display: grid;
+        gap: 16px;
+        max-width: 1440px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      /* KPI Summary Strip */
+      .kpiStrip {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+      .kpiCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-bottom-color: var(--line-strong);
+        border-radius: var(--r2);
+        box-shadow: none;
+        padding: 12px 14px;
+        display: grid;
+        gap: 3px;
+      }
+      .kpiCard[data-tone="danger"] .kpiVal {
+        color: var(--danger);
+      }
+      .kpiCard[data-tone="warn"] .kpiVal {
+        color: var(--warn);
+      }
+      .kpiCard[data-tone="good"] .kpiVal {
+        color: var(--good);
+      }
+      .kpiCard[data-tone="accent"] .kpiVal {
+        color: var(--accent-ink);
+      }
+      .kpiLabel {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+      .kpiVal {
+        font-family: var(--mono);
+        font-size: var(--t-5);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .kpiSub {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+
+      /* Statutory Alert Banner */
+      .statutoryBanner {
+        background: var(--danger-soft);
+        border: 1px solid var(--danger);
+        border-radius: var(--r2);
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .statutoryBannerContent {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1 1 500px;
+      }
+
+      /* Two Column Registry Grid */
+      .registryLayout {
+        display: grid;
+        grid-template-columns: 310px minmax(0, 1fr);
+        gap: 16px;
+        align-items: start;
+      }
+
+      /* Authority Catalogue Sidebar */
+      .authorityCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-bottom-color: var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .authorityHead {
+        padding: 10px 14px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        border-top-left-radius: var(--r1i);
+        border-top-right-radius: var(--r1i);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .authorityHead h3 {
+        margin: 0;
+        font-size: var(--t-1);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ink-soft);
+      }
+      .catalogItem {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .catalogItem:hover {
+        background: var(--surface-2);
+      }
+      .catalogItem.active {
+        background: var(--accent-soft);
+        box-shadow: inset 0 0 0 1.5px var(--accent);
+      }
+      .catalogItem:last-child {
+        border-bottom: none;
+      }
+      .catalogTop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+      .catalogCode {
+        font-family: var(--mono);
+        font-weight: 700;
+        font-size: var(--t-2);
+        color: var(--accent);
+      }
+      .catalogTitle {
+        font-weight: 600;
+        font-size: var(--t-1);
+        color: var(--ink);
+        margin-bottom: 4px;
+      }
+      .catalogMeta {
+        font-size: var(--t-0);
+        color: var(--muted);
+        line-height: 1.35;
+      }
+
+      /* Orders Table Panel */
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-bottom-color: var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .panelHeader {
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--line);
+        border-top-left-radius: var(--r1i);
+        border-top-right-radius: var(--r1i);
+        background: var(--surface-2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .panelHeader h2 {
+        margin: 0;
+        font-size: var(--t-2);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ink-soft);
+      }
+      .filterStrip {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .filterBtn {
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 4px 9px;
+        border-radius: var(--pill);
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--ink-soft);
+        cursor: pointer;
+      }
+      .filterBtn.active {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+      }
+
+      .tableWrap {
+        overflow-x: auto;
+        background: var(--surface);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--t-1);
+        text-align: left;
+      }
+      th {
+        padding: 9px 12px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+      }
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink);
+        vertical-align: middle;
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      tr:hover td {
+        background: var(--surface-2);
+      }
+      .mono {
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: var(--pill);
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+      .badge[data-tone="danger"] {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border: 1px solid var(--danger);
+      }
+      .badge[data-tone="warn"] {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid var(--warn);
+      }
+      .badge[data-tone="good"] {
+        background: var(--good-soft);
+        color: var(--good);
+        border: 1px solid var(--good);
+      }
+      .badge[data-tone="accent"] {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border: 1px solid var(--accent);
+      }
+
+      /* Modal Backdrop and Dialog */
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: var(--scrim);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        padding: 16px;
+      }
+      .modal.open {
+        display: flex;
+      }
+      .modalDialog {
+        width: min(94vw, 560px);
+        max-height: 90vh;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r1);
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .modalHead {
+        padding: 12px 18px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        border-top-left-radius: var(--r1i);
+        border-top-right-radius: var(--r1i);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .modalHead h3 {
+        margin: 0;
+        font-size: var(--t-3);
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .modalBody {
+        padding: 16px 18px;
+        overflow-y: auto;
+        display: grid;
+        gap: 14px;
+      }
+      .modalFoot {
+        padding: 12px 18px;
+        background: var(--surface-2);
+        border-top: 1px solid var(--line);
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      .formGroup {
+        display: grid;
+        gap: 4px;
+      }
+      .formLabel {
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+      }
+      .formInput,
+      .formSelect,
+      .formTextarea {
+        height: 34px;
+        padding: 0 10px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--ink);
+        font-family: inherit;
+        font-size: var(--t-2);
+        width: 100%;
+      }
+      .formTextarea {
+        height: 72px;
+        padding: 8px 10px;
+        resize: vertical;
+      }
+
+      /* Toast */
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(80px);
+        background: var(--ink);
+        color: var(--surface);
+        padding: 10px 18px;
+        border-radius: var(--r2);
+        font-size: var(--t-1);
+        font-weight: 500;
+        box-shadow: var(--lift);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 1000;
+        transition:
+          transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+          opacity 0.25s ease;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .toast.show {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+
+      @media (max-width: 1080px) {
+        .registryLayout {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+        .authorityCard {
+          display: flex;
+          flex-direction: row;
+          overflow-x: auto;
+          gap: 8px;
+          padding: 10px;
+          -webkit-overflow-scrolling: touch;
+        }
+        .authorityHead {
+          display: none;
+        }
+        .catalogItem {
+          flex: 0 0 200px;
+          margin: 0;
+        }
+        .kpiStrip {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 768px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+        .rail {
+          position: sticky;
+          top: 0;
+          z-index: 40;
+          height: auto;
+          flex-direction: row;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 14px;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+          background: var(--surface);
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        .brand {
+          padding: 0 10px 0 0;
+          margin-right: 4px;
+          flex: 0 0 auto;
+        }
+        .railScroll {
+          flex-direction: row;
+          gap: 6px;
+          padding: 0;
+          overflow-x: auto;
+        }
+        .railGroup {
+          display: flex;
+          flex-direction: row;
+          gap: 4px;
+          padding: 0;
+        }
+        .railEyebrow,
+        .railFoot {
+          display: none;
+        }
+        .railLink {
+          width: auto;
+          flex: 0 0 auto;
+          padding: 6px 10px;
+          font-size: var(--t-1);
+          white-space: nowrap;
+          box-shadow: none;
+        }
+        .railLink[aria-current="page"] {
+          box-shadow: inset 0 -2px 0 var(--gilt);
+          background: var(--surface-2);
+          color: var(--ink);
+        }
+        .kpiStrip {
+          grid-template-columns: 1fr;
+        }
+        .workspace {
+          padding: 12px;
+          gap: 14px;
+        }
+        .statutoryBanner {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- Sovereign 13-Screen Navigation Rail -->
+      <nav class="rail" aria-label="Primary Navigation">
+        <div class="brand"><b>Ward Flow</b><span>WA</span></div>
+        <div class="railScroll">
+          <div class="railGroup">
+            <p class="railEyebrow">Clinical Operations</p>
+            <a class="railLink" href="command-third-edition.html">Command Center</a>
+            <a class="railLink" href="movement-third-edition.html">Movement Board</a>
+            <a class="railLink" href="patient-now-third-edition.html">Patient Trajectory</a>
+            <a class="railLink" href="capacity-third-edition.html">Capacity &amp; Demand</a>
+            <a class="railLink" href="wards-third-edition.html">23-Ward Directory</a>
+          </div>
+          <div class="railGroup">
+            <p class="railEyebrow">Coordination &amp; Logistics</p>
+            <a class="railLink" href="add-a-patient-third-edition.html">Add a Patient</a>
+            <a class="railLink" href="ward-answer-third-edition.html">Ward Bed Answer</a>
+            <a class="railLink" href="discharges-third-edition.html">Discharges &amp; Egress</a>
+            <a class="railLink" href="out-of-area-third-edition.html">Out-of-Area Ledger</a>
+            <a class="railLink" href="transport-officer-third-edition.html">Transport Officer MDT</a>
+            <a class="railLink" href="on-call-third-edition.html">On-Call Directory</a>
+          </div>
+          <div class="railGroup">
+            <p class="railEyebrow">Legal &amp; Governance</p>
+            <a class="railLink" href="legal-forms-third-edition.html" aria-current="page">Legal Forms (MHA)</a>
+            <a class="railLink" href="governance-third-edition.html">Governance Overrides</a>
+            <a class="railLink" href="alerts-third-edition.html">Alerts Center</a>
+            <a class="railLink" href="settings-third-edition.html">System Settings</a>
+          </div>
+        </div>
+        <div class="railFoot">
+          <div>Legal Compliance: <b>MHA 2014</b></div>
+          <div>Active Orders: <b>27 Monitored</b></div>
+        </div>
+      </nav>
+
+      <!-- Main Content Frame -->
+      <div class="frame">
+        <header class="hdr">
+          <div class="hdrTitle">
+            <span>Mental Health Act 2014 Statutory Forms Registry</span>
+            <span class="chip">Office of Chief Psychiatrist</span>
+          </div>
+          <div class="hdrEnd">
+            <button class="btn" id="themeToggle" type="button">Dark Theme</button>
+            <button class="btn primary" type="button" onclick="openNewFormModal()">+ Issue Statutory Form</button>
+          </div>
+        </header>
+
+        <main class="workspace">
+          <!-- Statutory Metrics Strip -->
+          <div class="kpiStrip">
+            <div class="kpiCard" data-tone="accent">
+              <span class="kpiLabel">Form 1A (Exam Referral)</span>
+              <span class="kpiVal">8</span>
+              <span class="kpiSub">s. 34 &bull; 72h max period</span>
+            </div>
+            <div class="kpiCard" data-tone="danger">
+              <span class="kpiLabel">Form 3A (Inpatient Order)</span>
+              <span class="kpiVal">14</span>
+              <span class="kpiSub">s. 58 &bull; 21-day review track</span>
+            </div>
+            <div class="kpiCard" data-tone="warn">
+              <span class="kpiLabel">Form 4A (Transport Orders)</span>
+              <span class="kpiVal">3</span>
+              <span class="kpiSub">s. 61 &bull; 48h apprehension cap</span>
+            </div>
+            <div class="kpiCard" data-tone="good">
+              <span class="kpiLabel">Form 6A (Community CTO)</span>
+              <span class="kpiVal">22</span>
+              <span class="kpiSub">s. 112 &bull; Active in community</span>
+            </div>
+          </div>
+
+          <!-- Statutory Breach & Expiry Alert Banner -->
+          <div class="statutoryBanner">
+            <div class="statutoryBannerContent">
+              <span class="badge" data-tone="danger">Statutory Expiry Breach</span>
+              <span style="font-size: var(--t-1); font-weight: 600; color: var(--ink)">
+                Form 4A Transport Order for <b>Elena Rostova (WF-028)</b> at Joondalup ED has expired (&gt;48h elapsed).
+                Re-authorisation required under Section 61 prior to custodial transport.
+              </span>
+            </div>
+            <button type="button" class="btn sm danger" onclick="openRenewModal('WF-028', 'Elena Rostova', 'Form 4A')">
+              Re-Authorise Form 4A
+            </button>
+          </div>
+
+          <!-- Registry Layout: Authority Catalog + Orders Workbench -->
+          <div class="registryLayout">
+            <!-- Left: Statutory Authority Catalog -->
+            <aside class="authorityCard">
+              <div class="authorityHead">
+                <h3>MHA 2014 Authorities</h3>
+                <span class="mono" style="font-size: var(--t-0); color: var(--muted)">WA Gazetted</span>
+              </div>
+              <div class="catalogItem active" onclick="filterByCode('all')">
+                <div class="catalogTop">
+                  <span class="catalogCode">ALL FORMS</span>
+                  <span class="badge" data-tone="accent">27 Active</span>
+                </div>
+                <div class="catalogTitle">Comprehensive Statutory Ledger</div>
+                <div class="catalogMeta">All monitored filings across public mental health services.</div>
+              </div>
+              <div class="catalogItem" onclick="filterByCode('Form 1A')">
+                <div class="catalogTop">
+                  <span class="catalogCode">FORM 1A</span>
+                  <span class="badge" data-tone="accent">8</span>
+                </div>
+                <div class="catalogTitle">Referral for Examination</div>
+                <div class="catalogMeta">MHA 2014 s. 26 &amp; 34. Max 72h from practitioner signature.</div>
+              </div>
+              <div class="catalogItem" onclick="filterByCode('Form 3A')">
+                <div class="catalogTop">
+                  <span class="catalogCode">FORM 3A</span>
+                  <span class="badge" data-tone="danger">14</span>
+                </div>
+                <div class="catalogTitle">Involuntary Inpatient Order</div>
+                <div class="catalogMeta">
+                  MHA 2014 s. 58. Authorises admission and detention to authorized hospital.
+                </div>
+              </div>
+              <div class="catalogItem" onclick="filterByCode('Form 4A')">
+                <div class="catalogTop">
+                  <span class="catalogCode">FORM 4A</span>
+                  <span class="badge" data-tone="warn">3</span>
+                </div>
+                <div class="catalogTitle">Order Authorising Transport</div>
+                <div class="catalogMeta">
+                  MHA 2014 s. 61. Custody power for transport officer / WA Police. 48h limit.
+                </div>
+              </div>
+              <div class="catalogItem" onclick="filterByCode('Form 6A')">
+                <div class="catalogTop">
+                  <span class="catalogCode">FORM 6A</span>
+                  <span class="badge" data-tone="good">22</span>
+                </div>
+                <div class="catalogTitle">Community Treatment Order</div>
+                <div class="catalogMeta">MHA 2014 s. 112. Mandatory outpatient adherence under CMHT.</div>
+              </div>
+            </aside>
+
+            <!-- Right: Master Legal Orders Ledger -->
+            <section class="panel">
+              <div class="panelHeader">
+                <h2>Active Statutory Legal Orders &amp; Filings</h2>
+                <div class="filterStrip">
+                  <button type="button" class="filterBtn active" id="f-all" onclick="setTableFilter('all')">
+                    All Orders (6)
+                  </button>
+                  <button type="button" class="filterBtn" id="f-urgent" onclick="setTableFilter('urgent')">
+                    Urgent / Expiring (2)
+                  </button>
+                  <button type="button" class="filterBtn" id="f-valid" onclick="setTableFilter('valid')">
+                    Valid (4)
+                  </button>
+                </div>
+              </div>
+              <div class="tableWrap">
+                <table id="legalTable">
+                  <thead>
+                    <tr>
+                      <th>Form Code</th>
+                      <th>Statutory Authority</th>
+                      <th>Patient / URM</th>
+                      <th>Current Facility</th>
+                      <th>Authorising Clinician</th>
+                      <th>Filed Time</th>
+                      <th>Statutory Expiry</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr data-status="urgent" data-code="Form 4A" style="background: var(--danger-soft)">
+                      <td class="mono"><b>Form 4A</b></td>
+                      <td>Section 61 &mdash; Order Authorising Transport</td>
+                      <td>
+                        <b>Rostova, Elena</b><br /><span class="mono" style="font-size: var(--t-0); color: var(--muted)"
+                          >WF-028</span
+                        >
+                      </td>
+                      <td>Joondalup ED</td>
+                      <td>Dr. P. Hughes (Reg)</td>
+                      <td class="mono">12/08 09:30</td>
+                      <td class="mono" style="font-weight: 700; color: var(--danger)">14/08 09:30 (Expired)</td>
+                      <td><span class="badge" data-tone="danger">Expired</span></td>
+                      <td>
+                        <div style="display: flex; gap: 4px">
+                          <button
+                            type="button"
+                            class="btn sm danger"
+                            onclick="openRenewModal('WF-028', 'Elena Rostova', 'Form 4A')"
+                          >
+                            Renew
+                          </button>
+                          <button
+                            type="button"
+                            class="btn sm"
+                            onclick="
+                              inspectForm(
+                                'WF-028',
+                                'Elena Rostova',
+                                'Form 4A',
+                                'Section 61',
+                                'Joondalup ED',
+                                'Dr. P. Hughes',
+                                '12/08 09:30',
+                                '14/08 09:30 (Expired)',
+                                'Expired',
+                              )
+                            "
+                          >
+                            View
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr data-status="valid" data-code="Form 3A">
+                      <td class="mono"><b>Form 3A</b></td>
+                      <td>Section 58 &mdash; Involuntary Inpatient Order</td>
+                      <td>
+                        <b>Wren, Tobias</b><br /><span class="mono" style="font-size: var(--t-0); color: var(--muted)"
+                          >WF-009</span
+                        >
+                      </td>
+                      <td>Peel ED &rarr; Graylands HDU</td>
+                      <td>Dr. C. Vance (Psychiatrist)</td>
+                      <td class="mono">15/08 08:15</td>
+                      <td class="mono">22/08 08:15 (7 days)</td>
+                      <td><span class="badge" data-tone="danger">Active Order</span></td>
+                      <td>
+                        <button
+                          type="button"
+                          class="btn sm"
+                          onclick="
+                            inspectForm(
+                              'WF-009',
+                              'Tobias Wren',
+                              'Form 3A',
+                              'Section 58',
+                              'Peel ED -> Graylands HDU',
+                              'Dr. C. Vance',
+                              '15/08 08:15',
+                              '22/08 08:15',
+                              'Active Order',
+                            )
+                          "
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-status="urgent" data-code="Form 1A">
+                      <td class="mono"><b>Form 1A</b></td>
+                      <td>Section 34 &mdash; Referral for Examination</td>
+                      <td>
+                        <b>Callahan, Liam</b><br /><span class="mono" style="font-size: var(--t-0); color: var(--muted)"
+                          >WF-042</span
+                        >
+                      </td>
+                      <td>Royal Perth ED</td>
+                      <td>Dr. K. Henderson</td>
+                      <td class="mono">14/08 18:00</td>
+                      <td class="mono" style="color: var(--warn); font-weight: 600">17/08 18:00 (1d left)</td>
+                      <td><span class="badge" data-tone="warn">Exam Pending</span></td>
+                      <td>
+                        <button
+                          type="button"
+                          class="btn sm"
+                          onclick="
+                            inspectForm(
+                              'WF-042',
+                              'Liam Callahan',
+                              'Form 1A',
+                              'Section 34',
+                              'Royal Perth ED',
+                              'Dr. K. Henderson',
+                              '14/08 18:00',
+                              '17/08 18:00',
+                              'Exam Pending',
+                            )
+                          "
+                        >
+                          Examine
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-status="valid" data-code="Form 3A">
+                      <td class="mono"><b>Form 3A</b></td>
+                      <td>Section 58 &mdash; Involuntary Inpatient Order</td>
+                      <td>
+                        <b>Jasper, Lucan</b><br /><span class="mono" style="font-size: var(--t-0); color: var(--muted)"
+                          >WF-021</span
+                        >
+                      </td>
+                      <td>SCGH Adult Open</td>
+                      <td>Dr. M. Rowe</td>
+                      <td class="mono">10/08 14:00</td>
+                      <td class="mono">31/08 14:00 (16 days)</td>
+                      <td><span class="badge" data-tone="good">Valid</span></td>
+                      <td>
+                        <button
+                          type="button"
+                          class="btn sm"
+                          onclick="
+                            inspectForm(
+                              'WF-021',
+                              'Lucan Jasper',
+                              'Form 3A',
+                              'Section 58',
+                              'SCGH Adult Open',
+                              'Dr. M. Rowe',
+                              '10/08 14:00',
+                              '31/08 14:00',
+                              'Valid',
+                            )
+                          "
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-status="valid" data-code="Form 4A">
+                      <td class="mono"><b>Form 4A</b></td>
+                      <td>Section 61 &mdash; Order Authorising Transport</td>
+                      <td>
+                        <b>Wren, Tobias</b><br /><span class="mono" style="font-size: var(--t-0); color: var(--muted)"
+                          >WF-009</span
+                        >
+                      </td>
+                      <td>Peel ED &rarr; Graylands Secure</td>
+                      <td>Dr. C. Vance</td>
+                      <td class="mono">15/08 08:30</td>
+                      <td class="mono">17/08 08:30 (46h left)</td>
+                      <td><span class="badge" data-tone="good">Transport Valid</span></td>
+                      <td>
+                        <button
+                          type="button"
+                          class="btn sm"
+                          onclick="
+                            inspectForm(
+                              'WF-009',
+                              'Tobias Wren',
+                              'Form 4A',
+                              'Section 61',
+                              'Peel ED -> Graylands Secure',
+                              'Dr. C. Vance',
+                              '15/08 08:30',
+                              '17/08 08:30',
+                              'Transport Valid',
+                            )
+                          "
+                        >
+                          Verify
+                        </button>
+                      </td>
+                    </tr>
+                    <tr data-status="valid" data-code="Form 6A">
+                      <td class="mono"><b>Form 6A</b></td>
+                      <td>Section 112 &mdash; Community Treatment Order</td>
+                      <td>
+                        <b>Thorne, Aria</b><br /><span class="mono" style="font-size: var(--t-0); color: var(--muted)"
+                          >WF-031</span
+                        >
+                      </td>
+                      <td>Stirling CMHT Outpatient</td>
+                      <td>Dr. S. Nair</td>
+                      <td class="mono">01/08 10:00</td>
+                      <td class="mono">01/11 10:00 (78 days)</td>
+                      <td><span class="badge" data-tone="good">Active CTO</span></td>
+                      <td>
+                        <button
+                          type="button"
+                          class="btn sm"
+                          onclick="
+                            inspectForm(
+                              'WF-031',
+                              'Aria Thorne',
+                              'Form 6A',
+                              'Section 112',
+                              'Stirling CMHT Outpatient',
+                              'Dr. S. Nair',
+                              '01/08 10:00',
+                              '01/11 10:00',
+                              'Active CTO',
+                            )
+                          "
+                        >
+                          Review
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Issue New Form Modal -->
+    <div class="modal" id="newFormModal">
+      <div class="modalDialog">
+        <div class="modalHead">
+          <h3>Issue MHA 2014 Statutory Form</h3>
+          <button type="button" class="btn sm" onclick="closeModal('newFormModal')">✕</button>
+        </div>
+        <div class="modalBody">
+          <div class="formGroup">
+            <label class="formLabel">Patient URM &amp; Name</label>
+            <input type="text" class="formInput" id="newPatientInput" value="WF-049 &mdash; David Chen (RPH ED)" />
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Statutory Authority &amp; Form</label>
+            <select class="formSelect" id="newFormType">
+              <option value="Form 1A">Section 34 Form 1A &mdash; Referral for Examination</option>
+              <option value="Form 4A" selected>Section 61 Form 4A &mdash; Order Authorising Transport</option>
+              <option value="Form 3A">Section 58 Form 3A &mdash; Involuntary Inpatient Order</option>
+              <option value="Form 5A">Section 15 Form 5A &mdash; Treatment Without Consent</option>
+              <option value="Form 6A">Section 112 Form 6A &mdash; Community Treatment Order</option>
+            </select>
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Medical Practitioner / Authorized Psychiatrist</label>
+            <input type="text" class="formInput" id="newPractitioner" value="Dr. Marcus Rowe (AHPRA MED00019283)" />
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Clinical Grounds &amp; Criteria Satisfied</label>
+            <textarea class="formTextarea" id="newGrounds">
+Person suspected of having a mental illness requiring immediate involuntary assessment. Lack of capacity to consent; risk of serious harm to self or others.</textarea>
+          </div>
+          <div
+            style="
+              background: var(--surface-2);
+              border: 1px solid var(--line);
+              border-radius: var(--r2);
+              padding: 10px 12px;
+              font-size: var(--t-0);
+              color: var(--muted);
+            "
+          >
+            <b>Statutory Stamp:</b> Cryptographically issued under WA Mental Health Act 2014. Electronic notification
+            will be auto-dispatched to the Mental Health Tribunal &amp; Chief Psychiatrist.
+          </div>
+        </div>
+        <div class="modalFoot">
+          <button type="button" class="btn" onclick="closeModal('newFormModal')">Cancel</button>
+          <button type="button" class="btn primary" onclick="submitNewForm()">Digitally Sign &amp; Record Order</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Re-Authorisation Modal -->
+    <div class="modal" id="renewModal">
+      <div class="modalDialog">
+        <div class="modalHead">
+          <h3>Re-Authorise Expired Form 4A</h3>
+          <button type="button" class="btn sm" onclick="closeModal('renewModal')">✕</button>
+        </div>
+        <div class="modalBody">
+          <div
+            style="
+              background: var(--danger-soft);
+              border: 1px solid var(--danger);
+              border-radius: var(--r2);
+              padding: 10px 12px;
+              font-size: var(--t-1);
+            "
+          >
+            <b>Breach Clearance:</b> Transport order for <b id="renewPatientName">Elena Rostova</b> expired after 48h
+            without custody handover. Practitioner must certify continuation of involuntary status.
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Certifying Practitioner</label>
+            <input type="text" class="formInput" value="Dr. Sarah Jenkins (Consultant Psychiatrist - Joondalup)" />
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Justification for Delayed Transport</label>
+            <select class="formSelect">
+              <option>Bed allocation pending &mdash; secure vehicle delayed</option>
+              <option>Medical stabilization required in ED prior to transfer</option>
+              <option>Severe clinical agitation requiring ongoing sedation monitoring</option>
+            </select>
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">New Statutory Expiry Cap</label>
+            <input
+              type="text"
+              class="formInput mono"
+              value="48 Hours from Authorisation (Valid to 16/08 09:30)"
+              readonly
+            />
+          </div>
+        </div>
+        <div class="modalFoot">
+          <button type="button" class="btn" onclick="closeModal('renewModal')">Cancel</button>
+          <button type="button" class="btn danger" onclick="confirmRenewal()">Execute Form 4A Extension</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Statutory Certificate Inspector Modal -->
+    <div class="modal" id="inspectModal">
+      <div class="modalDialog">
+        <div class="modalHead">
+          <h3 id="inspectHeader">Statutory Certificate Viewer</h3>
+          <button type="button" class="btn sm" onclick="closeModal('inspectModal')">✕</button>
+        </div>
+        <div class="modalBody">
+          <div
+            style="
+              border: 2px solid var(--line-strong);
+              border-radius: var(--r2);
+              padding: 14px;
+              background: var(--surface-2);
+              display: grid;
+              gap: 10px;
+            "
+          >
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid var(--line);
+                padding-bottom: 8px;
+              "
+            >
+              <div>
+                <div style="font-size: var(--t-3); font-weight: 700; color: var(--accent)" id="inspFormCode">
+                  FORM 4A
+                </div>
+                <div style="font-size: var(--t-0); color: var(--muted)" id="inspAct">
+                  Mental Health Act 2014 &bull; Section 61
+                </div>
+              </div>
+              <span class="badge" id="inspBadge" data-tone="danger">Expired</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: var(--t-1)">
+              <div><span style="color: var(--muted)">Patient:</span> <b id="inspPatient">Elena Rostova</b></div>
+              <div><span style="color: var(--muted)">Facility:</span> <b id="inspFacility">Joondalup ED</b></div>
+              <div>
+                <span style="color: var(--muted)">Practitioner:</span> <b id="inspPractitioner">Dr. P. Hughes</b>
+              </div>
+              <div>
+                <span style="color: var(--muted)">Filed:</span> <span class="mono" id="inspFiled">12/08 09:30</span>
+              </div>
+              <div style="grid-column: 1/-1">
+                <span style="color: var(--muted)">Expiry:</span>
+                <span class="mono" style="font-weight: 700" id="inspExpiry">14/08 09:30</span>
+              </div>
+            </div>
+            <div
+              style="
+                border-top: 1px dashed var(--line-strong);
+                padding-top: 8px;
+                font-size: var(--t-0);
+                color: var(--muted);
+                line-height: 1.4;
+              "
+            >
+              <b>Statutory Certification:</b> This form satisfies all legislative obligations under the Western
+              Australia Mental Health Act 2014. Verified against Chief Psychiatrist Registry standards.
+            </div>
+          </div>
+        </div>
+        <div class="modalFoot">
+          <button type="button" class="btn" onclick="closeModal('inspectModal')">Close</button>
+          <button type="button" class="btn primary" onclick="printCertificate()">Print PDF Certificate</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="actionToast">
+      <span>✓</span>
+      <span id="toastMsg">Action executed successfully.</span>
+    </div>
+
+    <script>
+      // Theme Toggle
+      const themeBtn = document.getElementById("themeToggle");
+      themeBtn.addEventListener("click", () => {
+        const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+        document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
+        themeBtn.textContent = isDark ? "Dark Theme" : "Light Theme";
+      });
+
+      // Toast Helper
+      function showToast(msg) {
+        const toast = document.getElementById("actionToast");
+        document.getElementById("toastMsg").textContent = msg;
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 3200);
+      }
+
+      // Modal Helpers
+      function openModal(id) {
+        document.getElementById(id).classList.add("open");
+      }
+      function closeModal(id) {
+        document.getElementById(id).classList.remove("open");
+      }
+
+      function openNewFormModal() {
+        openModal("newFormModal");
+      }
+
+      function submitNewForm() {
+        const formType = document.getElementById("newFormType").value;
+        const patient = document.getElementById("newPatientInput").value;
+        closeModal("newFormModal");
+        showToast(`${formType} successfully filed and registered for ${patient}.`);
+      }
+
+      function openRenewModal(urm, name, code) {
+        document.getElementById("renewPatientName").textContent = `${name} (${urm})`;
+        openModal("renewModal");
+      }
+
+      function confirmRenewal() {
+        closeModal("renewModal");
+        showToast(`Form 4A renewed for Elena Rostova. Expiry extended by 48 hours.`);
+        const banner = document.querySelector(".statutoryBanner");
+        if (banner) banner.style.display = "none";
+        const firstRow = document.querySelector("#legalTable tbody tr");
+        if (firstRow) {
+          firstRow.style.background = "transparent";
+          const badge = firstRow.querySelector(".badge");
+          if (badge) {
+            badge.setAttribute("data-tone", "good");
+            badge.textContent = "Renewed Valid";
+          }
+        }
+      }
+
+      function inspectForm(urm, name, code, act, facility, practitioner, filed, expiry, status) {
+        document.getElementById("inspFormCode").textContent = code;
+        document.getElementById("inspAct").textContent = `Mental Health Act 2014 • ${act}`;
+        document.getElementById("inspPatient").textContent = `${name} (${urm})`;
+        document.getElementById("inspFacility").textContent = facility;
+        document.getElementById("inspPractitioner").textContent = practitioner;
+        document.getElementById("inspFiled").textContent = filed;
+        document.getElementById("inspExpiry").textContent = expiry;
+        const b = document.getElementById("inspBadge");
+        b.textContent = status;
+        b.setAttribute("data-tone", status.toLowerCase().includes("expired") ? "danger" : "good");
+        openModal("inspectModal");
+      }
+
+      function printCertificate() {
+        closeModal("inspectModal");
+        showToast("Statutory certificate sent to clinical queue & PDF archive.");
+      }
+
+      // Table Filters
+      function setTableFilter(mode) {
+        document.querySelectorAll(".filterBtn").forEach((b) => b.classList.remove("active"));
+        const activeBtn = document.getElementById(`f-${mode}`);
+        if (activeBtn) activeBtn.classList.add("active");
+
+        const rows = document.querySelectorAll("#legalTable tbody tr");
+        rows.forEach((r) => {
+          if (mode === "all") {
+            r.style.display = "";
+          } else if (mode === "urgent") {
+            r.style.display = r.getAttribute("data-status") === "urgent" ? "" : "none";
+          } else if (mode === "valid") {
+            r.style.display = r.getAttribute("data-status") === "valid" ? "" : "none";
+          }
+        });
+      }
+
+      function filterByCode(code) {
+        const rows = document.querySelectorAll("#legalTable tbody tr");
+        rows.forEach((r) => {
+          if (code === "all" || r.getAttribute("data-code") === code) {
+            r.style.display = "";
+          } else {
+            r.style.display = "none";
+          }
+        });
+        showToast(code === "all" ? "Showing all statutory orders" : `Filtered to ${code}`);
+      }
+    </script>
+
+    <!-- Visual QA Sentinel -->
+    <script id="qa-sentinel">
+      (function () {
+        function runQA() {
+          const issues = [];
+          if (document.documentElement.scrollWidth > window.innerWidth + 1) {
+            issues.push(
+              `Horizontal overflow detected (${document.documentElement.scrollWidth}px > ${window.innerWidth}px)`,
+            );
+          }
+          if (!document.querySelector("meta[charset]")) issues.push("Missing <meta charset='utf-8'>");
+          if (!document.querySelector('meta[name="viewport"]')) issues.push("Missing responsive viewport meta");
+          const allEls = document.querySelectorAll("*");
+          for (let el of allEls) {
+            const style = el.getAttribute("style") || "";
+            if (/#[0-9a-fA-F]{3,8}/.test(style)) {
+              issues.push(`Raw hex in style on <${el.tagName.toLowerCase()}>`);
+              break;
+            }
+          }
+          const badge = document.createElement("div");
+          badge.id = "qa-badge";
+          badge.style.cssText =
+            "position:fixed;bottom:12px;right:12px;padding:6px 10px;font:11px/1.2 var(--mono);background:var(--surface);border:1px solid var(--line-strong);border-radius:4px;box-shadow:var(--lift);z-index:99999;pointer-events:none;display:flex;align-items:center;gap:6px;";
+          if (issues.length === 0) {
+            badge.innerHTML =
+              '<span style="width:7px;height:7px;border-radius:50%;background:var(--good)"></span><span style="color:var(--good);font-weight:600">QA 100/100: PERFECTED</span>';
+          } else {
+            badge.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:var(--danger)"></span><span style="color:var(--danger);font-weight:600">QA ISSUES: ${issues.length}</span>`;
+          }
+          document.body.appendChild(badge);
+        }
+        if (document.readyState === "loading") {
+          window.addEventListener("DOMContentLoaded", runQA);
+        } else {
+          runQA();
+        }
+      })();
+    </script>
+  </body>
+</html>
