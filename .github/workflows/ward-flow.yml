@@ -1,0 +1,76 @@
+name: Ward Flow CI
+
+on:
+  pull_request:
+    branches: [main]
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ward-flow-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('{0}-{1}', github.event_name, github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  validate:
+    name: Ward Flow validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.15.0"
+          cache: npm
+      - name: Plan Ward scope
+        id: plan
+        env:
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/ward-ci-public/plan.mjs
+      - name: Check CI contracts
+        run: node scripts/ward-ci-public/check-contracts.mjs
+      - name: Check Ward document links
+        run: npm run check:ward-doc-links
+      - name: Install locked dependencies
+        id: install
+        if: ${{ !cancelled() && steps.plan.outputs.full == 'true' }}
+        run: npm ci --ignore-scripts
+      - name: Check Ward reference data
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run check:ward-reference
+      - name: Check Ward legal wording
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run check:ward-legal-language
+      - name: Typecheck
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node node_modules/typescript/bin/tsc -p tsconfig.typecheck.json --noEmit --incremental false
+      - name: Run reconciled unit suite
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run check:ward-expected-reds
+      - name: Install Chromium
+        id: chromium
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npx playwright install --with-deps chromium
+      - name: Run Ward browser journeys
+        if: ${{ !cancelled() && steps.chromium.outcome == 'success' }}
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.invalid
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder-ci-anon-key
+        run: npm run test:e2e:ward-journeys
+
+  required:
+    name: Ward Flow required
+    if: always()
+    needs: [validate]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require successful validation
+        env:
+          VALIDATION_RESULT: ${{ needs.validate.result }}
+        run: test "$VALIDATION_RESULT" = success
