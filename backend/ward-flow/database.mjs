@@ -44,11 +44,15 @@ export function createStore(client) {
     await ensureContainer();
     const url = `${base}/${encodeURIComponent(owner)}/${encodeURIComponent(id)}.json`;
     const result = await client.request("GET", url);
-    if (result.status === 404) return { url, record: null, etag: null };
+    if (result.status === 404 && result.headers.get("x-ms-error-code") === "BlobNotFound")
+      return { url, record: null, etag: null };
     if (result.status !== 200) throw new Error("Session read unavailable");
     const etag = result.headers.get("etag");
     if (!etag) throw new Error("Session version unavailable");
-    return { url, record: await result.json(), etag };
+    const record = await result.json();
+    if (!Number.isSafeInteger(record?.revision) || record.revision < 1)
+      throw new Error("Invalid stored session revision");
+    return { url, record, etag };
   }
   return {
     // Readiness contacts storage on every probe so a later outage is reported.
@@ -58,7 +62,7 @@ export function createStore(client) {
     },
     async save(owner, id, revision, payload) {
       const current = await get(owner, id);
-      if ((current.record?.revision ?? 0) !== revision) return null;
+      if ((current.record === null ? 0 : current.record.revision) !== revision) return null;
       const next = { revision: revision + 1, payload, updated_at: new Date().toISOString() };
       const result = await client.request("PUT", current.url, JSON.stringify(next), {
         "content-type": "application/json",

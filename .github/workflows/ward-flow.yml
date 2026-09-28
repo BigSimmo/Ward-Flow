@@ -33,7 +33,7 @@ jobs:
           WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: node scripts/ward-ci-public/plan.mjs
       - name: Check CI contracts
-        run: node scripts/ward-ci-public/check-contracts.mjs
+        run: node scripts/ward-ci-public/check-contracts.mjs && node --test tests/ward-backend-ci.node.mjs
       - name: Check Ward document links
         run: npm run check:ward-doc-links
       - name: Check Ward screen verification record
@@ -45,6 +45,15 @@ jobs:
         id: install
         if: ${{ !cancelled() && steps.plan.outputs.full == 'true' }}
         run: npm ci --ignore-scripts
+      - name: Install locked Ward backend dependencies
+        id: backend-install
+        if: ${{ !cancelled() && steps.plan.outputs.full == 'true' && hashFiles('backend/ward-flow/package.json') != '' }}
+        working-directory: backend/ward-flow
+        run: npm ci --ignore-scripts
+      - name: Run Ward backend tests
+        if: ${{ !cancelled() && steps.backend-install.outcome == 'success' }}
+        working-directory: backend/ward-flow
+        run: npm test
       - name: Check Ward reference data
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm run check:ward-reference

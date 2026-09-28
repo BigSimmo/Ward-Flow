@@ -1,5 +1,10 @@
 const STORAGE_ACCOUNT = "wflowdev7273a083aue";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const PLACEHOLDER_IDS = new Set([
+  "00000000-0000-0000-0000-000000000000",
+  "00000000-0000-4000-8000-000000000000",
+  "00000000-0000-4000-8000-000000000001",
+]);
 
 export function readConfig(env = process.env) {
   const required = [
@@ -9,7 +14,14 @@ export function readConfig(env = process.env) {
     "AzureWebJobsStorage__accountName",
   ];
   if (required.some((key) => !env[key]?.trim())) throw new Error("Missing backend configuration");
-  if (!UUID.test(env.AZURE_TENANT_ID) || !UUID.test(env.WARD_ALLOWED_OBJECT_ID))
+  const tenant = env.AZURE_TENANT_ID.toLowerCase();
+  const allowedObjectId = env.WARD_ALLOWED_OBJECT_ID.toLowerCase();
+  if (
+    !UUID.test(tenant) ||
+    !UUID.test(allowedObjectId) ||
+    PLACEHOLDER_IDS.has(tenant) ||
+    PLACEHOLDER_IDS.has(allowedObjectId)
+  )
     throw new Error("Invalid identity configuration");
   if (env.WARD_API_AUDIENCE !== "9b7b160d-9bc7-4712-b748-17ff3e70b706")
     throw new Error("Unapproved backend identity configuration");
@@ -27,9 +39,9 @@ export function readConfig(env = process.env) {
   const port = Number(env.PORT || 8787);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid port configuration");
   return {
-    tenant: env.AZURE_TENANT_ID,
+    tenant,
     audience: env.WARD_API_AUDIENCE,
-    allowedObjectId: env.WARD_ALLOWED_OBJECT_ID,
+    allowedObjectId,
     origin,
     host: env.HOST || "127.0.0.1",
     port,

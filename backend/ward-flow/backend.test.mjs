@@ -34,6 +34,41 @@ test("missing identity configuration fails closed", () => {
     assert.throws(() => readConfig(invalid), /configuration/);
   }
 });
+
+test("example and nil identity UUIDs fail closed", () => {
+  for (const [key, value] of [
+    ["AZURE_TENANT_ID", "00000000-0000-4000-8000-000000000000"],
+    ["WARD_ALLOWED_OBJECT_ID", "00000000-0000-4000-8000-000000000001"],
+    ["AZURE_TENANT_ID", "00000000-0000-0000-0000-000000000000"],
+  ])
+    assert.throws(() => readConfig({ ...environment, [key]: value }), /Invalid identity configuration/);
+});
+
+test("configured UUID casing matches lower-case Entra token claims", async () => {
+  const mixed = readConfig({
+    ...environment,
+    AZURE_TENANT_ID: environment.AZURE_TENANT_ID.toUpperCase(),
+    WARD_ALLOWED_OBJECT_ID: environment.WARD_ALLOWED_OBJECT_ID.toUpperCase(),
+  });
+  assert.equal(mixed.tenant, environment.AZURE_TENANT_ID);
+  assert.equal(mixed.allowedObjectId, environment.WARD_ALLOWED_OBJECT_ID);
+  const authenticate = await createAuthenticator(mixed, {
+    keys: {},
+    jose: {
+      jwtVerify: async (_token, _keys, options) => {
+        assert.equal(options.issuer, `https://login.microsoftonline.com/${environment.AZURE_TENANT_ID}/v2.0`);
+        return {
+          payload: {
+            tid: environment.AZURE_TENANT_ID,
+            oid: environment.WARD_ALLOWED_OBJECT_ID,
+            scp: "WardFlow.Access",
+          },
+        };
+      },
+    },
+  });
+  assert.equal(await authenticate("Bearer synthetic-token"), environment.WARD_ALLOWED_OBJECT_ID);
+});
 test("configuration refuses alternate storage accounts and wildcard origins", () => {
   assert.throws(() => readConfig({ ...environment, AzureWebJobsStorage__accountName: "other" }));
   assert.throws(() => readConfig({ ...environment, WARD_ALLOWED_ORIGIN: "*" }));
@@ -134,7 +169,7 @@ test("store scopes blobs by owner and uses conditional writes", async () => {
       if (method === "GET")
         return record
           ? new Response(JSON.stringify(record), { status: 200, headers: { etag } })
-          : new Response(null, { status: 404 });
+          : new Response(null, { status: 404, headers: { "x-ms-error-code": "BlobNotFound" } });
       if (record && headers["if-match"] !== etag) return new Response(null, { status: 412 });
       if (!record && headers["if-none-match"] !== "*") return new Response(null, { status: 412 });
       record = JSON.parse(value);
@@ -152,6 +187,47 @@ test("store scopes blobs by owner and uses conditional writes", async () => {
   );
   assert.equal(calls.find((call) => call.headers["if-none-match"])?.headers["if-none-match"], "*");
   assert.equal(calls.find((call) => call.headers["if-match"])?.headers["if-match"], '"second"');
+});
+
+test("only BlobNotFound is a missing session; a lost container is unavailable", async () => {
+  let errorCode = "BlobNotFound";
+  const store = createStore({
+    ...config.storage,
+    request: async (_method, url) =>
+      url.endsWith("?restype=container")
+        ? new Response(null, { status: 201 })
+        : new Response(null, { status: 404, headers: { "x-ms-error-code": errorCode } }),
+  });
+  assert.equal(await store.read(environment.WARD_ALLOWED_OBJECT_ID, id), null);
+  errorCode = "ContainerNotFound";
+  await assert.rejects(store.read(environment.WARD_ALLOWED_OBJECT_ID, id), /Session read unavailable/);
+  const handler = createHandler({
+    config,
+    store,
+    authenticate: async () => environment.WARD_ALLOWED_OBJECT_ID,
+  });
+  assert.equal((await handler(request())).status, 503);
+});
+
+test("malformed stored revision cannot be overwritten", async () => {
+  let putCount = 0;
+  for (const record of [{ payload: {} }, { revision: null, payload: {} }]) {
+    const store = createStore({
+      ...config.storage,
+      request: async (method, url) => {
+        if (url.endsWith("?restype=container")) return new Response(null, { status: 201 });
+        if (method === "GET")
+          return new Response(JSON.stringify(record), { status: 200, headers: { etag: '"existing"' } });
+        putCount += 1;
+        return new Response(null, { status: 201 });
+      },
+    });
+    await assert.rejects(
+      store.save(environment.WARD_ALLOWED_OBJECT_ID, id, 0, body.payload),
+      /Invalid stored session revision/,
+    );
+  }
+  assert.equal(putCount, 0);
 });
 
 test("readiness rejects a container that is being deleted", async () => {
