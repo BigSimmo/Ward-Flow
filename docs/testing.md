@@ -1,5 +1,10 @@
 # Testing and verification
 
+> [!NOTE]
+> **Historical Testing Reference (PsychSift Monorepo):**
+> This document describes testing infrastructure and verification gates developed for the PsychSift monorepo (including live Supabase/OpenAI test suites and migration checks).
+> In the dedicated **Ward Flow** repository (`BigSimmo/Ward-Flow`), Ward Flow uses synthetic browser/offline data. Day-to-day testing uses focused Vitest (`node scripts/run-vitest.mjs <files>`) and browser journeys (`npm run test:e2e:ward-journeys`). For current Ward Flow verification rules, see [`AGENTS.md`](../AGENTS.md) and [`docs/ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md).
+
 ## Safe local execution
 
 Repository verification uses a local run coordinator derived from Git's common directory, so admission covers every worktree for this repository. It permits at most two shared leases from different worktrees for fail-closed focused Vitest selections and read-only typechecking. Full Vitest, coverage, lint, build, Playwright, and live-provider tests retain exclusive admission. Unknown Vitest selections fail closed to exclusive mode, and shared Vitest runs are capped at two workers each.

@@ -1,5 +1,10 @@
 # Ward Flow — who holds what
 
+> [!NOTE]
+> **SUPERSEDED — 2026-09-28.**
+> This document records file custody and worktree allocations from August 2026 on the former monorepo.
+> Current file sign-outs and worktree procedures are tracked in `D:/Repos/ward-flow-logs/sign-out.md` per [`docs/ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md) and [`AGENTS.md`](../AGENTS.md).
+
 **This file exists because messages do not outlive the session that sent them.**
 
 I coordinated with four sessions all evening, recorded the conclusions, and lost the picture of who

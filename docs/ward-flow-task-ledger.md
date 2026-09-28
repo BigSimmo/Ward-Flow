@@ -1326,18 +1326,18 @@ before checking.** **It measured the LABEL and was about to conclude about the C
 
 > ⚠️ **These counts are as of 13 September.** The 16 September position is in §7.2.
 
-| Category                            |          Count          | Status Description                                                                                                                                                                                          |
-| ----------------------------------- | :---------------------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Canonical Issue Families**        |         **52**          | Unified canonical families (`WF-01` to `WF-52`) across all legacy reviews                                                                                                                                   |
-| — _Reproduced now_                  |           17            | Active code-level bugs re-verified directly in the live pinned worktree                                                                                                                                     |
-| — _Owner decision or real-use gate_ |           16            | Foundational clinical governance, privacy, statutory, or scoping decisions                                                                                                                                  |
-| — _Current source-supported_        |            8            | Architectural inconsistencies confirmed by current repository source                                                                                                                                        |
-| — _Partly resolved or narrowed_     |            6            | Historical defects partially addressed but retaining open residual scope                                                                                                                                    |
-| — _Reverification required_         |            4            | Boundary conditions requiring fresh whole-journey execution traces                                                                                                                                          |
-| — _Not reproduced now_              |            1            | Ephemeral environment/caching defect not observed in current build                                                                                                                                          |
-| **Targeted Vitest Suite**           |  12 files / 175 tests   | 174 pass / 1 fail (D-14 patient link default-deny guard at [`tests/ward-patient-link-default-deny.test.ts:255`](file:///d:/Worktrees/Database/ward-lead/tests/ward-patient-link-default-deny.test.ts#L255)) |
-| **Full Multi-Skill Suite**          | 462 files / 5,255 tests | 5,045 pass / 75 fail across 36 files (mapped into sub-issues below)                                                                                                                                         |
-| **Adversarial Audit Discoveries**   |            9            | Issues 74–82 integrated directly into corresponding canonical families                                                                                                                                      |
+| Category                            |          Count          | Status Description                                                                                                                                                     |
+| ----------------------------------- | :---------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Canonical Issue Families**        |         **52**          | Unified canonical families (`WF-01` to `WF-52`) across all legacy reviews                                                                                              |
+| — _Reproduced now_                  |           17            | Active code-level bugs re-verified directly in the live pinned worktree                                                                                                |
+| — _Owner decision or real-use gate_ |           16            | Foundational clinical governance, privacy, statutory, or scoping decisions                                                                                             |
+| — _Current source-supported_        |            8            | Architectural inconsistencies confirmed by current repository source                                                                                                   |
+| — _Partly resolved or narrowed_     |            6            | Historical defects partially addressed but retaining open residual scope                                                                                               |
+| — _Reverification required_         |            4            | Boundary conditions requiring fresh whole-journey execution traces                                                                                                     |
+| — _Not reproduced now_              |            1            | Ephemeral environment/caching defect not observed in current build                                                                                                     |
+| **Targeted Vitest Suite**           |  12 files / 175 tests   | 174 pass / 1 fail (D-14 patient link default-deny guard at [`tests/ward-patient-link-default-deny.test.ts:255`](../tests/ward-patient-link-default-deny.test.ts#L255)) |
+| **Full Multi-Skill Suite**          | 462 files / 5,255 tests | 5,045 pass / 75 fail across 36 files (mapped into sub-issues below)                                                                                                    |
+| **Adversarial Audit Discoveries**   |            9            | Issues 74–82 integrated directly into corresponding canonical families                                                                                                 |
 
 ---
 
@@ -1384,7 +1384,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **Issue 63 (Category 9)**: `WardFlowState` Contains Forbidden `admissions` Key / State Accounting Inconsistency. Reducer stores admissions in both state map and movements; `RECORD_EXAMINATION` with `outcome: 'revoked'` leaves orphaned admission entry while allocatable bed capacity is refunded ([`tests/ward-flow-reducer.test.ts:844`](file:///d:/Worktrees/Database/ward-lead/tests/ward-flow-reducer.test.ts#L844) `it.fails`).
+- **Issue 63 (Category 9)**: `WardFlowState` Contains Forbidden `admissions` Key / State Accounting Inconsistency. Reducer stores admissions in both state map and movements; `RECORD_EXAMINATION` with `outcome: 'revoked'` leaves orphaned admission entry while allocatable bed capacity is refunded ([`tests/ward-flow-reducer.test.ts:844`](../tests/ward-flow-reducer.test.ts#L844) `it.fails`).
 
 ---
 
@@ -1428,7 +1428,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **Acuity Staffing Invariant Violation**: `remainingHighAcuityCapacity` check in [`src/components/ward-management/ward-eligibility.ts:217-231`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-eligibility.ts#L217-L231) is enforced at candidate recommendation time but omitted in [`ward-admissions.ts:686-703`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-admissions.ts#L686-L703) when `PULL_PATIENT` executes, risking clinical bed allocation without requisite 1:1 nurse/patient ratio.
+- **Acuity Staffing Invariant Violation**: `remainingHighAcuityCapacity` check in [`src/components/ward-management/ward-eligibility.ts:217-231`](../src/components/ward-management/ward-eligibility.ts#L217-L231) is enforced at candidate recommendation time but omitted in [`ward-admissions.ts:686-703`](../src/components/ward-management/ward-admissions.ts#L686-L703) when `PULL_PATIENT` executes, risking clinical bed allocation without requisite 1:1 nurse/patient ratio.
 
 ---
 
@@ -1450,7 +1450,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **Issue 80 (Category 10)**: Transport Cancellation Permission Asymmetry (`Q10`). `CANCEL_TRANSPORT` in [`src/components/ward-management/ward-flow-reducer.ts:4291-4361`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-flow-reducer.ts#L4291-L4361) was modified to permit `ed` role, but reducer unconditionally creates a phantom replacement transport job and artificially advances patient to `handover_ready` without clinical dispatch.
+- **Issue 80 (Category 10)**: Transport Cancellation Permission Asymmetry (`Q10`). `CANCEL_TRANSPORT` in [`src/components/ward-management/ward-flow-reducer.ts:4291-4361`](../src/components/ward-management/ward-flow-reducer.ts#L4291-L4361) was modified to permit `ed` role, but reducer unconditionally creates a phantom replacement transport job and artificially advances patient to `handover_ready` without clinical dispatch.
 
 ---
 
@@ -1472,7 +1472,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **Issue 63 (Category 9)**: Double Physical Capacity Credit on Departure. When patient departs, `MARK_DEPARTED` decrements ward occupancy while `RELEASE_BED` also refunds allocatable capacity, artificially inflating available beds beyond physical capacity ([`ward-flow-reducer.ts:1079, 2550-2571, 3127-3170`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-flow-reducer.ts#L1079)).
+- **Issue 63 (Category 9)**: Double Physical Capacity Credit on Departure. When patient departs, `MARK_DEPARTED` decrements ward occupancy while `RELEASE_BED` also refunds allocatable capacity, artificially inflating available beds beyond physical capacity ([`ward-flow-reducer.ts:1079, 2550-2571, 3127-3170`](../src/components/ward-management/ward-flow-reducer.ts#L1079)).
 
 ---
 
@@ -1494,7 +1494,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **Issue 62 (Category 9)**: Event Matrix Integrity. Reducer does not validate runtime event payload boundaries, allowing negative, fractional, or `NaN` values in bed count modifications ([`ward-flow-reducer.ts:1118, 1233, 2809-2834`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-flow-reducer.ts#L1118)).
+- **Issue 62 (Category 9)**: Event Matrix Integrity. Reducer does not validate runtime event payload boundaries, allowing negative, fractional, or `NaN` values in bed count modifications ([`ward-flow-reducer.ts:1118, 1233, 2809-2834`](../src/components/ward-management/ward-flow-reducer.ts#L1118)).
 
 ---
 
@@ -1538,7 +1538,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **Issue 75 (Category 10)**: Duplicate Keys in `EVENT_ROLE` Dictionary. `ACCEPT_COMMUNITY_REFERRAL` is missing from `EVENT_ROLE` matrix, preventing community team clinicians from accepting referrals ([`ward-flow-events.ts:1484`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-flow-events.ts#L1484), [`ward-flow-reducer.ts:3860`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-flow-reducer.ts#L3860)).
+- **Issue 75 (Category 10)**: Duplicate Keys in `EVENT_ROLE` Dictionary. `ACCEPT_COMMUNITY_REFERRAL` is missing from `EVENT_ROLE` matrix, preventing community team clinicians from accepting referrals ([`ward-flow-events.ts:1484`](../src/components/ward-management/ward-flow-events.ts#L1484), [`ward-flow-reducer.ts:3860`](../src/components/ward-management/ward-flow-reducer.ts#L3860)).
 - **Issue 81 (Category 10)**: Community Step-Down Referrals Lack Terminal Handover State. Discharged ward patients referred to community teams have no terminal completion state once intake review concludes.
 
 ---
@@ -1561,7 +1561,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **Front-Door Withdrawal Zombie State**: When referrer dispatches `WITHDRAW_REFERRAL`, the movement remains in pending queues rather than transitioning to a terminal withdrawn disposition ([`ward-flow-reducer.ts:3600, 3900, 3966`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-flow-reducer.ts#L3600)).
+- **Front-Door Withdrawal Zombie State**: When referrer dispatches `WITHDRAW_REFERRAL`, the movement remains in pending queues rather than transitioning to a terminal withdrawn disposition ([`ward-flow-reducer.ts:3600, 3900, 3966`](../src/components/ward-management/ward-flow-reducer.ts#L3600)).
 
 ---
 
@@ -1583,7 +1583,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **No-Transport Journey Deadlock**: When transport is marked `needed: false` (e.g. self-transport or ambulatory escort), the journey halts because arrival transitions require a `BOOK_TRANSPORT` event ([`ward-model.ts:661`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-model.ts#L661), [`ward-flow-reducer.ts:1524, 2269-2301`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-flow-reducer.ts#L1524)).
+- **No-Transport Journey Deadlock**: When transport is marked `needed: false` (e.g. self-transport or ambulatory escort), the journey halts because arrival transitions require a `BOOK_TRANSPORT` event ([`ward-model.ts:661`](../src/components/ward-management/ward-model.ts#L661), [`ward-flow-reducer.ts:1524, 2269-2301`](../src/components/ward-management/ward-flow-reducer.ts#L1524)).
 
 ---
 
@@ -1649,7 +1649,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **Issue 1 (Category 1)**: [`tests/ward-patient-link-default-deny.test.ts:255`](file:///d:/Worktrees/Database/ward-lead/tests/ward-patient-link-default-deny.test.ts#L255) failure.
+- **Issue 1 (Category 1)**: [`tests/ward-patient-link-default-deny.test.ts:255`](../tests/ward-patient-link-default-deny.test.ts#L255) failure.
 - **Issue 2 (Category 2)**: 31 CSS Modules Introduced Undeclared Breakpoint `62.5625rem` (1001px).
 - **Issue 3 (Category 2)**: Shortlist Panel Custom Font Declaration.
 - **Issue 4 (Category 2)**: Undeclared CSS Token in Alerts Module.
@@ -1685,7 +1685,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 **Mapped Specific Defect Items & Test Assertions:**
 
 - **Issue 78 (Category 10)**: Non-Binary Patient Placement Blind Spot.
-- **Locked Bed Stock Depletion Allocation**: Allocating locked/secure psychiatric beds when locked stock is physically exhausted ([`src/components/ward-management/ward-eligibility.ts:139-160`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-eligibility.ts#L139-L160)).
+- **Locked Bed Stock Depletion Allocation**: Allocating locked/secure psychiatric beds when locked stock is physically exhausted ([`src/components/ward-management/ward-eligibility.ts:139-160`](../src/components/ward-management/ward-eligibility.ts#L139-L160)).
 
 ---
 
@@ -1707,7 +1707,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **Dangling Transport Job on Release**: Releasing a pulled bed reservation (`RELEASE_PULL`) clears the admission but leaves active transport dispatch jobs dangling in booked status ([`src/components/ward-management/ward-flow-reducer.ts:4120-4219`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-flow-reducer.ts#L4120-L4219)).
+- **Dangling Transport Job on Release**: Releasing a pulled bed reservation (`RELEASE_PULL`) clears the admission but leaves active transport dispatch jobs dangling in booked status ([`src/components/ward-management/ward-flow-reducer.ts:4120-4219`](../src/components/ward-management/ward-flow-reducer.ts#L4120-L4219)).
 
 ---
 
@@ -1729,7 +1729,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **Issue 74 (Category 10)**: `pressure-strip.tsx` Null DueAt Coercion Bug (`null !== undefined`). Zero timestamps (`now = 0` or midnight epoch) coerced to falsy in milestone calculations ([`src/components/ward-management/ward-audit.ts:150`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-audit.ts#L150), [`ward-flow-reducer.ts:2328`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-flow-reducer.ts#L2328)).
+- **Issue 74 (Category 10)**: `pressure-strip.tsx` Null DueAt Coercion Bug (`null !== undefined`). Zero timestamps (`now = 0` or midnight epoch) coerced to falsy in milestone calculations ([`src/components/ward-management/ward-audit.ts:150`](../src/components/ward-management/ward-audit.ts#L150), [`ward-flow-reducer.ts:2328`](../src/components/ward-management/ward-flow-reducer.ts#L2328)).
 - **Issues 66-67 (Category 9)**: Journey clock milestone math.
 
 ---
@@ -1756,7 +1756,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 - **Issues 23-24 (Category 4)**: Community Scope & Population Disclaimer Drift.
 - **Issues 25-27 (Category 4)**: Community Hub Attribution & Placeholder Warnings.
 - **Issue 56 (Category 7)**: Community Screen Main Column Panel Sequence.
-- **Community Header Role Default Drift**: Community screen header erroneously defaults to 'Viewing as Bed coordinator' ([`src/components/ward-management/ward-chrome-role.ts:20-37`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-chrome-role.ts#L20-L37)).
+- **Community Header Role Default Drift**: Community screen header erroneously defaults to 'Viewing as Bed coordinator' ([`src/components/ward-management/ward-chrome-role.ts:20-37`](../src/components/ward-management/ward-chrome-role.ts#L20-L37)).
 
 ---
 
@@ -1891,7 +1891,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **Issue 1 (Category 1)**: Shortlist Panel Direct Patient Link Read. Violates D-14 default-deny guard ([`tests/ward-patient-link-default-deny.test.ts:255`](file:///d:/Worktrees/Database/ward-lead/tests/ward-patient-link-default-deny.test.ts#L255)).
+- **Issue 1 (Category 1)**: Shortlist Panel Direct Patient Link Read. Violates D-14 default-deny guard ([`tests/ward-patient-link-default-deny.test.ts:255`](../tests/ward-patient-link-default-deny.test.ts#L255)).
 
 ---
 
@@ -2141,7 +2141,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **Issue 77 (Category 10)**: Unsaved Referral Draft Data Loss on Reload / Navigation (`A-1`). Clinical referrals drafted in [`referral-intake.tsx`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/referrals/referral-intake.tsx) are lost completely on browser refresh or route change; lacks draft persistence in local storage or session store.
+- **Issue 77 (Category 10)**: Unsaved Referral Draft Data Loss on Reload / Navigation (`A-1`). Clinical referrals drafted in [`referral-intake.tsx`](../src/components/ward-management/referrals/referral-intake.tsx) are lost completely on browser refresh or route change; lacks draft persistence in local storage or session store.
 
 ---
 
@@ -2163,7 +2163,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **Leave-Bed Accounting Decoupling**: Leave of absence beds are decoupled from admission episode tracking ([`ward-flow-events.ts:673`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-flow-events.ts#L673), [`ward-flow-reducer.ts:3208`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-flow-reducer.ts#L3208)).
+- **Leave-Bed Accounting Decoupling**: Leave of absence beds are decoupled from admission episode tracking ([`ward-flow-events.ts:673`](../src/components/ward-management/ward-flow-events.ts#L673), [`ward-flow-reducer.ts:3208`](../src/components/ward-management/ward-flow-reducer.ts#L3208)).
 
 ---
 
@@ -2185,7 +2185,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **Time-Only Input Date Truncation**: `HH:mm` time inputs default date to epoch or frozen seed day ([`ward/ward-screen.tsx:447-456`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward/ward-screen.tsx#L447-L456)).
+- **Time-Only Input Date Truncation**: `HH:mm` time inputs default date to epoch or frozen seed day ([`ward/ward-screen.tsx:447-456`](../src/components/ward-management/ward/ward-screen.tsx#L447-L456)).
 - **Issues 66-67 (Category 9)**: Movements Journey Clocks date mismatch.
 
 ---
@@ -2208,7 +2208,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **Documentation Drift**: Discrepancies between `docs/ward-flow/` architecture specifications and implemented React components ([`scripts/ward-flow/screen-verification.mjs`](file:///d:/Worktrees/Database/ward-lead/scripts/ward-flow/screen-verification.mjs)).
+- **Documentation Drift**: Discrepancies between `docs/ward-flow/` architecture specifications and implemented React components ([`scripts/ward-flow/screen-verification.mjs`](../scripts/ward-flow/screen-verification.mjs)).
 
 ---
 
@@ -2230,7 +2230,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **Issues 33-41 (Category 5)**: Movements Count Mismatch. Transport vehicle arrival at hospital gate is conflated with physical transfer of clinical custody on the psychiatric ward ([`src/components/ward-management/ward-flow-events.ts:1302`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-flow-events.ts#L1302), [`ward-flow-reducer.ts:2463-2483`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-flow-reducer.ts#L2463-L2483)).
+- **Issues 33-41 (Category 5)**: Movements Count Mismatch. Transport vehicle arrival at hospital gate is conflated with physical transfer of clinical custody on the psychiatric ward ([`src/components/ward-management/ward-flow-events.ts:1302`](../src/components/ward-management/ward-flow-events.ts#L1302), [`ward-flow-reducer.ts:2463-2483`](../src/components/ward-management/ward-flow-reducer.ts#L2463-L2483)).
 
 ---
 
@@ -2276,7 +2276,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 **Mapped Specific Defect Items & Test Assertions:**
 
 - **Issues 50-52 (Category 7)**: Command Screen Panel Order & Missing Headings.
-- **Dynamic History Rewriting**: Command activity timeline rewrites historical urgency labels when current patient status changes ([`src/components/ward-management/shell/ward-command-activity.ts:49-64`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/shell/ward-command-activity.ts#L49-L64)).
+- **Dynamic History Rewriting**: Command activity timeline rewrites historical urgency labels when current patient status changes ([`src/components/ward-management/shell/ward-command-activity.ts:49-64`](../src/components/ward-management/shell/ward-command-activity.ts#L49-L64)).
 
 ---
 
@@ -2300,7 +2300,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 - **Issue 12 (Category 4)**: Missing Synthetic Prototype Badge on Discharges Screen.
 - **Issues 16-17 (Category 4)**: Capacity Screen Banner Caption Drift & Missing 'Invented' Label.
-- **Unprovable Placement Guarantee Copy**: Capacity screen promises 'Nobody goes without' despite aggregate psychiatric bed deficits ([`src/components/ward-management/capacity/capacity-screen.tsx:602, 613`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/capacity/capacity-screen.tsx#L602)).
+- **Unprovable Placement Guarantee Copy**: Capacity screen promises 'Nobody goes without' despite aggregate psychiatric bed deficits ([`src/components/ward-management/capacity/capacity-screen.tsx:602, 613`](../src/components/ward-management/capacity/capacity-screen.tsx#L602)).
 
 ---
 
@@ -2347,7 +2347,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 **Mapped Specific Defect Items & Test Assertions:**
 
 - **Issues 5-6 (Category 2)**: Discharges Third-Edition Table Re-declaration. Discharge table layout overrides global tokens.
-- **Issue 7 (Category 2)**: Discharges Table Missing Min-Width Scroll Threshold ([`tests/ward-table-min-width.test.ts`](file:///d:/Worktrees/Database/ward-lead/tests/ward-table-min-width.test.ts)).
+- **Issue 7 (Category 2)**: Discharges Table Missing Min-Width Scroll Threshold ([`tests/ward-table-min-width.test.ts`](../tests/ward-table-min-width.test.ts)).
 - **Issues 57-58 (Category 8)**: Blocked Discharges Group Elevation Class Missing.
 - **Issues 59-61 (Category 8)**: Discharge Table Missing Blocker Column & Testid.
 - **Issue 81 (Category 10)**: Community Step-Down Referrals Lack Terminal Handover State.
@@ -2372,7 +2372,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **ED Attendance Location Decoupling**: Temporary ED attendance lacks responsible service assignment ([`ward-flow-reducer.ts:2752-2784`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/ward-flow-reducer.ts#L2752-L2784)).
+- **ED Attendance Location Decoupling**: Temporary ED attendance lacks responsible service assignment ([`ward-flow-reducer.ts:2752-2784`](../src/components/ward-management/ward-flow-reducer.ts#L2752-L2784)).
 
 ---
 
@@ -2394,9 +2394,9 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **Issues 45-48 (Category 6)**: Capacity Service Fold Buttons Lost `aria-expanded` ([`tests/ward-capacity-network-fold.dom.test.tsx`](file:///d:/Worktrees/Database/ward-lead/tests/ward-capacity-network-fold.dom.test.tsx)).
-- **Issue 49 (Category 6)**: Fold Button Lost When Sibling Service Empties ([`tests/ward-capacity-network-fold-empty-service.dom.test.tsx`](file:///d:/Worktrees/Database/ward-lead/tests/ward-capacity-network-fold-empty-service.dom.test.tsx)).
-- **Issues 53-55 (Category 7)**: Delays Screen Panel Sequence & Invented Figures Region ([`tests/ward-delays-screen.dom.test.tsx`](file:///d:/Worktrees/Database/ward-lead/tests/ward-delays-screen.dom.test.tsx)).
+- **Issues 45-48 (Category 6)**: Capacity Service Fold Buttons Lost `aria-expanded` ([`tests/ward-capacity-network-fold.dom.test.tsx`](../tests/ward-capacity-network-fold.dom.test.tsx)).
+- **Issue 49 (Category 6)**: Fold Button Lost When Sibling Service Empties ([`tests/ward-capacity-network-fold-empty-service.dom.test.tsx`](../tests/ward-capacity-network-fold-empty-service.dom.test.tsx)).
+- **Issues 53-55 (Category 7)**: Delays Screen Panel Sequence & Invented Figures Region ([`tests/ward-delays-screen.dom.test.tsx`](../tests/ward-delays-screen.dom.test.tsx)).
 
 ---
 
@@ -2418,7 +2418,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **Issues 42-43 (Category 5)**: Ward Nav Route Scans & Forbidden Copy ([`tests/ward-nav.test.ts`](file:///d:/Worktrees/Database/ward-lead/tests/ward-nav.test.ts)). Morning route frozen vs live contract.
+- **Issues 42-43 (Category 5)**: Ward Nav Route Scans & Forbidden Copy ([`tests/ward-nav.test.ts`](../tests/ward-nav.test.ts)). Morning route frozen vs live contract.
 
 ---
 
@@ -2610,14 +2610,14 @@ Every blocking question, clinical governance decision, and architectural gate re
 
 #### DECISION-04 (WF-29 / Issue 1): D-14 Default-Deny Coordinator Patient Link Read
 
-| Aspect                          | Details                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Category**                    | `Clinical Privacy & WA Mental Health Act Boundary`                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| **Core Problem**                | [`tests/ward-patient-link-default-deny.test.ts:255`](file:///d:/Worktrees/Database/ward-lead/tests/ward-patient-link-default-deny.test.ts#L255) fails because [`coordinator/shortlist-panel.tsx`](file:///d:/Worktrees/Database/ward-lead/src/components/ward-management/coordinator/shortlist-panel.tsx) reads `.patientId` to display patient names in the bed coordinator shortlist. Ruling D-14 strictly forbids ward-facing code reading `.patientId` to prevent cross-ward tracking. |
-| **WA Clinical / Legal Context** | The bed coordinator is a network-wide system manager who legitimately requires patient identity to avoid misidentification during bed allocation. However, ward-level staff must NOT see where else a patient has been referred.                                                                                                                                                                                                                                                           |
-| **Proposed Technical Solution** | Formally authorize the Bed Coordinator shortlist as a permitted reader in the D-14 allowlist (`tests/ward-patient-link-default-deny.test.ts`), while strictly preserving the ban on ward-level components.                                                                                                                                                                                                                                                                                 |
-| **Recommended Ruling**          | **APPROVE RECOMMENDATION**: Allow coordinator shortlist in D-14 allowlist under coordinator-only role gating.                                                                                                                                                                                                                                                                                                                                                                              |
-| **Owner's actual answer**       | ⚠️ **"Recommended Ruling" above is an AI's, not the owner's — see PROJECT-ISSUES.md's warning about this section.** The owner's real answer is `WLQ-30` (`docs/ward-flow/archive/dated-notes/owner-decisions-2026-09-15.md` ~:162): "Keep As you recommend" — ratifies the allowlist bounded by `tests/ward-patient-link-default-deny.test.ts`. **CLOSED 2026-09-17**, see §7.4 below.                                                                                                     |
+| Aspect                          | Details                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Category**                    | `Clinical Privacy & WA Mental Health Act Boundary`                                                                                                                                                                                                                                                                                                                                                               |
+| **Core Problem**                | [`tests/ward-patient-link-default-deny.test.ts:255`](../tests/ward-patient-link-default-deny.test.ts#L255) fails because [`coordinator/shortlist-panel.tsx`](../src/components/ward-management/coordinator/shortlist-panel.tsx) reads `.patientId` to display patient names in the bed coordinator shortlist. Ruling D-14 strictly forbids ward-facing code reading `.patientId` to prevent cross-ward tracking. |
+| **WA Clinical / Legal Context** | The bed coordinator is a network-wide system manager who legitimately requires patient identity to avoid misidentification during bed allocation. However, ward-level staff must NOT see where else a patient has been referred.                                                                                                                                                                                 |
+| **Proposed Technical Solution** | Formally authorize the Bed Coordinator shortlist as a permitted reader in the D-14 allowlist (`tests/ward-patient-link-default-deny.test.ts`), while strictly preserving the ban on ward-level components.                                                                                                                                                                                                       |
+| **Recommended Ruling**          | **APPROVE RECOMMENDATION**: Allow coordinator shortlist in D-14 allowlist under coordinator-only role gating.                                                                                                                                                                                                                                                                                                    |
+| **Owner's actual answer**       | ⚠️ **"Recommended Ruling" above is an AI's, not the owner's — see PROJECT-ISSUES.md's warning about this section.** The owner's real answer is `WLQ-30` (`docs/ward-flow/archive/dated-notes/owner-decisions-2026-09-15.md` ~:162): "Keep As you recommend" — ratifies the allowlist bounded by `tests/ward-patient-link-default-deny.test.ts`. **CLOSED 2026-09-17**, see §7.4 below.                           |
 
 ---
 
@@ -7708,7 +7708,6 @@ phone/dark visual acceptance, push, hosted service or broader Ward acceptance is
    - _Observation:_ Test synchronization currently detects fragile DOM selectors via regex heuristics.
    - _Required action:_ Extend `design-test-sync.mjs` with Babel/TypeScript AST analysis to generate suggested robust selector replacements (`getByRole`, `getByTestId`) automatically.
 
-
 ---
 
 ## § 7.70 · Settings Coordination Rules, Audio-Visual Urgent Buzz Alerts, Wallboard Refresh Timer & Operator Switcher (25 September 2026 — Paused by User Request)
@@ -7779,6 +7778,7 @@ All active background subagents have been cleanly stopped (`kill_all`) to preven
 **Audit & Alignment Completed: 25 September 2026**
 
 ### Context & Mission
+
 Comprehensive review and verification of alerts throughout the project to ensure all alert systems are correctly wired, automated, working, linked to appropriate triggers, and free of bugs, broken code, or missing connections.
 
 ### Actions Taken & Verified
@@ -7820,6 +7820,7 @@ Comprehensive review and verification of alerts throughout the project to ensure
 **Audit & Alignment Completed: 25 September 2026**
 
 ### Context & Mission
+
 Perform an exhaustive, meticulous audit of all 41 routes and every interactive component in the Ward Flow bed-coordination application, fix any defects found, enforce D4/D5 clinical boundaries (no invented statutory countdowns or section numbers; unwired controls labeled "Not wired in this prototype"), eliminate dead ends, and verify complete functionality with automated tests.
 
 ### Audit Findings & Actions Taken
@@ -7863,5 +7864,3 @@ Perform an exhaustive, meticulous audit of all 41 routes and every interactive c
 - `tests/ward-alerts-screen.dom.test.tsx` & `tests/ward-statistics-community-provenance.dom.test.tsx` (10/10 passed)
 - `npm run typecheck` (zero TypeScript errors across the repository)
 - Zero uncommitted code drift, working tree clean, local ward line only.
-
-

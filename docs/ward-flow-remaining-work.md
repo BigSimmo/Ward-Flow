@@ -1,12 +1,10 @@
 # Ward Flow — everything remaining, and the order to build it
 
-> **SUPERSEDED on 17 Sept 2026 by `docs/ward-flow-task-ledger.md`.** Kept for history; do not follow.
+> **SUPERSEDED on 17 Sept 2026 by [`docs/ward-flow-task-ledger.md`](ward-flow-task-ledger.md).** Kept for history; do not follow.
 
 > ⚠️ **ITS LIST IS SUPERSEDED. ITS REASONING IS NOT.**
 >
-> **The single list of outstanding work is `docs/ward-flow-task-ledger.md`** — on
-> `claude/Wardquestions`, so from another branch:
-> `git show claude/Wardquestions:docs/ward-flow-task-ledger.md`
+> **The single list of outstanding work is [`docs/ward-flow-task-ledger.md`](ward-flow-task-ledger.md)** in this repository.
 >
 > **Read THIS file for WHY a thing is the way it is.** ⚠️ **Do not take a task, a state or a count
 > from it** — three documents carrying task state means fixing one leaves two wrong, **and that is

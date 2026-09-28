@@ -143,6 +143,8 @@ const KNOWN_UNSATISFIABLE: Readonly<Record<string, string>> = {
 const DECLARED_UNDECIDABLE: Readonly<Record<string, string>> = {
   "tests/ward-flow-chat-control.test.ts :: existsSync(controlRoot)":
     "depends on whether docs/ward-flow/control is present in the checkout being tested",
+  "tests/ward-flow-remote-boundary.test.ts :: existsSync(shell)":
+    "depends on whether a bash or sh executable exists on the system to run the git hook",
   "tests/ward-travel-bands.test.ts :: !TRAVEL_BANDS_ARE_INVENTED":
     "a module constant about the fixture's provenance, not an environment fact",
 };

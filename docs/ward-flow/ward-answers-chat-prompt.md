@@ -1,5 +1,7 @@
 # Ward Answers — the questions chat
 
+> SUPERSEDED on 2026-09-28 by [`docs/ward-flow/HOW-WE-WORK.md`](HOW-WE-WORK.md) and repository [`AGENTS.md`](../../AGENTS.md). Historical prompt for former Database worktree setup; do not follow.
+
 A fourth Ward Flow chat whose only job is to **answer the owner's questions about the project**. It
 reads, it explains, it never builds.
 
