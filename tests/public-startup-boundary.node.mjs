@@ -112,6 +112,7 @@ test("legacy Database ward hook remains silent", () => {
 
 test("public sign-out check uses main and ignores Database checkout claims", () => {
   const cwd = fixture("https://github.com/BigSimmo/Ward-Flow.git");
+  const other = fixture("https://github.com/BigSimmo/Ward-Flow.git");
   const log = path.join(cwd, "sign-out.md");
   const file = "scripts/ward-flow/sign-out-check.mjs";
   try {
@@ -121,48 +122,60 @@ test("public sign-out check uses main and ignores Database checkout claims", () 
     assert.equal(clear.status, 0, clear.stderr);
     assert.match(clear.stdout, /no clash/);
 
-    writeFileSync(
-      log,
-      `Open sign-outs only\n- date | Public owner | ward/other | D:/Worktrees/WardFlow/ag-other | ${file}\n`,
-    );
+    writeFileSync(log, `Open sign-outs only\n- date | Public owner | ward/other | ${other} | ${file}\n`);
     const clash = run(process.execPath, [signOut, file], cwd, env);
     assert.equal(clash.status, 1, clash.stderr);
     assert.match(clash.stdout, /SIGNED OUT/);
   } finally {
     rmSync(cwd, { recursive: true, force: true });
+    rmSync(other, { recursive: true, force: true });
   }
 });
 
 test("pre-commit ownership accepts a public sign-out and ignores old Database claims", () => {
   const file = "scripts/ward-flow/sign-out-check.mjs";
-  const root = "D:/Worktrees/WardFlow/ag-startup-boundary";
+  const root = fixture("https://github.com/BigSimmo/Ward-Flow.git");
   const log =
     `Open sign-outs only\n` +
     `- date | Old owner | ward/old | D:/Worktrees/Database/ag-old | ${file}\n` +
     `- date | Current owner | ward/startup-boundary | ${root} | ${file}\n`;
-  assert.deepEqual(signOutConflicts([file], log, "ward/startup-boundary", root), []);
-  assert.deepEqual(unsignedWardFiles([file], log, "ward/startup-boundary", root), []);
+  try {
+    assert.deepEqual(signOutConflicts([file], log, "ward/startup-boundary", root), []);
+    assert.deepEqual(unsignedWardFiles([file], log, "ward/startup-boundary", root), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("pre-commit ownership still blocks another public branch's claim", () => {
   const file = "scripts/ward-flow/sign-out-check.mjs";
-  const root = "D:/Worktrees/WardFlow/ag-startup-boundary";
+  const root = fixture("https://github.com/BigSimmo/Ward-Flow.git");
+  const other = fixture("https://github.com/BigSimmo/Ward-Flow.git");
   const log =
     `Open sign-outs only\n` +
     `- date | Old owner | ward/old | D:/Worktrees/Database/ag-old | ${file}\n` +
-    `- date | Public owner | ward/other | D:/Worktrees/WardFlow/ag-other | ${file}\n`;
-  assert.deepEqual(signOutConflicts([file], log, "ward/startup-boundary", root), [
-    { file, owner: "Public owner", branch: "ward/other" },
-  ]);
-  assert.deepEqual(unsignedWardFiles([file], log, "ward/startup-boundary", root), [file]);
+    `- date | Public owner | ward/other | ${other} | ${file}\n`;
+  try {
+    assert.deepEqual(signOutConflicts([file], log, "ward/startup-boundary", root), [
+      { file, owner: "Public owner", branch: "ward/other" },
+    ]);
+    assert.deepEqual(unsignedWardFiles([file], log, "ward/startup-boundary", root), [file]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(other, { recursive: true, force: true });
+  }
 });
 
 test("old Database ownership does not grant a public takeover", () => {
   const file = "scripts/ward-flow/sign-out-check.mjs";
-  const root = "D:/Worktrees/WardFlow/ag-startup-boundary";
+  const root = fixture("https://github.com/BigSimmo/Ward-Flow.git");
   const log =
     `Open sign-outs only\n` +
     `- date | Old owner | ward/startup-boundary | D:/Worktrees/Database/ag-old | ${file} (approved takeover by Josh: old checkout only)\n`;
-  assert.deepEqual([...approvedTakeoverFiles(log, "ward/startup-boundary", root)], []);
-  assert.deepEqual(unsignedWardFiles([file], log, "ward/startup-boundary", root), [file]);
+  try {
+    assert.deepEqual([...approvedTakeoverFiles(log, "ward/startup-boundary", root)], []);
+    assert.deepEqual(unsignedWardFiles([file], log, "ward/startup-boundary", root), [file]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
