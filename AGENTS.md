@@ -23,10 +23,9 @@ dependencies. Publication to GitHub or a provider still needs the authority stat
 
 # How these rules are organised
 
-This file is the always-loaded core. It carries the boundaries that prevent irreversible harm, and
-the sections a committed gate parses by exact text. Every other rule keeps its heading here and its
-full text — verbatim, nothing dropped — in a named reference file. Open the file before acting in
-its area.
+This file is the always-loaded Ward Flow core. Some older checks locate policy headings in this
+file; the repository boundary above governs their interpretation. Open a reference file only when
+its topic applies and its instructions have been verified for this repository.
 
 **Read these first:** the repository boundary above, `# API and provider confirmation boundary`,
 and `# Local server safety`. Verify the actual destination before any push, pull request or deploy.
@@ -48,11 +47,9 @@ for Ward Flow. The `Run PR` sweep is disabled here until a Ward Flow specific wo
 | Repository skills                                                                                                         | [`docs/agents/repository-skills-and-issues.md`](docs/agents/repository-skills-and-issues.md) |
 | Codex dependency, review throttling, desktop worktree, reasoning effort, productivity, GitHub review, Cloud; Cursor Cloud | the `docs/agents/codex-*.md` and `docs/agents/cursor-cloud.md` pointers below                |
 
-Five sections stay here in full because a committed test or script reads their exact text:
-`## Bare PR publication is not readiness work`, the format-before-push rule,
+Some headings remain for existing policy checks, including `## Bare PR publication is not readiness work`,
 `# Search chrome behaviour`, `## Anti-conflict and CI-speed operating procedure`, and
-`## Codex Cloud environment`. Their wording is code, not prose — moving or rewording it fails
-`verify:cheap`.
+`## Codex Cloud environment`. A heading does not make copied PsychSift instructions applicable.
 
 <!-- BEGIN:dependency-shortcut -->
 
