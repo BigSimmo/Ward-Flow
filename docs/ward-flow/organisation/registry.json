@@ -65,7 +65,6 @@
     "src/lib/form-register.ts",
     "src/lib/local-server-utils.mjs",
     "src/lib/theme.ts",
-    "src/components/developer-area/ward-flow-access-gate.tsx",
     "src/lib/ward-output.ts"
   ],
   "sourceClasses": [
@@ -660,15 +659,6 @@
       "owner": "shared",
       "module": "host-boundary",
       "system": "change-recovery",
-      "reference": "tests/ward-flow-seam.test.ts",
-      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
-    },
-    {
-      "id": "ward-access-41",
-      "path": "src/components/developer-area/ward-flow-access-gate.tsx",
-      "owner": "ward-flow",
-      "module": "access",
-      "system": "safety-governance",
       "reference": "tests/ward-flow-seam.test.ts",
       "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
     },
