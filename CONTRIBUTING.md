@@ -4,9 +4,9 @@ This is a publicly visible proprietary repository. It is not an open-source
 project and does not accept unsolicited code, documentation, design, data, or
 other material for incorporation.
 
-## Ward Flow (local prototype)
+## Ward Flow
 
-Ward Flow is a separate, local-only bed-coordination prototype in this repo.
+This dedicated repository (`BigSimmo/Ward-Flow`) hosts the Ward Flow bed-coordination prototype for Western Australian mental health services.
 
 - Product entry: [`docs/ward-flow/README.md`](docs/ward-flow/README.md)
 - Boot the UI: [`docs/ward-flow/LOCAL-FIRST-RUN.md`](docs/ward-flow/LOCAL-FIRST-RUN.md)

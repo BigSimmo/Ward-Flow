@@ -4,8 +4,8 @@
 //
 //   node scripts/ward-flow/sign-out-check.mjs <file> [<file> ...]
 //
-// Lists, per file: sign-out.md entries from other branches, and every unfolded local ward/* branch
-// (not yet in the ward line) whose changes since the line touch the file. Exit 1 if any clash, so
+// Lists, per file: sign-out.md entries from this repository, and every other local task branch
+// (not yet in main) whose changes since main touch the file. Exit 1 if any clash, so
 // you stop and tell the coordinator before editing.
 import { execFile, execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -13,24 +13,22 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 
-function resolveLineRef() {
-  try {
-    execFileSync("git", ["rev-parse", "--verify", "--quiet", "codex/task-ward-flow-live-state-20260831"], {
-      stdio: ["ignore", "pipe", "ignore"],
-    });
-    return "codex/task-ward-flow-live-state-20260831";
-  } catch {
-    return "main";
-  }
-}
-const LINE = resolveLineRef();
+const git = (argv) => execFileSync("git", argv, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+const root = git(["rev-parse", "--show-toplevel"]);
+const { approvedTakeoverFiles, isPublicWardFlowCheckout, scopedActiveSignOutLines, signOutConflicts } = await import(
+  pathToFileURL(path.join(root, "scripts/pre-commit-checks.mjs")).href
+);
+const standaloneWardFlow = isPublicWardFlowCheckout(root);
+const LINE = standaloneWardFlow ? "refs/remotes/origin/main" : "codex/task-ward-flow-live-state-20260831";
 const SIGN_OUT = process.env.WARD_SIGNOUT_FILE ?? "D:/Repos/ward-flow-logs/sign-out.md";
+function readSignOutText() {
+  return existsSync(SIGN_OUT) ? readFileSync(SIGN_OUT, "utf8") : "";
+}
 // --stale: list Active sign-out lines whose branches are all folded into the line or gone, so the
 // steward can clear them after each fold. Lists only; it never edits the file.
 if (process.argv[2] === "--stale") {
-  const text = existsSync(SIGN_OUT) ? readFileSync(SIGN_OUT, "utf8") : "";
-  const { activeSignOutLines } = await import(new URL("../pre-commit-checks.mjs", import.meta.url));
-  const section = activeSignOutLines(text);
+  const text = readSignOutText();
+  const section = scopedActiveSignOutLines(text, root);
   const gitLineTip = execFileSync("git", ["rev-parse", LINE], { encoding: "utf8" }).trim();
   const state = (branch) => {
     let tip;
@@ -74,14 +72,8 @@ if (files.length === 0) {
   console.log("Usage: sign-out-check.mjs <file> [<file> ...] | --stale");
   process.exit(2);
 }
-const git = (argv) => execFileSync("git", argv, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
-const root = git(["rev-parse", "--show-toplevel"]);
 const current = git(["branch", "--show-current"]);
-
-const { approvedTakeoverFiles, signOutConflicts } = await import(
-  pathToFileURL(path.join(root, "scripts/pre-commit-checks.mjs")).href
-);
-const signOutText = existsSync(SIGN_OUT) ? readFileSync(SIGN_OUT, "utf8") : "";
+const signOutText = readSignOutText();
 const approved = approvedTakeoverFiles(signOutText, current, root);
 const toCheck = files.filter((file) => !approved.has(file));
 for (const file of files) if (approved.has(file)) console.log(`APPROVED TAKEOVER  ${file}`);
@@ -96,13 +88,13 @@ if (signedOut.length) {
   process.exit(1);
 }
 
-// No branch can have changed a requested path if no ward/* commit outside the line touched it.
+// No branch can have changed a requested path if no task commit outside the line touched it.
 // This common case avoids opening every historical branch for a new file.
 const history = git([
   "--literal-pathspecs",
   "log",
   "--full-history",
-  "--branches=ward/*",
+  standaloneWardFlow ? "--branches" : "--branches=ward/*",
   "--not",
   LINE,
   "--format=%H",
@@ -110,17 +102,18 @@ const history = git([
   ...toCheck,
 ]);
 if (!history) {
-  console.log(`sign-out-check: no clash for ${toCheck.length} file(s); no unfolded ward commit touches them.`);
+  console.log(`sign-out-check: no clash for ${toCheck.length} file(s); no unfolded task commit touches them.`);
   process.exit(0);
 }
 
-const branches = git(["for-each-ref", "--format=%(refname:short)", "refs/heads/ward/"])
+const branchPrefix = standaloneWardFlow ? "refs/heads/" : "refs/heads/ward/";
+const branches = git(["for-each-ref", "--format=%(refname:short)", branchPrefix])
   .split("\n")
-  .filter((branch) => branch && branch !== current);
+  .filter((branch) => branch && branch !== current && branch !== "main");
 // Ask Git for folded refs once. A merge-base subprocess per branch made this lightweight
 // ownership check take over 25 seconds in a repository with hundreds of historical branches.
 const folded = new Set(
-  git(["for-each-ref", `--merged=${LINE}`, "--format=%(refname:short)", "refs/heads/ward/"])
+  git(["for-each-ref", `--merged=${LINE}`, "--format=%(refname:short)", branchPrefix])
     .split("\n")
     .filter(Boolean),
 );
@@ -149,7 +142,7 @@ for (const [index, branch] of unfolded.entries()) {
 
 for (const { file, branch } of touching) console.log(`ALSO CHANGED  ${file}  on unfolded branch ${branch}`);
 if (touching.length === 0) {
-  console.log(`sign-out-check: no clash for ${toCheck.length} file(s) across ${branches.length} ward branches.`);
+  console.log(`sign-out-check: no clash for ${toCheck.length} file(s) across ${branches.length} task branches.`);
   process.exit(0);
 }
 console.log("sign-out-check: clash found. Tell the coordinator before editing these files.");

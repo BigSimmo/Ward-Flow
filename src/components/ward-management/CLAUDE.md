@@ -1,8 +1,11 @@
 # Ward Flow code: rules that fail a review
 
-Claude loads this file whenever it opens code in this folder. It is a short extract. The full
-process is `docs/ward-flow/HOW-WE-WORK.md` and the entry point is `docs/ward-flow/README.md`; where
-they differ, they win.
+Claude loads this file whenever it opens code in this folder. It is a short product and safety
+extract for the public [`BigSimmo/Ward-Flow`](https://github.com/BigSimmo/Ward-Flow) repository.
+Start with the repository [`AGENTS.md`](../../../AGENTS.md) for checkout, ownership, verification
+and remote boundaries, then [`docs/ward-flow/README.md`](../../../docs/ward-flow/README.md) for the
+product. Check that the active checkout belongs to `BigSimmo/Ward-Flow`; the former Database ward
+line and PsychSift provider instructions do not govern this repository.
 
 **Read before any task:** [`docs/ward-flow/code-map/README.md`](../../../docs/ward-flow/code-map/README.md)
 
@@ -17,8 +20,11 @@ they differ, they win.
   it. No patient names or typed text in URLs, logs, screenshots, commit messages or memory.
 - **Design tokens only, no hex.** Tap targets 48px via `var(--ward-tap)` or `var(--spacing-tap, 3rem)`.
   No coloured edge bars or top highlights on cards, rows or panels.
-- **Design comes from the drawings** in `docs/ward-flow/mockups/` (serve them, never open as a bare
-  file). **Behaviour comes from this engine** and its tests. Record screen checks in
+- **Design comes from the current rendered app.** The drawings in `docs/ward-flow/mockups/` are
+  background; serve them for comparison, never open them as bare files. **Behaviour comes from this
+  engine** and its tests. Record screen checks in
   `docs/ward-flow/SCREEN-VERIFICATION.md`.
-- **Before each commit:** the affected tests (`node scripts/run-vitest.mjs <files>`) and the type check.
-- **Never push, never open a pull request.** "Main" means the local ward line.
+- **Before each commit:** use the focused checks and required gates in repository `AGENTS.md` for
+  the files changed. A documentation-only edit does not require a type check by default.
+- **Repository base and remote:** use the current `BigSimmo/Ward-Flow` `main` and follow its
+  `AGENTS.md` before any push or pull request. Verify the remote identity first.
