@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { ArrowLeft, FileQuestion } from "lucide-react";
+import { ContextualBackLink } from "@/components/contextual-back-link";
 import { cn, primaryControl } from "@/components/ui-primitives";
 
 export default function NotFound() {
@@ -19,13 +19,13 @@ export default function NotFound() {
         </p>
 
         <div className="mt-6 flex flex-col gap-2">
-          <Link
-            href="/mockups/ward-flow"
+          <ContextualBackLink
+            fallbackHref="/mockups/ward-flow"
             className={cn(primaryControl, "flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium")}
           >
             <ArrowLeft aria-hidden="true" className="h-4 w-4" />
             Back to Ward Flow
-          </Link>
+          </ContextualBackLink>
         </div>
       </div>
     </div>

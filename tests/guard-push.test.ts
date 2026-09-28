@@ -160,7 +160,12 @@ describe("force-push detection", { timeout: 60_000 }, () => {
 
 describe("manual auto-merge ownership policy", () => {
   it("keeps active agent policies aligned on preserving an armed PR", () => {
-    const policyFiles = ["../AGENTS.md", "../.claude/skills/run-pr/SKILL.md", "../.claude/skills/handoff/SKILL.md"];
+    const policyFiles = [
+      "../AGENTS.md",
+      "../.claude/skills/run-pr/SKILL.md",
+      "../.claude/skills/handoff/SKILL.md",
+    ].filter((file) => existsSync(new URL(file, import.meta.url)));
+    expect(policyFiles).toContain("../AGENTS.md");
 
     for (const file of policyFiles) {
       const policy = readFileSync(new URL(file, import.meta.url), "utf8");

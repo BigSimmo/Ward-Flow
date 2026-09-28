@@ -13,6 +13,7 @@ function requireWorkflow(source) {
     /needs: \[validate\]/u,
     /npm run check:ward-reference/u,
     /npm run check:ward-expected-reds/u,
+    /WARD_PUBLIC_STANDALONE: "1"/u,
     /npm run test:e2e:ward-journeys/u,
   ])
     assert.match(source, pattern);

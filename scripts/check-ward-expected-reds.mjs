@@ -130,6 +130,29 @@ export const TOOLING_TESTS = [
   "tests/ward-source-control-chars-gate.test.ts",
 ];
 
+/**
+ * Contracts for editor/agent configuration intentionally absent from the standalone public
+ * repository. This exact list is excluded only by public CI, and only while all three private
+ * configuration roots are absent. Product, push-guard and runtime tests remain in the suite.
+ */
+export const PUBLIC_ABSENT_TOOLING_TESTS = [
+  "tests/agent-scopes.test.ts",
+  "tests/bare-pr-publication-policy.test.ts",
+  "tests/claude-code-settings.test.ts",
+  "tests/cursor-mcp-contract.test.ts",
+  "tests/pr-handoff-stop.test.ts",
+  "tests/push-format-guard.test.ts",
+  "tests/session-start-hook.test.ts",
+];
+
+export function selectPublicPopulation(population, privateRootsPresent) {
+  if (privateRootsPresent) throw new Error("Public CI scope requires private editor/agent roots to be absent.");
+  const excluded = new Set(PUBLIC_ABSENT_TOOLING_TESTS);
+  const missing = PUBLIC_ABSENT_TOOLING_TESTS.filter((file) => !population.includes(file));
+  if (missing.length > 0) throw new Error(`Public CI exclusion list is stale: ${missing.join(", ")}`);
+  return population.filter((file) => !excluded.has(file));
+}
+
 export function compareFailingSet({ failing, expected }) {
   const failingCount = new Map(failing.map((entry) => [entry.file, entry.count]));
   const expectedCount = new Map(expected.map((entry) => [entry.file, entry.failing]));
@@ -384,6 +407,14 @@ if (!invokedDirectly) {
     for (const file of tooling) expected.delete(file);
     console.log(`tooling tests skipped: no tooling change (${tooling.length} files; the night shift runs them):`);
     for (const file of tooling) console.log(`    ${file}`);
+  }
+  if (process.env.WARD_PUBLIC_STANDALONE === "1") {
+    const privateRootsPresent = [".claude", ".agents", ".cursor"].some((root) =>
+      existsSync(path.join(projectRoot, root)),
+    );
+    population = selectPublicPopulation(population, privateRootsPresent);
+    for (const file of PUBLIC_ABSENT_TOOLING_TESTS) expected.delete(file);
+    console.log(`Public standalone CI: ${PUBLIC_ABSENT_TOOLING_TESTS.length} absent private-tooling suites omitted.`);
   }
   if (population.length < FLOOR_FILES) {
     fail([
