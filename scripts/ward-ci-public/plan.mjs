@@ -5,13 +5,29 @@ const sha = /^[0-9a-f]{40}$/i;
 const docsOnly = (file) => file === "README.md" || /^docs\/ward-flow\/.*\.md$/u.test(file);
 const dependencyManifest = (file) => /(^|\/)(?:package(?:-lock)?\.json|npm-shrinkwrap\.json)$/u.test(file);
 
+// The separately packaged Azure backend: nothing under src/, tests/ or scripts/ imports it, and the
+// static job runs its own tests.
+const backendOnly = (file) => file.startsWith("backend/ward-flow/");
+// Unit test files. Browser specs import only application code and Playwright, never these files.
+const unitTest = (file) => /^tests\/.+\.test\.tsx?$/u.test(file);
+
+/**
+ * Which jobs a PR needs. `full` gates installs and the static checks; `unit` and `browser` gate
+ * those jobs' work. Anything not positively recognised runs everything (fail closed).
+ */
 export function classifyChanges(entries) {
-  if (!entries.length) return { full: true, reason: "empty diff" };
-  if (entries.some(({ status }) => status !== "M" && status !== "A")) {
-    return { full: true, reason: "deleted or renamed file" };
+  const all = (reason) => ({ full: true, unit: true, browser: true, reason });
+  if (!entries.length) return all("empty diff");
+  if (entries.some(({ status }) => status !== "M" && status !== "A")) return all("deleted or renamed file");
+  const files = entries.map(({ file }) => file);
+  if (files.every(docsOnly)) return { full: false, unit: false, browser: false, reason: "Ward documentation only" };
+  if (files.every((file) => docsOnly(file) || backendOnly(file))) {
+    return { full: true, unit: false, browser: false, reason: "backend and documentation only" };
   }
-  if (entries.every(({ file }) => docsOnly(file))) return { full: false, reason: "Ward documentation only" };
-  return { full: true, reason: "source, test, tooling, configuration or unknown change" };
+  if (files.every((file) => docsOnly(file) || backendOnly(file) || unitTest(file))) {
+    return { full: true, unit: true, browser: false, reason: "unit tests, backend and documentation only" };
+  }
+  return all("source, browser spec, tooling, configuration or unknown change");
 }
 
 export function hasDependencyChanges(entries) {
@@ -35,9 +51,11 @@ if (process.argv[1]?.replaceAll("\\", "/").endsWith("/scripts/ward-ci-public/pla
   let plan;
   let dependencyReview = false;
   if (!base) {
-    plan = { full: true, reason: "no PR base (merge group or manual run)" };
+    plan = classifyChanges([]);
+    plan.reason = "no PR base (merge group or manual run)";
   } else if (!sha.test(base)) {
-    plan = { full: true, reason: "invalid PR base" };
+    plan = classifyChanges([]);
+    plan.reason = "invalid PR base";
     dependencyReview = true;
   } else {
     try {
@@ -49,11 +67,17 @@ if (process.argv[1]?.replaceAll("\\", "/").endsWith("/scripts/ward-ci-public/pla
       plan = classifyChanges(changes);
       dependencyReview = hasDependencyChanges(changes);
     } catch (error) {
-      plan = { full: true, reason: `history unavailable (${error.code ?? error.status ?? "error"})` };
+      plan = classifyChanges([]);
+      plan.reason = `history unavailable (${error.code ?? error.status ?? "error"})`;
       dependencyReview = true;
     }
   }
-  console.log(`Ward CI scope: ${plan.full ? "full" : "docs"} — ${plan.reason}; dependency review: ${dependencyReview}`);
+  console.log(
+    `Ward CI scope: full=${plan.full} unit=${plan.unit} browser=${plan.browser} — ${plan.reason}; dependency review: ${dependencyReview}`,
+  );
   if (process.env.GITHUB_OUTPUT)
-    appendFileSync(process.env.GITHUB_OUTPUT, `full=${plan.full}\ndependency_review=${dependencyReview}\n`);
+    appendFileSync(
+      process.env.GITHUB_OUTPUT,
+      `full=${plan.full}\nunit=${plan.unit}\nbrowser=${plan.browser}\ndependency_review=${dependencyReview}\n`,
+    );
 }

@@ -7,15 +7,16 @@ locked dependencies, and synthetic browser configuration. It does not deploy the
 ## Layout
 
 The checks run as parallel jobs, so a typical PR finishes in about four minutes (the single serial
-job it replaced took about seventeen). Nothing is skipped: every job below runs on every non-docs PR.
+job it replaced took about seventeen). No test is dropped: each job runs everything in its part, and a
+PR skips a job only when its changes cannot affect it (see [Scope by change](#scope-by-change)).
 
-| Job                                | Runners | What it runs                                                                                                                                      | Typical time |
-| ---------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| `Ward Flow quick feedback`         | 1       | Only the tests that import the files the PR changed (`scripts/ward-flow/related-tests.mjs`). A fast signal, not a gate.                           | under 1 min  |
-| `Ward Flow static checks`          | 1       | CI contracts, document links, screen record, dependency review, reference data, legal wording, and one type check of source and route types.      | about 1 min  |
-| `Ward Flow unit shard 1` to `5`    | 5       | The reconciled offline unit population, split into five disjoint shards (`WARD_GATE_SHARD=i/5`). Together they run every file once.               | 2 to 3 min   |
-| `Ward Flow browser journeys 1`–`3` | 3       | The Ward browser journeys, split into three duration-balanced groups of spec files (`WARD_JOURNEY_GROUP=i/3`), each on its own server and runner. | about 3 min  |
-| `Ward Flow required`               | 1       | Passes only when the static, unit and browser jobs all succeed. This is the check the default-branch ruleset requires.                            | seconds      |
+| Job                                | Runners | What it runs                                                                                                                                                                     | Typical time |
+| ---------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| `Ward Flow quick feedback`         | 1       | Only the tests that import the files the PR changed (`scripts/ward-flow/related-tests.mjs`). A fast signal, not a gate.                                                          | under 1 min  |
+| `Ward Flow static checks`          | 1       | CI contracts, document links, screen record, dependency review, changed-file checks, backend tests, reference data, legal wording, and one type check of source and route types. | about 1 min  |
+| `Ward Flow unit shard 1` to `5`    | 5       | The reconciled offline unit population, split into five disjoint shards (`WARD_GATE_SHARD=i/5`). Together they run every file once.                                              | 2 to 3 min   |
+| `Ward Flow browser journeys 1`–`3` | 3       | The Ward browser journeys, split into three duration-balanced groups of spec files (`WARD_JOURNEY_GROUP=i/3`), each on its own server and runner.                                | about 3 min  |
+| `Ward Flow required`               | 1       | Passes only when the static, unit and browser jobs all succeed. This is the check the default-branch ruleset requires.                                                           | seconds      |
 
 Details that keep the split sound:
 
@@ -34,11 +35,39 @@ Details that keep the split sound:
   any of the three, if a shard or group matrix does not match its count, or if the browser builds skip
   their type check without the static job's route-type check.
 
-Documentation-only changes run the static contract, link and screen-record checks, and the other jobs
-finish without installing anything. Package manifest changes also receive GitHub dependency review.
+## Changed-file checks
+
+`scripts/ward-ci-public/changed-checks.mjs` runs in the static job on the files the PR changes, in
+about ten seconds:
+
+- **Prettier** on each changed file. Older unformatted files elsewhere never block an unrelated PR.
+- **ESLint, errors only**, on changed source and script files. Warnings are reported locally, not gated.
+- **Test-deletion guard** (`scripts/check-diff-integrity.mjs`): fails when a PR removes or guts tests
+  without an approved entry in `diff-integrity.json`.
+
+Run it locally with `node scripts/ward-ci-public/changed-checks.mjs --base origin/main`.
+
+## Scope by change
+
+`scripts/ward-ci-public/plan.mjs` decides which jobs a PR needs. It narrows only for files it
+positively recognises; anything else, including deletions, renames, workflow and configuration
+changes, runs every job.
+
+| The PR changes only                                     | Static | Unit shards | Browser groups |
+| ------------------------------------------------------- | ------ | ----------- | -------------- |
+| Ward documentation                                      | links  | skipped     | skipped        |
+| `backend/ward-flow/**` (and documentation)              | yes    | skipped     | skipped        |
+| unit test files `tests/**/*.test.ts(x)` (and the above) | yes    | yes         | skipped        |
+| anything else                                           | yes    | yes         | yes            |
+
+The narrower rows are safe because nothing in `src/`, `tests/` or `scripts/` imports the backend, and
+the browser specs import only application code and Playwright, never unit test files. Package manifest
+changes also receive GitHub dependency review. Unit and browser jobs time out after 15 and 20 minutes,
+so a hung run fails quickly instead of holding a runner.
 
 ## Fast local iteration
 
+- `node scripts/ward-ci-public/changed-checks.mjs --base origin/main`: the CI changed-file checks.
 - `npm run test:related`: runs only the tests related to your changes against `origin/main` (about two
   seconds for a small change). This is the same selection as the quick-feedback job.
 - `WARD_GATE_SHARD=2/5 npm run check:ward-expected-reds`: reproduces one CI unit shard exactly.

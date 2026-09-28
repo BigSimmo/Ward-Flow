@@ -612,7 +612,10 @@
   font-size: var(--t-1);
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .screen .filters [data-ward-primitive="filters"] button:hover {
@@ -1315,7 +1318,10 @@
   font-size: var(--t-1);
   font-weight: 500;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 .sidebarTabs button[aria-selected="true"] {
   border-bottom-color: var(--gilt);
@@ -1776,7 +1782,9 @@
   font-family: var(--body);
   text-align: left;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 .groupFoldButton:hover {
   background: var(--sunk);

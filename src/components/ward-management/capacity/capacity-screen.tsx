@@ -1400,14 +1400,8 @@ function CapacityTabs({
 
 /** Keyed by generation, declared actor and ward: stale selection receipts never cross a scope change. */
 function CapacityWardSidebar({ row, onBack }: { row: NetworkWardRow; onBack: () => void }) {
-  const {
-    bedReleases,
-    refreshRequests,
-    dispatch,
-    readDischargeRecords,
-    openDischargeRecord,
-    readDischargeRecord,
-  } = useWardFlow();
+  const { bedReleases, refreshRequests, dispatch, readDischargeRecords, openDischargeRecord, readDischargeRecord } =
+    useWardFlow();
   const now = useWardFlowClock();
   const [tab, setTab] = useState("ward");
   const [opened, setOpened] = useState<{ admissionId: string; handle: DischargeOpenHandle } | null>(null);
