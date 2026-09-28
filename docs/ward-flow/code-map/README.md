@@ -1,9 +1,12 @@
 # Ward Flow code map — start here
 
-**Read this before any Ward Flow task.** It is the index to a file-by-file reference of every Ward
-Flow file and the shared code it loads. Written 25 September 2026 against the ward line at tip
-`ace8e9ee8d` (`codex/task-ward-flow-live-state-20260831`). The line moves several times a day: check
-`git log -1` and re-count anything a decision depends on.
+**Start with [Ward Flow's entry point](../README.md) and the repository's
+[AGENTS.md](../../../AGENTS.md).** This map is a file-by-file snapshot written on 25 September 2026
+against the former Database ward line at `ace8e9ee8d`. Ward Flow now has its own repository,
+[`BigSimmo/Ward-Flow`](https://github.com/BigSimmo/Ward-Flow), with `main` as its current base.
+Check the code in your checkout before relying on a count, route, or setup claim below. Historical
+Database paths and PsychSift references in linked map pages describe the extraction source; they are
+not instructions for current work.
 
 This map describes code. It does not rule on product questions. Where it repeats another document's
 verdict it names that document.
@@ -21,15 +24,15 @@ verdict it names that document.
 | [Tests](tests.md)                                  | Every ward test file, how the suites run, which tests to run for a change                       |
 | [Scripts and tooling](scripts-and-tooling.md)      | Every script, generator, check, git hook and npm script; fold gates in order                    |
 | [Docs and mockups](docs-and-mockups.md)            | Every top-level doc and drawing, with status; what each history folder holds                    |
-| [Frame and PsychSift](frame-and-psychsift.md)      | The shared frame Ward Flow runs inside, load-bearing shared files, PsychSift at module level    |
+| [Former frame and PsychSift](frame-and-psychsift.md) | Historical extraction context; verify current shared imports in this repository               |
 
 ## Key concepts in ten lines
 
-1. **Two products, one Next.js app.** Ward Flow is a bed-coordination prototype for WA mental health
-   services. PsychSift, the clinical-guideline search app, shares the repository and is being retired
-   from this branch. Nothing in PsychSift imports Ward Flow.
-2. **No server, no database, no login.** All Ward Flow state lives in the browser tab. Patients are
-   synthetic. There are no Ward Flow API routes or migrations.
+1. **Ward Flow has its own repository.** This bed-coordination prototype for WA mental health services
+   is developed in `BigSimmo/Ward-Flow`. PsychSift belongs to the former Database repository.
+2. **This map predates shared database work.** Its browser-state, API, login and migration descriptions
+   are historical. Inspect the current implementation and [AGENTS.md](../../../AGENTS.md) before
+   changing data flow. Keep prototype patients synthetic.
 3. **One reducer is the engine.** Screens call `dispatch(event)`; `wardFlowReducer` checks the role,
    the payload, that the screen's view is not stale, and the domain rules, then either changes state
    or records a refusal. See [Engine](engine.md).
@@ -41,10 +44,10 @@ verdict it names that document.
    only moves through `ADVANCE_CLOCK`. Tests share one instant unless they advance it.
 7. **Saves go to `sessionStorage`, and stop once anything typed happens.** Typed free text never
    reaches browser storage (the privacy lock).
-8. **Drawings are the design authority; the engine is the behaviour authority.** The drawings live in
-   `docs/ward-flow/mockups/`. No test can see a screen that does not match its drawing.
-9. **The ward line is local only and never pushed.** "Fold into main" means the local ward line,
-   never `origin/main`, which deploys the live PsychSift app and database.
+8. **The rendered app is the current design authority; the engine is the behaviour authority.** The
+   drawings in `docs/ward-flow/mockups/` are background. See [Ward Flow's entry point](../README.md).
+9. **The current base is public Ward Flow `main`.** Verify the checkout and `origin` before any remote
+   action. The former Database ward line and its local-only rule do not govern this repository.
 10. **Owner rulings are law.** They are indexed in `docs/ward-flow/OWNER-RULINGS.md`; a later answer
     beats an earlier ruling.
 
@@ -64,13 +67,13 @@ verdict it names that document.
 | Tests for an area                     | [Tests](tests.md), "Which tests to run for a change"                                              |
 | Generated docs and their generators   | [Scripts and tooling](scripts-and-tooling.md)                                                     |
 | Status, open work, rulings            | `docs/ward-flow/STATUS.md`, `docs/ward-flow-task-ledger.md`, `docs/ward-flow/OWNER-RULINGS.md`    |
-| How to branch, commit and fold        | `docs/ward-flow/HOW-WE-WORK.md`                                                                   |
+| How to branch, check and integrate    | Repository [AGENTS.md](../../../AGENTS.md), then `docs/ward-flow/HOW-WE-WORK.md`                  |
 
 ## How to run and test
 
-Work in your own worktree on your own branch cut from the ward line, with `node_modules` as a junction
-to ward-lead's (`cmd //c mklink /J node_modules D:\Worktrees\Database\ward-lead\node_modules`, run
-inside the new worktree). Use absolute paths and `git -C <worktree>`; the shell's folder resets.
+Work in a separate worktree from the current `BigSimmo/Ward-Flow` `main`, following
+[AGENTS.md](../../../AGENTS.md). Do not link dependencies to the former Database checkout. Confirm
+the checkout and remote before changing or running anything.
 
 ```bash
 npm run ward:dev                                  # organisation check, then prints the local URL
@@ -81,33 +84,15 @@ node node_modules/typescript/bin/tsc -p tsconfig.typecheck.json --noEmit
 
 Screens are at `<printed URL>/mockups/ward-flow`. Never assume a port.
 
-Before folding (the full list and order is in [Scripts and tooling](scripts-and-tooling.md)):
+Select the checks for your change from [AGENTS.md](../../../AGENTS.md) and
+[HOW-WE-WORK.md](../HOW-WE-WORK.md). For a documentation-only change, check the changed links with
+`npm run check:ward-doc-links`.
 
-```bash
-node scripts/check-ward-expected-reds.mjs         # full offline ward suite (needed for engine changes)
-npm run test:e2e:ward-journeys                    # browser journeys, chromium-mockups project
-npm run check:ward-doc-links                      # doc links resolve
-npm run ward:organise:check -- --source working-tree
-```
+## Finishing a task
 
-Plus each generator's `--check` when its sources changed (`screen-map`, `mockup-manifest`,
-`owner-rulings-index`, `screen-verification`, `rules-index` under `scripts/ward-flow/`).
-
-## Finishing a task (Josh's rule, 25 September 2026)
-
-A thread is not finished, and must not be resolved, until all of this is true:
-
-1. **Everything useful is committed** on your own branch. Stage explicit paths; never `git add -A`,
-   never `git stash`, never push.
-2. **Anything a commit, merge or fold could overwrite is backed up first**: a backup branch
-   (`backup/<date>-<topic>`) or `bash ~/.claude/scripts/backup-work.sh`.
-3. **Take the fold lock** (`node scripts/ward-flow/fold-lock.mjs acquire "<thread name>"`), merge the
-   latest ward line into your branch, re-run the checks for what you touched, then fold into the ward
-   line in `D:/Worktrees/Database/ward-lead` (never `origin/main`).
-4. **Compare against the backup** to confirm nothing was lost, then **release the fold lock**.
-5. **Unwanted work stays on a named backup branch**, and your worktree has no uncommitted changes.
-6. **Report to the coordinator**: what was folded, the backup branch name, and any open questions.
-   Send any blocker or question to the coordinator straight away, with a recommendation.
+Follow the current repository [AGENTS.md](../../../AGENTS.md) for ownership, checks and integration.
+Commit only your intended files on your own branch, and report the verification actually run. Do not
+apply the former Database ward-line fold procedure to this repository.
 
 ## Common pitfalls
 
@@ -122,7 +107,8 @@ A thread is not finished, and must not be resolved, until all of this is true:
 5. **`ward-movements.ts` is seed data**, not movement logic.
 6. **Retired chrome and unreachable screens are still on disk** and look live. Check importers before
    editing, and never delete them without the owner (protected paths).
-7. **Double-clicking a drawing.** Serve it; opened as a bare file it renders as a different design.
+7. **Double-clicking a drawing.** Serve it for historical comparison; opened as a bare file it renders
+   differently. The rendered app is the current design authority.
 8. **Hex colours, small tap targets, coloured edge bars.** Design tokens only, 48px taps, no edge bars
    or top highlights (owner rulings; tests enforce most of this).
 9. **Mental Health Act wording.** No section numbers and no computed legal time limits; unconnected
