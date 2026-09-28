@@ -30,7 +30,7 @@ function publicRepo() {
 afterEach(() => {
   for (const root of roots.splice(0)) {
     expect(resolve(root).startsWith(resolve(tmpdir()))).toBe(true);
-    rmSync(root, { recursive: true, force: true });
+    rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
 

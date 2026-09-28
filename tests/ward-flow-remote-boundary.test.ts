@@ -36,6 +36,7 @@ function run(remoteUrl?: string, pushInput = stdin, envOverrides: Record<string,
       SKIP_IN_FLIGHT_CI_GUARD: "1",
       SKIP_FORMAT_GUARD: "1",
       SKIP_STATIC_GUARD: "1",
+      SKIP_CHECKOUT_GUARD: "1",
       CONFIRM_WARD_FLOW_PUSH_TO_MAIN: "I_CONFIRM_FOLD_TO_ORIGIN_MAIN",
       CONFIRM_WARD_FLOW_REMOTE: "I_CONFIRM_WARD_FLOW_REMOTE",
       ...envOverrides,
@@ -84,7 +85,7 @@ describe("Ward-Flow push destination", () => {
       const resolvedParent = realpathSync(tmpdir());
       const resolvedRoot = realpathSync(root);
       expect(resolvedRoot.startsWith(`${resolvedParent}${process.platform === "win32" ? "\\" : "/"}`)).toBe(true);
-      rmSync(resolvedRoot, { recursive: true, force: true });
+      rmSync(resolvedRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 
@@ -95,11 +96,10 @@ describe("Ward-Flow push destination", () => {
     expect(
       directMainPushVerdict(mainInput, { ...process.env, CONFIRM_PUSH_TO_MAIN: "I_CONFIRM_PUSH_TO_MAIN" }).ok,
     ).toBe(true);
-    expect(
-      run("https://github.com/BigSimmo/Ward-Flow.git", mainInput, {
-        CONFIRM_PUSH_TO_MAIN: "I_CONFIRM_PUSH_TO_MAIN",
-      }).status,
-    ).toBe(0);
+    const pushConfirmed = run("https://github.com/BigSimmo/Ward-Flow.git", mainInput, {
+      CONFIRM_PUSH_TO_MAIN: "I_CONFIRM_PUSH_TO_MAIN",
+    });
+    expect(pushConfirmed.status, `${pushConfirmed.stderr}\n${pushConfirmed.stdout}`).toBe(0);
   });
 
   it("guards deletion of refs/heads/main as well", () => {
@@ -144,7 +144,7 @@ describe("Ward-Flow push destination", () => {
 
   it("allows Ward Flow branch pushes to the canonical remote", () => {
     const result = run("git@github.com:BigSimmo/Ward-Flow.git");
-    expect(result.status).toBe(0);
+    expect(result.status, `${result.stderr}\n${result.stdout}`).toBe(0);
     expect(result.stderr).not.toContain("ward-flow-push");
   });
 

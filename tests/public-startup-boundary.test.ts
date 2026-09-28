@@ -59,7 +59,7 @@ describe("public startup boundary", () => {
       expect(hook.hookSpecificOutput.additionalContext).toMatch(/BEHIND origin\/main/);
       expect(hook.hookSpecificOutput.additionalContext).not.toMatch(/Never merge or rebase origin\/main/);
     } finally {
-      rmSync(cwd, { recursive: true, force: true });
+      rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 
@@ -91,7 +91,7 @@ describe("public startup boundary", () => {
       expect(JSON.parse(online.stdout).behind).toBe(2);
       expect(git(cwd, "rev-parse", "origin/main")).not.toBe(cachedHead);
     } finally {
-      rmSync(cwd, { recursive: true, force: true });
+      rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 
@@ -106,7 +106,7 @@ describe("public startup boundary", () => {
       expect(result.status, result.stderr).toBe(0);
       expect(result.stdout).toBe("");
     } finally {
-      rmSync(cwd, { recursive: true, force: true });
+      rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 
@@ -127,8 +127,8 @@ describe("public startup boundary", () => {
       expect(clash.status, clash.stderr).toBe(1);
       expect(clash.stdout).toMatch(/SIGNED OUT/);
     } finally {
-      rmSync(cwd, { recursive: true, force: true });
-      rmSync(other, { recursive: true, force: true });
+      rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      rmSync(other, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 
@@ -143,7 +143,7 @@ describe("public startup boundary", () => {
       expect(signOutConflicts([file], log, "ward/startup-boundary", root)).toEqual([]);
       expect(unsignedWardFiles([file], log, "ward/startup-boundary", root)).toEqual([]);
     } finally {
-      rmSync(root, { recursive: true, force: true });
+      rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 
@@ -161,8 +161,8 @@ describe("public startup boundary", () => {
       ]);
       expect(unsignedWardFiles([file], log, "ward/startup-boundary", root)).toEqual([file]);
     } finally {
-      rmSync(root, { recursive: true, force: true });
-      rmSync(other, { recursive: true, force: true });
+      rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      rmSync(other, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 
@@ -176,7 +176,7 @@ describe("public startup boundary", () => {
       expect([...approvedTakeoverFiles(log, "ward/startup-boundary", root)]).toEqual([]);
       expect(unsignedWardFiles([file], log, "ward/startup-boundary", root)).toEqual([file]);
     } finally {
-      rmSync(root, { recursive: true, force: true });
+      rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 });

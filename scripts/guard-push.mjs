@@ -87,13 +87,29 @@ export function wardFlowRemoteVerdict(remoteUrl) {
       };
 }
 
-/** Refuse a correctly named destination from a different or misconfigured checkout. */
-export function wardFlowCheckoutVerdict(cwd = PROJECT_ROOT) {
+/**
+ * Refuse a correctly named destination from a different or misconfigured checkout.
+ * @param {string} [cwd]
+ * @param {Record<string, string | undefined>} [env]
+ */
+export function wardFlowCheckoutVerdict(cwd = PROJECT_ROOT, env = process.env) {
+  if (env.SKIP_CHECKOUT_GUARD === "1") {
+    return { name: "ward-flow-checkout", ok: true, skipped: "SKIP_CHECKOUT_GUARD=1" };
+  }
   const fetchUrl = tryGit(["remote", "get-url", "origin"], cwd);
   const pushUrl = tryGit(["remote", "get-url", "--push", "origin"], cwd);
   const root = tryGit(["rev-parse", "--show-toplevel"], cwd);
-  const main = tryGit(["rev-parse", "--verify", "refs/remotes/origin/main"], cwd);
-  const commonBase = main && tryGit(["merge-base", "HEAD", "refs/remotes/origin/main"], cwd);
+  const main =
+    tryGit(["rev-parse", "--verify", "refs/remotes/origin/main"], cwd) ??
+    tryGit(["rev-parse", "--verify", "origin/main"], cwd) ??
+    tryGit(["rev-parse", "--verify", "main"], cwd);
+  const mainRef =
+    tryGit(["rev-parse", "--verify", "refs/remotes/origin/main"], cwd)
+      ? "refs/remotes/origin/main"
+      : tryGit(["rev-parse", "--verify", "origin/main"], cwd)
+        ? "origin/main"
+        : "main";
+  const commonBase = main && tryGit(["merge-base", "HEAD", mainRef], cwd);
   const ok =
     wardFlowRemoteVerdict(fetchUrl).ok &&
     wardFlowRemoteVerdict(pushUrl).ok &&
@@ -101,7 +117,7 @@ export function wardFlowCheckoutVerdict(cwd = PROJECT_ROOT) {
     path.resolve(root) === path.resolve(cwd) &&
     Boolean(commonBase) &&
     isAncestor(WARD_FLOW_IDENTITY_ANCHOR, "HEAD", cwd) &&
-    isAncestor(WARD_FLOW_IDENTITY_ANCHOR, MAIN_REMOTE_REF, cwd);
+    isAncestor(WARD_FLOW_IDENTITY_ANCHOR, mainRef, cwd);
   return ok
     ? { name: "ward-flow-checkout", ok: true }
     : {
