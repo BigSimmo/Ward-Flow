@@ -66,9 +66,86 @@ export function activeSignOutLines(signOutText) {
 
 const normalizedFolder = (value) => value.trim().replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
 
+// Kept self-contained because tests copy this script alone into fixture repositories.
+// tests/public-signout-boundary.test.ts asserts both stay identical to guard-push.mjs.
+export const WARD_FLOW_IDENTITY_ANCHOR = "e735c1f8d34df005becf720b96752626a4f1dcc8";
+
+/** Canonical HTTPS, scp-style and ssh:// Ward-Flow URLs, matching the push guard. */
+export function isCanonicalWardFlowRemote(remoteUrl) {
+  return (
+    typeof remoteUrl === "string" &&
+    /^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)BigSimmo\/Ward-Flow(?:\.git)?$/i.test(
+      remoteUrl,
+    )
+  );
+}
+
+const repositoryIdentityCache = new Map();
+
+/** Verify the checkout itself, regardless of which drive or host contains its worktree. */
+export function isPublicWardFlowCheckout(worktree) {
+  if (!worktree) return false;
+  const folder = normalizedFolder(worktree);
+  if (repositoryIdentityCache.has(folder)) return repositoryIdentityCache.get(folder);
+  let verified = false;
+  try {
+    const run = (...args) =>
+      execFileSync("git", ["-C", worktree, ...args], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    verified =
+      normalizedFolder(run("rev-parse", "--show-toplevel")) === folder &&
+      isCanonicalWardFlowRemote(run("remote", "get-url", "origin")) &&
+      isCanonicalWardFlowRemote(run("remote", "get-url", "--push", "origin"));
+    // A common base proves nothing: a repointed Database clone shares history with itself.
+    // HEAD and origin/main must both descend from the verified public Ward-Flow main;
+    // `merge-base --is-ancestor` exits non-zero otherwise, which run() turns into a throw.
+    if (verified) {
+      run("merge-base", "--is-ancestor", WARD_FLOW_IDENTITY_ANCHOR, "HEAD");
+      run("merge-base", "--is-ancestor", WARD_FLOW_IDENTITY_ANCHOR, "refs/remotes/origin/main");
+    }
+  } catch {
+    // A missing checkout, an unverified remote or foreign history never identifies a public claim.
+    verified = false;
+  }
+  repositoryIdentityCache.set(folder, verified);
+  return verified;
+}
+
+/** Scope both claims and releases before parsing either, so old releases cannot close public claims. */
+export function scopedActiveSignOutLines(signOutText, currentWorktree = "") {
+  const publicCheckout = isPublicWardFlowCheckout(currentWorktree);
+  const branches = new Map();
+  const result = [];
+  for (const line of activeSignOutLines(signOutText).split(/\r?\n/)) {
+    if (line.startsWith("- ")) {
+      const fields = line
+        .slice(2)
+        .split("|")
+        .map((field) => field.trim());
+      const branch = fields[2]?.split(/\s+/)[0];
+      const isPublic = /\brepo=BigSimmo\/Ward-Flow\b/i.test(line) || isPublicWardFlowCheckout(fields[3] ?? "");
+      if (branch) {
+        const scopes = branches.get(branch) ?? new Set();
+        scopes.add(isPublic ? "public" : "legacy");
+        branches.set(branch, scopes);
+      }
+      if (isPublic === publicCheckout) result.push(line);
+      continue;
+    }
+    if (line.startsWith("RELEASED ")) {
+      const branch = line.split("|")[2]?.trim().split(/\s+/)[0];
+      const scopes = branches.get(branch);
+      // Older unscoped releases belong to a sole known scope. An ambiguous one
+      // closes only the legacy claim; new public releases must name their repo.
+      const isPublic = /\brepo=BigSimmo\/Ward-Flow\b/i.test(line) || (scopes?.size === 1 && scopes.has("public"));
+      if (isPublic === publicCheckout) result.push(line);
+    }
+  }
+  return result.join("\n");
+}
+
 function signOutEntries(signOutText) {
   const entries = [];
-  for (const line of activeSignOutLines(signOutText).split(/\r?\n/)) {
+  for (const line of signOutText.split(/\r?\n/)) {
     if (line.startsWith("RELEASED ")) {
       const branch = line.split("|")[2]?.trim().split(/\s+/)[0];
       if (branch) {
@@ -121,6 +198,10 @@ function signOutEntries(signOutText) {
   return entries;
 }
 
+function signOutEntriesForCheckout(signOutText, currentWorktree) {
+  return signOutEntries(scopedActiveSignOutLines(signOutText, currentWorktree));
+}
+
 function coversFile(paths, file) {
   return paths.some((entry) => {
     const folder = entry.replace(/\/\*\*$/, "/");
@@ -138,7 +219,7 @@ function isOwnSignOut(entry, currentBranch, currentWorktree) {
 /** Staged files signed out by another branch. A trailing "/" or "/**" signs out a folder. */
 export function approvedTakeoverFiles(signOutText, currentBranch, currentWorktree = "") {
   return new Set(
-    signOutEntries(signOutText)
+    signOutEntriesForCheckout(signOutText, currentWorktree)
       .filter((entry) => isOwnSignOut(entry, currentBranch, currentWorktree))
       .flatMap((entry) => entry.takeoverPaths),
   );
@@ -146,7 +227,7 @@ export function approvedTakeoverFiles(signOutText, currentBranch, currentWorktre
 
 export function signOutConflicts(staged, signOutText, currentBranch, currentWorktree = "") {
   const conflicts = [];
-  const entries = signOutEntries(signOutText);
+  const entries = signOutEntriesForCheckout(signOutText, currentWorktree);
   const approved = approvedTakeoverFiles(signOutText, currentBranch, currentWorktree);
   for (const entry of entries) {
     if (isOwnSignOut(entry, currentBranch, currentWorktree)) continue;
@@ -164,8 +245,13 @@ const WARD_SIGNOUT_PATH =
 
 /** Ward files staged without an active sign-out owned by this branch or worktree. */
 export function unsignedWardFiles(staged, signOutText, currentBranch, currentWorktree = "") {
-  const owned = signOutEntries(signOutText).filter((entry) => isOwnSignOut(entry, currentBranch, currentWorktree));
-  return staged.filter((file) => WARD_SIGNOUT_PATH.test(file) && !owned.some((entry) => coversFile(entry.paths, file)));
+  const owned = signOutEntriesForCheckout(signOutText, currentWorktree).filter((entry) =>
+    isOwnSignOut(entry, currentBranch, currentWorktree),
+  );
+  const publicCheckout = isPublicWardFlowCheckout(currentWorktree);
+  return staged.filter(
+    (file) => (publicCheckout || WARD_SIGNOUT_PATH.test(file)) && !owned.some((entry) => coversFile(entry.paths, file)),
+  );
 }
 
 /** Parse `git diff --cached -U0` output into { file -> [{ line, text }] } of added lines. */
@@ -562,7 +648,10 @@ async function main() {
     const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]).trim();
     const signOutText = existsSync(SIGN_OUT_FILE) ? readFileSync(SIGN_OUT_FILE, "utf8") : "";
     const clashes = signOutConflicts(staged, signOutText, branch, root);
-    const unsigned = branch.startsWith("ward/") ? unsignedWardFiles(staged, signOutText, branch, root) : [];
+    const taskBranch = isPublicWardFlowCheckout(root)
+      ? branch !== "main" && branch !== "HEAD"
+      : branch.startsWith("ward/");
+    const unsigned = taskBranch ? unsignedWardFiles(staged, signOutText, branch, root) : [];
     if (clashes.length > 0) {
       failed = true;
       console.error(`[pre-commit] BLOCKED: files signed out by another session in ${SIGN_OUT_FILE}:`);

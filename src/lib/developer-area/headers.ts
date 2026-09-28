@@ -55,11 +55,9 @@ export const DEVELOPER_GATED_PATH_PREFIXES = ["/mockups/ward-flow", "/mockups/wa
  * Whether a pathname is inside one of the gated subtrees. Exact-or-slash, so a
  * look-alike such as `/mockups/care-plan-archive` is NOT a match.
  *
- * Lives here, beside the prefixes, because two callers need it and they cannot
- * share code any other way: `src/proxy.ts` runs on the server, and
- * `link-access-shared.ts` is reachable from a Client Component. A second copy of
- * this predicate is exactly the duplicate that drifts — and one of its callers
- * is a security guard, where drifting means failing open.
+ * Lives here, beside the prefixes, so `src/proxy.ts` never carries a second copy
+ * of this predicate: a duplicate is exactly what drifts, and the proxy's blanket
+ * production block is a security guard, where drifting means failing open.
  */
 export function isDeveloperGatedPath(pathname: string): boolean {
   return DEVELOPER_GATED_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));

@@ -1,5 +1,10 @@
 # Deployment Architecture
 
+> [!NOTE]
+> **Historical Architecture Reference (PsychSift Monorepo):**
+> This document records the production architecture of the separate PsychSift clinical knowledge base (`psychiatry.tools`, Supabase, ingestion workers).
+> **Ward Flow is deployed separately** as a standalone synthetic web app to Railway project `Ward Flow` (`8d748288-549b-4614-a4c3-30d1dbf3081d`) with in-memory/browser-local state and zero database connectors. For current Ward Flow hosting details, see [`docs/hosting.md`](./hosting.md).
+
 Decision record for the production topology of PsychSift. Written 2026-07-06,
 revised 2026-07-12 when the app went live on Railway. Companion documents:
 `docs/observability-slos.md` (SLOs + eval canary) and `docs/audit/capacity-review.md`

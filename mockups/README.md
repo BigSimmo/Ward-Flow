@@ -336,14 +336,8 @@ Mockups use the Clinical White / Sky Graphite role tokens (`--command`, `--clini
 
 ## Global search shell
 
-Runnable mockups under `src/app/mockups/*` inherit the shared PsychSift header and bottom search composer from `src/app/mockups/layout.tsx`.
-
-- Put the mockup content between the global header and bottom composer; do not copy the header or composer into new pages.
-- `src/app/mockups/mockups-layout-client.tsx` is the suppression registry: it carries the route-specific rules (by exact path or prefix) for which mockups hide the composer, the header, or both — Favourites and Tools mockups that provide their own primary search surface, the phone-frame studies that draw their own chrome, the Caring Contact and Care Plan prototypes, and more. Add a new mockup's rule there with a comment saying why, rather than inventing a route-local override.
-- Two subtrees bypass the shell entirely rather than rendering inside it with the chrome switched off: Ward Flow (`/mockups/ward-flow/**`) and the Developer Hub (`/mockups/development/**`). The comment block in that file records why (duplicate `<main>` landmarks and pointer interception when nested).
-- Use `?mode=answer`, `?mode=documents`, `?mode=prescribing`, `?mode=evidence`, or `?mode=favourites` to preview the active search mode.
-- The bottom composer routes live searches to the dashboard with `mode`, `q`, and `run=1`; New chat routes to `/?mode=answer&focus=1`.
-- If a future mockup must be standalone, add it to the bypass branch in `mockups-layout-client.tsx` (the Ward Flow pattern) or move it outside the `/mockups` route shell; do not copy the shell's header or composer into the page.
+> [!NOTE]
+> In the standalone `BigSimmo/Ward-Flow` repository, the legacy PsychSift shared header and bottom search composer have been retired. Mockups under `/mockups/ward-flow/**` render their own standalone navigation shell via `src/app/mockups/ward-flow/layout.tsx`. All state is local/in-memory and does not connect to PsychSift or Supabase.
 
 ## Calculators Show all chip (2026-08-24)
 

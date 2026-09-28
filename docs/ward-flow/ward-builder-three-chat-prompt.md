@@ -1,5 +1,7 @@
 # Ward Builder Three — the prompt to start the chat with
 
+> SUPERSEDED on 2026-09-28 by [`docs/ward-flow/HOW-WE-WORK.md`](HOW-WE-WORK.md) and repository [`AGENTS.md`](../../AGENTS.md). Historical prompt for former Database worktree setup; do not follow.
+
 Open a new Claude Code chat **in `D:/Worktrees/Database/ward-builder-three`** and paste everything
 below the line. Nothing else needs setting up — the branch exists, the dependencies are installed and
 byte-identical to the master line, and the git hooks are in place.

@@ -1,5 +1,10 @@
 # Process Hardening Plan
 
+> [!NOTE]
+> **Historical Process Reference (PsychSift Monorepo):**
+> This document records verification gates, CI design, and process hardening for the PsychSift monorepo (Supabase migrations, RAG evals, Docker builds, and Railway production).
+> For current **Ward Flow** standalone repository rules and verification procedures, see [`AGENTS.md`](../AGENTS.md) and [`docs/ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md).
+
 This document turns the current process review into phased, durable repo practice. It separates changes that already take effect from work that should stay explicit until it is implemented.
 
 ## Cloud environment verification boundaries (2026-09-07)

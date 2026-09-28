@@ -1,19 +1,15 @@
-> # 🔴 SUPERSEDED — 2026-09-08. DO NOT FOLLOW THE BRANCH INSTRUCTIONS BELOW.
+> # 🔴 SUPERSEDED — 2026-09-28. DO NOT FOLLOW THE LOCAL DATABASE INSTRUCTIONS BELOW.
 >
-> This document was written when `claude/Ward-design` held the register and
-> `claude/ward-flow-phases-6-7-design` held the code. **Both statements are now false.**
-> The single master line is **`codex/task-ward-flow-live-state-20260831`**, and every
-> ward document named below is present on it.
+> Ward Flow has been separated into its dedicated repository **`BigSimmo/Ward-Flow`** (branch `main`).
+> The former local line `codex/task-ward-flow-live-state-20260831` in `D:\Repos\Database` or `D:\Worktrees\Database\ward-lead`
+> is historical.
 >
 > **It is kept because it is a handover document, and handover documents are never deleted
 > here — including superseded ones.** It records how the project was organised at the end of
-> August 2026, which is worth having. It is not an instruction.
+> August 2026. It is not an instruction.
 >
-> **For the current state, read `docs/ward-flow/archive/dated-notes/WARD-LEAD-HANDOVER-2026-09-07.md`.**
->
-> ⚠️ It was also the only copy of itself anywhere: it lived on `claude/Ward-design` alone and
-> was not on the master line until today. A document that exists on one branch is one branch
-> deletion away from gone — which is why it is here now, banner and all.
+> **For the current product entry point and workflow, read [`docs/ward-flow/README.md`](ward-flow/README.md),
+> [`docs/ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md), and repository [`AGENTS.md`](../AGENTS.md).**
 
 ---
 

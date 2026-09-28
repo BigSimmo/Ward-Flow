@@ -1,5 +1,11 @@
 # Ward Flow — how the three chats work together
 
+> [!NOTE]
+> **SUPERSEDED — 2026-09-28.**
+> This document was written on 2026-09-01 for a local three-chat arrangement in `D:/Worktrees/Database/`.
+> Ward Flow now lives in the dedicated repository [`BigSimmo/Ward-Flow`](https://github.com/BigSimmo/Ward-Flow).
+> The master line `codex/task-ward-flow-live-state-20260831` and local-only fold rules are superseded by the repository boundary and workflow in [`AGENTS.md`](../../AGENTS.md) and [`HOW-WE-WORK.md`](HOW-WE-WORK.md).
+
 Written by Ward Lead on 2026-09-01, at the owner's instruction, after all three roles were set up
 but none of them had been told how to work alongside the other two.
 
