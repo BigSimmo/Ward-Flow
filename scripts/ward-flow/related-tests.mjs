@@ -18,7 +18,16 @@ import path from "node:path";
 const CAP = 60;
 const LINE = "codex/task-ward-flow-live-state-20260831";
 const args = process.argv.slice(2);
-const base = args.includes("--base") ? args[args.indexOf("--base") + 1] : LINE;
+// The public Ward-Flow repository has no local ward line; compare against its origin/main there.
+const lineExists = (() => {
+  try {
+    execFileSync("git", ["rev-parse", "--verify", "--quiet", `${LINE}^{commit}`], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+const base = args.includes("--base") ? args[args.indexOf("--base") + 1] : lineExists ? LINE : "origin/main";
 const dryRun = args.includes("--dry-run");
 // --head <ref>: judge a committed range instead of this worktree (for checking the selection).
 const head = args.includes("--head") ? args[args.indexOf("--head") + 1] : null;

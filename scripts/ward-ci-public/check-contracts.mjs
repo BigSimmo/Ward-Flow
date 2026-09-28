@@ -14,6 +14,7 @@ function requireWorkflow(source) {
     /test "\$STATIC_RESULT" = success && test "\$UNIT_RESULT" = success && test "\$BROWSER_RESULT" = success/u,
     /fail-fast: false/u,
     /WARD_GATE_SHARD: \$\{\{ matrix\.shard \}\}\/\d+/u,
+    /related-tests\.mjs --base "\$WARD_BASE_SHA" --head HEAD/u,
     /WARD_JOURNEY_GROUP: \$\{\{ matrix\.group \}\}\/\d+/u,
     /npm run check:ward-reference/u,
     /npm run check:ward-expected-reds/u,
@@ -66,7 +67,7 @@ for (const bad of [
   workflow.replace("contents: read", "contents: write"),
   workflow.replace("npm run check:ward-expected-reds", "echo no unit checks"),
   workflow.replace("needs: [static, unit, browser]", "needs: [static, browser]"),
-  workflow.replace("shard: [1, 2, 3, 4]", "shard: [1, 2, 3]"),
+  workflow.replace("shard: [1, 2, 3, 4, 5]", "shard: [1, 2, 3, 4]"),
   workflow.replaceAll("fail-fast: false", "fail-fast: true"),
   workflow.replace("group: [1, 2, 3]", "group: [1, 2]"),
 ])

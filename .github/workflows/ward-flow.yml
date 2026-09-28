@@ -58,6 +58,37 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node node_modules/typescript/bin/tsc -p tsconfig.typecheck.json --noEmit --incremental false
 
+  quick:
+    # Fast signal, not a gate: only the tests that import the files this PR changed, so a red shows
+    # in about a minute. The unit shards below still run every file and decide the required check.
+    name: Ward Flow quick feedback
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.15.0"
+          cache: npm
+      - name: Plan Ward scope
+        id: plan
+        env:
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/ward-ci-public/plan.mjs
+      - name: Install locked dependencies
+        id: install
+        if: ${{ !cancelled() && steps.plan.outputs.full == 'true' }}
+        run: npm ci --ignore-scripts
+      - name: Run the tests related to this PR's changes
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        env:
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/ward-flow/related-tests.mjs --base "$WARD_BASE_SHA" --head HEAD
+
   unit:
     name: Ward Flow unit shard ${{ matrix.shard }}
     runs-on: ubuntu-24.04
@@ -66,7 +97,7 @@ jobs:
       # Every shard reports, so one red never hides another shard's result.
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -88,7 +119,7 @@ jobs:
       - name: Run reconciled unit suite shard
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         env:
-          WARD_GATE_SHARD: ${{ matrix.shard }}/4
+          WARD_GATE_SHARD: ${{ matrix.shard }}/5
         run: npm run check:ward-expected-reds -- --print-signatures
 
   browser:
