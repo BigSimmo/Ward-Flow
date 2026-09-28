@@ -121,6 +121,14 @@ function signOutEntries(signOutText) {
   return entries;
 }
 
+function signOutEntriesForCheckout(signOutText, currentWorktree) {
+  const entries = signOutEntries(signOutText);
+  // The public Ward-Flow repository shares an append-only log with the old Database
+  // checkout. Its claims cover different physical files even when paths match.
+  if (!normalizedFolder(currentWorktree).startsWith("d:/worktrees/wardflow/")) return entries;
+  return entries.filter((entry) => normalizedFolder(entry.worktree).startsWith("d:/worktrees/wardflow/"));
+}
+
 function coversFile(paths, file) {
   return paths.some((entry) => {
     const folder = entry.replace(/\/\*\*$/, "/");
@@ -138,7 +146,7 @@ function isOwnSignOut(entry, currentBranch, currentWorktree) {
 /** Staged files signed out by another branch. A trailing "/" or "/**" signs out a folder. */
 export function approvedTakeoverFiles(signOutText, currentBranch, currentWorktree = "") {
   return new Set(
-    signOutEntries(signOutText)
+    signOutEntriesForCheckout(signOutText, currentWorktree)
       .filter((entry) => isOwnSignOut(entry, currentBranch, currentWorktree))
       .flatMap((entry) => entry.takeoverPaths),
   );
@@ -146,7 +154,7 @@ export function approvedTakeoverFiles(signOutText, currentBranch, currentWorktre
 
 export function signOutConflicts(staged, signOutText, currentBranch, currentWorktree = "") {
   const conflicts = [];
-  const entries = signOutEntries(signOutText);
+  const entries = signOutEntriesForCheckout(signOutText, currentWorktree);
   const approved = approvedTakeoverFiles(signOutText, currentBranch, currentWorktree);
   for (const entry of entries) {
     if (isOwnSignOut(entry, currentBranch, currentWorktree)) continue;
@@ -164,7 +172,9 @@ const WARD_SIGNOUT_PATH =
 
 /** Ward files staged without an active sign-out owned by this branch or worktree. */
 export function unsignedWardFiles(staged, signOutText, currentBranch, currentWorktree = "") {
-  const owned = signOutEntries(signOutText).filter((entry) => isOwnSignOut(entry, currentBranch, currentWorktree));
+  const owned = signOutEntriesForCheckout(signOutText, currentWorktree).filter((entry) =>
+    isOwnSignOut(entry, currentBranch, currentWorktree),
+  );
   return staged.filter((file) => WARD_SIGNOUT_PATH.test(file) && !owned.some((entry) => coversFile(entry.paths, file)));
 }
 

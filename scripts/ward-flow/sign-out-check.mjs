@@ -13,12 +13,30 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 
-const LINE = "codex/task-ward-flow-live-state-20260831";
+const git = (argv) => execFileSync("git", argv, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+let originUrl = "";
+try {
+  originUrl = git(["remote", "get-url", "origin"]);
+} catch {
+  // Old local ward worktrees may have no origin; keep their ward-line behaviour.
+}
+const standaloneWardFlow = /(?:^|[/:])BigSimmo\/Ward-Flow(?:\.git)?\/?$/i.test(originUrl);
+const LINE = standaloneWardFlow ? "main" : "codex/task-ward-flow-live-state-20260831";
 const SIGN_OUT = process.env.WARD_SIGNOUT_FILE ?? "D:/Repos/ward-flow-logs/sign-out.md";
+function readSignOutText() {
+  const text = existsSync(SIGN_OUT) ? readFileSync(SIGN_OUT, "utf8") : "";
+  if (!standaloneWardFlow) return text;
+  // The shared append-only log also records claims on the old Database checkout.
+  // Those are different physical files, so keep only claims for this public repo.
+  return text
+    .split(/\r?\n/)
+    .filter((line) => !line.startsWith("- ") || /\|\s*D:\/Worktrees\/WardFlow\//i.test(line))
+    .join("\n");
+}
 // --stale: list Active sign-out lines whose branches are all folded into the line or gone, so the
 // steward can clear them after each fold. Lists only; it never edits the file.
 if (process.argv[2] === "--stale") {
-  const text = existsSync(SIGN_OUT) ? readFileSync(SIGN_OUT, "utf8") : "";
+  const text = readSignOutText();
   const { activeSignOutLines } = await import(new URL("../pre-commit-checks.mjs", import.meta.url));
   const section = activeSignOutLines(text);
   const gitLineTip = execFileSync("git", ["rev-parse", LINE], { encoding: "utf8" }).trim();
@@ -64,14 +82,13 @@ if (files.length === 0) {
   console.log("Usage: sign-out-check.mjs <file> [<file> ...] | --stale");
   process.exit(2);
 }
-const git = (argv) => execFileSync("git", argv, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
 const root = git(["rev-parse", "--show-toplevel"]);
 const current = git(["branch", "--show-current"]);
 
 const { approvedTakeoverFiles, signOutConflicts } = await import(
   pathToFileURL(path.join(root, "scripts/pre-commit-checks.mjs")).href
 );
-const signOutText = existsSync(SIGN_OUT) ? readFileSync(SIGN_OUT, "utf8") : "";
+const signOutText = readSignOutText();
 const approved = approvedTakeoverFiles(signOutText, current, root);
 const toCheck = files.filter((file) => !approved.has(file));
 for (const file of files) if (approved.has(file)) console.log(`APPROVED TAKEOVER  ${file}`);

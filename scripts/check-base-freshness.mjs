@@ -74,17 +74,30 @@ function tryGit(args) {
   }
 }
 
-// Ward Flow branches are local-only and deliberately never take origin/main (owner rule: "main"
-// means the local ward line, and origin/main deploys the live app and database). On those branches
+// The old Database ward line is local-only. The standalone Ward-Flow repository has its
+// own origin/main, so identify the repository before applying that old branch rule.
+const originUrl = tryGit(["remote", "get-url", "origin"]) ?? "";
+const standaloneWardFlow = /(?:^|[/:])BigSimmo\/Ward-Flow(?:\.git)?\/?$/i.test(originUrl);
+const WARD_LINE = "codex/task-ward-flow-live-state-20260831";
+const hasLocalWardLine = Boolean(tryGit(["rev-parse", "--verify", "--quiet", WARD_LINE]));
+
+// Ward Flow branches in Database are local-only and deliberately never take origin/main
+// (owner rule: "main" means the local ward line, and origin/main deploys the live app
+// and database). On those branches
 // the "rebase or merge origin/main" advice is wrong, so hook mode stays silent there. The Ward Flow
 // fold check (~/.claude/hooks/ward-fold-debt.sh) reports freshness against the ward line instead.
-if (hookMode && /^ward\/|^(codex|claude)\/.*ward/i.test(tryGit(["rev-parse", "--abbrev-ref", "HEAD"]) ?? "")) {
+if (
+  hookMode &&
+  !standaloneWardFlow &&
+  hasLocalWardLine &&
+  /^(?:ward\/|(?:codex|claude)\/.*ward)/i.test(tryGit(["rev-parse", "--abbrev-ref", "HEAD"]) ?? "")
+) {
   process.exit(0);
 }
 // The desktop app names its worktree branches claude/<random>, so also recognise a Ward Flow
 // worktree by ancestry: if HEAD shares ward-only history with the ward line, give the ward check.
-const WARD_LINE = "codex/task-ward-flow-live-state-20260831";
-const wardBase = hookMode ? tryGit(["merge-base", WARD_LINE, "HEAD"]) : undefined;
+const wardBase =
+  hookMode && !standaloneWardFlow && hasLocalWardLine ? tryGit(["merge-base", WARD_LINE, "HEAD"]) : undefined;
 if (wardBase && tryGit(["merge-base", "--is-ancestor", wardBase, "origin/main"]) === undefined) {
   const wardBehind = tryGit(["rev-list", "--count", `HEAD..${WARD_LINE}`]) ?? "?";
   const additionalContext =
