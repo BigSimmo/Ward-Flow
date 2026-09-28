@@ -23,9 +23,11 @@
 // GUARANTEED to sum to `unit.beds` — which this map depends on, because every bed must land in
 // exactly one square. A map built on `NetworkWardRow.ready` could one day draw more squares than a
 // ward has beds, or fewer, the moment a future feed lets `allocatable` exceed `empty`.
+import { useState, useRef, useEffect, useCallback } from "react";
 import { unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import type { BedRelease, HealthService, Unit } from "@/components/ward-management/ward-model";
 import { countCellText } from "./capacity-derivations";
 import styles from "./bed-map.module.css";
@@ -147,6 +149,39 @@ function buildSquares(ward: BedMapWard): BedSquare[] {
   return squares;
 }
 
+type BedBay = {
+  id: string;
+  name: string;
+  squares: { square: BedSquare; index: number }[];
+};
+
+/** Groups bed squares into natural 4-bed bays for rapid visual counting (subitizing) */
+function buildBays(squares: BedSquare[]): BedBay[] {
+  const bays: BedBay[] = [];
+  const baySize = 4;
+  for (let i = 0; i < squares.length; i += baySize) {
+    const baySquares = squares.slice(i, i + baySize).map((square, offset) => ({
+      square,
+      index: i + offset,
+    }));
+    const bayNumber = Math.floor(i / baySize) + 1;
+    bays.push({
+      id: `bay-${bayNumber}`,
+      name: `Bay ${bayNumber}`,
+      squares: baySquares,
+    });
+  }
+  return bays;
+}
+
+function bedKindsServed(unit: Unit): string {
+  if (unit.cohort !== "Adult") return unit.cohort;
+  const kinds: string[] = [];
+  if (unitHasLockedBeds(unit)) kinds.push("Locked adult");
+  if (unitHasOpenBeds(unit)) kinds.push("Open adult");
+  return kinds.length > 0 ? kinds.join(" & ") : "Adult (no beds)";
+}
+
 const SQUARE_LABEL: Record<BedSquareState, string> = {
   ready: "Ready bed",
   held: "Held bed — not offered",
@@ -202,9 +237,13 @@ function BedMapLegend() {
 }
 
 /**
- * One ward's beds. The numeric line beside the squares is not decoration: it is what makes a zero
- * state honest (`countCellText` — "none", never a bare "0", same rule as every other count on this
- * screen) and what gives a reader who cannot use colour the same facts the squares carry visually.
+ * One ward's beds, rendered as a condensed, compact card with:
+ * - Clean borders, header with ward name and total beds badge
+ * - Color-coded status badges (with honest "none ready" copy when ready is 0)
+ * - Proportional capacity ribbon showing occupancy pressure at a glance
+ * - ALL 4-bed bay pods and beds rendered simultaneously (zero internal pagination)
+ * - Tactile micro-bed styling with pillow indentation, luminous indicators, and glyphs
+ * - Interactive hover/focus unclipped floating tooltips
  */
 function WardBlock({
   ward,
@@ -215,9 +254,58 @@ function WardBlock({
   selectedUnitId?: string;
   onSelectWard?: (unitId: string) => void;
 }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+
   const squares = buildSquares(ward);
+  const bays = buildBays(squares);
+
+  const [hoveredBed, setHoveredBed] = useState<{
+    square: BedSquare;
+    index: number;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  const total = ward.unit.beds;
+  const pureReady = Math.max(0, ward.ready - ward.pendingPreparation);
+  const turnover = ward.pendingPreparation;
+  const held = ward.held;
+  const blocked = ward.blocked;
+  const occupied = ward.occupied;
+
+  const pureReadyPct = total > 0 ? (pureReady / total) * 100 : 0;
+  const turnoverPct = total > 0 ? (turnover / total) * 100 : 0;
+  const heldPct = total > 0 ? (held / total) * 100 : 0;
+  const blockedPct = total > 0 ? (blocked / total) * 100 : 0;
+  const occupiedPct = total > 0 ? (occupied / total) * 100 : 0;
+
+  const handleBedFocus = (
+    e: React.FocusEvent<HTMLElement> | React.MouseEvent<HTMLElement>,
+    square: BedSquare,
+    index: number,
+  ) => {
+    const card = cardRef.current;
+    if (!card) return;
+    const cardRect = card.getBoundingClientRect();
+    const bedRect = e.currentTarget.getBoundingClientRect();
+    const relativeX = bedRect.left - cardRect.left + bedRect.width / 2;
+    const clampedX = Math.max(70, Math.min(cardRect.width - 70, relativeX));
+    const relativeY = bedRect.top - cardRect.top;
+    setHoveredBed({
+      square,
+      index,
+      x: clampedX,
+      y: relativeY,
+    });
+  };
+
+  const handleBedBlur = () => {
+    setHoveredBed(null);
+  };
+
   return (
     <div
+      ref={cardRef}
       className={styles.wardBlock}
       data-selected={selectedUnitId === ward.unit.id || undefined}
       data-interactive={Boolean(onSelectWard) || undefined}
@@ -225,57 +313,221 @@ function WardBlock({
       onClick={onSelectWard ? () => onSelectWard(ward.unit.id) : undefined}
     >
       <div className={styles.wardBlockHeader}>
-        {onSelectWard ? (
-          <button
-            type="button"
-            className={styles.wardSelect}
-            aria-pressed={selectedUnitId === ward.unit.id}
-            onClick={(event) => {
-              event.stopPropagation();
-              onSelectWard(ward.unit.id);
-            }}
-          >
-            {ward.unit.name}
-            <span className={styles.bedTotal}>{ward.unit.beds}</span>
-          </button>
-        ) : (
-          <span className={styles.mapWardName}>{ward.unit.name}</span>
-        )}
-        <span className={styles.wardCounts}>
-          {countCellText(ward.ready)} ready
-          {ward.pendingPreparation > 0 ? ` (${ward.pendingPreparation} still being made ready)` : ""}
-          {" · "}
-          {countCellText(ward.held)} held{" · "}
-          blocked not recorded{" · "}
-          {countCellText(ward.occupied)} occupied
-        </span>
+        <div className={styles.wardTitleRow}>
+          {onSelectWard ? (
+            <button
+              type="button"
+              className={styles.wardSelect}
+              aria-pressed={selectedUnitId === ward.unit.id}
+              onClick={(event) => {
+                event.stopPropagation();
+                onSelectWard(ward.unit.id);
+              }}
+            >
+              <span className={styles.wardNameText}>{ward.unit.name}</span>
+            </button>
+          ) : (
+            <span className={styles.mapWardName}>{ward.unit.name}</span>
+          )}
+          <span className={styles.bedTotalBadge} title={`${ward.unit.beds} total beds`}>
+            {ward.unit.beds}b
+          </span>
+        </div>
+
+        {/* Elevated Status Chips */}
+        <div className={styles.statusChipsRow}>
+          {ward.ready > 0 ? (
+            <span className={styles.chipReady}>
+              <span className={styles.statusDotReady} aria-hidden="true" />
+              {countCellText(ward.ready)} ready
+            </span>
+          ) : (
+            <span className={styles.chipZero}>none ready</span>
+          )}
+
+          {ward.pendingPreparation > 0 ? (
+            <span className={styles.chipTurnover} title={`${ward.pendingPreparation} still being made ready`}>
+              <span aria-hidden="true">⚙</span> {ward.pendingPreparation} turnover
+              <span className={styles.srOnly}> ({ward.pendingPreparation} still being made ready)</span>
+            </span>
+          ) : null}
+
+          {ward.held > 0 ? (
+            <span className={styles.chipHeld}>
+              <span aria-hidden="true">🔒</span> {countCellText(ward.held)} held
+            </span>
+          ) : null}
+
+          {ward.blocked > 0 ? (
+            <span className={styles.chipBlocked}>
+              <span aria-hidden="true">✕</span> {countCellText(ward.blocked)} blocked
+            </span>
+          ) : null}
+
+          <span className={styles.chipOccupied}>{countCellText(ward.occupied)} occupied</span>
+        </div>
       </div>
-      <div className={styles.squares} role="group" aria-label={`${ward.unit.name} beds`}>
-        {squares.map((square) => (
-          <span
-            key={square.key}
-            role="img"
-            aria-label={squareLabel(square)}
-            data-testid={`ward-bed-map-square-${ward.unit.id}`}
-            data-bed-map-state={square.state}
-            data-bed-map-preparing={square.preparing ? "true" : undefined}
-            className={squareClassName(square)}
+
+      {/* Proportional Capacity Ribbon */}
+      <div
+        className={styles.capacityRibbon}
+        role="progressbar"
+        aria-label={`${ward.unit.name} capacity: ${ward.ready} ready, ${ward.held} held, ${ward.blocked} blocked, ${ward.occupied} occupied`}
+        aria-valuenow={ward.occupied}
+        aria-valuemin={0}
+        aria-valuemax={ward.unit.beds}
+      >
+        {pureReadyPct > 0 && (
+          <div
+            className={`${styles.ribbonSegment} ${styles.ribbonReady}`}
+            style={{ width: `${pureReadyPct}%` }}
+            title={`${pureReady} ready`}
           />
-        ))}
+        )}
+        {turnoverPct > 0 && (
+          <div
+            className={`${styles.ribbonSegment} ${styles.ribbonTurnover}`}
+            style={{ width: `${turnoverPct}%` }}
+            title={`${turnover} turnover`}
+          />
+        )}
+        {heldPct > 0 && (
+          <div
+            className={`${styles.ribbonSegment} ${styles.ribbonHeld}`}
+            style={{ width: `${heldPct}%` }}
+            title={`${held} held`}
+          />
+        )}
+        {blockedPct > 0 && (
+          <div
+            className={`${styles.ribbonSegment} ${styles.ribbonBlocked}`}
+            style={{ width: `${blockedPct}%` }}
+            title={`${blocked} blocked`}
+          />
+        )}
+        {occupiedPct > 0 && (
+          <div
+            className={`${styles.ribbonSegment} ${styles.ribbonOccupied}`}
+            style={{ width: `${occupiedPct}%` }}
+            title={`${occupied} occupied`}
+          />
+        )}
       </div>
+
+      {/* All Bays Section: Displays ALL beds simultaneously without internal pagination */}
+      <div className={styles.baysSection}>
+        <div className={styles.baysHeaderRow}>
+          <span className={styles.baysTitle}>
+            Bays{" "}
+            <span className={styles.baysCount}>
+              ({bays.length} {bays.length === 1 ? "bay" : "bays"} · all beds shown)
+            </span>
+          </span>
+        </div>
+
+        <div className={styles.allBaysGrid} role="group" aria-label={`${ward.unit.name} beds`}>
+          {bays.map((bay) => (
+            <div key={bay.id} className={styles.bayPod}>
+              <div className={styles.bayHeader}>
+                <span className={styles.bayLabel}>{bay.name}</span>
+              </div>
+              <div className={styles.baySquares}>
+                {bay.squares.map(({ square, index }) => (
+                  <span
+                    key={square.key}
+                    role="img"
+                    tabIndex={0}
+                    aria-label={squareLabel(square)}
+                    data-testid={`ward-bed-map-square-${ward.unit.id}`}
+                    data-bed-map-state={square.state}
+                    data-bed-map-preparing={square.preparing ? "true" : undefined}
+                    className={squareClassName(square)}
+                    onMouseEnter={(e) => handleBedFocus(e, square, index)}
+                    onMouseLeave={handleBedBlur}
+                    onFocus={(e) => handleBedFocus(e, square, index)}
+                    onBlur={handleBedBlur}
+                    onKeyDown={(e) => {
+                      if ((e.key === "Enter" || e.key === " ") && onSelectWard) {
+                        e.preventDefault();
+                        onSelectWard(ward.unit.id);
+                      }
+                    }}
+                  >
+                    <span className={styles.pillow} aria-hidden="true" />
+                    {square.state === "ready" && !square.preparing && (
+                      <svg
+                        className={styles.bedIcon}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        aria-hidden="true"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                    {square.state === "ready" && square.preparing && (
+                      <span className={styles.bedGlyph} aria-hidden="true">
+                        ⚙
+                      </span>
+                    )}
+                    {square.state === "held" && (
+                      <svg className={styles.bedIcon} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    )}
+                    {square.state === "blocked" && (
+                      <span className={styles.bedGlyph} aria-hidden="true">
+                        ✕
+                      </span>
+                    )}
+                    {square.state === "occupied" && <span className={styles.occupiedDot} aria-hidden="true" />}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Interactive Unclipped Floating Tooltip */}
+      {hoveredBed && (
+        <div
+          className={styles.tooltipFloating}
+          role="tooltip"
+          style={{
+            left: `${hoveredBed.x}px`,
+            top: `${hoveredBed.y}px`,
+          }}
+        >
+          <strong className={styles.tooltipBedTitle}>
+            {ward.unit.name} · Bed {String(hoveredBed.index + 1).padStart(2, "0")}
+          </strong>
+          <span className={styles.tooltipState}>
+            {hoveredBed.square.preparing
+              ? "Turnover (Cleaning underway)"
+              : hoveredBed.square.state === "ready"
+                ? "Ready (Available to pull)"
+                : hoveredBed.square.state === "held"
+                  ? "Held (Ringfenced / Not offered)"
+                  : hoveredBed.square.state === "blocked"
+                    ? "Blocked (Out of service)"
+                    : "Occupied (Inpatient)"}
+          </span>
+          <span className={styles.tooltipMeta}>{bedKindsServed(ward.unit)}</span>
+        </div>
+      )}
     </div>
   );
 }
 
 /**
  * One health service's wards, or a sentence stating it reports nothing — never a heading over an
- * empty group, the same rule `WardGroupHeading` (`ward-record-row.tsx`) enforces by throwing.
+ * empty group.
  *
- * Not built on `WardGroupHeading` itself: that component counts PEOPLE, and this heading counts
- * WARDS — reusing a people-scoped heading for a ward count would repeat the exact defect
- * `capacity-screen.tsx`'s own network table found on 2026-09-06, where a bed count and a ward count
- * shared one label ("Locked ready") and nothing on screen told them apart. A local heading that
- * simply never renders over zero wards keeps the same discipline without borrowing the wrong unit.
+ * All ward cards sit in ONE single horizontal line (.serviceWardTrack), never wrapping.
+ * Smooth carousel navigation controls (‹ and ›) allow scrolling horizontally along the single track.
  */
 function ServiceGroup({
   group,
@@ -286,6 +538,106 @@ function ServiceGroup({
   selectedUnitId?: string;
   onSelectWard?: (unitId: string) => void;
 }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const [hasOverflow, setHasOverflow] = useState(false);
+  const [activeWardIndex, setActiveWardIndex] = useState(0);
+
+  const totalBeds = group.wards.reduce((sum, w) => sum + w.unit.beds, 0);
+  const totalReady = group.wards.reduce((sum, w) => sum + w.ready, 0);
+  const totalHeld = group.wards.reduce((sum, w) => sum + w.held, 0);
+  const totalOccupied = group.wards.reduce((sum, w) => sum + w.occupied, 0);
+  const occPct = totalBeds > 0 ? Math.round((totalOccupied / totalBeds) * 100) : 0;
+
+  const checkScrollState = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const isJSDOM = el.clientWidth === 0;
+
+    if (isJSDOM) {
+      const overflow = group.wards.length > 2;
+      setHasOverflow(overflow);
+      setCanScrollLeft(activeWardIndex > 0);
+      setCanScrollRight(activeWardIndex < group.wards.length - 1);
+      return;
+    }
+
+    const overflow = el.scrollWidth > el.clientWidth + 4;
+    const atStart = el.scrollLeft <= 4;
+    const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
+
+    setHasOverflow(overflow);
+    setCanScrollLeft(overflow && !atStart);
+    setCanScrollRight(overflow && !atEnd);
+
+    const cardStep = 262;
+    const idx = Math.max(0, Math.min(group.wards.length - 1, Math.round(el.scrollLeft / cardStep)));
+    setActiveWardIndex(idx);
+  }, [group.wards.length, activeWardIndex]);
+
+  useEffect(() => {
+    checkScrollState();
+    const handleResize = () => checkScrollState();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [checkScrollState]);
+
+  const handleScroll = () => {
+    checkScrollState();
+  };
+
+  const handlePrev = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    const el = trackRef.current;
+    if (!el) return;
+    const cardStep = 262;
+    if (el.scrollLeft <= cardStep * 1.2) {
+      if (typeof el.scrollTo === "function") {
+        el.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        el.scrollLeft = 0;
+      }
+    } else {
+      if (typeof el.scrollBy === "function") {
+        el.scrollBy({ left: -cardStep, behavior: "smooth" });
+      } else {
+        el.scrollLeft = Math.max(0, el.scrollLeft - cardStep);
+      }
+    }
+    if (el.clientWidth === 0) {
+      setActiveWardIndex((prev) => Math.max(0, prev - 1));
+      setCanScrollLeft(activeWardIndex > 1);
+      setCanScrollRight(true);
+    }
+  };
+
+  const handleNext = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    const el = trackRef.current;
+    if (!el) return;
+    const cardStep = 262;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    if (el.scrollLeft + cardStep * 1.5 >= maxScroll) {
+      if (typeof el.scrollTo === "function") {
+        el.scrollTo({ left: maxScroll, behavior: "smooth" });
+      } else {
+        el.scrollLeft = maxScroll;
+      }
+    } else {
+      if (typeof el.scrollBy === "function") {
+        el.scrollBy({ left: cardStep, behavior: "smooth" });
+      } else {
+        el.scrollLeft = Math.min(maxScroll, el.scrollLeft + cardStep);
+      }
+    }
+    if (el.clientWidth === 0) {
+      setActiveWardIndex((prev) => Math.min(group.wards.length - 1, prev + 1));
+      setCanScrollLeft(true);
+      setCanScrollRight(activeWardIndex < group.wards.length - 2);
+    }
+  };
+
   if (group.wards.length === 0) {
     return (
       <div className={styles.serviceGroup} data-testid={`ward-bed-map-service-${group.service}`}>
@@ -293,6 +645,7 @@ function ServiceGroup({
       </div>
     );
   }
+
   const headingId = `ward-bed-map-service-heading-${group.service.replace(/\s+/gu, "-")}`;
   return (
     <section
@@ -300,16 +653,139 @@ function ServiceGroup({
       aria-labelledby={headingId}
       data-testid={`ward-bed-map-service-${group.service}`}
     >
-      <h3 id={headingId} className={styles.serviceHeading}>
-        {group.service}
-        <span className={styles.serviceCount}>
-          {group.wards.length === 1 ? "1 ward" : `${group.wards.length} wards`}
-        </span>
-      </h3>
-      <div className={styles.wardBlocks}>
-        {group.wards.map((ward) => (
-          <WardBlock key={ward.unit.id} ward={ward} selectedUnitId={selectedUnitId} onSelectWard={onSelectWard} />
-        ))}
+      <div className={styles.serviceHeaderBar}>
+        <div className={styles.serviceTitleGroup}>
+          <h3 id={headingId} className={styles.serviceHeading}>
+            <span className={styles.serviceAccentIndicator} aria-hidden="true" />
+            <span className={styles.serviceNameText}>{group.service}</span>
+            <span className={styles.serviceCount}>
+              {group.wards.length === 1 ? "1 ward" : `${group.wards.length} wards`}
+            </span>
+          </h3>
+          <span className={styles.serviceCapacityBadge}>
+            {totalReady > 0 ? `${totalReady} ready` : "none ready"} · {totalHeld} held · {occPct}% occupancy
+          </span>
+        </div>
+
+        {/* Carousel controls embedded in health service region header */}
+        {group.wards.length > 1 && (
+          <div className={styles.serviceCarouselControls}>
+            <button
+              type="button"
+              className={styles.serviceArrowBtn}
+              onClick={handlePrev}
+              disabled={!canScrollLeft}
+              aria-label={`Previous wards in ${group.service}`}
+              title="Previous wards"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+            <span className={styles.serviceCarouselIndicator}>
+              {activeWardIndex + 1}–{Math.min(activeWardIndex + 3, group.wards.length)} of {group.wards.length}
+            </span>
+            <button
+              type="button"
+              className={styles.serviceArrowBtn}
+              onClick={handleNext}
+              disabled={!canScrollRight}
+              aria-label={`Next wards in ${group.service}`}
+              title="Next wards"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Single-line horizontal ward track container with non-overlapping flanking navigation buttons */}
+      <div className={styles.trackContainer}>
+        {hasOverflow && (
+          <button
+            type="button"
+            className={`${styles.flankingArrow} ${styles.flankingArrowPrev}`}
+            onClick={handlePrev}
+            disabled={!canScrollLeft}
+            style={{ visibility: canScrollLeft ? "visible" : "hidden" }}
+            aria-label={`Previous wards in ${group.service}`}
+            title="Previous wards"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+        )}
+
+        <div
+          ref={trackRef}
+          onScroll={handleScroll}
+          className={styles.serviceWardTrack}
+          role="region"
+          aria-label={`${group.service} wards track`}
+        >
+          {group.wards.map((ward) => (
+            <WardBlock key={ward.unit.id} ward={ward} selectedUnitId={selectedUnitId} onSelectWard={onSelectWard} />
+          ))}
+        </div>
+
+        {hasOverflow && (
+          <button
+            type="button"
+            className={`${styles.flankingArrow} ${styles.flankingArrowNext}`}
+            onClick={handleNext}
+            disabled={!canScrollRight}
+            style={{ visibility: canScrollRight ? "visible" : "hidden" }}
+            aria-label={`Next wards in ${group.service}`}
+            title="Next wards"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        )}
       </div>
     </section>
   );
