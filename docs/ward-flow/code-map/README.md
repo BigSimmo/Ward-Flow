@@ -13,18 +13,18 @@ verdict it names that document.
 
 ## The parts
 
-| Part                                               | Covers                                                                                          |
-| -------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| [Overview](overview.md)                            | The whole thing on one page: sizes, how the pieces fit, known gaps (the original 25 Sept map)   |
-| [Engine](engine.md)                                | Reducer, every event type, state shape, entities, persistence, the clock, adding an event       |
-| [Data and rules](data-and-rules.md)                | Seeds, reference data, eligibility, referrals, catchment, legal clocks, capacity, all selectors |
-| [Routes, shell and shared UI](shell-and-shared.md) | All 42 routes and redirects, the layout chain, rail, top bar, navigation, shared UI pieces      |
-| [Screens A](screens-a.md)                          | Coordinator, ED, ward, referrals, community, search, statistics                                 |
-| [Screens B](screens-b.md)                          | Board, capacity, movements, delays, handover, patients, alerts and the rest                     |
-| [Tests](tests.md)                                  | Every ward test file, how the suites run, which tests to run for a change                       |
-| [Scripts and tooling](scripts-and-tooling.md)      | Every script, generator, check, git hook and npm script; fold gates in order                    |
-| [Docs and mockups](docs-and-mockups.md)            | Every top-level doc and drawing, with status; what each history folder holds                    |
-| [Former frame and PsychSift](frame-and-psychsift.md) | Historical extraction context; verify current shared imports in this repository               |
+| Part                                                 | Covers                                                                                          |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| [Overview](overview.md)                              | The whole thing on one page: sizes, how the pieces fit, known gaps (the original 25 Sept map)   |
+| [Engine](engine.md)                                  | Reducer, every event type, state shape, entities, persistence, the clock, adding an event       |
+| [Data and rules](data-and-rules.md)                  | Seeds, reference data, eligibility, referrals, catchment, legal clocks, capacity, all selectors |
+| [Routes, shell and shared UI](shell-and-shared.md)   | All 42 routes and redirects, the layout chain, rail, top bar, navigation, shared UI pieces      |
+| [Screens A](screens-a.md)                            | Coordinator, ED, ward, referrals, community, search, statistics                                 |
+| [Screens B](screens-b.md)                            | Board, capacity, movements, delays, handover, patients, alerts and the rest                     |
+| [Tests](tests.md)                                    | Every ward test file, how the suites run, which tests to run for a change                       |
+| [Scripts and tooling](scripts-and-tooling.md)        | Every script, generator, check, git hook and npm script; fold gates in order                    |
+| [Docs and mockups](docs-and-mockups.md)              | Every top-level doc and drawing, with status; what each history folder holds                    |
+| [Former frame and PsychSift](frame-and-psychsift.md) | Historical extraction context; verify current shared imports in this repository                 |
 
 ## Key concepts in ten lines
 
