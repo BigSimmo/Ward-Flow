@@ -10,7 +10,11 @@ function requireWorkflow(source) {
     /persist-credentials: false/u,
     /name: Ward Flow required/u,
     /if: always\(\)/u,
-    /needs: \[validate\]/u,
+    /needs: \[static, unit, browser\]/u,
+    /test "\$STATIC_RESULT" = success && test "\$UNIT_RESULT" = success && test "\$BROWSER_RESULT" = success/u,
+    /fail-fast: false/u,
+    /WARD_GATE_SHARD: \$\{\{ matrix\.shard \}\}\/\d+/u,
+    /WARD_JOURNEY_NO_RESCUE: "1"/u,
     /npm run check:ward-reference/u,
     /npm run check:ward-expected-reds/u,
     /check:ward-expected-reds -- --print-signatures/u,
@@ -31,6 +35,17 @@ function requireWorkflow(source) {
   ]) {
     assert.doesNotMatch(source, pattern);
   }
+  // The unit shards must be exactly 1..N for the N named in WARD_GATE_SHARD, or some files never run.
+  const shards = /^\s*shard: \[([\d, ]+)\]$/mu
+    .exec(source)?.[1]
+    .split(",")
+    .map((value) => Number(value.trim()));
+  const count = Number(/WARD_GATE_SHARD: \$\{\{ matrix\.shard \}\}\/(\d+)/u.exec(source)?.[1]);
+  assert.ok(shards && count >= 1, "unit shard matrix and WARD_GATE_SHARD count are required");
+  assert.deepEqual(
+    shards,
+    Array.from({ length: count }, (_, index) => index + 1),
+  );
 }
 
 requireWorkflow(workflow);
@@ -39,6 +54,10 @@ for (const bad of [
   workflow.replace("if: always()", "if: success()"),
   workflow.replace("contents: read", "contents: write"),
   workflow.replace("npm run check:ward-expected-reds", "echo no unit checks"),
+  workflow.replace("needs: [static, unit, browser]", "needs: [static, browser]"),
+  workflow.replace("shard: [1, 2, 3, 4]", "shard: [1, 2, 3]"),
+  workflow.replace("fail-fast: false", "fail-fast: true"),
+  workflow.replace('WARD_JOURNEY_NO_RESCUE: "1"', 'WARD_JOURNEY_NO_RESCUE: "0"'),
 ])
   assert.throws(() => requireWorkflow(bad));
 

@@ -790,7 +790,11 @@ try {
         );
       }
     }
-    if (exitCode !== 0 && rerun.length > 0 && specFailures.length === failedFiles.size) {
+    // WARD_JOURNEY_NO_RESCUE=1 (public CI, which runs journeys with zero retries): a sharded failure
+    // is the verdict. The unsharded rerun would otherwise let a flaky spec pass on its second try.
+    if (exitCode !== 0 && rerun.length > 0 && process.env.WARD_JOURNEY_NO_RESCUE === "1") {
+      console.log(`WARD_JOURNEY_NO_RESCUE=1: not rerunning ${rerun.length} failed spec file(s): ${rerun.join(", ")}`);
+    } else if (exitCode !== 0 && rerun.length > 0 && specFailures.length === failedFiles.size) {
       console.log(`Rerunning ${rerun.length} failed spec file(s) alone, unsharded: ${rerun.join(", ")}`);
       const specArgs = playwrightArgs.filter((argument) => argument.startsWith("-"));
       const again = spawnSync(process.execPath, [playwrightBin, "test", ...specArgs, ...rerun], {

@@ -6,7 +6,12 @@ import { describe, expect, it } from "vitest";
 // Imported untyped, exactly as its two sibling suites import `compareFailingSet`, `floorBreaches`
 // and `validateEntry` from this same script. A `@ts-expect-error` was written here first and the
 // TYPECHECK rejected it as unused — the directive doing its own job, since the import resolves.
-import { isDirectInvocation, summariseRun } from "../scripts/check-ward-expected-reds.mjs";
+import {
+  isDirectInvocation,
+  parseGateShard,
+  selectGateShard,
+  summariseRun,
+} from "../scripts/check-ward-expected-reds.mjs";
 
 /**
  * 🔴 **THE GATE SAID "OK" OVER A COUNT IT COULD NOT TAKE, AND THE COUNT WAS THE ONE THING IT EXISTS
@@ -169,5 +174,35 @@ describe("isDirectInvocation — surviving a Windows drive-letter-case or juncti
     };
     const invoked = isDirectInvocation(REAL_PATH, MODULE_URL, { resolveRealPath: throwing, platform: "win32" });
     expect(invoked).toBe(true);
+  });
+});
+
+describe("WARD_GATE_SHARD splits the population without losing or repeating a file", () => {
+  const population = Array.from({ length: 23 }, (_, index) => `tests/f-${String(index).padStart(2, "0")}.test.ts`);
+
+  it("runs everything when unset", () => {
+    expect(parseGateShard(undefined)).toBeNull();
+    expect(parseGateShard("")).toBeNull();
+  });
+
+  it("refuses a malformed or out-of-range shard rather than guessing", () => {
+    for (const value of ["1", "0/4", "5/4", "1/0", "1/17", "a/b", "1/4 ", "-1/4"]) {
+      expect(() => parseGateShard(value), value).toThrow(/WARD_GATE_SHARD/);
+    }
+  });
+
+  it("gives disjoint shards whose union is exactly the population, in any input order", () => {
+    for (const count of [1, 2, 3, 4, 7]) {
+      const shuffled = [...population].reverse();
+      const shards = Array.from({ length: count }, (_, index) =>
+        selectGateShard(shuffled, parseGateShard(`${index + 1}/${count}`)),
+      );
+      const all = shards.flat();
+      expect(new Set(all).size).toBe(all.length);
+      expect([...all].sort()).toEqual([...population].sort());
+      expect(Math.max(...shards.map((s) => s.length)) - Math.min(...shards.map((s) => s.length))).toBeLessThanOrEqual(
+        1,
+      );
+    }
   });
 });
