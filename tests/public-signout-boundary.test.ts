@@ -3,6 +3,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { WARD_FLOW_IDENTITY_ANCHOR } from "../scripts/guard-push.mjs";
 import { isPublicWardFlowCheckout, scopedActiveSignOutLines, signOutConflicts } from "../scripts/pre-commit-checks.mjs";
 
 const SCRIPT = resolve("scripts/pre-commit-checks.mjs");
@@ -13,19 +14,28 @@ function git(root: string, ...args: string[]) {
   return execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
 }
 
-function publicRepo() {
+// Borrow this checkout's objects so a tiny fixture can descend from the real identity anchor.
+const OBJECTS = resolve(git(process.cwd(), "rev-parse", "--git-common-dir"), "objects").replace(/\\/g, "/");
+
+function repo(parent?: string) {
   const root = mkdtempSync(join(tmpdir(), "ward-public-signout-"));
   roots.push(root);
   git(root, "init", "--quiet", "-b", "main");
   git(root, "config", "user.name", "Ward Test");
   git(root, "config", "user.email", "ward-test@example.invalid");
+  mkdirSync(join(root, ".git", "objects", "info"), { recursive: true });
+  writeFileSync(join(root, ".git", "objects", "info", "alternates"), `${OBJECTS}\n`);
   writeFileSync(join(root, "README.md"), "synthetic\n");
   git(root, "add", "README.md");
-  git(root, "commit", "--quiet", "-m", "base");
+  const tree = git(root, "write-tree");
+  const base = git(root, "commit-tree", tree, ...(parent ? ["-p", parent] : []), "-m", "base");
+  git(root, "update-ref", "refs/heads/main", base);
   git(root, "remote", "add", "origin", "https://github.com/BigSimmo/Ward-Flow.git");
-  git(root, "update-ref", "refs/remotes/origin/main", "HEAD");
+  git(root, "update-ref", "refs/remotes/origin/main", base);
   return root;
 }
+
+const publicRepo = () => repo(WARD_FLOW_IDENTITY_ANCHOR);
 
 afterEach(() => {
   for (const root of roots.splice(0)) {
@@ -41,6 +51,17 @@ describe("public repository ownership boundary", () => {
     const wrongRoot = publicRepo();
     git(wrongRoot, "remote", "set-url", "--push", "origin", "https://github.com/BigSimmo/PsychSift.git");
     expect(isPublicWardFlowCheckout(wrongRoot)).toBe(false);
+  });
+
+  it("accepts the canonical ssh:// remote the push guard accepts", () => {
+    const sshRoot = publicRepo();
+    git(sshRoot, "remote", "set-url", "origin", "ssh://git@github.com/BigSimmo/Ward-Flow.git");
+    expect(isPublicWardFlowCheckout(sshRoot)).toBe(true);
+  });
+
+  it("rejects a repointed checkout whose history does not descend from Ward-Flow main", () => {
+    // HEAD and origin/main share a merge base, so only the identity anchor tells them apart.
+    expect(isPublicWardFlowCheckout(repo())).toBe(false);
   });
 
   it("keeps legacy releases from closing same-named public claims", () => {
@@ -96,6 +117,7 @@ describe("public repository ownership boundary", () => {
     git(root, "checkout", "--quiet", "-b", "codex/mine");
     mkdirSync(join(root, "scripts"), { recursive: true });
     copyFileSync(SCRIPT, join(root, "scripts/pre-commit-checks.mjs"));
+    copyFileSync(resolve("scripts/guard-push.mjs"), join(root, "scripts/guard-push.mjs"));
     writeFileSync(join(root, "package.json"), '{"type":"module"}\n');
     const signOutFile = join(root, "sign-out.md");
     writeFileSync(signOutFile, "Open sign-outs only\n");

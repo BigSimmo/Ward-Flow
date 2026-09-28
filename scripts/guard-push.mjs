@@ -66,17 +66,22 @@ const ZERO_SHA = "0000000000000000000000000000000000000000";
 const MAIN_REMOTE_REF = "refs/remotes/origin/main";
 // First verified public Ward-Flow main after the repository split. A remote URL
 // alone cannot identify a checkout: the old Database clone can be repointed.
-const WARD_FLOW_IDENTITY_ANCHOR = "e735c1f8d34df005becf720b96752626a4f1dcc8";
+export const WARD_FLOW_IDENTITY_ANCHOR = "e735c1f8d34df005becf720b96752626a4f1dcc8";
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-/** Git supplies the actual push destination as the second pre-push argument. */
-export function wardFlowRemoteVerdict(remoteUrl) {
-  const canonical =
+/** Canonical HTTPS, scp-style and ssh:// Ward-Flow URLs; shared with the sign-out ownership checks. */
+export function isCanonicalWardFlowRemote(remoteUrl) {
+  return (
     typeof remoteUrl === "string" &&
     /^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)BigSimmo\/Ward-Flow(?:\.git)?$/i.test(
       remoteUrl,
-    );
-  return canonical
+    )
+  );
+}
+
+/** Git supplies the actual push destination as the second pre-push argument. */
+export function wardFlowRemoteVerdict(remoteUrl) {
+  return isCanonicalWardFlowRemote(remoteUrl)
     ? { name: "ward-flow-remote", ok: true }
     : {
         name: "ward-flow-remote",
@@ -103,12 +108,11 @@ export function wardFlowCheckoutVerdict(cwd = PROJECT_ROOT, env = process.env) {
     tryGit(["rev-parse", "--verify", "refs/remotes/origin/main"], cwd) ??
     tryGit(["rev-parse", "--verify", "origin/main"], cwd) ??
     tryGit(["rev-parse", "--verify", "main"], cwd);
-  const mainRef =
-    tryGit(["rev-parse", "--verify", "refs/remotes/origin/main"], cwd)
-      ? "refs/remotes/origin/main"
-      : tryGit(["rev-parse", "--verify", "origin/main"], cwd)
-        ? "origin/main"
-        : "main";
+  const mainRef = tryGit(["rev-parse", "--verify", "refs/remotes/origin/main"], cwd)
+    ? "refs/remotes/origin/main"
+    : tryGit(["rev-parse", "--verify", "origin/main"], cwd)
+      ? "origin/main"
+      : "main";
   const commonBase = main && tryGit(["merge-base", "HEAD", mainRef], cwd);
   const ok =
     wardFlowRemoteVerdict(fetchUrl).ok &&

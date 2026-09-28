@@ -1,8 +1,8 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { basename, dirname, join } from "node:path";
+import { afterAll, describe, expect, it } from "vitest";
 import { directMainPushVerdict, wardFlowCheckoutVerdict, wardFlowRemoteVerdict } from "../scripts/guard-push.mjs";
 
 const script = join(process.cwd(), "scripts", "guard-push.mjs");
@@ -14,15 +14,26 @@ const gitCommand = process.platform === "win32" ? "where.exe" : "which";
 const gitPath = spawnSync(gitCommand, ["git"], { encoding: "utf8" }).stdout.trim().split(/\r?\n/)[0];
 const shell = process.platform === "win32" ? join(dirname(dirname(gitPath)), "bin", "sh.exe") : "/bin/sh";
 
+let gitShim: string | undefined;
+
+/** Drop every PATH entry holding gh, but keep git reachable when both share a folder (e.g. /usr/bin). */
 function withoutGh(): string {
   const separator = process.platform === "win32" ? ";" : ":";
   const path = process.env.PATH ?? "";
   const ghNames = process.platform === "win32" ? ["gh.exe", "gh.cmd", "gh.bat", "gh.com"] : ["gh"];
-  return path
-    .split(separator)
-    .filter((part) => !ghNames.some((name) => existsSync(join(part, name))))
-    .join(separator);
+  const kept = path.split(separator).filter((part) => !ghNames.some((name) => existsSync(join(part, name))));
+  const gitDir = dirname(gitPath);
+  if (!gitPath || kept.includes(gitDir)) return kept.join(separator);
+  if (!gitShim) {
+    gitShim = mkdtempSync(join(tmpdir(), "ward-git-only-"));
+    symlinkSync(gitPath, join(gitShim, basename(gitPath)));
+  }
+  return [gitShim, ...kept].join(separator);
 }
+
+afterAll(() => {
+  if (gitShim) rmSync(gitShim, { recursive: true, force: true });
+});
 
 function run(remoteUrl?: string, pushInput = stdin, envOverrides: Record<string, string> = {}) {
   return spawnSync(process.execPath, [script, "origin", ...(remoteUrl ? [remoteUrl] : [])], {

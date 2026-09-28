@@ -44,6 +44,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { isCanonicalWardFlowRemote, WARD_FLOW_IDENTITY_ANCHOR } from "./guard-push.mjs";
 
 const LINT_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/i;
 const TYPECHECK_EXTENSIONS = /\.(?:[cm]?tsx?)$/i;
@@ -66,7 +67,6 @@ export function activeSignOutLines(signOutText) {
 
 const normalizedFolder = (value) => value.trim().replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
 
-const WARD_FLOW_REMOTE = /^(?:https:\/\/github\.com\/|git@github\.com:)BigSimmo\/Ward-Flow(?:\.git)?$/i;
 const repositoryIdentityCache = new Map();
 
 /** Verify the checkout itself, regardless of which drive or host contains its worktree. */
@@ -80,11 +80,18 @@ export function isPublicWardFlowCheckout(worktree) {
       execFileSync("git", ["-C", worktree, ...args], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
     verified =
       normalizedFolder(run("rev-parse", "--show-toplevel")) === folder &&
-      WARD_FLOW_REMOTE.test(run("remote", "get-url", "origin")) &&
-      WARD_FLOW_REMOTE.test(run("remote", "get-url", "--push", "origin")) &&
-      Boolean(run("merge-base", "HEAD", "refs/remotes/origin/main"));
+      isCanonicalWardFlowRemote(run("remote", "get-url", "origin")) &&
+      isCanonicalWardFlowRemote(run("remote", "get-url", "--push", "origin"));
+    // A common base proves nothing: a repointed Database clone shares history with itself.
+    // HEAD and origin/main must both descend from the verified public Ward-Flow main;
+    // `merge-base --is-ancestor` exits non-zero otherwise, which run() turns into a throw.
+    if (verified) {
+      run("merge-base", "--is-ancestor", WARD_FLOW_IDENTITY_ANCHOR, "HEAD");
+      run("merge-base", "--is-ancestor", WARD_FLOW_IDENTITY_ANCHOR, "refs/remotes/origin/main");
+    }
   } catch {
-    // A missing checkout or an unverified remote never identifies a public claim.
+    // A missing checkout, an unverified remote or foreign history never identifies a public claim.
+    verified = false;
   }
   repositoryIdentityCache.set(folder, verified);
   return verified;
