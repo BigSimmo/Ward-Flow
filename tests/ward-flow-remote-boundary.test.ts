@@ -1,8 +1,9 @@
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { wardFlowRemoteVerdict } from "../scripts/guard-push.mjs";
+import { directMainPushVerdict, wardFlowCheckoutVerdict, wardFlowRemoteVerdict } from "../scripts/guard-push.mjs";
 
 const script = join(process.cwd(), "scripts", "guard-push.mjs");
 const hook = join(process.cwd(), ".githooks", "pre-push");
@@ -16,13 +17,14 @@ const shell = process.platform === "win32" ? join(dirname(dirname(gitPath)), "bi
 function withoutGh(): string {
   const separator = process.platform === "win32" ? ";" : ":";
   const path = process.env.PATH ?? "";
+  const ghNames = process.platform === "win32" ? ["gh.exe", "gh.cmd", "gh.bat", "gh.com"] : ["gh"];
   return path
     .split(separator)
-    .filter((part) => !part.toLowerCase().includes("github cli"))
+    .filter((part) => !ghNames.some((name) => existsSync(join(part, name))))
     .join(separator);
 }
 
-function run(remoteUrl?: string, pushInput = stdin) {
+function run(remoteUrl?: string, pushInput = stdin, envOverrides: Record<string, string> = {}) {
   return spawnSync(process.execPath, [script, "origin", ...(remoteUrl ? [remoteUrl] : [])], {
     cwd: process.cwd(),
     input: pushInput,
@@ -36,12 +38,72 @@ function run(remoteUrl?: string, pushInput = stdin) {
       SKIP_STATIC_GUARD: "1",
       CONFIRM_WARD_FLOW_PUSH_TO_MAIN: "I_CONFIRM_FOLD_TO_ORIGIN_MAIN",
       CONFIRM_WARD_FLOW_REMOTE: "I_CONFIRM_WARD_FLOW_REMOTE",
-      CONFIRM_PUSH_TO_MAIN: "I_CONFIRM_PUSH_TO_MAIN",
+      ...envOverrides,
     },
   });
 }
 
 describe("Ward-Flow push destination", () => {
+  it("removes the actual gh executable from PATH before invoking the guard", () => {
+    const result = spawnSync("gh", ["--version"], { env: { ...process.env, PATH: withoutGh() }, encoding: "utf8" });
+    expect(result.error && "code" in result.error ? result.error.code : undefined).toBe("ENOENT");
+  });
+
+  it("requires canonical origin fetch and push URLs plus shared main history", () => {
+    expect(wardFlowCheckoutVerdict().ok).toBe(true);
+    const root = mkdtempSync(join(tmpdir(), "ward-flow-guard-checkout-"));
+    const git = (...args: string[]) => {
+      const result = spawnSync("git", args, { cwd: root, encoding: "utf8" });
+      expect(result.status, result.stderr).toBe(0);
+    };
+    try {
+      git("clone", "--quiet", "--shared", "--no-checkout", process.cwd(), root);
+      git("update-ref", "refs/heads/fixture", head);
+      git("symbolic-ref", "HEAD", "refs/heads/fixture");
+      git("remote", "set-url", "origin", "https://github.com/BigSimmo/Ward-Flow.git");
+      git("update-ref", "refs/remotes/origin/main", "e735c1f8d34df005becf720b96752626a4f1dcc8");
+      expect(wardFlowCheckoutVerdict(root).ok).toBe(true);
+      git("remote", "set-url", "--push", "origin", "https://github.com/BigSimmo/PsychSift.git");
+      expect(wardFlowCheckoutVerdict(root).ok).toBe(false);
+      git("remote", "set-url", "--push", "origin", "https://github.com/BigSimmo/Ward-Flow.git");
+      git("remote", "set-url", "origin", "https://github.com/BigSimmo/PsychSift.git");
+      expect(wardFlowCheckoutVerdict(root).ok).toBe(false);
+      git("remote", "set-url", "origin", "https://github.com/BigSimmo/Ward-Flow.git");
+      git("remote", "remove", "origin");
+      expect(wardFlowCheckoutVerdict(root).ok).toBe(false);
+      git("remote", "add", "origin", "https://github.com/BigSimmo/Ward-Flow.git");
+      git("update-ref", "refs/remotes/origin/main", "e735c1f8d34df005becf720b96752626a4f1dcc8");
+      git("checkout", "--quiet", "--orphan", "unrelated");
+      git("config", "user.name", "Ward Flow test");
+      git("config", "user.email", "ward-test@example.invalid");
+      writeFileSync(join(root, "unrelated.txt"), "unrelated history\n");
+      git("add", "unrelated.txt");
+      git("commit", "--quiet", "-m", "unrelated");
+      expect(wardFlowCheckoutVerdict(root).ok).toBe(false);
+    } finally {
+      const resolvedParent = realpathSync(tmpdir());
+      const resolvedRoot = realpathSync(root);
+      expect(resolvedRoot.startsWith(`${resolvedParent}${process.platform === "win32" ? "\\" : "/"}`)).toBe(true);
+      rmSync(resolvedRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("requires explicit direct-main confirmation even with optional guards skipped", () => {
+    const mainInput = `refs/heads/main ${head} refs/heads/main ${head}\n`;
+    expect(directMainPushVerdict(mainInput, {}).ok).toBe(false);
+    expect(run("https://github.com/BigSimmo/Ward-Flow.git", mainInput).status).toBe(1);
+    expect(directMainPushVerdict(mainInput, { CONFIRM_PUSH_TO_MAIN: "I_CONFIRM_PUSH_TO_MAIN" }).ok).toBe(true);
+    expect(
+      run("https://github.com/BigSimmo/Ward-Flow.git", mainInput, {
+        CONFIRM_PUSH_TO_MAIN: "I_CONFIRM_PUSH_TO_MAIN",
+      }).status,
+    ).toBe(0);
+  });
+
+  it("guards deletion of refs/heads/main as well", () => {
+    const mainDeletion = `refs/heads/main ${"0".repeat(40)} refs/heads/main ${head}\n`;
+    expect(run("https://github.com/BigSimmo/Ward-Flow.git", mainDeletion).status).toBe(1);
+  });
   it.each([
     "https://github.com/BigSimmo/Ward-Flow.git",
     "https://github.com/BigSimmo/Ward-Flow",

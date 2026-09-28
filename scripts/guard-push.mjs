@@ -8,6 +8,9 @@
  * override. The remaining guards have explicit overrides.
  *   0. Destination identity: accept only the canonical Ward-Flow GitHub remote.
  *      This check has no environment override and runs before all other checks.
+ *      Also require canonical origin fetch/push URLs and Ward Flow ancestry.
+ *   0a. Direct main push: require explicit confirmation even when optional
+ *       format, static and CI guards are skipped.
  *
  *   1. Auto-merge force-push guard (all PR branches)
  *      Per-PR auto-merge state is user-owned. An ordinary fast-forward push to a PR
@@ -61,6 +64,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ZERO_SHA = "0000000000000000000000000000000000000000";
 const MAIN_REMOTE_REF = "refs/remotes/origin/main";
+// First verified public Ward-Flow main after the repository split. A remote URL
+// alone cannot identify a checkout: the old Database clone can be repointed.
+const WARD_FLOW_IDENTITY_ANCHOR = "e735c1f8d34df005becf720b96752626a4f1dcc8";
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 /** Git supplies the actual push destination as the second pre-push argument. */
@@ -79,6 +85,47 @@ export function wardFlowRemoteVerdict(remoteUrl) {
           "Push destination is missing, unknown, or outside BigSimmo/Ward-Flow. " +
           "Use the canonical HTTPS or SSH GitHub remote. No override permits another destination.",
       };
+}
+
+/** Refuse a correctly named destination from a different or misconfigured checkout. */
+export function wardFlowCheckoutVerdict(cwd = PROJECT_ROOT) {
+  const fetchUrl = tryGit(["remote", "get-url", "origin"], cwd);
+  const pushUrl = tryGit(["remote", "get-url", "--push", "origin"], cwd);
+  const root = tryGit(["rev-parse", "--show-toplevel"], cwd);
+  const main = tryGit(["rev-parse", "--verify", "refs/remotes/origin/main"], cwd);
+  const commonBase = main && tryGit(["merge-base", "HEAD", "refs/remotes/origin/main"], cwd);
+  const ok =
+    wardFlowRemoteVerdict(fetchUrl).ok &&
+    wardFlowRemoteVerdict(pushUrl).ok &&
+    root &&
+    path.resolve(root) === path.resolve(cwd) &&
+    Boolean(commonBase) &&
+    isAncestor(WARD_FLOW_IDENTITY_ANCHOR, "HEAD", cwd) &&
+    isAncestor(WARD_FLOW_IDENTITY_ANCHOR, MAIN_REMOTE_REF, cwd);
+  return ok
+    ? { name: "ward-flow-checkout", ok: true }
+    : {
+        name: "ward-flow-checkout",
+        ok: false,
+        message:
+          "This checkout must have canonical Ward-Flow origin fetch and push URLs, " +
+          "and descend from the verified public Ward-Flow main. Check the repository and remotes before pushing.",
+      };
+}
+
+/** Git's stdin names the actual remote ref, including for deletion-only pushes. */
+export function directMainPushVerdict(stdinText, env = process.env) {
+  const targetsMain = stdinText.split(/\r?\n/).some((line) => line.trim().split(/\s+/)[2] === "refs/heads/main");
+  const confirmed = env.CONFIRM_PUSH_TO_MAIN === "I_CONFIRM_PUSH_TO_MAIN";
+  return targetsMain && !confirmed
+    ? {
+        name: "direct-main-push",
+        ok: false,
+        message:
+          'Direct pushes to refs/heads/main require CONFIRM_PUSH_TO_MAIN="I_CONFIRM_PUSH_TO_MAIN". ' +
+          "Use a reviewed pull request for normal changes.",
+      }
+    : { name: "direct-main-push", ok: true };
 }
 
 function runGit(args, cwd = PROJECT_ROOT) {
@@ -1473,7 +1520,11 @@ function main() {
   }
   const remoteResult = wardFlowRemoteVerdict(process.argv[3]);
   if (!remoteResult.ok) process.exit(report([remoteResult]));
+  const checkoutResult = wardFlowCheckoutVerdict();
+  if (!checkoutResult.ok) process.exit(report([checkoutResult]));
   const stdin = readStdinSync();
+  const mainResult = directMainPushVerdict(stdin);
+  if (!mainResult.ok) process.exit(report([mainResult]));
   const ranges = parsePushRanges(stdin);
   if (ranges.length === 0) process.exit(0); // deletion-only push or nothing to do
   const branch = currentBranch();
