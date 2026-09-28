@@ -1,6 +1,6 @@
 # Ward Flow — THE plan
 
-> **SUPERSEDED on 17 Sept 2026 by `docs/ward-flow-task-ledger.md`.** Kept for history; do not follow. Its claim to supersede every other plan or task list is withdrawn.
+> **SUPERSEDED — 2026-09-28.** Kept for history; do not follow. Active task tracking is in [`docs/ward-flow-task-ledger.md`](ward-flow-task-ledger.md), current product entry point in [`docs/ward-flow/README.md`](ward-flow/README.md), and repository rules in [`AGENTS.md`](../AGENTS.md). Its claim to supersede every other plan or task list is withdrawn.
 
 **Measured 2026-09-01 at `ed17e803d` on `codex/task-ward-flow-live-state-20260831`.** Every state
 below was read from the code, not carried forward from an older document.

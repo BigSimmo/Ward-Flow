@@ -1,5 +1,10 @@
 # PsychSift Documentation Index
 
+> **Current Ward Flow work belongs in `BigSimmo/Ward-Flow`.** Start with the repository's
+> [`AGENTS.md`](../AGENTS.md) and [`docs/ward-flow/README.md`](ward-flow/README.md). This index
+> retains historical PsychSift-era entries; its old local-prototype and provider descriptions are
+> not current Ward Flow instructions. Verify the Ward Flow remote before Git writes.
+
 Categorised map of every tracked Markdown document under `docs/`: the load-bearing docs lead
 each category, and an "Also catalogued" list completes it. Categories distinguish **maintained** documents (keep these current when
 behavior changes) from **point-in-time records** (historical; do not update, supersede with a

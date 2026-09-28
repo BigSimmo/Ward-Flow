@@ -1,5 +1,11 @@
 # Coordination rules and locks — five chats, one repository
 
+> [!NOTE]
+> **SUPERSEDED — 2026-09-28.**
+> This document records multi-chat coordination experiments from August 2026 on the shared monorepo.
+> Current Ward Flow builder and thread coordination rules are defined in [`docs/ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md)
+> and repository [`AGENTS.md`](../AGENTS.md).
+
 **Owner decision, 2026-08-29**, when asked whether to keep five parallel chats or collapse to one:
 
 > _"Please keep it but create clear rules and locks for risky editing and build in coordination rules

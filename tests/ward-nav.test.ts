@@ -681,12 +681,13 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
       "/mockups/ward-flow/ward/[unitId]/answer",
     ]);
 
-    // 436 .ts/.tsx files under src/ once PsychSift was removed (25 September 2026; 1306 before it).
-    // Floored rather than pinned, because src/ grows
+    // 436 .ts/.tsx files under src/ once PsychSift was removed (25 September 2026; 1306 before it),
+    // 349 after later clean-ups deleted dead shims (28 September 2026). Floored rather than pinned,
+    // because src/ grows and shrinks
     // for reasons that have nothing to do with Ward Flow — but a walk that resolved the wrong root
     // or lost its extension filter returns 0 or a handful, and every per-route result below would
     // then read "nothing links this route" for reasons having nothing to do with the navigation.
-    expect(sourceFiles.length).toBeGreaterThan(340);
+    expect(sourceFiles.length).toBeGreaterThan(300);
 
     // Positive pins: the scan reads file CONTENT, and tells a concrete href from a built one.
     const board = dynamicRouteScans.get("/mockups/ward-flow/board/[unitId]");

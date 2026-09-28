@@ -1,5 +1,9 @@
 # Ward Flow full review — 25 September 2026
 
+> [!NOTE]
+> **Historical Audit Record (25 September 2026):**
+> This report records an audit of the former local `ward-lead` folder conducted before Ward Flow was extracted into its dedicated repository (`BigSimmo/Ward-Flow`). For current workflow and rules, see [`README.md`](README.md) and [`../../AGENTS.md`](../../AGENTS.md).
+
 Audit of the local Ward Lead folder (`D:/Worktrees/Database/ward-lead`, branch
 `codex/task-ward-flow-live-state-20260831`). Database and PsychSift content were excluded, as
 requested. Line numbers were correct against tip `3e38413195` when written; the line moves several

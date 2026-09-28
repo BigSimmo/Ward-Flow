@@ -75,6 +75,29 @@ if (
 ) {
   playwrightArgs.push("--project=chromium-mockups-known");
 }
+// WARD_JOURNEY_GROUP="<index>/<count>" (public CI): run only group <index> of the same
+// duration-balanced split WARD_JOURNEY_SHARDS=<count> would make, on this run's single server. Each
+// CI runner then has a whole machine to itself; three shards sharing one 4-core runner made
+// timing-sensitive journeys fail (28 September 2026). The groups partition the selected spec files,
+// so the <count> runs together cover every spec once.
+const journeyGroup = process.env.WARD_JOURNEY_GROUP;
+if (journeyGroup) {
+  const match = /^(\d+)\/(\d+)$/.exec(journeyGroup);
+  const index = match ? Number(match[1]) : Number.NaN;
+  const count = match ? Number(match[2]) : Number.NaN;
+  const groups = index >= 1 && index <= count ? balancedShardGroups(playwrightArgs, count) : null;
+  if (!groups || process.env.WARD_JOURNEY_SHARDS) {
+    console.error(
+      `WARD_JOURNEY_GROUP must be "<index>/<count>" over spec-file filters, without WARD_JOURNEY_SHARDS; got "${journeyGroup}".`,
+    );
+    process.exit(2);
+  }
+  const flags = playwrightArgs.filter((argument) => argument.startsWith("-"));
+  playwrightArgs.splice(0, playwrightArgs.length, ...flags, ...groups[index - 1].files);
+  console.log(
+    `Journey group ${index}/${count}: ${Math.round(groups[index - 1].seconds)}s measured, ${groups[index - 1].files.join(", ")}`,
+  );
+}
 const explicitProjectRequested = playwrightArgs.some(
   (argument) => argument === "--project" || argument.startsWith("--project="),
 );

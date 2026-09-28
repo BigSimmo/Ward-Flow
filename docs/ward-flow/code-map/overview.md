@@ -1,5 +1,9 @@
 # Overview: Ward Flow and the project on one page
 
+> [!NOTE]
+> **Historical Code Map Context:**
+> This overview was written on 25 September 2026 when Ward Flow was co-located in the Database monorepo with PsychSift. Ward Flow has since been separated into its own repository ([`BigSimmo/Ward-Flow`](https://github.com/BigSimmo/Ward-Flow)) with `main` as its base. References to "two products", "the ward line is local only and never pushed", and PsychSift deployment pipelines are historical context describing the extraction state.
+
 Back to [the code map index](README.md). The other parts go file by file; this page is the
 summary. Where this page and a part disagree, the part wins: it was written later, at tip
 `ace8e9ee8d`, and each correction below is marked "(corrected)".
@@ -17,15 +21,12 @@ document and its date.
 
 ## 1. The whole thing on one page
 
-This repository holds **two products that share one Next.js app**:
+Historically, the source monorepo held **two products that shared one Next.js app**:
 
-1. **PsychSift** — the live product. A private clinical-guideline search and answer tool
-   (Supabase + pgvector + OpenAI), deployed to Railway from `origin/main`. Merging to `main`
-   deploys the app and applies database migrations to the live clinical database within seconds.
+1. **PsychSift** — the live clinical knowledge base (Supabase + pgvector + OpenAI), deployed to Railway.
 2. **Ward Flow** — a prototype for coordinating psychiatric beds across Western Australian
-   services. Synthetic patients only. **No database, no API routes, no login, no server
-   logic.** All of its state lives in the browser tab. It exists only on this local branch and
-   is never pushed.
+   services with synthetic patients only. In this dedicated repository (`BigSimmo/Ward-Flow`),
+   Ward Flow runs standalone with in-memory/browser-local state and no database connectors.
 
 Ward Flow borrows the app frame (Next.js, the request proxy, a developer access gate, a handful
 of shared UI pieces) and nothing else. Nothing in PsychSift imports Ward Flow.
@@ -50,10 +51,9 @@ Browser request /mockups/ward-flow/...
   └─ src/app/layout.tsx ── sees the Ward Flow header, SKIPS the Supabase AuthProvider
   └─ src/app/mockups/layout.tsx ── 404 unless mockups enabled or developer-gated
   └─ src/app/mockups/ward-flow/layout.tsx
-        WardFlowAccessGate        (developer cookie/key; local dev bypass)
-          WardFlowProvider        (the engine: useReducer + sessionStorage + clock)
-            WardLiveRegion, WardRail, WardBarMount, WardBroadcastBanner   (the chrome)
-            WardGround → {page}   (one of 42 routes → one screen component)
+        WardFlowProvider          (the engine: useReducer + sessionStorage + clock)
+          WardLiveRegion, WardRail, WardBarMount, WardBroadcastBanner   (the chrome)
+          WardGround → {page}     (one of 42 routes → one screen component)
 
 Screen ──dispatch(event)──▶ wardFlowReducer ──▶ new WardFlowState
    ▲                          (role check → stale check → eligibility/legal guards;
@@ -506,7 +506,6 @@ files, `lessons/` 209 (source of `RULES.md`), `archive/dated-notes/` 178, `sdd-r
 | `@/components/ui/sheet`                                                             |          4 | drawers                                                    |
 | `@/components/ui/missing-value`, `contextual-back-link`, `clinical-dashboard/brand` |     2 each | empty values, back links, brand mark (retired chrome only) |
 | `@/components/ui/tooltip`, `ui/sheet-focus`                                         |     1 each | rail tooltips, dialog focus                                |
-| `@/components/developer-area/ward-flow-access-gate`                                 |          1 | the access gate (layout only)                              |
 
 **Reverse direction:** no file in `src/` outside Ward Flow imports Ward Flow (grep re-checked).
 
@@ -518,9 +517,8 @@ files, `lessons/` 209 (source of `RULES.md`), `archive/dated-notes/` 178, `sdd-r
 - **`src/app/layout.tsx`:** with that header, the Supabase auth providers are **not mounted**.
 - **`src/app/mockups/layout.tsx`:** 404 unless mockups are enabled
   (`mockupsEnabled()` in `src/lib/env.ts:475`) or the path is developer-gated.
-- **Access:** `src/components/developer-area/ward-flow-access-gate.tsx` — a signed developer
-  cookie in production, open in local dev and offline test runs. Ward Flow never uses Supabase
-  auth or `isDemoMode()`.
+- **Access:** open. The developer-key gate (`ward-flow-access-gate.tsx`) was removed 28 September 2026 at Josh's request; Ward Flow now opens with no developer key.
+  Ward Flow never uses Supabase auth or `isDemoMode()`.
 - **Neighbour routes:** `src/app/mockups/ward-flow-sign-in` and `ward-flow-digest` sit beside
   (not inside) `ward-flow`, so they get no rail or provider.
 - **Config:** `next.config.ts` adds `noindex` to all `/mockups`; `tsconfig.json` has one alias
@@ -579,11 +577,8 @@ files, `lessons/` 209 (source of `RULES.md`), `archive/dated-notes/` 178, `sdd-r
 
 ### 8.4 Deploy and CI
 
-Railway project `Database`: services `Database` (app) and `worker`, both deploy on push to
-`main`. Supabase deploys migrations on merge to `main`. 24 workflows, led by `ci.yml`
-(risk-scoped), `live-drift.yml`, `pr-policy.yml`. Local gates: `verify:cheap`, `verify:ui`,
-`verify:pr-local`, `verify:release` (provider-backed, needs approval). **None of this applies to
-Ward Flow, which is never pushed.**
+In the historical PsychSift monorepo, Railway project `Database` and Supabase migrations deployed on push/merge to `main`.
+**In `BigSimmo/Ward-Flow`**, Ward Flow deploys to its own dedicated Railway project `Ward Flow` with zero database connections, and follows the repository boundary rules in [`AGENTS.md`](../../../AGENTS.md).
 
 ---
 

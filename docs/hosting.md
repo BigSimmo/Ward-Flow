@@ -13,15 +13,15 @@ Owner-approved setup, 27 September 2026.
 
 ## Railway target
 
-| Item | Value |
-| --- | --- |
-| Public app | https://ward-flow-production.up.railway.app/ |
-| Project | `Ward Flow` (`8d748288-549b-4614-a4c3-30d1dbf3081d`) |
-| Environment | `production` (`c52294d0-9ae8-46bc-b8cb-522d5f703f11`) |
-| Service | `ward-flow` (`a45ea3c2-cc8d-4d4b-a76d-1c89f5a79896`) |
-| Source | `BigSimmo/Ward-Flow`, `main` |
-| Runtime region | Singapore (`asia-southeast1-eqsg3a`) |
-| Networking | Railway HTTPS domain routed to container port `8080` |
+| Item           | Value                                                 |
+| -------------- | ----------------------------------------------------- |
+| Public app     | https://ward-flow-production.up.railway.app/          |
+| Project        | `Ward Flow` (`8d748288-549b-4614-a4c3-30d1dbf3081d`)  |
+| Environment    | `production` (`c52294d0-9ae8-46bc-b8cb-522d5f703f11`) |
+| Service        | `ward-flow` (`a45ea3c2-cc8d-4d4b-a76d-1c89f5a79896`)  |
+| Source         | `BigSimmo/Ward-Flow`, `main`                          |
+| Runtime region | Singapore (`asia-southeast1-eqsg3a`)                  |
+| Networking     | Railway HTTPS domain routed to container port `8080`  |
 
 These identifiers are resource references, not credentials. Check the exact target before making changes. Hosting here does not establish suitability for real clinical data.
 
@@ -37,7 +37,7 @@ Railway service settings hold the build and start commands. Railpack installs th
 - Code, assets, scripts and runtime/build configuration are included in deployment watch paths; documentation-only changes are excluded.
 - GitHub Actions remains disabled. The Railway GitHub integration is the deployment mechanism.
 
-The Railway connector rejected the hyphen in the existing Ward Flow route when configuring a healthcheck. No dedicated healthcheck endpoint is configured. Check `/mockups/ward-flow` directly after deployments and distinguish build success from runtime verification.
+The dedicated healthcheck endpoint is `/api/health`, returning `{ status: "ok", appName: "Ward Flow", synthetic: true }` (HTTP 200). Check `/mockups/ward-flow` directly after deployments and distinguish build success from runtime verification.
 
 ## Known limits
 
