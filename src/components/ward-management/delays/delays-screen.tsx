@@ -69,7 +69,6 @@ import {
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "@/components/ward-management/ward-legal-clock";
 
-
 export type SystemicHoldCategory = "all" | "ward" | "transport" | "staffing";
 
 export interface SystemicDelayHold {
@@ -131,10 +130,7 @@ function radarX(waitMinutes: number): number {
   return 820 + Math.min((waitMinutes - 1440) / 480, 1) * 140;
 }
 
-export function DelaysScreen({
-  aliasFrom: aliasFromProp,
-  movements: movementsOverride,
-}: DelaysScreenProps = {}) {
+export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOverride }: DelaysScreenProps = {}) {
   const [aliasFrom, setAliasFrom] = useState<DelaysAliasFrom | null>(() => aliasFromProp ?? null);
   const [aliasBannerDismissed, setAliasBannerDismissed] = useState(false);
 
@@ -178,14 +174,16 @@ export function DelaysScreen({
 
   // Search & Sort State
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortOrder, setSortOrder] = useState<"worstBlocker" | "longestWait" | "legalDeadline" | "triageRank">("worstBlocker");
+  const [sortOrder, setSortOrder] = useState<"worstBlocker" | "longestWait" | "legalDeadline" | "triageRank">(
+    "worstBlocker",
+  );
 
   // Refs for accessibility & drawer focus
   const detailColumnRef = useRef<HTMLDivElement>(null);
   const detailBodyRef = useRef<HTMLDivElement>(null);
 
   const handleProtoAction = (actionName?: string) => {
-    setProtoActionNotice(actionName ?? "Action recorded.");
+    setProtoActionNotice(actionName ?? "Not wired in this prototype.");
     window.setTimeout(() => setProtoActionNotice(null), 4000);
   };
 
@@ -365,7 +363,7 @@ export function DelaysScreen({
   const radarPoints = useMemo(() => {
     function getJitter(str: string) {
       let hash = 0;
-      for (let i = 0; i < str.length; i++) hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      for (let i = 0; i < str.length; i++) hash = (hash << 5) - hash + str.charCodeAt(i);
       return Math.abs(hash);
     }
 
@@ -561,9 +559,7 @@ export function DelaysScreen({
               Delays &amp; Bottleneck Control
             </h1>
             <LegalLimitsNotChecked />
-            <span className={styles.pageSubtitle}>
-              Statewide Psychiatric Bed Coordination Desk · Western Australia
-            </span>
+            <span className={styles.pageSubtitle}>Statewide Psychiatric Bed Coordination Desk · Western Australia</span>
           </div>
 
           <div className={styles.mastheadMeta}>
@@ -595,11 +591,7 @@ export function DelaysScreen({
             data-from={aliasFrom}
           >
             <p>{delaysAliasBannerCopy(aliasFrom)}</p>
-            <button
-              type="button"
-              className={styles.aliasBannerDismiss}
-              onClick={() => setAliasBannerDismissed(true)}
-            >
+            <button type="button" className={styles.aliasBannerDismiss} onClick={() => setAliasBannerDismissed(true)}>
               Dismiss
             </button>
           </aside>
@@ -634,7 +626,9 @@ export function DelaysScreen({
           <div className={styles.topExecutiveControlRow}>
             <div className={styles.execTitleGroup}>
               <h2 className={styles.execSectionTitle}>Executive coordination overview</h2>
-              <span className={styles.execSectionSub}>Statewide wait durations, statutory clocks &amp; blocker ownership</span>
+              <span className={styles.execSectionSub}>
+                Statewide wait durations, statutory clocks &amp; blocker ownership
+              </span>
             </div>
 
             <div className={styles.viewSwitcherSeg} role="tablist" aria-label="Executive Overview Mode">
@@ -686,10 +680,18 @@ export function DelaysScreen({
                 </div>
 
                 <div className={styles.radarLegend}>
-                  <div className={styles.legendItem}><span className={`${styles.legendDot} ${styles.legendDotYours}`} /> Yours (Coordinator)</div>
-                  <div className={styles.legendItem}><span className={`${styles.legendDot} ${styles.legendDotWards}`} /> Wards</div>
-                  <div className={styles.legendItem}><span className={`${styles.legendDot} ${styles.legendDotTransport}`} /> Transport</div>
-                  <div className={styles.legendItem}><span className={`${styles.legendDot} ${styles.legendDotBreached}`} /> Past recorded time / due soon</div>
+                  <div className={styles.legendItem}>
+                    <span className={`${styles.legendDot} ${styles.legendDotYours}`} /> Yours (Coordinator)
+                  </div>
+                  <div className={styles.legendItem}>
+                    <span className={`${styles.legendDot} ${styles.legendDotWards}`} /> Wards
+                  </div>
+                  <div className={styles.legendItem}>
+                    <span className={`${styles.legendDot} ${styles.legendDotTransport}`} /> Transport
+                  </div>
+                  <div className={styles.legendItem}>
+                    <span className={`${styles.legendDot} ${styles.legendDotBreached}`} /> Past recorded time / due soon
+                  </div>
                 </div>
               </div>
 
@@ -714,9 +716,7 @@ export function DelaysScreen({
                           : `due in ${splitDuration(legalDeadlineMinutes(radarTooltip.movement, now)!)}`}
                       </span>
                     ) : (
-                      <span className={styles.ttStatus}>
-                        Legal Status: {radarTooltip.movement.legalStatus}
-                      </span>
+                      <span className={styles.ttStatus}>Legal Status: {radarTooltip.movement.legalStatus}</span>
                     )}
                   </div>
                 )}
@@ -724,52 +724,265 @@ export function DelaysScreen({
                 <svg className={styles.radarSvg} viewBox="0 0 1000 255" preserveAspectRatio="xMidYMid meet">
                   {/* Background Quadrants */}
                   {/* Red Zone: Top Right (>8h wait & Breached/Imminent) - covers x=340 to 975, y=20 to 115 */}
-                  <rect x={severeX} y="20" width={975 - severeX} height="95" fill="var(--danger-soft, #f8e6e2)" opacity="0.65" rx="4" />
-                  <rect x={severeX} y="20" width={975 - severeX} height="95" fill="none" stroke="var(--danger, #b03b2e)" strokeWidth="1" strokeDasharray="3 3" opacity="0.8" rx="4" />
-                  <text x={severeX + 10} y="34" fill="var(--danger, #b03b2e)" fontFamily="var(--body)" fontSize="10" fontWeight="700" letterSpacing="0.05em">RED ZONE: PAST OR NEAR RECORDED LEGAL TIME / &gt;{severeWaitHours}h WAIT ({OPERATIONAL_DEFAULT_LABEL})</text>
+                  <rect
+                    x={severeX}
+                    y="20"
+                    width={975 - severeX}
+                    height="95"
+                    fill="var(--danger-soft, #f8e6e2)"
+                    opacity="0.65"
+                    rx="4"
+                  />
+                  <rect
+                    x={severeX}
+                    y="20"
+                    width={975 - severeX}
+                    height="95"
+                    fill="none"
+                    stroke="var(--danger, #b03b2e)"
+                    strokeWidth="1"
+                    strokeDasharray="3 3"
+                    opacity="0.8"
+                    rx="4"
+                  />
+                  <text
+                    x={severeX + 10}
+                    y="34"
+                    fill="var(--danger, #b03b2e)"
+                    fontFamily="var(--body)"
+                    fontSize="10"
+                    fontWeight="700"
+                    letterSpacing="0.05em"
+                  >
+                    RED ZONE: PAST OR NEAR RECORDED LEGAL TIME / &gt;{severeWaitHours}h WAIT (
+                    {OPERATIONAL_DEFAULT_LABEL})
+                  </text>
 
                   {/* Access Blocked Zone: Bottom Right (>8h to 24h+ Wait, Stable Authority) */}
-                  <rect x={severeX} y="120" width={975 - severeX} height="95" fill="var(--sunk, #eef2f6)" opacity="0.45" rx="4" />
-                  <text x={severeX + 10} y="134" fill="var(--muted, #5f6873)" fontFamily="var(--body)" fontSize="9.5" fontWeight="600" letterSpacing="0.04em">LONG WAIT (&gt;{severeWaitHours}h, {OPERATIONAL_DEFAULT_LABEL})</text>
+                  <rect
+                    x={severeX}
+                    y="120"
+                    width={975 - severeX}
+                    height="95"
+                    fill="var(--sunk, #eef2f6)"
+                    opacity="0.45"
+                    rx="4"
+                  />
+                  <text
+                    x={severeX + 10}
+                    y="134"
+                    fill="var(--muted, #5f6873)"
+                    fontFamily="var(--body)"
+                    fontSize="9.5"
+                    fontWeight="600"
+                    letterSpacing="0.04em"
+                  >
+                    LONG WAIT (&gt;{severeWaitHours}h, {OPERATIONAL_DEFAULT_LABEL})
+                  </text>
 
                   {/* Acute Urgency Zone: Top Left (<8h Wait, but Imminent Legal Clock) */}
-                  <rect x="80" y="20" width={severeX - 85} height="95" fill="var(--warn-soft, #f6eeda)" opacity="0.55" rx="4" />
-                  <text x="90" y="34" fill="var(--warn, #825d10)" fontFamily="var(--body)" fontSize="9.5" fontWeight="600" letterSpacing="0.04em">RECORDED LEGAL TIME DUE, SHORTER WAIT</text>
+                  <rect
+                    x="80"
+                    y="20"
+                    width={severeX - 85}
+                    height="95"
+                    fill="var(--warn-soft, #f6eeda)"
+                    opacity="0.55"
+                    rx="4"
+                  />
+                  <text
+                    x="90"
+                    y="34"
+                    fill="var(--warn, #825d10)"
+                    fontFamily="var(--body)"
+                    fontSize="9.5"
+                    fontWeight="600"
+                    letterSpacing="0.04em"
+                  >
+                    RECORDED LEGAL TIME DUE, SHORTER WAIT
+                  </text>
 
                   {/* Standard Flow Zone: Bottom Left (<8h Wait, Stable Authority) */}
-                  <rect x="80" y="120" width={severeX - 85} height="95" fill="var(--surface-2, #f4f7fa)" opacity="0.6" rx="4" />
-                  <text x="90" y="134" fill="var(--muted, #5f6873)" fontFamily="var(--body)" fontSize="9.5" fontWeight="500" letterSpacing="0.04em">STANDARD ED INTAKE &amp; STABLE AUTHORITY</text>
+                  <rect
+                    x="80"
+                    y="120"
+                    width={severeX - 85}
+                    height="95"
+                    fill="var(--surface-2, #f4f7fa)"
+                    opacity="0.6"
+                    rx="4"
+                  />
+                  <text
+                    x="90"
+                    y="134"
+                    fill="var(--muted, #5f6873)"
+                    fontFamily="var(--body)"
+                    fontSize="9.5"
+                    fontWeight="500"
+                    letterSpacing="0.04em"
+                  >
+                    STANDARD ED INTAKE &amp; STABLE AUTHORITY
+                  </text>
 
                   {/* Subtle Midline separating Jeopardy top half from Stable bottom half */}
-                  <line x1="80" y1="117.5" x2="975" y2="117.5" stroke="var(--line, rgba(22, 30, 40, 0.12))" strokeWidth="1" strokeDasharray="2 4" opacity="0.6" />
+                  <line
+                    x1="80"
+                    y1="117.5"
+                    x2="975"
+                    y2="117.5"
+                    stroke="var(--line, rgba(22, 30, 40, 0.12))"
+                    strokeWidth="1"
+                    strokeDasharray="2 4"
+                    opacity="0.6"
+                  />
 
                   {/* Benchmark Guide Lines & Labels positioned cleanly above without dot collision */}
 
                   {/* Grid Axes */}
-                  <line x1="80" y1="225" x2="975" y2="225" stroke="var(--line-strong, rgba(22, 30, 40, 0.26))" strokeWidth="1.5" />
-                  <line x1="80" y1="18" x2="80" y2="225" stroke="var(--line-strong, rgba(22, 30, 40, 0.26))" strokeWidth="1.5" />
+                  <line
+                    x1="80"
+                    y1="225"
+                    x2="975"
+                    y2="225"
+                    stroke="var(--line-strong, rgba(22, 30, 40, 0.26))"
+                    strokeWidth="1.5"
+                  />
+                  <line
+                    x1="80"
+                    y1="18"
+                    x2="80"
+                    y2="225"
+                    stroke="var(--line-strong, rgba(22, 30, 40, 0.26))"
+                    strokeWidth="1.5"
+                  />
 
                   {/* Y-Axis Labels aligned with the 4 band centers (50, 90, 145, 195) */}
-                  <text x="72" y="54" textAnchor="end" fill="var(--danger, #b03b2e)" fontFamily="var(--body)" fontSize="11" fontWeight="700">Past time</text>
-                  <text x="72" y="94" textAnchor="end" fill="var(--warn, #825d10)" fontFamily="var(--body)" fontSize="10" fontWeight="600">&lt;60m Due</text>
-                  <text x="72" y="149" textAnchor="end" fill="var(--ink, #161a20)" fontFamily="var(--body)" fontSize="10" fontWeight="500">Severe</text>
-                  <text x="72" y="199" textAnchor="end" fill="var(--muted, #5f6873)" fontFamily="var(--body)" fontSize="10" fontWeight="500">Routine</text>
+                  <text
+                    x="72"
+                    y="54"
+                    textAnchor="end"
+                    fill="var(--danger, #b03b2e)"
+                    fontFamily="var(--body)"
+                    fontSize="11"
+                    fontWeight="700"
+                  >
+                    Past time
+                  </text>
+                  <text
+                    x="72"
+                    y="94"
+                    textAnchor="end"
+                    fill="var(--warn, #825d10)"
+                    fontFamily="var(--body)"
+                    fontSize="10"
+                    fontWeight="600"
+                  >
+                    &lt;60m Due
+                  </text>
+                  <text
+                    x="72"
+                    y="149"
+                    textAnchor="end"
+                    fill="var(--ink, #161a20)"
+                    fontFamily="var(--body)"
+                    fontSize="10"
+                    fontWeight="500"
+                  >
+                    Severe
+                  </text>
+                  <text
+                    x="72"
+                    y="199"
+                    textAnchor="end"
+                    fill="var(--muted, #5f6873)"
+                    fontFamily="var(--body)"
+                    fontSize="10"
+                    fontWeight="500"
+                  >
+                    Routine
+                  </text>
 
                   {/* X-Axis Labels */}
-                  <text x="80" y="240" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="10.5">0h</text>
-                  <text x="210" y="240" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="10.5">4h</text>
-                  <text x="340" y="240" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="10.5">8h</text>
-                  <text x="460" y="240" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="10.5">12h</text>
-                  <text x="580" y="240" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="10.5">16h</text>
-                  <text x="700" y="240" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="10.5">20h</text>
-                  <text x="820" y="240" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="10.5">24h</text>
-                  <text x="950" y="240" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="10.5">28h+</text>
+                  <text x="80" y="240" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="10.5">
+                    0h
+                  </text>
+                  <text
+                    x="210"
+                    y="240"
+                    textAnchor="middle"
+                    fill="var(--muted)"
+                    fontFamily="var(--mono)"
+                    fontSize="10.5"
+                  >
+                    4h
+                  </text>
+                  <text
+                    x="340"
+                    y="240"
+                    textAnchor="middle"
+                    fill="var(--muted)"
+                    fontFamily="var(--mono)"
+                    fontSize="10.5"
+                  >
+                    8h
+                  </text>
+                  <text
+                    x="460"
+                    y="240"
+                    textAnchor="middle"
+                    fill="var(--muted)"
+                    fontFamily="var(--mono)"
+                    fontSize="10.5"
+                  >
+                    12h
+                  </text>
+                  <text
+                    x="580"
+                    y="240"
+                    textAnchor="middle"
+                    fill="var(--muted)"
+                    fontFamily="var(--mono)"
+                    fontSize="10.5"
+                  >
+                    16h
+                  </text>
+                  <text
+                    x="700"
+                    y="240"
+                    textAnchor="middle"
+                    fill="var(--muted)"
+                    fontFamily="var(--mono)"
+                    fontSize="10.5"
+                  >
+                    20h
+                  </text>
+                  <text
+                    x="820"
+                    y="240"
+                    textAnchor="middle"
+                    fill="var(--muted)"
+                    fontFamily="var(--mono)"
+                    fontSize="10.5"
+                  >
+                    24h
+                  </text>
+                  <text
+                    x="950"
+                    y="240"
+                    textAnchor="middle"
+                    fill="var(--muted)"
+                    fontFamily="var(--mono)"
+                    fontSize="10.5"
+                  >
+                    28h+
+                  </text>
 
                   {/* Dynamic Plotted Dots with 2D Beeswarm Dispersion */}
                   {radarPoints.map((pt) => {
                     const isSelected = selectedId === pt.movement.id;
                     const owner = ownerOf(
-                      groups.find((g) => g.movements.some((m) => m.id === pt.movement.id))?.cause ?? "awaiting_coordinator",
+                      groups.find((g) => g.movements.some((m) => m.id === pt.movement.id))?.cause ??
+                        "awaiting_coordinator",
                     );
 
                     let fillColor = "var(--ink)";
@@ -802,13 +1015,7 @@ export function DelaysScreen({
                         onMouseLeave={() => setRadarTooltip(null)}
                       >
                         {/* Enlarged invisible tap/hover hit target (hit radius 16px = 32x32px minimum) */}
-                        <circle
-                          cx={pt.x}
-                          cy={pt.y}
-                          r={16}
-                          fill="transparent"
-                          stroke="transparent"
-                        />
+                        <circle cx={pt.x} cy={pt.y} r={16} fill="transparent" stroke="transparent" />
                         {pt.isBreached && (
                           <circle
                             cx={pt.x}
@@ -853,14 +1060,20 @@ export function DelaysScreen({
                     </svg>
                     Statutory &amp; Safety Sentinel
                   </h3>
-                  <span className={styles.pillarBadge}>MHA 2014</span>
+                  <span className={styles.pillarBadge}>Recorded status</span>
                 </div>
 
                 <div className={styles.pillarBody}>
                   {breachedCount > 0 ? (
                     <div className={styles.sentinelBreach}>
                       <div className={styles.sentinelBreachLeft}>
-                        <svg className={styles.sentinelBreachIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg
+                          className={styles.sentinelBreachIcon}
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
                           <circle cx="12" cy="12" r="10" />
                           <line x1="12" y1="8" x2="12" y2="12" />
                           <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -1038,10 +1251,7 @@ export function DelaysScreen({
                     options={delayFilters.map((option) => ({
                       id: option.id,
                       label: option.label,
-                      count: groups.reduce(
-                        (sum, group) => sum + group.movements.filter(option.predicate).length,
-                        0,
-                      ),
+                      count: groups.reduce((sum, group) => sum + group.movements.filter(option.predicate).length, 0),
                     }))}
                   />
                 </div>
@@ -1095,7 +1305,7 @@ export function DelaysScreen({
                           : markedOwner !== null
                             ? `Owner: ${markedOwner.toUpperCase()}`
                             : markedCause !== null
-                              ? DELAY_CAUSE_COPY.find((c) => c.cause === markedCause)?.title ?? markedCause
+                              ? (DELAY_CAUSE_COPY.find((c) => c.cause === markedCause)?.title ?? markedCause)
                               : "Filtered results"}
                     </strong>{" "}
                     ({markedCount} matching)
@@ -1135,9 +1345,7 @@ export function DelaysScreen({
                 const sortedItems = [...filteredItems];
                 if (sortOrder === "longestWait") {
                   sortedItems.sort(
-                    (a, b) =>
-                      a.movement.openedAt - b.movement.openedAt ||
-                      a.movement.id.localeCompare(b.movement.id),
+                    (a, b) => a.movement.openedAt - b.movement.openedAt || a.movement.id.localeCompare(b.movement.id),
                   );
                 } else if (sortOrder === "legalDeadline") {
                   sortedItems.sort((a, b) => {
@@ -1152,10 +1360,7 @@ export function DelaysScreen({
                     }
                     if (legalA !== undefined) return -1;
                     if (legalB !== undefined) return 1;
-                    return (
-                      a.movement.openedAt - b.movement.openedAt ||
-                      a.movement.id.localeCompare(b.movement.id)
-                    );
+                    return a.movement.openedAt - b.movement.openedAt || a.movement.id.localeCompare(b.movement.id);
                   });
                 } else if (sortOrder === "triageRank") {
                   sortedItems.sort(
@@ -1221,8 +1426,12 @@ export function DelaysScreen({
                   data-testid="delays-detail-backdrop"
                 />
                 <div style={{ display: "none" }}>
-                  <WardPanel title="What the blocker is"><div /></WardPanel>
-                  <WardPanel title="Escalations and resolved"><div /></WardPanel>
+                  <WardPanel title="What the blocker is">
+                    <div />
+                  </WardPanel>
+                  <WardPanel title="Escalations and resolved">
+                    <div />
+                  </WardPanel>
                 </div>
                 <div ref={detailColumnRef} className={styles.colDetail}>
                   <WardPanel title="Why this person is waiting">
@@ -1365,11 +1574,16 @@ export function DelaysScreen({
                               {/* D-b: this register is whole-network, so a row outside the chosen
                                   service is never dropped — only marked. */}
                               {isOutsideChosenService(movement) ? (
-                                <span className={styles.rowSub} data-testid={`delays-escalation-outside-${movement.id}`}>
+                                <span
+                                  className={styles.rowSub}
+                                  data-testid={`delays-escalation-outside-${movement.id}`}
+                                >
                                   {`Outside ${service}`}
                                 </span>
                               ) : null}
-                              <span className={styles.rowSub}>{formatInstantWithDay(escalationOf(movement).at, now)}</span>
+                              <span className={styles.rowSub}>
+                                {formatInstantWithDay(escalationOf(movement).at, now)}
+                              </span>
                             </li>
                           ))}
                         </ul>
@@ -1384,8 +1598,8 @@ export function DelaysScreen({
                       hidden={registerTab !== "attention"}
                     >
                       <p className={styles.paneScope}>
-                        Patients at a time limit or with nowhere to go, plus urgent patients outside the service you have chosen.
-                        The side-rail Delays badge counts only those at a time limit or with nowhere to go.
+                        Patients at a time limit or with nowhere to go, plus urgent patients outside the service you
+                        have chosen. The side-rail Delays badge counts only those at a time limit or with nowhere to go.
                       </p>
                       {attentionRows.length === 0 ? (
                         <p className={styles.absent}>No movements requiring urgent attention right now.</p>
@@ -1401,7 +1615,9 @@ export function DelaysScreen({
                               >
                                 <div className={styles.attentionCardTop}>
                                   {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                                  <span className={styles.attentionWho}>{resolvePatientIdentity(movement).formalName}</span>
+                                  <span className={styles.attentionWho}>
+                                    {resolvePatientIdentity(movement).formalName}
+                                  </span>
                                   <span className={styles.attentionWhen}>
                                     {splitDuration(Math.max(now - movement.openedAt, 0))} waiting
                                   </span>
@@ -1462,14 +1678,14 @@ export function DelaysScreen({
             <div className={styles.systemicHeader}>
               <p className={styles.systemicDesc}>
                 This model records delays only against a movement. Ward-wide closures and transport outages are not
-                represented as individual patient movements; systemic and facility holds active across the Western Australian
-                network are tracked below.
+                represented as individual patient movements; systemic and facility holds active across the Western
+                Australian network are tracked below.
               </p>
               <div className={styles.systemicActions}>
                 <button
                   type="button"
                   className={styles.logHoldButton}
-                  onClick={() => handleProtoAction("Record a service-wide delay")}
+                  onClick={() => handleProtoAction()}
                   aria-label="Record a service-wide or facility delay"
                 >
                   + Record a service-wide delay
@@ -1481,9 +1697,21 @@ export function DelaysScreen({
               {(
                 [
                   { id: "all", label: "All holds", count: SYSTEMIC_HOLDS.length },
-                  { id: "ward", label: "Ward closures", count: SYSTEMIC_HOLDS.filter((h) => h.category === "ward").length },
-                  { id: "transport", label: "Transport & fleet", count: SYSTEMIC_HOLDS.filter((h) => h.category === "transport").length },
-                  { id: "staffing", label: "Staffing surge", count: SYSTEMIC_HOLDS.filter((h) => h.category === "staffing").length },
+                  {
+                    id: "ward",
+                    label: "Ward closures",
+                    count: SYSTEMIC_HOLDS.filter((h) => h.category === "ward").length,
+                  },
+                  {
+                    id: "transport",
+                    label: "Transport & fleet",
+                    count: SYSTEMIC_HOLDS.filter((h) => h.category === "transport").length,
+                  },
+                  {
+                    id: "staffing",
+                    label: "Staffing surge",
+                    count: SYSTEMIC_HOLDS.filter((h) => h.category === "staffing").length,
+                  },
                 ] as const
               ).map((chip) => (
                 <button
@@ -1740,21 +1968,19 @@ function SelectedPerson({
 
       {/* Statutory Legal Clock Badge */}
       {legalForm && legalMinutes !== undefined && (
-        <div className={`${styles.legalClockCard} ${legalMinutes < 0 ? styles.legalClockCardBreached : styles.legalClockCardWarning}`}>
+        <div
+          className={`${styles.legalClockCard} ${legalMinutes < 0 ? styles.legalClockCardBreached : styles.legalClockCardWarning}`}
+        >
           <div className={styles.legalClockTop}>
             <span className={styles.legalClockForm}>{legalFormName(legalForm)}</span>
-            <span className={styles.legalClockStatus}>
-              {legalMinutes < 0 ? "PAST RECORDED TIME" : "DUE SOON"}
-            </span>
+            <span className={styles.legalClockStatus}>{legalMinutes < 0 ? "PAST RECORDED TIME" : "DUE SOON"}</span>
           </div>
           <div className={styles.legalClockCountdown}>
             {legalMinutes < 0
               ? `Lapsed ${splitDuration(Math.abs(legalMinutes))} ago`
               : `Expires in ${splitDuration(legalMinutes)}`}
           </div>
-          <p className={styles.legalClockNote}>
-            {LEGAL_LIMITS_NOT_CHECKED_NOTICE}
-          </p>
+          <p className={styles.legalClockNote}>{LEGAL_LIMITS_NOT_CHECKED_NOTICE}</p>
         </div>
       )}
 
@@ -1837,23 +2063,30 @@ function SelectedPerson({
 
       {/* Candidate Wards Matcher */}
       <div className={styles.dossierSection} style={{ marginTop: 14 }}>
-        <h4 className={styles.dossierSectionTitle}>
-          Candidate Wards Shortlist
-        </h4>
+        <h4 className={styles.dossierSectionTitle}>Candidate Wards Shortlist</h4>
         <div className={styles.wardQueryList}>
-          {shortlistCandidates(movement, units, now).slice(0, 3).map((candidate) => (
-            <div key={candidate.unit.id} className={styles.wardQueryRow}>
-              <div className={styles.wardQueryLeft}>
-                <span className={styles.wardQueryName}>{candidate.unit.name}</span>
-                <span className={styles.wardQueryReason}>
-                  {candidate.availability === "eligible" ? "Eligible bed" : candidate.availability === "overridable" ? "Overridable" : "Unavailable"} · {candidate.verdict.eligible ? "Eligible" : "Requires override"}
+          {shortlistCandidates(movement, units, now)
+            .slice(0, 3)
+            .map((candidate) => (
+              <div key={candidate.unit.id} className={styles.wardQueryRow}>
+                <div className={styles.wardQueryLeft}>
+                  <span className={styles.wardQueryName}>{candidate.unit.name}</span>
+                  <span className={styles.wardQueryReason}>
+                    {candidate.availability === "eligible"
+                      ? "Eligible bed"
+                      : candidate.availability === "overridable"
+                        ? "Overridable"
+                        : "Unavailable"}{" "}
+                    · {candidate.verdict.eligible ? "Eligible" : "Requires override"}
+                  </span>
+                </div>
+                <span
+                  className={`${styles.wardQueryStatus} ${candidate.verdict.eligible ? styles.wardQueryStatusCandidate : styles.wardQueryStatusDeclined}`}
+                >
+                  {candidate.verdict.eligible ? "MATCH" : "OVERRIDE"}
                 </span>
               </div>
-              <span className={`${styles.wardQueryStatus} ${candidate.verdict.eligible ? styles.wardQueryStatusCandidate : styles.wardQueryStatusDeclined}`}>
-                {candidate.verdict.eligible ? "MATCH" : "OVERRIDE"}
-              </span>
-            </div>
-          ))}
+            ))}
           {movement.declines.map((decline) => (
             <div key={decline.unitId} className={styles.wardQueryRow}>
               <div className={styles.wardQueryLeft}>
@@ -1862,9 +2095,7 @@ function SelectedPerson({
                 </span>
                 <span className={styles.wardQueryReason}>{decline.reason}</span>
               </div>
-              <span className={`${styles.wardQueryStatus} ${styles.wardQueryStatusDeclined}`}>
-                DECLINED
-              </span>
+              <span className={`${styles.wardQueryStatus} ${styles.wardQueryStatusDeclined}`}>DECLINED</span>
             </div>
           ))}
         </div>
@@ -1873,11 +2104,11 @@ function SelectedPerson({
       {/* Coordination Actions (Rule D4) */}
       {(() => {
         const handleAssignBed = () => {
-          onAction("Assign Recommended Bed & Lock Place");
+          onAction();
         };
 
         const handleRenewHold = () => {
-          onAction("Renew Bed Hold (60m)");
+          onAction();
         };
 
         const handleEscalate = () => {
@@ -1887,9 +2118,9 @@ function SelectedPerson({
             now,
             movementId: movement.id,
             triedUnitIds: movement.declines.map((d) => d.unitId),
-            contact: "Bed Desk",
+            contact: "State bed coordination desk",
           });
-          onAction("Escalate to Bed Desk");
+          onAction("Escalation recorded.");
         };
 
         return (
@@ -1967,7 +2198,9 @@ function PersonRow({
   const isBreached = legalMinutes !== undefined && legalMinutes < 0;
   const isImminent = legalMinutes !== undefined && legalMinutes >= 0 && legalMinutes <= 60;
   const owner = ownerOf(cause);
-  const activeBlocker = movement.blocker.trim() !== "" && !BLOCKERS_MEANING_NOTHING_IS_BLOCKING.some((inactive) => inactive === movement.blocker.trim());
+  const activeBlocker =
+    movement.blocker.trim() !== "" &&
+    !BLOCKERS_MEANING_NOTHING_IS_BLOCKING.some((inactive) => inactive === movement.blocker.trim());
 
   return (
     <li
@@ -1994,23 +2227,20 @@ function PersonRow({
             <span className={styles.cardPatientId} data-ward-primitive="record-id">
               {patientWho.formalName}
             </span>
-            <span className={`${styles.triageTag} ${styles[`triageTagT${movement.urgency}`]}`} data-tier={movement.urgency}>
+            <span
+              className={`${styles.triageTag} ${styles[`triageTagT${movement.urgency}`]}`}
+              data-tier={movement.urgency}
+            >
               T{movement.urgency}
             </span>
-            {movement.flaggedUrgent && (
-              <span className={styles.escalatedTag}>Escalated</span>
-            )}
-            {movement.security === "Secure" && (
-              <span className={styles.lockedBedFlag}>Needs Locked Bed</span>
-            )}
+            {movement.flaggedUrgent && <span className={styles.escalatedTag}>Escalated</span>}
+            {movement.security === "Secure" && <span className={styles.lockedBedFlag}>Needs Locked Bed</span>}
             {cleared === false ? (
               <span className={styles.uncleared}>NOT CLEARED</span>
             ) : cleared === true ? (
               <span className={styles.clearedBadge}>CLEARED</span>
             ) : null}
-            {marked && markLabel !== null && (
-              <span className={styles.markedBadge}>Marked: {markLabel}</span>
-            )}
+            {marked && markLabel !== null && <span className={styles.markedBadge}>Marked: {markLabel}</span>}
           </div>
 
           <div className={styles.cardWaitClock}>
@@ -2033,13 +2263,17 @@ function PersonRow({
         <div className={styles.cardLocRow}>
           <span className={styles.cardFacility}>{originName}</span>
           <span data-ward-type-floor="delays-profile" className={styles.cardDemographics}>
-            {movement.cohort} · {movement.security === "Secure" ? "Needs a locked bed" : "An open bed suits"} · {movement.legalStatus}
+            {movement.cohort} · {movement.security === "Secure" ? "Needs a locked bed" : "An open bed suits"} ·{" "}
+            {movement.legalStatus}
           </span>
         </div>
 
         {/* Statutory Legal Alert Strip */}
         {legalForm !== undefined && legalMinutes !== undefined && (isBreached || isImminent) && (
-          <div className={`${styles.cardLegalAlert} ${isImminent ? styles.cardLegalAlertImminent : ""}`} data-breached={isBreached}>
+          <div
+            className={`${styles.cardLegalAlert} ${isImminent ? styles.cardLegalAlertImminent : ""}`}
+            data-breached={isBreached}
+          >
             <span>
               <strong>{legalFormName(legalForm)}</strong>:{" "}
               {legalMinutes < 0
@@ -2053,7 +2287,9 @@ function PersonRow({
         {/* Blocker Strip */}
         <div className={styles.cardBlockerStrip}>
           <div className={styles.cardBlockerTop}>
-            <span className={`${styles.cardOwnerTag} ${owner === "yours" ? styles.cardOwnerTagYours : owner === "wards" ? styles.cardOwnerTagWards : owner === "transport" ? styles.cardOwnerTagTransport : styles.cardOwnerTagEd}`}>
+            <span
+              className={`${styles.cardOwnerTag} ${owner === "yours" ? styles.cardOwnerTagYours : owner === "wards" ? styles.cardOwnerTagWards : owner === "transport" ? styles.cardOwnerTagTransport : styles.cardOwnerTagEd}`}
+            >
               {owner.toUpperCase()}
             </span>
             <span data-ward-type-floor="delays-since" className={styles.cardStagnation}>
@@ -2080,4 +2316,3 @@ function PersonRow({
     </li>
   );
 }
-

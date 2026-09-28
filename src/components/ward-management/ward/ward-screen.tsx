@@ -403,7 +403,6 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
   const [answerIndex, setAnswerIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<"attn" | "coming" | "out" | "beds" | "return">("attn");
   const [dischargeSubTab, setDischargeSubTab] = useState<"all" | "scheduled" | "leave" | "barriers" | "suburb">("all");
-  const [selectedPod, setSelectedPod] = useState<string>("all");
   const [selectedBed, setSelectedBed] = useState<number | null>(null);
   const [confirmNumbersOpen, setConfirmNumbersOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -998,7 +997,7 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
   ];
 
   // Derive bed roster & telemetry for Bed Board matrix
-  // D-21 items 4A & 6A: HDU left off; show real recorded bed designations from WARD_LOCKED_BED_SPLITS.
+  // D-21 items 4A & 6A: the locked/open split is a ward-level count, not a bed map.
   const lockedBeds = unit.lockedBeds ?? WARD_LOCKED_BED_SPLITS[unit.id] ?? 0;
   const openBedsCount = Math.max(0, unit.beds - lockedBeds);
   const isMixed = lockedBeds > 0 && openBedsCount > 0;
@@ -1018,9 +1017,6 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
 
   const bedsList = Array.from({ length: unit.beds }, (_, i) => {
     const bedNumber = i + 1;
-    const designation: "Locked" | "Open" | undefined = isMixed ? (i < lockedBeds ? "Locked" : "Open") : undefined;
-    const podId = isMixed ? (i < lockedBeds ? "locked" : "open") : "all";
-    const podLabel = isMixed ? `${unit.name} ${designation} Beds` : unit.name;
     const isHdu = false;
 
     // Every leave record gets its own slot, right after the ready beds — never only the first one.
@@ -1074,9 +1070,6 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
     return {
       bedNumber,
       bedLabel: `Bed ${String(bedNumber).padStart(2, "0")}`,
-      podId,
-      podLabel,
-      designation,
       isHdu,
       status,
       statusText,
@@ -1090,8 +1083,6 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
       legalStatusLabel,
     };
   });
-
-  const filteredBeds = selectedPod === "all" ? bedsList : bedsList.filter((b) => b.podId === selectedPod);
 
   /**
    * OD-3's read side, ward-scoped. **`overridesAgainstUnit`, never `allOverrides`** — the register
@@ -2647,9 +2638,7 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
                   </svg>
                   <span>Morning Census &amp; Capacity Confirmation</span>
                 </h2>
-                <span className={styles.commandSubTitle}>
-                  Your morning roll-up, your default, not a legal limit
-                </span>
+                <span className={styles.commandSubTitle}>Your morning roll-up, your default, not a legal limit</span>
               </div>
               <span
                 className={`${styles.returnStatusChip} ${confirmedToday.size >= 3 ? styles.returnStatusChipConfirmed : ""}`}
@@ -2842,9 +2831,7 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
                       Save answer
                     </button>
                   </form>
-                  <p className={styles.confirmSkipNote}>
-                    Choose none if nothing is limiting intake right now.
-                  </p>
+                  <p className={styles.confirmSkipNote}>Choose none if nothing is limiting intake right now.</p>
                 </li>
 
                 <li className={styles.confirmRow} data-kind="record" data-testid="ward-confirm-row-release">
@@ -3335,7 +3322,9 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
                                     required
                                     className={styles.capacityInput}
                                     value={dischargeDestination ?? ""}
-                                    onChange={(event) => setDischargeDestination(event.target.value as LeavingDestination)}
+                                    onChange={(event) =>
+                                      setDischargeDestination(event.target.value as LeavingDestination)
+                                    }
                                   >
                                     <option value="" disabled>
                                       Choose where they are going
@@ -3446,7 +3435,8 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
                             >
                               <header className={`${styles.cardHeader} ${styles.cardTopRow}`}>
                                 <span className={styles.cardBedName}>
-                                  {bedRecordLabel(release.admissionId)} · <strong>{bedReleaseStateLabels[release.state]}</strong>
+                                  {bedRecordLabel(release.admissionId)} ·{" "}
+                                  <strong>{bedReleaseStateLabels[release.state]}</strong>
                                 </span>
                                 {isBlocked ? (
                                   <strong
@@ -3465,9 +3455,7 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
                               </header>
                               <div className={styles.cardWaitingRow}>
                                 <span className={styles.cardWaitingLabel}>Waiting on:</span>
-                                <span className={styles.cardWaitingVal}>
-                                  {release.waitingOn ?? "Not recorded"}
-                                </span>
+                                <span className={styles.cardWaitingVal}>{release.waitingOn ?? "Not recorded"}</span>
                               </div>
                               {release.blocker ? (
                                 <div className={styles.cardBlockerAlert}>Blocker: {release.blocker}</div>
@@ -3537,7 +3525,9 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
                                     required
                                     className={styles.capacityInput}
                                     value={dischargeDestination ?? ""}
-                                    onChange={(event) => setDischargeDestination(event.target.value as LeavingDestination)}
+                                    onChange={(event) =>
+                                      setDischargeDestination(event.target.value as LeavingDestination)
+                                    }
                                   >
                                     <option value="" disabled>
                                       Choose where they are going
@@ -3809,8 +3799,8 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
 
             <div className={styles.leaveStatutoryAlert}>
               {unitLeaveBeds.length} bed
-              {unitLeaveBeds.length === 1 ? "" : "s"} currently on leave at {unit.name}. Beds on leave remain
-              reserved for the patient and are <strong>NEVER</strong> merged into available beds.
+              {unitLeaveBeds.length === 1 ? "" : "s"} currently on leave at {unit.name}. Beds on leave remain reserved
+              for the patient and are <strong>NEVER</strong> merged into available beds.
             </div>
 
             <form
@@ -3892,9 +3882,7 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
                       className={styles.leaveItemCard}
                     >
                       <div className={styles.leaveItemInfo}>
-                        <strong className={styles.leaveItemTitle}>
-                          Bed not recorded &middot; Bed on leave
-                        </strong>
+                        <strong className={styles.leaveItemTitle}>Bed not recorded &middot; Bed on leave</strong>
                         <span className={styles.leaveItemMeta}>
                           Expected return {formatInstant(leaveBed.expectedReturn)}
                         </span>
@@ -3931,9 +3919,7 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
                 </svg>
                 <span>Ward activity</span>
               </h3>
-              <span className={`${styles.returnStatusChip} ${styles.returnStatusChipConfirmed}`}>
-                Ward log
-              </span>
+              <span className={`${styles.returnStatusChip} ${styles.returnStatusChipConfirmed}`}>Ward log</span>
             </div>
 
             <div className={styles.ledgerFeed}>
@@ -3962,7 +3948,9 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
                   <span className={styles.ledgerTime}>{formatInstantWithDay(release.confirmedAt, now)}</span>
                   <span className={styles.ledgerText}>
                     <strong>A bed (bed not recorded) freed by a departure</strong>. Preparation:{" "}
-                    {release.preparationNote ?? (release.preparing ? "being made ready, no reason recorded" : "not recorded")}.
+                    {release.preparationNote ??
+                      (release.preparing ? "being made ready, no reason recorded" : "not recorded")}
+                    .
                   </span>
                 </div>
               ))}
@@ -4639,36 +4627,7 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
           data-active={activeTab === "beds"}
         >
           <div className={styles.matrixControls}>
-            <div className={styles.podFilters} role="group" aria-label="Filter by designation">
-              <button
-                type="button"
-                className={styles.podFilterBtn}
-                aria-pressed={selectedPod === "all"}
-                onClick={() => setSelectedPod("all")}
-              >
-                All Beds ({unit.beds})
-              </button>
-              {isMixed ? (
-                <>
-                  <button
-                    type="button"
-                    className={styles.podFilterBtn}
-                    aria-pressed={selectedPod === "locked"}
-                    onClick={() => setSelectedPod("locked")}
-                  >
-                    Locked ({bedsList.filter((b) => b.podId === "locked").length})
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.podFilterBtn}
-                    aria-pressed={selectedPod === "open"}
-                    onClick={() => setSelectedPod("open")}
-                  >
-                    Open ({bedsList.filter((b) => b.podId === "open").length})
-                  </button>
-                </>
-              ) : null}
-            </div>
+            <span className={styles.glanceSub}>All beds ({unit.beds})</span>
             <div className={styles.podTitleBar}>
               <span className={styles.glanceSub}>
                 Click any bed card to inspect clinical telemetry &amp; patient notes
@@ -4685,7 +4644,7 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
           </p>
 
           <div className={styles.bedMatrixGrid}>
-            {filteredBeds.map((bed) => (
+            {bedsList.map((bed) => (
               <button
                 type="button"
                 key={bed.bedNumber}
@@ -4732,9 +4691,6 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
                 <div className={styles.bedTagsRow}>
                   {bed.isSpecialling ? (
                     <span className={`${styles.tagChip} ${styles.special}`}>1:1 Special</span>
-                  ) : null}
-                  {bed.designation ? (
-                    <span className={`${styles.tagChip} ${styles.legal}`}>{bed.designation}</span>
                   ) : null}
                   {bed.legalStatusLabel ? (
                     <span className={`${styles.tagChip} ${styles.legal}`}>{bed.legalStatusLabel}</span>

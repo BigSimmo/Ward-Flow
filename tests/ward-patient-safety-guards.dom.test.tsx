@@ -25,6 +25,7 @@ import { WardBoard } from "@/components/ward-management/board/ward-board";
 import { AddPatientForm } from "@/components/ward-management/patients/add-patient";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WARD_ADMISSIONS_ANCHOR } from "@/components/ward-management/ward-admissions-seed";
+import { wardPatients } from "@/components/ward-management/ward-patients-seed";
 
 const NOW_ANCHOR = 1_700_000_000_000;
 
@@ -37,9 +38,7 @@ describe("WardBoard Patient Safety Confirmations", () => {
     );
 
     const shiftButtons = screen.queryAllByRole("button", { name: "They have left" });
-    if (shiftButtons.length === 0) {
-      return;
-    }
+    expect(shiftButtons.length).toBeGreaterThan(0);
     const leaveBtn = shiftButtons[0];
     fireEvent.click(leaveBtn);
 
@@ -78,7 +77,7 @@ describe("WardBoard Patient Safety Confirmations", () => {
     );
 
     const shiftButtons = screen.queryAllByRole("button", { name: "They have left" });
-    if (shiftButtons.length === 0) return;
+    expect(shiftButtons.length).toBeGreaterThan(0);
 
     fireEvent.click(shiftButtons[0]);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -102,9 +101,9 @@ describe("WardBoard Patient Safety Confirmations", () => {
     fireEvent.click(within(tiles[0]).getByRole("button"));
 
     const awayBtn = screen.queryByTestId("ward-board-record-away-submit");
-    if (!awayBtn) return; // Patient may already be away at ED
+    expect(awayBtn).toBeInTheDocument();
 
-    fireEvent.click(awayBtn);
+    fireEvent.click(awayBtn!);
 
     // Modal dialog must appear for ED transfer confirmation
     const dialog = screen.getByRole("dialog");
@@ -124,6 +123,43 @@ describe("WardBoard Patient Safety Confirmations", () => {
 });
 
 describe("AddPatientForm Patient Safety & Privacy Defenses", () => {
+  it("unlocks after a duplicate record number is rejected", async () => {
+    const existing = wardPatients[0];
+    expect(existing).toBeDefined();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <AddPatientForm />
+      </WardFlowProvider>,
+    );
+    fireEvent.change(screen.getByLabelText(/medical record number/i), { target: { value: existing.umrn } });
+    fireEvent.change(screen.getByLabelText(/given name/i), { target: { value: "New" } });
+    fireEvent.change(screen.getByLabelText(/family name/i), { target: { value: "Person" } });
+    fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: "1985-05-15" } });
+    fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
+    await waitFor(() => expect(screen.getByTestId("ward-add-patient-submit")).toBeEnabled());
+    expect(screen.getByTestId("ward-add-patient-rejection")).toHaveTextContent(/could not be added/i);
+    expect(router.push).not.toHaveBeenCalled();
+  });
+
+  it("clears demonstration selections after a confirmed reset", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <AddPatientForm />
+      </WardFlowProvider>,
+    );
+    const indigenous = screen.getByLabelText("Indigenous status");
+    const facility = screen.getByLabelText("Presenting facility");
+    const service = screen.getByLabelText("Health service catchment");
+    fireEvent.change(indigenous, { target: { value: "aboriginal" } });
+    fireEvent.change(facility, { target: { value: "rph-ed" } });
+    fireEvent.change(service, { target: { value: "East Metro" } });
+    fireEvent.click(screen.getByTestId("ward-add-patient-reset"));
+    expect(screen.getByText("Reset patient form?")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("ward-add-patient-reset-confirm"));
+    expect(indigenous).toHaveValue("not-stated");
+    expect(facility).toHaveValue("");
+    expect(service).toHaveValue("");
+  });
   it("warns on window beforeunload when in-memory form is dirty", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
