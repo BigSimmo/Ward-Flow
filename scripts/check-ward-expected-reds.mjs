@@ -336,6 +336,31 @@ export function floorBreaches({ files, filesRan, tests }, floors = { files: FLOO
   return breaches;
 }
 
+/**
+ * WARD_GATE_SHARD="<index>/<count>" (public CI only): run one disjoint slice of the population so
+ * the slices can run on separate runners at once. Returns null when unset. Anything malformed
+ * throws, so a typo can never quietly run the whole suite or nothing.
+ */
+export function parseGateShard(value) {
+  if (value === undefined || value === "") return null;
+  const match = /^(\d+)\/(\d+)$/.exec(value);
+  const index = match ? Number(match[1]) : NaN;
+  const count = match ? Number(match[2]) : NaN;
+  if (!match || count < 1 || count > 16 || index < 1 || index > count) {
+    throw new Error(`WARD_GATE_SHARD must be "<index>/<count>" with 1 <= index <= count <= 16, got "${value}".`);
+  }
+  return { index, count };
+}
+
+/**
+ * The shard's files: every count-th file of the sorted population, starting at index - 1. Every
+ * shard of the same population is disjoint and together they are exactly the population, so the
+ * manifest entries each shard checks (those for its own files) also cover the manifest exactly once.
+ */
+export function selectGateShard(population, { index, count }) {
+  return [...population].sort().filter((_, position) => position % count === index - 1);
+}
+
 function fail(lines) {
   console.error(`\ncheck:ward-expected-reds FAILED\n`);
   for (const line of lines) console.error(line);
@@ -426,6 +451,27 @@ if (!invokedDirectly) {
     ]);
   }
 
+  // The discovery floor above is always checked on the whole population; a shard only narrows what
+  // this runner executes, and drops the manifest entries that belong to another shard's files.
+  let shard;
+  try {
+    shard = parseGateShard(process.env.WARD_GATE_SHARD);
+  } catch (error) {
+    fail([error.message]);
+  }
+  const runFloors = shard
+    ? { files: Math.floor(FLOOR_FILES / shard.count), tests: Math.floor(FLOOR_TESTS / shard.count) }
+    : undefined;
+  if (shard) {
+    if (process.env.WARD_FULL_GATE_RECHECK) fail(["WARD_GATE_SHARD cannot be combined with WARD_FULL_GATE_RECHECK."]);
+    const wholeCount = population.length;
+    population = selectGateShard(population, shard);
+    for (const file of [...expected.keys()]) if (!population.includes(file)) expected.delete(file);
+    console.log(
+      `Shard ${shard.index}/${shard.count}: ${population.length} of ${wholeCount} files, ${expected.size} manifest entr(y/ies).`,
+    );
+  }
+
   const reportDir = mkdtempSync(path.join(tmpdir(), "ward-reds-"));
   const reportPath = path.join(reportDir, "report.json");
   try {
@@ -441,7 +487,7 @@ if (!invokedDirectly) {
         tmpdir(),
         "ward-full-gate",
         createHash("sha256").update(projectRoot.toLowerCase()).digest("hex").slice(0, 12),
-        commit,
+        shard ? `${commit}-shard-${shard.index}-of-${shard.count}` : commit,
       );
     const gateEnvironment = {
       ...process.env,
@@ -614,7 +660,7 @@ if (!invokedDirectly) {
       ]);
     }
 
-    const breaches = floorBreaches({ files: population.length, filesRan: suites.length, tests: totalTests });
+    const breaches = floorBreaches({ files: population.length, filesRan: suites.length, tests: totalTests }, runFloors);
     if (breaches.length > 0) {
       fail([
         "The run is not sound enough to compare:",
