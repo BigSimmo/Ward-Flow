@@ -74,23 +74,23 @@ describe("Ward Flow's database-free runtime boundary", () => {
     expect(violations).toEqual([]);
   });
 
-  it("uses the passwordless gate and keeps that gate free of Clinical KB authentication", () => {
+  it("opens without an access gate and keeps its layout free of Clinical KB authentication", () => {
+    // The developer-key gate was removed on 28 September 2026 at Josh's request. Ward Flow is
+    // synthetic, so the layout now mounts the provider directly; this guards against either gate
+    // returning by accident.
     const layout = readFileSync("src/app/mockups/ward-flow/layout.tsx", "utf8");
-    const boundaryFiles = [
-      "src/components/developer-area/ward-flow-access-gate.tsx",
-      "src/components/developer-area/ward-flow-key-gate-screen.tsx",
-    ];
+    const layoutFile = "src/app/mockups/ward-flow/layout.tsx";
 
-    expect(layout).toContain("WardFlowAccessGate");
+    expect(layout).not.toContain("WardFlowAccessGate");
     expect(layout).not.toContain("DeveloperAreaGate");
-    for (const file of boundaryFiles) {
-      const { imports, networkCalls } = importsAndCalls(file);
-      expect(
-        imports.filter((specifier) => /supabase|site-content|clinical-registry|database/iu.test(specifier)),
-        file,
-      ).toEqual([]);
-      expect(networkCalls, file).toEqual([]);
-    }
+    const { imports, networkCalls } = importsAndCalls(layoutFile);
+    expect(
+      imports.filter((specifier) =>
+        /supabase|site-content|clinical-registry|database|developer-area/iu.test(specifier),
+      ),
+      layoutFile,
+    ).toEqual([]);
+    expect(networkCalls, layoutFile).toEqual([]);
   });
 
   it("keeps the root layout free of Clinical KB auth, account and Supabase code", () => {
