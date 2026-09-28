@@ -2,22 +2,12 @@
 /**
  * guard-push — pre-push safety net for this repo's known, repeated traps.
  *
- * Runs five independent guards; any one can BLOCK the push (non-zero exit).
- * Every guard except the auto-merge guard's two blocking cases (armed auto-merge +
- * migration, or armed auto-merge + force-push — see guard 1) has an explicit override.
- * Guard 0 is NOT a plain SKIP_*_GUARD=1 override like guards 2-4 below — it is
- * overridden per-case via three CONFIRM_* env vars (see that guard's own cases):
- *
- *   0. Ward Flow / origin:main push guard (Ward Flow isolation & origin/main protection)
- *      Ward Flow exists on THIS DISK ONLY and must never be pushed to origin/main or any
- *      remote branch without explicit confirmation. Three cases, three overrides:
- *        Case 1 (Ward Flow -> origin/main): CONFIRM_WARD_FLOW_PUSH_TO_MAIN=I_CONFIRM_FOLD_TO_ORIGIN_MAIN
- *        Case 2 (any direct push -> origin/main): CONFIRM_PUSH_TO_MAIN=I_CONFIRM_PUSH_TO_MAIN
- *          (the Case 1 value also unlocks this case — see wardFlowPushVerdict)
- *        Case 3 (Ward Flow -> any other remote branch): CONFIRM_WARD_FLOW_REMOTE=I_CONFIRM_WARD_FLOW_REMOTE
- *          (the Case 1 value also unlocks this case too)
- *      Direct push to origin/main is also blocked to protect production from unattended
- *      deploys and migrations (AGENTS.md).
+ * Runs the repository identity check before the remaining push guards. A push
+ * destination other than BigSimmo/Ward-Flow is always blocked.
+ * Destination identity and the auto-merge force-push guard have no
+ * override. The remaining guards have explicit overrides.
+ *   0. Destination identity: accept only the canonical Ward-Flow GitHub remote.
+ *      This check has no environment override and runs before all other checks.
  *
  *   1. Auto-merge force-push guard (all PR branches)
  *      Per-PR auto-merge state is user-owned. An ordinary fast-forward push to a PR
@@ -72,6 +62,24 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const ZERO_SHA = "0000000000000000000000000000000000000000";
 const MAIN_REMOTE_REF = "refs/remotes/origin/main";
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+/** Git supplies the actual push destination as the second pre-push argument. */
+export function wardFlowRemoteVerdict(remoteUrl) {
+  const canonical =
+    typeof remoteUrl === "string" &&
+    /^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)BigSimmo\/Ward-Flow(?:\.git)?$/i.test(
+      remoteUrl,
+    );
+  return canonical
+    ? { name: "ward-flow-remote", ok: true }
+    : {
+        name: "ward-flow-remote",
+        ok: false,
+        message:
+          "Push destination is missing, unknown, or outside BigSimmo/Ward-Flow. " +
+          "Use the canonical HTTPS or SSH GitHub remote. No override permits another destination.",
+      };
+}
 
 function runGit(args, cwd = PROJECT_ROOT) {
   return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
@@ -257,7 +265,8 @@ function ghIsAvailable() {
 }
 
 // ---------------------------------------------------------------------------
-// Guard 0: Ward Flow isolation & origin/main protection
+// Legacy local-only Ward Flow policy. Retained as pure exports for existing
+// tests, but it is no longer invoked by the pre-push runtime.
 // ---------------------------------------------------------------------------
 export function isMainBranch(branch) {
   if (!branch) return false;
@@ -505,12 +514,11 @@ export function touchesProductionMigrations(changedFiles = []) {
   return changedFiles.some((f) => f.startsWith("supabase/migrations/"));
 }
 
-function autoMergeGuard(branches, forcePushBranches = new Set(), changedFiles = []) {
+function autoMergeGuard(branches, forcePushBranches = new Set()) {
   if (!ghIsAvailable()) {
     return { name: "auto-merge", ok: true, note: "gh not available — auto-merge check skipped (fail-open)" };
   }
   const warnings = [];
-  const migrations = touchesProductionMigrations(changedFiles);
   for (const branch of branches) {
     let payload;
     try {
@@ -523,17 +531,13 @@ function autoMergeGuard(branches, forcePushBranches = new Set(), changedFiles = 
       // No PR for this branch, or gh unauthenticated: fail open.
       continue;
     }
-    const verdict = autoMergeVerdict(branch, payload, forcePushBranches.has(branch), migrations);
+    // This repository cannot apply PsychSift's clinical Supabase migrations.
+    const verdict = autoMergeVerdict(branch, payload, forcePushBranches.has(branch));
     if (verdict.block) {
       const message =
-        verdict.reason === "auto-merge-armed-migration"
-          ? `PR #${verdict.number} on ${branch} has auto-merge ARMED and this push carries a hosted migration.\n` +
-            `  Merging to main applies migrations to the LIVE clinical database automatically, within seconds.\n` +
-            `  Auto-merge on a migration PR therefore schedules an unattended production schema change.\n` +
-            `  Ask the user to disable auto-merge and merge it inside an approved window. No override.`
-          : `PR #${verdict.number} on ${branch} has auto-merge ARMED and this push force-updates the branch.\n` +
-            `  A force-push while armed can discard the commit GitHub already validated or is mid-evaluating.\n` +
-            `  Push a fast-forward commit instead, or wait for the user to change the auto-merge state. No override.`;
+        `PR #${verdict.number} on ${branch} has auto-merge ARMED and this push force-updates the branch.\n` +
+        `  A force-push while armed can discard the commit GitHub already validated or is mid-evaluating.\n` +
+        `  Push a fast-forward commit instead, or wait for the user to change the auto-merge state. No override.`;
       return { name: "auto-merge", ok: false, message };
     }
     if (verdict.warn) {
@@ -819,7 +823,6 @@ function isPrettierPolicyFile(file, sha) {
  * A checkout with `node_modules` linked in has none of those gaps.
  */
 function checkPushedCommit(prettierBin, sha, files) {
-  tryGit(["worktree", "prune"]); // clear any worktree a crashed run left behind
   const dir = mkdtempSync(path.join(tmpdir(), "guard-push-format-"));
   rmSync(dir, { recursive: true, force: true }); // `git worktree add` wants a fresh path
   try {
@@ -938,9 +941,8 @@ function describeError(error) {
  * When the link could NOT be removed, neither force-delete runs. Swallowing that
  * failure and continuing is the single case where a force-delete would run over
  * a directory still holding a live link into another worktree's node_modules. A
- * leftover scratch directory is cheap and the `git worktree prune` at the top of
- * checkPushedCommit clears its registration on the next push; the alternative is
- * not cheap.
+ * leftover scratch directory and worktree registration are retained for manual
+ * inspection; the alternative is not cheap.
  *
  * Dependencies are injectable so the ordering and the skip are unit-testable
  * without creating and destroying real worktrees.
@@ -1469,6 +1471,8 @@ function main() {
   if (process.argv.includes("--self-test")) {
     return selfTest();
   }
+  const remoteResult = wardFlowRemoteVerdict(process.argv[3]);
+  if (!remoteResult.ok) process.exit(report([remoteResult]));
   const stdin = readStdinSync();
   const ranges = parsePushRanges(stdin);
   if (ranges.length === 0) process.exit(0); // deletion-only push or nothing to do
@@ -1476,16 +1480,10 @@ function main() {
   const pushedBranches = pushedBranchNames(ranges, branch);
   const forcePushBranches = forcePushedBranchNames(ranges);
   const changedFiles = collectChangedFiles(ranges);
-  // A Ward Flow refusal is final, so report it before the slow guards (lint,
-  // typecheck, GitHub lookups) spend a minute on a push that cannot go ahead.
-  const wardResult = wardFlowPushGuard(pushedBranches, ranges, changedFiles, branch, {
-    derivesFromWardLine: derivesFromUnpushedWardLine(ranges),
-  });
-  if (!wardResult.ok) process.exit(report([wardResult]));
   // formatGuard reads the pushed blobs; the static gate only needs the paths.
   const results = [
-    wardResult,
-    autoMergeGuard(pushedBranches, forcePushBranches, changedFiles),
+    remoteResult,
+    autoMergeGuard(pushedBranches, forcePushBranches),
     inFlightCiGuard(pushedBranches, ranges),
     formatGuard(collectChangedBlobs(ranges)),
     staticGuard(changedFiles, { ranges }),

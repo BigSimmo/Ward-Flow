@@ -163,6 +163,8 @@ describe("manual auto-merge ownership policy", () => {
     const policyFiles = ["../AGENTS.md", "../.claude/skills/run-pr/SKILL.md", "../.claude/skills/handoff/SKILL.md"];
 
     for (const file of policyFiles) {
+      // Public Ward-Flow ships AGENTS.md; the old private Claude skills may be absent.
+      if (file !== "../AGENTS.md" && !existsSync(new URL(file, import.meta.url))) continue;
       const policy = readFileSync(new URL(file, import.meta.url), "utf8");
       expect(policy, file).toContain("auto-merge state is user-owned");
       expect(policy, file).toContain("must not disable");
@@ -1061,18 +1063,11 @@ describe("guard-push main() wiring", () => {
   // same "<localRef> <localSha> <remoteRef> <remoteSha>" stdin format `.githooks/pre-push`
   // feeds it, with NO real `git push` and NO remote involved anywhere.
   //
-  // Every guard other than guard 0 (ward-flow-push) is neutralized for this test so it
-  // proves ONLY the thing it names — that a blocked Guard 0 verdict reaches
-  // process.exit() as a non-zero code via report(). The non-ward-flow guards are
-  // neutralized two ways:
+  // Other guards are neutralized so this tests only the destination refusal.
   //   - guards 2-4 (in-flight CI, format, static) via their own
   //     documented SKIP_*_GUARD=1 overrides, passed ONLY to this spawned child's env
   //     (never to this session's own shell, and never used for a real push).
-  //   - guard 1 (auto-merge) has no override, so instead PATH is stripped of any
-  //     directory containing a `gh` binary for this child only. guard-push.mjs's own
-  //     ghIsAvailable() check then fails closed to "not available" and the guard
-  //     reports itself skipped/fail-open — verified below via that exact log line,
-  //     which is the guard's own proof it never attempted a network call.
+  //   - guard 1 (auto-merge) has no override, so PATH is stripped of gh for this child.
   const GUARD_PUSH_SCRIPT = join(process.cwd(), "scripts", "guard-push.mjs");
   const FAKE_SHA = "1".repeat(40);
 
@@ -1096,19 +1091,17 @@ describe("guard-push main() wiring", () => {
       SKIP_FORMAT_GUARD: "1",
       SKIP_STATIC_GUARD: "1",
     };
-    // Guard 0 has no SKIP_* override (see the header comment this brief corrected) —
-    // only CONFIRM_*. Deleting these guarantees the block this test exercises cannot be
-    // silently unlocked by something already set in the ambient environment.
-    delete childEnv.CONFIRM_WARD_FLOW_PUSH_TO_MAIN;
-    delete childEnv.CONFIRM_PUSH_TO_MAIN;
-    delete childEnv.CONFIRM_WARD_FLOW_REMOTE;
     try {
-      const stdout = execFileSync(process.execPath, [GUARD_PUSH_SCRIPT], {
-        input: stdin,
-        encoding: "utf8",
-        env: childEnv,
-        stdio: ["pipe", "pipe", "pipe"],
-      });
+      const stdout = execFileSync(
+        process.execPath,
+        [GUARD_PUSH_SCRIPT, "origin", "https://github.com/BigSimmo/PsychSift.git"],
+        {
+          input: stdin,
+          encoding: "utf8",
+          env: childEnv,
+          stdio: ["pipe", "pipe", "pipe"],
+        },
+      );
       return { status: 0, stdout, stderr: "" };
     } catch (error) {
       const err = error as { status?: number | null; stdout?: string; stderr?: string };
@@ -1116,21 +1109,14 @@ describe("guard-push main() wiring", () => {
     }
   }
 
-  it("exits non-zero when Guard 0 (ward-flow-push) blocks the push, and never reaches gh", () => {
-    // remoteRef targets origin/main with no CONFIRM_* override present, which blocks
-    // unconditionally in every case wardFlowPushVerdict can reach for a main-targeted
-    // push (Case 1 if the checked-out branch/files are ward-flagged, Case 2 otherwise) —
-    // so this assertion does not depend on which branch happens to be checked out
-    // wherever this test runs.
+  it("exits non-zero when the actual push destination is not Ward-Flow", () => {
     const stdin = `refs/heads/test-wiring-branch ${FAKE_SHA} refs/heads/main ${ZERO}\n`;
     const result = runGuardPushChild(stdin);
 
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("[guard-push] Push blocked:");
-    expect(result.stderr).toContain("✖ ward-flow-push");
-    // A Ward Flow refusal is reported before any other guard runs, so guard 1
-    // (auto-merge) never starts and `gh` is never invoked: no network call, and
-    // none of the later guards' output appears.
+    expect(result.stderr).toContain("✖ ward-flow-remote");
+    // Destination refusal happens before the other guards can contact GitHub.
     expect(result.stderr).not.toContain("gh not available");
     expect(result.stderr).not.toContain("auto-merge");
   });
