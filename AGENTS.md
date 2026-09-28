@@ -69,7 +69,10 @@ the separately required clinical, privacy and legal reviews.
   folder name mentions Ward Flow. Do not change that repository's shared Git configuration.
 - Before editing an exact file, check the shared sign-out at `D:/Repos/ward-flow-logs/sign-out.md`.
   An active overlap needs the other owner's release or Josh's scoped takeover approval for that
-  exact file. Preserve existing work. Keep the log append-only and release claims after completion.
+  exact file. Sign out every file on every task branch, including `codex/*` and files outside the
+  old Ward directories. Include `repo=BigSimmo/Ward-Flow` in each new sign-out and `RELEASED` line
+  so claims remain attributable if a worktree is later removed. Preserve existing work and keep
+  the log append-only; older Database claims remain separate physical files.
 - Make small commits on the task branch. Never clean, reset, discard, force-push or rewrite unclear
   work. Stage named files only; never use `git add -A`. Keep a recoverable base before replacing
   files. Use dependencies from this repository's lockfile, not from the former Database checkout.
