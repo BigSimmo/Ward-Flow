@@ -154,13 +154,11 @@ function networkCell(page: Page, testId: string) {
  * text node, which is exactly the count `freeingCellText` rendered.
  */
 async function blockedCountOwnText(page: Page): Promise<string> {
-  return networkCell(page, "ward-capacity-network-blocked").evaluate((el) =>
-    Array.from(el.childNodes)
-      .filter((node) => node.nodeType === Node.TEXT_NODE)
-      .map((node) => node.textContent ?? "")
-      .join("")
-      .trim(),
-  );
+  return networkCell(page, "ward-capacity-network-blocked").evaluate((el) => {
+    const clone = el.cloneNode(true) as HTMLElement;
+    clone.querySelector('[data-testid="ward-capacity-network-blocked-since"]')?.remove();
+    return clone.textContent?.trim() ?? "";
+  });
 }
 
 /** A board cell's own number: "none" reads as 0. */
