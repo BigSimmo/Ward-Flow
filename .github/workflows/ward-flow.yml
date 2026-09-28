@@ -36,6 +36,11 @@ jobs:
         run: node scripts/ward-ci-public/check-contracts.mjs
       - name: Check Ward document links
         run: npm run check:ward-doc-links
+      - name: Check Ward screen verification record
+        run: node scripts/ward-flow/screen-verification.mjs --check
+      - name: Review dependency changes
+        if: ${{ github.event_name == 'pull_request' && steps.plan.outputs.dependency_review == 'true' }}
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
       - name: Install locked dependencies
         id: install
         if: ${{ !cancelled() && steps.plan.outputs.full == 'true' }}
@@ -51,17 +56,26 @@ jobs:
         run: node node_modules/typescript/bin/tsc -p tsconfig.typecheck.json --noEmit --incremental false
       - name: Run reconciled unit suite
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: npm run check:ward-expected-reds
+        run: npm run check:ward-expected-reds -- --print-signatures
       - name: Install Chromium
         id: chromium
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npx playwright install --with-deps chromium
       - name: Run Ward browser journeys
+        id: journeys
         if: ${{ !cancelled() && steps.chromium.outcome == 'success' }}
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://example.invalid
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder-ci-anon-key
         run: npm run test:e2e:ward-journeys
+      - name: Upload failed Ward browser evidence
+        if: ${{ !cancelled() && steps.journeys.outcome == 'failure' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ward-browser-failures-${{ github.run_id }}
+          path: test-results/
+          if-no-files-found: warn
+          retention-days: 3
 
   required:
     name: Ward Flow required

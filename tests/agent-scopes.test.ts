@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -88,9 +88,23 @@ function isRepoRelative(entry: string): boolean {
   return head.length > 0 && tree.includes(`${head}/`);
 }
 
-const agents = readdirSync(agentsDir).filter((name) => name.endsWith(".md"));
+const hasAgentConfig = existsSync(agentsDir);
+const agents = hasAgentConfig ? readdirSync(agentsDir).filter((name) => name.endsWith(".md")) : [];
+function describeConfiguredAgents(name: string, body: () => void) {
+  if (hasAgentConfig) describe(name, body);
+}
 
-describe("review-agent scopes", () => {
+if (!hasAgentConfig) {
+  describe("public review-agent configuration", () => {
+    it("ships Ward instructions without partial Claude or Cursor agent configuration", () => {
+      expect(readFileSync(join(repoRoot, "AGENTS.md"), "utf8")).toContain("Ward Flow");
+      expect(existsSync(join(repoRoot, ".claude"))).toBe(false);
+      expect(existsSync(join(repoRoot, ".cursor"))).toBe(false);
+    });
+  });
+}
+
+describeConfiguredAgents("review-agent scopes", () => {
   it("finds agents with a scope list", () => {
     // Pinned exactly rather than as a floor: after the four PsychSift reviewers were removed
     // (Josh, 26 September), only the rescoped Ward Flow frontend reviewer carries a scope list.
@@ -139,7 +153,7 @@ describe("review-agent scopes", () => {
  * (`.editorconfig` is `charset = utf-8`; a BOM on line 1 would silently break a real pattern
  * moved there).
  */
-describe("cursor twins of the claude surfaces", () => {
+describeConfiguredAgents("cursor twins of the claude surfaces", () => {
   it("cursor repo-auditor skill is triage-only, like the claude repo-auditor agent", () => {
     const cursor = readFileSync(join(repoRoot, ".cursor/skills/repo-auditor/SKILL.md"), "utf8");
     const claude = readFileSync(join(repoRoot, ".claude/agents/repo-auditor.md"), "utf8");

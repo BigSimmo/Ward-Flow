@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { classifyChanges, parseNameStatus } from "./plan.mjs";
+import { classifyChanges, hasDependencyChanges, parseNameStatus } from "./plan.mjs";
 
 const workflow = readFileSync(new URL("../../.github/workflows/ward-flow.yml", import.meta.url), "utf8");
 function requireWorkflow(source) {
@@ -13,10 +13,22 @@ function requireWorkflow(source) {
     /needs: \[validate\]/u,
     /npm run check:ward-reference/u,
     /npm run check:ward-expected-reds/u,
+    /check:ward-expected-reds -- --print-signatures/u,
     /npm run test:e2e:ward-journeys/u,
+    /screen-verification\.mjs --check/u,
+    /dependency-review-action@[0-9a-f]{40}/u,
+    /steps\.plan\.outputs\.dependency_review == 'true'/u,
+    /actions\/upload-artifact@[0-9a-f]{40}/u,
+    /steps\.journeys\.outcome == 'failure'/u,
   ])
     assert.match(source, pattern);
-  for (const pattern of [/pull_request_target:/u, /continue-on-error:/u, /secrets\./u, /contents: write/u]) {
+  for (const pattern of [
+    /pull_request_target:/u,
+    /continue-on-error:/u,
+    /secrets\./u,
+    /contents: write/u,
+    /WARD_PUBLIC_STANDALONE:/u,
+  ]) {
     assert.doesNotMatch(source, pattern);
   }
 }
@@ -39,4 +51,7 @@ assert.equal(
 );
 assert.equal(classifyChanges([{ status: "M", file: ".github/workflows/ward-flow.yml" }]).full, true);
 assert.equal(classifyChanges([]).full, true);
+assert.equal(hasDependencyChanges([{ status: "M", file: "docs/ward-flow/README.md" }]), false);
+assert.equal(hasDependencyChanges([{ status: "M", file: "backend/ward-flow/package-lock.json" }]), true);
+assert.equal(hasDependencyChanges([{ status: "A", file: "package.json" }]), true);
 console.log("Ward public CI contracts OK");
