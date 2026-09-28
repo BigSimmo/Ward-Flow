@@ -2,7 +2,22 @@ import { describe, expect, it } from "vitest";
 
 // The gate script is plain .mjs. Its pure half is imported rather than re-implemented here: a
 // control that re-writes the logic it checks proves only that two copies agree.
-import { compareFailingSet, failureSignature, floorBreaches } from "../scripts/check-ward-expected-reds.mjs";
+import {
+  compareFailingSet,
+  failureSignature,
+  floorBreaches,
+  PUBLIC_ABSENT_TOOLING_TESTS,
+  selectPublicPopulation,
+} from "../scripts/check-ward-expected-reds.mjs";
+
+describe("public standalone unit scope", () => {
+  it("keeps product and push-guard tests while omitting only the absent private-tooling suites", () => {
+    const retained = ["tests/guard-push.test.ts", "tests/ward-patient-safety-guards.dom.test.tsx"];
+    expect(selectPublicPopulation([...PUBLIC_ABSENT_TOOLING_TESTS, ...retained], false)).toEqual(retained);
+    expect(() => selectPublicPopulation([...PUBLIC_ABSENT_TOOLING_TESTS, ...retained], true)).toThrow(/absent/);
+    expect(() => selectPublicPopulation(retained, false)).toThrow(/stale/);
+  });
+});
 
 /**
  * THE CONTROL FOR THE EXPECTED-RED GATE, AND IT EXISTS BECAUSE ONE OF ITS TWO DIRECTIONS NEVER

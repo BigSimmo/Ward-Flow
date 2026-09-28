@@ -51,6 +51,8 @@ jobs:
         run: node node_modules/typescript/bin/tsc -p tsconfig.typecheck.json --noEmit --incremental false
       - name: Run reconciled unit suite
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        env:
+          WARD_PUBLIC_STANDALONE: "1"
         run: npm run check:ward-expected-reds
       - name: Install Chromium
         id: chromium
