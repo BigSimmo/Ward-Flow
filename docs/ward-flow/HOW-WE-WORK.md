@@ -5,11 +5,10 @@ hands back Ward Flow work.** Written 17 September 2026; repository and integrati
 updated 28 September 2026. Where an older process document disagrees, this
 file wins. Start at [`README.md`](README.md).
 
-> **The full, current rules are the "Ward Flow rulebook" section of the repo's `AGENTS.md`**, and
-> Josh's standing rulings are in [`decisions.md`](decisions.md) (D-8). Where this file differs from
-> the rulebook, the rulebook wins. Builders mark their branches READY in
-> `ward-flow-logs/fold-queue.md`. A ready branch owner may claim stewardship of a batch that includes
-> their own work; another builder may hand over to the acting steward. Section 4 describes the fold.
+> **The current rules are in this `BigSimmo/Ward-Flow` repository's `AGENTS.md`**, and Josh's
+> standing rulings are in [`decisions.md`](decisions.md). Where this file differs from `AGENTS.md`,
+> `AGENTS.md` wins. The former local Ward-line fold queue and lock are historical. Section 4
+> describes how to prepare an integration candidate in the dedicated repository.
 
 ## 1. Picking up work
 
