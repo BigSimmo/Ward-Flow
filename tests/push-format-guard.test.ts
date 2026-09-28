@@ -1,11 +1,23 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 const hook = join(process.cwd(), ".claude/hooks/push-format-guard.sh");
 const scratchRoots: string[] = [];
+function describeAvailableHook(name: string, body: () => void) {
+  if (existsSync(hook)) describe.skipIf(process.platform === "win32")(name, body);
+}
+
+if (!existsSync(hook)) {
+  describe("public pre-push guard boundary", () => {
+    it("uses the shipped Git hook without a partial Claude hook", () => {
+      expect(existsSync(join(process.cwd(), ".claude"))).toBe(false);
+      expect(readFileSync(join(process.cwd(), ".githooks/pre-push"), "utf8")).toContain("scripts/guard-push.mjs");
+    });
+  });
+}
 
 afterEach(() => {
   for (const root of scratchRoots.splice(0)) {
@@ -133,7 +145,7 @@ function runHook(
 // it, and `core.fileMode=false` on the ReFS Dev Drive makes the
 // not-executable case unrepresentable there. That is neither the hook's
 // runtime nor meaningful Windows coverage, so avoid false local reds.
-describe.skipIf(process.platform === "win32")("push-format-guard", () => {
+describeAvailableHook("push-format-guard", () => {
   describe("self-disables when this repo's pre-push hook is genuinely wired", () => {
     // `core.hooksPath` is absolute OR relative to the top of the working tree.
     // `npm install` in this repo writes the bare relative form, which a

@@ -1,10 +1,13 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cursorMcpPath = path.join(repoRoot, ".cursor", "mcp.json");
+function describeConfiguredCursor(name: string, body: () => void) {
+  if (existsSync(cursorMcpPath)) describe(name, body);
+}
 
 type CursorMcpConfig = {
   mcpServers?: Record<
@@ -19,7 +22,16 @@ type CursorMcpConfig = {
   >;
 };
 
-describe("Cursor project MCP contract", () => {
+if (!existsSync(cursorMcpPath)) {
+  describe("public Cursor MCP boundary", () => {
+    it("ships no partial project MCP configuration", () => {
+      expect(existsSync(path.join(repoRoot, ".cursor"))).toBe(false);
+      expect(existsSync(path.join(repoRoot, ".mcp.json"))).toBe(false);
+    });
+  });
+}
+
+describeConfiguredCursor("Cursor project MCP contract", () => {
   const raw = readFileSync(cursorMcpPath, "utf8");
   const config = JSON.parse(raw) as CursorMcpConfig;
   const servers = config.mcpServers ?? {};

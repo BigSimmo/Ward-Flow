@@ -141,8 +141,6 @@ const KNOWN_UNSATISFIABLE: Readonly<Record<string, string>> = {
  * it is recording that satisfiability was considered and found undecidable from a static read.
  */
 const DECLARED_UNDECIDABLE: Readonly<Record<string, string>> = {
-  "tests/check-runtime.test.ts :: !existsSync(sessionHookPath)":
-    "depends on whether the private .claude SessionStart hook is present in this checkout",
   "tests/ward-flow-chat-control.test.ts :: existsSync(controlRoot)":
     "depends on whether docs/ward-flow/control is present in the checkout being tested",
   "tests/ward-travel-bands.test.ts :: !TRAVEL_BANDS_ARE_INVENTED":
