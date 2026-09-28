@@ -14,8 +14,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # The checks run as parallel jobs rather than one serial job. Nothing is dropped: the unit suite is
-# split into disjoint shards that together run every file, and the browser journeys run every spec
-# across several servers built from one production build.
+# split into disjoint shards that together run every file, and the browser journey specs are split
+# into disjoint groups, each on its own runner.
 jobs:
   static:
     name: Ward Flow static checks
@@ -92,9 +92,13 @@ jobs:
         run: npm run check:ward-expected-reds -- --print-signatures
 
   browser:
-    name: Ward Flow browser journeys
+    name: Ward Flow browser journeys ${{ matrix.group }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [1, 2, 3]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -123,20 +127,15 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://example.invalid
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder-ci-anon-key
-          # One build, three servers, three browsers at once, balanced by measured duration.
-          WARD_JOURNEY_SHARDS: "3"
-          # A sharded failure is final: no unsharded second try that could hide a flaky spec.
-          WARD_JOURNEY_NO_RESCUE: "1"
-          # The build skips its own type check; the same check runs beside the journeys and still
-          # fails the step, so nothing is checked less.
-          WARD_GATE_PARALLEL_TSC: "1"
-          WARD_FLOW_LOGS: test-results/ward-flow-logs
+          # One duration-balanced third of the journey specs per runner, one worker each, so no
+          # runner shares its CPU with another browser. The three groups cover every spec once.
+          WARD_JOURNEY_GROUP: ${{ matrix.group }}/3
         run: npm run test:e2e:ward-journeys
       - name: Upload failed Ward browser evidence
         if: ${{ !cancelled() && steps.journeys.outcome == 'failure' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: ward-browser-failures-${{ github.run_id }}
+          name: ward-browser-failures-${{ github.run_id }}-${{ matrix.group }}
           path: test-results/
           if-no-files-found: warn
           retention-days: 3

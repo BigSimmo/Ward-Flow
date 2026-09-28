@@ -14,7 +14,7 @@ function requireWorkflow(source) {
     /test "\$STATIC_RESULT" = success && test "\$UNIT_RESULT" = success && test "\$BROWSER_RESULT" = success/u,
     /fail-fast: false/u,
     /WARD_GATE_SHARD: \$\{\{ matrix\.shard \}\}\/\d+/u,
-    /WARD_JOURNEY_NO_RESCUE: "1"/u,
+    /WARD_JOURNEY_GROUP: \$\{\{ matrix\.group \}\}\/\d+/u,
     /npm run check:ward-reference/u,
     /npm run check:ward-expected-reds/u,
     /check:ward-expected-reds -- --print-signatures/u,
@@ -46,6 +46,17 @@ function requireWorkflow(source) {
     shards,
     Array.from({ length: count }, (_, index) => index + 1),
   );
+  // Likewise the browser groups must be exactly 1..N for the N in WARD_JOURNEY_GROUP.
+  const groups = /^\s*group: \[([\d, ]+)\]$/mu
+    .exec(source)?.[1]
+    .split(",")
+    .map((value) => Number(value.trim()));
+  const groupCount = Number(/WARD_JOURNEY_GROUP: \$\{\{ matrix\.group \}\}\/(\d+)/u.exec(source)?.[1]);
+  assert.ok(groups && groupCount >= 1, "browser group matrix and WARD_JOURNEY_GROUP count are required");
+  assert.deepEqual(
+    groups,
+    Array.from({ length: groupCount }, (_, index) => index + 1),
+  );
 }
 
 requireWorkflow(workflow);
@@ -56,8 +67,8 @@ for (const bad of [
   workflow.replace("npm run check:ward-expected-reds", "echo no unit checks"),
   workflow.replace("needs: [static, unit, browser]", "needs: [static, browser]"),
   workflow.replace("shard: [1, 2, 3, 4]", "shard: [1, 2, 3]"),
-  workflow.replace("fail-fast: false", "fail-fast: true"),
-  workflow.replace('WARD_JOURNEY_NO_RESCUE: "1"', 'WARD_JOURNEY_NO_RESCUE: "0"'),
+  workflow.replaceAll("fail-fast: false", "fail-fast: true"),
+  workflow.replace("group: [1, 2, 3]", "group: [1, 2]"),
 ])
   assert.throws(() => requireWorkflow(bad));
 
