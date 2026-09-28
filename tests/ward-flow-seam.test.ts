@@ -81,7 +81,6 @@ const APPROVED_SHARED_MODULES = new Map([
 const APPROVED_ROUTE_REFERENCES = new Map([
   ["src/lib/developer-area/headers.ts", "route list for the developer-area header"],
   ["src/proxy.ts", "the constellation-to-network redirect kept for historical deep links"],
-  ["src/app/not-found.tsx", "the standalone app's not-found page links to Ward Flow as its home route"],
   [
     "src/lib/developer-area/link-access-shared.ts",
     "where the access gate sends a visitor who asked for no page: Ward Flow, since the developer hub it used to name was retired",
@@ -116,6 +115,7 @@ const APPROVED_ROUTE_REFERENCES = new Map([
     "src/app/page.tsx",
     'the front page: Ward Flow is the only app left, so "/" redirects to its Coordinator view (Josh, 26 September 2026)',
   ],
+  ["src/app/not-found.tsx", "the standalone app's not-found fallback returns visitors to its only product, Ward Flow"],
 ]);
 
 const WARD_ROUTE_LITERAL = "mockups/ward-flow";
@@ -298,7 +298,7 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // skipped Ward Flow's routes by name, because there is no PsychSift shell left to skip.
     // 6 -> 7 on 2026-09-26: the front page "/" had no page after the PsychSift removal and showed
     // "not found"; Josh ruled it opens the Coordinator view, so src/app/page.tsx names the route.
-    // 7 -> 8: the standalone app's not-found page has an explicit route home.
+    // 7 -> 8 in the standalone app: its not-found fallback names the only product route.
     expect(APPROVED_ROUTE_REFERENCES.size).toBe(8);
     expect(wardFiles.length).toBeGreaterThan(50);
     expect(allSourceFiles.length).toBeGreaterThan(wardFiles.length);

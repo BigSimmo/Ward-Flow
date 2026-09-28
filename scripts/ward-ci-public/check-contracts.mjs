@@ -13,6 +13,7 @@ function requireWorkflow(source) {
     /needs: \[validate\]/u,
     /npm run check:ward-reference/u,
     /npm run check:ward-expected-reds/u,
+    /check:ward-expected-reds -- --print-signatures/u,
     /npm run test:e2e:ward-journeys/u,
     /screen-verification\.mjs --check/u,
     /dependency-review-action@[0-9a-f]{40}/u,
@@ -21,7 +22,13 @@ function requireWorkflow(source) {
     /steps\.journeys\.outcome == 'failure'/u,
   ])
     assert.match(source, pattern);
-  for (const pattern of [/pull_request_target:/u, /continue-on-error:/u, /secrets\./u, /contents: write/u]) {
+  for (const pattern of [
+    /pull_request_target:/u,
+    /continue-on-error:/u,
+    /secrets\./u,
+    /contents: write/u,
+    /WARD_PUBLIC_STANDALONE:/u,
+  ]) {
     assert.doesNotMatch(source, pattern);
   }
 }

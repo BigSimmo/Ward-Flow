@@ -151,8 +151,8 @@ const DECLARED_UNDECIDABLE: Readonly<Record<string, string>> = {
  * A walk reaching too few gates would make every verdict below pass over nothing.
  *
  * Re-measured after PsychSift's removal, which took `tests/pdf-extractor.test.ts`
- * and `tests/claude-cloud-profile.test.ts` with it: the suite now carries 7
- * conditional gates (down from the pre-removal count this floor was set against).
+ * and `tests/claude-cloud-profile.test.ts` with it: the suite carried 7
+ * conditional gates. The public-checkout hook guard brought the total to 8.
  * The floor sits below that fresh measurement, not at it, for the same reason
  * every floor in this file does - ordinary test churn should not trip it, only a
  * collapse of the walk itself should.
