@@ -360,6 +360,13 @@
       "after": 0,
       "reason": "Owner-approved PsychSift retirement: exact fourteen-file list approved in the acting Codex chat on 27 September 2026. Dedicated tests retire with their unused implementation; no remaining Ward runtime or test consumer was found. Backup: backup/20260927-psychsift-orphans.",
       "approvedOn": "2026-09-27"
+    },
+    {
+      "path": "tests/developer-area-route-guard.dom.test.tsx",
+      "before": 4,
+      "after": 0,
+      "reason": "Josh asked on 28 September 2026 for the Ward Flow developer key to be removed. The key gate, its key screen, the signed-cookie helpers (link-access*.ts) and DeveloperAreaRouteGuard went together: the route guard only existed to re-run the key check on client navigation inside the gate, and its sole importer was the deleted gate. This file tested only that guard.",
+      "approvedOn": "2026-09-28"
     }
   ]
 }

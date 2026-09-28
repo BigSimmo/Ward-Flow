@@ -65,11 +65,8 @@ files.
   `@/components/ui-primitives`.
 - **`src/components/ui/sheet-focus.ts`** (345 lines) — dialog focus-trap/return-focus utility.
   Imported once, by `ward-modal-focus.ts`. No outside project imports of its own.
-- **`src/components/developer-area/ward-flow-access-gate.tsx`** (43 lines) — the developer-cookie
-  access gate. Imported once, by `src/app/mockups/ward-flow/layout.tsx` (the only mount point).
-  Imports `@/components/developer-area/developer-area-route-guard.tsx` (45 lines),
-  `@/components/developer-area/ward-flow-key-gate-screen.tsx` (100 lines), and
-  `@/lib/developer-area/headers.ts` (§1.2).
+- **`src/components/developer-area/ward-flow-access-gate.tsx`** — the developer-cookie access gate,
+  with its route guard, key screen and `lib/developer-area/link-access*.ts`: removed 28 September 2026 at Josh's request; Ward Flow now opens with no developer key.
 - **`src/components/ward-flow-sign-in/ward-flow-sign-in-screen.tsx`** (535 lines) — the sign-in
   mockup screen. This is a sibling of `ward-flow/`, not a child of it (see the prefix note at
   `src/lib/developer-area/headers.ts:40-46`), so it never gets the rail, the provider, or any Ward
@@ -202,9 +199,8 @@ these:
   folders.
 - **`src/lib/client-store-factory.ts`** — the rail, service selector and sidebar-collapsed state all
   depend on it.
-- **`src/components/developer-area/ward-flow-access-gate.tsx`** (+ its two imports) — Ward Flow's
-  only entry gate; without it there is nothing standing between `/mockups/ward-flow` and the
-  mockups-layout 404.
+- **`src/components/developer-area/ward-flow-access-gate.tsx`** — removed 28 September 2026 at Josh's request; Ward Flow now opens with no developer key. The proxy still lets
+  `/mockups/ward-flow` past the mockups-layout 404 through the developer-area header.
 - **`src/components/ward-flow-sign-in/ward-flow-sign-in-screen.tsx`** — the sign-in route has
   nothing else to render.
 - **The most surprising dependency:** `src/lib/source-authority-registry.ts` (497 lines) and
