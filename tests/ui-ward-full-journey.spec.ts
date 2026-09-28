@@ -135,9 +135,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
   test.describe.configure({ timeout: 120_000 });
 
   test("every listed Ward route answers without a server error or missing page", async ({ request }) => {
-    const routes = readFileSync(new URL("../scripts/ward-flow/shot-routes.txt", import.meta.url), "utf8")
-      .split(/\r?\n/u)
-      .filter(Boolean);
+    const routes = readFileSync("scripts/ward-flow/shot-routes.txt", "utf8").split(/\r?\n/u).filter(Boolean);
     expect(routes.length).toBeGreaterThan(0);
     expect(new Set(routes).size).toBe(routes.length);
     const failures: string[] = [];
