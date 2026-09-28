@@ -21,7 +21,7 @@
 
 **The file to open:** `docs/ward-flow/README.md`
 
-Paste this as the first message:
+Archived first message (do not paste; the design instruction below was later superseded):
 
 ```
 Read docs/ward-flow/README.md in full before doing anything else, then follow where it points.
@@ -31,8 +31,8 @@ keeping the behaviour that already works. The drawings are authoritative on desi
 working engine is authoritative on behaviour; every deviation gets written down with its reason.
 
 Four rules that are expensive to learn late:
-1. Ward Flow is NEVER pushed. Both branches exist on one disk only. "Fold into main" always
-   means the local ward line, never a remote — a remote push deploys to a live clinical database.
+1. Verify that the checkout's origin is BigSimmo/Ward-Flow before a Git write. Push, pull request,
+   merge, migration and deployment are separate actions with their own approval and checks.
 2. Serve a mockup to view it; never open one as a bare file. Each builds its navigation with
    JavaScript and renders as a completely different design when opened directly. A false
    "the build doesn't match" finding was reported to the owner from exactly that mistake.
@@ -56,7 +56,7 @@ Start by telling me what you understand the job to be, and what you'd do first.
 **The file to open first:** `START-HERE-HANDOVER.md` — read the section headed
 **"ADDED 2026-09-12, LATE"** before the rest of the file, because it corrects it.
 
-Paste this as the first message:
+Archived first message (do not paste; the design instruction below was later superseded):
 
 ```
 I'm handing you a folder for a project called Ward Flow — a hospital ward bed-coordination
@@ -91,19 +91,14 @@ folder exists to prevent.
 
 # ③ Using the prompt in Codex specifically
 
-**Yes, prompt ① works in Codex unchanged** — Codex reads `AGENTS.md`, which now points at
-`docs/ward-flow/README.md`, so it reaches the same place. **But add these two lines**, because
-they are the two ways a Codex session goes wrong here and neither is obvious from inside it.
+**Historical Codex prompt: do not paste.** It predates the dedicated Ward Flow repository. New
+sessions should use the current `AGENTS.md` and `docs/ward-flow/README.md` in `BigSimmo/Ward-Flow`.
 
 ```
-You are working on branch codex/task-ward-flow-live-state-20260831. Confirm you are on it
-before touching anything — docs/ward-flow/ does not exist on main, so if those files appear
-missing you are on the wrong branch, not looking at a broken folder.
+Confirm you are in BigSimmo/Ward-Flow and on an isolated branch based on its main before editing.
 
-Never open a pull request, never push, and never merge anything toward origin/main for this
-work. Ward Flow is local-only by design. If another chat is already working in this folder,
-do not start here — two sessions in one working folder cannot both commit, and the block is
-mechanical with no polite way round it.
+Verify the remote and intended destination before any publication. Keep separate editing sessions
+in separate worktrees. A push, pull request or merge needs its own applicable authority.
 ```
 
 ⚠️ **THE SECOND ONE IS NOT THEORETICAL.** Two builders hit it from opposite sides and spent two
@@ -111,31 +106,30 @@ hours each asking the other to "just commit first". **That request is mechanical
 the commit check inspects the whole folder, so neither can commit until one party's changes are
 completely out of the way.
 
-⚠️ **AND THE FIRST ONE READS AS YOUR MISTAKE WHEN IT HAPPENS.** On any other branch, every path in
-this document returns "no such file" — which looks like a bad handover rather than a wrong branch.
+⚠️ **This old branch check is obsolete.** Verify the dedicated Ward Flow remote, checkout and
+branch before relying on any file path.
 
 ---
 
-# ④ THE CODEX PROMPT — folder to select, then paste this
+# ④ HISTORICAL CODEX PROMPT — do not select or paste
 
-**Select this folder in Codex:**
+**Old folder (retained for historical context only):**
 
 ```
-D:\Worktrees\Database\ward-lead
+Former shared Ward checkout under D:\Worktrees\Database\ (do not select for current work)
 ```
 
 ⚠️ **Only one session may work in that folder at a time.** If a Claude chat is still live in it,
 do not start Codex there — two sessions in one folder cannot both commit, and there is no polite
 way round it.
 
-Paste this as the first message:
+Archived first message (do not paste; the design and timing instructions below are historical):
 
 ```
 You are continuing an existing project. Read before building.
 
-FIRST: confirm you are on branch codex/task-ward-flow-live-state-20260831. docs/ward-flow/ does
-not exist on main — if those paths look missing, you are on the wrong branch, not looking at a
-broken handover.
+FIRST: confirm the remote is BigSimmo/Ward-Flow and the branch is based on its main. If those
+paths look missing, verify the checkout before continuing.
 
 THEN: read docs/ward-flow/README.md in full, and follow where it points. It is the entry point
 and it is current. Do not start from your own assumptions about this codebase.
@@ -159,9 +153,8 @@ THE FIVE THINGS THAT COST A DAY EACH IF LEARNED LATE
    reports identically to one that ran and failed.
 3. Nothing automated here can see that a screen does not look like its drawing. Thousands of
    passing tests sat over sixteen screens that did not match. Looking is the only instrument.
-4. Ward Flow is NEVER pushed. Both branches exist on one disk only. No pull request, no push,
-   no merge toward origin/main — that deploys to a live clinical database. "Fold into main"
-   always means the local ward line.
+4. Verify the Ward Flow remote before Git writes. Push, pull request, merge, migration and
+   deployment need their own applicable authority and checks.
 5. Never delete or move anything matching ward-flow, ward-management or ward-board, any handover
    or decision document, any worktree, or either ward branch, without asking the owner first.
    "Nothing imports it" is never a sufficient reason.
@@ -186,22 +179,22 @@ to stop repeating.**
 
 ---
 
-# ⑤ A NEW SESSION CONTINUING CASELOAD SYSTEM & MASTER ISSUES REMEDIATION (Current: 2026-09-14)
+# ⑤ HISTORICAL 2026-09-14 CASELOAD PROMPT — do not select or paste
 
-**Folder to select:**
+**Old folder (retained for historical context only):**
 
 ```
-D:\Worktrees\Database\ward-lead
+Former shared Ward checkout under D:\Worktrees\Database\ (do not select for current work)
 ```
 
-Paste this as the first message to continue directly from the 2026-09-14 handover:
+Archived first message from 2026-09-14 (do not paste or treat its tasks as current):
 
 ```
 You are continuing development on Ward Flow, a psychiatric ward bed-coordination and patient flow prototype.
-Confirm you are on branch `codex/task-ward-flow-live-state-20260831` in `D:\Worktrees\Database\ward-lead` before doing anything else.
+Confirm the remote is `BigSimmo/Ward-Flow` and the branch is based on its `main` before editing.
 
 1. CRITICAL GOVERNANCE & SAFETY RULES:
-   - Ward Flow is NEVER pushed to origin/main. Both branches exist on one disk only. Pushing to origin/main deploys to a live clinical database.
+   - Check the Ward Flow remote before Git writes. Push, pull request, merge, migration and deployment require separate applicable authority and checks.
    - Owner Ruling D-11 applies: There are two separate ledgers. Ward Flow issues and tasks live in `docs/ward-flow/PROJECT-ISSUES.md` and `docs/ward-flow-task-ledger.md`. Never touch `docs/outstanding-issues.md` for Ward Flow.
    - 100% CSS strict tokenization: Zero raw hex/rgb/hsl literals in `src/components/ward-management/` CSS files. Use `var(--...)`.
 
