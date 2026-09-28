@@ -1671,8 +1671,8 @@
 }
 
 .modalCloseBtn {
-  min-height: 44px;
-  min-width: 44px;
+  min-height: var(--ward-tap, 3rem);
+  min-width: var(--ward-tap, 3rem);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2973,9 +2973,9 @@ button.searchBox:hover {
   background: transparent;
   border: 1px solid var(--line);
   border-radius: var(--r2);
-  width: 1.75rem;
-  height: 1.75rem;
-  display: flex;
+  min-width: var(--ward-tap, 3rem);
+  min-height: var(--ward-tap, 3rem);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--muted);
@@ -3044,10 +3044,12 @@ button.searchBox:hover {
   box-shadow: var(--lift);
   max-width: 44rem;
   width: 100%;
-  max-height: 90vh;
+  max-height: 85vh;
+  max-height: 85dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  overflow-y: auto;
   animation: modalScaleUp 0.15s ease-out;
 }
 
@@ -3082,9 +3084,9 @@ button.searchBox:hover {
   background: transparent;
   border: 1px solid var(--line);
   border-radius: var(--r2);
-  width: 1.75rem;
-  height: 1.75rem;
-  display: flex;
+  min-width: var(--ward-tap, 3rem);
+  min-height: var(--ward-tap, 3rem);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--muted);

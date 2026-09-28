@@ -282,7 +282,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
   }
 
   // Bed matrix cells
-  const occupiedCount = Math.max(0, unit.beds - capacity.available);
+  const occupiedCount = capacity.occupied;
   const occupancyPct = ((occupiedCount / Math.max(1, unit.beds)) * 100).toFixed(1);
   const activeSpeciallingCount = movements.filter((m) => m.specialling && m.acceptedUnitId === unit.id).length;
 
@@ -797,19 +797,27 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 {Array.from({ length: unit.beds }, (_, i) => {
                   const bedNum = String(i + 1).padStart(2, "0");
                   const isVacant = i < capacity.available;
+                  const isHeld = !isVacant && i < capacity.available + capacity.held;
+                  const statusLabel = isVacant ? "READY" : isHeld ? "Held" : "Inpatient";
+                  const cellClass = `${styles.bedCell} ${
+                    isVacant ? styles.vacant : isHeld ? styles.held : styles.occupied
+                  }`;
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={bedNum}
-                      className={`${styles.bedCell} ${isVacant ? styles.bedCellVacant : styles.bedCellOccupied}`}
+                      className={cellClass}
                       onClick={() => {
                         if (isVacant && activeMovement) {
                           setAcceptModalOpen(true);
                         }
                       }}
+                      aria-label={`Bed ${bedNum} ${statusLabel}`}
+                      disabled={!isVacant}
                     >
                       <span className={styles.bedNum}>{bedNum}</span>
-                      <span>{isVacant ? "READY" : "Inpatient"}</span>
-                    </div>
+                      <span>{statusLabel}</span>
+                    </button>
                   );
                 })}
               </div>

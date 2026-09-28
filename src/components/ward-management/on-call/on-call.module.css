@@ -909,6 +909,8 @@
   cursor: pointer;
   padding: 6px;
   border-radius: var(--r2);
+  min-width: var(--ward-tap, 3rem);
+  min-height: var(--ward-tap, 3rem);
   display: inline-flex;
   align-items: center;
   justify-content: center;

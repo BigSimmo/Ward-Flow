@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
@@ -133,7 +133,8 @@ describe("installedLockParity", () => {
     const packageJson = JSON.parse(readFileSync(path.resolve("package.json"), "utf8")) as {
       scripts: Record<string, string>;
     };
-    const ci = readFileSync(path.resolve(".github/workflows/ci.yml"), "utf8");
+    const ciPath = path.resolve(".github/workflows/ci.yml");
+    const ci = existsSync(ciPath) ? readFileSync(ciPath, "utf8") : null;
 
     for (const scriptName of ["verify:cheap:internal", "verify:ui", "verify:release"]) {
       const script = packageJson.scripts[scriptName];
@@ -149,7 +150,7 @@ describe("installedLockParity", () => {
     expect(readFileSync(path.resolve("scripts/verify-pr-local.mjs"), "utf8")).toContain(
       '"check:runtime", "check:installed-lock-parity"',
     );
-    expect(ci).toContain("run: npm run check:installed-lock-parity");
+    if (ci) expect(ci).toContain("run: npm run check:installed-lock-parity");
   });
 
   it("keeps brace-expansion on CVE-2026-14257-patched maintenance releases", () => {

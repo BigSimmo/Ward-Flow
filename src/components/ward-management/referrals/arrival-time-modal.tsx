@@ -14,6 +14,7 @@ import {
   LATE_ARRIVAL_GRACE_MINUTES,
   OPERATIONAL_DEFAULT_LABEL,
 } from "@/components/ward-management/ward-operational-defaults";
+import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import styles from "./arrival-time-modal.module.css";
 
 export { ARRIVAL_MODE_LABELS, LATE_ARRIVAL_GRACE_MINUTES };
@@ -81,14 +82,7 @@ export function ArrivalTimeModal({ isOpen, onClose, movement, role = "coordinato
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset on open/switch only
   }, [isOpen, movement.id]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  useWardModalFocus(isOpen, dialogRef, onClose);
 
   if (!isOpen) return null;
 
