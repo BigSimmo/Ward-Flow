@@ -10,7 +10,9 @@ function requireWorkflow(source) {
     /persist-credentials: false/u,
     /name: Ward Flow required/u,
     /if: always\(\)/u,
-    /needs: \[validate\]/u,
+    /^  browser:\s*\n\s*name: Ward Flow browser journeys/mu,
+    /needs: \[validate, browser\]/u,
+    /test "\$VALIDATION_RESULT" = success && test "\$BROWSER_RESULT" = success/u,
     /npm run check:ward-reference/u,
     /npm run check:ward-expected-reds/u,
     /WARD_PUBLIC_STANDALONE: "1"/u,
@@ -26,6 +28,11 @@ requireWorkflow(workflow);
 for (const bad of [
   workflow.replace("name: Ward Flow required", "name: Optional"),
   workflow.replace("if: always()", "if: success()"),
+  workflow.replace("needs: [validate, browser]", "needs: [validate]"),
+  workflow.replace(
+    'test "$VALIDATION_RESULT" = success && test "$BROWSER_RESULT" = success',
+    'test "$VALIDATION_RESULT" = success',
+  ),
   workflow.replace("contents: read", "contents: write"),
   workflow.replace("npm run check:ward-expected-reds", "echo no unit checks"),
 ])
