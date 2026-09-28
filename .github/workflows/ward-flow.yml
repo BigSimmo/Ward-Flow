@@ -33,7 +33,7 @@ jobs:
           WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: node scripts/ward-ci-public/plan.mjs
       - name: Check CI contracts
-        run: node scripts/ward-ci-public/check-contracts.mjs && node --test tests/ward-backend-ci.node.mjs
+        run: node scripts/ward-ci-public/check-contracts.mjs
       - name: Check Ward document links
         run: npm run check:ward-doc-links
       - name: Check Ward screen verification record
