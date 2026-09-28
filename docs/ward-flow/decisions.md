@@ -354,3 +354,16 @@ add a new entry that says which one it replaces, and mark the old one "Replaced 
 - **Why:** On 27 September, a three-file queue-tool change passed its four related merged-tree tests
   but then waited over 14 minutes in a roughly 9,600-test fold suite. The full suite did not target
   a plausible additional failure path for that change and blocked the shared wide slot.
+
+## D-27. Ward Flow uses its dedicated repository (28 September)
+
+- **Date:** 28 September 2026. **Decided by:** Josh.
+- **Decision:** `BigSimmo/Ward-Flow` is the sole GitHub repository for current Ward Flow work. Use
+  an isolated worktree based on its `main` and verify `git remote get-url origin` before any Git
+  write or publication. `D:\Worktrees\Database\ward-lead` and `BigSimmo/Database` are legacy
+  sources, not destinations for this project. Pushes, pull requests, merges and deployments remain
+  separate actions requiring their applicable authorisation and checks. This supersedes D-1's
+  local-only and no-linked-repository directions and R1's no-GitHub direction; their historical
+  record remains above.
+- **Why:** The old shared checkout pointed at PsychSift. Its instructions caused Ward Flow work to
+  be aimed at the wrong repository. A verified dedicated repository prevents that mix-up.

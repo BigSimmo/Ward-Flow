@@ -1,8 +1,8 @@
 ﻿# Documentation system
 
-How Documentation keeps PsychSift + Ward Flow docs accurate on this tip. **Process doc - no product DDL.**
+How Documentation keeps Ward Flow docs accurate on this tip. **Process doc - no product DDL.**
 
-_Owned by Documentation. Updated 2026-09-21._
+_Updated 2026-09-28 - dedicated Ward Flow repository boundary; Documentation owns._
 
 ## Principles
 
@@ -11,14 +11,14 @@ _Owned by Documentation. Updated 2026-09-21._
 3. **Names only for secrets** - never paste values, JWTs, or dashboard passwords.
 4. **Status in one board** - for Ward Flow: `docs/ward-flow/STATUS.md` + `docs/ward-flow-task-ledger.md`; do not fork status elsewhere.
 5. **One map improvement per pass** when cheap.
-6. **Ward Flow tip lock** - only `D:\Worktrees\Database\ward-lead`. Confirm tip (`git log -1` / `rev-parse`) before acting. No stale worktrees, detached inventory/suite checkouts, older SHAs, or cloud agents unless Joshua explicitly names another path.
+6. **Ward Flow repository lock** - confirm `git remote get-url origin` is `https://github.com/BigSimmo/Ward-Flow.git` before editing. Use a separate worktree based on this repository's `main`; confirm the branch and tip before acting. `D:\Worktrees\Database\ward-lead` and `BigSimmo/Database` are legacy sources, not Ward Flow destinations.
 7. **Recheck triggers** - tip SHA / boot command / entry path change refreshes entry docs; operator change restamps runbooks; deferred item moves update closeout/STATUS.
 
 ## Pipeline
 
-Scope -> Read tip -> Edit (class-aware) -> Stamp + commit (docs only) -> Memory/FYI -> One map improvement
+Scope -> Verify repository and branch -> Read tip -> Edit (class-aware) -> Stamp + commit (docs only) -> One map improvement
 
-Ward Flow commits stay **local** (never push the ward line). Stage **docs paths only** - never mix unrelated product WIP.
+Stage **docs paths only** - never mix unrelated product WIP. A push or pull request requires the user's authorisation and a verified `BigSimmo/Ward-Flow` destination.
 
 ## Ward Flow live set
 
@@ -35,9 +35,9 @@ Ward Flow commits stay **local** (never push the ward line). Stage **docs paths 
 
 **Boot:** `npm run ensure` - trust the printed URL; never hardcode ports.
 
-## PsychSift (same monorepo, GitHub main)
+## Repository boundary
 
-Product name **PsychSift**; repo `BigSimmo/Database`. Prefer GitHub default branch for PsychSift product docs; use this tip for Ward Flow.
+Ward Flow is in `BigSimmo/Ward-Flow`. `BigSimmo/Database` is the separate PsychSift repository. Historical documents may mention the former shared checkout; treat those paths as history and use the verified Ward Flow checkout for current work.
 
 ## Related
 

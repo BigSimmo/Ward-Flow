@@ -1,6 +1,11 @@
 # Starting a new AI chat on Ward Flow
 
-> **SUPERSEDED on 17 Sept 2026 by `docs/ward-flow/README.md`.** Kept for history; do not follow. A new chat on any platform starts at the README.
+> **Historical archive — do not copy any prompt below.** These prompts name the old
+> `D:\Worktrees\Database\ward-lead` checkout and prohibit GitHub use. Both directions are obsolete
+> for the current `BigSimmo/Ward-Flow` project. Start a new task from this repository's
+> [`AGENTS.md`](../../AGENTS.md) and [`README.md`](README.md). Before any Git write, verify the
+> checkout's `origin` is `https://github.com/BigSimmo/Ward-Flow.git` and use a separate worktree
+> based on its `main`. Do not use the old `BigSimmo/Database` repository for Ward Flow work.
 
 **Two situations, two different files. Using the wrong one wastes the first hour.**
 
