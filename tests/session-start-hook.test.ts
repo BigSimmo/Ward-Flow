@@ -43,6 +43,19 @@ import { afterEach, describe, expect, it } from "vitest";
 
 const sourceHook = join(process.cwd(), ".claude/hooks/session-start.sh");
 const sourcePrecompactHook = join(process.cwd(), ".claude/hooks/precompact-issues-capture.sh");
+const hasClaudeHooks = existsSync(sourceHook);
+function describeConfiguredHook(name: string, body: () => void) {
+  if (hasClaudeHooks) describe(name, body);
+}
+
+if (!hasClaudeHooks) {
+  describe("public Claude hook boundary", () => {
+    it("ships no partial hook directory or registration", () => {
+      expect(existsSync(join(process.cwd(), ".claude"))).toBe(false);
+      expect(existsSync(sourcePrecompactHook)).toBe(false);
+    });
+  });
+}
 const NODE_VERSION = "24.19.0";
 const scratchRoots: string[] = [];
 const bashCommand =
@@ -108,7 +121,7 @@ function runHook(hook: string, env: Record<string, string | undefined>, cwd: str
   return spawnSync(bashCommand, [hook.replace(/\\/g, "/")], { cwd, env: base as NodeJS.ProcessEnv, encoding: "utf8" });
 }
 
-describe("session-start hook", () => {
+describeConfiguredHook("session-start hook", () => {
   it("survives a manual run with no CLAUDE_ENV_FILE", () => {
     const { home, project, hook } = stubEnvironment();
 
@@ -225,7 +238,7 @@ describe("session-start hook", () => {
   });
 });
 
-describe("precompact observability hook", () => {
+describeConfiguredHook("precompact observability hook", () => {
   it("stays silent while recording only a bounded trigger", () => {
     const repository = mkdtempSync(join(tmpdir(), "precompact-hook-"));
     scratchRoots.push(repository);
@@ -295,7 +308,7 @@ describe("precompact observability hook", () => {
  * near-unreadable `/bin/bash^M: bad interpreter`. Measured clean at the time of
  * writing (CR=0 across all five hook blobs); this keeps it that way.
  */
-describe("claude hook scripts are checked in runnable", () => {
+describeConfiguredHook("claude hook scripts are checked in runnable", () => {
   const listed = spawnSync("git", ["ls-files", "-s", ".claude/hooks"], {
     cwd: process.cwd(),
     encoding: "utf8",

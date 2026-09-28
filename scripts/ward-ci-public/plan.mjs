@@ -3,6 +3,7 @@ import { appendFileSync } from "node:fs";
 
 const sha = /^[0-9a-f]{40}$/i;
 const docsOnly = (file) => file === "README.md" || /^docs\/ward-flow\/.*\.md$/u.test(file);
+const dependencyManifest = (file) => /(^|\/)(?:package(?:-lock)?\.json|npm-shrinkwrap\.json)$/u.test(file);
 
 export function classifyChanges(entries) {
   if (!entries.length) return { full: true, reason: "empty diff" };
@@ -11,6 +12,10 @@ export function classifyChanges(entries) {
   }
   if (entries.every(({ file }) => docsOnly(file))) return { full: false, reason: "Ward documentation only" };
   return { full: true, reason: "source, test, tooling, configuration or unknown change" };
+}
+
+export function hasDependencyChanges(entries) {
+  return entries.some(({ file }) => dependencyManifest(file));
 }
 
 export function parseNameStatus(output) {
@@ -28,21 +33,27 @@ export function parseNameStatus(output) {
 if (process.argv[1]?.replaceAll("\\", "/").endsWith("/scripts/ward-ci-public/plan.mjs")) {
   const base = process.env.WARD_BASE_SHA;
   let plan;
+  let dependencyReview = false;
   if (!base) {
     plan = { full: true, reason: "no PR base (merge group or manual run)" };
   } else if (!sha.test(base)) {
     plan = { full: true, reason: "invalid PR base" };
+    dependencyReview = true;
   } else {
     try {
       const output = execFileSync("git", ["diff", "--name-status", "--no-renames", `${base}...HEAD`], {
         encoding: "utf8",
         timeout: 30_000,
       });
-      plan = classifyChanges(parseNameStatus(output));
+      const changes = parseNameStatus(output);
+      plan = classifyChanges(changes);
+      dependencyReview = hasDependencyChanges(changes);
     } catch (error) {
       plan = { full: true, reason: `history unavailable (${error.code ?? error.status ?? "error"})` };
+      dependencyReview = true;
     }
   }
-  console.log(`Ward CI scope: ${plan.full ? "full" : "docs"} — ${plan.reason}`);
-  if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `full=${plan.full}\n`);
+  console.log(`Ward CI scope: ${plan.full ? "full" : "docs"} — ${plan.reason}; dependency review: ${dependencyReview}`);
+  if (process.env.GITHUB_OUTPUT)
+    appendFileSync(process.env.GITHUB_OUTPUT, `full=${plan.full}\ndependency_review=${dependencyReview}\n`);
 }

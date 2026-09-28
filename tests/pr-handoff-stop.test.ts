@@ -15,6 +15,18 @@ import { afterEach, describe, expect, it } from "vitest";
 
 const hook = join(process.cwd(), ".claude/hooks/pr-handoff-stop.sh");
 const scratchRoots: string[] = [];
+function describeAvailableHook(name: string, body: () => void) {
+  if (existsSync(hook)) describe.skipIf(process.platform === "win32")(name, body);
+}
+
+if (!existsSync(hook)) {
+  describe("public PR handoff boundary", () => {
+    it("has no partial Claude hook registration and retains the PR policy", () => {
+      expect(existsSync(join(process.cwd(), ".claude"))).toBe(false);
+      expect(readFileSync(join(process.cwd(), "AGENTS.md"), "utf8")).toContain("Do not babysit CI");
+    });
+  });
+}
 
 /** Default budget is 30 minutes; these ages sit unambiguously either side of it. */
 const INSIDE_BUDGET_SECONDS = 60;
@@ -92,7 +104,7 @@ function runHook(
 // WSL launcher: it cannot execute the native absolute paths this fixture gives
 // it and can retain NTFS directory handles after exit. That is neither the
 // hook's runtime nor meaningful Windows coverage, so avoid false local reds.
-describe.skipIf(process.platform === "win32")("pr-babysit budget hook", () => {
+describeAvailableHook("pr-babysit budget hook", () => {
   describe("post — starting the budget", () => {
     it("does not treat create_pull_request_review as opening a PR", () => {
       const { root } = freshRepo();

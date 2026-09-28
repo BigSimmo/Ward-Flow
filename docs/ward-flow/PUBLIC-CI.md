@@ -4,15 +4,19 @@ The public `BigSimmo/Ward-Flow` repository retains its current application sourc
 workflow runs on pull requests to `main` and merge groups. It uses a read-only token, pinned actions,
 locked dependencies, and synthetic browser configuration. It does not deploy the application.
 
-Documentation-only changes run CI contracts and Ward document-link validation. Other changes run
-reference and legal-language checks, typechecking, the reconciled offline unit population, and Ward
-browser journeys. `Ward Flow required` passes only when validation succeeds.
+Documentation-only changes run CI contracts, Ward document-link validation, and the screen-verification
+record check. Other changes also run reference and legal-language checks, typechecking, the reconciled
+offline unit population, and Ward browser journeys, including an HTTP response check for every route
+in `scripts/ward-flow/shot-routes.txt`. New package manifest changes receive GitHub dependency review.
+Failing browser journeys upload their traces and screenshots for three days. `Ward Flow required`
+passes only when validation succeeds.
 
-The previous broad PsychSift `CI` workflow is managed separately at the GitHub workflow setting
-because its local file is currently owned by another Ward Flow thread. Do not enable repository
-Actions until that workflow is disabled, or it will also run. Require `Ward Flow required` in the
-default-branch ruleset only after its hosted identity and outcomes have been observed.
+The previous broad PsychSift `CI` workflow is disabled in GitHub settings. The default-branch ruleset
+requires `Ward Flow required` and resolved review conversations. Repository auto-merge is available
+when GitHub's PR requirements permit it. The workflow uses no write token or application deployment.
 
-Current public-source baseline at preparation: reference data passes; Ward legal wording and two
-archived document links fail. These failures are not waived. A first hosted run must establish unit
-and browser outcomes before the PR check can be considered ready.
+The first hosted run on public `main` found broken local evidence links, four legal-wording lines and
+inherited unit tests that refer to agent tooling absent from the public checkout. Its reference,
+typecheck and browser journey steps passed. These failures are not waived; a later hosted run on the
+final PR head must pass before the change is ready to merge. The screen-verification record check
+checks record structure and freshness, not whether the rendered screens visually match their designs.
