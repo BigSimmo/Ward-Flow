@@ -42,6 +42,7 @@ const publicRouteHandlerDescriptions: Record<string, string> = {
 };
 
 const apiDescriptions: Record<string, string> = {
+  "/api/health": "Railway deployment healthcheck.",
   "/api/local-project-id": "Local project identity guard.",
 };
 

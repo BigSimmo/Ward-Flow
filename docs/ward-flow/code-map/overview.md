@@ -51,10 +51,9 @@ Browser request /mockups/ward-flow/...
   └─ src/app/layout.tsx ── sees the Ward Flow header, SKIPS the Supabase AuthProvider
   └─ src/app/mockups/layout.tsx ── 404 unless mockups enabled or developer-gated
   └─ src/app/mockups/ward-flow/layout.tsx
-        WardFlowAccessGate        (developer cookie/key; local dev bypass)
-          WardFlowProvider        (the engine: useReducer + sessionStorage + clock)
-            WardLiveRegion, WardRail, WardBarMount, WardBroadcastBanner   (the chrome)
-            WardGround → {page}   (one of 42 routes → one screen component)
+        WardFlowProvider          (the engine: useReducer + sessionStorage + clock)
+          WardLiveRegion, WardRail, WardBarMount, WardBroadcastBanner   (the chrome)
+          WardGround → {page}     (one of 42 routes → one screen component)
 
 Screen ──dispatch(event)──▶ wardFlowReducer ──▶ new WardFlowState
    ▲                          (role check → stale check → eligibility/legal guards;
@@ -507,7 +506,6 @@ files, `lessons/` 209 (source of `RULES.md`), `archive/dated-notes/` 178, `sdd-r
 | `@/components/ui/sheet`                                                             |          4 | drawers                                                    |
 | `@/components/ui/missing-value`, `contextual-back-link`, `clinical-dashboard/brand` |     2 each | empty values, back links, brand mark (retired chrome only) |
 | `@/components/ui/tooltip`, `ui/sheet-focus`                                         |     1 each | rail tooltips, dialog focus                                |
-| `@/components/developer-area/ward-flow-access-gate`                                 |          1 | the access gate (layout only)                              |
 
 **Reverse direction:** no file in `src/` outside Ward Flow imports Ward Flow (grep re-checked).
 
@@ -519,9 +517,8 @@ files, `lessons/` 209 (source of `RULES.md`), `archive/dated-notes/` 178, `sdd-r
 - **`src/app/layout.tsx`:** with that header, the Supabase auth providers are **not mounted**.
 - **`src/app/mockups/layout.tsx`:** 404 unless mockups are enabled
   (`mockupsEnabled()` in `src/lib/env.ts:475`) or the path is developer-gated.
-- **Access:** `src/components/developer-area/ward-flow-access-gate.tsx` — a signed developer
-  cookie in production, open in local dev and offline test runs. Ward Flow never uses Supabase
-  auth or `isDemoMode()`.
+- **Access:** open. The developer-key gate (`ward-flow-access-gate.tsx`) was removed 28 September 2026 at Josh's request; Ward Flow now opens with no developer key.
+  Ward Flow never uses Supabase auth or `isDemoMode()`.
 - **Neighbour routes:** `src/app/mockups/ward-flow-sign-in` and `ward-flow-digest` sit beside
   (not inside) `ward-flow`, so they get no rail or provider.
 - **Config:** `next.config.ts` adds `noindex` to all `/mockups`; `tsconfig.json` has one alias
