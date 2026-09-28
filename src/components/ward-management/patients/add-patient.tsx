@@ -1093,7 +1093,7 @@ export function AddPatientForm() {
               </h3>
               <p
                 id="reset-dialog-desc"
-                style={{ margin: 0, fontSize: "0.95rem", color: "var(--ink-muted)", lineHeight: 1.5 }}
+                style={{ margin: 0, fontSize: "0.95rem", color: "var(--text-muted)", lineHeight: 1.5 }}
               >
                 You have entered patient details or clinical notes. Resetting the form will clear all unsaved fields in
                 this session.

@@ -3534,7 +3534,7 @@ export function WardBoard({
                   style={{
                     background: "transparent",
                     border: "none",
-                    color: "var(--ink-subtle)",
+                    color: "var(--text-muted)",
                     cursor: "pointer",
                     fontSize: "1.25rem",
                     padding: "0.25rem 0.5rem",
@@ -3547,7 +3547,7 @@ export function WardBoard({
 
               <p
                 id="confirm-dialog-description"
-                style={{ margin: 0, fontSize: "0.95rem", color: "var(--ink-muted)", lineHeight: 1.5 }}
+                style={{ margin: 0, fontSize: "0.95rem", color: "var(--text-muted)", lineHeight: 1.5 }}
               >
                 {pendingConfirm.kind === "leaving" ? (
                   <>
