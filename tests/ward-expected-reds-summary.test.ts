@@ -195,7 +195,7 @@ describe("WARD_GATE_SHARD splits the population without losing or repeating a fi
     for (const count of [1, 2, 3, 4, 7]) {
       const shuffled = [...population].reverse();
       const shards = Array.from({ length: count }, (_, index) =>
-        selectGateShard(shuffled, parseGateShard(`${index + 1}/${count}`)),
+        selectGateShard(shuffled, { index: index + 1, count }),
       );
       const all = shards.flat();
       expect(new Set(all).size).toBe(all.length);
