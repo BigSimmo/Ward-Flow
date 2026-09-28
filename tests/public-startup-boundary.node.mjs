@@ -82,10 +82,7 @@ test("public sign-out check uses main and ignores Database checkout claims", () 
   const log = path.join(cwd, "sign-out.md");
   const file = "scripts/ward-flow/sign-out-check.mjs";
   try {
-    writeFileSync(
-      log,
-      `Open sign-outs only\n- date | Old owner | ward/old | D:/Worktrees/Database/ag-old | ${file}\n`,
-    );
+    writeFileSync(log, `Open sign-outs only\n- date | Old owner | ward/old | D:/Worktrees/Database/ag-old | ${file}\n`);
     const env = { WARD_SIGNOUT_FILE: log };
     const clear = run(process.execPath, [signOut, file], cwd, env);
     assert.equal(clear.status, 0, clear.stderr);
