@@ -2,10 +2,11 @@
 /**
  * check-base-freshness — advisory stale-base tripwire.
  *
- * main moves fast (claude/* branches auto-merge on green), so a worktree branched
- * a while ago can be many commits behind origin/main — which is how duplicate work
- * gets built against a stale base. This fetches origin/main and reports how far
- * behind the current branch is, warning loudly past a threshold.
+ * A worktree branched a while ago can be many commits behind origin/main, which
+ * can lead to duplicate work on a stale base. This compares against the locally known
+ * origin/main and reports how far behind the current branch is. In the standalone
+ * Ward-Flow repository, startup is offline by default; request a fetch explicitly
+ * when a current remote comparison is needed.
  *
  * ADVISORY ONLY — never exits non-zero on staleness, so it is safe to wire into a
  * SessionStart hook or statusline without ever blocking work. Exit is non-zero
@@ -33,17 +34,18 @@
  * that `npm run check:base-freshness`, the `newtask` skill (step 4) and the `handoff`
  * skill read — it would only add one extra JSON line on stdout.
  *
- * The origin/main fetch is capped at 10s. Claude Code gives a hook a 60s budget, so an
+ * An explicitly requested origin/main fetch is capped at 10s. Claude Code gives a hook a 60s budget, so an
  * un-timed fetch against an unreachable remote could burn the entire SessionStart
- * budget; on timeout we fall back to the last-known origin/main exactly as the offline
- * path already did.
+ * budget; on timeout we use the locally known origin/main.
  *
  * Env:
  *   STALE_BASE_THRESHOLD  commits-behind that triggers the loud warning (default 10)
- *   BASE_FRESHNESS_NO_FETCH=1  skip the network fetch (use last-known origin/main)
+ *   BASE_FRESHNESS_FETCH=1     fetch origin/main in standalone Ward-Flow
+ *   BASE_FRESHNESS_NO_FETCH=1  skip any network fetch (takes precedence)
  * Flags:
  *   --json    machine-readable output
  *   --hook    force SessionStart hook output on stdout (auto-detected; see above)
+ *   --fetch   fetch origin/main in standalone Ward-Flow
  *   --strict  exit 1 when the base ref cannot be resolved (default: exit 0)
  */
 import { execFileSync } from "node:child_process";
@@ -76,7 +78,7 @@ function tryGit(args) {
 
 // The old Database ward line is local-only. The standalone Ward-Flow repository has its
 // own origin/main, so identify the repository before applying that old branch rule.
-const originUrl = tryGit(["remote", "get-url", "origin"]) ?? "";
+const originUrl = tryGit(["config", "--get", "remote.origin.url"]) ?? "";
 const standaloneWardFlow = /(?:^|[/:])BigSimmo\/Ward-Flow(?:\.git)?\/?$/i.test(originUrl);
 const WARD_LINE = "codex/task-ward-flow-live-state-20260831";
 const hasLocalWardLine = Boolean(tryGit(["rev-parse", "--verify", "--quiet", WARD_LINE]));
@@ -188,7 +190,8 @@ if (expectedRoot) {
 
 const branch = tryGit(["rev-parse", "--abbrev-ref", "HEAD"]) ?? "(unknown)";
 
-if (process.env.BASE_FRESHNESS_NO_FETCH !== "1") {
+const fetchRequested = process.argv.includes("--fetch") || process.env.BASE_FRESHNESS_FETCH === "1";
+if (process.env.BASE_FRESHNESS_NO_FETCH !== "1" && (!standaloneWardFlow || fetchRequested)) {
   try {
     // 10s cap: a hook gets ~60s total, and a fetch that hangs (unreachable remote, a
     // credential prompt, a wedged proxy) would otherwise eat the whole SessionStart

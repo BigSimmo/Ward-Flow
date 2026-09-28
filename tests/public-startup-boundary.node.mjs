@@ -4,6 +4,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
+import { pathToFileURL } from "node:url";
 import { approvedTakeoverFiles, signOutConflicts, unsignedWardFiles } from "../scripts/pre-commit-checks.mjs";
 
 const repoRoot = path.resolve(import.meta.dirname, "..");
@@ -57,6 +58,38 @@ test("standalone Ward-Flow hook reports stale origin/main even on a ward branch"
     const hook = JSON.parse(result.stdout.trim());
     assert.match(hook.hookSpecificOutput.additionalContext, /BEHIND origin\/main/);
     assert.doesNotMatch(hook.hookSpecificOutput.additionalContext, /Never merge or rebase origin\/main/);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test("standalone Ward-Flow startup stays offline until fetch is explicitly requested", () => {
+  const cwd = fixture("https://github.com/BigSimmo/Ward-Flow.git");
+  try {
+    const remote = path.join(cwd, "remote.git");
+    git(cwd, "init", "--bare", "-q", remote);
+    git(cwd, "config", `url.${pathToFileURL(remote).href}.insteadOf`, "https://github.com/BigSimmo/Ward-Flow.git");
+    git(cwd, "checkout", "-q", "main");
+    git(cwd, "push", "-q", "origin", "main");
+    git(cwd, "update-ref", "refs/remotes/origin/main", "main~1");
+    git(cwd, "checkout", "-q", "ward/task");
+
+    const cachedHead = git(cwd, "rev-parse", "origin/main");
+    const offline = run(process.execPath, [freshness, "--json"], cwd, {
+      BASE_FRESHNESS_FETCH: "0",
+      BASE_FRESHNESS_NO_FETCH: "0",
+    });
+    assert.equal(offline.status, 0, offline.stderr);
+    assert.equal(JSON.parse(offline.stdout).behind, 1);
+    assert.equal(git(cwd, "rev-parse", "origin/main"), cachedHead);
+
+    const online = run(process.execPath, [freshness, "--json", "--fetch"], cwd, {
+      BASE_FRESHNESS_FETCH: "0",
+      BASE_FRESHNESS_NO_FETCH: "0",
+    });
+    assert.equal(online.status, 0, online.stderr);
+    assert.equal(JSON.parse(online.stdout).behind, 2);
+    assert.notEqual(git(cwd, "rev-parse", "origin/main"), cachedHead);
   } finally {
     rmSync(cwd, { recursive: true, force: true });
   }
