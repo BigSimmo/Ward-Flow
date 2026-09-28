@@ -44,7 +44,6 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { isCanonicalWardFlowRemote, WARD_FLOW_IDENTITY_ANCHOR } from "./guard-push.mjs";
 
 const LINT_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/i;
 const TYPECHECK_EXTENSIONS = /\.(?:[cm]?tsx?)$/i;
@@ -66,6 +65,20 @@ export function activeSignOutLines(signOutText) {
 }
 
 const normalizedFolder = (value) => value.trim().replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
+
+// Kept self-contained because tests copy this script alone into fixture repositories.
+// tests/public-signout-boundary.test.ts asserts both stay identical to guard-push.mjs.
+export const WARD_FLOW_IDENTITY_ANCHOR = "e735c1f8d34df005becf720b96752626a4f1dcc8";
+
+/** Canonical HTTPS, scp-style and ssh:// Ward-Flow URLs, matching the push guard. */
+export function isCanonicalWardFlowRemote(remoteUrl) {
+  return (
+    typeof remoteUrl === "string" &&
+    /^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)BigSimmo\/Ward-Flow(?:\.git)?$/i.test(
+      remoteUrl,
+    )
+  );
+}
 
 const repositoryIdentityCache = new Map();
 

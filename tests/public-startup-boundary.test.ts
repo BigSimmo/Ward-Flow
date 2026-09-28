@@ -4,7 +4,12 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
-import { approvedTakeoverFiles, signOutConflicts, unsignedWardFiles } from "../scripts/pre-commit-checks.mjs";
+import {
+  approvedTakeoverFiles,
+  signOutConflicts,
+  unsignedWardFiles,
+  WARD_FLOW_IDENTITY_ANCHOR,
+} from "../scripts/pre-commit-checks.mjs";
 
 const repoRoot = path.resolve(import.meta.dirname, "..");
 const freshness = path.join(repoRoot, "scripts/check-base-freshness.mjs");
@@ -25,13 +30,23 @@ function git(cwd: string, ...args: string[]) {
   return result.stdout.trim();
 }
 
-function fixture(origin: string) {
+// Ownership checks need history descending from the Ward-Flow identity anchor. Borrow this
+// checkout's objects for that rather than copying them.
+const objects = path.resolve(repoRoot, git(repoRoot, "rev-parse", "--git-common-dir"), "objects").replace(/\\/g, "/");
+
+function fixture(origin: string, { anchored = false } = {}) {
   const cwd = mkdtempSync(path.join(tmpdir(), "ward-startup-"));
   git(cwd, "init", "-q", "-b", "main");
   mkdirSync(path.join(cwd, "scripts"));
   copyFileSync(path.join(repoRoot, "scripts/pre-commit-checks.mjs"), path.join(cwd, "scripts/pre-commit-checks.mjs"));
   git(cwd, "config", "user.name", "Ward Test");
   git(cwd, "config", "user.email", "ward-test@example.invalid");
+  if (anchored) {
+    mkdirSync(path.join(cwd, ".git", "objects", "info"), { recursive: true });
+    writeFileSync(path.join(cwd, ".git", "objects", "info", "alternates"), `${objects}\n`);
+    // The index stays empty, so the first commit below records only the fixture's own files.
+    git(cwd, "update-ref", "refs/heads/main", WARD_FLOW_IDENTITY_ANCHOR);
+  }
   writeFileSync(path.join(cwd, "README.md"), "public ward fixture\n");
   git(cwd, "add", "README.md");
   git(cwd, "commit", "-qm", "base");
@@ -111,12 +126,15 @@ describe("public startup boundary", () => {
   });
 
   it("public sign-out check uses main and ignores Database checkout claims", () => {
-    const cwd = fixture("https://github.com/BigSimmo/Ward-Flow.git");
-    const other = fixture("https://github.com/BigSimmo/Ward-Flow.git");
+    const cwd = fixture("https://github.com/BigSimmo/Ward-Flow.git", { anchored: true });
+    const other = fixture("https://github.com/BigSimmo/Ward-Flow.git", { anchored: true });
     const log = path.join(cwd, "sign-out.md");
     const file = "scripts/ward-flow/sign-out-check.mjs";
     try {
-      writeFileSync(log, `Open sign-outs only\n- date | Old owner | ward/old | D:/Worktrees/Database/ag-old | ${file}\n`);
+      writeFileSync(
+        log,
+        `Open sign-outs only\n- date | Old owner | ward/old | D:/Worktrees/Database/ag-old | ${file}\n`,
+      );
       const env = { WARD_SIGNOUT_FILE: log };
       const clear = run(process.execPath, [signOut, file], cwd, env);
       expect(clear.status, clear.stderr).toBe(0);
@@ -134,7 +152,7 @@ describe("public startup boundary", () => {
 
   it("pre-commit ownership accepts a public sign-out and ignores old Database claims", () => {
     const file = "scripts/ward-flow/sign-out-check.mjs";
-    const root = fixture("https://github.com/BigSimmo/Ward-Flow.git");
+    const root = fixture("https://github.com/BigSimmo/Ward-Flow.git", { anchored: true });
     const log =
       `Open sign-outs only\n` +
       `- date | Old owner | ward/old | D:/Worktrees/Database/ag-old | ${file}\n` +
@@ -149,8 +167,8 @@ describe("public startup boundary", () => {
 
   it("pre-commit ownership still blocks another public branch's claim", () => {
     const file = "scripts/ward-flow/sign-out-check.mjs";
-    const root = fixture("https://github.com/BigSimmo/Ward-Flow.git");
-    const other = fixture("https://github.com/BigSimmo/Ward-Flow.git");
+    const root = fixture("https://github.com/BigSimmo/Ward-Flow.git", { anchored: true });
+    const other = fixture("https://github.com/BigSimmo/Ward-Flow.git", { anchored: true });
     const log =
       `Open sign-outs only\n` +
       `- date | Old owner | ward/old | D:/Worktrees/Database/ag-old | ${file}\n` +
@@ -168,7 +186,7 @@ describe("public startup boundary", () => {
 
   it("old Database ownership does not grant a public takeover", () => {
     const file = "scripts/ward-flow/sign-out-check.mjs";
-    const root = fixture("https://github.com/BigSimmo/Ward-Flow.git");
+    const root = fixture("https://github.com/BigSimmo/Ward-Flow.git", { anchored: true });
     const log =
       `Open sign-outs only\n` +
       `- date | Old owner | ward/startup-boundary | D:/Worktrees/Database/ag-old | ${file} (approved takeover by Josh: old checkout only)\n`;

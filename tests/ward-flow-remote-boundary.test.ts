@@ -32,7 +32,7 @@ function withoutGh(): string {
 }
 
 afterAll(() => {
-  if (gitShim) rmSync(gitShim, { recursive: true, force: true });
+  if (gitShim) rmSync(gitShim, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 function run(remoteUrl?: string, pushInput = stdin, envOverrides: Record<string, string> = {}) {

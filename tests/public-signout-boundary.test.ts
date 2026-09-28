@@ -3,8 +3,14 @@ import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { WARD_FLOW_IDENTITY_ANCHOR } from "../scripts/guard-push.mjs";
-import { isPublicWardFlowCheckout, scopedActiveSignOutLines, signOutConflicts } from "../scripts/pre-commit-checks.mjs";
+import * as guardPush from "../scripts/guard-push.mjs";
+import {
+  isCanonicalWardFlowRemote,
+  isPublicWardFlowCheckout,
+  scopedActiveSignOutLines,
+  signOutConflicts,
+  WARD_FLOW_IDENTITY_ANCHOR,
+} from "../scripts/pre-commit-checks.mjs";
 
 const SCRIPT = resolve("scripts/pre-commit-checks.mjs");
 const SIGN_OUT_CHECK = resolve("scripts/ward-flow/sign-out-check.mjs");
@@ -45,6 +51,21 @@ afterEach(() => {
 });
 
 describe("public repository ownership boundary", () => {
+  it("keeps the ownership identity identical to the push guard's", () => {
+    expect(WARD_FLOW_IDENTITY_ANCHOR).toBe(guardPush.WARD_FLOW_IDENTITY_ANCHOR);
+    for (const url of [
+      "https://github.com/BigSimmo/Ward-Flow.git",
+      "https://github.com/BigSimmo/Ward-Flow",
+      "git@github.com:BigSimmo/Ward-Flow.git",
+      "ssh://git@github.com/BigSimmo/Ward-Flow.git",
+      "https://github.com/BigSimmo/Database.git",
+      "https://github.com/BigSimmo/Ward-Flow.git.evil",
+      "",
+    ]) {
+      expect(isCanonicalWardFlowRemote(url), url).toBe(guardPush.isCanonicalWardFlowRemote(url));
+    }
+  });
+
   it("recognises a verified checkout at an arbitrary path and rejects a wrong push destination", () => {
     const publicRoot = publicRepo();
     expect(isPublicWardFlowCheckout(publicRoot)).toBe(true);
@@ -117,7 +138,6 @@ describe("public repository ownership boundary", () => {
     git(root, "checkout", "--quiet", "-b", "codex/mine");
     mkdirSync(join(root, "scripts"), { recursive: true });
     copyFileSync(SCRIPT, join(root, "scripts/pre-commit-checks.mjs"));
-    copyFileSync(resolve("scripts/guard-push.mjs"), join(root, "scripts/guard-push.mjs"));
     writeFileSync(join(root, "package.json"), '{"type":"module"}\n');
     const signOutFile = join(root, "sign-out.md");
     writeFileSync(signOutFile, "Open sign-outs only\n");
