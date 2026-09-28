@@ -3,7 +3,7 @@
 import React, { useCallback, useId, useMemo, useState } from "react";
 import { AlertTriangle, Clock } from "lucide-react";
 
-import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useOptionalWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "@/components/ward-management/ward-legal-clock";
 import { formTitleForCode } from "@/lib/form-register";
 import styles from "./ward-mha-calculator.module.css";
@@ -37,12 +37,28 @@ export interface FormDisplayRecord {
   safeguardMessage: string | null;
 }
 
+const perthDateTime = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Australia/Perth",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+  weekday: "short",
+});
+
+function perthParts(date: Date): Record<string, string> {
+  return Object.fromEntries(perthDateTime.formatToParts(date).map(({ type, value }) => [type, value]));
+}
+
 /**
  * Checks if a moment falls outside standard business hours (17:00 to 08:00).
  * In WA hospital practice, normal day cover is 08:00 to 16:59:59.
  */
 export function isAfterHours(date: Date): boolean {
-  const hours = date.getHours();
+  if (Number.isNaN(date.getTime())) return false;
+  const hours = Number(perthParts(date).hour);
   return hours >= 17 || hours < 8;
 }
 
@@ -50,8 +66,8 @@ export function isAfterHours(date: Date): boolean {
  * Checks if a date falls on a weekend (Saturday or Sunday).
  */
 export function isWeekend(date: Date): boolean {
-  const day = date.getDay();
-  return day === 0 || day === 6; // 0 = Sunday, 6 = Saturday
+  if (Number.isNaN(date.getTime())) return false;
+  return ["Sat", "Sun"].includes(perthParts(date).weekday);
 }
 
 /**
@@ -94,7 +110,7 @@ export function checkSafeguardAlert(date: Date | null): SafeguardAlertResult {
 }
 
 /**
- * Formats a Date into standard en-AU date & time: "Fri, 25 Sep 2026, 17:00".
+ * Formats a Date into standard en-AU date & time: "Fri, 25 Sep 2026, 17:00" in AWST (Australia/Perth).
  */
 export function formatStatutoryDateTime(d: Date): string {
   if (Number.isNaN(d.getTime())) return "Not recorded";
@@ -103,36 +119,37 @@ export function formatStatutoryDateTime(d: Date): string {
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: "Australia/Perth",
   });
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  return `${dayStr}, ${hours}:${minutes}`;
+  const timeStr = d.toLocaleTimeString("en-AU", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Australia/Perth",
+  });
+  return `${dayStr}, ${timeStr}`;
 }
 
 export function toDateInputValue(d: Date): string {
   if (Number.isNaN(d.getTime())) return "";
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+  const { year, month, day } = perthParts(d);
   return `${year}-${month}-${day}`;
 }
 
 export function toTimeInputValue(d: Date): string {
   if (Number.isNaN(d.getTime())) return "";
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  return `${hours}:${minutes}`;
+  const { hour, minute } = perthParts(d);
+  return `${hour}:${minute}`;
 }
 
 export function parseDateTimeInput(dateStr: string, timeStr: string): Date | null {
-  if (!dateStr) return null;
-  const parts = dateStr.split("-").map(Number);
-  if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
-  const [year, month, day] = parts;
-  const timeParts = timeStr ? timeStr.split(":").map(Number) : [0, 0];
-  const [hours, minutes] = timeParts;
-  const parsed = new Date(year, month - 1, day, hours || 0, minutes || 0, 0, 0);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr) || (timeStr && !/^\d{2}:\d{2}$/.test(timeStr))) return null;
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const [hours, minutes] = (timeStr || "00:00").split(":").map(Number);
+  if (year < 100 || month < 1 || month > 12 || day < 1 || day > 31 || hours > 23 || minutes > 59) return null;
+  // Perth observes UTC+08:00 throughout the year. Interpret the typed wall time there.
+  const parsed = new Date(Date.UTC(year, month - 1, day, hours - 8, minutes));
+  return toDateInputValue(parsed) === dateStr && toTimeInputValue(parsed) === (timeStr || "00:00") ? parsed : null;
 }
 
 /**
@@ -194,23 +211,17 @@ export const calculateForm4B = getForm4BRecord;
 
 /**
  * Safely resolves the current reference clock moment.
- * Reads `useWardFlowClock()` when mounted inside `WardFlowProvider`,
+ * Reads `useWardFlowClock()` at top level when mounted inside `WardFlowProvider`,
  * or falls back to standard wall clock when mounted in tests or standalone.
  */
 function useResolvedClock(override?: Date): Date {
-  let demoInstant: number | null = null;
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    demoInstant = useWardFlowClock();
-  } catch {
-    demoInstant = null;
-  }
+  const demoInstant = useOptionalWardFlowClock();
 
   return useMemo(() => {
     if (override) return override;
     if (demoInstant !== null) {
       const today = new Date();
-      const dayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const dayZero = parseDateTimeInput(toDateInputValue(today), "00:00") ?? today;
       return new Date(dayZero.getTime() + demoInstant * 60_000);
     }
     return new Date();
@@ -221,6 +232,7 @@ export interface WardMhaCalculatorProps {
   initialForm?: MhaFormType;
   initialStartDate?: Date;
   referenceNow?: Date;
+  now?: Date;
   className?: string;
 }
 
@@ -228,9 +240,11 @@ export function WardMhaCalculator({
   initialForm = "1A",
   initialStartDate,
   referenceNow,
+  now: propNow,
   className,
 }: WardMhaCalculatorProps) {
-  const now = useResolvedClock(referenceNow);
+  const effectiveNow = propNow ?? referenceNow;
+  const now = useResolvedClock(effectiveNow);
   const defaultDate = initialStartDate ?? now;
 
   const [selectedForm, setSelectedForm] = useState<MhaFormType>(initialForm);
@@ -265,10 +279,12 @@ export function WardMhaCalculator({
     (preset: "today-0900" | "yesterday-1800" | "offset-48h" | "offset-70h" | "offset-20d") => {
       const target = new Date(now.getTime());
       if (preset === "today-0900") {
-        target.setHours(9, 0, 0, 0);
+        target.setTime(parseDateTimeInput(toDateInputValue(now), "09:00")?.getTime() ?? now.getTime());
       } else if (preset === "yesterday-1800") {
-        target.setDate(target.getDate() - 1);
-        target.setHours(18, 0, 0, 0);
+        target.setTime(
+          parseDateTimeInput(toDateInputValue(new Date(now.getTime() - 86_400_000)), "18:00")?.getTime() ??
+            now.getTime(),
+        );
       } else if (preset === "offset-48h") {
         target.setTime(target.getTime() - 48 * 60 * 60 * 1000);
       } else if (preset === "offset-70h") {
@@ -290,7 +306,7 @@ export function WardMhaCalculator({
       <header className={styles.headerBlock}>
         <div className={styles.titleArea}>
           <h3 className={styles.title}>MHA Deadline Calculator</h3>
-          <p className={styles.subtitle}>WA Mental Health Act Statutory Forms</p>
+          <p className={styles.subtitle}>WA mental health forms · entered dates only</p>
           <p className={styles.subtitle} role="note" data-testid="legal-limits-not-checked">
             {LEGAL_LIMITS_NOT_CHECKED_NOTICE}
           </p>

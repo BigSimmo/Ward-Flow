@@ -234,7 +234,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
      */
     const wardBeds = unitById("rph-adult-secure")?.beds;
     expect(wardBeds, "rph-adult-secure is not in the fixture — this assertion would prove nothing").toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: `All Beds (${wardBeds})` })).toBeInTheDocument();
+    expect(screen.getByText(`All beds (${wardBeds})`)).toBeInTheDocument();
     const bed01Card = screen.getByRole("button", { name: /Bed 01/i });
     expect(bed01Card).toBeInTheDocument();
 

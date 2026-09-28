@@ -14,10 +14,14 @@ import {
   toTimeInputValue,
 } from "@/components/ward-management/tools/ward-mha-calculator";
 
+function perthDate(day: number, hour = 0, minute = 0, second = 0, millisecond = 0): Date {
+  return new Date(Date.UTC(2026, 8, day, hour - 8, minute, second, millisecond));
+}
+
 describe("Mental Health Act Form Record (Calculator)", () => {
   describe("Form 1A (Referral for examination by a psychiatrist)", () => {
     it("uses official form title and does not compute statutory deadlines or statuses", () => {
-      const entered = new Date(2026, 8, 25, 9, 0, 0, 0);
+      const entered = perthDate(25, 9, 0, 0, 0);
       const result = calculateForm1A(entered);
 
       expect(result.officialTitle).toBe("Form 1A (Referral for examination by a psychiatrist)");
@@ -36,7 +40,7 @@ describe("Mental Health Act Form Record (Calculator)", () => {
 
   describe("Form 3A (Detention order)", () => {
     it("uses official form title and shows entered time marked Not legally checked", () => {
-      const entered = new Date(2026, 8, 26, 14, 30, 0, 0);
+      const entered = perthDate(26, 14, 30, 0, 0);
       const result = calculateForm3A(entered);
 
       expect(result.officialTitle).toBe("Form 3A (Detention order)");
@@ -54,7 +58,7 @@ describe("Mental Health Act Form Record (Calculator)", () => {
 
   describe("Form 4B (Extension of transport order)", () => {
     it("uses official form title and displays entered time", () => {
-      const entered = new Date(2026, 8, 27, 10, 15, 0, 0);
+      const entered = perthDate(27, 10, 15, 0, 0);
       const result = calculateForm4B(entered);
 
       expect(result.officialTitle).toBe("Form 4B (Extension of transport order)");
@@ -72,7 +76,7 @@ describe("Mental Health Act Form Record (Calculator)", () => {
 
   describe("No Act section numbers or computed legal expiry statuses", () => {
     it("never emits section numbers or computed statuses in records", () => {
-      const testDate = new Date(2026, 8, 25, 12, 0, 0);
+      const testDate = perthDate(25, 12, 0, 0);
       const records = [calculateForm1A(testDate), calculateForm3A(testDate), calculateForm4B(testDate)];
 
       for (const rec of records) {
@@ -89,32 +93,32 @@ describe("Mental Health Act Form Record (Calculator)", () => {
   describe("Weekend and After-Hours Safeguard Logic", () => {
     describe("isAfterHours", () => {
       it("identifies after-hours correctly (17:00 to 08:00)", () => {
-        expect(isAfterHours(new Date(2026, 8, 25, 8, 0, 0))).toBe(false);
-        expect(isAfterHours(new Date(2026, 8, 25, 12, 30, 0))).toBe(false);
-        expect(isAfterHours(new Date(2026, 8, 25, 16, 59, 59))).toBe(false);
+        expect(isAfterHours(perthDate(25, 8, 0, 0))).toBe(false);
+        expect(isAfterHours(perthDate(25, 12, 30, 0))).toBe(false);
+        expect(isAfterHours(perthDate(25, 16, 59, 59))).toBe(false);
 
-        expect(isAfterHours(new Date(2026, 8, 25, 17, 0, 0))).toBe(true);
-        expect(isAfterHours(new Date(2026, 8, 25, 18, 30, 0))).toBe(true);
-        expect(isAfterHours(new Date(2026, 8, 25, 23, 59, 0))).toBe(true);
+        expect(isAfterHours(perthDate(25, 17, 0, 0))).toBe(true);
+        expect(isAfterHours(perthDate(25, 18, 30, 0))).toBe(true);
+        expect(isAfterHours(perthDate(25, 23, 59, 0))).toBe(true);
 
-        expect(isAfterHours(new Date(2026, 8, 25, 0, 0, 0))).toBe(true);
-        expect(isAfterHours(new Date(2026, 8, 25, 4, 15, 0))).toBe(true);
-        expect(isAfterHours(new Date(2026, 8, 25, 7, 59, 59))).toBe(true);
+        expect(isAfterHours(perthDate(25, 0, 0, 0))).toBe(true);
+        expect(isAfterHours(perthDate(25, 4, 15, 0))).toBe(true);
+        expect(isAfterHours(perthDate(25, 7, 59, 59))).toBe(true);
       });
     });
 
     describe("isWeekend", () => {
       it("identifies Saturday and Sunday as weekends and weekdays as non-weekend", () => {
-        expect(isWeekend(new Date(2026, 8, 25))).toBe(false); // Friday
-        expect(isWeekend(new Date(2026, 8, 26))).toBe(true); // Saturday
-        expect(isWeekend(new Date(2026, 8, 27))).toBe(true); // Sunday
-        expect(isWeekend(new Date(2026, 8, 28))).toBe(false); // Monday
+        expect(isWeekend(perthDate(25))).toBe(false); // Friday
+        expect(isWeekend(perthDate(26))).toBe(true); // Saturday
+        expect(isWeekend(perthDate(27))).toBe(true); // Sunday
+        expect(isWeekend(perthDate(28))).toBe(false); // Monday
       });
     });
 
     describe("checkSafeguardAlert", () => {
       it("triggers no alert during weekday business hours", () => {
-        const weekdayDaytime = new Date(2026, 8, 25, 14, 0, 0);
+        const weekdayDaytime = perthDate(25, 14, 0, 0);
         const alert = checkSafeguardAlert(weekdayDaytime);
 
         expect(alert.alertRequired).toBe(false);
@@ -124,7 +128,7 @@ describe("Mental Health Act Form Record (Calculator)", () => {
       });
 
       it("triggers alert when time written falls after-hours on a weekday", () => {
-        const weekdayAfterHours = new Date(2026, 8, 25, 19, 30, 0);
+        const weekdayAfterHours = perthDate(25, 19, 30, 0);
         const alert = checkSafeguardAlert(weekdayAfterHours);
 
         expect(alert.alertRequired).toBe(true);
@@ -135,7 +139,7 @@ describe("Mental Health Act Form Record (Calculator)", () => {
       });
 
       it("triggers alert when time written falls on a weekend daytime", () => {
-        const weekendDaytime = new Date(2026, 8, 26, 11, 0, 0);
+        const weekendDaytime = perthDate(26, 11, 0, 0);
         const alert = checkSafeguardAlert(weekendDaytime);
 
         expect(alert.alertRequired).toBe(true);
@@ -149,7 +153,7 @@ describe("Mental Health Act Form Record (Calculator)", () => {
       // test stays. Only tests of computed durations and statuses went with the ruling.
       it("triggers alert when time written falls on a weekend after-hours", () => {
         // Sunday 21:00
-        const weekendAfterHours = new Date(2026, 8, 27, 21, 0, 0);
+        const weekendAfterHours = perthDate(27, 21, 0, 0);
         const alert = checkSafeguardAlert(weekendAfterHours);
 
         expect(alert.alertRequired).toBe(true);
@@ -160,7 +164,7 @@ describe("Mental Health Act Form Record (Calculator)", () => {
 
       it("integrates the safeguard alert into the Form 1A record from the typed time alone", () => {
         // Saturday 26 Sep 2026 at 18:00, typed from the form: weekend AND after-hours.
-        const typed = new Date(2026, 8, 26, 18, 0, 0);
+        const typed = perthDate(26, 18, 0, 0);
         const result = calculateForm1A(typed);
 
         expect(result.safeguardAlert).toBe(true);
@@ -178,8 +182,15 @@ describe("Mental Health Act Form Record (Calculator)", () => {
   });
 
   describe("Formatters and Input Parsers", () => {
+    it("interprets a typed Perth after-hours time as the same instant on every host", () => {
+      const typed = parseDateTimeInput("2026-09-25", "17:00");
+      expect(typed?.toISOString()).toBe("2026-09-25T09:00:00.000Z");
+      expect(toTimeInputValue(typed!)).toBe("17:00");
+      expect(isAfterHours(typed!)).toBe(true);
+    });
+
     it("formats statutory date and time string in en-AU format", () => {
-      const date = new Date(2026, 8, 25, 14, 30, 0);
+      const date = perthDate(25, 14, 30, 0);
       const formatted = formatStatutoryDateTime(date);
       expect(formatted).toContain("25");
       expect(formatted).toContain("2026");
@@ -187,13 +198,13 @@ describe("Mental Health Act Form Record (Calculator)", () => {
     });
 
     it("formats entered expiry notice", () => {
-      const date = new Date(2026, 8, 25, 14, 30, 0);
+      const date = perthDate(25, 14, 30, 0);
       expect(formatEnteredExpiryNotice(date)).toBe(`Expiry written on form: ${formatStatutoryDateTime(date)}`);
       expect(formatEnteredExpiryNotice(null)).toBe("Not recorded");
     });
 
     it("converts Date to HTML input strings and back accurately", () => {
-      const date = new Date(2026, 8, 25, 9, 15, 0);
+      const date = perthDate(25, 9, 15, 0);
       const dateStr = toDateInputValue(date);
       const timeStr = toTimeInputValue(date);
 
@@ -202,11 +213,7 @@ describe("Mental Health Act Form Record (Calculator)", () => {
 
       const roundTrip = parseDateTimeInput(dateStr, timeStr);
       expect(roundTrip).not.toBeNull();
-      expect(roundTrip!.getFullYear()).toBe(2026);
-      expect(roundTrip!.getMonth()).toBe(8);
-      expect(roundTrip!.getDate()).toBe(25);
-      expect(roundTrip!.getHours()).toBe(9);
-      expect(roundTrip!.getMinutes()).toBe(15);
+      expect(roundTrip!.getTime()).toBe(date.getTime());
     });
 
     it("returns null for empty date input", () => {
