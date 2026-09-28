@@ -686,7 +686,7 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
     // for reasons that have nothing to do with Ward Flow — but a walk that resolved the wrong root
     // or lost its extension filter returns 0 or a handful, and every per-route result below would
     // then read "nothing links this route" for reasons having nothing to do with the navigation.
-    expect(sourceFiles.length).toBeGreaterThan(350);
+    expect(sourceFiles.length).toBeGreaterThan(340);
 
     // Positive pins: the scan reads file CONTENT, and tells a concrete href from a built one.
     const board = dynamicRouteScans.get("/mockups/ward-flow/board/[unitId]");

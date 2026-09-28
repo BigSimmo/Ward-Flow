@@ -91,14 +91,14 @@ function renderScreen() {
  * concepts asserted here (invented data, no real hospital, not a clinical record) are the substance
  * an old "not a medical device" reader was also relying on, restated in this screen's own words.
  */
-describe("Case 1 — Capacity identifies synthetic data beside its current provenance", () => {
-  it("keeps the synthetic marker and both provenance clocks visible", () => {
+describe("Case 1 — Capacity identifies synthetic data via the governance footer", () => {
+  it("keeps the synthetic prototype disclosure visible in the footer", () => {
     renderScreen();
     // Hospital names are real directory facts. The synthetic marker applies to the operational data.
-    const provenance = screen.getByLabelText("Capacity data provenance");
-    expect(within(provenance).getByText("Synthetic prototype")).toBeVisible();
-    expect(provenance).toHaveTextContent(/Latest ward confirmation:/u);
-    expect(provenance).toHaveTextContent(/Demo clock/u);
+    const governance = screen.getByTestId("ward-capacity-governance");
+    expect(within(governance).getByText("Synthetic prototype")).toBeVisible();
+    expect(governance).toHaveTextContent(/Statewide bed capacity/u);
+    expect(governance).toHaveTextContent(/Not a medical device/u);
   });
 });
 

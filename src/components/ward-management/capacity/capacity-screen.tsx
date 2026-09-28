@@ -5,7 +5,7 @@ import Link from "next/link";
 import { LEAVING_DESTINATIONS } from "../ward-admissions";
 
 import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { DischargeOpenHandle, DischargeRecord, WardRecordActor } from "../ward-discharge-records";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
@@ -330,16 +330,9 @@ export function CapacityScreen() {
            * prototype; this says the TIME beside these bed counts is a demo clock rather than now,
            * which is the fact a coordinator would otherwise read as live.
            */}
-          <p className={styles.snapshotTime} aria-label="Capacity data provenance">
-            <span
-              className={styles.liveDot}
-              data-live={latestConfirmation !== null ? "true" : "false"}
-              aria-hidden="true"
-            />
-            <span className={styles.prototypeBadge}>Synthetic prototype</span> Latest ward confirmation:{" "}
-            {latestConfirmation === null ? "not recorded" : formatInstantWithDay(latestConfirmation, now)}{" "}
-            <span>· Demo clock {formatInstantWithDay(now, now)}</span>
-          </p>
+          {/*
+           * Provenance badge removed as prototype is disclosed at page footer.
+           */}
           <WardPanel
             title="Where the mismatch is"
             count={`${gapTotals.waiting} waiting, ${gapTotals.bedsThatFit} beds that fit`}
@@ -375,17 +368,6 @@ export function CapacityScreen() {
                 </tr>
               </tfoot>
             </WardTable>
-            <details className={styles.groupDefinitions}>
-              <summary>About the bed groups</summary>
-              <dl>
-                {gapRows.map((row) => (
-                  <div key={row.id}>
-                    <dt>{row.need}</dt>
-                    <dd>{row.who}</dd>
-                  </div>
-                ))}
-              </dl>
-            </details>
           </WardPanel>
           {/*
             🔴 **§2: "The mismatch band stays whole-network." — SO NOTHING ABOVE THIS LINE CHANGED.**
@@ -557,8 +539,18 @@ export function CapacityScreen() {
               count={`${networkRows.length} ${networkRows.length === 1 ? "ward" : "wards"} in the network, ${matchingNetworkRows.length} matching`}
             >
               <div className={styles.filters}>
+                <WardFilters
+                  legend="Highlight wards"
+                  activeId={networkFilterId}
+                  onChange={setNetworkFilterId}
+                  options={networkFilters.map((option) => ({
+                    id: option.id,
+                    label: option.label,
+                    count: networkRows.filter(option.predicate).length,
+                  }))}
+                />
                 <label className={styles.sortControl}>
-                  Order{" "}
+                  <span className={styles.sortLabel}>Order</span>
                   <select
                     id="capacity-ward-sort"
                     name="wardSort"
@@ -571,16 +563,6 @@ export function CapacityScreen() {
                     <option value="confirmation">Oldest confirmation</option>
                   </select>
                 </label>
-                <WardFilters
-                  legend="Highlight wards"
-                  activeId={networkFilterId}
-                  onChange={setNetworkFilterId}
-                  options={networkFilters.map((option) => ({
-                    id: option.id,
-                    label: option.label,
-                    count: networkRows.filter(option.predicate).length,
-                  }))}
-                />
               </div>
               <div className={styles.networkBody} role="region" aria-label="Ward capacity table" tabIndex={0}>
                 <WardTable
@@ -947,7 +929,11 @@ function NetworkRow({
           ⚠️ The word REPLACES the digit and never sits beside it. A cell reading "0 none" passes a
           careless assertion and is worse than either alone.
         */}
-        {row.ready === 0 ? <span className={styles.statedZero}>{countCellText(row.ready)}</span> : row.ready}
+        {row.ready === 0 ? (
+          <span className={styles.statedZero}>{countCellText(row.ready)}</span>
+        ) : (
+          <span className={styles.readyBadge}>{row.ready}</span>
+        )}
         {row.pendingPreparation !== undefined && row.pendingPreparation > 0 ? (
           <small className={styles.beingMadeReady} data-testid="ward-capacity-network-pending">
             {row.pendingPreparation} still being made ready
@@ -966,7 +952,7 @@ function NetworkRow({
         {row.lockedReady === 0 ? (
           <span className={styles.statedZero}>{countCellText(row.lockedReady)}</span>
         ) : (
-          row.lockedReady
+          <span className={styles.lockedBadge}>{row.lockedReady}</span>
         )}
       </td>
       <td
@@ -1000,7 +986,11 @@ function NetworkRow({
         data-testid="ward-capacity-network-blocked"
         className={row.blocked === undefined ? styles.notTracked : row.blocked === 0 ? styles.statedZero : undefined}
       >
-        {freeingCellText(row.blocked)}
+        {row.blocked === undefined || row.blocked === 0 ? (
+          freeingCellText(row.blocked)
+        ) : (
+          <span className={styles.blockedBadge}>{freeingCellText(row.blocked)}</span>
+        )}
         {/*
           WLQ-10, owner ruling 2026-09-15: while a discharge is still held up it keeps counting in
           `row.blocked` above — that figure is unchanged by this task — and the screen additionally
@@ -1012,7 +1002,9 @@ function NetworkRow({
         */}
         {row.oldestBlockedSince !== undefined ? (
           <small className={styles.beingMadeReady} data-testid="ward-capacity-network-blocked-since">
-            held up since {formatInstantWithDay(row.oldestBlockedSince, now)}
+            {dayOf(row.oldestBlockedSince) > dayOf(now)
+              ? `expected release in ${dayOf(row.oldestBlockedSince) - dayOf(now)} days`
+              : `held up since ${formatInstantWithDay(row.oldestBlockedSince, now)}`}
           </small>
         ) : null}
       </td>
@@ -1143,7 +1135,11 @@ function NetworkRow({
         statutory fact, in the codebase's existing wording. Nothing here decides eligibility;
         `ward-eligibility.ts` owns that and still refuses at the point of action.
       */}
-      <td data-testid={`ward-capacity-authorised-${row.unit.id}`}>{row.unit.authorised ? "Yes" : "No"}</td>
+      <td data-testid={`ward-capacity-authorised-${row.unit.id}`}>
+        <span className={row.unit.authorised ? styles.authYes : styles.authNo}>
+          {row.unit.authorised ? "Yes" : "No"}
+        </span>
+      </td>
       <td>
         {/*
           🔴 WHO CONFIRMED IT, RESTORED 2026-09-05 — MY FOLD DROPPED IT AND A GREEN TEST HID THAT.
@@ -1278,11 +1274,12 @@ function NetworkServiceGroupRows({
               onClick={() => setOpen((wasOpen) => !wasOpen)}
             >
               <span className={styles.foldIcon} aria-hidden="true">
-                {open ? "−" : "+"}
+                {open ? "▾" : "▸"}
               </span>
-              <span>{open ? "Hide" : "Show"} {group.service}</span>
+              <span className={styles.groupServiceName}>{group.service}</span>
+              <span className={styles.groupWardBadge}>{totals.wards === 1 ? "1 ward" : `${totals.wards} wards`}</span>
+              <span className={styles.srOnly}>{open ? "Hide" : "Show"}</span>
             </button>
-            <span className={styles.groupWardCount}>{totals.wards === 1 ? "1 ward" : `${totals.wards} wards`}</span>
           </th>
           {/*
             ⚠️ Bed kinds served is a per-ward FACT (which kinds this ward offers), not a quantity —
@@ -1291,8 +1288,20 @@ function NetworkServiceGroupRows({
             and is not (see `networkServiceGroupTotals`'s own doc comment).
           */}
           <td className={styles.groupNoSummary}>By ward</td>
-          <td>{countCellText(totals.ready)}</td>
-          <td>{countCellText(totals.lockedReady)}</td>
+          <td>
+            {totals.ready === 0 ? (
+              <span className={styles.statedZero}>{countCellText(totals.ready)}</span>
+            ) : (
+              <span className={styles.readyBadge}>{totals.ready}</span>
+            )}
+          </td>
+          <td>
+            {totals.lockedReady === 0 ? (
+              <span className={styles.statedZero}>{countCellText(totals.lockedReady)}</span>
+            ) : (
+              <span className={styles.lockedBadge}>{totals.lockedReady}</span>
+            )}
+          </td>
           <td>{freeingCellText(totals.freeing)}</td>
           <td>{freeingCellText(totals.confirmed)}</td>
           <td>{freeingCellText(totals.expected)}</td>

@@ -1999,7 +1999,7 @@
   align-items: baseline;
   padding: 8px 12px;
   margin: 1px 4px;
-  border-radius: var(--r-sm, 6px);
+  border-radius: var(--radius-sm, 6px);
   border-bottom: 1px solid var(--line);
   font-size: var(--t-1);
   transition: background 0.12s ease;
