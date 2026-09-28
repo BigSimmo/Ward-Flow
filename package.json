@@ -120,7 +120,7 @@
     "check:dev-drive-cache": "node scripts/check-dev-drive-cache.mjs --self-test && node scripts/check-dev-drive-cache.mjs",
     "design-system:token-divergence:update": "node scripts/token-layer-divergences.mjs --write",
     "check:design-system-contract": "node scripts/token-layer-divergences.mjs",
-    "test:ci-workflows": "node scripts/run-vitest.mjs run tests/ci-cache-safety.test.ts tests/test-runner-safety.test.ts tests/installed-lock-parity.test.ts"
+    "test:ci-workflows": "node scripts/run-vitest.mjs run tests/ci-cache-safety.test.ts tests/test-runner-safety.test.ts tests/installed-lock-parity.test.ts tests/ward-backend-ci.test.ts"
   },
   "dependencies": {
     "@next/env": "16.3.3",
