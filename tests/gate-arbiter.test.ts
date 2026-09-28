@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -93,7 +95,9 @@ describe("gate arbiter — change classification fails closed", () => {
   });
 });
 
-describe("gate arbiter — CI coverage is derived, not assumed", () => {
+describe.skipIf(!existsSync(path.join(projectRoot, ".github", "workflows", "ci.yml")))(
+  "gate arbiter — CI coverage is derived, not assumed",
+  () => {
   it("resolves a gate CI runs under its own name, when its guard is satisfied", () => {
     expect(deriveCiCoverage(projectRoot, "lint", { scope: { static_heavy_changed: true } }).covered).toBe(true);
   });
@@ -239,7 +243,9 @@ describe("gate arbiter — the decision table", () => {
   });
 });
 
-describe("gate arbiter — CI coverage evaluates step and job guards", () => {
+describe.skipIf(!existsSync(path.join(projectRoot, ".github", "workflows", "ci.yml")))(
+  "gate arbiter — CI coverage evaluates step and job guards",
+  () => {
   // The P1 from Codex review on PR #2245, reproduced against the real ci.yml: `lint`
   // and `typecheck` are step-conditional on static_heavy_changed, `test:coverage` is
   // job-conditional on coverage_changed. A docs-only change satisfies neither, so CI

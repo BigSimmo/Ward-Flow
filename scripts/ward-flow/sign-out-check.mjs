@@ -13,7 +13,17 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 
-const LINE = "codex/task-ward-flow-live-state-20260831";
+function resolveLineRef() {
+  try {
+    execFileSync("git", ["rev-parse", "--verify", "--quiet", "codex/task-ward-flow-live-state-20260831"], {
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    return "codex/task-ward-flow-live-state-20260831";
+  } catch {
+    return "main";
+  }
+}
+const LINE = resolveLineRef();
 const SIGN_OUT = process.env.WARD_SIGNOUT_FILE ?? "D:/Repos/ward-flow-logs/sign-out.md";
 // --stale: list Active sign-out lines whose branches are all folded into the line or gone, so the
 // steward can clear them after each fold. Lists only; it never edits the file.

@@ -103,9 +103,8 @@ UNMAPPED rather than disappearing.
 - `/queue`
 - `/transport`
 
-### ⚠️ UNREACHABLE — a screen component nothing imports — 5
+### ⚠️ UNREACHABLE — a screen component nothing imports — 4
 
-- `src/components/ward-management/board/ward-bed-board.tsx`
 - `src/components/ward-management/community/community-home.tsx`
 - `src/components/ward-management/ed/ed-home.tsx`
 - `src/components/ward-management/escalation/escalation-board.tsx`

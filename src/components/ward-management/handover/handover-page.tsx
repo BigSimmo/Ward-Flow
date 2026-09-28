@@ -494,10 +494,10 @@ export function HandoverPage() {
     return relevantUnits.reduce((acc, u) => acc + (u.allocatable?.value ?? 0), 0);
   }, [units, scope]);
 
-  // Current referrals seeking bed placement
+  // Current referrals seeking bed placement (scoped by inScopeMovements)
   const currentReferralsCount = useMemo(() => {
-    return openMovements.filter((m) => m.stage === "placement_requested" || m.stage === "destination_review").length;
-  }, [openMovements]);
+    return inScopeMovements.filter((m) => m.stage === "placement_requested" || m.stage === "destination_review").length;
+  }, [inScopeMovements]);
 
   const speciallingInScopeCount = useMemo(
     () => inScopeMovements.filter((m) => m.specialling || m.flaggedUrgent).length,
@@ -543,9 +543,20 @@ export function HandoverPage() {
       }));
   }, [inScopeAdmissions, patients, referrals, units]);
 
+  const [longStayPage, setLongStayPage] = useState(1);
+  const LONG_STAY_PAGE_SIZE = 20;
+
   const longStayAdmissions = useMemo(() => {
     return inScopeAdmissions.filter((adm) => adm.state === "occupied" && (daysInBed(adm, now) ?? 0) >= 7);
   }, [inScopeAdmissions, now]);
+
+  const totalLongStayPages = Math.max(1, Math.ceil(longStayAdmissions.length / LONG_STAY_PAGE_SIZE));
+  const currentLongStayPage = Math.min(longStayPage, totalLongStayPages);
+
+  const pagedLongStayAdmissions = useMemo(() => {
+    const start = (currentLongStayPage - 1) * LONG_STAY_PAGE_SIZE;
+    return longStayAdmissions.slice(start, start + LONG_STAY_PAGE_SIZE);
+  }, [longStayAdmissions, currentLongStayPage]);
 
   const unrecordedBarriersCount = useMemo(() => {
     return longStayAdmissions.filter((adm) => !adm.dischargeBarrier).length;
@@ -860,7 +871,7 @@ export function HandoverPage() {
                   aria-checked={selectedShift === "morning"}
                   onClick={() => setSelectedShift("morning")}
                 >
-                  Morning 07:00–15:00
+                  Morning 07:00–15:30 AWST
                   {handoverCompletionFlags.morning ? (
                     <span className={pageStyles.shiftHandoverFlag} data-testid="ward-handover-morning-not-recorded">
                       · handover not recorded
@@ -874,7 +885,7 @@ export function HandoverPage() {
                   aria-checked={selectedShift === "afternoon"}
                   onClick={() => setSelectedShift("afternoon")}
                 >
-                  Afternoon 15:00–00:00
+                  Afternoon 15:00–23:30 AWST
                   {handoverCompletionFlags.afternoon ? (
                     <span className={pageStyles.shiftHandoverFlag} data-testid="ward-handover-afternoon-not-recorded">
                       · handover not recorded
@@ -888,7 +899,7 @@ export function HandoverPage() {
                   aria-checked={selectedShift === "night"}
                   onClick={() => setSelectedShift("night")}
                 >
-                  Night 23:00–07:30
+                  Night 23:00–07:30 AWST
                 </button>
               </div>
             </div>
@@ -1910,7 +1921,7 @@ export function HandoverPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {openMovements
+                    {inScopeMovements
                       .filter((m) => m.stage === "placement_requested" || m.stage === "destination_review")
                       .map((movement) => (
                         <tr key={movement.id}>
@@ -2137,11 +2148,14 @@ export function HandoverPage() {
                             <td>{admission.blockReason}</td>
                             <td>
                               <span className="mono">
-                                {admission.expectedDischargeAt !== null && Number.isFinite(admission.expectedDischargeAt)
+                                {admission.expectedDischargeAt !== null &&
+                                Number.isFinite(admission.expectedDischargeAt)
                                   ? `${formatInstantWithDay(admission.expectedDischargeAt, now)} AWST`
                                   : "Not recorded"}
                               </span>
-                              <div className={pageStyles.officialMeta}>{admission.dischargeDateSetBy ?? "Not recorded"}</div>
+                              <div className={pageStyles.officialMeta}>
+                                {admission.dischargeDateSetBy ?? "Not recorded"}
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -2276,13 +2290,13 @@ export function HandoverPage() {
                     },
                     {
                       id: "task-2",
-                      label: "Confirm arrival & bed intake for Dermot Hawthorn (FRE 4W)",
+                      label: "Confirm arrival & bed intake for Dermot Hawthornby (FRE 4W)",
                       due: "Due 15:45",
                     },
                     { id: "task-3", label: "Review serum lithium lab panel for FRE Ward 4W Bed 12", due: "Due 18:00" },
                     {
                       id: "task-4",
-                      label: "Confirm WAPOL escort dispatch for Callum Finch (Form 4A Transport)",
+                      label: "Confirm WAPOL escort dispatch for Callum Finchgrove (Form 4A Transport)",
                       due: "Due 16:00",
                     },
                     {
@@ -2494,7 +2508,13 @@ export function HandoverPage() {
                     No long-stay patients (&ge; 7 days) currently in scope.
                   </p>
                 ) : (
-                  <div className={pageStyles.tableWrap} style={{ overflowX: "auto" }}>
+                  <div
+                    className={pageStyles.tableWrap}
+                    tabIndex={0}
+                    role="region"
+                    aria-label="Long stay handover table"
+                    style={{ overflowX: "auto" }}
+                  >
                     <table className={pageStyles.handoverTable} style={{ width: "100%", fontSize: "var(--t-1)" }}>
                       <thead>
                         <tr>
@@ -2507,14 +2527,12 @@ export function HandoverPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {longStayAdmissions.map((adm) => {
+                        {pagedLongStayAdmissions.map((adm) => {
                           const unit = units.find((u) => u.id === adm.unitId);
                           const stay = daysInBed(adm, now) ?? 0;
                           return (
                             <tr key={adm.id}>
-                              <td style={{ fontWeight: 600 }}>
-                                {unit?.name ?? adm.unitId} · bed not recorded
-                              </td>
+                              <td style={{ fontWeight: 600 }}>{unit?.name ?? adm.unitId} · bed not recorded</td>
                               <td>
                                 <span
                                   style={{
@@ -2592,6 +2610,83 @@ export function HandoverPage() {
                         })}
                       </tbody>
                     </table>
+                    {totalLongStayPages > 1 && (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "0.75rem 1rem",
+                          borderTop: "1px solid var(--line)",
+                          fontSize: "var(--t-0)",
+                          flexWrap: "wrap",
+                          gap: "0.5rem",
+                        }}
+                      >
+                        <span style={{ color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}>
+                          Showing {(currentLongStayPage - 1) * LONG_STAY_PAGE_SIZE + 1}–
+                          {Math.min(currentLongStayPage * LONG_STAY_PAGE_SIZE, longStayAdmissions.length)} of{" "}
+                          {longStayAdmissions.length} long-stay patients
+                        </span>
+                        <div style={{ display: "flex", gap: "0.25rem", alignItems: "center" }}>
+                          <button
+                            type="button"
+                            onClick={() => setLongStayPage((p) => Math.max(1, p - 1))}
+                            disabled={currentLongStayPage <= 1}
+                            style={{
+                              padding: "0.25rem 0.5rem",
+                              borderRadius: "4px",
+                              border: "1px solid var(--line)",
+                              background: "var(--surface-1)",
+                              cursor: currentLongStayPage <= 1 ? "not-allowed" : "pointer",
+                              opacity: currentLongStayPage <= 1 ? 0.5 : 1,
+                              fontSize: "var(--t-0)",
+                            }}
+                            aria-label="Previous page"
+                          >
+                            Previous
+                          </button>
+                          {Array.from({ length: totalLongStayPages }, (_, i) => i + 1).map((page) => (
+                            <button
+                              key={page}
+                              type="button"
+                              onClick={() => setLongStayPage(page)}
+                              style={{
+                                padding: "0.25rem 0.5rem",
+                                borderRadius: "4px",
+                                border: "1px solid var(--line)",
+                                background: page === currentLongStayPage ? "var(--accent)" : "var(--surface-1)",
+                                color: page === currentLongStayPage ? "var(--accent-contrast, white)" : "inherit",
+                                fontWeight: page === currentLongStayPage ? 700 : 400,
+                                cursor: "pointer",
+                                fontSize: "var(--t-0)",
+                                fontVariantNumeric: "tabular-nums",
+                              }}
+                              aria-current={page === currentLongStayPage ? "page" : undefined}
+                            >
+                              {page}
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => setLongStayPage((p) => Math.min(totalLongStayPages, p + 1))}
+                            disabled={currentLongStayPage >= totalLongStayPages}
+                            style={{
+                              padding: "0.25rem 0.5rem",
+                              borderRadius: "4px",
+                              border: "1px solid var(--line)",
+                              background: "var(--surface-1)",
+                              cursor: currentLongStayPage >= totalLongStayPages ? "not-allowed" : "pointer",
+                              opacity: currentLongStayPage >= totalLongStayPages ? 0.5 : 1,
+                              fontSize: "var(--t-0)",
+                            }}
+                            aria-label="Next page"
+                          >
+                            Next
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

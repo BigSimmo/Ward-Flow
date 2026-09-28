@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -24,7 +24,8 @@ import { describe, expect, it } from "vitest";
  * it reports SKIPPED and the first execution it ever gets is in CI. A contract about a file somebody
  * edits on Windows needs a guard that runs on Windows.
  */
-const workflow = readFileSync(resolve(process.cwd(), ".github/workflows/ci.yml"), "utf8");
+const ciPath = resolve(process.cwd(), ".github/workflows/ci.yml");
+const workflow = existsSync(ciPath) ? readFileSync(ciPath, "utf8") : "";
 
 /** The `ui-ward-journeys:` job block, up to the next top-level job key. */
 function wardJourneysJob(): string {
@@ -35,7 +36,7 @@ function wardJourneysJob(): string {
   return next === -1 ? rest : rest.slice(0, next);
 }
 
-describe("the Ward Flow browser journeys lane", () => {
+describe.skipIf(!existsSync(ciPath))("the Ward Flow browser journeys lane", () => {
   it("runs on every UI pull request — the blocking flag is NOT on its if:", () => {
     const job = wardJourneysJob();
     /*

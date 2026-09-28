@@ -548,6 +548,17 @@ export function PatientSearchPage() {
     return unifiedCaseload.find((p) => p.id === selectedId) ?? unifiedCaseload[0] ?? null;
   }, [unifiedCaseload, selectedId]);
 
+  const handleSelectPatient = (p: UnifiedCaseloadPatient) => {
+    setSelectedId(p.id);
+    if (p.originalSubject.kind === "movement") {
+      setPreview({ kind: "movement", movement: p.originalSubject.movement });
+    } else if (p.originalSubject.kind === "referral") {
+      setPreview({ kind: "referral", referral: p.originalSubject.referral });
+    } else {
+      setPreview({ kind: "person", patient: p.originalSubject.patient });
+    }
+  };
+
   // Copy Summary Handler
   const copyPatientSummary = () => {
     if (!selectedPatient) return;
@@ -697,7 +708,9 @@ Clinical Note: ${p.clinicalNote}`;
               </span>
               <span className={styles.statusLiveSummary}>
                 {yieldMetrics.live} in hospital ·{" "}
-                {yieldMetrics.breaches > 0 ? `${yieldMetrics.breaches} waiting ${LONG_WAIT_TEXT}` : `none waiting ${LONG_WAIT_TEXT}`}
+                {yieldMetrics.breaches > 0
+                  ? `${yieldMetrics.breaches} waiting ${LONG_WAIT_TEXT}`
+                  : `none waiting ${LONG_WAIT_TEXT}`}
               </span>
             </div>
             <div className={styles.headerRight}>
@@ -1084,7 +1097,8 @@ Clinical Note: ${p.clinicalNote}`;
                       )
                     </option>
                     <option value="over24">
-                      &gt; {LONG_WAIT_HOURS} Hours ({unifiedCaseload.filter((p) => p.waitHours >= LONG_WAIT_HOURS).length})
+                      &gt; {LONG_WAIT_HOURS} Hours (
+                      {unifiedCaseload.filter((p) => p.waitHours >= LONG_WAIT_HOURS).length})
                     </option>
                   </select>
                   <svg className={styles.facetArrow} viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -1357,23 +1371,15 @@ Clinical Note: ${p.clinicalNote}`;
                       key={p.id}
                       role="row"
                       tabIndex={0}
+                      aria-selected={isSelected}
                       className={`${styles.denseRow} ${isSelected ? styles.denseRowSelected : ""}`}
                       data-id={p.id}
                       data-testid={`ward-patient-search-case-${p.id}`}
-                      onClick={() => {
-                        setSelectedId(p.id);
-                        if (p.originalSubject.kind === "movement") {
-                          setPreview({ kind: "movement", movement: p.originalSubject.movement });
-                        } else if (p.originalSubject.kind === "referral") {
-                          setPreview({ kind: "referral", referral: p.originalSubject.referral });
-                        } else {
-                          setPreview({ kind: "person", patient: p.originalSubject.patient });
-                        }
-                      }}
+                      onClick={() => handleSelectPatient(p)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
-                          setSelectedId(p.id);
+                          handleSelectPatient(p);
                         }
                       }}
                     >
@@ -1746,18 +1752,16 @@ Clinical Note: ${p.clinicalNote}`;
         className={`${styles.patientCard} ${isSelected ? styles.selected : ""}`}
         data-id={p.id}
         data-testid={`ward-patient-search-case-${p.id}`}
-        onClick={() => {
-          setSelectedId(p.id);
-          if (p.originalSubject.kind === "movement") {
-            setPreview({ kind: "movement", movement: p.originalSubject.movement });
-          } else if (p.originalSubject.kind === "referral") {
-            setPreview({ kind: "referral", referral: p.originalSubject.referral });
-          } else {
-            setPreview({ kind: "person", patient: p.originalSubject.patient });
+        onClick={() => handleSelectPatient(p)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleSelectPatient(p);
           }
         }}
         tabIndex={0}
         role="button"
+        aria-pressed={isSelected}
         aria-label={`Patient ${p.name}`}
       >
         <div className={styles.patientCardRow1}>

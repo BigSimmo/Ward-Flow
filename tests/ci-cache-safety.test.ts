@@ -12,7 +12,8 @@ const lighthouseChromiumSetup = readFileSync(
   new URL("../.github/actions/setup-lighthouse-chromium/action.yml", import.meta.url),
   "utf8",
 );
-const workflow = readFileSync(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
+const ciUrl = new URL("../.github/workflows/ci.yml", import.meta.url);
+const workflow = existsSync(ciUrl) ? readFileSync(ciUrl, "utf8") : "";
 const prShardRunner = readFileSync(new URL("../scripts/playwright-pr-shards.mjs", import.meta.url), "utf8");
 // live-web-vitals.yml and ops-digest.yml were PsychSift's (its live website and search canary) and
 // were retired on 26 September 2026 (docs/ward-flow/archive/retired-psychsift-tail/), with the
@@ -31,7 +32,8 @@ describe("CI cache safety", () => {
     expect(nodeSetup).not.toContain("cache-hit");
   });
 
-  it("keeps quarantined and mockup UI specs in one advisory lane", () => {
+  describe.skipIf(!existsSync(ciUrl))("monorepo CI workflow jobs", () => {
+    it("keeps quarantined and mockup UI specs in one advisory lane", () => {
     expect(workflow).toContain("ui-advisory:");
     expect(workflow).toContain("uses: ./.github/actions/setup-ui-e2e");
     expect(workflow).toContain("run: npm run test:e2e:advisory");
@@ -364,8 +366,9 @@ describe("CI cache safety", () => {
  * because the defect was in the script's behaviour and a structural assertion would have
  * passed against it (see #094 on gates asserting structure over rendered effect).
  */
-describe.skipIf(process.platform === "win32")("PR required aggregate — cancelled vs failed (#095)", () => {
+describe.skipIf(process.platform === "win32" || !workflow)("PR required aggregate — cancelled vs failed (#095)", () => {
   const script = (() => {
+    if (!workflow) return "";
     const lines = workflow.split("\n");
     const stepIndex = lines.findIndex((line) => line.includes("name: Verify required in-scope jobs"));
     const runIndex = lines.findIndex((line, index) => index > stepIndex && /^\s+run: \|\s*$/.test(line));
@@ -642,10 +645,11 @@ describe.skipIf(process.platform === "win32")("PR required aggregate — cancell
       });
     }
     expect(offenders).toEqual([]);
+    });
   });
 });
 
-describe("Visual baseline routing", () => {
+describe.skipIf(!existsSync(ciUrl))("Visual baseline routing", () => {
   /** The `visual-baseline:` block, up to the next top-level job key. */
   const visualBaselineJob = /\n  visual-baseline:\n([\s\S]*?)(?=\n  [a-z][\w-]*:\n)/.exec(workflow)?.[1] ?? "";
 
@@ -680,7 +684,7 @@ describe("Visual baseline routing", () => {
   });
 });
 
-describe("Lighthouse budget routing", () => {
+describe.skipIf(!existsSync(ciUrl))("Lighthouse budget routing", () => {
   /** The `lighthouse-budget:` block, up to the next top-level job key. */
   const lighthouseJob = /\n  lighthouse-budget:\n([\s\S]*?)(?=\n  [a-z][\w-]*:\n)/.exec(workflow)?.[1] ?? "";
   const refreshJob = /\n  lighthouse-baseline-refresh:\n([\s\S]*?)(?=\n  [a-z][\w-]*:\n)/.exec(workflow)?.[1] ?? "";

@@ -1106,27 +1106,62 @@
         display: flex;
         flex-direction: column;
         padding: 4px 0;
+        position: relative;
       }
       .feedRow {
+        position: relative;
         display: grid;
-        grid-template-columns: 3.8rem auto minmax(0, 1fr);
+        grid-template-columns: 3.6rem 12px minmax(0, 1fr);
         gap: 10px;
         align-items: baseline;
-        padding: 9px 16px;
+        padding: 8px 12px;
+        margin: 1px 4px;
+        border-radius: var(--r-sm, 6px);
         border-bottom: 1px solid var(--line);
         font-size: var(--t-1);
+        transition: background 0.12s ease;
+      }
+      .feedRow:hover {
+        background: var(--surface-2);
       }
       .feedTime {
         font-family: var(--mono);
         font-size: var(--t-0);
         color: var(--muted);
         font-variant-numeric: tabular-nums;
+        letter-spacing: -0.01em;
       }
       .feedToneDot {
-        width: 6px;
-        height: 6px;
+        position: relative;
+        width: 7px;
+        height: 7px;
         border-radius: 50%;
         margin-top: 5px;
+        justify-self: center;
+        flex-shrink: 0;
+        z-index: 1;
+        box-shadow: 0 0 0 2px var(--surface);
+      }
+      .feedToneDot::before {
+        content: "";
+        position: absolute;
+        top: -18px;
+        bottom: -18px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 1px;
+        background: var(--line);
+        z-index: -1;
+        pointer-events: none;
+      }
+      .feedRow:first-child .feedToneDot::before {
+        top: 4px;
+      }
+      .feedRow:last-child .feedToneDot::before {
+        bottom: 4px;
+      }
+      .feedRow:only-child .feedToneDot::before {
+        display: none;
       }
       .feedToneDot[data-tone="good"] {
         background: var(--good);
@@ -1139,7 +1174,7 @@
       }
       .feedText {
         color: var(--ink-soft);
-        line-height: 1.4;
+        line-height: 1.45;
       }
       .feedText b {
         color: var(--ink);
@@ -2070,9 +2105,9 @@
               <kbd class="searchKbd">/</kbd>
             </div>
             <div class="qPop" id="qPop" role="listbox">
-              <div class="qHit" onclick="openPatientQuick('WF-002', 'Dermot Hawthorn')">
+              <div class="qHit" onclick="openPatientQuick('WF-002', 'Dermot Hawthornby')">
                 <div class="qHitTop">
-                  <span>Dermot Hawthorn</span>
+                  <span>Dermot Hawthornby</span>
                   <span class="badgePill">Adult Secure</span>
                 </div>
                 <div class="qHitMeta">UMRN UM100002 · FSH ED → Fremantle Ward 4 · Form 1A</div>
@@ -3054,7 +3089,7 @@
         <div class="taskRow" data-tone="danger">
           <span class="taskKindBadge">FACT</span>
           <div class="taskMeta">
-            <span class="taskTitle">Form 4A Expiry in 1.8h (Callum Finch)</span>
+            <span class="taskTitle">Form 4A Expiry in 1.8h (Callum Finchgrove)</span>
             <span class="taskDetail">Transport authority expiring · Contact Armadale ED</span>
           </div>
           <div class="taskActions">
@@ -3118,7 +3153,7 @@
             <span class="feedTime">14:52</span>
             <span class="feedToneDot" data-tone="good"></span>
             <span class="feedText"
-              >Bed hold placed for <b>Dermot Hawthorn</b> at <b>Fremantle Adult Secure</b> (Bed 04).</span
+              >Bed hold placed for <b>Dermot Hawthornby</b> at <b>Fremantle Adult Secure</b> (Bed 04).</span
             >
           </div>
           <div class="feedRow">
@@ -3138,7 +3173,7 @@
           <div class="feedRow">
             <span class="feedTime">13:50</span>
             <span class="feedToneDot" data-tone="good"></span>
-            <span class="feedText">Form 4A signed by Dr. J. Vance for <b>Callum Finch</b>. Transport booked.</span>
+            <span class="feedText">Form 4A signed by Dr. J. Vance for <b>Callum Finchgrove</b>. Transport booked.</span>
           </div>
         </div>
       </div>
@@ -3245,10 +3280,10 @@
               <label class="fieldLabel">Select Known Patient / UMRN</label>
               <select class="fieldSelect" id="refPatientSelect" onchange="onSelectPatient(this.value)">
                 <option value="custom">— Enter Patient Below —</option>
-                <option value="WF-002">Dermot Hawthorn (UMRN: UM100002)</option>
+                <option value="WF-002">Dermot Hawthornby (UMRN: UM100002)</option>
                 <option value="WF-009">Tobias Wren (UMRN: UM100009)</option>
-                <option value="WF-004">Callum Finch (UMRN: UM100004)</option>
-                <option value="WF-006">Margery Slate (UMRN: UM100006)</option>
+                <option value="WF-004">Callum Finchgrove (UMRN: UM100004)</option>
+                <option value="WF-006">Margery Slateridge (UMRN: UM100006)</option>
               </select>
             </div>
             <div class="fieldGroup">
@@ -3662,7 +3697,7 @@
 
       function onSelectPatient(val) {
         if (val === "WF-002") {
-          document.getElementById("refName").value = "Dermot Hawthorn";
+          document.getElementById("refName").value = "Dermot Hawthornby";
           document.getElementById("refSuburb").value = "Hilton";
           document.getElementById("refCohort").value = "Adult";
           document.getElementById("refSecurity").value = "Secure";
@@ -3674,13 +3709,13 @@
           document.getElementById("refSecurity").value = "Secure";
           document.getElementById("refLegal").value = "Form 1A";
         } else if (val === "WF-004") {
-          document.getElementById("refName").value = "Callum Finch";
+          document.getElementById("refName").value = "Callum Finchgrove";
           document.getElementById("refSuburb").value = "Gosnells";
           document.getElementById("refCohort").value = "Adult";
           document.getElementById("refSecurity").value = "Open";
           document.getElementById("refLegal").value = "Form 4A";
         } else if (val === "WF-006") {
-          document.getElementById("refName").value = "Margery Slate";
+          document.getElementById("refName").value = "Margery Slateridge";
           document.getElementById("refSuburb").value = "Karrinyup";
           document.getElementById("refCohort").value = "Older adult";
           document.getElementById("refSecurity").value = "Open";

@@ -2766,7 +2766,7 @@
 }
 
 /* The phone starts with the task. Full navigation and shift context remain in Menu. */
-@media (max-width: 40rem) {
+@media (max-width: 48rem) {
   .rail,
   .rail[data-rail="closed"] {
     display: flex;

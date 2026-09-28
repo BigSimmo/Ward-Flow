@@ -1394,25 +1394,21 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
-}
-
-.activityFeed li {
-  display: grid;
-  grid-template-columns: auto 0.5rem minmax(0, 1fr);
-  align-items: baseline;
-  gap: 0.5rem;
-  font-size: var(--t-1);
-  border-bottom: 0.0625rem solid var(--line);
-  padding-bottom: 0.375rem;
+  padding: 4px 0;
+  gap: 2px;
 }
 
 .eventDot,
 .activityKey i {
-  width: 0.5rem;
-  height: 0.5rem;
+  position: relative;
+  width: 7px;
+  height: 7px;
   border-radius: var(--radius-pill);
   background: var(--accent);
+  justify-self: center;
+  margin-top: 5px;
+  flex-shrink: 0;
+  z-index: 1;
 }
 
 .activityFeed li[data-tone="warning"] .eventDot,
@@ -1998,10 +1994,12 @@
 .feedRow {
   position: relative;
   display: grid;
-  grid-template-columns: 3.8rem 1rem minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: 3.6rem 12px minmax(0, 1fr);
+  gap: 10px;
   align-items: baseline;
-  padding: 10px 16px;
+  padding: 8px 12px;
+  margin: 1px 4px;
+  border-radius: var(--r-sm, 6px);
   border-bottom: 1px solid var(--line);
   font-size: var(--t-1);
   transition: background 0.12s ease;
@@ -2009,6 +2007,11 @@
 
 .feedRow:hover {
   background: var(--surface-2);
+}
+
+.feedText {
+  color: var(--ink-soft);
+  line-height: 1.45;
 }
 
 .feedTime {

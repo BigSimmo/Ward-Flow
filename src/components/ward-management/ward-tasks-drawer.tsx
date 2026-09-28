@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, CheckSquare, ListChecks, RotateCcw, ShieldAlert, UserCheck, X } from "lucide-react";
-import { useEffect, useState, type Dispatch } from "react";
+import { useEffect, useRef, useState, type Dispatch } from "react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
@@ -11,6 +11,7 @@ import {
   type InboxAcknowledgement,
   type InboxCompletionEntry,
 } from "@/components/ward-management/ward-flow-reducer";
+import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 
 import styles from "./ward-tasks-drawer.module.css";
 
@@ -46,16 +47,8 @@ export function WardTasksDrawer({
   onSelectMovement,
   withBackdrop = false,
 }: WardTasksDrawerProps) {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  const drawerRef = useRef<HTMLElement>(null);
+  useWardModalFocus(true, drawerRef, onClose);
 
   const [taskFilter, setTaskFilter] = useState<"all" | "critical" | "review">("all");
 
@@ -99,7 +92,7 @@ export function WardTasksDrawer({
           data-testid="ward-tasks-drawer-backdrop"
         />
       ) : null}
-      <aside className={styles.drawer} role="complementary" aria-label="Tasks">
+      <aside ref={drawerRef} className={styles.drawer} role="complementary" aria-label="Tasks">
       <div className={styles.header}>
         <h2 className={styles.heading}>
           <span>Outstanding work</span>

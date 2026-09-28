@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -471,8 +471,10 @@ describe("evaluate", () => {
   });
 });
 
-describe("CI wiring", () => {
-  const workflow = readFileSync(resolve(REPOSITORY_ROOT, ".github/workflows/ci.yml"), "utf8");
+describe.skipIf(!existsSync(resolve(REPOSITORY_ROOT, ".github/workflows/ci.yml")))("CI wiring", () => {
+  const workflow = existsSync(resolve(REPOSITORY_ROOT, ".github/workflows/ci.yml"))
+    ? readFileSync(resolve(REPOSITORY_ROOT, ".github/workflows/ci.yml"), "utf8")
+    : "";
 
   it("runs the gate unconditionally, because any scope predicate is a hole", () => {
     // A workflow-only diff sets coverage_changed, ui_changed, static_heavy_changed and

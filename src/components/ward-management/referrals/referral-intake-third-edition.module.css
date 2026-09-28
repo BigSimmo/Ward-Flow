@@ -451,7 +451,10 @@
   font-family: var(--body) !important;
   font-size: var(--t-2, 13.5px) !important;
   outline: none !important;
-  transition: border-color 0.12s, background 0.12s, box-shadow 0.12s !important;
+  transition:
+    border-color 0.12s,
+    background 0.12s,
+    box-shadow 0.12s !important;
   box-sizing: border-box !important;
 }
 
@@ -601,7 +604,10 @@
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  transition: background 0.12s, color 0.12s, border-color 0.12s !important;
+  transition:
+    background 0.12s,
+    color 0.12s,
+    border-color 0.12s !important;
   user-select: none !important;
   position: relative !important;
   padding: 0 10px !important;
@@ -666,7 +672,10 @@
   align-items: center !important;
   gap: 10px !important;
   cursor: pointer !important;
-  transition: background 0.12s, border-color 0.12s, box-shadow 0.12s !important;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    box-shadow 0.12s !important;
   user-select: none !important;
   font-family: inherit;
   text-align: left !important;
@@ -736,7 +745,10 @@
   border: 1px solid var(--line) !important;
   border-radius: var(--r1, 10px) !important;
   overflow: hidden !important;
-  transition: border-color 0.14s ease, box-shadow 0.14s ease, background 0.14s ease !important;
+  transition:
+    border-color 0.14s ease,
+    box-shadow 0.14s ease,
+    background 0.14s ease !important;
   box-shadow: var(--lift) !important;
   list-style: none !important;
   padding: 16px 20px !important;
@@ -753,7 +765,9 @@
 .destinationOption[data-active="true"],
 .destCard[data-active="true"] {
   border-color: var(--accent) !important;
-  box-shadow: 0 0 0 1px var(--accent), var(--lift) !important;
+  box-shadow:
+    0 0 0 1px var(--accent),
+    var(--lift) !important;
   background: color-mix(in srgb, var(--accent) 4%, var(--surface)) !important;
 }
 
@@ -893,7 +907,9 @@
   line-height: 1.45 !important;
   white-space: normal !important;
   word-break: break-word !important;
-  transition: background 0.12s ease, border-color 0.12s ease !important;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease !important;
 }
 
 .destinationFact:hover {
@@ -992,7 +1008,10 @@
   font-weight: 500 !important;
   color: var(--ink-soft) !important;
   cursor: pointer !important;
-  transition: background 0.12s, color 0.12s, border-color 0.12s !important;
+  transition:
+    background 0.12s,
+    color 0.12s,
+    border-color 0.12s !important;
   min-height: 28px !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -1028,7 +1047,10 @@
   width: 100% !important;
   box-sizing: border-box !important;
   outline: none !important;
-  transition: border-color 0.14s, background 0.14s, box-shadow 0.14s !important;
+  transition:
+    border-color 0.14s,
+    background 0.14s,
+    box-shadow 0.14s !important;
 }
 
 .textArea:focus,
@@ -1133,6 +1155,7 @@
 /* Submit Bar */
 .submitBar {
   padding: 12px 14px;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   background: var(--surface-2);
   border-top: 1px solid var(--line);
   display: flex;
@@ -2111,8 +2134,15 @@
 }
 
 @keyframes beaconPulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.25); opacity: 0.65; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 0.65;
+  }
 }
 
 .radarTitle {
@@ -2386,9 +2416,15 @@
   flex-shrink: 0;
 }
 
-.gateDotGood { background: var(--good); }
-.gateDotWarn { background: var(--warn); }
-.gateDotInfo { background: var(--accent); }
+.gateDotGood {
+  background: var(--good);
+}
+.gateDotWarn {
+  background: var(--warn);
+}
+.gateDotInfo {
+  background: var(--accent);
+}
 
 .gateText {
   display: flex;
@@ -2439,7 +2475,9 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
   font-family: var(--body);
 }
 
@@ -2462,6 +2500,7 @@
   background: var(--surface);
   border-top: 1px solid var(--line);
   padding: 12px 14px;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -2486,7 +2525,10 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: background 0.14s, transform 0.08s, box-shadow 0.14s;
+  transition:
+    background 0.14s,
+    transform 0.08s,
+    box-shadow 0.14s;
   box-shadow: var(--lift);
 }
 
@@ -2537,8 +2579,12 @@
 }
 
 @keyframes modalFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modalDialog {
@@ -2560,8 +2606,14 @@
 }
 
 @keyframes modalSlideUp {
-  from { transform: translateY(12px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .modalHeader {
@@ -2622,7 +2674,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.12s, color 0.12s;
+  transition:
+    background 0.12s,
+    color 0.12s;
 }
 
 .modalCloseBtn:hover {
@@ -2848,7 +2902,9 @@
   gap: 10px;
   opacity: 0;
   transform: translateY(10px) scale(0.97);
-  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+  transition:
+    opacity 0.15s ease-out,
+    transform 0.15s ease-out;
   pointer-events: auto;
 }
 
@@ -2856,4 +2912,3 @@
   opacity: 1;
   transform: translateY(0) scale(1);
 }
-
