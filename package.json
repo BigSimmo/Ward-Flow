@@ -39,6 +39,7 @@
     "typecheck:ci": "node scripts/run-heavy.mjs --npm-script typecheck:ci:internal",
     "typecheck:ci:internal": "node ./node_modules/typescript/bin/tsc -p tsconfig.typecheck.json --noEmit --incremental false",
     "test": "node scripts/run-vitest.mjs run --reporter=dot",
+    "test:related": "node scripts/ward-flow/related-tests.mjs",
     "test:focused": "node scripts/test-focused.mjs",
     "test:live": "node scripts/run-live-tests.mjs",
     "test:coverage": "node scripts/run-vitest.mjs run --coverage --coverage.reportOnFailure=true",
