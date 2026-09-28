@@ -1,5 +1,10 @@
 # Pull Request Workflow
 
+> [!NOTE]
+> **Historical PR Workflow Reference (PsychSift Monorepo):**
+> This document records the PR procedures and `Run PR` sweep used in the separate PsychSift repository (`BigSimmo/Database`).
+> **In `BigSimmo/Ward-Flow`**, the inherited `Run PR` shortcut and PsychSift PR sweeps are **disabled**. Follow the repository boundary rules in [`AGENTS.md`](../../AGENTS.md) for Ward Flow PR publication and integration.
+
 <!-- BEGIN:pull-request-workflow -->
 
 ## Open PR branch sync (anti-churn)

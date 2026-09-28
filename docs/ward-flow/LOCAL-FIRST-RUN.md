@@ -1,18 +1,17 @@
-﻿# Ward Flow — local first run
+# Ward Flow — local first run
 
 **Audience:** human or agent opening the Ward Flow UI on this machine.  
 **Product/process entry:** still [`README.md`](README.md). This page is only how to boot the UI.
 
 ## Preconditions
 
-- Worktree: `D:\Worktrees\Database\ward-lead`
+- Worktree: dedicated checkout/worktree of `BigSimmo/Ward-Flow` (e.g. `D:\Worktrees\WardFlow\<branch>`)
 - Node `>=24.15.0 <25` and npm `11.x` (see `package.json` `engines` / `packageManager`)
 - Dependencies once: `npm ci --include=dev`
 
 ## Boot (PowerShell)
 
 ```powershell
-Set-Location D:\Worktrees\Database\ward-lead
 git status -sb
 git log -1 --oneline
 npm run ensure
@@ -32,7 +31,7 @@ npm run ensure
 
 1. Copy `.env.example` → `.env.local` if needed.
 2. Follow the Ward Flow / mockups comments in `.env.example`.
-3. Full PsychSift/Supabase/OpenAI values are **not** required just to click Ward Flow mockups.
+3. Ward Flow uses synthetic browser-local state; no Supabase, database, or OpenAI credentials are required.
 
 ## Useful checks
 
@@ -63,11 +62,12 @@ npm run ward:check-docs   # same as check:ward-doc-links
 npm run ensure            # start/reuse dev server and print URL
 ```
 
-## Current worktree vs fold line
+## Current worktree vs base
 
-- **Fold / integration line (policy):** `codex/task-ward-flow-live-state-20260831` — local only, never pushed to `origin/main`.
-- **This worktree:** run `git branch --show-current` (may be a `fix/*` or `ward/*` branch while work is in flight).
-- Before folding or quoting “the line”, confirm with `git log -1` and [`STATUS.md`](STATUS.md).
+- **Base branch:** `main` on `BigSimmo/Ward-Flow`.
+- **This worktree:** work on a dedicated task branch in an isolated worktree created from verified `main`. Check `git branch --show-current`.
+- Before quoting “the line”, confirm with `git log -1` and [`STATUS.md`](STATUS.md).
+- The former local ward line (`codex/task-ward-flow-live-state-20260831`) in `ward-lead` and local-only fold queue are historical PsychSift-era records.
 
 ## Do not use for first run
 

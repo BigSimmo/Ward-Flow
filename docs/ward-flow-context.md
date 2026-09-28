@@ -1,5 +1,10 @@
 # Ward Flow — complete context
 
+> [!NOTE]
+> **Product Context Note:**
+> This document provides clinical and design background on the psychiatric bed-coordination workflow that Ward Flow addresses.
+> For current product entry point, architecture, and status, see [`docs/ward-flow/README.md`](ward-flow/README.md) and [`docs/ward-flow/STATUS.md`](ward-flow/STATUS.md).
+
 Everything a session needs to work on Ward Flow, in one file. Written to be read cold, without
 any prior conversation.
 

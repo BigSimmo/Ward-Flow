@@ -1,5 +1,9 @@
 # Ward Flow adversarial audit — 22 September 2026
 
+> [!NOTE]
+> **Historical Audit Record (22 September 2026):**
+> This report records an adversarial audit conducted against the former shared Database checkout prior to repository extraction. Ward Flow now resides in its own standalone repository (`BigSimmo/Ward-Flow`). For current entry and rules, see [`README.md`](README.md) and [`../../AGENTS.md`](../../AGENTS.md).
+
 **Ward Flow has connected parts of a patient-flow prototype, but it is not currently a trustworthy end-to-end system.** In the running application, an explicitly unlinked referral acquired another synthetic patient's name and UMRN. Its confirmation showed a fabricated reference and the wrong destination. Other panels presented invented clinical history, legal dates, staffing assumptions and transport arrangements as facts about the selected case. These defects would undermine a coordinator's decisions even when the underlying action succeeds.
 
 Engine probes independently found that stage corrections can let later actions remove a physically collected patient's bed commitment, leave a dangling admission link, or misreport a retained bed. A completed locked-bed journey fails to restore locked capacity on discharge. Valid zero-valued transport timestamps block progression or allow milestone overwrites. These are reproduced local failures, not inferred clinical outcomes.
