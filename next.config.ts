@@ -27,8 +27,9 @@ async function withOptionalBundleAnalyzer(config: NextConfig): Promise<NextConfi
 
 const nextConfig: NextConfig = {
   distDir: requestedDistDir || ".next",
-  // WARD_GATE_BUILD=1 (Ward Flow fold gate only): skip the build's own type check, because the gate
-  // runs the full `tsc -p tsconfig.typecheck.json` on the same commit. Never set for a real build.
+  // WARD_GATE_BUILD=1 (Ward Flow fold gate and CI browser jobs only): skip the build's own type
+  // check, because the gate or CI's static job type-checks the same commit (CI runs `next typegen`
+  // first, so route types are covered). Never set for a real, deployed build.
   ...(requestedTsConfigPath || process.env.WARD_GATE_BUILD === "1"
     ? {
         typescript: {

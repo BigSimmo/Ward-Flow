@@ -15,6 +15,10 @@ function requireWorkflow(source) {
     /fail-fast: false/u,
     /WARD_GATE_SHARD: \$\{\{ matrix\.shard \}\}\/\d+/u,
     /related-tests\.mjs --base "\$WARD_BASE_SHA" --head HEAD/u,
+    // Browser builds may skip their own type check only because the static job checks route types.
+    /next\/dist\/bin\/next typegen\n\s*node node_modules\/typescript\/bin\/tsc -p tsconfig\.json --noEmit/u,
+    /WARD_GATE_BUILD: "1"/u,
+    /actions\/cache@[0-9a-f]{40}/u,
     /WARD_JOURNEY_GROUP: \$\{\{ matrix\.group \}\}\/\d+/u,
     /npm run check:ward-reference/u,
     /npm run check:ward-expected-reds/u,
@@ -70,6 +74,8 @@ for (const bad of [
   workflow.replace("shard: [1, 2, 3, 4, 5]", "shard: [1, 2, 3, 4]"),
   workflow.replaceAll("fail-fast: false", "fail-fast: true"),
   workflow.replace("group: [1, 2, 3]", "group: [1, 2]"),
+  workflow.replace("node node_modules/next/dist/bin/next typegen", "echo no route types"),
+  workflow.replace("tsc -p tsconfig.json --noEmit", "tsc -p tsconfig.typecheck.json --noEmit"),
 ])
   assert.throws(() => requireWorkflow(bad));
 
