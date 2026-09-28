@@ -1,5 +1,9 @@
 # Ward Flow audit follow-up — handover
 
+> [!NOTE]
+> **Historical Handover Record (25 September 2026):**
+> This handover documents the state of the former local `ward-lead` folder prior to extraction into the dedicated `BigSimmo/Ward-Flow` repository. For current workflow, see [`README.md`](README.md) and [`../../AGENTS.md`](../../AGENTS.md).
+
 Follows [the full review](audit-2026-09-25-full-review.md). Chat: "Ward Flow audit follow-up".
 
 **Updated 25 September 2026, about 17:20.** Section 0 is the current state and is written for the Ward

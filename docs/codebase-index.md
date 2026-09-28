@@ -1,5 +1,10 @@
 # PsychSift — Codebase Index
 
+> [!NOTE]
+> **Historical Monorepo Index (PsychSift):**
+> This codebase index describes the historical PsychSift clinical knowledge base architecture (Next.js + Supabase + OpenAI + Ingestion Worker).
+> **In `BigSimmo/Ward-Flow`**, the active application is the standalone Ward Flow bed-coordination prototype. See [`docs/ward-flow/README.md`](ward-flow/README.md) and [`docs/ward-flow/code-map/README.md`](ward-flow/code-map/README.md) for current Ward Flow code and architecture. Supabase and ingestion workers are not present or active in this repository.
+
 Structured map for AI agents and onboarding. For live routes, see `docs/site-map.md` (`npm run docs:update` / `sitemap:check`). For agent rules and verification gates, see `AGENTS.md`; for test execution and flake policy, see `docs/testing.md`.
 
 **Stack:** Next.js 16, React 19, Supabase (pgvector, Storage, Auth), OpenAI, Python OCR worker.  

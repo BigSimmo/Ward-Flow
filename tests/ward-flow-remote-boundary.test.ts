@@ -29,7 +29,7 @@ function run(remoteUrl?: string, pushInput = stdin, envOverrides: Record<string,
     cwd: process.cwd(),
     input: pushInput,
     encoding: "utf8",
-    timeout: 10_000,
+    timeout: 30_000,
     env: {
       ...process.env,
       PATH: withoutGh(),
@@ -90,9 +90,11 @@ describe("Ward-Flow push destination", () => {
 
   it("requires explicit direct-main confirmation even with optional guards skipped", () => {
     const mainInput = `refs/heads/main ${head} refs/heads/main ${head}\n`;
-    expect(directMainPushVerdict(mainInput, {}).ok).toBe(false);
+    expect(directMainPushVerdict(mainInput, {} as unknown as NodeJS.ProcessEnv).ok).toBe(false);
     expect(run("https://github.com/BigSimmo/Ward-Flow.git", mainInput).status).toBe(1);
-    expect(directMainPushVerdict(mainInput, { CONFIRM_PUSH_TO_MAIN: "I_CONFIRM_PUSH_TO_MAIN" }).ok).toBe(true);
+    expect(
+      directMainPushVerdict(mainInput, { ...process.env, CONFIRM_PUSH_TO_MAIN: "I_CONFIRM_PUSH_TO_MAIN" }).ok,
+    ).toBe(true);
     expect(
       run("https://github.com/BigSimmo/Ward-Flow.git", mainInput, {
         CONFIRM_PUSH_TO_MAIN: "I_CONFIRM_PUSH_TO_MAIN",

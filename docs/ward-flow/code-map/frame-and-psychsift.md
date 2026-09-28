@@ -1,5 +1,9 @@
 # The app frame, shared code, and PsychSift at module level
 
+> [!NOTE]
+> **Historical Extraction Context:**
+> This map records the shared app frame and dependencies at the time Ward Flow was separated from PsychSift. In `BigSimmo/Ward-Flow`, Ward Flow is hosted in its own repository with zero live connection to PsychSift or Supabase.
+
 Read-only map, written 25 September 2026 against tip `ace8e9ee8d` on branch
 `ward/extend-ward-flow-code-map` (`D:/Worktrees/Database/ward-code-map`). This part covers two
 things only: (1) every file outside `src/components/ward-management/**` and

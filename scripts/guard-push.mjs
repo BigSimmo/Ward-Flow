@@ -113,7 +113,11 @@ export function wardFlowCheckoutVerdict(cwd = PROJECT_ROOT) {
       };
 }
 
-/** Git's stdin names the actual remote ref, including for deletion-only pushes. */
+/**
+ * Git's stdin names the actual remote ref, including for deletion-only pushes.
+ * @param {string} stdinText
+ * @param {Record<string, string | undefined>} [env]
+ */
 export function directMainPushVerdict(stdinText, env = process.env) {
   const targetsMain = stdinText.split(/\r?\n/).some((line) => line.trim().split(/\s+/)[2] === "refs/heads/main");
   const confirmed = env.CONFIRM_PUSH_TO_MAIN === "I_CONFIRM_PUSH_TO_MAIN";

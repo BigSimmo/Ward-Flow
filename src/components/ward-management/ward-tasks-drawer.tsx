@@ -47,6 +47,15 @@ export function WardTasksDrawer({
   withBackdrop = false,
 }: WardTasksDrawerProps) {
   useEffect(() => {
+    const trigger = typeof document !== "undefined" ? (document.activeElement as HTMLElement | null) : null;
+    return () => {
+      if (trigger && typeof trigger.focus === "function") {
+        trigger.focus();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();

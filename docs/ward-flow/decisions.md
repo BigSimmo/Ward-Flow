@@ -11,7 +11,7 @@ add a new entry that says which one it replaces, and mark the old one "Replaced 
 
 ---
 
-## D-1. Ward Flow is local only, with no linked repository
+## D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)
 
 - **Date:** 25 September 2026. **Decided by:** Josh.
 - **Decision:** All Ward Flow work lives on Josh's own computer, in
