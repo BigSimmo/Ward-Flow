@@ -63,9 +63,13 @@ jobs:
       - name: Check Ward legal wording
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm run check:ward-legal-language
-      - name: Typecheck
+      # next typegen writes the route types and validator that `next build` checks, so this one
+      # type check covers source and route signatures. The browser builds then skip their own copy.
+      - name: Typecheck source and route types
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: node node_modules/typescript/bin/tsc -p tsconfig.typecheck.json --noEmit --incremental false
+        run: |
+          node node_modules/next/dist/bin/next typegen
+          node node_modules/typescript/bin/tsc -p tsconfig.json --noEmit --incremental false
 
   quick:
     # Fast signal, not a gate: only the tests that import the files this PR changed, so a red shows
@@ -161,6 +165,14 @@ jobs:
         id: chromium
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npx playwright install --with-deps chromium
+      - name: Restore Next build cache
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/ward-next-cache
+          key: ward-next-${{ runner.os }}-${{ hashFiles('package-lock.json', 'next.config.ts') }}-${{ github.sha }}
+          restore-keys: |
+            ward-next-${{ runner.os }}-${{ hashFiles('package-lock.json', 'next.config.ts') }}-
       - name: Run Ward browser journeys
         id: journeys
         if: ${{ !cancelled() && steps.chromium.outcome == 'success' }}
@@ -170,6 +182,11 @@ jobs:
           # One duration-balanced third of the journey specs per runner, one worker each, so no
           # runner shares its CPU with another browser. The three groups cover every spec once.
           WARD_JOURNEY_GROUP: ${{ matrix.group }}/3
+          # The static job type-checks source and route types on this same commit (next typegen),
+          # so the test builds skip that 40-second step. Next validates every cache entry against
+          # the source, so the warm build cache changes speed, not what is built.
+          WARD_GATE_BUILD: "1"
+          WARD_BUILD_CACHE_DIR: ${{ runner.temp }}/ward-next-cache
         run: npm run test:e2e:ward-journeys
       - name: Upload failed Ward browser evidence
         if: ${{ !cancelled() && steps.journeys.outcome == 'failure' }}
