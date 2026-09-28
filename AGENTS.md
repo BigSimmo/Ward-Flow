@@ -31,10 +31,14 @@ its area.
 **Read these first:** the repository boundary above, `# API and provider confirmation boundary`,
 and `# Local server safety`. Verify the actual destination before any push, pull request or deploy.
 
+Several `docs/agents/` files were copied from PsychSift. They are background only where they name
+another repository, remote, provider or CI workflow. Do not execute their Git or provider procedures
+for Ward Flow. The `Run PR` sweep is disabled here until a Ward Flow specific workflow is written.
+
 | Topic                                                                                                                     | Full text                                                                                    |
 | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | Gate selection, the verification tier table, the gate arbiter                                                             | [`docs/agents/verification-gates.md`](docs/agents/verification-gates.md)                     |
-| Open PR sync, the `Run PR` sweep, babysitting a PR, review coverage, PR bundling                                          | [`docs/agents/pull-request-workflow.md`](docs/agents/pull-request-workflow.md)               |
+| Historical PR workflow; do not execute its GitHub procedures in Ward Flow                                               | [`docs/agents/pull-request-workflow.md`](docs/agents/pull-request-workflow.md)               |
 | The `upload` shortcut                                                                                                     | [`docs/agents/upload-shortcut.md`](docs/agents/upload-shortcut.md)                           |
 | Button and route wiring, the bundle budget                                                                                | [`docs/agents/wiring-and-bundle-budget.md`](docs/agents/wiring-and-bundle-budget.md)         |
 | External skill precedence, evidence and calibration                                                                       | [`docs/agents/external-skill-precedence.md`](docs/agents/external-skill-precedence.md)       |
@@ -54,8 +58,9 @@ Five sections stay here in full because a committed test or script reads their e
 
 # Ward Flow — dedicated repository entry point
 
-[`docs/ward-flow/README.md`](docs/ward-flow/README.md) is the product entry point. This repository
-contains Ward Flow; the working engine is authoritative for behaviour and the latest approved app
+[`docs/ward-flow/README.md`](docs/ward-flow/README.md) is the product entry point for Ward Flow's
+mission and design. Its old worktree, fold and publication instructions are superseded by this
+repository boundary. The working engine is authoritative for behaviour and the latest approved app
 is authoritative for appearance. Synthetic data only. Do not use real patient information before
 the separately required clinical, privacy and legal reviews.
 
@@ -69,8 +74,8 @@ the separately required clinical, privacy and legal reviews.
   An active overlap needs the other owner's release or Josh's scoped takeover approval for that
   exact file. Preserve existing work. Keep the log append-only and release claims after completion.
 - Make small commits on the task branch. Never clean, reset, discard, force-push or rewrite unclear
-  work. Keep a recoverable base before replacing files. Use dependencies from this repository's
-  lockfile, not from the former Database checkout.
+  work. Stage named files only; never use `git add -A`. Keep a recoverable base before replacing
+  files. Use dependencies from this repository's lockfile, not from the former Database checkout.
 
 ### Checks and shared run slots
 
@@ -79,6 +84,8 @@ publication. One wide run at a time across the PC; narrow checks use the shared 
 run old Ward Flow scripts that hard-code the former Database worktree or local ward line. Confirm
 that a script's checkout, base and provider effects fit this repository before running it. A test
 pass in the old checkout does not prove this public repository or a deployed service.
+Stop servers, browsers and other processes you started when the task no longer needs them. Check
+ownership before stopping a process that might belong to another chat.
 
 ### Publication and provider safety
 
@@ -237,7 +244,7 @@ Flow resource, data boundary and user authority before any live provider action.
 - Treat indirect API usage inside scripts, tests, release checks, PR tooling, and review automation as confirmation-required too.
 - Prefer local, static, mocked, or offline checks. If a recommended verification would touch a provider, report the command and ask before running it.
 - Live PR/CI tooling, Azure resource checks, and release gates that call providers are not automatic.
-- Exception: the `Run PR` shortcut (see "## Run PR shortcut") is standing user confirmation for the specific GitHub actions it enumerates, for the duration of that sweep only.
+- The inherited `Run PR` shortcut is disabled in this repository; it targets PsychSift's PR queue.
 
 <!-- END:api-confirmation-boundary -->
 
@@ -254,25 +261,27 @@ For the `upload` safe Git handoff workflow — protected branches, required insp
 
 ## Open PR branch sync (anti-churn)
 
-For the anti-churn branch-sync mitigations and the `git merge-tree` test that tells staleness from a real conflict, see [`docs/agents/pull-request-workflow.md`](docs/agents/pull-request-workflow.md).
+The inherited branch-sync procedure targets PsychSift and is disabled for Ward Flow. Verify this
+repository and the named PR before any separate authorised sync.
 <!-- END:pr-branch-sync -->
 
 ## Run PR shortcut
 
-For the `Run PR` open-PR maintenance sweep — what it authorizes, its hard guardrails, and its procedure, see [`docs/agents/pull-request-workflow.md`](docs/agents/pull-request-workflow.md).
+Disabled for Ward Flow. Do not use the inherited PsychSift PR sweep or treat it as GitHub authority.
 <!-- END:run-pr-shortcut -->
 
 ## Babysit the pull request, then stop
 
-For the 30-minute post-PR CI budget, what may be done inside it, and how it is enforced, see [`docs/agents/pull-request-workflow.md`](docs/agents/pull-request-workflow.md).
+The inherited PsychSift PR observation procedure is disabled for Ward Flow. Use only a specifically
+authorised Ward Flow PR task, with its exact repository and head verified.
 
 ## Automated review coverage (owner decision, 2026-08-22)
 
-For the 2026-08-22 owner decision on automated review coverage, see [`docs/agents/pull-request-workflow.md`](docs/agents/pull-request-workflow.md).
+The inherited PsychSift review workflow does not establish Ward Flow review or publication authority.
 
 ## PR bundling (reduce one-task-one-PR churn)
 
-For when a task may ride an already-open PR, the two-way low-risk test, and what must never be bundled, see [`docs/agents/pull-request-workflow.md`](docs/agents/pull-request-workflow.md).
+Bundle Ward Flow changes only after checking the exact branch, owner and user-authorised scope.
 <!-- BEGIN:anti-conflict-speed -->
 
 ## Anti-conflict and CI-speed operating procedure
@@ -290,7 +299,8 @@ repository boundary. Do not touch unrelated active PRs unless the user explicitl
 
 - Assemble the intended commits before an authorised push. Check the actual Ward Flow remote,
   destination branch, CI triggers and deployment effects before publishing.
-- For Run PR sweeps and normal readiness pushes — never an explicit bare PR publication — run `npm run format` **and commit the result**, then `npm run verify:pr-local` (or the smallest gate that covers the change). Format is in `static-pr` but not in `verify:cheap`; an uncommitted format leaves CI red on the pushed blob. Whole-tree Prettier, not a single edited file.
+- For normal Ward Flow readiness pushes — never an explicit bare PR publication — run the
+  selected gate for the actual changed files, then verify the exact pushed commit.
 - If a PR has auto-merge armed, its auto-merge state is user-owned and automation must not disable or re-enable it. Ordinary fast-forward pushes, `update-branch`/merge-main-in syncs, and bundled additions may proceed — GitHub re-validates required checks against the new head before merging, so an additive push cannot slip past that. A force-push, history rewrite, or base/target change while armed still hard-blocks with no override; wait for the user to change that state first.
 - Missing CI checks are not a green pass. Verify checks against the exact head in the Ward Flow PR.
 - Triage and repair actionable review threads early; reply before resolving (`<!-- codex-thread-disposition:resolved -->`). Leave ambiguous or product-sensitive threads open for the owner.
