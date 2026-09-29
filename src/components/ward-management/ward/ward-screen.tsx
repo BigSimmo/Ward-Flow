@@ -108,6 +108,7 @@ import { SuburbTeamPanel } from "./suburb-team-panel";
  */
 import { RELEASE_DAYS, parseReleaseDayInstant, releaseTimeAlreadyPassed, type ReleaseDay } from "./release-day";
 import { WardAnswerView } from "./ward-answer-view";
+import { WardDecisionsCockpit } from "./ward-decisions-cockpit";
 import styles from "./ward.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import {
@@ -2623,6 +2624,8 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
           they can never increment it — see their own comments. An absent item is not an absent
           answer, and a ward with nobody going on leave has not failed to answer.
         */}
+          <WardDecisionsCockpit unit={unit} />
+
           <div
             id="ward-daily-return"
             className={`${styles.dailyReturn} ${styles.censusCommandCard}`}

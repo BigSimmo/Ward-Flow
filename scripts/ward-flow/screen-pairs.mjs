@@ -93,6 +93,7 @@ export const PAIRS = [
   ["delays-perfected-third-edition.html", null, null, false],
   ["notification-popup-third-edition.html", null, null, false],
   ["ward-before-after-redesign.html", null, null, false],
+  ["ward-bed-decisions-perfected.html", null, null, false],
 ];
 
 /** Superseded drawings — named so they are never treated as current. */
