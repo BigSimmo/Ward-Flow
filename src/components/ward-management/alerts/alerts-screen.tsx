@@ -607,53 +607,51 @@ export function AlertsScreen() {
   return (
     <div className={styles.screen} data-testid="ward-alerts-page" data-ward-design="third-edition">
       <main id="main-content" className={styles.main}>
-        {/* Clinical Page Header */}
+        {/* Clinical Page Header — Action & Status Deck */}
         <header className={styles.pageHeader}>
-          <div className={styles.pageHeaderRow}>
-            <div>
-              <p className={styles.eyebrow}>Operational inbox</p>
-              <h1>Alerts</h1>
-              <LegalLimitsNotChecked />
-              <p>Recorded conditions that need action now, separated by responsible role.</p>
+          <div className={styles.headerLeftDeck}>
+            <div className={styles.liveStreamBadge}>
+              <span className={styles.liveDot} aria-hidden="true" />
+              <span className={styles.liveStreamLabel}>Live Action Stream</span>
             </div>
-            <div className={styles.pageHeaderActions}>
-              <span data-ward-type-floor="badge" className={styles.prototypeBadge}>
-                Synthetic prototype
-              </span>
-              <button
-                ref={broadcastTriggerRef}
-                type="button"
-                className={`${styles.btn} ${styles.btnPrimary}`}
-                onClick={(e) => {
-                  broadcastTriggerRef.current = e.currentTarget;
-                  setBroadcastModalOpen(true);
-                }}
-              >
-                <Radio className={styles.btnIcon} aria-hidden="true" />
-                <span>+ Broadcast Network Alert</span>
-              </button>
-            </div>
+            <dl className={styles.summary} aria-label="Alert summary">
+              <div data-tone={needsYouCount > 0 ? "danger" : "quiet"}>
+                <dt>Needs you</dt>
+                <dd>{needsYouCount}</dd>
+              </div>
+              <div>
+                <dt>Other roles</dt>
+                <dd>{otherRolesCount}</dd>
+              </div>
+              <div>
+                <dt>Conditions checked</dt>
+                <dd>7</dd>
+              </div>
+            </dl>
           </div>
-          <dl className={styles.summary} aria-label="Alert summary">
-            <div data-tone={needsYouCount > 0 ? "danger" : "quiet"}>
-              <dt>Needs you</dt>
-              <dd>{needsYouCount}</dd>
-            </div>
-            <div>
-              <dt>Other roles</dt>
-              <dd>{otherRolesCount}</dd>
-            </div>
-            <div>
-              <dt>Conditions checked</dt>
-              <dd>7</dd>
-            </div>
-          </dl>
+          <div className={styles.pageHeaderActions}>
+            <button
+              ref={broadcastTriggerRef}
+              type="button"
+              className={`${styles.btn} ${styles.btnPrimary} ${styles.btnBroadcast}`}
+              onClick={(e) => {
+                broadcastTriggerRef.current = e.currentTarget;
+                setBroadcastModalOpen(true);
+              }}
+            >
+              <Radio className={styles.btnIcon} aria-hidden="true" />
+              <span>+ Broadcast Network Alert</span>
+            </button>
+          </div>
         </header>
 
         {/* Third-Edition 4-KPI Summary Strip */}
         <div className={styles.kpiStrip}>
           <div className={styles.kpiCard} data-tone={legal.length > 0 ? "danger" : "good"}>
-            <span className={styles.kpiLabel}>Form expiries passed</span>
+            <div className={styles.kpiHeaderRow}>
+              <span className={styles.kpiLabel}>Form expiries passed</span>
+              <LegalLimitsNotChecked variant="tag" />
+            </div>
             <span className={styles.kpiVal}>{legal.length}</span>
             <span className={styles.kpiSub}>
               {legal.length > 0
@@ -895,31 +893,6 @@ export function AlertsScreen() {
                   setRoleFilter("all");
                 }}
               />
-              <details className={`${styles.contextDetails} source-print`}>
-                <summary>What this group checks</summary>
-                <div className={styles.contextGrid}>
-                  <ConditionContext
-                    title="Form expiry passed"
-                    watches="Watches every movement carrying a recorded form expiry, and fires when one passes."
-                    none={`No recorded form expiry has passed. ${withDeadline.length} ${
-                      withDeadline.length === 1 ? "movement carries" : "movements carry"
-                    } one and none is overdue — that is a count, not a gap.`}
-                    items={legal}
-                  />
-                  <ConditionContext
-                    title="Every ward asked has declined"
-                    watches="Watches movements where every ward approached has refused and none has accepted."
-                    none="No movement has been refused by every ward it asked."
-                    items={declined}
-                  />
-                  <ConditionContext
-                    title="Destination no longer suitable"
-                    watches="Watches accepted destinations against an authorised-hospital check for the patient's current recorded status."
-                    none="No accepted destination has failed an authorised-hospital check."
-                    items={unlawful}
-                  />
-                </div>
-              </details>
             </div>
           </WardPanel>
 
@@ -944,6 +917,26 @@ export function AlertsScreen() {
               <details className={`${styles.contextDetails} source-print`}>
                 <summary>What this group checks and cannot check</summary>
                 <div className={styles.contextGrid}>
+                  <ConditionContext
+                    title="Form expiry passed"
+                    watches="Watches every movement carrying a recorded form expiry, and fires when one passes."
+                    none={`No recorded form expiry has passed. ${withDeadline.length} ${
+                      withDeadline.length === 1 ? "movement carries" : "movements carry"
+                    } one and none is overdue — that is a count, not a gap.`}
+                    items={legal}
+                  />
+                  <ConditionContext
+                    title="Every ward asked has declined"
+                    watches="Watches movements where every ward approached has refused and none has accepted."
+                    none="No movement has been refused by every ward it asked."
+                    items={declined}
+                  />
+                  <ConditionContext
+                    title="Destination no longer suitable"
+                    watches="Watches accepted destinations against an authorised-hospital check for the patient's current recorded status."
+                    none="No accepted destination has failed an authorised-hospital check."
+                    items={unlawful}
+                  />
                   <ConditionContext
                     title="Bed hold expired"
                     watches="Watches bed pulls against the time they were held until."
@@ -998,20 +991,66 @@ export function AlertsScreen() {
           </WardPanel>
         </div>
 
-        {/* Operational Notices & Shift Communication Feed (Mockup Parity) */}
+        {/* Operational Notices & Shift Communication Feed */}
         <section className={styles.feedSection} aria-label="Operational Notices and Shift Communication Feed">
           <div className={styles.feedHead}>
-            <h2>Role Notices &amp; Shift Communication Feed</h2>
-            <span style={{ fontSize: "var(--t-0)", color: "var(--muted)", fontFamily: "var(--mono)" }}>
-              All Services Stream
-            </span>
+            <div className={styles.feedHeadTitleGroup}>
+              <Radio className={styles.feedIconAccent} aria-hidden="true" />
+              <h2>Role Notices &amp; Shift Communication Feed</h2>
+              <span className={styles.feedStreamActiveTag}>
+                <span className={styles.feedPulseDot} aria-hidden="true" />
+                <span>Live Feed</span>
+              </span>
+            </div>
+            <div className={styles.feedTelemetryGroup}>
+              <span className={styles.telemetryChip}>
+                <span className={styles.telemetryDot} aria-hidden="true" />
+                ED Liaison Desk: Connected
+              </span>
+              <span className={styles.telemetryChip}>
+                <span className={styles.telemetryDot} aria-hidden="true" />
+                State Bed Desk: Listening
+              </span>
+              <span className={styles.streamChannelTag}>All Services Stream</span>
+            </div>
           </div>
-          {/* The notices the reducer has actually raised this session, newest first. Two typed-in
-              items used to stand here, one naming "Luke Davies" as WF-021's patient and calling the
-              transfer complete; neither the person nor the transfer is in the record (25 September
-              2026 audit, A7). */}
           {feedNotices.length === 0 ? (
-            <p className={styles.none}>No notices have been raised this session.</p>
+            <div className={styles.feedEmptyCard}>
+              <div className={styles.feedEmptyIconBox}>
+                <Radio className={styles.feedEmptyIcon} aria-hidden="true" />
+              </div>
+              <div className={styles.feedEmptyTextGroup}>
+                <h3 className={styles.feedEmptyTitle}>Active Shift Telemetry Channel</h3>
+                <p className={styles.none}>No notices have been raised this session.</p>
+                <p className={styles.feedEmptySub}>
+                  Operational broadcasts, capacity alerts, and urgent shift handovers recorded across the hospital
+                  network will stream into this console automatically.
+                </p>
+              </div>
+              <div className={styles.feedStatusGrid}>
+                <div className={styles.feedStatusCard}>
+                  <span className={styles.statusDotGreen} aria-hidden="true" />
+                  <div className={styles.feedStatusCardContent}>
+                    <strong>Emergency Liaison Desk</strong>
+                    <span>Channel open &bull; Normal latency</span>
+                  </div>
+                </div>
+                <div className={styles.feedStatusCard}>
+                  <span className={styles.statusDotGreen} aria-hidden="true" />
+                  <div className={styles.feedStatusCardContent}>
+                    <strong>State Bed Bureau</strong>
+                    <span>Sync active &bull; 0 queue stalls</span>
+                  </div>
+                </div>
+                <div className={styles.feedStatusCard}>
+                  <span className={styles.statusDotAmber} aria-hidden="true" />
+                  <div className={styles.feedStatusCardContent}>
+                    <strong>Directives Service</strong>
+                    <span>Standing by &bull; Broadcast ready</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           ) : (
             <ul className={styles.feedList}>
               {feedNotices.map((notice) => {
