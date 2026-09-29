@@ -169,4 +169,67 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     expect(notice.textContent).toContain("Return transfer movement queued for bed placement at home health service.");
     expect(notice.textContent).toContain("Royal Perth Hospital");
   });
+
+  it("filters placements when home catchment dropdown is selected", () => {
+    renderBoard();
+    const select = screen.getByTestId("ward-out-of-area-catchment-filter");
+    expect(select).toBeInTheDocument();
+
+    fireEvent.change(select, { target: { value: "South West" } });
+    const swEntries = entries.filter((e) => e.admission.homeRegion === "South West");
+    expect(swEntries.length).toBeGreaterThan(0);
+
+    for (const entry of swEntries) {
+      expect(screen.getByTestId(`ward-out-of-area-row-${entry.admission.id}`)).toBeInTheDocument();
+    }
+
+    const nonSw = entries.find((e) => e.admission.homeRegion !== "South West");
+    if (nonSw) {
+      expect(screen.queryByTestId(`ward-out-of-area-row-${nonSw.admission.id}`)).not.toBeInTheDocument();
+    }
+  });
+
+  it("filters placements when an interactive catchment pill is clicked in the default view", () => {
+    renderBoard();
+    const pill = screen.getByRole("button", { name: /Filter by South West/i });
+    expect(pill).toBeInTheDocument();
+    expect(pill).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(pill);
+    expect(pill).toHaveAttribute("aria-pressed", "true");
+
+    const nonSw = entries.find((e) => e.admission.homeRegion !== "South West");
+    if (nonSw) {
+      expect(screen.queryByTestId(`ward-out-of-area-row-${nonSw.admission.id}`)).not.toBeInTheDocument();
+    }
+
+    // Clicking again toggles off
+    fireEvent.click(pill);
+    expect(pill).toHaveAttribute("aria-pressed", "false");
+    if (nonSw) {
+      expect(screen.getByTestId(`ward-out-of-area-row-${nonSw.admission.id}`)).toBeInTheDocument();
+    }
+  });
+
+  it("clears selection back to cohort overview when Escape key is pressed", () => {
+    renderBoard();
+    const first = entries[0];
+    fireEvent.click(screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`));
+    expect(screen.getByTestId("ward-out-of-area-subject-facts")).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByTestId("ward-out-of-area-subject-facts")).not.toBeInTheDocument();
+    expect(screen.getByTestId("ward-out-of-area-subject-empty")).toBeInTheDocument();
+  });
+
+  it("inspects the longest case directly from the priority case button", () => {
+    renderBoard();
+    const inspectBtn = screen.getByRole("button", { name: /Inspect Longest Case/i });
+    expect(inspectBtn).toBeInTheDocument();
+
+    fireEvent.click(inspectBtn);
+    const facts = screen.getByTestId("ward-out-of-area-subject-facts");
+    expect(facts).toBeInTheDocument();
+    expect(facts).toHaveTextContent("AD-ALBA-01");
+  });
 });
