@@ -3893,6 +3893,26 @@ input.historyField:focus-visible {
   line-height: 1.2;
 }
 
+.bedDeclinedBadge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--ward-danger, #b91c1c);
+  background: var(--ward-danger-soft, #fee2e2);
+  border: 1px solid var(--danger-border, #fca5a5);
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  line-height: 1.2;
+}
+
+.cardDecidedTime {
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin-left: 0.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .cardRouteRow {
   display: flex;
   align-items: center;
@@ -4333,17 +4353,20 @@ input.historyField:focus-visible {
   color: var(--accent-ink);
 }
 
-.screen[data-referral-view="register"] .sectionLive {
+.screen[data-referral-view="register"] .sectionLive,
+.screen[data-referral-view="register"] .section {
   padding: 0;
 }
 
-.screen[data-referral-view="register"] .sectionLive > :not(.sectionHeading) {
+.screen[data-referral-view="register"] .sectionLive > :not(.sectionHeading),
+.screen[data-referral-view="register"] .section > :not(.sectionHeading) {
   margin-right: 0.875rem;
   margin-left: 0.875rem;
 }
 
 .screen[data-referral-view="register"] .sectionLive .tableScroll,
-.screen[data-referral-view="register"] .sectionLive .cardList {
+.screen[data-referral-view="register"] .sectionLive .cardList,
+.screen[data-referral-view="register"] .cardList {
   margin-right: 0;
   margin-left: 0;
   border-right: 0;

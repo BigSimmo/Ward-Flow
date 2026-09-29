@@ -1377,7 +1377,7 @@ function DecidedSection({
   onResetFilters?: () => void;
 }) {
   return (
-    <section className={styles.section} data-testid="ward-referral-board-decided">
+    <section className={`${styles.section} ${styles.sectionLive}`} data-testid="ward-referral-board-decided">
       <h2 className={styles.sectionHeading}>
         {decided.length < decidedTotal
           ? `Recently decided — ${decided.length} most recent of ${decidedTotal}`
@@ -1464,6 +1464,7 @@ function DecidedSection({
           <ul className={styles.cardList} data-testid="ward-referral-board-decided-cards">
             {displayDecided.map((referral) => {
               const patientInfo = resolveSubjectPatient(referral, { patients, referrals: decided, movements });
+              const sendingHospital = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode;
               return (
                 <li
                   key={referral.id}
@@ -1485,24 +1486,64 @@ function DecidedSection({
                         </span>
                         <span className={styles.patientCardName}>{patientInfo.displayName}</span>
                       </span>
-                      <span className={styles.decidedOutcomeBadge}>{outcomeLabel(referral)}</span>
+                      <span className={styles.cardTierGroup}>
+                        <span
+                          className={styles.priorityBadge}
+                          data-priority={getReferralPriority(referral, now)}
+                        >
+                          <PriorityGlyph priority={getReferralPriority(referral, now)} />
+                          <span className={styles.priorityText}>
+                            {referralPriorityLabel(getReferralPriority(referral, now))}
+                          </span>
+                        </span>
+                        <span
+                          className={styles.cardTier}
+                          data-tier={referral.urgency}
+                        >
+                          {urgencyTierLabel(referral.urgency)}
+                        </span>
+                        <span className={styles.waitBadge}>
+                          {decidedWaitLabel(referral)}
+                        </span>
+                      </span>
                     </span>
-                    <span
-                      className={styles.cardDetail}
-                      data-testid={`ward-referral-board-decided-detail-card-${referral.id}`}
-                    >
-                      <OutcomeDetail
-                        referral={referral}
-                        units={units}
-                        refusalsTestId={`ward-referral-board-decided-refusals-card-${referral.id}`}
-                        cancelledTestId={`ward-referral-board-decided-cancelled-card-${referral.id}`}
-                      />
+
+                    <span className={styles.cardContextRow}>
+                      <span className={styles.cardService}>
+                        {referralPersonFactsStatingSex(referral).join(" · ")}
+                      </span>
+                      <span
+                        className={
+                          referralState(referral) === "accepted"
+                            ? styles.bedAssignedBadge
+                            : styles.bedDeclinedBadge
+                        }
+                      >
+                        {outcomeLabel(referral)}
+                      </span>
                     </span>
-                    <span className={styles.cardService}>
-                      {decidedWaitLabel(referral)} ·{" "}
-                      {referralDecidedAt(referral) !== undefined
-                        ? formatInstantWithDay(referralDecidedAt(referral)!, now)
-                        : "Not recorded"}
+
+                    <span className={styles.cardRouteRow}>
+                      <span className={styles.cardRouteOrigin}>{sendingHospital}</span>
+                      <span className={styles.cardRouteArrow} aria-hidden="true">
+                        →
+                      </span>
+                      <span
+                        className={styles.cardRouteDestination}
+                        data-testid={`ward-referral-board-decided-detail-card-${referral.id}`}
+                      >
+                        <OutcomeDetail
+                          referral={referral}
+                          units={units}
+                          refusalsTestId={`ward-referral-board-decided-refusals-card-${referral.id}`}
+                          cancelledTestId={`ward-referral-board-decided-cancelled-card-${referral.id}`}
+                        />
+                      </span>
+                      <span className={styles.cardDecidedTime}>
+                        · {referralDecidedAt(referral) !== undefined
+                          ? `Decided ${formatInstantWithDay(referralDecidedAt(referral)!, now)}`
+                          : "Not recorded"}
+                      </span>
                     </span>
                   </button>
                 </li>
