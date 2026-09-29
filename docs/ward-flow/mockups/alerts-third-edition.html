@@ -3,12 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ward Flow — Clinical &amp; Operational Action Alerts Center</title>
+    <title>Ward Flow — Operational Action Alerts Center</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap"
     />
     <style>
       :root {
@@ -29,6 +29,7 @@
         --r1i: 9px;
         --r2: 6px;
         --pill: 9999px;
+        --ward-tap: 48px;
 
         --railw: 240px;
       }
@@ -54,46 +55,50 @@
         --gilt-soft: #f1ebdf;
         --good: #227550;
         --good-soft: #e2f0e8;
+        --good-ink: #144630;
         --warn: #825d10;
         --warn-soft: #f6eeda;
+        --warn-ink: #523a0a;
         --danger: #b03b2e;
         --danger-soft: #f8e6e2;
-        --danger-ink: #973121;
-        --line: rgba(22, 30, 40, 0.11);
-        --line-strong: rgba(22, 30, 40, 0.22);
-        --lift: 0 4px 20px -2px rgba(32, 44, 58, 0.08), 0 1px 3px rgba(32, 44, 58, 0.04);
-        --scrim: rgba(15, 20, 26, 0.45);
+        --danger-ink: #6a2118;
+        --line: #cbd5e1;
+        --line-strong: #94a3b8;
+        --scrim: rgba(15, 23, 42, 0.45);
+        --lift: 0 4px 16px rgba(0, 0, 0, 0.08);
       }
 
       :root[data-theme="dark"] {
-        --ground-hi: #14181d;
-        --ground: #0f1216;
-        --ground-2: #0c0f12;
-        --surface: #171b21;
-        --surface-2: #1f242c;
-        --surface-3: #262c36;
-        --sunk: #13161b;
-        --ink: #e8ebef;
-        --ink-soft: #b0b8c4;
-        --muted: #7e8998;
-        --accent: #a7bcd2;
-        --accent-ink: #c8d8e8;
-        --accent-soft: #232c37;
-        --on-accent: #0f1216;
-        --stripe: #a7bcd2;
-        --gilt: #d3b77e;
-        --gilt-soft: #2a2418;
-        --good: #6fd39b;
-        --good-soft: #172820;
-        --warn: #d4a34b;
-        --warn-soft: #2b2314;
-        --danger: #ff8b76;
-        --danger-soft: #321915;
-        --danger-ink: #ffb4a6;
-        --line: rgba(255, 255, 255, 0.09);
-        --line-strong: rgba(255, 255, 255, 0.18);
-        --lift: 0 6px 24px -4px rgba(0, 0, 0, 0.45);
+        --ground-hi: #0f141c;
+        --ground: #141923;
+        --ground-2: #19202c;
+        --surface: #1e2636;
+        --surface-2: #242d3f;
+        --surface-3: #2a354a;
+        --sunk: #18202d;
+        --ink: #f0f3f8;
+        --ink-soft: #c8d1de;
+        --muted: #8b99ae;
+        --accent: #5b87ad;
+        --accent-ink: #d0e1f0;
+        --accent-soft: #1e2d3d;
+        --on-accent: #ffffff;
+        --stripe: #4d7191;
+        --gilt: #b8954d;
+        --gilt-soft: #382c16;
+        --good: #3ea675;
+        --good-soft: #143324;
+        --good-ink: #a7dfc4;
+        --warn: #c4942b;
+        --warn-soft: #38290a;
+        --warn-ink: #ebd498;
+        --danger: #d95343;
+        --danger-soft: #3d1b17;
+        --danger-ink: #f0a8a0;
+        --line: #2e3a4e;
+        --line-strong: #455570;
         --scrim: rgba(0, 0, 0, 0.7);
+        --lift: 0 4px 16px rgba(0, 0, 0, 0.3);
       }
 
       * {
@@ -104,49 +109,34 @@
         font-family: var(--body);
         font-size: var(--t-2);
         color: var(--ink);
-        background:
-          linear-gradient(180deg, var(--ground-hi) 0%, var(--ground) 55%, var(--ground-2) 100%) fixed,
-          var(--ground);
+        background: var(--ground);
+        line-height: 1.45;
         -webkit-font-smoothing: antialiased;
-        font-variant-numeric: tabular-nums;
       }
 
-      body::before {
-        content: "";
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: var(--stripe);
-        z-index: 50;
-        pointer-events: none;
-      }
-
+      /* App Shell Layout */
       .app {
         display: grid;
-        grid-template-columns: var(--railw) minmax(0, 1fr);
+        grid-template-columns: var(--railw) 1fr;
         min-height: 100vh;
       }
 
-      /* Sovereign 13-Screen Rail */
+      /* Navigation Rail */
       .rail {
-        position: sticky;
-        top: 0;
-        align-self: start;
-        height: 100vh;
         background: var(--surface);
         border-right: 1px solid var(--line);
         display: flex;
         flex-direction: column;
+        height: 100vh;
+        position: sticky;
+        top: 0;
         z-index: 30;
-        overflow-y: auto;
       }
       .brand {
-        padding: 14px 16px 12px;
         display: flex;
-        align-items: baseline;
-        gap: 6px;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 16px;
         border-bottom: 1px solid var(--line);
         flex-shrink: 0;
       }
@@ -269,8 +259,8 @@
 
       /* Buttons */
       .btn {
-        height: 32px;
-        padding: 0 12px;
+        min-height: var(--ward-tap);
+        padding: 0 14px;
         border-radius: var(--r2);
         font-size: var(--t-1);
         font-weight: 600;
@@ -280,11 +270,10 @@
         cursor: pointer;
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 6px;
         text-decoration: none;
-        transition:
-          background 0.15s,
-          border-color 0.15s;
+        transition: background 0.15s, border-color 0.15s;
       }
       .btn:hover {
         background: var(--sunk);
@@ -304,8 +293,8 @@
         color: #fff;
       }
       .btn.sm {
-        height: 26px;
-        padding: 0 8px;
+        min-height: 34px;
+        padding: 0 10px;
         font-size: var(--t-0);
       }
 
@@ -319,6 +308,69 @@
         width: 100%;
       }
 
+      /* Action & Status Deck */
+      .actionDeck {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 10px 16px;
+        flex-wrap: wrap;
+      }
+      .deckLeft {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .liveBadge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 10px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--pill);
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .liveDot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--danger);
+        box-shadow: 0 0 6px var(--danger);
+      }
+      .summaryList {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .summaryPill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 10px;
+        background: var(--ground-hi);
+        border: 1px solid var(--line);
+        border-radius: var(--pill);
+        font-size: var(--t-0);
+        font-family: var(--mono);
+        color: var(--muted);
+      }
+      .summaryPill strong {
+        color: var(--ink);
+      }
+
       /* KPI Summary Strip */
       .kpiStrip {
         display: grid;
@@ -328,214 +380,405 @@
       .kpiCard {
         background: var(--surface);
         border: 1px solid var(--line);
-        border-bottom-color: var(--line-strong);
         border-radius: var(--r2);
-        box-shadow: none;
         padding: 12px 14px;
         display: grid;
-        gap: 3px;
+        gap: 4px;
       }
-      .kpiCard[data-tone="danger"] .kpiVal {
-        color: var(--danger);
-      }
-      .kpiCard[data-tone="warn"] .kpiVal {
-        color: var(--warn);
-      }
-      .kpiCard[data-tone="good"] .kpiVal {
-        color: var(--good);
+      .kpiHeadRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
       }
       .kpiLabel {
         font-size: var(--t-0);
-        font-weight: 600;
+        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.08em;
         color: var(--muted);
+        font-family: var(--mono);
+      }
+      .legalTag {
+        font-size: 11px;
+        font-family: var(--mono);
+        color: var(--muted);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        padding: 1px 6px;
+        border-radius: var(--pill);
       }
       .kpiVal {
         font-family: var(--mono);
         font-size: var(--t-5);
         font-weight: 700;
         color: var(--ink);
+        font-variant-numeric: tabular-nums;
       }
+      .kpiCard[data-tone="good"] .kpiVal { color: var(--good); }
+      .kpiCard[data-tone="danger"] .kpiVal { color: var(--danger); }
+      .kpiCard[data-tone="warn"] .kpiVal { color: var(--warn); }
       .kpiSub {
         font-size: var(--t-0);
         color: var(--muted);
+        font-family: var(--mono);
       }
 
-      /* Filter Toolbar */
-      .filterBar {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
+      /* Multi-tier Filter Deck */
+      .filterDeck {
         background: var(--surface);
         border: 1px solid var(--line);
         border-radius: var(--r2);
-        padding: 8px 12px;
-        align-items: center;
+        padding: 10px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
       }
-      .filterLabel {
+      .tierRow {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 8px;
+      }
+      .roleRow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .rowLabel {
         font-size: var(--t-0);
-        font-weight: 600;
+        font-weight: 700;
         text-transform: uppercase;
         color: var(--muted);
-        margin-right: 4px;
+        font-family: var(--mono);
       }
       .filterBtn {
-        padding: 4px 10px;
-        border-radius: var(--pill);
-        border: 1px solid var(--line-strong);
+        min-height: 36px;
+        padding: 4px 12px;
+        border-radius: var(--r2);
+        border: 1px solid var(--line);
         background: var(--surface-2);
-        font-size: var(--t-0);
+        font-size: var(--t-1);
         font-weight: 600;
         color: var(--ink-soft);
         cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .filterBtn.pill {
+        border-radius: var(--pill);
+        padding: 4px 12px;
       }
       .filterBtn.active {
         background: var(--accent);
         color: var(--on-accent);
         border-color: var(--accent);
       }
+      .badgeCount {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: var(--pill);
+        font-size: 11px;
+        font-family: var(--mono);
+        font-weight: 700;
+        background: var(--surface);
+        color: var(--ink);
+        border: 1px solid var(--line);
+      }
+      .filterBtn.active .badgeCount {
+        background: var(--on-accent);
+        color: var(--accent);
+        border-color: transparent;
+      }
 
-      /* Panels & Alert Items */
-      .panel {
+      /* Two Column Operational Layout */
+      .gridTwoCol {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        align-items: start;
+      }
+      .panelCol {
         background: var(--surface);
         border: 1px solid var(--line);
-        border-bottom-color: var(--line-strong);
         border-radius: var(--r1);
-        box-shadow: var(--lift);
         overflow: hidden;
-        display: flex;
-        flex-direction: column;
       }
-      .ph {
+      .colHead {
         padding: 10px 16px;
-        border-bottom: 1px solid var(--line);
-        border-top-left-radius: var(--r1i);
-        border-top-right-radius: var(--r1i);
         background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
         display: flex;
         align-items: center;
         justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 8px;
       }
-      .ph h2 {
+      .colHead h2 {
         margin: 0;
-        font-size: var(--t-2);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--ink-soft);
-      }
-
-      .alertList {
-        display: flex;
-        flex-direction: column;
-      }
-      .alertItem {
-        display: grid;
-        grid-template-columns: 36px minmax(0, 1fr) auto;
-        gap: 14px;
-        padding: 14px 16px;
-        border-bottom: 1px solid var(--line);
-        align-items: center;
-        transition: background 0.15s;
-      }
-      .alertItem:last-child {
-        border-bottom: none;
-      }
-      .alertItem:hover {
-        background: var(--surface-2);
-      }
-      .alertItem[data-priority="critical"] {
-        background: var(--danger-soft);
-      }
-      .alertItem[data-priority="warning"] {
-        background: var(--surface);
-      }
-      .alertItem[data-priority="info"] {
-        background: var(--surface);
-      }
-
-      .alertIcon {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        font-size: var(--t-3);
         font-weight: 700;
-        font-size: var(--t-2);
-      }
-      .alertItem[data-priority="critical"] .alertIcon {
-        background: var(--danger-soft);
-        color: var(--danger-ink);
-      }
-      .alertItem[data-priority="warning"] .alertIcon {
-        background: var(--warn-soft);
-        color: var(--warn);
-      }
-      .alertItem[data-priority="info"] .alertIcon {
-        background: var(--accent-soft);
-        color: var(--accent);
-      }
-
-      .alertContent {
-        display: grid;
-        gap: 4px;
-      }
-      .alertHead {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-      .alertTitle {
-        font-weight: 600;
-        font-size: var(--t-2);
         color: var(--ink);
       }
-      .alertMeta {
+      .colHead span {
         font-size: var(--t-0);
         color: var(--muted);
+        font-family: var(--mono);
       }
-      .alertDesc {
-        font-size: var(--t-1);
-        color: var(--ink-soft);
-        line-height: 1.4;
+      .alertList {
+        padding: 12px;
+        display: grid;
+        gap: 10px;
       }
 
-      .badge {
+      /* Alert Card */
+      .alertCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 12px 14px;
+        display: grid;
+        gap: 8px;
+      }
+      .alertTop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .alertBadgeRow {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .alertGlyph {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        padding: 2px 7px;
-        border-radius: var(--pill);
+        justify-content: center;
         font-size: var(--t-0);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        white-space: nowrap;
-      }
-      .badge[data-tone="danger"] {
+        font-weight: 700;
         background: var(--danger-soft);
         color: var(--danger-ink);
         border: 1px solid var(--danger);
       }
-      .badge[data-tone="warn"] {
+      .alertGlyph.warn {
         background: var(--warn-soft);
-        color: var(--warn);
-        border: 1px solid var(--warn);
+        color: var(--warn-ink);
+        border-color: var(--warn);
       }
-      .badge[data-tone="good"] {
+      .badgePill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: var(--pill);
+        font-size: 11px;
+        font-family: var(--mono);
+        font-weight: 700;
+        text-transform: uppercase;
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        color: var(--ink-soft);
+      }
+      .badgePill.danger {
+        border-color: var(--danger);
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+      }
+      .badgePill.warn {
+        border-color: var(--warn);
+        background: var(--warn-soft);
+        color: var(--warn-ink);
+      }
+      .alertTitle {
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .alertMeta {
+        font-size: var(--t-1);
+        color: var(--muted);
+      }
+      .alertMeta strong {
+        color: var(--ink);
+      }
+      .alertSub {
+        font-size: var(--t-0);
+        font-family: var(--mono);
+        color: var(--muted);
+      }
+      .alertActions {
+        display: flex;
+        gap: 6px;
+      }
+
+      /* Shift Feed Section */
+      .feedSection {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        overflow: hidden;
+      }
+      .feedHead {
+        padding: 10px 16px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .feedTitleGroup {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .feedTitleGroup h2 {
+        margin: 0;
+        font-size: var(--t-3);
+        font-weight: 700;
+      }
+      .feedTagLive {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: var(--pill);
         background: var(--good-soft);
-        color: var(--good);
         border: 1px solid var(--good);
+        color: var(--good-ink);
+        font-size: 11px;
+        font-family: var(--mono);
+        font-weight: 700;
+        text-transform: uppercase;
       }
-      .badge[data-tone="accent"] {
-        background: var(--accent-soft);
+      .feedStatusList {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: var(--t-0);
+        font-family: var(--mono);
+        color: var(--muted);
+      }
+      .feedDot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--good);
+        display: inline-block;
+      }
+      .feedEmptyBox {
+        padding: 28px 20px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+      .feedEmptyIcon {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--surface-2);
+        border: 1px solid var(--line-strong);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
         color: var(--accent);
-        border: 1px solid var(--accent);
+      }
+      .feedEmptyTitle {
+        margin: 0;
+        font-size: var(--t-4);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .feedEmptyNone {
+        margin: 0;
+        color: var(--ink-soft);
+        font-size: var(--t-2);
+        font-weight: 600;
+      }
+      .feedEmptySub {
+        margin: 0;
+        color: var(--muted);
+        font-size: var(--t-0);
+        max-width: 500px;
+      }
+      .feedTelemetryGrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+        width: 100%;
+        max-width: 680px;
+        margin-top: 6px;
+      }
+      .feedTeleCard {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        text-align: left;
+      }
+      .feedTeleCard strong {
+        font-size: var(--t-0);
+        color: var(--ink);
+        display: block;
+      }
+      .feedTeleCard span {
+        font-size: 11px;
+        font-family: var(--mono);
+        color: var(--muted);
+      }
+
+      /* Governance Accordion */
+      .govDetails {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 12px 16px;
+      }
+      .govDetails summary {
+        font-size: var(--t-1);
+        font-weight: 650;
+        color: var(--ink-soft);
+        cursor: pointer;
+      }
+      .govGrid {
+        margin-top: 12px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 12px;
+      }
+      .govCard {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        padding: 10px 12px;
+      }
+      .govCard h3 {
+        margin: 0 0 4px;
+        font-size: var(--t-1);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .govCard p {
+        margin: 0;
+        font-size: var(--t-0);
+        color: var(--muted);
       }
 
       /* Modals */
@@ -608,7 +851,7 @@
       .formInput,
       .formSelect,
       .formTextarea {
-        height: 34px;
+        height: 38px;
         padding: 0 10px;
         border-radius: var(--r2);
         border: 1px solid var(--line-strong);
@@ -642,9 +885,7 @@
         align-items: center;
         gap: 8px;
         z-index: 1000;
-        transition:
-          transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-          opacity 0.25s ease;
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
         opacity: 0;
         pointer-events: none;
       }
@@ -654,86 +895,14 @@
       }
 
       @media (max-width: 1000px) {
-        .app {
-          grid-template-columns: 1fr;
-        }
-        .rail {
-          position: sticky;
-          top: 0;
-          z-index: 40;
-          height: auto;
-          flex-direction: row;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 14px;
-          border-right: 0;
-          border-bottom: 1px solid var(--line);
-          background: var(--surface);
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
-        }
-        .brand {
-          padding: 0 10px 0 0;
-          margin-right: 4px;
-          flex: 0 0 auto;
-        }
-        .railScroll {
-          flex-direction: row;
-          gap: 6px;
-          padding: 0;
-          overflow-x: auto;
-        }
-        .railGroup {
-          display: flex;
-          flex-direction: row;
-          gap: 4px;
-          padding: 0;
-        }
-        .railEyebrow,
-        .railFoot {
-          display: none;
-        }
-        .railLink {
-          width: auto;
-          flex: 0 0 auto;
-          padding: 6px 10px;
-          font-size: var(--t-1);
-          white-space: nowrap;
-          box-shadow: none;
-        }
-        .railLink[aria-current="page"] {
-          box-shadow: inset 0 -2px 0 var(--gilt);
-          background: var(--surface-2);
-          color: var(--ink);
-        }
-        .kpiStrip {
-          grid-template-columns: repeat(2, 1fr);
-        }
-        .workspace {
-          padding: 16px;
-        }
+        .app { grid-template-columns: 1fr; }
+        .rail { display: none; }
+        .gridTwoCol { grid-template-columns: 1fr; }
+        .kpiStrip { grid-template-columns: repeat(2, 1fr); }
       }
-
       @media (max-width: 640px) {
-        .kpiStrip {
-          grid-template-columns: 1fr;
-        }
-        .alertItem {
-          grid-template-columns: 1fr;
-        }
-        .workspace {
-          padding: 12px;
-          gap: 14px;
-        }
-        .hdr {
-          padding: 0 12px;
-        }
-        .hdrTitle {
-          font-size: var(--t-2);
-        }
-        .btn {
-          height: 36px;
-        }
+        .kpiStrip { grid-template-columns: 1fr; }
+        .workspace { padding: 12px; }
       }
     </style>
   </head>
@@ -769,7 +938,7 @@
           </div>
         </div>
         <div class="railFoot">
-          <div>Active Alerts: <b>4 Critical / Warn</b></div>
+          <div>Active Alerts: <b>7 Total (1 Needs You)</b></div>
           <div>Engine Status: <b>Synchronized</b></div>
         </div>
       </nav>
@@ -778,221 +947,289 @@
       <div class="frame">
         <header class="hdr">
           <div class="hdrTitle">
-            <span>Clinical &amp; Operational Action Alerts Center</span>
-            <span class="chip danger">4 Active Incidents</span>
+            <span>Operational Action Alerts</span>
+            <span class="chip danger">1 Needs Action</span>
           </div>
           <div class="hdrEnd">
-            <button class="btn" id="themeToggle" type="button">Dark Theme</button>
-            <button class="btn primary" type="button" onclick="openBroadcastModal()">+ Broadcast Network Alert</button>
+            <button class="btn sm" id="themeToggle" type="button">Dark Theme</button>
+            <button class="btn sm primary" type="button" onclick="openBroadcastModal()">+ Broadcast Network Alert</button>
           </div>
         </header>
 
         <main class="workspace">
-          <!-- KPI Strip -->
+          <!-- Action & Status Deck -->
+          <div class="actionDeck">
+            <div class="deckLeft">
+              <span class="liveBadge">
+                <span class="liveDot"></span>
+                Live Action Stream
+              </span>
+              <ul class="summaryList">
+                <li class="summaryPill">Needs you: <strong>1</strong></li>
+                <li class="summaryPill">Other roles: <strong>6</strong></li>
+                <li class="summaryPill">Conditions checked: <strong>7</strong></li>
+              </ul>
+            </div>
+            <div>
+              <button class="btn sm primary" type="button" onclick="openBroadcastModal()">((•)) + Broadcast Network Alert</button>
+            </div>
+          </div>
+
+          <!-- KPI Glance Strip -->
           <div class="kpiStrip">
-            <div class="kpiCard" data-tone="danger">
-              <span class="kpiLabel">Statutory Breaches</span>
-              <span class="kpiVal">1</span>
-              <span class="kpiSub">Form 4A Transport Expired</span>
+            <div class="kpiCard" data-tone="good">
+              <div class="kpiHeadRow">
+                <span class="kpiLabel">Form Expiries Passed</span>
+                <span class="legalTag">(limits not legally checked)</span>
+              </div>
+              <span class="kpiVal">0</span>
+              <span class="kpiSub">0 of 6 with a written deadline passed</span>
             </div>
             <div class="kpiCard" data-tone="danger">
-              <span class="kpiLabel">Placement Gridlock</span>
-              <span class="kpiVal">3</span>
-              <span class="kpiSub">&ge;3 Parallel Declines</span>
+              <div class="kpiHeadRow">
+                <span class="kpiLabel">Placement Gridlock</span>
+              </div>
+              <span class="kpiVal">1</span>
+              <span class="kpiSub">≥3 Parallel Declines</span>
             </div>
             <div class="kpiCard" data-tone="warn">
-              <span class="kpiLabel">Prolonged ED Wait (&gt;24h)</span>
-              <span class="kpiVal">2</span>
-              <span class="kpiSub">FSH &amp; Joondalup EDs</span>
+              <div class="kpiHeadRow">
+                <span class="kpiLabel">Prolonged ED Wait (&gt;24H)</span>
+              </div>
+              <span class="kpiVal">5</span>
+              <span class="kpiSub">Metropolitan Emergency Hubs</span>
             </div>
-            <div class="kpiCard" data-tone="good">
-              <span class="kpiLabel">Resolved Today</span>
-              <span class="kpiVal">14</span>
-              <span class="kpiSub">All Handlers Cleared</span>
+            <div class="kpiCard">
+              <div class="kpiHeadRow">
+                <span class="kpiLabel">Active Monitored</span>
+              </div>
+              <span class="kpiVal">7</span>
+              <span class="kpiSub">Separated by Role</span>
             </div>
           </div>
 
-          <!-- Filter Bar -->
-          <div class="filterBar">
-            <span class="filterLabel">Category Filter:</span>
-            <button class="filterBtn active" type="button" onclick="filterCategory('all', this)">All Active (4)</button>
-            <button class="filterBtn" type="button" onclick="filterCategory('statutory', this)">
-              Statutory &amp; Legal (1)
-            </button>
-            <button class="filterBtn" type="button" onclick="filterCategory('gridlock', this)">Bed Gridlock (1)</button>
-            <button class="filterBtn" type="button" onclick="filterCategory('ed-wait', this)">
-              ED Wait &gt;24h (1)
-            </button>
-            <button class="filterBtn" type="button" onclick="filterCategory('hold', this)">
-              Reservation Holds (1)
-            </button>
+          <!-- Multi-tier Filter Deck -->
+          <div class="filterDeck">
+            <div class="tierRow">
+              <button class="filterBtn active" type="button" onclick="filterTier('all', this)">
+                All Active Tiers <span class="badgeCount">7</span>
+              </button>
+              <button class="filterBtn" type="button" onclick="filterTier('t1', this)">
+                Tier 1: Clinical Emergency / High Risk <span class="badgeCount">0</span>
+              </button>
+              <button class="filterBtn" type="button" onclick="filterTier('t2', this)">
+                Tier 2: Capacity Pressure / Delay <span class="badgeCount">2</span>
+              </button>
+              <button class="filterBtn" type="button" onclick="filterTier('t3', this)">
+                Tier 3: Administrative &amp; Transfer <span class="badgeCount">5</span>
+              </button>
+            </div>
+            <div class="roleRow">
+              <span class="rowLabel">Addressed Role:</span>
+              <button class="filterBtn pill active" type="button" onclick="filterRole('all', this)">All Roles (7)</button>
+              <button class="filterBtn pill" type="button" onclick="filterRole('coordinator', this)">Coordinator (4)</button>
+              <button class="filterBtn pill" type="button" onclick="filterRole('registrar', this)">Duty Registrar (1)</button>
+              <button class="filterBtn pill" type="button" onclick="filterRole('bedmanager', this)">Bed Manager (0)</button>
+              <button class="filterBtn pill" type="button" onclick="filterRole('num', this)">NUM (2)</button>
+            </div>
           </div>
 
-          <!-- Active Critical & Operational Alerts -->
-          <section class="panel">
-            <div class="ph">
-              <h2>Active High-Priority Alert Queue</h2>
-              <span class="badge" data-tone="danger">Immediate Intervention Required</span>
+          <!-- Dual Column Alerts Grid -->
+          <div class="gridTwoCol">
+            <!-- Left Column: Needs You -->
+            <div class="panelCol">
+              <div class="colHead">
+                <h2>Needs you</h2>
+                <span>1 to act on</span>
+              </div>
+              <div class="alertList" id="needsYouList">
+                <div class="alertCard" data-tier="t2" data-role="coordinator" id="alert-wf-009">
+                  <div class="alertTop">
+                    <div class="alertBadgeRow">
+                      <span class="alertGlyph">!</span>
+                      <span class="badgePill danger">Multiple Declines</span>
+                    </div>
+                    <div class="alertActions">
+                      <button class="btn sm danger" type="button" onclick="openActionModal('WF-009 (Tobias Wren)', 'Intervene in Placement Gridlock', 'alert-wf-009')">Intervene</button>
+                      <a class="btn sm" href="patient-now-third-edition.html">Trajectory</a>
+                    </div>
+                  </div>
+                  <div class="alertTitle">Multiple destinations declined</div>
+                  <div class="alertMeta">
+                    &bull; Patient: <strong>Tobias Wren</strong> &bull; UMRN: <strong>UM100023</strong> &bull; Peel Health Campus Emergency Department &bull; Owner: Flow coordinator
+                  </div>
+                  <div class="alertSub">WF-009 &bull; 5 destinations have declined</div>
+                </div>
+              </div>
             </div>
-            <div class="alertList" id="alertItemsList">
-              <!-- Alert 1: Form 4A Expiry -->
-              <div class="alertItem" data-cat="statutory" data-priority="critical" id="alert-wf-028">
-                <div class="alertIcon">!</div>
-                <div class="alertContent">
-                  <div class="alertHead">
-                    <span class="badge" data-tone="danger">Statutory Breach</span>
-                    <span class="alertTitle">Form 4A Transport Order Past the Expiry Written on the Form</span>
-                    <span class="alertMeta">&bull; Patient: Elena Rostova (WF-028) &bull; Joondalup ED</span>
+
+            <!-- Right Column: For Other Roles -->
+            <div class="panelCol">
+              <div class="colHead">
+                <h2>For other roles</h2>
+                <span>6 elsewhere</span>
+              </div>
+              <div class="alertList" id="otherRolesList">
+                <!-- Alert 2 -->
+                <div class="alertCard" data-tier="t2" data-role="coordinator" id="alert-wf-004">
+                  <div class="alertTop">
+                    <div class="alertBadgeRow">
+                      <span class="alertGlyph warn">!</span>
+                      <span class="badgePill warn">Reservation Window</span>
+                      <span class="badgePill danger">15m overdue</span>
+                    </div>
+                    <div class="alertActions">
+                      <button class="btn sm danger" type="button" onclick="openActionModal('WF-004 (Rhys Cadwaller)', 'Extend Bed Hold / Dispatch Transport', 'alert-wf-004')">Extend Hold</button>
+                    </div>
                   </div>
-                  <div class="alertDesc">
-                    Form 4A Transport Authorisation executed on 12 Sep 14:15 is past the expiry written on the form.
-                    Custodial transport handover needs re-authorisation by an authorised medical practitioner.
+                  <div class="alertTitle">Bed pull expired</div>
+                  <div class="alertMeta">
+                    &bull; Patient: <strong>Rhys Cadwaller</strong> &bull; UMRN: <strong>UM100046</strong> &bull; St John of God Midland Emergency Department &bull; Owner: Flow coordinator
                   </div>
+                  <div class="alertSub">WF-004 &bull; 15m overdue</div>
                 </div>
-                <div style="display: flex; gap: 6px">
-                  <button
-                    type="button"
-                    class="btn sm danger"
-                    onclick="
-                      openActionModal(
-                        'WF-028 (Elena Rostova)',
-                        'Re-Authorise Statutory Transport Order',
-                        'alert-wf-028',
-                      )
-                    "
-                  >
-                    Re-Authorise
-                  </button>
-                  <a class="btn sm" href="legal-forms-third-edition.html">View Order</a>
+
+                <!-- Alert 3 -->
+                <div class="alertCard" data-tier="t3" data-role="coordinator" id="alert-wf-005">
+                  <div class="alertTop">
+                    <div class="alertBadgeRow">
+                      <span class="alertGlyph warn">&#9200;</span>
+                      <span class="badgePill">Transport Leg</span>
+                    </div>
+                    <div class="alertActions">
+                      <a class="btn sm" href="transport-officer-third-edition.html">Review Leg</a>
+                    </div>
+                  </div>
+                  <div class="alertTitle">Transport awaiting departure</div>
+                  <div class="alertMeta">
+                    &bull; Patient: <strong>Noor Tremalow</strong> &bull; UMRN: <strong>UM100047</strong> &bull; Peel Health Campus Emergency Department &bull; Owner: ED mental health team
+                  </div>
+                  <div class="alertSub">WF-005 &bull; accepted 10:12</div>
+                </div>
+
+                <!-- Alert 4 -->
+                <div class="alertCard" data-tier="t3" data-role="num" id="alert-wf-015">
+                  <div class="alertTop">
+                    <div class="alertBadgeRow">
+                      <span class="alertGlyph warn">&#9200;</span>
+                      <span class="badgePill">Transport Leg</span>
+                    </div>
+                    <div class="alertActions">
+                      <a class="btn sm" href="transport-officer-third-edition.html">Review Leg</a>
+                    </div>
+                  </div>
+                  <div class="alertTitle">Transport awaiting departure</div>
+                  <div class="alertMeta">
+                    &bull; Patient: <strong>Alastair Pendelbury</strong> &bull; UMRN: <strong>UM100026</strong> &bull; Rockingham General Hospital Emergency Department &bull; Owner: Ward nurse in charge
+                  </div>
+                  <div class="alertSub">WF-015 &bull; accepted 10:27</div>
+                </div>
+
+                <!-- Alert 5 -->
+                <div class="alertCard" data-tier="t3" data-role="num" id="alert-wf-021">
+                  <div class="alertTop">
+                    <div class="alertBadgeRow">
+                      <span class="alertGlyph warn">&#9200;</span>
+                      <span class="badgePill">Transport Leg</span>
+                    </div>
+                    <div class="alertActions">
+                      <a class="btn sm" href="transport-officer-third-edition.html">Review Leg</a>
+                    </div>
+                  </div>
+                  <div class="alertTitle">Transport awaiting departure</div>
+                  <div class="alertMeta">
+                    &bull; Patient: <strong>Ivo Bramblewick</strong> &bull; UMRN: <strong>UM100024</strong> &bull; Armadale Hospital Emergency Department &bull; Owner: Ward nurse in charge
+                  </div>
+                  <div class="alertSub">WF-021 &bull; accepted 10:22</div>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <!-- Alert 2: Placement Gridlock -->
-              <div class="alertItem" data-cat="gridlock" data-priority="critical" id="alert-wf-009">
-                <div class="alertIcon">&times;</div>
-                <div class="alertContent">
-                  <div class="alertHead">
-                    <span class="badge" data-tone="danger">Placement Gridlock</span>
-                    <span class="alertTitle">All 3 Parallel Inpatient Referrals Declined (Acuity Ceiling)</span>
-                    <span class="alertMeta">&bull; Patient: Tobias Wren (WF-009) &bull; SCGH ED</span>
-                  </div>
-                  <div class="alertDesc">
-                    Referrals to Graylands (Dorrington), Midland (Ward 1), and Joondalup have all returned clinical
-                    declines. Patient remains in SCGH ED acute assessment pod (waiting 14h 45m). Executive escalation or
-                    catchment override required.
-                  </div>
-                </div>
-                <div style="display: flex; gap: 6px">
-                  <button
-                    type="button"
-                    class="btn sm danger"
-                    onclick="openActionModal('WF-009 (Tobias Wren)', 'Declare Catchment Override', 'alert-wf-009')"
-                  >
-                    Intervene
-                  </button>
-                  <a class="btn sm primary" href="patient-now-third-edition.html">Trajectory</a>
-                </div>
+          <!-- Role Notices & Shift Communication Feed -->
+          <section class="feedSection">
+            <div class="feedHead">
+              <div class="feedTitleGroup">
+                <h2>Role Notices &amp; Shift Communication Feed</h2>
+                <span class="feedTagLive">Live Feed</span>
               </div>
-
-              <!-- Alert 3: ED Stay >24h -->
-              <div class="alertItem" data-cat="ed-wait" data-priority="warning" id="alert-wf-033">
-                <div class="alertIcon">&Delta;</div>
-                <div class="alertContent">
-                  <div class="alertHead">
-                    <span class="badge" data-tone="warn">Prolonged ED Stay</span>
-                    <span class="alertTitle">Emergency Department Length of Stay &gt;24 Hours (26h 40m)</span>
-                    <span class="alertMeta">&bull; Patient: Marcus Vance (WF-033) &bull; Fiona Stanley ED</span>
-                  </div>
-                  <div class="alertDesc">
-                    Involuntary patient on Form 1A waiting for open adult bed for 26h 40m. 1:1 Specialling nurse
-                    coverage approaching consecutive shift maximum. Prioritise allocation against morning discharge
-                    register.
-                  </div>
-                </div>
-                <div style="display: flex; gap: 6px">
-                  <button
-                    type="button"
-                    class="btn sm"
-                    onclick="openActionModal('WF-033 (Marcus Vance)', 'Prioritise Bed Allocation', 'alert-wf-033')"
-                  >
-                    Prioritise Allocation
-                  </button>
-                </div>
+              <div class="feedStatusList">
+                <span><span class="feedDot"></span> ED Liaison Desk: Connected</span>
+                <span><span class="feedDot"></span> State Bed Desk: Listening</span>
+                <span>All Services Stream</span>
               </div>
-
-              <!-- Alert 4: Bed Hold Expiring -->
-              <div class="alertItem" data-cat="hold" data-priority="warning" id="alert-wf-017">
-                <div class="alertIcon">&#9200;</div>
-                <div class="alertContent">
-                  <div class="alertHead">
-                    <span class="badge" data-tone="warn">Reservation Window</span>
-                    <span class="alertTitle">Pulled Bed Hold Expiring in 18 Minutes</span>
-                    <span class="alertMeta">&bull; Graylands Hospital &bull; Dorrington Bed 04</span>
-                  </div>
-                  <div class="alertDesc">
-                    Bed reservation for Sarah Jenkins (WF-017) expires at 18:30 unless custodial transport departure is
-                    confirmed. Nothing releases the bed automatically; a person must decide to release it.
+            </div>
+            <div class="feedEmptyBox">
+              <div class="feedEmptyIcon">((•))</div>
+              <h3 class="feedEmptyTitle">Active Shift Telemetry Channel</h3>
+              <p class="feedEmptyNone">No notices have been raised this session.</p>
+              <p class="feedEmptySub">
+                Operational broadcasts, capacity alerts, and urgent shift handovers recorded across the hospital network will stream into this console automatically.
+              </p>
+              <div class="feedTelemetryGrid">
+                <div class="feedTeleCard">
+                  <span class="feedDot"></span>
+                  <div>
+                    <strong>Emergency Liaison Desk</strong>
+                    <span>Channel open &bull; Normal latency</span>
                   </div>
                 </div>
-                <div style="display: flex; gap: 6px">
-                  <button
-                    type="button"
-                    class="btn sm"
-                    onclick="
-                      openActionModal('WF-017 (Sarah Jenkins)', 'Extend Bed Hold / Dispatch Transport', 'alert-wf-017')
-                    "
-                  >
-                    Extend Hold
-                  </button>
+                <div class="feedTeleCard">
+                  <span class="feedDot"></span>
+                  <div>
+                    <strong>State Bed Bureau</strong>
+                    <span>Sync active &bull; 0 queue stalls</span>
+                  </div>
+                </div>
+                <div class="feedTeleCard">
+                  <span class="feedDot" style="background:var(--warn)"></span>
+                  <div>
+                    <strong>Directives Service</strong>
+                    <span>Standing by &bull; Broadcast ready</span>
+                  </div>
                 </div>
               </div>
             </div>
           </section>
 
-          <!-- Operational Notices & Communication Feed -->
-          <section class="panel">
-            <div class="ph">
-              <h2>Role Notices &amp; Shift Communication Feed</h2>
-              <span class="mono" style="font-size: var(--t-0); color: var(--muted)">All Services Stream</span>
-            </div>
-            <div class="alertList">
-              <div class="alertItem" data-priority="info">
-                <div class="alertIcon">i</div>
-                <div class="alertContent">
-                  <div class="alertHead">
-                    <span class="badge" data-tone="accent">Governance Audit</span>
-                    <span class="alertTitle">Catchment Override Logged for Older Adult Placement</span>
-                    <span class="alertMeta">&bull; Recorded by: State Bed Desk &bull; Target: Selby Lodge</span>
-                  </div>
-                  <div class="alertDesc">
-                    Out-of-catchment placement authorized for WF-014 due to lack of local EMHS psychogeriatric capacity.
-                    Flagged for review at next clinical governance audit.
-                  </div>
-                </div>
-                <div>
-                  <a class="btn sm" href="governance-third-edition.html">View Audit</a>
-                </div>
+          <!-- Governance Disclosure: What this group checks and cannot check -->
+          <details class="govDetails">
+            <summary>What this group checks and cannot check</summary>
+            <div class="govGrid">
+              <div class="govCard">
+                <h3>Form expiry passed</h3>
+                <p>Monitors custodial and involuntary orders with written statutory deadlines.</p>
               </div>
-
-              <div class="alertItem" data-priority="info">
-                <div class="alertIcon">&#10003;</div>
-                <div class="alertContent">
-                  <div class="alertHead">
-                    <span class="badge" data-tone="good">Logistics Confirmed</span>
-                    <span class="alertTitle">Custodial Transfer Completed &bull; Fremantle W Ward</span>
-                    <span class="alertMeta">&bull; Patient: Luke Davies (WF-021) &bull; Transport: St John Secure</span>
-                  </div>
-                  <div class="alertDesc">
-                    Patient successfully transferred into Fremantle W Ward inpatient care. Form 4A verified and custody
-                    signed over.
-                  </div>
-                </div>
-                <div>
-                  <span class="badge" data-tone="good">Archived</span>
-                </div>
+              <div class="govCard">
+                <h3>Every ward asked has declined</h3>
+                <p>Escalates acute placement gridlock where parallel requests are exhausted.</p>
+              </div>
+              <div class="govCard">
+                <h3>Destination no longer suitable</h3>
+                <p>Identifies acuity mismatches and unit security restrictions.</p>
+              </div>
+              <div class="govCard">
+                <h3>Bed hold expired</h3>
+                <p>Surfaces pulled reservations that have exceeded departure windows.</p>
+              </div>
+              <div class="govCard">
+                <h3>Transport waiting to leave</h3>
+                <p>Tracks accepted transfers pending physical departure from emergency hubs.</p>
+              </div>
+              <div class="govCard">
+                <h3>Referral awaiting triage</h3>
+                <p>Monitors inbound requests exceeding standard intake response times.</p>
+              </div>
+              <div class="govCard">
+                <h3>Override recorded</h3>
+                <p>Logs administrative allocation exceptions for clinical governance review.</p>
+              </div>
+              <div class="govCard">
+                <h3>Handover &amp; Communication Limitations</h3>
+                <p>Telephone handovers and unentered bedside assessments cannot be verified automatically.</p>
               </div>
             </div>
-          </section>
+          </details>
         </main>
       </div>
     </div>
@@ -1007,7 +1244,7 @@
         <div class="modalBody">
           <div class="formGroup">
             <label class="formLabel">Subject / Clinical Reference</label>
-            <input type="text" id="modalSubject" class="formInput mono" value="" readonly />
+            <input type="text" id="modalSubject" class="formInput" value="" readonly />
           </div>
           <div class="formGroup">
             <label class="formLabel">Action Taken / Clinical Intervention</label>
@@ -1021,13 +1258,12 @@
           </div>
           <div class="formGroup">
             <label class="formLabel">Clinician Sign-off Notes</label>
-            <textarea class="formTextarea" id="actionNotes">
-Action verified by State Duty Bed Coordinator. Relevant clinical teams and ED liaison desks notified.</textarea>
+            <textarea class="formTextarea" id="actionNotes">Action verified by State Duty Bed Coordinator. Relevant clinical teams and ED liaison desks notified.</textarea>
           </div>
         </div>
         <div class="modalFoot">
-          <button type="button" class="btn" onclick="closeModal('actionModal')">Cancel</button>
-          <button type="button" class="btn primary" onclick="submitAction()">Confirm Intervention</button>
+          <button type="button" class="btn sm" onclick="closeModal('actionModal')">Cancel</button>
+          <button type="button" class="btn sm primary" onclick="submitAction()">Confirm Intervention</button>
         </div>
       </div>
     </div>
@@ -1060,13 +1296,12 @@ Action verified by State Duty Bed Coordinator. Relevant clinical teams and ED li
           </div>
           <div class="formGroup">
             <label class="formLabel">Broadcast Message Content</label>
-            <textarea class="formTextarea">
-URGENT: Metropolitan secure HDU occupancy at 100%. All units requested to expedite morning discharge verifications and report candidate surge beds immediately.</textarea>
+            <textarea class="formTextarea">URGENT: Metropolitan secure HDU occupancy at 100%. All units requested to expedite morning discharge verifications and report candidate surge beds immediately.</textarea>
           </div>
         </div>
         <div class="modalFoot">
-          <button type="button" class="btn" onclick="closeModal('broadcastModal')">Cancel</button>
-          <button type="button" class="btn danger" onclick="submitBroadcast()">Broadcast to Network</button>
+          <button type="button" class="btn sm" onclick="closeModal('broadcastModal')">Cancel</button>
+          <button type="button" class="btn sm danger" onclick="submitBroadcast()">Broadcast to Network</button>
         </div>
       </div>
     </div>
@@ -1120,15 +1355,10 @@ URGENT: Metropolitan secure HDU occupancy at 100%. All units requested to expedi
           if (item) {
             item.style.opacity = "0.7";
             item.style.background = "var(--surface-2)";
-            const badge = item.querySelector(".badge");
+            const badge = item.querySelector(".badgePill");
             if (badge) {
-              badge.setAttribute("data-tone", "good");
+              badge.className = "badgePill";
               badge.textContent = "Resolved";
-            }
-            const actionBtn = item.querySelector(".btn.primary");
-            if (actionBtn) {
-              actionBtn.outerHTML =
-                '<span style="font-size:var(--t-0); color:var(--muted); font-weight:600;">Intervention Logged</span>';
             }
           }
         }
@@ -1143,61 +1373,33 @@ URGENT: Metropolitan secure HDU occupancy at 100%. All units requested to expedi
         showToast("Statewide network alert successfully broadcast to all clinical consoles.");
       }
 
-      // Category Filter
-      function filterCategory(cat, btn) {
-        document.querySelectorAll(".filterBtn").forEach((b) => b.classList.remove("active"));
+      // Filter controls
+      function filterTier(tier, btn) {
+        document.querySelectorAll(".tierRow .filterBtn").forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
-
-        const items = document.querySelectorAll("#alertItemsList .alertItem");
-        items.forEach((item) => {
-          if (cat === "all" || item.getAttribute("data-cat") === cat) {
-            item.style.display = "";
-          } else {
-            item.style.display = "none";
-          }
-        });
-        showToast(cat === "all" ? "Showing all active alerts" : `Filtered to ${cat} alerts`);
+        applyFilters();
       }
-    </script>
 
-    <!-- Visual QA Sentinel -->
-    <script id="qa-sentinel">
-      (function () {
-        function runQA() {
-          const issues = [];
-          if (document.documentElement.scrollWidth > window.innerWidth + 1) {
-            issues.push(
-              `Horizontal overflow detected (${document.documentElement.scrollWidth}px > ${window.innerWidth}px)`,
-            );
-          }
-          if (!document.querySelector("meta[charset]")) issues.push("Missing <meta charset='utf-8'>");
-          if (!document.querySelector('meta[name="viewport"]')) issues.push("Missing responsive viewport meta");
-          const allEls = document.querySelectorAll("*");
-          for (let el of allEls) {
-            const style = el.getAttribute("style") || "";
-            if (/#[0-9a-fA-F]{3,8}/.test(style)) {
-              issues.push(`Raw hex in style on <${el.tagName.toLowerCase()}>`);
-              break;
-            }
-          }
-          const badge = document.createElement("div");
-          badge.id = "qa-badge";
-          badge.style.cssText =
-            "position:fixed;bottom:12px;right:12px;padding:6px 10px;font:11px/1.2 var(--mono);background:var(--surface);border:1px solid var(--line-strong);border-radius:4px;box-shadow:var(--lift);z-index:99999;pointer-events:none;display:flex;align-items:center;gap:6px;";
-          if (issues.length === 0) {
-            badge.innerHTML =
-              '<span style="width:7px;height:7px;border-radius:50%;background:var(--good)"></span><span style="color:var(--good);font-weight:600">QA 100/100: PERFECTED</span>';
-          } else {
-            badge.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:var(--danger)"></span><span style="color:var(--danger);font-weight:600">QA ISSUES: ${issues.length}</span>`;
-          }
-          document.body.appendChild(badge);
-        }
-        if (document.readyState === "loading") {
-          window.addEventListener("DOMContentLoaded", runQA);
-        } else {
-          runQA();
-        }
-      })();
+      function filterRole(role, btn) {
+        document.querySelectorAll(".roleRow .filterBtn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        applyFilters();
+      }
+
+      function applyFilters() {
+        const activeTierBtn = document.querySelector(".tierRow .filterBtn.active");
+        const activeRoleBtn = document.querySelector(".roleRow .filterBtn.active");
+        const tier = activeTierBtn ? activeTierBtn.getAttribute("onclick").match(/'([^']+)'/)[1] : "all";
+        const role = activeRoleBtn ? activeRoleBtn.getAttribute("onclick").match(/'([^']+)'/)[1] : "all";
+
+        document.querySelectorAll(".alertCard").forEach((card) => {
+          const cardTier = card.getAttribute("data-tier");
+          const cardRole = card.getAttribute("data-role");
+          const matchTier = tier === "all" || cardTier === tier;
+          const matchRole = role === "all" || cardRole === role;
+          card.style.display = matchTier && matchRole ? "" : "none";
+        });
+      }
     </script>
   </body>
 </html>
