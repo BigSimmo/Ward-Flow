@@ -332,9 +332,9 @@
   display: grid;
   min-width: 0;
   grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
-  align-items: stretch;
+  align-items: start;
   position: relative;
-  height: 400px;
+  height: auto;
 }
 
 .diagSplit.enlarged {
@@ -447,7 +447,8 @@
 
 /* Grid Filler Row so background grid extends to bottom */
 .ganttFillerRow {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
+  height: 24px;
   min-height: 24px;
   display: flex;
   background: var(--surface);
@@ -772,7 +773,10 @@
   background: var(--surface);
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: auto;
+  max-height: 24rem;
+  position: sticky;
+  top: 1rem;
   min-height: 0;
 }
 

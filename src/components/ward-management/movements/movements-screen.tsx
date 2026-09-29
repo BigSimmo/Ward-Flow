@@ -277,7 +277,7 @@ export function MovementsScreen() {
 
   const [boardTab, setBoardTab] = useState<"every" | "resolved">("every");
   const [order, setOrder] = useState<"stands" | "cause" | "transport" | "wait">("stands");
-  const [shapeTab, setShapeTab] = useState<"stage" | "transport" | "waiting" | "resolved" | "no-owner">("stage");
+  const [shapeTab, setShapeTab] = useState<"stage" | "transport" | "waiting" | "resolved">("stage");
   const [reveal, setReveal] = useState<{ id: string; request: number } | null>(null);
   const consumedReveal = useRef(0);
   const consumeReveal = useCallback((request: number) => {
@@ -375,7 +375,6 @@ export function MovementsScreen() {
   const openMovements = movements.filter(isOpen);
   const openStages = journeyStages(openMovements, now);
   const waitingMovements = byLongestWait(openMovements, now);
-  const noOwnerMovements = openMovements.filter((movement) => movement.owner.trim().length === 0);
   const unacceptedTransport = byLongestWait(
     openMovements.filter((movement) => movement.transport !== undefined && movement.transport.acceptedAt === undefined),
     now,
@@ -1027,7 +1026,6 @@ export function MovementsScreen() {
                     { id: "transport", label: "Transport", count: legs.length },
                     { id: "waiting", label: "Waiting", count: waitingMovements.length },
                     { id: "resolved", label: "Resolved", count: closedToday.length },
-                    { id: "no-owner", label: "No owner", count: noOwnerMovements.length },
                   ] as const
                 ).map((tab) => (
                   <button
@@ -1105,13 +1103,6 @@ export function MovementsScreen() {
                     </ul>
                     <div className={styles.stageFollowUp}>
                       <h3>Next to review</h3>
-                      <button type="button" onClick={() => setShapeTab("no-owner")}>
-                        Owner not recorded{" "}
-                        <strong>
-                          <span className="sr-only">Synthetic movement records: </span>
-                          {noOwnerMovements.length === 0 ? "none" : noOwnerMovements.length}
-                        </strong>
-                      </button>
                       <button type="button" onClick={() => setShapeTab("transport")}>
                         Transport not accepted{" "}
                         <strong>
@@ -1248,9 +1239,6 @@ export function MovementsScreen() {
                 ) : null}
                 {shapeTab === "resolved" ? (
                   <ShapeMovementList movements={closedToday} now={now} referrals={referrals} patients={patients} onOpenDetail={openDetail} resolved />
-                ) : null}
-                {shapeTab === "no-owner" ? (
-                  <ShapeMovementList movements={noOwnerMovements} now={now} referrals={referrals} patients={patients} onOpenDetail={openDetail} />
                 ) : null}
               </div>
             </WardPanel>

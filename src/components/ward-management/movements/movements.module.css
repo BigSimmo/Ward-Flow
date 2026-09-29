@@ -116,6 +116,14 @@
   .columns {
     grid-template-columns: minmax(0, 1fr) 19rem;
   }
+
+  .secondary {
+    position: sticky;
+    top: 1rem;
+    align-self: start;
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+  }
 }
 
 .primary {

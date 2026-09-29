@@ -45,6 +45,21 @@
   min-width: 0;
 }
 
+@media (min-width: 1001px) {
+  .shellRow {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+
+  .shellContent {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+}
+
 /*
  * ⚠️ **MUST MATCH `ward-rail.module.css`'S OWN `max-width: 1000px` BREAKPOINT EXACTLY.** Below
  * it, `WardRail`'s `.rail` sets its own `width: 100%; height: auto` and reflows to a wrapping row

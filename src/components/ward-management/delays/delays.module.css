@@ -3797,9 +3797,11 @@
   box-shadow: var(--lift);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   position: sticky;
-  top: 16px;
+  top: 1rem;
+  align-self: start;
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
 }
 
 .dossierContainer {
@@ -4768,11 +4770,11 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-lg, 10px);
   box-shadow: var(--lift);
-  display: flex;
-  flex-direction: column;
   position: sticky;
-  top: 72px;
-  overflow: hidden;
+  top: 1rem;
+  align-self: start;
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
 }
 
 /* State A: Selected Patient Dossier */

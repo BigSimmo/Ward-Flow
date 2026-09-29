@@ -166,7 +166,7 @@
 
 .pressureStrip {
   padding: var(--ward-space-8) var(--ward-space-12);
-  max-height: 11.25rem;
+  max-height: 12.5rem;
 }
 
 .regionHeader {
@@ -457,7 +457,7 @@
   scroll-snap-type: x mandatory;
   scrollbar-width: thin;
   scrollbar-color: var(--line) transparent;
-  padding: 0.125rem 0.125rem 0.25rem;
+  padding: 0.5rem 1rem 0.75rem 1rem;
 }
 
 .pressureList::-webkit-scrollbar {

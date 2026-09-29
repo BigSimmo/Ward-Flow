@@ -161,7 +161,23 @@ const text = lines.join("\n");
 
 if (process.argv.includes("--check")) {
   const current = existsSync(OUT) ? readFileSync(OUT, "utf8") : "";
-  const stale = current.trim() !== text.trim();
+  const normalizeRow = (l) => {
+    l = l.replace(/\r/g, "");
+    if (!l.startsWith("|")) return l.trim();
+    const cols = l.split("|").slice(1, -1);
+    return (
+      "|" +
+      cols
+        .map((c) => {
+          const trimmed = c.trim();
+          return /^[-:]+$/.test(trimmed) ? "---" : trimmed;
+        })
+        .join("|") +
+      "|"
+    );
+  };
+  const normalize = (s) => s.split("\n").map(normalizeRow).join("\n").trim();
+  const stale = normalize(current) !== normalize(text);
   const hard = problems.filter(([t]) => t.startsWith("🔴"));
   if (!stale && !hard.length) {
     console.log(`screen map is current — ${mockups.length} mockups, ${routes.length} routes, no hard problems.`);

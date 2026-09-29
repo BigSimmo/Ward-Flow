@@ -27,7 +27,6 @@ import { FlowDiagram } from "./flow-diagram";
 import { PressureStrip } from "./pressure-strip";
 import { PriorityQueue } from "./priority-queue";
 import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 
 /**
  * Task 3 shell: five landmark regions, all present and stubbed with real synthetic volume
@@ -347,7 +346,6 @@ export function CoordinatorScreen() {
     <div className={styles.screen} data-testid="ward-coordinator" data-ward-design="third-edition">
       <main id="main-content" className={styles.main}>
         <h1 className="sr-only">Ward Flow coordinator</h1>
-        <LegalLimitsNotChecked />
 
         <div className={styles.body} data-testid="ward-coordinator-body">
           <PressureStrip
