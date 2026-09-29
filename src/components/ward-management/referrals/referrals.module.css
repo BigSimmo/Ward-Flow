@@ -1134,6 +1134,14 @@
   font-weight: 700;
 }
 
+.matchUmrn {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Review finding I1 / Task 8 finding B: the urgency tier is its own line on the match view,
    never a field inside `.matchSummary`'s dot-separated run — see `referral-match.tsx`'s own
    comment for why the layout changed rather than the words. Styled like the board's tier cell

@@ -169,6 +169,12 @@ type DecidedDetail = {
   alsoCancelled: string[];
 };
 
+function formatUmrn(umrn: string): string {
+  if (!umrn || umrn === "UMRN not recorded") return "UMRN not recorded";
+  if (umrn.toUpperCase().startsWith("UMRN")) return umrn;
+  return `UMRN: ${umrn}`;
+}
+
 function outcomeDetail(referral: Referral, units: Unit[]): DecidedDetail {
   const refusals = refusalLines(referral);
   const cancelled = cancelledLines(referral);
@@ -794,11 +800,11 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
               <>
                 <div className={styles.inspectorHeader}>
                   <div className={styles.inspectorHeaderLeft}>
-                    <span className={styles.inspectorId}>{selectedReferral.id}</span>
-                    <span className={styles.inspectorPatientName}>{selectedPatientInfo.displayName}</span>
-                    <span className={styles.inspectorUmrn}>
-                      UMRN: <strong>{selectedPatientInfo.umrn}</strong>
+                    <span className={styles.inspectorId}>
+                      <span className="sr-only">{selectedReferral.id} </span>
+                      {formatUmrn(selectedPatientInfo.umrn)}
                     </span>
+                    <span className={styles.inspectorPatientName}>{selectedPatientInfo.displayName}</span>
                     <div className={styles.inspectorUrgencyGroup}>
                       <span
                         className={styles.priorityBadge}
@@ -1030,6 +1036,8 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                   now={now}
                   dispatch={dispatch}
                   rejections={rejections}
+                  patients={patients}
+                  movements={movements}
                 />
               </>
             ) : (
@@ -1189,10 +1197,6 @@ function QueuedSection({
                       </button>
                       <span className={styles.patientTableMeta}>
                         <strong>{patientInfo.displayName}</strong>
-                        <span className={styles.patientTableUmrn}>
-                          {" "}
-                          · UMRN: <strong>{patientInfo.umrn}</strong>
-                        </span>
                       </span>
                       {refusals.length > 0 ? (
                         <span
@@ -1271,11 +1275,11 @@ function QueuedSection({
                   >
                     <span className={styles.cardHeaderRow}>
                       <span className={styles.cardIdGroup}>
-                        <span className={styles.cardIdBadge}>{referral.id}</span>
-                        <span className={styles.patientCardName}>{patientInfo.displayName}</span>
-                        <span className={styles.patientCardUmrn}>
-                          UMRN: <strong>{patientInfo.umrn}</strong>
+                        <span className={styles.cardIdBadge}>
+                          <span className="sr-only">{referral.id} </span>
+                          {formatUmrn(patientInfo.umrn)}
                         </span>
+                        <span className={styles.patientCardName}>{patientInfo.displayName}</span>
                       </span>
                       <span className={styles.cardTierGroup}>
                         <span
@@ -1435,10 +1439,6 @@ function DecidedSection({
                       <div>{outcomeLabel(referral)}</div>
                       <span style={{ display: "block", fontSize: "0.82rem", marginTop: "0.2rem" }}>
                         <strong>{patientInfo.displayName}</strong>
-                        <span style={{ color: "var(--muted, #64748b)" }}>
-                          {" "}
-                          · UMRN: <strong>{patientInfo.umrn}</strong>
-                        </span>
                       </span>
                     </td>
                     <td data-testid={`ward-referral-board-decided-detail-${referral.id}`}>
@@ -1479,11 +1479,11 @@ function DecidedSection({
                   >
                     <span className={styles.cardHeaderRow}>
                       <span className={styles.cardIdGroup}>
-                        <span className={styles.cardIdBadge}>{referral.id}</span>
-                        <span className={styles.patientCardName}>{patientInfo.displayName}</span>
-                        <span className={styles.patientCardUmrn}>
-                          UMRN: <strong>{patientInfo.umrn}</strong>
+                        <span className={styles.cardIdBadge}>
+                          <span className="sr-only">{referral.id} </span>
+                          {formatUmrn(patientInfo.umrn)}
                         </span>
+                        <span className={styles.patientCardName}>{patientInfo.displayName}</span>
                       </span>
                       <span className={styles.decidedOutcomeBadge}>{outcomeLabel(referral)}</span>
                     </span>

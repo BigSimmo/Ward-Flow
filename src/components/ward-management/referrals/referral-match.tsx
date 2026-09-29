@@ -24,13 +24,22 @@ import {
   REFERRAL_DECLINE_REASONS,
   genderReviewNeeded,
   type CommunityDeclineReason,
+  type Movement,
   type Referral,
   type ReferralDeclineReason,
   type ReferralDestinationKind,
   type Rejection,
   type Unit,
 } from "@/components/ward-management/ward-model";
+import type { Patient } from "@/components/ward-management/ward-patients";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
+
+function formatUmrn(umrn: string): string {
+  if (!umrn || umrn === "UMRN not recorded") return "UMRN not recorded";
+  if (umrn.toUpperCase().startsWith("UMRN")) return umrn;
+  return `UMRN: ${umrn}`;
+}
 import {
   candidateAccepts,
   COMMUNITY_DECLINE_REASON_LABELS,
@@ -176,6 +185,8 @@ type ReferralMatchViewProps = {
   now: Instant;
   dispatch: Dispatch<WardFlowEvent>;
   rejections: Rejection[];
+  patients?: readonly Patient[];
+  movements?: readonly Movement[];
 };
 
 /**
@@ -303,7 +314,15 @@ function ReferralHistoryAndCorrections({
  * selected always remounts fresh local state here (the decline-reason draft, the rejection banner)
  * rather than carrying one referral's leftover UI state onto the next.
  */
-export function ReferralMatchView({ referral, units, now, dispatch, rejections }: ReferralMatchViewProps) {
+export function ReferralMatchView({
+  referral,
+  units,
+  now,
+  dispatch,
+  rejections,
+  patients = [],
+  movements = [],
+}: ReferralMatchViewProps) {
   /*
    * EVERY HOOK THIS VIEW HAS IS CALLED HERE, above the not-a-bed-question return below, and none
    * of them may move under it. React identifies a hook by its position in the call order, so a
@@ -401,6 +420,7 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections }
    * this person", which for a community referral is not a shortage, it is a category error.
    */
   const ward = wardAddressing(referral);
+  const patientInfo = resolveSubjectPatient(referral, { patients, referrals: [referral], movements });
   /**
    * Owner answer 25, 2026-09-17: *"GP referrals: the GP is told by phone or letter for now; add
    * 'GP' as a referral source."* `referralReferrer` (`ward-flow-reducer.ts`) resolves no addressee
@@ -422,8 +442,12 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections }
     return (
       <section className={styles.matchPanel} data-testid="ward-referral-match-not-a-bed-question">
         <p className={styles.matchSummary}>
-          {referral.id} was sent to {referralDestinationLabels(referral).join(", ").toLowerCase()} — none of which is
-          answered by matching a bed. There is no bed shortlist for this referral.
+          <span className="sr-only">{referral.id} </span>
+          {patientInfo.displayName !== "Unknown Patient"
+            ? `${patientInfo.displayName} (${formatUmrn(patientInfo.umrn)})`
+            : `Patient (${formatUmrn(patientInfo.umrn)})`}{" "}
+          was sent to {referralDestinationLabels(referral).join(", ").toLowerCase()} — none of which is answered by
+          matching a bed. There is no bed shortlist for this referral.
         </p>
         {gpSourceNotice}
         {edAddressing && edAddressing.state === "queued" ? (
@@ -807,7 +831,18 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections }
          * The paragraph below carries the proper wording, from the one home. Do not reintroduce a
          * short state word here: a second, shorter spelling is how the first one got in.
          */}
-        <h2 className={styles.matchHeading}>{referral.id}</h2>
+        <h2 className={styles.matchHeading}>
+          <span className="sr-only">{referral.id} </span>
+          {patientInfo.displayName !== "Unknown Patient" ? (
+            <>
+              {patientInfo.displayName} · <span className={styles.matchUmrn}>{formatUmrn(patientInfo.umrn)}</span>
+            </>
+          ) : (
+            <span className={styles.matchUmrn}>
+              {formatUmrn(patientInfo.umrn !== "UMRN not recorded" ? patientInfo.umrn : referral.id)}
+            </span>
+          )}
+        </h2>
         <p data-testid="ward-referral-match-decided">
           {ward.state === "accepted"
             ? acceptedUnit
@@ -878,7 +913,18 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections }
 
   return (
     <section className={styles.matchPanel} data-testid="ward-referral-match-panel">
-      <h2 className={styles.matchHeading}>{referral.id}</h2>
+      <h2 className={styles.matchHeading}>
+        <span className="sr-only">{referral.id} </span>
+        {patientInfo.displayName !== "Unknown Patient" ? (
+          <>
+            {patientInfo.displayName} · <span className={styles.matchUmrn}>{formatUmrn(patientInfo.umrn)}</span>
+          </>
+        ) : (
+          <span className={styles.matchUmrn}>
+            {formatUmrn(patientInfo.umrn !== "UMRN not recorded" ? patientInfo.umrn : referral.id)}
+          </span>
+        )}
+      </h2>
       {/*
        * M7 (fix round C): the brief says BOTH screens carry the prose banner. `ReferralBoard`'s
        * sits at the top of `<main>`, above two sections and two tables — on a phone a coordinator
