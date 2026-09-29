@@ -371,7 +371,7 @@ export function LegalFormsScreen() {
                   <span className={styles.formAlertBadge} data-tone="danger">
                     Documentation Review Required
                   </span>
-                  <span className={styles.alertTimeTag}>Statutory Breach Detected</span>
+                  <span className={styles.alertTimeTag}>Statutory Due Time Passed</span>
                 </div>
                 <span className={styles.formAlertBannerText}>
                   {passed} {passed === 1 ? "legal form has" : "legal forms have"} passed the recorded due time.
