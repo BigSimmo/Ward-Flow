@@ -1,1394 +1,1568 @@
 <!doctype html>
 <html lang="en-AU">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ward Flow — Patient Trajectory Monitor (Perfected)</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" />
-  <style>
-    :root {
-      color-scheme: light dark;
-      --display: "Geist", system-ui, -apple-system, sans-serif;
-      --body: "Geist", system-ui, -apple-system, sans-serif;
-      --mono: "Geist Mono", ui-monospace, monospace;
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow — Patient Trajectory Monitor (Perfected)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --display: "Geist", system-ui, -apple-system, sans-serif;
+        --body: "Geist", system-ui, -apple-system, sans-serif;
+        --mono: "Geist Mono", ui-monospace, monospace;
 
-      --t-0: 12px;
-      --t-1: 13px;
-      --t-2: 14px;
-      --t-3: 15px;
-      --t-4: 17px;
-      --t-5: 20px;
-      --t-6: 24px;
+        --t-0: 12px;
+        --t-1: 13px;
+        --t-2: 14px;
+        --t-3: 15px;
+        --t-4: 17px;
+        --t-5: 20px;
+        --t-6: 24px;
 
-      --r1: 4px;
-      --r2: 6px;
-      --r3: 10px;
-      --pill: 9999px;
+        --r1: 4px;
+        --r2: 6px;
+        --r3: 10px;
+        --pill: 9999px;
 
-      --railw: 236px;
-      --railw-closed: 84px;
-    }
+        --railw: 236px;
+        --railw-closed: 84px;
+      }
 
-    :root, :root[data-theme="light"] {
-      --ground: #e6eaef;
-      --surface: #fdfdfe;
-      --surface-2: #f2f5f8;
-      --sunk: #e9edf2;
-      --ink: #14161a;
-      --ink-soft: #384250;
-      --muted: #5b6470;
-      --accent: #2f4c66;
-      --accent-ink: #1e354a;
-      --accent-soft: #dfe7f0;
-      --on-accent: #ffffff;
-      --stripe: #2f4c66;
-      --gilt: #7d612a;
-      --gilt-soft: #f1ebdf;
-      --good: #227550;
-      --good-soft: #e2f0e8;
-      --warn: #825d10;
-      --warn-soft: #f6eeda;
-      --danger: #b03b2e;
-      --danger-soft: #f8e6e2;
-      --danger-ink: #973121;
-      --line: rgba(22, 30, 40, 0.11);
-      --line-strong: rgba(22, 30, 40, 0.22);
-      --lift: 0 4px 20px -2px rgba(32, 44, 58, 0.08), 0 1px 3px rgba(32, 44, 58, 0.04);
-      --scrim: rgba(15, 20, 26, 0.45);
-    }
+      :root,
+      :root[data-theme="light"] {
+        --ground: #e6eaef;
+        --surface: #fdfdfe;
+        --surface-2: #f2f5f8;
+        --sunk: #e9edf2;
+        --ink: #14161a;
+        --ink-soft: #384250;
+        --muted: #5b6470;
+        --accent: #2f4c66;
+        --accent-ink: #1e354a;
+        --accent-soft: #dfe7f0;
+        --on-accent: #ffffff;
+        --stripe: #2f4c66;
+        --gilt: #7d612a;
+        --gilt-soft: #f1ebdf;
+        --good: #227550;
+        --good-soft: #e2f0e8;
+        --warn: #825d10;
+        --warn-soft: #f6eeda;
+        --danger: #b03b2e;
+        --danger-soft: #f8e6e2;
+        --danger-ink: #973121;
+        --line: rgba(22, 30, 40, 0.11);
+        --line-strong: rgba(22, 30, 40, 0.22);
+        --lift: 0 4px 20px -2px rgba(32, 44, 58, 0.08), 0 1px 3px rgba(32, 44, 58, 0.04);
+        --scrim: rgba(15, 20, 26, 0.45);
+      }
 
-    :root[data-theme="dark"] {
-      --ground: #0f1216;
-      --surface: #171b21;
-      --surface-2: #1f242c;
-      --sunk: #13161b;
-      --ink: #e8ebef;
-      --ink-soft: #b0b8c4;
-      --muted: #7e8998;
-      --accent: #a7bcd2;
-      --accent-ink: #c8d8e8;
-      --accent-soft: #232c37;
-      --on-accent: #0f1216;
-      --stripe: #a7bcd2;
-      --gilt: #d3b77e;
-      --gilt-soft: #2a2418;
-      --good: #6fd39b;
-      --good-soft: #172820;
-      --warn: #d4a34b;
-      --warn-soft: #2b2314;
-      --danger: #ff8b76;
-      --danger-soft: #321915;
-      --danger-ink: #ffb4a6;
-      --line: rgba(255, 255, 255, 0.09);
-      --line-strong: rgba(255, 255, 255, 0.18);
-      --lift: 0 6px 24px -4px rgba(0, 0, 0, 0.45);
-      --scrim: rgba(0, 0, 0, 0.7);
-    }
+      :root[data-theme="dark"] {
+        --ground: #0f1216;
+        --surface: #171b21;
+        --surface-2: #1f242c;
+        --sunk: #13161b;
+        --ink: #e8ebef;
+        --ink-soft: #b0b8c4;
+        --muted: #7e8998;
+        --accent: #a7bcd2;
+        --accent-ink: #c8d8e8;
+        --accent-soft: #232c37;
+        --on-accent: #0f1216;
+        --stripe: #a7bcd2;
+        --gilt: #d3b77e;
+        --gilt-soft: #2a2418;
+        --good: #6fd39b;
+        --good-soft: #172820;
+        --warn: #d4a34b;
+        --warn-soft: #2b2314;
+        --danger: #ff8b76;
+        --danger-soft: #321915;
+        --danger-ink: #ffb4a6;
+        --line: rgba(255, 255, 255, 0.09);
+        --line-strong: rgba(255, 255, 255, 0.18);
+        --lift: 0 6px 24px -4px rgba(0, 0, 0, 0.45);
+        --scrim: rgba(0, 0, 0, 0.7);
+      }
 
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: var(--body);
-      font-size: var(--t-2);
-      color: var(--ink);
-      background: var(--ground);
-      -webkit-font-smoothing: antialiased;
-    }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: var(--body);
+        font-size: var(--t-2);
+        color: var(--ink);
+        background: var(--ground);
+        -webkit-font-smoothing: antialiased;
+      }
 
-    body::before {
-      content: "";
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      height: 3px;
-      background: var(--stripe);
-      z-index: 45;
-      pointer-events: none;
-    }
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--stripe);
+        z-index: 45;
+        pointer-events: none;
+      }
 
-    .app {
-      display: grid;
-      grid-template-columns: var(--railw) minmax(0, 1fr);
-      min-height: 100vh;
-      transition: grid-template-columns 0.15s ease;
-    }
+      .app {
+        display: grid;
+        grid-template-columns: var(--railw) minmax(0, 1fr);
+        min-height: 100vh;
+        transition: grid-template-columns 0.15s ease;
+      }
 
-    /* Rail */
-    .rail {
-      position: sticky;
-      top: 0;
-      align-self: start;
-      height: 100vh;
-      background: var(--surface);
-      border-right: 1px solid var(--line);
-      display: flex;
-      flex-direction: column;
-      z-index: 20;
-      overflow: hidden;
-    }
-    .brand {
-      padding: 16px 16px 12px;
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
-      border-bottom: 1px solid var(--line);
-    }
-    .brand b { font-size: var(--t-3); font-weight: 700; color: var(--accent); }
-    .brand span { font-size: var(--t-0); font-weight: 600; color: var(--gilt); letter-spacing: 0.1em; }
-    .railScroll { flex: 1 1 auto; overflow-y: auto; padding: 12px 8px; display: flex; flex-direction: column; gap: 16px; }
-    .railGroup { display: grid; gap: 2px; }
-    .railEyebrow {
-      margin: 0 0 6px 8px;
-      font-size: var(--t-0);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-    }
-    .railLink {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 10px;
-      border-radius: var(--r2);
-      border: 0;
-      background: transparent;
-      color: var(--ink-soft);
-      font-size: var(--t-1);
-      font-weight: 500;
-      text-decoration: none;
-      cursor: pointer;
-      text-align: left;
-      width: 100%;
-    }
-    .railLink:hover { background: var(--sunk); color: var(--ink); }
-    .railLink[aria-current="page"] {
-      background: var(--surface-2);
-      color: var(--ink);
-      font-weight: 600;
-      box-shadow: inset 3px 0 0 var(--gilt);
-    }
-    .railFoot {
-      padding: 12px;
-      border-top: 1px solid var(--line);
-      background: var(--surface-2);
-      font-size: var(--t-0);
-      color: var(--muted);
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .railFoot b { color: var(--ink-soft); }
+      /* Rail */
+      .rail {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        height: 100vh;
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        z-index: 20;
+        overflow: hidden;
+      }
+      .brand {
+        padding: 16px 16px 12px;
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        border-bottom: 1px solid var(--line);
+      }
+      .brand b {
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .brand span {
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--gilt);
+        letter-spacing: 0.1em;
+      }
+      .railScroll {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 12px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .railGroup {
+        display: grid;
+        gap: 2px;
+      }
+      .railEyebrow {
+        margin: 0 0 6px 8px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+      }
+      .railLink {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: var(--r2);
+        border: 0;
+        background: transparent;
+        color: var(--ink-soft);
+        font-size: var(--t-1);
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        text-align: left;
+        width: 100%;
+      }
+      .railLink:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+      .railLink[aria-current="page"] {
+        background: var(--surface-2);
+        color: var(--ink);
+        font-weight: 600;
+        box-shadow: inset 3px 0 0 var(--gilt);
+      }
+      .railFoot {
+        padding: 12px;
+        border-top: 1px solid var(--line);
+        background: var(--surface-2);
+        font-size: var(--t-0);
+        color: var(--muted);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .railFoot b {
+        color: var(--ink-soft);
+      }
 
-    /* Header */
-    .frame { display: flex; flex-direction: column; min-width: 0; }
-    .hdr1 {
-      height: 44px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--line);
-      display: flex;
-      align-items: center;
-      padding: 0 20px;
-      gap: 16px;
-      position: sticky;
-      top: 0;
-      z-index: 30;
-    }
-    .hdrTitle {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: var(--t-3);
-      font-weight: 600;
-    }
-    .chipMark {
-      font-size: var(--t-0);
-      padding: 2px 7px;
-      border-radius: var(--pill);
-      background: var(--sunk);
-      color: var(--muted);
-      border: 1px solid var(--line);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-    .hdrEnd {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+      /* Header */
+      .frame {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .hdr1 {
+        height: 44px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        gap: 16px;
+        position: sticky;
+        top: 0;
+        z-index: 30;
+      }
+      .hdrTitle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: var(--t-3);
+        font-weight: 600;
+      }
+      .chipMark {
+        font-size: var(--t-0);
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        background: var(--sunk);
+        color: var(--muted);
+        border: 1px solid var(--line);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .hdrEnd {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
 
-    /* Workspace */
-    .workspace {
-      padding: 18px 24px 36px;
-      display: grid;
-      gap: 16px;
-    }
+      /* Workspace */
+      .workspace {
+        padding: 18px 24px 36px;
+        display: grid;
+        gap: 16px;
+      }
 
-    /* Executive Top Card */
-    .topCard {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--r3);
-      box-shadow: var(--lift);
-      overflow: hidden;
-    }
-    .patientMetaRow {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 16px 20px 14px;
-      border-bottom: 1px solid var(--line);
-    }
-    .patientPrimary {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      min-width: 0;
-      flex: 1 1 360px;
-    }
-    .nameLine {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px;
-    }
-    .ptId {
-      font-family: var(--mono);
-      font-size: var(--t-1);
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      padding: 2px 8px;
-      border-radius: var(--r2);
-      background: var(--surface-2);
-      border: 1px solid var(--line);
-      color: var(--ink);
-    }
-    .ptName {
-      margin: 0;
-      font-family: var(--display);
-      font-size: var(--t-5);
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      color: var(--ink);
-    }
-    .knownPill {
-      font-size: var(--t-1);
-      font-weight: 500;
-      color: var(--muted);
-      background: var(--surface-2);
-      border: 1px solid var(--line);
-      padding: 2px 8px;
-      border-radius: var(--r2);
-    }
-    .demographicChips {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 8px;
-      font-size: var(--t-1);
-      color: var(--muted);
-    }
-    .demoChip {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .demoChip strong { color: var(--ink-soft); font-weight: 600; }
-    .demoDivider { color: var(--line-strong); }
+      /* Executive Top Card */
+      .topCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r3);
+        box-shadow: var(--lift);
+        overflow: hidden;
+      }
+      .patientMetaRow {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px 20px 14px;
+        border-bottom: 1px solid var(--line);
+      }
+      .patientPrimary {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 0;
+        flex: 1 1 360px;
+      }
+      .nameLine {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+      }
+      .ptId {
+        font-family: var(--mono);
+        font-size: var(--t-1);
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        padding: 2px 8px;
+        border-radius: var(--r2);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        color: var(--ink);
+      }
+      .ptName {
+        margin: 0;
+        font-family: var(--display);
+        font-size: var(--t-5);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+      }
+      .knownPill {
+        font-size: var(--t-1);
+        font-weight: 500;
+        color: var(--muted);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        padding: 2px 8px;
+        border-radius: var(--r2);
+      }
+      .demographicChips {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        font-size: var(--t-1);
+        color: var(--muted);
+      }
+      .demoChip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .demoChip strong {
+        color: var(--ink-soft);
+        font-weight: 600;
+      }
+      .demoDivider {
+        color: var(--line-strong);
+      }
 
-    .statusCluster {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 8px;
-      margin-left: auto;
-    }
-    .urgencyBadge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 4px 10px;
-      border-radius: var(--r2);
-      font-size: var(--t-0);
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      background: var(--danger-soft);
-      color: var(--danger-ink);
-      border: 1px solid var(--line);
-    }
-    .urgencyBadge[data-tier="2"] {
-      background: var(--warn-soft);
-      color: var(--warn);
-    }
-    .waitBadge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: var(--r2);
-      font-family: var(--mono);
-      font-size: var(--t-0);
-      font-weight: 600;
-      background: var(--surface-2);
-      border: 1px solid var(--line);
-      color: var(--ink);
-      font-variant-numeric: tabular-nums;
-    }
-    .waitPulse {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--danger);
-      box-shadow: 0 0 0 2px var(--danger-soft);
-    }
-    .statusBadge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 4px 10px;
-      border-radius: var(--r2);
-      font-size: var(--t-0);
-      font-weight: 600;
-      background: var(--surface-2);
-      border: 1px solid var(--line);
-      color: var(--ink);
-    }
+      .statusCluster {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+      }
+      .urgencyBadge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: var(--r2);
+        font-size: var(--t-0);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border: 1px solid var(--line);
+      }
+      .urgencyBadge[data-tier="2"] {
+        background: var(--warn-soft);
+        color: var(--warn);
+      }
+      .waitBadge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: var(--r2);
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        color: var(--ink);
+        font-variant-numeric: tabular-nums;
+      }
+      .waitPulse {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--danger);
+        box-shadow: 0 0 0 2px var(--danger-soft);
+      }
+      .statusBadge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: var(--r2);
+        font-size: var(--t-0);
+        font-weight: 600;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        color: var(--ink);
+      }
 
-    /* Toolbar Row */
-    .topToolbar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 10px 20px;
-      background: var(--surface-2);
-      border-bottom: 1px solid var(--line);
-    }
-    .actionControls {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 8px;
-    }
-    .switchControls {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 12px;
-      margin-left: auto;
-    }
-    .segmentedControl {
-      display: inline-flex;
-      align-items: center;
-      background: var(--surface);
-      border: 1px solid var(--line-strong);
-      border-radius: var(--r2);
-      padding: 2px;
-      gap: 2px;
-    }
-    .segmentBtn {
-      border: none;
-      background: transparent;
-      color: var(--muted);
-      font-family: inherit;
-      font-size: var(--t-0);
-      font-weight: 600;
-      padding: 5px 12px;
-      border-radius: calc(var(--r2) - 2px);
-      cursor: pointer;
-      transition: all 0.12s ease;
-      white-space: nowrap;
-    }
-    .segmentBtn:hover { color: var(--ink); }
-    .segmentBtn[aria-pressed="true"] {
-      background: var(--surface-2);
-      color: var(--ink);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 6px 14px;
-      font-family: inherit;
-      font-size: var(--t-1);
-      font-weight: 600;
-      border-radius: var(--r2);
-      border: 1px solid var(--line-strong);
-      background: var(--surface);
-      color: var(--ink);
-      cursor: pointer;
-      text-decoration: none;
-      transition: all 0.12s ease;
-    }
-    .btn:hover { background: var(--surface-2); border-color: var(--accent); }
-    .btn.primary {
-      background: var(--accent);
-      color: var(--on-accent);
-      border-color: var(--accent);
-    }
-    .btn.primary:hover { filter: brightness(1.08); }
+      /* Toolbar Row */
+      .topToolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 20px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+      }
+      .actionControls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+      }
+      .switchControls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        margin-left: auto;
+      }
+      .segmentedControl {
+        display: inline-flex;
+        align-items: center;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        padding: 2px;
+        gap: 2px;
+      }
+      .segmentBtn {
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        font-family: inherit;
+        font-size: var(--t-0);
+        font-weight: 600;
+        padding: 5px 12px;
+        border-radius: calc(var(--r2) - 2px);
+        cursor: pointer;
+        transition: all 0.12s ease;
+        white-space: nowrap;
+      }
+      .segmentBtn:hover {
+        color: var(--ink);
+      }
+      .segmentBtn[aria-pressed="true"] {
+        background: var(--surface-2);
+        color: var(--ink);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 6px 14px;
+        font-family: inherit;
+        font-size: var(--t-1);
+        font-weight: 600;
+        border-radius: var(--r2);
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--ink);
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.12s ease;
+      }
+      .btn:hover {
+        background: var(--surface-2);
+        border-color: var(--accent);
+      }
+      .btn.primary {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+      }
+      .btn.primary:hover {
+        filter: brightness(1.08);
+      }
 
-    /* Barrier Cards Container */
-    .barrierContainer {
-      padding: 14px 20px 16px;
-      background: var(--surface);
-    }
-    .barrierHeader {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-    .verdictTitle {
-      margin: 0;
-      font-family: var(--display);
-      font-size: var(--t-2);
-      font-weight: 700;
-      letter-spacing: -0.01em;
-      color: var(--danger-ink);
-    }
-    .verdictTitle[data-tone="good"] { color: var(--good); }
-    .barrierSummaryBadge {
-      font-size: var(--t-0);
-      font-weight: 600;
-      color: var(--muted);
-    }
-    .barrierGrid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 12px;
-    }
-    .barrierCard {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 12px 14px;
-      border-radius: var(--r2);
-      background: var(--surface-2);
-      border: 1px solid var(--line);
-      border-left: 4px solid var(--danger);
-      gap: 10px;
-    }
-    .barrierCardClear {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 18px;
-      border-radius: var(--r2);
-      background: var(--good-soft);
-      border: 1px solid var(--line);
-      border-left: 4px solid var(--good);
-    }
-    .barrierCardTop {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-    }
-    .barrierIcon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: var(--danger-soft);
-      color: var(--danger);
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
-    .barrierClearIcon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: var(--good-soft);
-      color: var(--good);
-      flex-shrink: 0;
-    }
-    .barrierMain {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      min-width: 0;
-      flex: 1 1 auto;
-    }
-    .barrierLabelRow {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 8px;
-    }
-    .barrierLabel {
-      font-size: var(--t-1);
-      font-weight: 700;
-      color: var(--ink);
-    }
-    .barrierVerdictPill {
-      font-family: var(--mono);
-      font-size: var(--t-0);
-      font-weight: 700;
-      color: var(--danger-ink);
-      background: var(--danger-soft);
-      padding: 2px 7px;
-      border-radius: var(--r2);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-    .barrierDetail {
-      margin: 0;
-      font-size: var(--t-0);
-      line-height: 1.45;
-      color: var(--ink-soft);
-    }
-    .barrierCardAction {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      border-top: 1px solid var(--line);
-      padding-top: 8px;
-    }
-    .barrierActionBtn {
-      border: none;
-      background: transparent;
-      color: var(--accent);
-      font-family: inherit;
-      font-size: var(--t-0);
-      font-weight: 600;
-      cursor: pointer;
-      padding: 2px 4px;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .barrierActionBtn:hover { text-decoration: underline; }
+      /* Barrier Cards Container */
+      .barrierContainer {
+        padding: 14px 20px 16px;
+        background: var(--surface);
+      }
+      .barrierHeader {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .verdictTitle {
+        margin: 0;
+        font-family: var(--display);
+        font-size: var(--t-2);
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--danger-ink);
+      }
+      .verdictTitle[data-tone="good"] {
+        color: var(--good);
+      }
+      .barrierSummaryBadge {
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .barrierGrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 12px;
+      }
+      .barrierCard {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 12px 14px;
+        border-radius: var(--r2);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--danger);
+        gap: 10px;
+      }
+      .barrierCardClear {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 18px;
+        border-radius: var(--r2);
+        background: var(--good-soft);
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--good);
+      }
+      .barrierCardTop {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .barrierIcon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--danger-soft);
+        color: var(--danger);
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .barrierClearIcon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--good-soft);
+        color: var(--good);
+        flex-shrink: 0;
+      }
+      .barrierMain {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+      .barrierLabelRow {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .barrierLabel {
+        font-size: var(--t-1);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .barrierVerdictPill {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 700;
+        color: var(--danger-ink);
+        background: var(--danger-soft);
+        padding: 2px 7px;
+        border-radius: var(--r2);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .barrierDetail {
+        margin: 0;
+        font-size: var(--t-0);
+        line-height: 1.45;
+        color: var(--ink-soft);
+      }
+      .barrierCardAction {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        border-top: 1px solid var(--line);
+        padding-top: 8px;
+      }
+      .barrierActionBtn {
+        border: none;
+        background: transparent;
+        color: var(--accent);
+        font-family: inherit;
+        font-size: var(--t-0);
+        font-weight: 600;
+        cursor: pointer;
+        padding: 2px 4px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .barrierActionBtn:hover {
+        text-decoration: underline;
+      }
 
-    /* 2-Column Grid */
-    .clinicalGrid {
-      display: grid;
-      grid-template-columns: 290px minmax(0, 1fr);
-      gap: 16px;
-      align-items: start;
-    }
-    @media (max-width: 1024px) {
-      .clinicalGrid { grid-template-columns: minmax(0, 1fr); }
-    }
+      /* 2-Column Grid */
+      .clinicalGrid {
+        display: grid;
+        grid-template-columns: 290px minmax(0, 1fr);
+        gap: 16px;
+        align-items: start;
+      }
+      @media (max-width: 1024px) {
+        .clinicalGrid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
 
-    /* Panel Surface */
-    .panel {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--r3);
-      box-shadow: var(--lift);
-      overflow: hidden;
-    }
-    .panelHdr {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 10px 16px 8px;
-      border-bottom: 1px solid var(--line);
-      background: var(--surface-2);
-    }
-    .panelTitle {
-      margin: 0;
-      font-family: var(--display);
-      font-size: var(--t-3);
-      font-weight: 600;
-      letter-spacing: -0.01em;
-      color: var(--ink);
-    }
-    .badgeCount {
-      font-family: var(--mono);
-      font-size: var(--t-0);
-      color: var(--muted);
-      font-variant-numeric: tabular-nums;
-    }
+      /* Panel Surface */
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r3);
+        box-shadow: var(--lift);
+        overflow: hidden;
+      }
+      .panelHdr {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 10px 16px 8px;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface-2);
+      }
+      .panelTitle {
+        margin: 0;
+        font-family: var(--display);
+        font-size: var(--t-3);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--ink);
+      }
+      .badgeCount {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
 
-    /* Journey Stepper */
-    .journeyBody {
-      padding: 14px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .jrn {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-    }
-    .jst {
-      display: flex;
-      align-items: stretch;
-      gap: 12px;
-      min-height: 42px;
-      position: relative;
-    }
-    .jIndicatorCol {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 20px;
-      flex-shrink: 0;
-    }
-    .jnode {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--surface);
-      border: 2px solid var(--line-strong);
-      color: var(--muted);
-      font-size: 10px;
-      font-weight: 700;
-      z-index: 1;
-    }
-    .jst[data-s="done"] .jnode {
-      background: var(--good);
-      border-color: var(--good);
-      color: var(--surface);
-    }
-    .jst[data-s="now"] .jnode {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: var(--on-accent);
-      box-shadow: 0 0 0 3px var(--accent-soft);
-    }
-    .jline {
-      flex: 1 1 auto;
-      width: 2px;
-      background: var(--line);
-      margin: 2px 0;
-    }
-    .jst[data-s="done"] .jline { background: var(--good); }
-    .jcontent {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding-bottom: 10px;
-      flex: 1 1 auto;
-      min-width: 0;
-    }
-    .stageButton {
-      all: unset;
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      cursor: pointer;
-      border-radius: var(--r2);
-      padding: 4px 6px;
-      margin-left: -6px;
-      margin-right: -6px;
-      transition: background 0.12s ease;
-      box-sizing: border-box;
-    }
-    .stageButton:hover {
-      background: var(--surface-2);
-    }
-    .stageButton:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 1px;
-    }
-    .jnameRow {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-      width: 100%;
-    }
-    .stageRightCluster {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .stageChevron {
-      color: var(--muted);
-      transition: transform 0.15s ease;
-      flex-shrink: 0;
-    }
-    .stageChevronOpen {
-      transform: rotate(180deg);
-      color: var(--ink);
-    }
-    .stageDetailBox {
-      margin-top: 6px;
-      padding: 8px 10px;
-      background: var(--surface-2);
-      border: 1px solid var(--line);
-      border-radius: var(--r2);
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .stageDetailHeader {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-    .stageDetailBadge {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      padding: 1px 6px;
-      border-radius: var(--r2);
-      font-family: var(--mono);
-    }
-    .stageDetailBadge[data-tone="warn"] {
-      background: var(--warn-soft);
-      color: var(--warn);
-    }
-    .stageDetailBadge[data-tone="danger"] {
-      background: var(--danger-soft);
-      color: var(--danger-ink);
-    }
-    .stageDetailBadge[data-tone="good"] {
-      background: var(--good-soft);
-      color: var(--good);
-    }
-    .stageDetailBadge[data-tone="accent"] {
-      background: var(--accent-soft);
-      color: var(--accent-ink);
-    }
-    .stageDetailBadge[data-tone="neutral"] {
-      background: var(--sunk);
-      color: var(--muted);
-    }
-    .stageDetailSummary {
-      margin: 0;
-      font-size: var(--t-0);
-      line-height: 1.4;
-      color: var(--ink);
-    }
-    .stageMilestoneList {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      border-top: 1px solid var(--line);
-      padding-top: 6px;
-    }
-    .stageMilestoneItem {
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
-      font-size: 11px;
-      line-height: 1.35;
-    }
-    .stageMilestoneTime {
-      font-family: var(--mono);
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--muted);
-      flex-shrink: 0;
-    }
-    .stageMilestoneLabel {
-      font-weight: 600;
-      color: var(--ink);
-      flex-shrink: 0;
-    }
-    .stageMilestoneText {
-      color: var(--ink-soft);
-      flex: 1 1 auto;
-    }
-    .jname {
-      font-size: var(--t-1);
-      font-weight: 500;
-      color: var(--muted);
-    }
-    .jst[data-s="now"] .jname { font-weight: 700; color: var(--ink); }
-    .jst[data-s="done"] .jname { font-weight: 600; color: var(--ink); }
-    .jwhen {
-      font-family: var(--mono);
-      font-size: var(--t-0);
-      font-weight: 700;
-      color: var(--accent-ink);
-      background: var(--accent-soft);
-      padding: 1px 6px;
-      border-radius: var(--r2);
-      white-space: nowrap;
-    }
+      /* Journey Stepper */
+      .journeyBody {
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .jrn {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .jst {
+        display: flex;
+        align-items: stretch;
+        gap: 12px;
+        min-height: 42px;
+        position: relative;
+      }
+      .jIndicatorCol {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 20px;
+        flex-shrink: 0;
+      }
+      .jnode {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--surface);
+        border: 2px solid var(--line-strong);
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 700;
+        z-index: 1;
+      }
+      .jst[data-s="done"] .jnode {
+        background: var(--good);
+        border-color: var(--good);
+        color: var(--surface);
+      }
+      .jst[data-s="now"] .jnode {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--on-accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      .jline {
+        flex: 1 1 auto;
+        width: 2px;
+        background: var(--line);
+        margin: 2px 0;
+      }
+      .jst[data-s="done"] .jline {
+        background: var(--good);
+      }
+      .jcontent {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-bottom: 10px;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .stageButton {
+        all: unset;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        cursor: pointer;
+        border-radius: var(--r2);
+        padding: 4px 6px;
+        margin-left: -6px;
+        margin-right: -6px;
+        transition: background 0.12s ease;
+        box-sizing: border-box;
+      }
+      .stageButton:hover {
+        background: var(--surface-2);
+      }
+      .stageButton:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+      }
+      .jnameRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        width: 100%;
+      }
+      .stageRightCluster {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .stageChevron {
+        color: var(--muted);
+        transition: transform 0.15s ease;
+        flex-shrink: 0;
+      }
+      .stageChevronOpen {
+        transform: rotate(180deg);
+        color: var(--ink);
+      }
+      .stageDetailBox {
+        margin-top: 6px;
+        padding: 8px 10px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .stageDetailHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .stageDetailBadge {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 1px 6px;
+        border-radius: var(--r2);
+        font-family: var(--mono);
+      }
+      .stageDetailBadge[data-tone="warn"] {
+        background: var(--warn-soft);
+        color: var(--warn);
+      }
+      .stageDetailBadge[data-tone="danger"] {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+      }
+      .stageDetailBadge[data-tone="good"] {
+        background: var(--good-soft);
+        color: var(--good);
+      }
+      .stageDetailBadge[data-tone="accent"] {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+      }
+      .stageDetailBadge[data-tone="neutral"] {
+        background: var(--sunk);
+        color: var(--muted);
+      }
+      .stageDetailSummary {
+        margin: 0;
+        font-size: var(--t-0);
+        line-height: 1.4;
+        color: var(--ink);
+      }
+      .stageMilestoneList {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        border-top: 1px solid var(--line);
+        padding-top: 6px;
+      }
+      .stageMilestoneItem {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        font-size: 11px;
+        line-height: 1.35;
+      }
+      .stageMilestoneTime {
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--muted);
+        flex-shrink: 0;
+      }
+      .stageMilestoneLabel {
+        font-weight: 600;
+        color: var(--ink);
+        flex-shrink: 0;
+      }
+      .stageMilestoneText {
+        color: var(--ink-soft);
+        flex: 1 1 auto;
+      }
+      .jname {
+        font-size: var(--t-1);
+        font-weight: 500;
+        color: var(--muted);
+      }
+      .jst[data-s="now"] .jname {
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .jst[data-s="done"] .jname {
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .jwhen {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 700;
+        color: var(--accent-ink);
+        background: var(--accent-soft);
+        padding: 1px 6px;
+        border-radius: var(--r2);
+        white-space: nowrap;
+      }
 
-    /* Next Action Callout */
-    .nextActionCard {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: var(--r2);
-      background: var(--surface-2);
-      border: 1px solid var(--line-strong);
-    }
-    .nextActionIcon {
-      color: var(--accent);
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-    .nextActionMain {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      min-width: 0;
-    }
-    .nextActionLabel {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--muted);
-    }
-    .nextActionText {
-      margin: 0;
-      font-size: var(--t-0);
-      font-weight: 600;
-      color: var(--ink);
-      line-height: 1.35;
-    }
-    .slFacts {
-      display: grid;
-      grid-template-columns: minmax(110px, 160px) minmax(0, 1fr);
-      row-gap: 8px;
-      column-gap: 16px;
-      margin: 0;
-      font-size: var(--t-1);
-      line-height: 1.45;
-      align-items: baseline;
-    }
-    .slFacts dt {
-      margin: 0;
-      font-size: var(--t-1);
-      font-weight: 500;
-      color: var(--muted);
-    }
-    .slFacts dd {
-      margin: 0;
-      font-size: var(--t-1);
-      font-weight: 600;
-      color: var(--ink);
-      word-break: break-word;
-    }
-    .jfoot {
-      margin-top: 14px;
-      padding-top: 12px;
-      border-top: 1px solid var(--line);
-      grid-template-columns: auto 1fr;
-      row-gap: 6px;
-      column-gap: 10px;
-    }
-    .jfoot dt {
-      font-size: var(--t-0);
-      font-weight: 500;
-      color: var(--muted);
-    }
-    .jfoot dd {
-      font-size: var(--t-0);
-      font-weight: 600;
-      font-family: var(--mono);
-      color: var(--ink);
-      text-align: right;
-    }
+      /* Next Action Callout */
+      .nextActionCard {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: var(--r2);
+        background: var(--surface-2);
+        border: 1px solid var(--line-strong);
+      }
+      .nextActionIcon {
+        color: var(--accent);
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .nextActionMain {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+      .nextActionLabel {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+      }
+      .nextActionText {
+        margin: 0;
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--ink);
+        line-height: 1.35;
+      }
+      .slFacts {
+        display: grid;
+        grid-template-columns: minmax(110px, 160px) minmax(0, 1fr);
+        row-gap: 8px;
+        column-gap: 16px;
+        margin: 0;
+        font-size: var(--t-1);
+        line-height: 1.45;
+        align-items: baseline;
+      }
+      .slFacts dt {
+        margin: 0;
+        font-size: var(--t-1);
+        font-weight: 500;
+        color: var(--muted);
+      }
+      .slFacts dd {
+        margin: 0;
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink);
+        word-break: break-word;
+      }
+      .jfoot {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+        grid-template-columns: auto 1fr;
+        row-gap: 6px;
+        column-gap: 10px;
+      }
+      .jfoot dt {
+        font-size: var(--t-0);
+        font-weight: 500;
+        color: var(--muted);
+      }
+      .jfoot dd {
+        font-size: var(--t-0);
+        font-weight: 600;
+        font-family: var(--mono);
+        color: var(--ink);
+        text-align: right;
+      }
 
-    /* Tabs Panel */
-    .tabbar {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 8px 12px 0;
-      border-bottom: 1px solid var(--line);
-      background: var(--surface-2);
-      overflow-x: auto;
-    }
-    .tabBtn {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      min-height: 38px;
-      padding: 8px 14px 10px;
-      font-family: inherit;
-      font-size: var(--t-2);
-      font-weight: 500;
-      color: var(--muted);
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      margin-bottom: -1px;
-      white-space: nowrap;
-    }
-    .tabBtn:hover { color: var(--ink); }
-    .tabBtn[aria-selected="true"] {
-      color: var(--ink);
-      font-weight: 600;
-      border-bottom-color: var(--gilt);
-    }
-    .tabNum {
-      font-family: var(--mono);
-      font-size: var(--t-0);
-      color: var(--muted);
-      font-variant-numeric: tabular-nums;
-    }
-    .tabBtn[aria-selected="true"] .tabNum { color: var(--accent-ink); font-weight: 600; }
+      /* Tabs Panel */
+      .tabbar {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 8px 12px 0;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface-2);
+        overflow-x: auto;
+      }
+      .tabBtn {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 38px;
+        padding: 8px 14px 10px;
+        font-family: inherit;
+        font-size: var(--t-2);
+        font-weight: 500;
+        color: var(--muted);
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        white-space: nowrap;
+      }
+      .tabBtn:hover {
+        color: var(--ink);
+      }
+      .tabBtn[aria-selected="true"] {
+        color: var(--ink);
+        font-weight: 600;
+        border-bottom-color: var(--gilt);
+      }
+      .tabNum {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .tabBtn[aria-selected="true"] .tabNum {
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
 
-    /* Tab Panes */
-    .tabPane { display: none; }
-    .tabPane.active { display: block; }
-    .pnCols {
-      display: grid;
-      grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-      align-items: start;
-    }
-    @media (max-width: 900px) {
-      .pnCols { grid-template-columns: minmax(0, 1fr); }
-      .pnNowRight { border-left: none !important; border-top: 1px solid var(--line); }
-    }
-    .pnNowRight {
-      border-left: 1px solid var(--line);
-      min-width: 0;
-    }
-    .sec {
-      padding: 14px 16px 16px;
-      border-top: 1px solid var(--line);
-    }
-    .pnCols > div > .sec:first-child { border-top: 0; }
-    .secH {
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-      margin: 0 0 10px;
-      font-size: var(--t-2);
-      font-weight: 600;
-      color: var(--ink);
-      letter-spacing: -0.01em;
-    }
-    .secSub { font-size: var(--t-1); margin-top: 14px; }
-    .count {
-      font-family: var(--mono);
-      font-size: var(--t-0);
-      color: var(--muted);
-      font-weight: 400;
-    }
+      /* Tab Panes */
+      .tabPane {
+        display: none;
+      }
+      .tabPane.active {
+        display: block;
+      }
+      .pnCols {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+        align-items: start;
+      }
+      @media (max-width: 900px) {
+        .pnCols {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .pnNowRight {
+          border-left: none !important;
+          border-top: 1px solid var(--line);
+        }
+      }
+      .pnNowRight {
+        border-left: 1px solid var(--line);
+        min-width: 0;
+      }
+      .sec {
+        padding: 14px 16px 16px;
+        border-top: 1px solid var(--line);
+      }
+      .pnCols > div > .sec:first-child {
+        border-top: 0;
+      }
+      .secH {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin: 0 0 10px;
+        font-size: var(--t-2);
+        font-weight: 600;
+        color: var(--ink);
+        letter-spacing: -0.01em;
+      }
+      .secSub {
+        font-size: var(--t-1);
+        margin-top: 14px;
+      }
+      .count {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+        font-weight: 400;
+      }
 
-    /* Referral and filter rows */
-    .referralFilterRow {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 12px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--line);
-    }
-    .referralStatsPills {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px;
-    }
-    .statPill {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 3px 8px;
-      border-radius: var(--r2);
-      font-size: var(--t-0);
-      font-weight: 600;
-      background: var(--surface-2);
-      border: 1px solid var(--line);
-      color: var(--ink);
-    }
-    .statPill[data-variant="danger"] {
-      background: var(--danger-soft);
-      color: var(--danger-ink);
-      border-color: var(--danger-soft);
-    }
-    .statPill[data-variant="accent"] {
-      background: var(--accent-soft);
-      color: var(--accent-ink);
-      border-color: var(--accent-soft);
-    }
+      /* Referral and filter rows */
+      .referralFilterRow {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--line);
+      }
+      .referralStatsPills {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+      }
+      .statPill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: var(--r2);
+        font-size: var(--t-0);
+        font-weight: 600;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        color: var(--ink);
+      }
+      .statPill[data-variant="danger"] {
+        background: var(--danger-soft);
+        color: var(--danger-ink);
+        border-color: var(--danger-soft);
+      }
+      .statPill[data-variant="accent"] {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-color: var(--accent-soft);
+      }
 
-    /* Cards in list */
-    .rows { display: flex; flex-direction: column; gap: 8px; }
-    .row {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      padding: 10px 12px;
-      background: var(--surface-2);
-      border: 1px solid var(--line);
-      border-radius: var(--r2);
-    }
-    .row[data-tone="warn"] { border-left: 3px solid var(--warn); }
-    .rowTop {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 8px;
-    }
-    .rowTop strong { font-size: var(--t-1); color: var(--ink); }
-    .when {
-      font-family: var(--mono);
-      font-size: var(--t-0);
-      color: var(--muted);
-    }
-    .rowSub { font-size: var(--t-0); color: var(--ink-soft); }
-    .rowWho { font-size: var(--t-0); color: var(--muted); }
-    .pnDeclined { color: var(--danger-ink); font-weight: 700; }
-    .pnHint {
-      font-size: var(--t-0);
-      color: var(--muted);
-      font-style: italic;
-    }
+      /* Cards in list */
+      .rows {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .row {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 10px 12px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+      }
+      .row[data-tone="warn"] {
+        border-left: 3px solid var(--warn);
+      }
+      .rowTop {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .rowTop strong {
+        font-size: var(--t-1);
+        color: var(--ink);
+      }
+      .when {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+      .rowSub {
+        font-size: var(--t-0);
+        color: var(--ink-soft);
+      }
+      .rowWho {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+      .pnDeclined {
+        color: var(--danger-ink);
+        font-weight: 700;
+      }
+      .pnHint {
+        font-size: var(--t-0);
+        color: var(--muted);
+        font-style: italic;
+      }
 
-    /* Timeline */
-    .tline {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: grid;
-    }
-    .tev {
-      position: relative;
-      display: grid;
-      grid-template-columns: 3.2rem minmax(0, 1fr);
-      gap: 1px 12px;
-      padding: 0 0 12px 24px;
-    }
-    .tev::before {
-      content: "";
-      position: absolute;
-      left: 5px;
-      top: 14px;
-      bottom: -2px;
-      width: 1px;
-      background: var(--line-strong);
-    }
-    .tline > li:last-child::before { display: none; }
-    .tnode {
-      position: absolute;
-      left: 1px;
-      top: 4px;
-      width: 9px;
-      height: 9px;
-      border-radius: var(--pill);
-      background: var(--muted);
-    }
-    .tev[data-tone="warn"] .tnode { background: var(--warn); }
-    .tev[data-tone="good"] .tnode { background: var(--good); }
-    .twhen {
-      font-family: var(--mono);
-      font-size: var(--t-0);
-      color: var(--muted);
-      font-variant-numeric: tabular-nums;
-    }
-    .twhat {
-      font-size: var(--t-1);
-      color: var(--ink-soft);
-      line-height: 1.4;
-    }
-    .tquote {
-      grid-column: 2;
-      font-size: var(--t-0);
-      font-style: italic;
-      color: var(--muted);
-      margin-top: 2px;
-    }
-    .tquiet {
-      position: relative;
-      display: grid;
-      grid-template-columns: 3.2rem minmax(0, 1fr);
-      gap: 1px 12px;
-      padding: 0 0 12px 24px;
-    }
-    .tquiet .tnode {
-      position: absolute;
-      left: 3px;
-      top: 6px;
-      width: 5px;
-      height: 5px;
-      border-radius: var(--pill);
-      background: var(--line-strong);
-    }
-    .tquiet .twhat { font-size: var(--t-0); color: var(--muted); }
+      /* Timeline */
+      .tline {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+      }
+      .tev {
+        position: relative;
+        display: grid;
+        grid-template-columns: 3.2rem minmax(0, 1fr);
+        gap: 1px 12px;
+        padding: 0 0 12px 24px;
+      }
+      .tev::before {
+        content: "";
+        position: absolute;
+        left: 5px;
+        top: 14px;
+        bottom: -2px;
+        width: 1px;
+        background: var(--line-strong);
+      }
+      .tline > li:last-child::before {
+        display: none;
+      }
+      .tnode {
+        position: absolute;
+        left: 1px;
+        top: 4px;
+        width: 9px;
+        height: 9px;
+        border-radius: var(--pill);
+        background: var(--muted);
+      }
+      .tev[data-tone="warn"] .tnode {
+        background: var(--warn);
+      }
+      .tev[data-tone="good"] .tnode {
+        background: var(--good);
+      }
+      .twhen {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .twhat {
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        line-height: 1.4;
+      }
+      .tquote {
+        grid-column: 2;
+        font-size: var(--t-0);
+        font-style: italic;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .tquiet {
+        position: relative;
+        display: grid;
+        grid-template-columns: 3.2rem minmax(0, 1fr);
+        gap: 1px 12px;
+        padding: 0 0 12px 24px;
+      }
+      .tquiet .tnode {
+        position: absolute;
+        left: 3px;
+        top: 6px;
+        width: 5px;
+        height: 5px;
+        border-radius: var(--pill);
+        background: var(--line-strong);
+      }
+      .tquiet .twhat {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
 
-    .pnStory {
-      margin: 0;
-      font-size: var(--t-1);
-      line-height: 1.45;
-      color: var(--ink-soft);
-      font-style: italic;
-    }
+      .pnStory {
+        margin: 0;
+        font-size: var(--t-1);
+        line-height: 1.45;
+        color: var(--ink-soft);
+        font-style: italic;
+      }
 
-    .nsteps {
-      list-style: decimal;
-      padding-left: 20px;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .nstep { font-size: var(--t-1); color: var(--ink-soft); }
-    .nstep b { color: var(--ink); display: block; }
+      .nsteps {
+        list-style: decimal;
+        padding-left: 20px;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .nstep {
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+      }
+      .nstep b {
+        color: var(--ink);
+        display: block;
+      }
 
-    /* Tables */
-    .tableWrap {
-      overflow-x: auto;
-      border: 1px solid var(--line);
-      border-radius: var(--r2);
-      background: var(--surface);
-    }
-    table { width: 100%; border-collapse: collapse; font-size: var(--t-1); }
-    th {
-      text-align: left;
-      padding: 8px 12px;
-      font-size: var(--t-0);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-      background: var(--surface-2);
-      border-bottom: 1px solid var(--line);
-    }
-    td {
-      padding: 8px 12px;
-      border-bottom: 1px solid var(--line);
-      color: var(--ink);
-    }
-    tr:last-child td { border-bottom: 0; }
-    .fcode {
-      display: inline-block;
-      padding: 2px 6px;
-      border-radius: var(--r2);
-      background: var(--sunk);
-      font-family: var(--mono);
-      font-size: var(--t-0);
-      font-weight: 600;
-      color: var(--ink-soft);
-    }
-    .statusPill {
-      display: inline-flex;
-      align-items: center;
-      padding: 2px 8px;
-      border-radius: var(--pill);
-      font-size: var(--t-0);
-      font-weight: 600;
-      background: var(--sunk);
-      color: var(--muted);
-    }
-    .statusPill[data-status="Active"], .statusPill[data-status="Filed"] {
-      background: var(--good-soft);
-      color: var(--good);
-    }
+      /* Tables */
+      .tableWrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: var(--r2);
+        background: var(--surface);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--t-1);
+      }
+      th {
+        text-align: left;
+        padding: 8px 12px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+      }
+      td {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink);
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      .fcode {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: var(--r2);
+        background: var(--sunk);
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--ink-soft);
+      }
+      .statusPill {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: var(--pill);
+        font-size: var(--t-0);
+        font-weight: 600;
+        background: var(--sunk);
+        color: var(--muted);
+      }
+      .statusPill[data-status="Active"],
+      .statusPill[data-status="Filed"] {
+        background: var(--good-soft);
+        color: var(--good);
+      }
 
-    /* History SVG */
-    .pnScrollX { overflow-x: auto; padding-bottom: 8px; }
-    .historySvg { width: 100%; min-width: 600px; height: 90px; }
-    .gridLine { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 2; }
-    .tickText { font-family: var(--mono); font-size: 11px; fill: var(--muted); }
-    .pnMark { fill: var(--accent); transition: r 0.15s ease; cursor: pointer; }
-    .pnMark[data-current="true"] { fill: var(--gilt); }
-    .chalo { fill: transparent; }
-    .chalo:hover + .pnMark { r: 8px; }
+      /* History SVG */
+      .pnScrollX {
+        overflow-x: auto;
+        padding-bottom: 8px;
+      }
+      .historySvg {
+        width: 100%;
+        min-width: 600px;
+        height: 90px;
+      }
+      .gridLine {
+        stroke: var(--line);
+        stroke-width: 1;
+        stroke-dasharray: 2 2;
+      }
+      .tickText {
+        font-family: var(--mono);
+        font-size: 11px;
+        fill: var(--muted);
+      }
+      .pnMark {
+        fill: var(--accent);
+        transition: r 0.15s ease;
+        cursor: pointer;
+      }
+      .pnMark[data-current="true"] {
+        fill: var(--gilt);
+      }
+      .chalo {
+        fill: transparent;
+      }
+      .chalo:hover + .pnMark {
+        r: 8px;
+      }
 
-    /* Footer */
-    .pnFoot {
-      border-top: 1px solid var(--line);
-      background: var(--surface-2);
-      padding: 10px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .provenanceSentence {
-      margin: 0;
-      font-size: var(--t-0);
-      line-height: 1.45;
-      color: var(--muted);
-      text-align: center;
-    }
-  </style>
-</head>
-<body>
-  <div class="app">
-    <!-- Navigation Rail -->
-    <aside class="rail">
-      <div class="brand">
-        <b>Ward Flow</b>
-        <span>PERFECTED</span>
-      </div>
-      <div class="railScroll">
-        <div class="railGroup">
-          <div class="railEyebrow">Views</div>
-          <a class="railLink" href="#">Overview Board</a>
-          <a class="railLink" href="#" aria-current="page">Patient Trajectory</a>
-          <a class="railLink" href="#">Capacity Matrix</a>
-          <a class="railLink" href="#">Transport Dispatch</a>
+      /* Footer */
+      .pnFoot {
+        border-top: 1px solid var(--line);
+        background: var(--surface-2);
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .provenanceSentence {
+        margin: 0;
+        font-size: var(--t-0);
+        line-height: 1.45;
+        color: var(--muted);
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- Navigation Rail -->
+      <aside class="rail">
+        <div class="brand">
+          <b>Ward Flow</b>
+          <span>PERFECTED</span>
         </div>
-        <div class="railGroup">
-          <div class="railEyebrow">Perspectives</div>
-          <a class="railLink" href="#" id="railCoord">Bed Coordinator</a>
-          <a class="railLink" href="#" id="railWard">Receiving Ward</a>
-        </div>
-      </div>
-      <div class="railFoot">
-        <div><b>Network Clock:</b> 10:42 AWST</div>
-        <div>Handover: 14:00</div>
-      </div>
-    </aside>
-
-    <!-- Content Frame -->
-    <div class="frame">
-      <!-- Universal Header -->
-      <header class="hdr1">
-        <div class="hdrTitle">
-          <span>Patient Trajectory Monitor</span>
-          <span class="chipMark">Third Edition Perfected</span>
-        </div>
-        <div class="hdrEnd">
-          <button type="button" class="btn" id="themeToggle">Theme</button>
-        </div>
-      </header>
-
-      <!-- Main Workspace -->
-      <main class="workspace">
-        <!-- Executive Clinical Top Bar -->
-        <section class="topCard" id="subjectCard">
-          <div class="patientMetaRow">
-            <!-- Identity Cluster -->
-            <div class="patientPrimary" id="ptIdentity">
-              <div class="nameLine">
-                <h1 class="ptName" id="ptDisplayName">Wren, Tobias</h1>
-                <span class="knownPill" id="ptKnownAs">known as Toby</span>
-              </div>
-              <div class="demographicChips" id="ptChips">
-                <span class="demoChip"><strong>UMRN</strong> <span id="chipUmrn">UM100009</span></span>
-                <span class="demoDivider">·</span>
-                <span class="demoChip"><strong>DOB</strong> <span id="chipDob">14 Oct 1993</span> (<span id="chipAge">32y</span>)</span>
-                <span class="demoDivider">·</span>
-                <span class="demoChip"><strong>Sex</strong> Male</span>
-                <span class="demoDivider">·</span>
-                <span class="demoChip"><strong>Location</strong> <span id="chipLoc">Peel Health Campus ED · Bay 3</span></span>
-                <span class="demoDivider">·</span>
-                <span class="demoChip"><strong>Legal</strong> <span id="chipLegal">Involuntary inpatient (Form 3B)</span></span>
-              </div>
-            </div>
-
-            <!-- Priority & Status Cluster -->
-            <div class="statusCluster">
-              <span class="urgencyBadge" id="urgencyBadge" data-tier="1">Tier 1 — High Acuity</span>
-              <span class="waitBadge" id="waitBadge">
-                <span class="waitPulse"></span>
-                <span id="waitDuration">402m waiting</span>
-              </span>
-              <span class="statusBadge" id="trajectoryStatus">Placement In Progress</span>
-            </div>
+        <div class="railScroll">
+          <div class="railGroup">
+            <div class="railEyebrow">Views</div>
+            <a class="railLink" href="#">Overview Board</a>
+            <a class="railLink" href="#" aria-current="page">Patient Trajectory</a>
+            <a class="railLink" href="#">Capacity Matrix</a>
+            <a class="railLink" href="#">Transport Dispatch</a>
           </div>
-
-          <!-- Action Toolbar -->
-          <div class="topToolbar">
-            <div class="actionControls">
-              <button type="button" class="btn primary">Open the movement</button>
-              <button type="button" class="btn" id="copyHandoverBtn">Copy handover summary</button>
-            </div>
-
-            <div class="switchControls">
-              <!-- View Mode Segmented Control -->
-              <div class="segmentedControl" role="group" aria-label="Perspective">
-                <button type="button" class="segmentBtn" id="btnCoord" aria-pressed="true">Coordinator</button>
-                <button type="button" class="segmentBtn" id="btnWard" aria-pressed="false">Ward</button>
-              </div>
-
-              <!-- Scenario Switcher Segmented Control -->
-              <div class="segmentedControl" role="group" aria-label="Scenario">
-                <button type="button" class="segmentBtn" id="btnWf009" aria-pressed="true">Stuck (WF-009)</button>
-                <button type="button" class="segmentBtn" id="btnWf004" aria-pressed="false">Moving well (WF-004)</button>
-              </div>
-            </div>
+          <div class="railGroup">
+            <div class="railEyebrow">Perspectives</div>
+            <a class="railLink" href="#" id="railCoord">Bed Coordinator</a>
+            <a class="railLink" href="#" id="railWard">Receiving Ward</a>
           </div>
+        </div>
+        <div class="railFoot">
+          <div><b>Network Clock:</b> 10:42 AWST</div>
+          <div>Handover: 14:00</div>
+        </div>
+      </aside>
 
-          <!-- Barriers & Blockers High-Impact Section -->
-          <div class="barrierContainer" id="barrierContainer">
-            <div class="barrierHeader">
-              <h3 class="verdictTitle" id="verdictTitle" data-tone="danger">Cannot be moved. Two things are missing.</h3>
-              <span class="barrierSummaryBadge" id="barrierSummary">2 missing gates</span>
+      <!-- Content Frame -->
+      <div class="frame">
+        <!-- Universal Header -->
+        <header class="hdr1">
+          <div class="hdrTitle">
+            <span>Patient Trajectory Monitor</span>
+            <span class="chipMark">Third Edition Perfected</span>
+          </div>
+          <div class="hdrEnd">
+            <button type="button" class="btn" id="themeToggle">Theme</button>
+          </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="workspace">
+          <!-- Executive Clinical Top Bar -->
+          <section class="topCard" id="subjectCard">
+            <div class="patientMetaRow">
+              <!-- Identity Cluster -->
+              <div class="patientPrimary" id="ptIdentity">
+                <div class="nameLine">
+                  <h1 class="ptName" id="ptDisplayName">Wren, Tobias</h1>
+                  <span class="knownPill" id="ptKnownAs">known as Toby</span>
+                </div>
+                <div class="demographicChips" id="ptChips">
+                  <span class="demoChip"><strong>UMRN</strong> <span id="chipUmrn">UM100009</span></span>
+                  <span class="demoDivider">·</span>
+                  <span class="demoChip"
+                    ><strong>DOB</strong> <span id="chipDob">14 Oct 1993</span> (<span id="chipAge">32y</span>)</span
+                  >
+                  <span class="demoDivider">·</span>
+                  <span class="demoChip"><strong>Sex</strong> Male</span>
+                  <span class="demoDivider">·</span>
+                  <span class="demoChip"
+                    ><strong>Location</strong> <span id="chipLoc">Peel Health Campus ED · Bay 3</span></span
+                  >
+                  <span class="demoDivider">·</span>
+                  <span class="demoChip"
+                    ><strong>Legal</strong> <span id="chipLegal">Involuntary inpatient (Form 3B)</span></span
+                  >
+                </div>
+              </div>
+
+              <!-- Priority & Status Cluster -->
+              <div class="statusCluster">
+                <span class="urgencyBadge" id="urgencyBadge" data-tier="1">Tier 1 — High Acuity</span>
+                <span class="waitBadge" id="waitBadge">
+                  <span class="waitPulse"></span>
+                  <span id="waitDuration">402m waiting</span>
+                </span>
+                <span class="statusBadge" id="trajectoryStatus">Placement In Progress</span>
+              </div>
             </div>
 
-            <div class="barrierGrid" id="barrierCards">
-              <!-- Card 1: Bed -->
-              <div class="barrierCard">
-                <div class="barrierCardTop">
-                  <span class="barrierIcon" aria-hidden="true">
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M2 2L10 10M10 2L2 10" stroke-width="2" />
-                    </svg>
-                  </span>
-                  <div class="barrierMain">
-                    <div class="barrierLabelRow">
-                      <span class="barrierLabel">Locked, adult bed</span>
-                      <span class="barrierVerdictPill">No Bed</span>
+            <!-- Action Toolbar -->
+            <div class="topToolbar">
+              <div class="actionControls">
+                <button type="button" class="btn primary">Open the movement</button>
+                <button type="button" class="btn" id="copyHandoverBtn">Copy handover summary</button>
+              </div>
+
+              <div class="switchControls">
+                <!-- View Mode Segmented Control -->
+                <div class="segmentedControl" role="group" aria-label="Perspective">
+                  <button type="button" class="segmentBtn" id="btnCoord" aria-pressed="true">Coordinator</button>
+                  <button type="button" class="segmentBtn" id="btnWard" aria-pressed="false">Ward</button>
+                </div>
+
+                <!-- Scenario Switcher Segmented Control -->
+                <div class="segmentedControl" role="group" aria-label="Scenario">
+                  <button type="button" class="segmentBtn" id="btnWf009" aria-pressed="true">Stuck (WF-009)</button>
+                  <button type="button" class="segmentBtn" id="btnWf004" aria-pressed="false">
+                    Moving well (WF-004)
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Barriers & Blockers High-Impact Section -->
+            <div class="barrierContainer" id="barrierContainer">
+              <div class="barrierHeader">
+                <h3 class="verdictTitle" id="verdictTitle" data-tone="danger">
+                  Cannot be moved. Two things are missing.
+                </h3>
+                <span class="barrierSummaryBadge" id="barrierSummary">2 missing gates</span>
+              </div>
+
+              <div class="barrierGrid" id="barrierCards">
+                <!-- Card 1: Bed -->
+                <div class="barrierCard">
+                  <div class="barrierCardTop">
+                    <span class="barrierIcon" aria-hidden="true">
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 12 12"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <path d="M2 2L10 10M10 2L2 10" stroke-width="2" />
+                      </svg>
+                    </span>
+                    <div class="barrierMain">
+                      <div class="barrierLabelRow">
+                        <span class="barrierLabel">Locked, adult bed</span>
+                        <span class="barrierVerdictPill">No Bed</span>
+                      </div>
+                      <p class="barrierDetail">5 of 16 adult wards declined. Re-check: After 14:00 shift handover.</p>
                     </div>
-                    <p class="barrierDetail">5 of 16 adult wards declined. Re-check: After 14:00 shift handover.</p>
+                  </div>
+                  <div class="barrierCardAction">
+                    <button type="button" class="barrierActionBtn" id="viewDeclinesBtn">
+                      View 5 Ward Declines &rarr;
+                    </button>
                   </div>
                 </div>
-                <div class="barrierCardAction">
-                  <button type="button" class="barrierActionBtn" id="viewDeclinesBtn">View 5 Ward Declines &rarr;</button>
-                </div>
-              </div>
 
-              <!-- Card 2: Fitness -->
-              <div class="barrierCard">
-                <div class="barrierCardTop">
-                  <span class="barrierIcon" aria-hidden="true">
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M2 2L10 10M10 2L2 10" stroke-width="2" />
-                    </svg>
-                  </span>
-                  <div class="barrierMain">
-                    <div class="barrierLabelRow">
-                      <span class="barrierLabel">Recorded fit to travel</span>
-                      <span class="barrierVerdictPill">Not Assessed</span>
+                <!-- Card 2: Fitness -->
+                <div class="barrierCard">
+                  <div class="barrierCardTop">
+                    <span class="barrierIcon" aria-hidden="true">
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 12 12"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <path d="M2 2L10 10M10 2L2 10" stroke-width="2" />
+                      </svg>
+                    </span>
+                    <div class="barrierMain">
+                      <div class="barrierLabelRow">
+                        <span class="barrierLabel">Recorded fit to travel</span>
+                        <span class="barrierVerdictPill">Not Assessed</span>
+                      </div>
+                      <p class="barrierDetail">No medical clearance recorded. Action: Request ED medical clearance.</p>
                     </div>
-                    <p class="barrierDetail">No medical clearance recorded. Action: Request ED medical clearance.</p>
+                  </div>
+                  <div class="barrierCardAction">
+                    <button type="button" class="barrierActionBtn" onclick="alert('ED Medical clearance requested.')">
+                      Request ED Clearance &rarr;
+                    </button>
                   </div>
                 </div>
-                <div class="barrierCardAction">
-                  <button type="button" class="barrierActionBtn" onclick="alert('ED Medical clearance requested.')">Request ED Clearance &rarr;</button>
-                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <!-- 2-Column Clinical Layout: Journey Stepper & Record Tabs -->
-        <div class="clinicalGrid">
-          <!-- Left: Journey Stepper -->
-          <section class="panel" id="journeyPanel">
-            <div class="panelHdr">
-              <h2 class="panelTitle">Journey</h2>
-              <span class="badgeCount" id="stageCountBadge">Stage 1 of 7</span>
-            </div>
+          <!-- 2-Column Clinical Layout: Journey Stepper & Record Tabs -->
+          <div class="clinicalGrid">
+            <!-- Left: Journey Stepper -->
+            <section class="panel" id="journeyPanel">
+              <div class="panelHdr">
+                <h2 class="panelTitle">Journey</h2>
+                <span class="badgeCount" id="stageCountBadge">Stage 1 of 7</span>
+              </div>
 
               <ol class="jrn" id="stepperList"></ol>
 
@@ -1414,709 +1588,917 @@
                 <dt>Acuity need</dt>
                 <dd id="sideNeed">Locked adult bed (1:1)</dd>
               </dl>
-            </div>
-          </section>
+            </section>
 
-          <!-- Right: Five Functional Tabs -->
-          <section class="panel" id="tabsPanel">
-            <div class="tabbar" role="tablist" aria-label="The record">
-              <button type="button" class="tabBtn" role="tab" id="tabNow" aria-selected="true" onclick="switchTab('now')">
-                Now <span class="tabNum" id="countNow">9</span>
-              </button>
-              <button type="button" class="tabBtn" role="tab" id="tabHistory" aria-selected="false" onclick="switchTab('history')">
-                History <span class="tabNum" id="countHistory">7</span>
-              </button>
-              <button type="button" class="tabBtn" role="tab" id="tabCommunity" aria-selected="false" onclick="switchTab('community')">
-                Community <span class="tabNum" id="countCommunity">1</span>
-              </button>
-              <button type="button" class="tabBtn" role="tab" id="tabDetails" aria-selected="false" onclick="switchTab('details')">
-                Details
-              </button>
-              <button type="button" class="tabBtn" role="tab" id="tabDocuments" aria-selected="false" onclick="switchTab('documents')">
-                Documents <span class="tabNum" id="countDocs">5</span>
-              </button>
-            </div>
+            <!-- Right: Five Functional Tabs -->
+            <section class="panel" id="tabsPanel">
+              <div class="tabbar" role="tablist" aria-label="The record">
+                <button
+                  type="button"
+                  class="tabBtn"
+                  role="tab"
+                  id="tabNow"
+                  aria-selected="true"
+                  onclick="switchTab('now')"
+                >
+                  Now <span class="tabNum" id="countNow">9</span>
+                </button>
+                <button
+                  type="button"
+                  class="tabBtn"
+                  role="tab"
+                  id="tabHistory"
+                  aria-selected="false"
+                  onclick="switchTab('history')"
+                >
+                  History <span class="tabNum" id="countHistory">7</span>
+                </button>
+                <button
+                  type="button"
+                  class="tabBtn"
+                  role="tab"
+                  id="tabCommunity"
+                  aria-selected="false"
+                  onclick="switchTab('community')"
+                >
+                  Community <span class="tabNum" id="countCommunity">1</span>
+                </button>
+                <button
+                  type="button"
+                  class="tabBtn"
+                  role="tab"
+                  id="tabDetails"
+                  aria-selected="false"
+                  onclick="switchTab('details')"
+                >
+                  Details
+                </button>
+                <button
+                  type="button"
+                  class="tabBtn"
+                  role="tab"
+                  id="tabDocuments"
+                  aria-selected="false"
+                  onclick="switchTab('documents')"
+                >
+                  Documents <span class="tabNum" id="countDocs">5</span>
+                </button>
+              </div>
 
-            <!-- TAB 1: NOW -->
-            <div class="tabPane active" id="paneNow">
-              <div class="pnCols">
-                <!-- Left: Events, Referral quote, Needs -->
-                <div>
-                  <div class="sec">
-                    <div class="referralFilterRow">
-                      <h3 class="secH" style="margin: 0;">
-                        This presentation <span class="count" id="evCount">9 events</span>
-                      </h3>
-                      <div class="segmentedControl" id="eventFilters">
-                        <button type="button" class="segmentBtn" id="evAll" aria-pressed="true" onclick="filterEvents('all')">All</button>
-                        <button type="button" class="segmentBtn" id="evDeclines" aria-pressed="false" onclick="filterEvents('declines')">Declines (5)</button>
-                        <button type="button" class="segmentBtn" id="evClinical" aria-pressed="false" onclick="filterEvents('clinical')">Clinical</button>
-                      </div>
-                    </div>
-
-                    <ol class="tline" id="timelineList">
-                      <li class="tev tevClinical">
-                        <span class="tnode"></span>
-                        <span class="twhen">04:00</span>
-                        <span class="twhat">Journey opened at <strong>Peel Health Campus Emergency Department</strong>, brought in by police.</span>
-                      </li>
-                      <li class="tev tevClinical">
-                        <span class="tnode"></span>
-                        <span class="twhen">05:34</span>
-                        <span class="twhat">Psychiatric examination recorded.</span>
-                      </li>
-                      <li class="tev tevClinical">
-                        <span class="tnode"></span>
-                        <span class="twhen">06:11</span>
-                        <span class="twhat">Legal status changed to <strong>involuntary inpatient</strong>. Form 3B recorded.</span>
-                      </li>
-                      <li class="tev tevDecline" data-tone="warn">
-                        <span class="tnode"></span>
-                        <span class="twhen">06:42</span>
-                        <span class="twhat"><strong>FSH Adult Secure declined</strong>, no bed.</span>
-                      </li>
-                      <li class="tev tevDecline" data-tone="warn">
-                        <span class="tnode"></span>
-                        <span class="twhen">07:16</span>
-                        <span class="twhat"><strong>RGH Adult Secure declined</strong>, sex mix.</span>
-                      </li>
-                      <li class="tev tevDecline" data-tone="warn">
-                        <span class="tnode"></span>
-                        <span class="twhen">07:54</span>
-                        <span class="twhat"><strong>Graylands Adult Secure declined</strong>, acuity mix.</span>
-                      </li>
-                      <li class="tev tevDecline" data-tone="warn">
-                        <span class="tnode"></span>
-                        <span class="twhen">08:41</span>
-                        <span class="twhat"><strong>RPH Adult Secure declined</strong>, out of catchment.</span>
-                      </li>
-                      <li class="tev tevDecline" data-tone="warn">
-                        <span class="tnode"></span>
-                        <span class="twhen">09:48</span>
-                        <span class="twhat"><strong>BTY Adult Secure declined</strong>, bed pulled for an earlier referral.</span>
-                      </li>
-                      <li class="tev tevClinical" data-tone="warn">
-                        <span class="tnode"></span>
-                        <span class="twhen">10:04</span>
-                        <span class="twhat">Escalated to <strong>State bed coordination desk</strong>.</span>
-                        <span class="tquote">“No secure adult bed available across the network.”</span>
-                      </li>
-                      <li class="tquiet tevClinical">
-                        <span class="tnode"></span>
-                        <span class="twhen">10:42</span>
-                        <span class="twhat">38m elapsed since last network response.</span>
-                      </li>
-                    </ol>
-                  </div>
-
-                  <div class="sec">
-                    <h3 class="secH">Clinical presentation</h3>
-                    <p class="pnStory" id="presentationStory">
-                      “Brought in by police under Form 1A following acute relapse with prominent persecutory delusions and uncharacteristic aggression in the community.”
-                    </p>
-                  </div>
-
-                  <div class="sec">
-                    <h3 class="secH">Requirements</h3>
-                    <dl class="slFacts">
-                      <dt>Bed</dt><dd id="reqBed">Locked, adult</dd>
-                      <dt>Nursing</dt><dd id="reqNursing">One to one specialling</dd>
-                      <dt>Urgency</dt><dd id="reqUrgency">Tier 1, most urgent</dd>
-                      <dt>Transport</dt><dd id="reqTransport">No job yet</dd>
-                      <dt>Fit to travel</dt><dd id="reqFit">Not assessed</dd>
-                      <dt>Community</dt><dd id="reqCommunity">Rockingham Adult Community Mental Health</dd>
-                      <dt>Catchment</dt><dd id="reqCatchment">Mandurah, South Metropolitan</dd>
-                    </dl>
-                  </div>
-                </div>
-
-                <!-- Right: Referrals, Next Steps, Ring, Authority -->
-                <div class="pnNowRight">
-                  <div class="sec">
-                    <h3 class="secH">
-                      Referrals <span class="count" id="refCount">5 asked</span>
-                    </h3>
-
-                    <div id="referralsCoordinator">
+              <!-- TAB 1: NOW -->
+              <div class="tabPane active" id="paneNow">
+                <div class="pnCols">
+                  <!-- Left: Events, Referral quote, Needs -->
+                  <div>
+                    <div class="sec">
                       <div class="referralFilterRow">
-                        <div class="referralStatsPills">
-                          <span class="statPill" data-variant="danger">5 Asked · 5 Declined</span>
-                          <span class="statPill">11 Out of cohort</span>
-                        </div>
-                        <div class="segmentedControl" id="referralFilters">
-                          <button type="button" class="segmentBtn" id="rfAll" aria-pressed="true" onclick="filterReferrals('all')">All (5)</button>
-                          <button type="button" class="segmentBtn" id="rfReask" aria-pressed="false" onclick="filterReferrals('reask')">Re-ask (3)</button>
-                          <button type="button" class="segmentBtn" id="rfSettled" aria-pressed="false" onclick="filterReferrals('settled')">Settled (2)</button>
-                        </div>
-                      </div>
-
-                      <!-- Re-askable -->
-                      <div id="refReaskSection">
-                        <h4 class="secH secSub">Worth asking again <span class="count">3</span></h4>
-                        <div class="rows">
-                          <div class="row" data-tone="warn">
-                            <span class="rowTop">
-                              <strong>FSH Adult Secure</strong>
-                              <span class="when">06:42</span>
-                            </span>
-                            <span class="rowSub"><b class="pnDeclined">Declined</b>, no bed.</span>
-                            <span class="pnHint">Re-check: After 14:00 shift handover.</span>
-                          </div>
-                          <div class="row" data-tone="warn">
-                            <span class="rowTop">
-                              <strong>RGH Adult Secure</strong>
-                              <span class="when">07:16</span>
-                            </span>
-                            <span class="rowSub"><b class="pnDeclined">Declined</b>, sex mix.</span>
-                            <span class="pnHint">Re-check: Female discharge scheduled 14:30.</span>
-                          </div>
-                          <div class="row" data-tone="warn">
-                            <span class="rowTop">
-                              <strong>BTY Adult Secure</strong>
-                              <span class="when">09:48</span>
-                            </span>
-                            <span class="rowSub"><b class="pnDeclined">Declined</b>, bed pulled for earlier referral.</span>
-                            <span class="pnHint">Re-check: If transport fails to collect by 12:00.</span>
-                          </div>
+                        <h3 class="secH" style="margin: 0">
+                          This presentation <span class="count" id="evCount">9 events</span>
+                        </h3>
+                        <div class="segmentedControl" id="eventFilters">
+                          <button
+                            type="button"
+                            class="segmentBtn"
+                            id="evAll"
+                            aria-pressed="true"
+                            onclick="filterEvents('all')"
+                          >
+                            All
+                          </button>
+                          <button
+                            type="button"
+                            class="segmentBtn"
+                            id="evDeclines"
+                            aria-pressed="false"
+                            onclick="filterEvents('declines')"
+                          >
+                            Declines (5)
+                          </button>
+                          <button
+                            type="button"
+                            class="segmentBtn"
+                            id="evClinical"
+                            aria-pressed="false"
+                            onclick="filterEvents('clinical')"
+                          >
+                            Clinical
+                          </button>
                         </div>
                       </div>
 
-                      <!-- Settled -->
-                      <div id="refSettledSection" style="margin-top: 14px;">
-                        <h4 class="secH secSub">Settled <span class="count">2</span></h4>
-                        <div class="rows">
-                          <div class="row">
-                            <span class="rowTop">
-                              <strong>Graylands Adult Secure</strong>
-                              <span class="when">07:54</span>
-                            </span>
-                            <span class="rowSub"><b class="pnDeclined">Declined</b>, acuity mix.</span>
-                            <span class="rowWho">Settled: Acuity cap reached today.</span>
-                          </div>
-                          <div class="row">
-                            <span class="rowTop">
-                              <strong>RPH Adult Secure</strong>
-                              <span class="when">08:41</span>
-                            </span>
-                            <span class="rowSub"><b class="pnDeclined">Declined</b>, out of catchment.</span>
-                            <span class="rowWho">Settled: East Metro catchment policy.</span>
-                          </div>
-                        </div>
-                      </div>
+                      <ol class="tline" id="timelineList">
+                        <li class="tev tevClinical">
+                          <span class="tnode"></span>
+                          <span class="twhen">04:00</span>
+                          <span class="twhat"
+                            >Journey opened at <strong>Peel Health Campus Emergency Department</strong>, brought in by
+                            police.</span
+                          >
+                        </li>
+                        <li class="tev tevClinical">
+                          <span class="tnode"></span>
+                          <span class="twhen">05:34</span>
+                          <span class="twhat">Psychiatric examination recorded.</span>
+                        </li>
+                        <li class="tev tevClinical">
+                          <span class="tnode"></span>
+                          <span class="twhen">06:11</span>
+                          <span class="twhat"
+                            >Legal status changed to <strong>involuntary inpatient</strong>. Form 3B recorded.</span
+                          >
+                        </li>
+                        <li class="tev tevDecline" data-tone="warn">
+                          <span class="tnode"></span>
+                          <span class="twhen">06:42</span>
+                          <span class="twhat"><strong>FSH Adult Secure declined</strong>, no bed.</span>
+                        </li>
+                        <li class="tev tevDecline" data-tone="warn">
+                          <span class="tnode"></span>
+                          <span class="twhen">07:16</span>
+                          <span class="twhat"><strong>RGH Adult Secure declined</strong>, sex mix.</span>
+                        </li>
+                        <li class="tev tevDecline" data-tone="warn">
+                          <span class="tnode"></span>
+                          <span class="twhen">07:54</span>
+                          <span class="twhat"><strong>Graylands Adult Secure declined</strong>, acuity mix.</span>
+                        </li>
+                        <li class="tev tevDecline" data-tone="warn">
+                          <span class="tnode"></span>
+                          <span class="twhen">08:41</span>
+                          <span class="twhat"><strong>RPH Adult Secure declined</strong>, out of catchment.</span>
+                        </li>
+                        <li class="tev tevDecline" data-tone="warn">
+                          <span class="tnode"></span>
+                          <span class="twhen">09:48</span>
+                          <span class="twhat"
+                            ><strong>BTY Adult Secure declined</strong>, bed pulled for an earlier referral.</span
+                          >
+                        </li>
+                        <li class="tev tevClinical" data-tone="warn">
+                          <span class="tnode"></span>
+                          <span class="twhen">10:04</span>
+                          <span class="twhat">Escalated to <strong>State bed coordination desk</strong>.</span>
+                          <span class="tquote">“No secure adult bed available across the network.”</span>
+                        </li>
+                        <li class="tquiet tevClinical">
+                          <span class="tnode"></span>
+                          <span class="twhen">10:42</span>
+                          <span class="twhat">38m elapsed since last network response.</span>
+                        </li>
+                      </ol>
                     </div>
 
-                    <div id="referralsWard" style="display: none;">
-                      <p style="margin: 0; font-size: var(--t-1); color: var(--muted); padding: 12px; background: var(--surface-2); border-radius: var(--r2);">
-                        Referral history is restricted to Bed Coordinator view.
+                    <div class="sec">
+                      <h3 class="secH">Clinical presentation</h3>
+                      <p class="pnStory" id="presentationStory">
+                        “Brought in by police under Form 1A following acute relapse with prominent persecutory delusions
+                        and uncharacteristic aggression in the community.”
                       </p>
                     </div>
-                  </div>
 
-                  <div class="sec">
-                    <h3 class="secH">Next steps <span class="count">3</span></h3>
-                    <ol class="nsteps" id="nextStepsList">
-                      <li class="nstep">
-                        <b>Ring FSH coordinator at 14:00</b>
-                        <span>Check if planned discharge from ward 4B departed.</span>
-                      </li>
-                      <li class="nstep">
-                        <b>Confirm ED medical clearance</b>
-                        <span>Ensure fit-to-travel certificate is filed in system.</span>
-                      </li>
-                      <li class="nstep">
-                        <b>Monitor BTY bed status at 12:00</b>
-                        <span>Re-request bed if earlier referral falls through.</span>
-                      </li>
-                    </ol>
-                  </div>
-
-                  <div class="sec">
-                    <h3 class="secH">Who to ring <span class="count">2</span></h3>
-                    <div class="rows" id="ringList">
-                      <div class="row">
-                        <span class="rowTop"><strong>FSH Bed Coordinator</strong></span>
-                        <span class="rowSub">Duty Coordinator · Direct line #4921</span>
-                        <span class="rowWho">Re-check bed status after 14:00 handover</span>
-                      </div>
-                      <div class="row">
-                        <span class="rowTop"><strong>Peel ED Senior Registrar</strong></span>
-                        <span class="rowSub">Duty Medical Officer</span>
-                        <span class="rowWho">Fit to travel clearance assessment</span>
-                      </div>
+                    <div class="sec">
+                      <h3 class="secH">Requirements</h3>
+                      <dl class="slFacts">
+                        <dt>Bed</dt>
+                        <dd id="reqBed">Locked, adult</dd>
+                        <dt>Nursing</dt>
+                        <dd id="reqNursing">One to one specialling</dd>
+                        <dt>Urgency</dt>
+                        <dd id="reqUrgency">Tier 1, most urgent</dd>
+                        <dt>Transport</dt>
+                        <dd id="reqTransport">No job yet</dd>
+                        <dt>Fit to travel</dt>
+                        <dd id="reqFit">Not assessed</dd>
+                        <dt>Community</dt>
+                        <dd id="reqCommunity">Rockingham Adult Community Mental Health</dd>
+                        <dt>Catchment</dt>
+                        <dd id="reqCatchment">Mandurah, South Metropolitan</dd>
+                      </dl>
                     </div>
                   </div>
 
-                  <div class="sec">
-                    <h3 class="secH">Legal authority</h3>
-                    <dl class="slFacts">
-                      <dt>Status</dt><dd id="legalStatusVal">Involuntary inpatient</dd>
-                      <dt>Form</dt><dd id="legalFormVal">Form 3B. Valid until 18 Aug 2026.</dd>
-                    </dl>
+                  <!-- Right: Referrals, Next Steps, Ring, Authority -->
+                  <div class="pnNowRight">
+                    <div class="sec">
+                      <h3 class="secH">Referrals <span class="count" id="refCount">5 asked</span></h3>
+
+                      <div id="referralsCoordinator">
+                        <div class="referralFilterRow">
+                          <div class="referralStatsPills">
+                            <span class="statPill" data-variant="danger">5 Asked · 5 Declined</span>
+                            <span class="statPill">11 Out of cohort</span>
+                          </div>
+                          <div class="segmentedControl" id="referralFilters">
+                            <button
+                              type="button"
+                              class="segmentBtn"
+                              id="rfAll"
+                              aria-pressed="true"
+                              onclick="filterReferrals('all')"
+                            >
+                              All (5)
+                            </button>
+                            <button
+                              type="button"
+                              class="segmentBtn"
+                              id="rfReask"
+                              aria-pressed="false"
+                              onclick="filterReferrals('reask')"
+                            >
+                              Re-ask (3)
+                            </button>
+                            <button
+                              type="button"
+                              class="segmentBtn"
+                              id="rfSettled"
+                              aria-pressed="false"
+                              onclick="filterReferrals('settled')"
+                            >
+                              Settled (2)
+                            </button>
+                          </div>
+                        </div>
+
+                        <!-- Re-askable -->
+                        <div id="refReaskSection">
+                          <h4 class="secH secSub">Worth asking again <span class="count">3</span></h4>
+                          <div class="rows">
+                            <div class="row" data-tone="warn">
+                              <span class="rowTop">
+                                <strong>FSH Adult Secure</strong>
+                                <span class="when">06:42</span>
+                              </span>
+                              <span class="rowSub"><b class="pnDeclined">Declined</b>, no bed.</span>
+                              <span class="pnHint">Re-check: After 14:00 shift handover.</span>
+                            </div>
+                            <div class="row" data-tone="warn">
+                              <span class="rowTop">
+                                <strong>RGH Adult Secure</strong>
+                                <span class="when">07:16</span>
+                              </span>
+                              <span class="rowSub"><b class="pnDeclined">Declined</b>, sex mix.</span>
+                              <span class="pnHint">Re-check: Female discharge scheduled 14:30.</span>
+                            </div>
+                            <div class="row" data-tone="warn">
+                              <span class="rowTop">
+                                <strong>BTY Adult Secure</strong>
+                                <span class="when">09:48</span>
+                              </span>
+                              <span class="rowSub"
+                                ><b class="pnDeclined">Declined</b>, bed pulled for earlier referral.</span
+                              >
+                              <span class="pnHint">Re-check: If transport fails to collect by 12:00.</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Settled -->
+                        <div id="refSettledSection" style="margin-top: 14px">
+                          <h4 class="secH secSub">Settled <span class="count">2</span></h4>
+                          <div class="rows">
+                            <div class="row">
+                              <span class="rowTop">
+                                <strong>Graylands Adult Secure</strong>
+                                <span class="when">07:54</span>
+                              </span>
+                              <span class="rowSub"><b class="pnDeclined">Declined</b>, acuity mix.</span>
+                              <span class="rowWho">Settled: Acuity cap reached today.</span>
+                            </div>
+                            <div class="row">
+                              <span class="rowTop">
+                                <strong>RPH Adult Secure</strong>
+                                <span class="when">08:41</span>
+                              </span>
+                              <span class="rowSub"><b class="pnDeclined">Declined</b>, out of catchment.</span>
+                              <span class="rowWho">Settled: East Metro catchment policy.</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div id="referralsWard" style="display: none">
+                        <p
+                          style="
+                            margin: 0;
+                            font-size: var(--t-1);
+                            color: var(--muted);
+                            padding: 12px;
+                            background: var(--surface-2);
+                            border-radius: var(--r2);
+                          "
+                        >
+                          Referral history is restricted to Bed Coordinator view.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="sec">
+                      <h3 class="secH">Next steps <span class="count">3</span></h3>
+                      <ol class="nsteps" id="nextStepsList">
+                        <li class="nstep">
+                          <b>Ring FSH coordinator at 14:00</b>
+                          <span>Check if planned discharge from ward 4B departed.</span>
+                        </li>
+                        <li class="nstep">
+                          <b>Confirm ED medical clearance</b>
+                          <span>Ensure fit-to-travel certificate is filed in system.</span>
+                        </li>
+                        <li class="nstep">
+                          <b>Monitor BTY bed status at 12:00</b>
+                          <span>Re-request bed if earlier referral falls through.</span>
+                        </li>
+                      </ol>
+                    </div>
+
+                    <div class="sec">
+                      <h3 class="secH">Who to ring <span class="count">2</span></h3>
+                      <div class="rows" id="ringList">
+                        <div class="row">
+                          <span class="rowTop"><strong>FSH Bed Coordinator</strong></span>
+                          <span class="rowSub">Duty Coordinator · Direct line #4921</span>
+                          <span class="rowWho">Re-check bed status after 14:00 handover</span>
+                        </div>
+                        <div class="row">
+                          <span class="rowTop"><strong>Peel ED Senior Registrar</strong></span>
+                          <span class="rowSub">Duty Medical Officer</span>
+                          <span class="rowWho">Fit to travel clearance assessment</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="sec">
+                      <h3 class="secH">Legal authority</h3>
+                      <dl class="slFacts">
+                        <dt>Status</dt>
+                        <dd id="legalStatusVal">Involuntary inpatient</dd>
+                        <dt>Form</dt>
+                        <dd id="legalFormVal">Form 3B. Valid until 18 Aug 2026.</dd>
+                      </dl>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <!-- TAB 2: HISTORY -->
-            <div class="tabPane" id="paneHistory">
-              <div class="sec">
-                <div class="referralFilterRow">
-                  <h3 class="secH" style="margin: 0;">
-                    Presentations <span class="count" id="histCount">7</span>
-                  </h3>
-                  <div class="segmentedControl">
-                    <button type="button" class="segmentBtn" id="histAll" aria-pressed="true" onclick="filterHistory('all')">All (7)</button>
-                    <button type="button" class="segmentBtn" id="histEd" aria-pressed="false" onclick="filterHistory('ed')">Emergency</button>
-                    <button type="button" class="segmentBtn" id="histAdm" aria-pressed="false" onclick="filterHistory('adm')">Inpatient</button>
+              <!-- TAB 2: HISTORY -->
+              <div class="tabPane" id="paneHistory">
+                <div class="sec">
+                  <div class="referralFilterRow">
+                    <h3 class="secH" style="margin: 0">Presentations <span class="count" id="histCount">7</span></h3>
+                    <div class="segmentedControl">
+                      <button
+                        type="button"
+                        class="segmentBtn"
+                        id="histAll"
+                        aria-pressed="true"
+                        onclick="filterHistory('all')"
+                      >
+                        All (7)
+                      </button>
+                      <button
+                        type="button"
+                        class="segmentBtn"
+                        id="histEd"
+                        aria-pressed="false"
+                        onclick="filterHistory('ed')"
+                      >
+                        Emergency
+                      </button>
+                      <button
+                        type="button"
+                        class="segmentBtn"
+                        id="histAdm"
+                        aria-pressed="false"
+                        onclick="filterHistory('adm')"
+                      >
+                        Inpatient
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                <!-- Timeline SVG Chart -->
-                <div class="pnScrollX">
-                  <svg viewBox="0 0 1000 110" class="historySvg" role="img" aria-label="Timeline from 2019 to 2027">
-                    <line class="gridLine" x1="50" y1="20" x2="50" y2="74"></line>
-                    <text class="tickText" x="50" y="96" text-anchor="middle">2019</text>
-                    <line class="gridLine" x1="200" y1="20" x2="200" y2="74"></line>
-                    <text class="tickText" x="200" y="96" text-anchor="middle">2021</text>
-                    <line class="gridLine" x1="350" y1="20" x2="350" y2="74"></line>
-                    <text class="tickText" x="350" y="96" text-anchor="middle">2023</text>
-                    <line class="gridLine" x1="500" y1="20" x2="500" y2="74"></line>
-                    <text class="tickText" x="500" y="96" text-anchor="middle">2024</text>
-                    <line class="gridLine" x1="650" y1="20" x2="650" y2="74"></line>
-                    <text class="tickText" x="650" y="96" text-anchor="middle">2025</text>
-                    <line class="gridLine" x1="800" y1="20" x2="800" y2="74"></line>
-                    <text class="tickText" x="800" y="96" text-anchor="middle">2026</text>
-                    <line class="gridLine" x1="950" y1="20" x2="950" y2="74"></line>
-                    <text class="tickText" x="950" y="96" text-anchor="middle">2027</text>
+                  <!-- Timeline SVG Chart -->
+                  <div class="pnScrollX">
+                    <svg viewBox="0 0 1000 110" class="historySvg" role="img" aria-label="Timeline from 2019 to 2027">
+                      <line class="gridLine" x1="50" y1="20" x2="50" y2="74"></line>
+                      <text class="tickText" x="50" y="96" text-anchor="middle">2019</text>
+                      <line class="gridLine" x1="200" y1="20" x2="200" y2="74"></line>
+                      <text class="tickText" x="200" y="96" text-anchor="middle">2021</text>
+                      <line class="gridLine" x1="350" y1="20" x2="350" y2="74"></line>
+                      <text class="tickText" x="350" y="96" text-anchor="middle">2023</text>
+                      <line class="gridLine" x1="500" y1="20" x2="500" y2="74"></line>
+                      <text class="tickText" x="500" y="96" text-anchor="middle">2024</text>
+                      <line class="gridLine" x1="650" y1="20" x2="650" y2="74"></line>
+                      <text class="tickText" x="650" y="96" text-anchor="middle">2025</text>
+                      <line class="gridLine" x1="800" y1="20" x2="800" y2="74"></line>
+                      <text class="tickText" x="800" y="96" text-anchor="middle">2026</text>
+                      <line class="gridLine" x1="950" y1="20" x2="950" y2="74"></line>
+                      <text class="tickText" x="950" y="96" text-anchor="middle">2027</text>
 
-                    <!-- Markers -->
-                    <circle class="pnMark" cx="120" cy="74" r="5"></circle>
-                    <circle class="pnMark" cx="290" cy="74" r="5"></circle>
-                    <circle class="pnMark" cx="470" cy="74" r="5"></circle>
-                    <circle class="pnMark" cx="620" cy="74" r="5"></circle>
-                    <circle class="pnMark" cx="720" cy="74" r="5"></circle>
-                    <circle class="pnMark" cx="790" cy="74" r="5"></circle>
-                    <circle class="pnMark" cx="890" cy="74" r="7" data-current="true"></circle>
-                    <text x="890" y="55" text-anchor="middle" class="tickText" style="fill: var(--accent-ink); font-weight: 700;">Open now</text>
-                  </svg>
-                </div>
-
-                <div class="rows" id="historyCardList" style="margin-top: 14px;">
-                  <div class="row" data-kind="ed">
-                    <span class="rowTop"><strong>Sat 15 Aug 2026 · Peel Health Campus ED</strong><span class="when">open now</span></span>
-                    <span class="rowSub">Destination: <strong>no destination yet</strong> · Outcome: Placement requested, stage 1 of 7.</span>
+                      <!-- Markers -->
+                      <circle class="pnMark" cx="120" cy="74" r="5"></circle>
+                      <circle class="pnMark" cx="290" cy="74" r="5"></circle>
+                      <circle class="pnMark" cx="470" cy="74" r="5"></circle>
+                      <circle class="pnMark" cx="620" cy="74" r="5"></circle>
+                      <circle class="pnMark" cx="720" cy="74" r="5"></circle>
+                      <circle class="pnMark" cx="790" cy="74" r="5"></circle>
+                      <circle class="pnMark" cx="890" cy="74" r="7" data-current="true"></circle>
+                      <text
+                        x="890"
+                        y="55"
+                        text-anchor="middle"
+                        class="tickText"
+                        style="fill: var(--accent-ink); font-weight: 700"
+                      >
+                        Open now
+                      </text>
+                    </svg>
                   </div>
-                  <div class="row" data-kind="adm">
-                    <span class="rowTop"><strong>12 Mar 2026 · Peel Health Campus ED</strong><span class="when">14d</span></span>
-                    <span class="rowSub">Destination: <strong>FSH Adult Secure</strong> · Outcome: Admitted, stabilized, planned discharge.</span>
-                  </div>
-                  <div class="row" data-kind="ed">
-                    <span class="rowTop"><strong>04 Nov 2025 · Rockingham General ED</strong><span class="when">6h</span></span>
-                    <span class="rowSub">Destination: <strong>discharged from ED</strong> · Outcome: Community mental health follow-up arranged.</span>
+
+                  <div class="rows" id="historyCardList" style="margin-top: 14px">
+                    <div class="row" data-kind="ed">
+                      <span class="rowTop"
+                        ><strong>Sat 15 Aug 2026 · Peel Health Campus ED</strong
+                        ><span class="when">open now</span></span
+                      >
+                      <span class="rowSub"
+                        >Destination: <strong>no destination yet</strong> · Outcome: Placement requested, stage 1 of
+                        7.</span
+                      >
+                    </div>
+                    <div class="row" data-kind="adm">
+                      <span class="rowTop"
+                        ><strong>12 Mar 2026 · Peel Health Campus ED</strong><span class="when">14d</span></span
+                      >
+                      <span class="rowSub"
+                        >Destination: <strong>FSH Adult Secure</strong> · Outcome: Admitted, stabilized, planned
+                        discharge.</span
+                      >
+                    </div>
+                    <div class="row" data-kind="ed">
+                      <span class="rowTop"
+                        ><strong>04 Nov 2025 · Rockingham General ED</strong><span class="when">6h</span></span
+                      >
+                      <span class="rowSub"
+                        >Destination: <strong>discharged from ED</strong> · Outcome: Community mental health follow-up
+                        arranged.</span
+                      >
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <!-- TAB 3: COMMUNITY -->
-            <div class="tabPane" id="paneCommunity">
-              <div class="sec">
-                <h3 class="secH">Community team <span class="count">1 on record</span></h3>
-                <div class="rows">
-                  <div class="row">
-                    <span class="rowTop"><strong>Rockingham Adult Community Mental Health</strong><span class="when">Active</span></span>
-                    <span class="rowSub">Key clinician: Dr S. Lim (Consultant), Case Manager: M. Taylor</span>
+              <!-- TAB 3: COMMUNITY -->
+              <div class="tabPane" id="paneCommunity">
+                <div class="sec">
+                  <h3 class="secH">Community team <span class="count">1 on record</span></h3>
+                  <div class="rows">
+                    <div class="row">
+                      <span class="rowTop"
+                        ><strong>Rockingham Adult Community Mental Health</strong><span class="when">Active</span></span
+                      >
+                      <span class="rowSub">Key clinician: Dr S. Lim (Consultant), Case Manager: M. Taylor</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="sec">
+                  <h3 class="secH">Follow-up plan</h3>
+                  <p style="margin: 0; font-size: var(--t-1); line-height: 1.5; color: var(--ink-soft)">
+                    Team aware of acute presentation. Direct handover to case manager scheduled upon ward admission.
+                    Post-discharge review target within 72 hours.
+                  </p>
+                </div>
+              </div>
+
+              <!-- TAB 4: DETAILS -->
+              <div class="tabPane" id="paneDetails">
+                <div class="sec">
+                  <h3 class="secH">Identity</h3>
+                  <dl class="slFacts">
+                    <dt>Name</dt>
+                    <dd id="detName">Wren, Tobias</dd>
+                    <dt>Preferred name</dt>
+                    <dd id="detPref">Toby</dd>
+                    <dt>Movement</dt>
+                    <dd id="detId">WF-009</dd>
+                    <dt>UMRN</dt>
+                    <dd id="detUmrn">UM100009</dd>
+                    <dt>Date of birth</dt>
+                    <dd>14 Oct 1993</dd>
+                    <dt>Age band</dt>
+                    <dd>26 to 40</dd>
+                    <dt>Sex</dt>
+                    <dd>Male</dd>
+                  </dl>
+                </div>
+                <div class="sec">
+                  <h3 class="secH">Location and care</h3>
+                  <dl class="slFacts">
+                    <dt>Address</dt>
+                    <dd>Mandurah, Western Australia</dd>
+                    <dt>Catchment</dt>
+                    <dd>South Metropolitan Health Service</dd>
+                    <dt>Legal status</dt>
+                    <dd id="detLegal">Involuntary inpatient</dd>
+                    <dt>Owner</dt>
+                    <dd>Bed coordinator</dd>
+                  </dl>
+                </div>
+              </div>
+
+              <!-- TAB 5: DOCUMENTS -->
+              <div class="tabPane" id="paneDocuments">
+                <div class="sec">
+                  <h3 class="secH">Documents <span class="count">5</span></h3>
+                  <div class="tableWrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th scope="col">Type</th>
+                          <th scope="col">Document</th>
+                          <th scope="col">From</th>
+                          <th scope="col">Date</th>
+                          <th scope="col">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td><span class="fcode">Form 3B</span></td>
+                          <td>Order to transport a person</td>
+                          <td>Peel ED</td>
+                          <td>Today 06:11</td>
+                          <td><span class="statusPill" data-status="Active">Active</span></td>
+                        </tr>
+                        <tr>
+                          <td><span class="fcode">Form 1A</span></td>
+                          <td>Referral for examination</td>
+                          <td>Police</td>
+                          <td>Today 04:00</td>
+                          <td><span class="statusPill" data-status="Filed">Filed</span></td>
+                        </tr>
+                        <tr>
+                          <td><span class="fcode">Clinical</span></td>
+                          <td>Psychiatric Emergency Assessment</td>
+                          <td>Duty Psychiatrist</td>
+                          <td>Today 05:34</td>
+                          <td><span class="statusPill" data-status="Filed">Filed</span></td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
-              <div class="sec">
-                <h3 class="secH">Follow-up plan</h3>
-                <p style="margin: 0; font-size: var(--t-1); line-height: 1.5; color: var(--ink-soft);">
-                  Team aware of acute presentation. Direct handover to case manager scheduled upon ward admission. Post-discharge review target within 72 hours.
+
+              <!-- Discreet provenance legal notice -->
+              <div class="pnFoot">
+                <p class="provenanceSentence">
+                  Every figure on this screen is invented — nobody here is a real person and nothing here is a clinical
+                  record.
                 </p>
               </div>
-            </div>
-
-            <!-- TAB 4: DETAILS -->
-            <div class="tabPane" id="paneDetails">
-              <div class="sec">
-                <h3 class="secH">Identity</h3>
-                <dl class="slFacts">
-                  <dt>Name</dt><dd id="detName">Wren, Tobias</dd>
-                  <dt>Preferred name</dt><dd id="detPref">Toby</dd>
-                  <dt>Movement</dt><dd id="detId">WF-009</dd>
-                  <dt>UMRN</dt><dd id="detUmrn">UM100009</dd>
-                  <dt>Date of birth</dt><dd>14 Oct 1993</dd>
-                  <dt>Age band</dt><dd>26 to 40</dd>
-                  <dt>Sex</dt><dd>Male</dd>
-                </dl>
-              </div>
-              <div class="sec">
-                <h3 class="secH">Location and care</h3>
-                <dl class="slFacts">
-                  <dt>Address</dt><dd>Mandurah, Western Australia</dd>
-                  <dt>Catchment</dt><dd>South Metropolitan Health Service</dd>
-                  <dt>Legal status</dt><dd id="detLegal">Involuntary inpatient</dd>
-                  <dt>Owner</dt><dd>Bed coordinator</dd>
-                </dl>
-              </div>
-            </div>
-
-            <!-- TAB 5: DOCUMENTS -->
-            <div class="tabPane" id="paneDocuments">
-              <div class="sec">
-                <h3 class="secH">Documents <span class="count">5</span></h3>
-                <div class="tableWrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th scope="col">Type</th>
-                        <th scope="col">Document</th>
-                        <th scope="col">From</th>
-                        <th scope="col">Date</th>
-                        <th scope="col">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td><span class="fcode">Form 3B</span></td>
-                        <td>Order to transport a person</td>
-                        <td>Peel ED</td>
-                        <td>Today 06:11</td>
-                        <td><span class="statusPill" data-status="Active">Active</span></td>
-                      </tr>
-                      <tr>
-                        <td><span class="fcode">Form 1A</span></td>
-                        <td>Referral for examination</td>
-                        <td>Police</td>
-                        <td>Today 04:00</td>
-                        <td><span class="statusPill" data-status="Filed">Filed</span></td>
-                      </tr>
-                      <tr>
-                        <td><span class="fcode">Clinical</span></td>
-                        <td>Psychiatric Emergency Assessment</td>
-                        <td>Duty Psychiatrist</td>
-                        <td>Today 05:34</td>
-                        <td><span class="statusPill" data-status="Filed">Filed</span></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- Discreet provenance legal notice -->
-            <div class="pnFoot">
-              <p class="provenanceSentence">
-                Every figure on this screen is invented — nobody here is a real person and nothing here is a clinical record.
-              </p>
-            </div>
-          </section>
-        </div>
-      </main>
+            </section>
+          </div>
+        </main>
+      </div>
     </div>
-  </div>
 
-  <script>
-    // Theme toggle
-    const themeBtn = document.getElementById('themeToggle');
-    let isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    function applyTheme() {
-      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-    }
-    themeBtn.addEventListener('click', () => {
-      isDark = !isDark;
-      applyTheme();
-    });
-    applyTheme();
-
-    // Tab switcher
-    const tabBtns = document.querySelectorAll('.tabBtn');
-    const tabPanes = document.querySelectorAll('.tabPane');
-    function switchTab(name) {
-      tabBtns.forEach(btn => btn.setAttribute('aria-selected', btn.id === 'tab' + capitalize(name) ? 'true' : 'false'));
-      tabPanes.forEach(pane => pane.classList.toggle('active', pane.id === 'pane' + capitalize(name)));
-    }
-    function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-
-    // Event filters
-    function filterEvents(type) {
-      document.getElementById('evAll').setAttribute('aria-pressed', type === 'all');
-      document.getElementById('evDeclines').setAttribute('aria-pressed', type === 'declines');
-      document.getElementById('evClinical').setAttribute('aria-pressed', type === 'clinical');
-
-      document.querySelectorAll('#timelineList li').forEach(li => {
-        if (type === 'all') li.style.display = 'grid';
-        else if (type === 'declines') li.style.display = li.classList.contains('tevDecline') ? 'grid' : 'none';
-        else if (type === 'clinical') li.style.display = li.classList.contains('tevClinical') ? 'grid' : 'none';
-      });
-    }
-
-    // Referral filters
-    function filterReferrals(type) {
-      document.getElementById('rfAll').setAttribute('aria-pressed', type === 'all');
-      document.getElementById('rfReask').setAttribute('aria-pressed', type === 'reask');
-      document.getElementById('rfSettled').setAttribute('aria-pressed', type === 'settled');
-
-      const reaskSec = document.getElementById('refReaskSection');
-      const settledSec = document.getElementById('refSettledSection');
-
-      if (type === 'all') { reaskSec.style.display = 'block'; settledSec.style.display = 'block'; }
-      else if (type === 'reask') { reaskSec.style.display = 'block'; settledSec.style.display = 'none'; }
-      else if (type === 'settled') { reaskSec.style.display = 'none'; settledSec.style.display = 'block'; }
-    }
-
-    // History filters
-    function filterHistory(type) {
-      document.getElementById('histAll').setAttribute('aria-pressed', type === 'all');
-      document.getElementById('histEd').setAttribute('aria-pressed', type === 'ed');
-      document.getElementById('histAdm').setAttribute('aria-pressed', type === 'adm');
-
-      document.querySelectorAll('#historyCardList .row').forEach(row => {
-        if (type === 'all') row.style.display = 'flex';
-        else if (type === 'ed') row.style.display = row.getAttribute('data-kind') === 'ed' ? 'flex' : 'none';
-        else if (type === 'adm') row.style.display = row.getAttribute('data-kind') === 'adm' ? 'flex' : 'none';
-      });
-    }
-
-    // Perspective switchers
-    const btnCoord = document.getElementById('btnCoord');
-    const btnWard = document.getElementById('btnWard');
-    const refCoord = document.getElementById('referralsCoordinator');
-    const refWard = document.getElementById('referralsWard');
-
-    btnCoord.addEventListener('click', () => {
-      btnCoord.setAttribute('aria-pressed', 'true');
-      btnWard.setAttribute('aria-pressed', 'false');
-      refCoord.style.display = 'block';
-      refWard.style.display = 'none';
-    });
-    btnWard.addEventListener('click', () => {
-      btnCoord.setAttribute('aria-pressed', 'false');
-      btnWard.setAttribute('aria-pressed', 'true');
-      refCoord.style.display = 'none';
-      refWard.style.display = 'block';
-    });
-
-    // Journey Stepper presentation data & interactive handling
-    const STAGE_DATA = {
-      'WF-009': {
-        currentIndex: 0,
-        stages: [
-          {
-            id: 'placement_requested',
-            label: 'Placement requested',
-            when: '402m here',
-            tone: 'warn',
-            status: 'Active · Waiting 6h 42m',
-            summary: 'Acute referral initiated at Peel ED for locked adult secure bed with 1:1 specialling.',
-            milestones: [
-              { time: '04:00', label: 'Arrival & Triage', detail: 'Brought into Peel ED by police under Form 1A.' },
-              { time: '05:34', label: 'Psych Examination', detail: 'Involuntary status confirmed; Form 1A recorded.' },
-              { time: '06:15', label: 'Referral Logged', detail: 'Placement request submitted to mental health network.' }
-            ]
-          },
-          {
-            id: 'destination_review',
-            label: 'Destination review',
-            when: '',
-            tone: 'danger',
-            status: 'Blocked · 5/5 Units Declined',
-            summary: 'All 5 network adult secure wards declined placement; escalated to State Bed Coordination.',
-            milestones: [
-              { time: '06:42', label: 'FSH Adult Secure', detail: 'Declined — ward acuity ceiling reached.' },
-              { time: '07:16', label: 'Rockingham Inpatient', detail: 'Declined — outside local catchment boundary.' },
-              { time: '07:54', label: 'Graylands Hospital', detail: 'Declined — locked capacity fully occupied.' },
-              { time: '08:41', label: 'RPH Adult Secure', detail: 'Declined — gender mix and staffing ceiling.' },
-              { time: '09:48', label: 'Bentley Adult Secure', detail: 'Declined — 1:1 specialling nurse unavailable.' },
-              { time: '10:04', label: 'State Desk Escalation', detail: 'Central coordination review in progress.' }
-            ]
-          },
-          {
-            id: 'accepted_awaiting_bed',
-            label: 'Accepted, awaiting bed',
-            when: '',
-            tone: 'neutral',
-            status: 'Pending Destination Acceptance',
-            summary: 'Awaiting formal acceptance from an inpatient mental health facility.',
-            milestones: [
-              { label: 'Requirement', detail: 'Inpatient consultant and nurse coordinator acceptance.' }
-            ]
-          },
-          {
-            id: 'pulled',
-            label: 'Bed pulled',
-            when: '',
-            tone: 'neutral',
-            status: 'Pending Bed Allocation',
-            summary: 'Bed pull authorization will occur once target unit accepts and confirms a bed.',
-            milestones: [
-              { label: 'Prerequisite', detail: 'Confirmed vacancy at receiving adult secure unit.' }
-            ]
-          },
-          {
-            id: 'handover_ready',
-            label: 'Handover ready',
-            when: '',
-            tone: 'danger',
-            status: 'Pending Clearance',
-            summary: 'Fit to travel medical clearance is not yet completed at Peel ED.',
-            milestones: [
-              { label: 'Handover Pack', detail: 'Clinical history and Form 1A assembled.' },
-              { label: 'Fit to Travel', detail: 'Pending medical sign-off from Peel ED emergency team.' }
-            ]
-          },
-          {
-            id: 'moving',
-            label: 'Moving',
-            when: '',
-            tone: 'neutral',
-            status: 'Pending Dispatch',
-            summary: 'Transport dispatch cannot proceed without bed acceptance and travel clearance.',
-            milestones: [
-              { label: 'Requirement', detail: 'Dual-officer secure mental health transport.' }
-            ]
-          },
-          {
-            id: 'arrived',
-            label: 'Arrived',
-            when: '',
-            tone: 'neutral',
-            status: 'Pending',
-            summary: 'Physical handover and admission at destination inpatient facility.',
-            milestones: [
-              { label: 'Target', detail: 'Receiving ward nursing and psychiatric admission.' }
-            ]
-          }
-        ]
-      },
-      'WF-004': {
-        currentIndex: 2,
-        stages: [
-          {
-            id: 'placement_requested',
-            label: 'Placement requested',
-            when: '07:30',
-            tone: 'good',
-            status: 'Completed 07:30',
-            summary: 'Referral logged at Fiona Stanley Hospital ED for locked adult bed.',
-            milestones: [
-              { time: '07:30', label: 'Referral Logged', detail: 'EMHS crisis team submitted request from FSH ED.' },
-              { time: '07:45', label: 'Legal Status', detail: 'Form 4C legal authority reviewed and verified.' }
-            ]
-          },
-          {
-            id: 'destination_review',
-            label: 'Destination review',
-            when: '08:32',
-            tone: 'good',
-            status: 'Accepted 08:32',
-            summary: 'Bentley Adult Secure reviewed clinical handover and accepted admission.',
-            milestones: [
-              { time: '08:15', label: 'Clinical Review', detail: 'Coordinator at Bentley Adult Secure reviewed file.' },
-              { time: '08:32', label: 'Admission Accepted', detail: 'Bed allocated for transfer today.' }
-            ]
-          },
-          {
-            id: 'accepted_awaiting_bed',
-            label: 'Accepted, awaiting bed',
-            when: '70m here',
-            tone: 'accent',
-            status: 'Active · Waiting 1h 10m',
-            summary: 'Bed reserved at Bentley Adult Secure. Ready for transfer on bay clearance.',
-            milestones: [
-              { time: '08:32', label: 'Bed Reserved', detail: 'Direct inpatient bed allocated at Bentley Adult Secure.' },
-              { time: '09:40', label: 'Bed Readiness', detail: 'Occupant discharge confirmed; cleaning in progress.' }
-            ]
-          },
-          {
-            id: 'pulled',
-            label: 'Bed pulled',
-            when: '',
-            tone: 'neutral',
-            status: 'Scheduled ~10:45',
-            summary: 'Bed pull confirmation scheduled upon terminal clean completion.',
-            milestones: [
-              { label: 'Target Pull', detail: 'Discharge liaison confirms bay availability by 10:45.' }
-            ]
-          },
-          {
-            id: 'handover_ready',
-            label: 'Handover ready',
-            when: '08:45',
-            tone: 'good',
-            status: 'Ready · Signed off 08:45',
-            summary: 'Fit to travel medical clearance and handover pack completed.',
-            milestones: [
-              { time: '08:45', label: 'Fit to Travel', detail: 'Medical clearance signed off at FSH ED.' },
-              { time: '09:00', label: 'Handover Pack', detail: 'Clinical documentation and medication profile ready.' }
-            ]
-          },
-          {
-            id: 'moving',
-            label: 'Moving',
-            when: 'Booked 11:15',
-            tone: 'warn',
-            status: 'Booked 11:15',
-            summary: 'Secure transport booking confirmed for 11:15 departure.',
-            milestones: [
-              { time: '09:52', label: 'Transport Booked', detail: 'Secure ambulance transport scheduled for 11:15.' }
-            ]
-          },
-          {
-            id: 'arrived',
-            label: 'Arrived',
-            when: 'ETA 11:45',
-            tone: 'neutral',
-            status: 'Estimated 11:45',
-            summary: 'Direct transfer and inpatient handover at Bentley Adult Secure.',
-            milestones: [
-              { label: 'Destination', detail: 'Receiving nursing team at Bentley Adult Secure notified.' }
-            ]
-          }
-        ]
+    <script>
+      // Theme toggle
+      const themeBtn = document.getElementById("themeToggle");
+      let isDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      function applyTheme() {
+        document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
       }
-    };
+      themeBtn.addEventListener("click", () => {
+        isDark = !isDark;
+        applyTheme();
+      });
+      applyTheme();
 
-    let activePatientId = 'WF-009';
-    let currentExpandedStage = 0;
+      // Tab switcher
+      const tabBtns = document.querySelectorAll(".tabBtn");
+      const tabPanes = document.querySelectorAll(".tabPane");
+      function switchTab(name) {
+        tabBtns.forEach((btn) =>
+          btn.setAttribute("aria-selected", btn.id === "tab" + capitalize(name) ? "true" : "false"),
+        );
+        tabPanes.forEach((pane) => pane.classList.toggle("active", pane.id === "pane" + capitalize(name)));
+      }
+      function capitalize(s) {
+        return s.charAt(0).toUpperCase() + s.slice(1);
+      }
 
-    function renderJourneyStepper(patientId) {
-      const data = STAGE_DATA[patientId] || STAGE_DATA['WF-009'];
-      const currentIdx = data.currentIndex;
-      const list = document.getElementById('stepperList');
-      if (!list) return;
-      list.innerHTML = '';
+      // Event filters
+      function filterEvents(type) {
+        document.getElementById("evAll").setAttribute("aria-pressed", type === "all");
+        document.getElementById("evDeclines").setAttribute("aria-pressed", type === "declines");
+        document.getElementById("evClinical").setAttribute("aria-pressed", type === "clinical");
 
-      data.stages.forEach((s, i) => {
-        const state = i < currentIdx ? 'done' : (i === currentIdx ? 'now' : 'todo');
-        const isExpanded = currentExpandedStage === i;
-        const li = document.createElement('li');
-        li.className = 'jst';
-        li.setAttribute('data-s', state);
+        document.querySelectorAll("#timelineList li").forEach((li) => {
+          if (type === "all") li.style.display = "grid";
+          else if (type === "declines") li.style.display = li.classList.contains("tevDecline") ? "grid" : "none";
+          else if (type === "clinical") li.style.display = li.classList.contains("tevClinical") ? "grid" : "none";
+        });
+      }
 
-        const nodeContent = state === 'done'
-          ? '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1.5 5.5L4 8L8.5 2.5"/></svg>'
-          : (i + 1);
+      // Referral filters
+      function filterReferrals(type) {
+        document.getElementById("rfAll").setAttribute("aria-pressed", type === "all");
+        document.getElementById("rfReask").setAttribute("aria-pressed", type === "reask");
+        document.getElementById("rfSettled").setAttribute("aria-pressed", type === "settled");
 
-        const lineHtml = i < data.stages.length - 1 ? '<span class="jline"></span>' : '';
+        const reaskSec = document.getElementById("refReaskSection");
+        const settledSec = document.getElementById("refSettledSection");
 
-        let milestoneHtml = '';
-        if (s.milestones && s.milestones.length > 0) {
-          milestoneHtml = `
+        if (type === "all") {
+          reaskSec.style.display = "block";
+          settledSec.style.display = "block";
+        } else if (type === "reask") {
+          reaskSec.style.display = "block";
+          settledSec.style.display = "none";
+        } else if (type === "settled") {
+          reaskSec.style.display = "none";
+          settledSec.style.display = "block";
+        }
+      }
+
+      // History filters
+      function filterHistory(type) {
+        document.getElementById("histAll").setAttribute("aria-pressed", type === "all");
+        document.getElementById("histEd").setAttribute("aria-pressed", type === "ed");
+        document.getElementById("histAdm").setAttribute("aria-pressed", type === "adm");
+
+        document.querySelectorAll("#historyCardList .row").forEach((row) => {
+          if (type === "all") row.style.display = "flex";
+          else if (type === "ed") row.style.display = row.getAttribute("data-kind") === "ed" ? "flex" : "none";
+          else if (type === "adm") row.style.display = row.getAttribute("data-kind") === "adm" ? "flex" : "none";
+        });
+      }
+
+      // Perspective switchers
+      const btnCoord = document.getElementById("btnCoord");
+      const btnWard = document.getElementById("btnWard");
+      const refCoord = document.getElementById("referralsCoordinator");
+      const refWard = document.getElementById("referralsWard");
+
+      btnCoord.addEventListener("click", () => {
+        btnCoord.setAttribute("aria-pressed", "true");
+        btnWard.setAttribute("aria-pressed", "false");
+        refCoord.style.display = "block";
+        refWard.style.display = "none";
+      });
+      btnWard.addEventListener("click", () => {
+        btnCoord.setAttribute("aria-pressed", "false");
+        btnWard.setAttribute("aria-pressed", "true");
+        refCoord.style.display = "none";
+        refWard.style.display = "block";
+      });
+
+      // Journey Stepper presentation data & interactive handling
+      const STAGE_DATA = {
+        "WF-009": {
+          currentIndex: 0,
+          stages: [
+            {
+              id: "placement_requested",
+              label: "Placement requested",
+              when: "402m here",
+              tone: "warn",
+              status: "Active · Waiting 6h 42m",
+              summary: "Acute referral initiated at Peel ED for locked adult secure bed with 1:1 specialling.",
+              milestones: [
+                { time: "04:00", label: "Arrival & Triage", detail: "Brought into Peel ED by police under Form 1A." },
+                {
+                  time: "05:34",
+                  label: "Psych Examination",
+                  detail: "Involuntary status confirmed; Form 1A recorded.",
+                },
+                {
+                  time: "06:15",
+                  label: "Referral Logged",
+                  detail: "Placement request submitted to mental health network.",
+                },
+              ],
+            },
+            {
+              id: "destination_review",
+              label: "Destination review",
+              when: "",
+              tone: "danger",
+              status: "Blocked · 5/5 Units Declined",
+              summary: "All 5 network adult secure wards declined placement; escalated to State Bed Coordination.",
+              milestones: [
+                { time: "06:42", label: "FSH Adult Secure", detail: "Declined — ward acuity ceiling reached." },
+                {
+                  time: "07:16",
+                  label: "Rockingham Inpatient",
+                  detail: "Declined — outside local catchment boundary.",
+                },
+                { time: "07:54", label: "Graylands Hospital", detail: "Declined — locked capacity fully occupied." },
+                { time: "08:41", label: "RPH Adult Secure", detail: "Declined — gender mix and staffing ceiling." },
+                {
+                  time: "09:48",
+                  label: "Bentley Adult Secure",
+                  detail: "Declined — 1:1 specialling nurse unavailable.",
+                },
+                { time: "10:04", label: "State Desk Escalation", detail: "Central coordination review in progress." },
+              ],
+            },
+            {
+              id: "accepted_awaiting_bed",
+              label: "Accepted, awaiting bed",
+              when: "",
+              tone: "neutral",
+              status: "Pending Destination Acceptance",
+              summary: "Awaiting formal acceptance from an inpatient mental health facility.",
+              milestones: [{ label: "Requirement", detail: "Inpatient consultant and nurse coordinator acceptance." }],
+            },
+            {
+              id: "pulled",
+              label: "Bed pulled",
+              when: "",
+              tone: "neutral",
+              status: "Pending Bed Allocation",
+              summary: "Bed pull authorization will occur once target unit accepts and confirms a bed.",
+              milestones: [{ label: "Prerequisite", detail: "Confirmed vacancy at receiving adult secure unit." }],
+            },
+            {
+              id: "handover_ready",
+              label: "Handover ready",
+              when: "",
+              tone: "danger",
+              status: "Pending Clearance",
+              summary: "Fit to travel medical clearance is not yet completed at Peel ED.",
+              milestones: [
+                { label: "Handover Pack", detail: "Clinical history and Form 1A assembled." },
+                { label: "Fit to Travel", detail: "Pending medical sign-off from Peel ED emergency team." },
+              ],
+            },
+            {
+              id: "moving",
+              label: "Moving",
+              when: "",
+              tone: "neutral",
+              status: "Pending Dispatch",
+              summary: "Transport dispatch cannot proceed without bed acceptance and travel clearance.",
+              milestones: [{ label: "Requirement", detail: "Dual-officer secure mental health transport." }],
+            },
+            {
+              id: "arrived",
+              label: "Arrived",
+              when: "",
+              tone: "neutral",
+              status: "Pending",
+              summary: "Physical handover and admission at destination inpatient facility.",
+              milestones: [{ label: "Target", detail: "Receiving ward nursing and psychiatric admission." }],
+            },
+          ],
+        },
+        "WF-004": {
+          currentIndex: 2,
+          stages: [
+            {
+              id: "placement_requested",
+              label: "Placement requested",
+              when: "07:30",
+              tone: "good",
+              status: "Completed 07:30",
+              summary: "Referral logged at Fiona Stanley Hospital ED for locked adult bed.",
+              milestones: [
+                { time: "07:30", label: "Referral Logged", detail: "EMHS crisis team submitted request from FSH ED." },
+                { time: "07:45", label: "Legal Status", detail: "Form 4C legal authority reviewed and verified." },
+              ],
+            },
+            {
+              id: "destination_review",
+              label: "Destination review",
+              when: "08:32",
+              tone: "good",
+              status: "Accepted 08:32",
+              summary: "Bentley Adult Secure reviewed clinical handover and accepted admission.",
+              milestones: [
+                {
+                  time: "08:15",
+                  label: "Clinical Review",
+                  detail: "Coordinator at Bentley Adult Secure reviewed file.",
+                },
+                { time: "08:32", label: "Admission Accepted", detail: "Bed allocated for transfer today." },
+              ],
+            },
+            {
+              id: "accepted_awaiting_bed",
+              label: "Accepted, awaiting bed",
+              when: "70m here",
+              tone: "accent",
+              status: "Active · Waiting 1h 10m",
+              summary: "Bed reserved at Bentley Adult Secure. Ready for transfer on bay clearance.",
+              milestones: [
+                {
+                  time: "08:32",
+                  label: "Bed Reserved",
+                  detail: "Direct inpatient bed allocated at Bentley Adult Secure.",
+                },
+                {
+                  time: "09:40",
+                  label: "Bed Readiness",
+                  detail: "Occupant discharge confirmed; cleaning in progress.",
+                },
+              ],
+            },
+            {
+              id: "pulled",
+              label: "Bed pulled",
+              when: "",
+              tone: "neutral",
+              status: "Scheduled ~10:45",
+              summary: "Bed pull confirmation scheduled upon terminal clean completion.",
+              milestones: [{ label: "Target Pull", detail: "Discharge liaison confirms bay availability by 10:45." }],
+            },
+            {
+              id: "handover_ready",
+              label: "Handover ready",
+              when: "08:45",
+              tone: "good",
+              status: "Ready · Signed off 08:45",
+              summary: "Fit to travel medical clearance and handover pack completed.",
+              milestones: [
+                { time: "08:45", label: "Fit to Travel", detail: "Medical clearance signed off at FSH ED." },
+                {
+                  time: "09:00",
+                  label: "Handover Pack",
+                  detail: "Clinical documentation and medication profile ready.",
+                },
+              ],
+            },
+            {
+              id: "moving",
+              label: "Moving",
+              when: "Booked 11:15",
+              tone: "warn",
+              status: "Booked 11:15",
+              summary: "Secure transport booking confirmed for 11:15 departure.",
+              milestones: [
+                { time: "09:52", label: "Transport Booked", detail: "Secure ambulance transport scheduled for 11:15." },
+              ],
+            },
+            {
+              id: "arrived",
+              label: "Arrived",
+              when: "ETA 11:45",
+              tone: "neutral",
+              status: "Estimated 11:45",
+              summary: "Direct transfer and inpatient handover at Bentley Adult Secure.",
+              milestones: [
+                { label: "Destination", detail: "Receiving nursing team at Bentley Adult Secure notified." },
+              ],
+            },
+          ],
+        },
+      };
+
+      let activePatientId = "WF-009";
+      let currentExpandedStage = 0;
+
+      function renderJourneyStepper(patientId) {
+        const data = STAGE_DATA[patientId] || STAGE_DATA["WF-009"];
+        const currentIdx = data.currentIndex;
+        const list = document.getElementById("stepperList");
+        if (!list) return;
+        list.innerHTML = "";
+
+        data.stages.forEach((s, i) => {
+          const state = i < currentIdx ? "done" : i === currentIdx ? "now" : "todo";
+          const isExpanded = currentExpandedStage === i;
+          const li = document.createElement("li");
+          li.className = "jst";
+          li.setAttribute("data-s", state);
+
+          const nodeContent =
+            state === "done"
+              ? '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1.5 5.5L4 8L8.5 2.5"/></svg>'
+              : i + 1;
+
+          const lineHtml = i < data.stages.length - 1 ? '<span class="jline"></span>' : "";
+
+          let milestoneHtml = "";
+          if (s.milestones && s.milestones.length > 0) {
+            milestoneHtml = `
             <ul class="stageMilestoneList">
-              ${s.milestones.map(m => `
+              ${s.milestones
+                .map(
+                  (m) => `
                 <li class="stageMilestoneItem">
-                  ${m.time ? `<span class="stageMilestoneTime">${m.time}</span>` : ''}
+                  ${m.time ? `<span class="stageMilestoneTime">${m.time}</span>` : ""}
                   <span class="stageMilestoneLabel">${m.label}:</span>
                   <span class="stageMilestoneText">${m.detail}</span>
                 </li>
-              `).join('')}
+              `,
+                )
+                .join("")}
             </ul>
           `;
-        }
+          }
 
-        const detailBoxHtml = isExpanded ? `
+          const detailBoxHtml = isExpanded
+            ? `
           <div class="stageDetailBox">
             <div class="stageDetailHeader">
               <span class="stageDetailBadge" data-tone="${s.tone}">${s.status}</span>
@@ -2124,9 +2506,10 @@
             <p class="stageDetailSummary">${s.summary}</p>
             ${milestoneHtml}
           </div>
-        ` : '';
+        `
+            : "";
 
-        li.innerHTML = `
+          li.innerHTML = `
           <div class="jIndicatorCol">
             <span class="jnode">${nodeContent}</span>
             ${lineHtml}
@@ -2136,8 +2519,8 @@
               <div class="jnameRow">
                 <span class="jname">${s.label}</span>
                 <div class="stageRightCluster">
-                  ${s.when ? `<span class="jwhen">${s.when}</span>` : ''}
-                  <svg class="stageChevron ${isExpanded ? 'stageChevronOpen' : ''}" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5">
+                  ${s.when ? `<span class="jwhen">${s.when}</span>` : ""}
+                  <svg class="stageChevron ${isExpanded ? "stageChevronOpen" : ""}" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5">
                     <polyline points="4 6 8 10 12 6"/>
                   </svg>
                 </div>
@@ -2146,50 +2529,50 @@
             ${detailBoxHtml}
           </div>
         `;
-        list.appendChild(li);
-      });
-    }
+          list.appendChild(li);
+        });
+      }
 
-    function toggleStage(index) {
-      currentExpandedStage = currentExpandedStage === index ? null : index;
-      renderJourneyStepper(activePatientId);
-    }
+      function toggleStage(index) {
+        currentExpandedStage = currentExpandedStage === index ? null : index;
+        renderJourneyStepper(activePatientId);
+      }
 
-    // Scenario switchers: WF-009 vs WF-004
-    const btnWf009 = document.getElementById('btnWf009');
-    const btnWf004 = document.getElementById('btnWf004');
+      // Scenario switchers: WF-009 vs WF-004
+      const btnWf009 = document.getElementById("btnWf009");
+      const btnWf004 = document.getElementById("btnWf004");
 
-    btnWf009.addEventListener('click', () => loadScenario('WF-009'));
-    btnWf004.addEventListener('click', () => loadScenario('WF-004'));
+      btnWf009.addEventListener("click", () => loadScenario("WF-009"));
+      btnWf004.addEventListener("click", () => loadScenario("WF-004"));
 
-    function loadScenario(id) {
-      activePatientId = id;
-      currentExpandedStage = id === 'WF-004' ? 2 : 0;
-      renderJourneyStepper(id);
+      function loadScenario(id) {
+        activePatientId = id;
+        currentExpandedStage = id === "WF-004" ? 2 : 0;
+        renderJourneyStepper(id);
 
-      btnWf009.setAttribute('aria-pressed', id === 'WF-009');
-      btnWf004.setAttribute('aria-pressed', id === 'WF-004');
+        btnWf009.setAttribute("aria-pressed", id === "WF-009");
+        btnWf004.setAttribute("aria-pressed", id === "WF-004");
 
-      if (id === 'WF-009') {
-        if (document.getElementById('ptIdBadge')) document.getElementById('ptIdBadge').textContent = 'WF-009';
-        document.getElementById('ptDisplayName').textContent = 'Wren, Tobias';
-        document.getElementById('ptKnownAs').style.display = 'inline-block';
-        document.getElementById('chipUmrn').textContent = 'UM100009';
-        if (document.getElementById('detUmrn')) document.getElementById('detUmrn').textContent = 'UM100009';
-        document.getElementById('chipDob').textContent = '14 Oct 1993';
-        document.getElementById('chipAge').textContent = '32y';
-        document.getElementById('chipLoc').textContent = 'Peel Health Campus ED · Bay 3';
-        document.getElementById('chipLegal').textContent = 'Involuntary inpatient (Form 3B)';
+        if (id === "WF-009") {
+          if (document.getElementById("ptIdBadge")) document.getElementById("ptIdBadge").textContent = "WF-009";
+          document.getElementById("ptDisplayName").textContent = "Wren, Tobias";
+          document.getElementById("ptKnownAs").style.display = "inline-block";
+          document.getElementById("chipUmrn").textContent = "UM100009";
+          if (document.getElementById("detUmrn")) document.getElementById("detUmrn").textContent = "UM100009";
+          document.getElementById("chipDob").textContent = "14 Oct 1993";
+          document.getElementById("chipAge").textContent = "32y";
+          document.getElementById("chipLoc").textContent = "Peel Health Campus ED · Bay 3";
+          document.getElementById("chipLegal").textContent = "Involuntary inpatient (Form 3B)";
 
-        document.getElementById('urgencyBadge').textContent = 'Tier 1 — High Acuity';
-        document.getElementById('urgencyBadge').setAttribute('data-tier', '1');
-        document.getElementById('waitDuration').textContent = '402m waiting';
-        document.getElementById('trajectoryStatus').textContent = 'Placement In Progress';
+          document.getElementById("urgencyBadge").textContent = "Tier 1 — High Acuity";
+          document.getElementById("urgencyBadge").setAttribute("data-tier", "1");
+          document.getElementById("waitDuration").textContent = "402m waiting";
+          document.getElementById("trajectoryStatus").textContent = "Placement In Progress";
 
-        document.getElementById('verdictTitle').textContent = 'Cannot be moved. Two things are missing.';
-        document.getElementById('verdictTitle').setAttribute('data-tone', 'danger');
-        document.getElementById('barrierSummary').textContent = '2 missing gates';
-        document.getElementById('barrierCards').innerHTML = `
+          document.getElementById("verdictTitle").textContent = "Cannot be moved. Two things are missing.";
+          document.getElementById("verdictTitle").setAttribute("data-tone", "danger");
+          document.getElementById("barrierSummary").textContent = "2 missing gates";
+          document.getElementById("barrierCards").innerHTML = `
           <div class="barrierCard">
             <div class="barrierCardTop">
               <span class="barrierIcon"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M2 2L10 10M10 2L2 10" stroke-width="2" /></svg></span>
@@ -2222,30 +2605,31 @@
           </div>
         `;
 
-        document.getElementById('stageCountBadge').textContent = 'Stage 1 of 7';
-        document.getElementById('nextActionSummary').innerHTML = '<strong>Re-ask Fiona Stanley Hospital Secure</strong> — Recheck bed status after 14:00 handover.';
-        document.getElementById('sideWait').textContent = '402m';
-        document.getElementById('sideNeed').textContent = 'Locked adult bed (1:1)';
-      } else {
-        if (document.getElementById('ptIdBadge')) document.getElementById('ptIdBadge').textContent = 'WF-004';
-        document.getElementById('ptDisplayName').textContent = 'Hawthorn, Dermot';
-        document.getElementById('ptKnownAs').style.display = 'none';
-        document.getElementById('chipUmrn').textContent = 'UM100004';
-        if (document.getElementById('detUmrn')) document.getElementById('detUmrn').textContent = 'UM100004';
-        document.getElementById('chipDob').textContent = '02 Feb 1978';
-        document.getElementById('chipAge').textContent = '48y';
-        document.getElementById('chipLoc').textContent = 'Fiona Stanley Hospital ED · Bay 1';
-        document.getElementById('chipLegal').textContent = 'Involuntary inpatient (Form 4C)';
+          document.getElementById("stageCountBadge").textContent = "Stage 1 of 7";
+          document.getElementById("nextActionSummary").innerHTML =
+            "<strong>Re-ask Fiona Stanley Hospital Secure</strong> — Recheck bed status after 14:00 handover.";
+          document.getElementById("sideWait").textContent = "402m";
+          document.getElementById("sideNeed").textContent = "Locked adult bed (1:1)";
+        } else {
+          if (document.getElementById("ptIdBadge")) document.getElementById("ptIdBadge").textContent = "WF-004";
+          document.getElementById("ptDisplayName").textContent = "Hawthornby, Dermot";
+          document.getElementById("ptKnownAs").style.display = "none";
+          document.getElementById("chipUmrn").textContent = "UM100004";
+          if (document.getElementById("detUmrn")) document.getElementById("detUmrn").textContent = "UM100004";
+          document.getElementById("chipDob").textContent = "02 Feb 1978";
+          document.getElementById("chipAge").textContent = "48y";
+          document.getElementById("chipLoc").textContent = "Fiona Stanley Hospital ED · Bay 1";
+          document.getElementById("chipLegal").textContent = "Involuntary inpatient (Form 4C)";
 
-        document.getElementById('urgencyBadge').textContent = 'Tier 2 — Standard Care';
-        document.getElementById('urgencyBadge').setAttribute('data-tier', '2');
-        document.getElementById('waitDuration').textContent = '192m waiting';
-        document.getElementById('trajectoryStatus').textContent = 'Bed Accepted · Transport Booked';
+          document.getElementById("urgencyBadge").textContent = "Tier 2 — Standard Care";
+          document.getElementById("urgencyBadge").setAttribute("data-tier", "2");
+          document.getElementById("waitDuration").textContent = "192m waiting";
+          document.getElementById("trajectoryStatus").textContent = "Bed Accepted · Transport Booked";
 
-        document.getElementById('verdictTitle').textContent = 'Nothing is holding this movement up.';
-        document.getElementById('verdictTitle').setAttribute('data-tone', 'good');
-        document.getElementById('barrierSummary').textContent = 'All gates cleared';
-        document.getElementById('barrierCards').innerHTML = `
+          document.getElementById("verdictTitle").textContent = "Nothing is holding this movement up.";
+          document.getElementById("verdictTitle").setAttribute("data-tone", "good");
+          document.getElementById("barrierSummary").textContent = "All gates cleared";
+          document.getElementById("barrierCards").innerHTML = `
           <div class="barrierCardClear" style="grid-column: 1 / -1;">
             <span class="barrierClearIcon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 8.5L6.5 12L13 4"></path></svg></span>
             <div class="barrierMain">
@@ -2255,32 +2639,35 @@
           </div>
         `;
 
-        document.getElementById('stageCountBadge').textContent = 'Stage 3 of 7';
-        document.getElementById('nextActionSummary').innerHTML = '<strong>Awaiting transport arrival</strong> — St John ambulance dispatch ETA 10:15.';
-        document.getElementById('sideWait').textContent = '192m';
-        document.getElementById('sideNeed').textContent = 'Locked adult bed (Standard)';
+          document.getElementById("stageCountBadge").textContent = "Stage 3 of 7";
+          document.getElementById("nextActionSummary").innerHTML =
+            "<strong>Awaiting transport arrival</strong> — St John ambulance dispatch ETA 10:15.";
+          document.getElementById("sideWait").textContent = "192m";
+          document.getElementById("sideNeed").textContent = "Locked adult bed (Standard)";
+        }
       }
-    }
 
-    // Initialize default scenario
-    loadScenario('WF-009');
+      // Initialize default scenario
+      loadScenario("WF-009");
 
-    // Copy handover button feedback
-    const copyBtn = document.getElementById('copyHandoverBtn');
-    copyBtn.addEventListener('click', () => {
-      const original = copyBtn.textContent;
-      copyBtn.textContent = 'Copied!';
-      setTimeout(() => { copyBtn.textContent = original; }, 2000);
-    });
-
-    // Connect View Declines button
-    const viewDeclinesBtn = document.getElementById('viewDeclinesBtn');
-    if (viewDeclinesBtn) {
-      viewDeclinesBtn.addEventListener('click', () => {
-        switchTab('now');
-        filterReferrals('reask');
+      // Copy handover button feedback
+      const copyBtn = document.getElementById("copyHandoverBtn");
+      copyBtn.addEventListener("click", () => {
+        const original = copyBtn.textContent;
+        copyBtn.textContent = "Copied!";
+        setTimeout(() => {
+          copyBtn.textContent = original;
+        }, 2000);
       });
-    }
-  </script>
-</body>
+
+      // Connect View Declines button
+      const viewDeclinesBtn = document.getElementById("viewDeclinesBtn");
+      if (viewDeclinesBtn) {
+        viewDeclinesBtn.addEventListener("click", () => {
+          switchTab("now");
+          filterReferrals("reask");
+        });
+      }
+    </script>
+  </body>
 </html>
