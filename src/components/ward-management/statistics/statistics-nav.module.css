@@ -1,165 +1,50 @@
-/* ═══════════════════════════════════════════════════════════════════════
-   WARD FLOW STATISTICS SUITE MASTER NAVIGATION BAR
-   Third Edition Design System Tokens & Responsive Invariants
-   Enforces text floor (>= 12px) and tabular-nums
-   ═══════════════════════════════════════════════════════════════════════ */
-
 .navBar {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  background: var(--surface, #ffffff);
-  border-bottom: 1px solid var(--line-strong, rgba(22, 30, 40, 0.2));
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  padding: 6px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-family: var(--display, "Geist", system-ui, -apple-system, sans-serif);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  display: block;
   width: 100%;
-}
-
-:global([data-theme="dark"]) .navBar {
-  background: var(--surface, #171b21);
-  border-bottom-color: var(--line-strong, rgba(255, 255, 255, 0.18));
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-}
-
-.suiteNavBrand {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  text-decoration: none;
-  color: inherit;
-  flex-shrink: 0;
-}
-
-.suiteNavBeacon {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #227550;
-  box-shadow: 0 0 0 2px rgba(34, 117, 80, 0.25);
-  animation: suiteNavPulse 2.2s infinite;
-  display: inline-block;
-}
-
-:global([data-theme="dark"]) .suiteNavBeacon {
-  background: #6fd39b;
-  box-shadow: 0 0 0 2px rgba(111, 211, 155, 0.3);
-}
-
-@keyframes suiteNavPulse {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(34, 117, 80, 0.5);
-  }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 6px rgba(34, 117, 80, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(34, 117, 80, 0);
-  }
-}
-
-.suiteNavTitle {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--accent-ink, #27405a);
-  letter-spacing: -0.01em;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-
-:global([data-theme="dark"]) .suiteNavTitle {
-  color: var(--accent-ink, #bfd0e2);
-}
-
-.suiteNavBadge {
-  font-family: var(--mono, "Geist Mono", monospace);
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: var(--gilt-soft, #f1ebdf);
-  color: var(--gilt, #7d612a);
-  border: 1px solid rgba(125, 97, 42, 0.2);
-  white-space: nowrap;
-}
-
-:global([data-theme="dark"]) .suiteNavBadge {
-  background: var(--gilt-soft, #2a251b);
-  color: var(--gilt, #d3b77e);
-  border-color: rgba(211, 183, 126, 0.3);
+  margin: 0 0 16px 0;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04);
 }
 
 .scrollTrack {
   display: flex;
   align-items: center;
-  gap: 3px;
-  background: var(--sunk, #eef2f6);
-  padding: 3px;
-  border-radius: 8px;
-  border: 1px solid var(--line, rgba(22, 30, 40, 0.1));
+  gap: 4px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  -ms-overflow-style: none;
-  max-width: 100%;
-  flex: 1 1 auto;
-  min-width: 0;
+  padding: 2px;
 }
 
 .scrollTrack::-webkit-scrollbar {
   display: none;
 }
 
-:global([data-theme="dark"]) .scrollTrack {
-  background: var(--sunk, #13171c);
-  border-color: var(--line, rgba(255, 255, 255, 0.09));
-}
-
 .navItem {
-  font-family: var(--display, "Geist", system-ui, sans-serif);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted, #5f6873);
-  background: transparent;
-  border: 0;
-  padding: 3px 6px;
-  border-radius: 6px;
-  cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 14px;
+  color: var(--muted);
   text-decoration: none;
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 7px;
   white-space: nowrap;
-  transition: all 0.15s ease;
-  min-height: 28px;
+  position: relative;
+  transition: all 0.15s ease-in-out;
   flex-shrink: 0;
-}
-
-:global([data-theme="dark"]) .navItem {
-  color: var(--muted, #8a929d);
+  border: 1px solid transparent;
 }
 
 .navItem:hover {
-  color: var(--ink, #161a20);
-  background: rgba(255, 255, 255, 0.6);
-}
-
-:global([data-theme="dark"]) .navItem:hover {
-  color: var(--ink, #e8ecf1);
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+  background: var(--surface-hover, var(--ward-subtle));
 }
 
 .navItem:focus-visible {
@@ -168,149 +53,40 @@
 }
 
 .navItemActive {
-  color: var(--ink, #161a20);
-  background: var(--surface, #ffffff);
-  box-shadow:
-    0 1px 2px rgba(30, 48, 66, 0.06),
-    0 3px 6px -2px rgba(30, 48, 66, 0.15);
-  font-weight: 700;
+  color: var(--accent);
+  background: var(--ward-blue-soft, var(--accent-soft));
+  font-weight: 600;
+  border-color: var(--ward-blue-border, var(--line-strong));
 }
 
-:global([data-theme="dark"]) .navItemActive {
-  color: #ffffff;
-  background: var(--surface-2, #1b2026);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-}
-
-.navPillNum {
-  font-family: var(--mono, "Geist Mono", monospace);
-  font-size: 12px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  padding: 1px 5px;
-  border-radius: 999px;
-  background: var(--accent-soft, #dfe7f0);
-  color: var(--accent-ink, #27405a);
-}
-
-:global([data-theme="dark"]) .navPillNum {
-  background: var(--accent-soft, #1f2a36);
-  color: var(--accent-ink, #bfd0e2);
-}
-
-.navItemActive .navPillNum {
-  background: var(--good-soft, #e2f0e8);
-  color: var(--good, #227550);
-}
-
-:global([data-theme="dark"]) .navItemActive .navPillNum {
-  background: var(--good-soft, #15291f);
-  color: var(--good, #6fd39b);
-}
-
-.suiteNavActions {
+.navIcon {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: currentColor;
   flex-shrink: 0;
 }
 
-.suiteThemeBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--line-strong, rgba(22, 30, 40, 0.2));
-  color: var(--ink, #161a20);
-  font-family: var(--display, "Geist", system-ui, sans-serif);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  min-height: 28px;
+.navLabel {
+  line-height: 1.2;
 }
 
-:global([data-theme="dark"]) .suiteThemeBtn {
-  background: var(--surface-2, #1b2026);
-  border-color: var(--line-strong, rgba(255, 255, 255, 0.2));
-  color: var(--ink, #e8ecf1);
+.activePillIndicator {
+  display: none;
 }
 
-.suiteThemeBtn:hover {
-  background: var(--sunk, #eef2f6);
-}
-
-:global([data-theme="dark"]) .suiteThemeBtn:hover {
-  background: var(--sunk, #13171c);
-}
-
-.suitePortalLink {
-  font-family: var(--display, "Geist", system-ui, sans-serif);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--accent-ink, #27405a);
-  text-decoration: none;
-  padding: 4px 8px;
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: var(--surface-2, #f4f7fa);
-  border: 1px solid var(--line, rgba(22, 30, 40, 0.1));
-  min-height: 28px;
-  transition: all 0.15s ease;
-}
-
-:global([data-theme="dark"]) .suitePortalLink {
-  color: var(--accent-ink, #bfd0e2);
-  background: var(--surface-2, #1b2026);
-  border-color: var(--line, rgba(255, 255, 255, 0.1));
-}
-
-.suitePortalLink:hover {
-  background: var(--accent-soft, #dfe7f0);
-}
-
-:global([data-theme="dark"]) .suitePortalLink:hover {
-  background: var(--accent-soft, #1f2a36);
-}
-
-/* ─── Responsive Breakdown ─── */
-@media (max-width: 1024px) {
+@media (max-width: 640px) {
   .navBar {
-    padding: 6px 12px;
-    gap: 8px;
-    flex-wrap: wrap;
+    margin-bottom: 12px;
+    padding: 3px;
+    border-radius: 8px;
   }
-  .scrollTrack {
-    order: 3;
-    width: 100%;
-    margin-top: 4px;
-    justify-content: flex-start;
-  }
-}
 
-@media (max-width: 1600px) {
-  .suiteNavBadge {
-    display: none;
-  }
-}
-
-@media (max-width: 600px) {
   .navItem {
-    padding: 4px 6px;
+    padding: 8px 11px;
     font-size: 12px;
-  }
-  .navPillNum {
-    font-size: 12px;
-    padding: 1px 4px;
-  }
-  .suiteThemeBtn,
-  .suitePortalLink {
-    padding: 4px 6px;
-    font-size: 12px;
-    min-height: 28px;
+    gap: 6px;
   }
 }

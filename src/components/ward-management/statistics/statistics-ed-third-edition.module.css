@@ -276,9 +276,7 @@
   z-index: 100;
   min-width: 180px;
   max-width: 280px;
-  transition:
-    transform 0.04s ease-out,
-    opacity 0.15s ease;
+  transition: transform 0.04s ease-out, opacity 0.15s ease;
   line-height: 1.45;
 }
 :global([data-theme="dark"]) .chartTooltipCard {
@@ -594,3 +592,4 @@
     align-items: flex-start;
   }
 }
+

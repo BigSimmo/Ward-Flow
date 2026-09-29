@@ -370,23 +370,6 @@ export function StatisticsOverviewScreen() {
                   <strong>{s.ready + s.held}</strong> Headroom
                 </span>
               </div>
-              <div
-                style={{
-                  marginTop: "auto",
-                  paddingTop: "8px",
-                  borderTop: "1px solid var(--line)",
-                  fontSize: "12px",
-                  color: "var(--accent-ink)",
-                  fontWeight: 600,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "flex-end",
-                  gap: "4px",
-                }}
-              >
-                <span>Service details</span>
-                <span aria-hidden="true">→</span>
-              </div>
             </Link>
           ))}
         </div>
@@ -675,87 +658,22 @@ export function StatisticsOverviewScreen() {
             testId="ward-statistics-overview-worklist"
           >
             <div className={styles.panelBody} role="group" aria-label="Referral and bed worklist content" tabIndex={0}>
-              <div className={styles.worklistTelemetryGrid}>
-                <div className={styles.worklistCard}>
-                  <div className={styles.worklistCardTop}>
-                    <span className={styles.worklistCardLabel}>Refused So Far</span>
-                    <span
-                      className={styles.stageStatus}
-                      style={{ background: "var(--warn-soft)", color: "var(--warn)" }}
-                    >
-                      Open
-                    </span>
-                  </div>
-                  <div className={styles.worklistCardValue}>
-                    <span data-testid="ward-statistics-overview-refused-so-far-value">{refused.count}</span>
-                    <span
-                      style={{ fontSize: "var(--t-0)", fontWeight: 500, color: "var(--muted)", marginLeft: "0.375rem" }}
-                    >
-                      of{" "}
-                      <span data-testid="ward-statistics-overview-refused-so-far-open-count">
-                        {refused.openMovementCount}
-                      </span>{" "}
-                      open
-                    </span>
-                  </div>
-                  <span className={styles.worklistCardSub}>All asked wards have declined</span>
-                </div>
-
-                <div className={styles.worklistCard}>
-                  <div className={styles.worklistCardTop}>
-                    <span className={styles.worklistCardLabel}>Beds Pending</span>
-                    <span
-                      className={styles.stageStatus}
-                      style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
-                    >
-                      Prep
-                    </span>
-                  </div>
-                  <div className={styles.worklistCardValue}>
-                    <span data-testid="ward-statistics-overview-preparing-value">{preparingCount}</span>
-                    <span
-                      style={{ fontSize: "var(--t-0)", fontWeight: 500, color: "var(--muted)", marginLeft: "0.375rem" }}
-                    >
-                      {preparingCount === 1 ? "bed" : "beds"}
-                    </span>
-                  </div>
-                  <span className={styles.worklistCardSub}>Cleaning / maintenance hold</span>
-                </div>
-
-                <div className={styles.worklistCard}>
-                  <div className={styles.worklistCardTop}>
-                    <span className={styles.worklistCardLabel}>Immediate Action</span>
-                    <span
-                      className={styles.stageStatus}
-                      style={{ background: "var(--good-soft)", color: "var(--good)" }}
-                    >
-                      Ready
-                    </span>
-                  </div>
-                  <div className={styles.worklistCardValue}>
-                    {openNow}
-                    <span
-                      style={{ fontSize: "var(--t-0)", fontWeight: 500, color: "var(--muted)", marginLeft: "0.375rem" }}
-                    >
-                      of {capacity.ready} ready
-                    </span>
-                  </div>
-                  <span className={styles.worklistCardSub}>Deployable beds right now</span>
-                </div>
-              </div>
+              <p className={styles.body} data-testid="ward-statistics-overview-refused-so-far-count">
+                <span data-testid="ward-statistics-overview-refused-so-far-value">{refused.count}</span> of{" "}
+                <span data-testid="ward-statistics-overview-refused-so-far-open-count">
+                  {refused.openMovementCount}
+                </span>{" "}
+                open {refused.openMovementCount === 1 ? "movement" : "movements"} network-wide have at least one
+                ward&apos;s refusal on record and no ward currently deciding — every ward asked <em>so far</em> has
+                refused.
+              </p>
 
               <details
                 className={`${styles.reveal} source-print`}
                 data-testid="ward-statistics-overview-refused-so-far-disclosure"
               >
-                <summary>Operational context & methodology</summary>
+                <summary>What &ldquo;so far&rdquo; means</summary>
                 <div className={styles.revealBody}>
-                  <p className={styles.body} data-testid="ward-statistics-overview-refused-so-far-count">
-                    {refused.count} of {refused.openMovementCount} open{" "}
-                    {refused.openMovementCount === 1 ? "movement" : "movements"} network-wide have at least one
-                    ward&apos;s refusal on record and no ward currently deciding — every ward asked <em>so far</em> has
-                    refused.
-                  </p>
                   <p>
                     No closure flag marks the network as exhausted. A decline removes that ward from the current list,
                     and the case can go to fresh wards. This is a worklist of who needs a decision today, not a count of
@@ -770,14 +688,18 @@ export function StatisticsOverviewScreen() {
                     instead. This is a recorded opinion that the network was exhausted, not a derived fact. Escalations
                     are classified first, so the count above is a floor.
                   </p>
-                  <p className={styles.body} data-testid="ward-statistics-overview-preparing-count">
-                    {preparingCount} {preparingCount === 1 ? "bed is" : "beds are"} currently marked as Pending across
-                    the network — cleaning, maintenance or repair, or with no reason stated. A patient cannot be pulled
-                    into a bed that is still Pending, so the network can act on {openNow} of its {capacity.ready} Ready
-                    beds right now.
-                  </p>
                 </div>
               </details>
+
+              <p className={styles.body} data-testid="ward-statistics-overview-preparing-count">
+                <span data-testid="ward-statistics-overview-preparing-value">{preparingCount}</span>{" "}
+                {preparingCount === 1 ? "bed is" : "beds are"} currently marked as Pending across the network —
+                cleaning, maintenance or repair, or with no reason stated.{" "}
+                <strong>
+                  A patient cannot be pulled into a bed that is still Pending, so the network can act on {openNow} of
+                  its {capacity.ready} Ready beds right now.
+                </strong>
+              </p>
             </div>
           </WardPanel>
           {/*
@@ -811,12 +733,12 @@ export function StatisticsOverviewScreen() {
                * day."* discloses nothing when read alone. ⚠️ **This lane's standing rule is to quote the drawing
                * verbatim; here the drawing and a ruling collide, and the ruling wins.** Recorded under §7.0(2).
                */}
-              <details className={`${styles.reveal} source-print`} style={{ margin: 0 }}>
-                <summary>Provenance & boundary notes (synthetic demonstration)</summary>
+              <p className={styles.body} data-testid="ward-statistics-overview-invented-figures">
+                <strong>Every figure here is invented and describes no real person or day.</strong>
+              </p>
+              <details className={`${styles.reveal} source-print`}>
+                <summary>Provenance and limits</summary>
                 <div className={styles.revealBody}>
-                  <p className={styles.body} data-testid="ward-statistics-overview-invented-figures">
-                    <strong>Every figure here is invented and describes no real person or day.</strong>
-                  </p>
                   <p>
                     The invented figures cover network capacity, the four admission stages, declines, current movements,
                     the referral worklist, pending beds and the 30 chart points.

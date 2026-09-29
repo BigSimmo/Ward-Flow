@@ -533,6 +533,7 @@
   font-size: 12px;
 }
 
+
 [data-ward-design="third-edition"] .chartCaption {
   color: var(--muted);
   font-family: var(--body);

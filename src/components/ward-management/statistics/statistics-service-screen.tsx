@@ -522,12 +522,12 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
       blocked: 0,
       locked: 0,
     };
-    current.total += unit.capacity;
+    current.total += unit.beds;
     current.occupied += capacity.occupied;
     current.ready += capacity.available;
     current.held += capacity.held;
     current.blocked += capacity.blocked;
-    current.locked += capacity.locked;
+    current.locked += unit.lockedBeds ?? 0;
     cohortsMap.set(cohort, current);
   }
 
@@ -732,7 +732,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
               <div className={pageStyles.siteCardGrid}>
                 {serviceSites.map((site) => {
                   const sUnits = serviceUnits.filter((u) => u.siteCode === site.code);
-                  const sCap = sUnits.reduce((acc, u) => acc + u.capacity, 0);
+                  const sCap = sUnits.reduce((acc, u) => acc + u.beds, 0);
                   const sReady = sUnits.reduce((acc, u) => {
                     const row = readyRows.find((r) => r.unit.id === u.id);
                     return acc + (row?.capacity.available ?? 0);
@@ -939,7 +939,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                 </thead>
                 <tbody>
                   {filteredReadyRows.map(({ unit, capacity }) => {
-                    const occPct = unit.capacity > 0 ? ((capacity.occupied / unit.capacity) * 100).toFixed(0) : "0";
+                    const occPct = unit.beds > 0 ? ((capacity.occupied / unit.beds) * 100).toFixed(0) : "0";
                     return (
                       <tr key={unit.id}>
                         <th scope="row">
@@ -949,7 +949,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                         </th>
                         <td>{unit.siteCode}</td>
                         <td>{unit.cohort}</td>
-                        <td className="num">{unit.capacity}</td>
+                        <td className="num">{unit.beds}</td>
                         <td className="num">{capacity.occupied}</td>
                         <td className="num" style={{ fontWeight: 600, color: capacity.available > 0 ? "var(--good)" : "var(--muted)" }}>
                           {capacity.available}
@@ -1191,7 +1191,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                         {outOfAreaEntries.slice(0, 8).map((entry, idx) => (
                           <tr key={idx}>
                             <th scope="row">
-                              {serviceUnits.find((u) => u.id === entry.unitId)?.name ?? entry.unitId}
+                              {entry.unit.name}
                             </th>
                             <td>{TRAVEL_BAND_LABELS[entry.band]}</td>
                             <td>
@@ -1258,7 +1258,6 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             </Link>
           </p>
         </div>
-      </div>
 
       {toastMessage && (
         <div className={pageStyles.actionToast} role="status" aria-live="polite" aria-atomic="true">

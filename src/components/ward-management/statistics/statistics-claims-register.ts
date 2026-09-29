@@ -2031,7 +2031,7 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
   {
     id: "community-index/enumeration/a-team-name-is-what-a-referral-stores",
     renderedIn: COMMUNITY_INDEX,
-    rendered: "Every team listed in this directory is derived directly from the referral intake vocabulary",
+    rendered: "Every community team a referral can name in this prototype",
     claim: "A team's name is exactly the string a referral stores, never composed or prettified.",
     sourceFile: COMMUNITY_DERIVATIONS,
     evidence: COMMUNITY_TEAM_PAGE_DERIVATION,

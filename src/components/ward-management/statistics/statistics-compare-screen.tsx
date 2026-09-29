@@ -81,7 +81,7 @@ export function StatisticsCompareScreen({
    */
   admissions?: Admission[];
 } = {}) {
-  const { units: liveUnits, admissions: liveAdmissions, movements } = useWardFlow();
+  const { units: liveUnits, admissions: liveAdmissions, movements} = useWardFlow();
   const now = useWardFlowClock();
   const admissions = admissionsOverride ?? liveAdmissions;
   const units = unitsOverride ?? liveUnits;
@@ -551,16 +551,16 @@ function CompareTable<Row>({
               <tr key={id}>
                 <th scope="row">{name}</th>
                 {columns.map((column) => {
-                  const cell = column.cell(row);
-                  return (
-                    <td key={column.header} className={styles.num}>
-                      {cell.unmeasured ? <span className={styles.unmeasured}>{cell.text}</span> : cell.text}
-                    </td>
-                  );
-                })}
-              </tr>
-            );
-          })}
+                const cell = column.cell(row);
+                return (
+                  <td key={column.header} className={styles.num}>
+                    {cell.unmeasured ? <span className={styles.unmeasured}>{cell.text}</span> : cell.text}
+                  </td>
+                );
+              })}
+            </tr>
+          );
+        })}
         </tbody>
       </WardTable>
       {uniform.length > 0 && (
@@ -586,7 +586,15 @@ interface HoveredWardState {
   unit: Unit;
 }
 
-function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admissions: Admission[]; now: number }) {
+function WardAlosBarChart({
+  units,
+  admissions,
+  now,
+}: {
+  units: Unit[];
+  admissions: Admission[];
+  now: number;
+}) {
   const [hoveredWard, setHoveredWard] = useState<HoveredWardState | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -624,7 +632,14 @@ function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admission
           const y = py(v);
           return (
             <g key={v}>
-              <line x1={padLeft} y1={y} x2={W - padRight} y2={y} stroke="var(--line)" strokeWidth="1" />
+              <line
+                x1={padLeft}
+                y1={y}
+                x2={W - padRight}
+                y2={y}
+                stroke="var(--line)"
+                strokeWidth="1"
+              />
               <text
                 x={padLeft - 10}
                 y={y + 4}
@@ -845,11 +860,11 @@ function EdWaitingBarChart({
   if (emergencyDepartments.length === 0) return null;
 
   const W = 920;
-  const H = 300;
+  const H = 240;
   const padLeft = 45;
   const padRight = 30;
   const padTop = 30;
-  const padBottom = 80;
+  const padBottom = 50;
   const plotW = W - padLeft - padRight;
   const plotH = H - padTop - padBottom;
 
@@ -865,12 +880,6 @@ function EdWaitingBarChart({
   const maxVal = Math.max(4, maxFound + 1);
   const py = (v: number) => padTop + plotH * (1 - v / maxVal);
 
-  const step = maxVal > 15 ? 5 : maxVal > 8 ? 2 : 1;
-  const gridValues: number[] = [];
-  for (let v = step; v <= maxVal; v += step) {
-    gridValues.push(v);
-  }
-
   const n = Math.max(emergencyDepartments.length, 1);
   const colW = plotW / n;
   const barW = Math.min(colW - 24, 52);
@@ -879,17 +888,24 @@ function EdWaitingBarChart({
     <div ref={containerRef} className={styles.barChartBox}>
       <svg
         width="100%"
-        height="300"
+        height="240"
         viewBox={`0 0 ${W} ${H}`}
         aria-label="ED placement requests stacked bar chart"
         style={{ display: "block", width: "100%", height: "auto" }}
       >
-        {/* Dynamic scale grid lines (12px floor) at stepped intervals */}
-        {gridValues.map((v) => {
+        {/* Dynamic scale grid lines (12px floor) */}
+        {Array.from({ length: maxVal }, (_, i) => i + 1).map((v) => {
           const y = py(v);
           return (
             <g key={v}>
-              <line x1={padLeft} y1={y} x2={W - padRight} y2={y} stroke="var(--line)" strokeWidth="1" />
+              <line
+                x1={padLeft}
+                y1={y}
+                x2={W - padRight}
+                y2={y}
+                stroke="var(--line)"
+                strokeWidth="1"
+              />
               <text
                 x={padLeft - 10}
                 y={y + 4}
@@ -923,10 +939,7 @@ function EdWaitingBarChart({
 
           const site = siteByCode(department.siteCode);
           const shortName = site
-            ? site.name.replace(
-                / Emergency Department$| Hospital$| Health Service$| Health Campus$| Public Hospital$/,
-                "",
-              )
+            ? site.name.replace(/ Emergency Department$| Hospital$| Health Service$| Health Campus$| Public Hospital$/, "")
             : department.name;
 
           const urgentH = (urgent / maxVal) * plotH;
@@ -1013,24 +1026,17 @@ function EdWaitingBarChart({
                 </text>
               )}
 
-              {/* Rotated Site label below (12px font floor) */}
-              {(() => {
-                const lx = (bx + barW / 2).toFixed(1);
-                const ly = (padTop + plotH + 14).toFixed(1);
-                return (
-                  <text
-                    x={lx}
-                    y={ly}
-                    textAnchor="end"
-                    transform={`rotate(-40 ${lx} ${ly})`}
-                    fontSize="12"
-                    fontFamily="var(--body)"
-                    fill="var(--ink-soft)"
-                  >
-                    {shortName}
-                  </text>
-                );
-              })()}
+              {/* Site label below (12px font floor) */}
+              <text
+                x={bx + barW / 2}
+                y={padTop + plotH + 22}
+                textAnchor="middle"
+                fontSize="12"
+                fontWeight="600"
+                fill="var(--ink)"
+              >
+                {shortName}
+              </text>
             </g>
           );
         })}

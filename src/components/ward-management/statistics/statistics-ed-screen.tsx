@@ -378,9 +378,7 @@ export function StatisticsEdScreen({
               <dd>{longestWait ? splitDuration(longestWait.waitMinutes) : "none"}</dd>
               {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
               <dd className={pageStyles.kpiCaption}>
-                {longestWait
-                  ? resolveSubjectPatient(longestWait.movement, { patients, referrals }).formalName
-                  : "no open placement"}
+                {longestWait ? resolveSubjectPatient(longestWait.movement, { patients, referrals }).formalName : "no open placement"}
               </dd>
             </div>
             <div>
@@ -479,14 +477,12 @@ export function StatisticsEdScreen({
               <>
                 <h3 className={styles.subHeading}>Past {LONG_WAIT_MINUTES / 60} hours</h3>
                 <p className={styles.body} data-testid="ward-stat-ed-over-24h">
-                  {over24h} of the {onTheList} above {over24h === 1 ? "has" : "have"} been waiting more than{" "}
-                  {LONG_WAIT_MINUTES / 60} hours ({OPERATIONAL_DEFAULT_LABEL}).
+                  {over24h} of the {onTheList} above {over24h === 1 ? "has" : "have"} been waiting more than {LONG_WAIT_MINUTES / 60} hours ({OPERATIONAL_DEFAULT_LABEL}).
                 </p>
 
                 <h3 className={styles.subHeading}>Past {VERY_LONG_WAIT_MINUTES / 60} hours</h3>
                 <p className={styles.body} data-testid="ward-stat-ed-over-48h">
-                  {over48h} of the {onTheList} above {over48h === 1 ? "has" : "have"} been waiting more than{" "}
-                  {VERY_LONG_WAIT_MINUTES / 60} hours ({OPERATIONAL_DEFAULT_LABEL}).
+                  {over48h} of the {onTheList} above {over48h === 1 ? "has" : "have"} been waiting more than {VERY_LONG_WAIT_MINUTES / 60} hours ({OPERATIONAL_DEFAULT_LABEL}).
                 </p>
 
                 <h3 className={styles.subHeading}>Longest wait</h3>
@@ -939,9 +935,9 @@ export function StatisticsEdScreen({
             </WardTable>
 
             <p className={styles.note}>
-              Due times passed counts only an overdue transport or transfer order. Neither an examination form nor a
-              detention form carries a due-by time in this model at all, so this column can never report a missed Mental
-              Health Act deadline — only a transport or transfer order that has run past when it was due.
+              Due times passed counts only an overdue transport or transfer order. Neither an examination form nor a detention
+              form carries a due-by time in this model at all, so this column can never report a missed Mental Health
+              Act deadline — only a transport or transfer order that has run past when it was due.
             </p>
             <LegalLimitsNotChecked />
 

@@ -26,7 +26,7 @@ import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/com
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { calendarDateOf, dayOf, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
-import { unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
+import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import type { BedRelease, Movement, Referral } from "@/components/ward-management/ward-model";
@@ -301,16 +301,6 @@ export function StatisticsScreen({
   const endYAdm = py(admissionsCount);
   const endYDis = py(dischargesCount);
 
-  const occFrac = totalBeds > 0 ? occupiedBeds / totalBeds : 0;
-  const heroGaugeDashoffset = (282.7 * (1 - Math.min(Math.max(occFrac, 0), 1))).toFixed(1);
-  const heroAngle = Math.PI - Math.min(Math.max(occFrac, 0), 1) * Math.PI;
-  const heroHeadX = (115 + 90 * Math.cos(heroAngle)).toFixed(1);
-  const heroHeadY = (115 - 90 * Math.sin(heroAngle)).toFixed(1);
-  const netFlow = admissionsCount - dischargesCount;
-  const blockedBedsCount = Math.max(0, totalBeds - occupiedBeds - availableNow - heldBeds);
-  const blockedPct = totalBeds > 0 ? Math.round((blockedBedsCount / totalBeds) * 100) : 0;
-  const heldPct = totalBeds > 0 ? Math.round((heldBeds / totalBeds) * 100) : 0;
-
   return (
     <div
       className={`${styles.screen} ${pageStyles.screen}`}
@@ -324,290 +314,10 @@ export function StatisticsScreen({
         </header>
 
         {/* ══════════ REPORTING PERIOD STRIP (Test contract preserved, styled cleanly) ══════════ */}
-        <div data-testid="ward-statistics-reporting-period" className={pageStyles.timeWindowTrack}>
-          <button
-            type="button"
-            className={`${pageStyles.segBtn} ${pageStyles.active}`}
-            title="Today's live operational statistics"
-            onClick={() => {}}
-            aria-pressed="true"
-          >
-            <span>Today (Live)</span>
-            <span className={pageStyles.mono}>Current state</span>
-          </button>
-          <button
-            type="button"
-            className={pageStyles.segBtn}
-            disabled
-            style={{ opacity: 0.6, cursor: "not-allowed" }}
-            title="7-day and 30-day history is not recorded."
-          >
-            <span>7-Day Trend (Unrecorded)</span>
-          </button>
-          <button
-            type="button"
-            className={pageStyles.segBtn}
-            disabled
-            style={{ opacity: 0.6, cursor: "not-allowed" }}
-            title="7-day and 30-day history is not recorded."
-          >
-            <span>30-Day Trend (Unrecorded)</span>
-          </button>
-          <span className="sr-only">7-day and 30-day history is not recorded.</span>
-          <span className="sr-only">No target recorded</span>
-        </div>
-
-        {/* ══════════ 5 KPI SPARKLINE CARDS ══════════ */}
-        <div className={pageStyles.kpiGrid} id="execKpiGrid">
-          <div className={pageStyles.kpiCard} data-tone="accent">
-            <div className={pageStyles.kpiTop}>
-              <span className={pageStyles.kpiLabel}>Total Capacity</span>
-              <span className={pageStyles.chip}>All Services</span>
-            </div>
-            <div className={pageStyles.kpiValRow}>
-              <span className={pageStyles.kpiVal}>{totalBeds}</span>
-              <span className={pageStyles.kpiSub}>beds / {units.length} wards</span>
-            </div>
-            <span className={pageStyles.kpiSub}>
-              <strong>{availableNow}</strong> ready to admit ({availablePct}%)
-            </span>
-            <svg className={pageStyles.kpiSpark} viewBox="0 0 100 20" preserveAspectRatio="none">
-              <path d="M0,10 Q25,8 50,11 T100,9" fill="none" stroke="var(--accent)" strokeWidth="2" />
-            </svg>
-          </div>
-
-          <div className={pageStyles.kpiCard} data-tone="warn">
-            <div className={pageStyles.kpiTop}>
-              <span className={pageStyles.kpiLabel}>Occupancy Rate</span>
-              <span className={pageStyles.mono}>{occupiedPct}%</span>
-            </div>
-            <div className={pageStyles.kpiValRow}>
-              <span className={pageStyles.kpiVal}>{occupiedPct}%</span>
-              <span className={pageStyles.kpiSub}>{occupiedBeds} occupied</span>
-            </div>
-            <span className={pageStyles.kpiSub}>Surge threshold: 95.0%</span>
-            <svg className={pageStyles.kpiSpark} viewBox="0 0 100 20" preserveAspectRatio="none">
-              <path d="M0,15 L20,14 L40,12 L60,9 L80,7 L100,5" fill="none" stroke="var(--warn)" strokeWidth="2" />
-            </svg>
-          </div>
-
-          <div className={pageStyles.kpiCard} data-tone="danger">
-            <div className={pageStyles.kpiTop}>
-              <span className={pageStyles.kpiLabel}>ED Bed Waits</span>
-              <span className={pageStyles.mono}>{emergencyDepts.length} EDs</span>
-            </div>
-            <div className={pageStyles.kpiValRow}>
-              <span className={pageStyles.kpiVal}>{totalEdWaiting}</span>
-              <span className={pageStyles.kpiSub}>patients waiting</span>
-            </div>
-            <span className={pageStyles.kpiSub}>
-              Longest: <strong>{networkLongestWait}h</strong> · Median: <strong>{networkMedianWait}h</strong> ·{" "}
-              {totalEdOver8} &gt;8h
-            </span>
-            <svg className={pageStyles.kpiSpark} viewBox="0 0 100 20" preserveAspectRatio="none">
-              <path d="M0,8 L20,10 L40,6 L60,12 L80,14 L100,11" fill="none" stroke="var(--danger)" strokeWidth="2" />
-            </svg>
-          </div>
-
-          <div className={pageStyles.kpiCard} data-tone="good">
-            <div className={pageStyles.kpiTop}>
-              <span className={pageStyles.kpiLabel}>24h Net Movement</span>
-              <span className={pageStyles.mono}>Network-wide</span>
-            </div>
-            <div className={pageStyles.kpiValRow}>
-              <span className={pageStyles.kpiVal}>{netFlow >= 0 ? `+${netFlow}` : netFlow}</span>
-              <span className={pageStyles.kpiSub}>net daily flow</span>
-            </div>
-            <span className={pageStyles.kpiSub}>
-              {admissionsCount} Admissions vs {dischargesCount} Discharges
-            </span>
-            <svg className={pageStyles.kpiSpark} viewBox="0 0 100 20" preserveAspectRatio="none">
-              <path d="M0,12 L20,8 L40,14 L60,6 L80,10 L100,8" fill="none" stroke="var(--good)" strokeWidth="2" />
-            </svg>
-          </div>
-
-          <div className={pageStyles.kpiCard}>
-            <div className={pageStyles.kpiTop}>
-              <span className={pageStyles.kpiLabel}>Bed Referrals</span>
-              <span className={pageStyles.mono}>Today</span>
-            </div>
-            <div className={pageStyles.kpiValRow}>
-              <span className={pageStyles.kpiVal}>{refOpen}</span>
-              <span className={pageStyles.kpiSub}>pending placement</span>
-            </div>
-            <span className={pageStyles.kpiSub}>
-              {refRaised} raised · {refAccepted} accepted · {refDeclined} declined
-            </span>
-            <svg className={pageStyles.kpiSpark} viewBox="0 0 100 20" preserveAspectRatio="none">
-              <path d="M0,14 L20,11 L40,13 L60,8 L80,9 L100,7" fill="none" stroke="var(--accent)" strokeWidth="2" />
-            </svg>
-          </div>
-        </div>
-
-        {/* ══════════ TWO HERO VISUAL PANELS ══════════ */}
-        <div className={pageStyles.visualMetricsGrid}>
-          <div className={pageStyles.gaugeCard}>
-            <div className={pageStyles.gaugeHeader}>
-              <h3>Network Occupancy</h3>
-              <span
-                className={pageStyles.mono}
-                id="gaugeStatusBadge"
-                style={{
-                  fontSize: "var(--t-0)",
-                  padding: "2px 8px",
-                  borderRadius: "var(--r2)",
-                  background:
-                    occFrac >= 0.95 ? "var(--danger-soft)" : occFrac >= 0.85 ? "var(--warn-soft)" : "var(--good-soft)",
-                  color: occFrac >= 0.95 ? "var(--danger)" : occFrac >= 0.85 ? "var(--warn)" : "var(--good)",
-                  fontWeight: 600,
-                }}
-              >
-                {occFrac >= 0.95 ? "High Load" : occFrac >= 0.85 ? "Elevated" : "Balanced"}
-              </span>
-            </div>
-            <div className={pageStyles.gaugeBody}>
-              <svg
-                className={pageStyles.gaugeSvg}
-                viewBox="0 0 230 130"
-                id="networkGaugeSvg"
-                role="img"
-                aria-label={`Network Occupancy: ${occupiedPct}%`}
-              >
-                <path className={pageStyles.gaugeArcBg} d="M 25 115 A 90 90 0 0 1 205 115" />
-                <line
-                  x1="25"
-                  y1="115"
-                  x2="35"
-                  y2="115"
-                  stroke="var(--line-strong, var(--ink))"
-                  strokeWidth="1.5"
-                  strokeOpacity="0.4"
-                />
-                <line
-                  x1="115"
-                  y1="25"
-                  x2="115"
-                  y2="35"
-                  stroke="var(--line-strong, var(--ink))"
-                  strokeWidth="1.5"
-                  strokeOpacity="0.4"
-                />
-                <line x1="190.5" y1="76.2" x2="199.5" y2="72.2" stroke="var(--gilt)" strokeWidth="2.5" />
-                <line x1="200.0" y1="102.5" x2="209.5" y2="100.8" stroke="var(--danger)" strokeWidth="2.5" />
-                <line x1="195" y1="115" x2="205" y2="115" stroke="var(--danger)" strokeWidth="1.5" />
-                <path
-                  className={pageStyles.gaugeArcVal}
-                  id="gaugeArcPath"
-                  d="M 25 115 A 90 90 0 0 1 205 115"
-                  strokeDasharray="282.7"
-                  strokeDashoffset={heroGaugeDashoffset}
-                  stroke={occFrac >= 0.95 ? "var(--danger)" : occFrac >= 0.85 ? "var(--warn)" : "var(--good)"}
-                />
-                <circle
-                  id="gaugeArcHead"
-                  cx={heroHeadX}
-                  cy={heroHeadY}
-                  r="5"
-                  fill="var(--surface)"
-                  stroke={occFrac >= 0.95 ? "var(--danger)" : occFrac >= 0.85 ? "var(--warn)" : "var(--good)"}
-                  strokeWidth="3"
-                />
-              </svg>
-              <div className={pageStyles.gaugeCenterText}>
-                <span className={pageStyles.gaugeNum} id="gaugeNumText">
-                  {occupiedPct}%
-                </span>
-                <span className={pageStyles.gaugeDesc}>
-                  {occupiedBeds} / {totalBeds} Beds
-                </span>
-              </div>
-            </div>
-            <div className={pageStyles.gaugeThresholds}>
-              <span>0%</span>
-              <span className={pageStyles.badgeTarget}>&lt;85% Benchmark</span>
-              <span className={pageStyles.badgeAlert}>&gt;95% High Load</span>
-              <span>100%</span>
-            </div>
-          </div>
-
-          <div className={pageStyles.waterfallCard}>
-            <div className={pageStyles.waterfallHeader}>
-              <h3>Bed State Distribution</h3>
-              <span className={pageStyles.mono} style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
-                {totalBeds} Total Beds
-              </span>
-            </div>
-            <p
-              className={pageStyles.scopeSubtitle}
-              style={{ fontSize: "var(--t-0)", color: "var(--muted)", margin: 0 }}
-            >
-              Real-time status breakdown across {units.length} adult, youth, and specialist inpatient wards.
-            </p>
-            <div className={pageStyles.waterfallBar}>
-              <div
-                className={pageStyles.wfSegment}
-                style={{ width: `${Math.max(5, occupiedPct)}%`, background: "var(--accent)" }}
-                title={`Occupied: ${occupiedBeds} beds (${occupiedPct}%)`}
-              >
-                {occupiedBeds} Occupied ({occupiedPct}%)
-              </div>
-              <div
-                className={pageStyles.wfSegment}
-                style={{ width: `${Math.max(3, availablePct)}%`, background: "var(--good)" }}
-                title={`Ready to admit: ${availableNow} beds (${availablePct}%)`}
-              >
-                {availableNow} Ready
-              </div>
-              {blockedBedsCount > 0 ? (
-                <div
-                  className={pageStyles.wfSegment}
-                  style={{ width: `${Math.max(3, blockedPct)}%`, background: "var(--danger)" }}
-                  title={`Out of Service / Blocked: ${blockedBedsCount} beds (${blockedPct}%)`}
-                >
-                  {blockedBedsCount} Blocked
-                </div>
-              ) : null}
-              {heldBeds > 0 ? (
-                <div
-                  className={pageStyles.wfSegment}
-                  style={{ width: `${Math.max(3, heldPct)}%`, background: "var(--gilt)" }}
-                  title={`Held / Reserved: ${heldBeds} beds (${heldPct}%)`}
-                >
-                  {heldBeds}
-                </div>
-              ) : null}
-            </div>
-            <div className={pageStyles.wfLegend}>
-              <div className={pageStyles.wfLegendItem}>
-                <span className={pageStyles.wfColorBox} style={{ background: "var(--accent)" }}></span>
-                <span>Occupied</span>
-                <span className={pageStyles.mono} style={{ marginLeft: "auto", fontWeight: 600 }}>
-                  {occupiedBeds} ({occupiedPct}%)
-                </span>
-              </div>
-              <div className={pageStyles.wfLegendItem}>
-                <span className={pageStyles.wfColorBox} style={{ background: "var(--good)" }}></span>
-                <span>Ready to Admit</span>
-                <span className={pageStyles.mono} style={{ marginLeft: "auto", fontWeight: 600 }}>
-                  {availableNow} ({availablePct}%)
-                </span>
-              </div>
-              <div className={pageStyles.wfLegendItem}>
-                <span className={pageStyles.wfColorBox} style={{ background: "var(--danger)" }}></span>
-                <span>Out of Service</span>
-                <span className={pageStyles.mono} style={{ marginLeft: "auto", fontWeight: 600 }}>
-                  {blockedBedsCount} ({blockedPct}%)
-                </span>
-              </div>
-              <div className={pageStyles.wfLegendItem}>
-                <span className={pageStyles.wfColorBox} style={{ background: "var(--gilt)" }}></span>
-                <span>Held / Reserved</span>
-                <span className={pageStyles.mono} style={{ marginLeft: "auto", fontWeight: 600 }}>
-                  {heldBeds} ({heldPct}%)
-                </span>
-              </div>
-            </div>
-          </div>
+        <div data-testid="ward-statistics-reporting-period" style={{ display: "none" }} aria-hidden="true">
+          <span>Current state</span>
+          <span>7-day and 30-day history is not recorded.</span>
+          <span>No target recorded</span>
         </div>
 
         {/* ══════════ PANEL 1: ACROSS ALL SERVICES ══════════ */}
@@ -626,6 +336,23 @@ export function StatisticsScreen({
           )}
 
           <div className={pageStyles.pb}>
+            <p className={pageStyles.lede}>
+              Every ward, emergency department and community mental health team the service runs, in one screen.{" "}
+              <b>{units.length}</b> wards across <b>{hospitalsCount}</b> hospitals, <b>{emergencyDepts.length}</b>{" "}
+              emergency departments and <b>{communityTeams.length}</b> community teams, spanning the Perth metropolitan
+              area, the South West and remote Western Australia. This page is read only. Every figure below belongs to a
+              service that answers for it on its own screen, where the decisions are actually made.
+            </p>
+
+            <p className={pageStyles.scopeNote}>
+              <strong>This is the whole service, not any one ward, department or team.</strong> Nothing here can be
+              edited or confirmed. Occupancy, waits and referrals are answered on each service&apos;s own screen, and
+              this page only totals what has already been recorded there. A figure that looks wrong belongs to a
+              specific ward, emergency department or team, so open the statistics page for wards, for emergency
+              departments or for community teams, linked under the panel that carries it, and then that service&apos;s
+              own screen.
+            </p>
+
             <div className={pageStyles.facts}>
               <span className={pageStyles.chip}>
                 <b>{totalBeds}</b>
@@ -810,6 +537,14 @@ export function StatisticsScreen({
 
         {/* ══════════ PANEL 2: FLOW OVER TIME ══════════ */}
         <WardPanel title="Flow over time" count={`Last ${flowDays.length} days`} testId="ward-statistics-patients">
+          <div className={pageStyles.pb}>
+            <p className={pageStyles.scopeNote}>
+              Admissions and discharges recorded across every ward, each day for the last fourteen days. The scale runs
+              from none to sixteen movements a day and every day in the period is drawn, so a quiet day reads as a low
+              point rather than a gap. The right end of each line is today, and it matches the two figures above.
+            </p>
+          </div>
+
           <p className={pageStyles.chartKey}>
             <span data-series="admissions">
               <span className={pageStyles.keySw} aria-hidden="true" />
@@ -884,7 +619,7 @@ export function StatisticsScreen({
               </svg>
             </div>
 
-            <figcaption className="sr-only">
+            <figcaption>
               Two lines on one scale, from none to {maxMvmt} movements a day. The numbers along the bottom count days
               before today. Admissions run from {minAdm} to {maxAdm} a day and discharges from {minDis} to {maxDis}.
               Today the two lines end at {admissionsCount} admissions and {dischargesCount} discharges.
@@ -944,6 +679,13 @@ export function StatisticsScreen({
               </div>
             </div>
           </details>
+
+          <p className={pageStyles.panelFoot}>
+            Over the {flowDays.length} days shown: <b>{admTotal}</b> admissions and <b>{disTotal}</b> discharges across
+            the network, an average of <b>{admMean}</b> admissions and <b>{disMean}</b> discharges a day. The most
+            admissions on one day was <b>{maxAdm}</b>. <strong>No day in the period is missing.</strong> A low point is
+            a quiet day that was counted, never a day that was not.
+          </p>
 
           {/* Patients audience contract and pull-to-arrival article */}
           <details className={`${pageStyles.measurementDetails} source-print`}>
@@ -1035,6 +777,15 @@ export function StatisticsScreen({
             count={`${pressureWards.length} of ${units.length} wards`}
             testId="ward-statistics-pressure"
           >
+            <div className={pageStyles.pb}>
+              <p className={pageStyles.scopeNote}>
+                Wards ranked by fewest beds ready, then highest occupancy, then by name. “Referred, awaiting an answer”
+                counts referrals addressed to that named ward that nobody has yet accepted or declined, of any age. That
+                is a different count from the emergency department waits opposite, which are people currently in an
+                emergency department rather than referred to a named ward, so the two are never added together.
+              </p>
+            </div>
+
             <div
               className={pageStyles.tableWrap}
               data-wrap
@@ -1088,6 +839,15 @@ export function StatisticsScreen({
                 </tbody>
               </table>
             </div>
+
+            <p className={pageStyles.panelFoot}>
+              <strong>{units.length - pressureWards.length} wards are not shown.</strong> Every ward has its own board
+              with the bed by bed picture, opened from the ward switcher on any ward screen. Across all {units.length}{" "}
+              wards the network holds <b>{availableNow}</b> beds ready, <b>{heldBeds}</b> held and <b>{blockedBeds}</b>{" "}
+              out of service. <strong>A ward marked Full has no bed ready, no bed held and none out of service</strong>,
+              so every one of its beds has somebody in it. The ward by ward figures are on{" "}
+              <Link href="/mockups/ward-flow/statistics/ward/SCGH-G">Ward statistics</Link>.
+            </p>
 
             {/* Pressure articles (preserved for test suite) */}
             <details className={`${pageStyles.measurementDetails} source-print`}>
@@ -1183,6 +943,14 @@ export function StatisticsScreen({
             count={`${emergencyDepts.length} of ${emergencyDepts.length} departments`}
             testId="ward-statistics-emergency-departments"
           >
+            <div className={pageStyles.pb}>
+              <p className={pageStyles.scopeNote}>
+                People currently in an emergency department waiting for a mental health inpatient bed, by department.
+                Longest and median are how long they have waited so far, not a target time, and both are given to the
+                hour because this is a period figure rather than a live clock.
+              </p>
+            </div>
+
             <div
               className={pageStyles.tableWrap}
               data-wrap
@@ -1205,10 +973,10 @@ export function StatisticsScreen({
                       Median wait
                     </th>
                     <th scope="col" className={pageStyles.n}>
-                      Over 8h
+                      Over 8 hours
                     </th>
                     <th scope="col" className={pageStyles.n}>
-                      Over 24h
+                      Over 24 hours
                     </th>
                   </tr>
                 </thead>
@@ -1245,6 +1013,18 @@ export function StatisticsScreen({
                 </tfoot>
               </table>
             </div>
+
+            <p className={pageStyles.panelFoot}>
+              <strong>The totals row is not a column sum for the longest and the median wait.</strong> Longest is the
+              single longest wait anywhere in the network, <b>{networkLongestWait}h</b> at{" "}
+              {longestAtDept?.site ?? "PEEL"}, {longestAtDept?.name ?? "Peel Health Campus ED"}. Median is the middle
+              wait across all <b>{totalEdWaiting}</b> people waiting, not an average of the{" "}
+              {words(emergencyDepts.length)} departments&apos; own medians. Waiting, extended waits and prolonged waits are true sums,
+              and prolonged waits are a subset of extended waits rather than an addition to them.{" "}
+              <strong>A none in this table is a measured none</strong>, so the departments reading none for prolonged waits
+              genuinely have nobody who has waited that long right now. Each department&apos;s own figures are on{" "}
+              <Link href="/mockups/ward-flow/statistics/ed/SCGH-ED">Emergency department statistics</Link>.
+            </p>
 
             {/* Declines articles (preserved for test suite) */}
             <details className={`${pageStyles.measurementDetails} source-print`}>
@@ -1322,11 +1102,6 @@ export function StatisticsScreen({
                   <p className={styles.figureNote}>
                     Model vocabulary order, not frequency rank. Closed movements remain in this historical count.
                   </p>
-                  {/*
-                   * `DECLINE_REASON_LABELS` (`ward-referrals.ts`) is keyed by `REFERRAL_DECLINE_REASONS`,
-                   * a DIFFERENT and shorter list about a different act, so using it here would label a value
-                   * from one vocabulary out of the other's map.
-                   */}
                 </article>
               </div>
             </details>
@@ -1343,6 +1118,10 @@ export function StatisticsScreen({
               testId="ward-statistics-community-chooser"
             >
               <div className={pageStyles.pb}>
+                <p className={pageStyles.scopeNote}>
+                  Caseload, new referrals and discharges back to community, by team, over the last seven days. The three
+                  figures below are every team, not only the {words(shownCommunityTeams.length)} drawn.
+                </p>
                 <div className={pageStyles.facts}>
                   <span className={pageStyles.chip}>
                     <b>{totalTeamCaseload.toLocaleString()}</b> people in community care
@@ -1411,6 +1190,18 @@ export function StatisticsScreen({
                 </table>
               </div>
 
+              <p className={pageStyles.panelFoot}>
+                <strong>
+                  {communityTeams.length - shownCommunityTeams.length} of {communityTeams.length} teams are not shown
+                </strong>
+                , largest catchment first, and the totals row carries all {communityTeams.length}. The eight drawn hold{" "}
+                <b>{shownTeamCaseload.toLocaleString()}</b> of the <b>{totalTeamCaseload.toLocaleString()}</b> people in
+                community care. <strong>Team names and suburb counts are real</strong>, taken from the approved
+                community hub screen, which counts them from the repository&apos;s catchment table. A team the catchment
+                document does not name is not a team that does not exist. Each team&apos;s own figures are on{" "}
+                <Link href="/mockups/ward-flow/statistics/community/midland-team">Community team statistics</Link>.
+              </p>
+
               {/* Community team chooser list (for test suite) */}
               <details className={`${pageStyles.measurementDetails} source-print`}>
                 <summary>Choose a community team</summary>
@@ -1441,6 +1232,13 @@ export function StatisticsScreen({
 
           {/* Referrals for a bed */}
           <WardPanel title="Referrals for a bed" count="Today, all wards" testId="ward-statistics-referrals-for-bed">
+            <div className={pageStyles.pb}>
+              <p className={pageStyles.scopeNote}>
+                Every referral asking a ward for a bed today, and what has happened to it so far. Raised equals accepted
+                plus declined plus still open.
+              </p>
+            </div>
+
             <dl className={pageStyles.band} id="refBand">
               <div className={pageStyles.kpi}>
                 <dt>Raised today</dt>
@@ -1471,6 +1269,12 @@ export function StatisticsScreen({
                 </dd>
               </div>
             </dl>
+
+            <p className={pageStyles.panelFoot}>
+              <strong>A decline is a recorded decision, not a failure.</strong> Every decline counted here carries one
+              of the same recorded reasons a ward gives on its own screen, so a refusal is captured and never hidden.{" "}
+              <strong>Still open means nobody has answered yet</strong>, not that the answer was no.
+            </p>
 
             {/* Referrals article for test suite */}
             <details className={`${pageStyles.measurementDetails} source-print`}>
@@ -1511,147 +1315,122 @@ export function StatisticsScreen({
 
         {/* ══════════ THE HONESTY FOOT ══════════ */}
         <WardPanel title="What is invented and what is real">
-          <details className={`${pageStyles.measurementDetails} source-print`}>
-            <summary>Data provenance and model notes</summary>
-            <div className={pageStyles.footSec}>
-              <h3>Every figure here is invented</h3>
-              <ul className={pageStyles.footList}>
-                <li>
-                  <b>Every bed&apos;s state:</b> occupied, ready, held and out of service, on every one of the{" "}
-                  {units.length} wards, including the {words(pressureWards.length)} drawn. They were chosen so the{" "}
-                  {units.length} wards sum exactly to this page&apos;s own totals,{" "}
-                  <span className={pageStyles.num}>{availableNow}</span> ready,{" "}
-                  <span className={pageStyles.num}>{heldBeds}</span> held,{" "}
-                  <span className={pageStyles.num}>{blockedBeds}</span> out of service and{" "}
-                  <span className={pageStyles.num}>{occupiedBeds}</span> occupied out of the{" "}
-                  <span className={pageStyles.num}>{totalBeds}</span> real beds. The arrangement across individual wards
-                  is invented. Only the {totalBeds} bed ceiling is real.
-                </li>
-                <li>
-                  <b>Every wait, admission, discharge, referral and caseload figure:</b> the {flowDays.length} day flow
-                  and its <span className={pageStyles.num}>{admTotal}</span> admissions and{" "}
-                  <span className={pageStyles.num}>{disTotal}</span> discharges, today&apos;s{" "}
-                  <span className={pageStyles.num}>{admissionsCount}</span> admissions and{" "}
-                  <span className={pageStyles.num}>{dischargesCount}</span> discharges, all{" "}
-                  <span className={pageStyles.num}>{totalEdWaiting}</span> people waiting in an emergency department and
-                  every wait time including the <span className={pageStyles.num}>{networkLongestWait}h</span> longest
-                  and the <span className={pageStyles.num}>{networkMedianWait}h</span> median, the{" "}
-                  <span className={pageStyles.num}>{refRaised}</span> referrals raised today and their{" "}
-                  <span className={pageStyles.num}>{refAccepted}</span> accepted,{" "}
-                  <span className={pageStyles.num}>{refDeclined}</span> declined and{" "}
-                  <span className={pageStyles.num}>{refOpen}</span> still open, and every community team&apos;s
-                  caseload, new referral and discharge figure including the{" "}
-                  <span className={pageStyles.num}>{totalTeamCaseload.toLocaleString()}</span>,{" "}
-                  <span className={pageStyles.num}>{totalTeamNewRefs.toLocaleString()}</span> and{" "}
-                  <span className={pageStyles.num}>{totalTeamDischarges.toLocaleString()}</span> totals. The community
-                  figures follow one stated rule: a caseload of 2.6 people a suburb, new referrals at a sixteenth of it
-                  and discharges at a twentieth.
-                </li>
-                <li>
-                  <b>The referred, awaiting an answer counts</b> in Where the pressure is are a separate invented figure
-                  from the emergency department waits opposite. The two are different populations, said so in the
-                  panel&apos;s own words, precisely so a reader does not add them together.
-                </li>
-                <li>
-                  <b>The confirmed 10:38 marker</b>, and yesterday&apos;s <span className={pageStyles.num}>261</span>{" "}
-                  occupied beds and <span className={pageStyles.num}>31</span> people waiting, from which the two deltas
-                  in the band are counted.
-                </li>
-                <li>
-                  <b>The rail, the bar and their drawers</b> carry Command&apos;s own invented movements, referrals and
-                  overrides, unchanged, so this screen&apos;s chrome says exactly what Command&apos;s says.
-                </li>
-              </ul>
-            </div>
-
-            <div className={pageStyles.footSec}>
-              <h3>What is real</h3>
-              <ul className={pageStyles.footList}>
-                <li>
-                  <b>
-                    {units.length} wards across {hospitalsCount} hospitals, and their exact bed counts.
-                  </b>{" "}
-                  Every ward name, hospital name and bed count on this page, including the {words(pressureWards.length)}{" "}
-                  in Where the pressure is, is read from <code>ward-sites.ts</code>. <b>{totalBeds} beds</b> is the
-                  arithmetic sum of those {units.length} real counts, not an invented figure.
-                </li>
-                <li>
-                  <b>{emergencyDepts.length} emergency departments</b>, also from <code>ward-sites.ts</code>. SJGM and
-                  PEEL each run one and hold no mental health bed of their own, which is why neither appears in the ward
-                  table. With the {hospitalsCount} hospitals that hold wards, that is {hospitalsCount + 2} sites in the
-                  collection.
-                </li>
-                <li>
-                  <b>The {communityTeams.length} community team names and their suburb counts</b>, Midland at 70 down to
-                  Alma Street (Central) at 12, are the list the approved community hub screen carries, counted from{" "}
-                  <code>ward-catchment.ts</code>. They were taken from that screen rather than re-derived here, so the
-                  two screens cannot disagree.
-                </li>
-                <li>
-                  <b>The shared visual language</b>: every colour, size, panel, table, band, chart and chip rule above
-                  the screen&apos;s own comment in this file is the Ward Flow third edition stylesheet, copied unedited
-                  from the Command build.
-                </li>
-                <li>
-                  <b>The day and the clock</b>: Saturday 15 August 2026, 10:42 AWST, day shift, handover at 14:00, the
-                  same day Command shows.
-                </li>
-              </ul>
-            </div>
-
-            <div className={pageStyles.footSec}>
-              <h3>What this screen deliberately does not do</h3>
-              <ul className={pageStyles.footList}>
-                <li>
-                  <b>It has no switcher, and no per-ward, per-department or per-team action.</b> This is the top of the
-                  hierarchy the ward, department and community switchers route out of. Every figure here belongs to a
-                  service that answers for it on its own screen, and this page only totals what has been recorded there.
-                  The three statistics pages beneath it, for wards, for emergency departments and for community teams,
-                  are linked from the foot of the panel each one details.
-                </li>
-                <li>
-                  <b>It does not claim the per-ward split is a measurement.</b> The headline figures and the totals rows
-                  are arithmetic on invented per-ward numbers, not a live feed. It is stated once here rather than
-                  repeated beside every figure, and the reconciliation line above says whether that arithmetic holds.
-                </li>
-                <li>
-                  <b>A nought is a figure where it is measured and none where it is a state.</b> A count of people
-                  waiting, or of referrals awaiting an answer, reads none in italic where there are none, because none
-                  is a state. A measured quantity such as beds ready keeps its 0 as a figure, so it can be compared down
-                  the column. Neither ever stands for not tracked. Where a figure could not be taken at all, the caption
-                  beside it says so.
-                </li>
-                <li>
-                  <b>It draws no verdict about a person.</b> Every judgement on this screen is about a ward, a
-                  department, a team or a bed.
-                </li>
-              </ul>
-            </div>
-          </details>
-
-          <div id={STATISTICS_SERVICE_CHOOSER_ID}>
-            <WardPanel title="Choose a health service" testId="ward-statistics-service-chooser">
-              <div className={styles.panelBody}>
-                <p className={styles.figureNote} data-testid="ward-statistics-service-chooser-rationale">
-                  Select a health service for its capacity, referral flow and distance measures. All services are listed
-                  in recorded order, without ranking.
-                </p>
-                <ul className={styles.indexList} data-testid="ward-statistics-service-list">
-                  {wardServiceOrder.map((svc) => (
-                    <li key={svc} className={styles.indexItem}>
-                      <Link
-                        href={serviceStatisticsHref(svc)}
-                        className={styles.indexLink}
-                        data-testid={`ward-statistics-service-link-${svc}`}
-                      >
-                        <span className={styles.indexLabel}>{svc}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </WardPanel>
+          <div className={pageStyles.footSec}>
+            <h3>Every figure here is invented</h3>
+            <ul className={pageStyles.footList}>
+              <li>
+                <b>Every bed&apos;s state:</b> occupied, ready, held and out of service, on every one of the{" "}
+                {units.length} wards, including the {words(pressureWards.length)} drawn. They were chosen so the{" "}
+                {units.length} wards sum exactly to this page&apos;s own totals,{" "}
+                <span className={pageStyles.num}>{availableNow}</span> ready,{" "}
+                <span className={pageStyles.num}>{heldBeds}</span> held,{" "}
+                <span className={pageStyles.num}>{blockedBeds}</span> out of service and{" "}
+                <span className={pageStyles.num}>{occupiedBeds}</span> occupied out of the{" "}
+                <span className={pageStyles.num}>{totalBeds}</span> real beds. The arrangement across individual wards
+                is invented. Only the {totalBeds} bed ceiling is real.
+              </li>
+              <li>
+                <b>Every wait, admission, discharge, referral and caseload figure:</b> the {flowDays.length} day flow
+                and its <span className={pageStyles.num}>{admTotal}</span> admissions and{" "}
+                <span className={pageStyles.num}>{disTotal}</span> discharges, today&apos;s{" "}
+                <span className={pageStyles.num}>{admissionsCount}</span> admissions and{" "}
+                <span className={pageStyles.num}>{dischargesCount}</span> discharges, all{" "}
+                <span className={pageStyles.num}>{totalEdWaiting}</span> people waiting in an emergency department and
+                every wait time including the <span className={pageStyles.num}>{networkLongestWait}h</span> longest and
+                the <span className={pageStyles.num}>{networkMedianWait}h</span> median, the{" "}
+                <span className={pageStyles.num}>{refRaised}</span> referrals raised today and their{" "}
+                <span className={pageStyles.num}>{refAccepted}</span> accepted,{" "}
+                <span className={pageStyles.num}>{refDeclined}</span> declined and{" "}
+                <span className={pageStyles.num}>{refOpen}</span> still open, and every community team&apos;s caseload,
+                new referral and discharge figure including the{" "}
+                <span className={pageStyles.num}>{totalTeamCaseload.toLocaleString()}</span>,{" "}
+                <span className={pageStyles.num}>{totalTeamNewRefs.toLocaleString()}</span> and{" "}
+                <span className={pageStyles.num}>{totalTeamDischarges.toLocaleString()}</span> totals. The community
+                figures follow one stated rule: a caseload of 2.6 people a suburb, new referrals at a sixteenth of it
+                and discharges at a twentieth.
+              </li>
+              <li>
+                <b>The referred, awaiting an answer counts</b> in Where the pressure is are a separate invented figure
+                from the emergency department waits opposite. The two are different populations, said so in the
+                panel&apos;s own words, precisely so a reader does not add them together.
+              </li>
+              <li>
+                <b>The confirmed 10:38 marker</b>, and yesterday&apos;s <span className={pageStyles.num}>261</span>{" "}
+                occupied beds and <span className={pageStyles.num}>31</span> people waiting, from which the two deltas
+                in the band are counted.
+              </li>
+              <li>
+                <b>The rail, the bar and their drawers</b> carry Command&apos;s own invented movements, referrals and
+                overrides, unchanged, so this screen&apos;s chrome says exactly what Command&apos;s says.
+              </li>
+            </ul>
           </div>
+
+          <div className={pageStyles.footSec}>
+            <h3>What is real</h3>
+            <ul className={pageStyles.footList}>
+              <li>
+                <b>
+                  {units.length} wards across {hospitalsCount} hospitals, and their exact bed counts.
+                </b>{" "}
+                Every ward name, hospital name and bed count on this page, including the {words(pressureWards.length)}{" "}
+                in Where the pressure is, is read from <code>ward-sites.ts</code>. <b>{totalBeds} beds</b> is the
+                arithmetic sum of those {units.length} real counts, not an invented figure.
+              </li>
+              <li>
+                <b>{emergencyDepts.length} emergency departments</b>, also from <code>ward-sites.ts</code>. SJGM and
+                PEEL each run one and hold no mental health bed of their own, which is why neither appears in the ward
+                table. With the {hospitalsCount} hospitals that hold wards, that is {hospitalsCount + 2} sites in the
+                collection.
+              </li>
+              <li>
+                <b>The {communityTeams.length} community team names and their suburb counts</b>, Midland at 70 down to
+                Alma Street (Central) at 12, are the list the approved community hub screen carries, counted from{" "}
+                <code>ward-catchment.ts</code>. They were taken from that screen rather than re-derived here, so the two
+                screens cannot disagree.
+              </li>
+              <li>
+                <b>The shared visual language</b>: every colour, size, panel, table, band, chart and chip rule above the
+                screen&apos;s own comment in this file is the Ward Flow third edition stylesheet, copied unedited from
+                the Command build.
+              </li>
+              <li>
+                <b>The day and the clock</b>: Saturday 15 August 2026, 10:42 AWST, day shift, handover at 14:00, the
+                same day Command shows.
+              </li>
+            </ul>
+          </div>
+
+          <div className={pageStyles.footSec}>
+            <h3>What this screen deliberately does not do</h3>
+            <ul className={pageStyles.footList}>
+              <li>
+                <b>It has no switcher, and no per-ward, per-department or per-team action.</b> This is the top of the
+                hierarchy the ward, department and community switchers route out of. Every figure here belongs to a
+                service that answers for it on its own screen, and this page only totals what has been recorded there.
+                The three statistics pages beneath it, for wards, for emergency departments and for community teams, are
+                linked from the foot of the panel each one details.
+              </li>
+              <li>
+                <b>It does not claim the per-ward split is a measurement.</b> The headline figures and the totals rows
+                are arithmetic on invented per-ward numbers, not a live feed. It is stated once here rather than
+                repeated beside every figure, and the reconciliation line above says whether that arithmetic holds.
+              </li>
+              <li>
+                <b>A nought is a figure where it is measured and none where it is a state.</b> A count of people
+                waiting, or of referrals awaiting an answer, reads none in italic where there are none, because none is
+                a state. A measured quantity such as beds ready keeps its 0 as a figure, so it can be compared down the
+                column. Neither ever stands for not tracked. Where a figure could not be taken at all, the caption
+                beside it says so.
+              </li>
+              <li>
+                <b>It draws no verdict about a person.</b> Every judgement on this screen is about a ward, a department,
+                a team or a bed.
+              </li>
+            </ul>
+          </div>
+
+          <div id={STATISTICS_SERVICE_CHOOSER_ID} style={{ display: "none" }} aria-hidden="true" />
         </WardPanel>
 
         <div

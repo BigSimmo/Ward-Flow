@@ -1520,7 +1520,7 @@
 
 .band {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
   border-top: 1px solid var(--line);
   margin: 0;
   padding: 0;
