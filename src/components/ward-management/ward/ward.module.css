@@ -2599,66 +2599,81 @@
 .glanceStrip {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 10px;
+  gap: 12px;
   align-items: stretch;
 }
 
 .glanceCard {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r1);
+  border-top: 3px solid var(--line-strong);
+  border-radius: var(--r1, 10px);
   padding: 10px 14px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 5.6rem;
+  min-height: 5.8rem;
   gap: 4px;
   position: relative;
-  box-shadow: var(--lift);
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04);
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease,
     border-color 0.15s ease;
 }
 
+.glanceCard.highlight {
+  border-top-color: var(--accent);
+}
+
+.glanceCard.good {
+  border-top-color: var(--good);
+}
+
+.glanceCard.warn {
+  border-top-color: var(--warn);
+}
+
+.glanceCard.alert {
+  border-top-color: var(--danger);
+}
+
 .glanceCard:hover {
   transform: translateY(-1px);
   border-color: var(--line-strong);
-  box-shadow: var(--lift);
+  box-shadow: 0 3px 6px rgb(var(--ward-shadow-rgb) / 0.08);
 }
 
 .glanceCard .heroCta {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-height: var(--ward-tap, 3rem);
-  padding: 3px 10px;
-  background: var(--accent);
-  color: var(--on-accent) !important;
-  border: 1px solid var(--accent);
-  border-radius: 5px;
+  gap: 4px;
   font-size: var(--t-0, 12px);
   font-weight: 600;
+  color: var(--good) !important;
   text-decoration: none !important;
-  margin-top: 4px;
-  width: 100%;
+  margin-top: 2px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  min-height: unset;
+  width: auto;
   white-space: normal;
   line-height: 1.3;
-  text-align: center;
   box-sizing: border-box;
-  box-shadow: var(--lift);
-  transition:
-    background 0.15s,
-    transform 0.1s;
+  transition: color 0.12s;
 }
 
 .glanceCard .heroCta:hover {
-  background: var(--accent-press);
-  transform: translateY(-1px);
+  color: var(--accent) !important;
+  background: transparent;
+  transform: none;
+  text-decoration: underline !important;
 }
 
 .glanceCard .heroCta span {
-  color: var(--on-accent) !important;
+  color: inherit !important;
 }
 
 .glanceTop {
@@ -2736,17 +2751,15 @@
   z-index: 20;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
-  box-shadow:
-    0 4px 6px -1px color-mix(in srgb, var(--ink) 4%, transparent),
-    0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
-  padding: 0 12px;
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04);
+  padding: 4px 8px;
   border-radius: var(--r1, 10px) var(--r1, 10px) 0 0;
 }
 
 .tabList {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   overflow-x: auto;
   scrollbar-width: none;
   margin: 0;
@@ -2760,29 +2773,33 @@
 
 .tabBtn {
   background: transparent;
-  border: 0;
-  min-height: var(--ward-tap, 48px);
-  padding: 12px 14px 11px;
-  font-size: var(--t-2, 13.5px);
+  border: 1px solid transparent;
+  min-height: 2.25rem;
+  padding: 6px 14px;
+  font-size: var(--t-1, 13px);
   font-weight: 500;
   color: var(--ink-soft);
+  border-radius: var(--r2, 6px);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   position: relative;
   white-space: nowrap;
-  transition: color 0.12s;
+  transition: all 0.12s ease;
 }
 
 .tabBtn:hover {
   color: var(--ink);
+  background: var(--surface-2);
 }
 
 .tabBtn[aria-selected="true"] {
   color: var(--ink);
   font-weight: 600;
-  box-shadow: inset 0 -3px 0 var(--gilt);
+  background: var(--surface);
+  border-color: var(--line-strong);
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.06);
 }
 
 .tabBadge {
@@ -2794,6 +2811,7 @@
   background: var(--sunk);
   color: var(--muted);
   border: 1px solid var(--line);
+  line-height: 1.2;
 }
 
 .tabBtn[aria-selected="true"] .tabBadge {
@@ -2889,18 +2907,19 @@
 
 .bedMatrixGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
 }
 
 .bedCard {
   background: var(--surface);
   border: 1px solid var(--line);
+  border-left: 4px solid var(--line-strong);
   border-radius: var(--r2, 6px);
-  padding: 12px 14px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
   transition:
     transform 0.12s,
@@ -2908,17 +2927,31 @@
     box-shadow 0.12s;
   position: relative;
   text-align: left;
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.04);
 }
 
 .bedCard:hover {
-  transform: translateY(-2px);
-  border-color: var(--accent);
-  box-shadow: var(--lift);
+  transform: translateY(-1px);
+  border-color: var(--line-strong);
+  box-shadow: 0 3px 8px rgb(var(--ward-shadow-rgb) / 0.08);
 }
 
 .bedCard.ready {
-  border: 1.5px solid var(--good);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--good);
   background: var(--surface);
+}
+
+.bedCard.occupied {
+  border-left-color: var(--ink-soft);
+}
+
+.bedCard.leave {
+  border-left-color: var(--warn);
+}
+
+.bedCard.incoming {
+  border-left-color: var(--accent);
 }
 
 .bedCard.ready .bedNum {
@@ -2927,6 +2960,7 @@
 
 .bedCard.hdu {
   border: 1px solid var(--line);
+  border-left: 4px solid var(--danger);
 }
 
 .bedCard.specialling {
@@ -3305,8 +3339,8 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
-    height: clamp(34rem, calc(100dvh - 14rem), 54rem);
-    overflow: hidden;
+    height: auto;
+    overflow: visible;
   }
 
   .attnGrid > .listSection > .sectionHeading,
@@ -3318,7 +3352,7 @@
   .attnGrid > .cardPanel > .panelBody {
     flex: 1 1 auto;
     min-height: 0;
-    overflow-y: auto;
+    overflow-y: visible;
   }
 }
 
@@ -3538,20 +3572,29 @@
 
 /* ─── Tab 2: Coming In (Inbound Intake) ───────────────────────── */
 .inboundGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .inboundCard {
   background: var(--surface);
   border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
   border-radius: var(--r2, 6px);
-  padding: 16px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  box-shadow: var(--lift);
+  gap: 10px;
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04);
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s;
+}
+
+.inboundCard:hover {
+  border-color: var(--line-strong);
+  box-shadow: 0 2px 6px rgb(var(--ward-shadow-rgb) / 0.06);
 }
 
 .inboundTop {
@@ -3559,7 +3602,7 @@
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--line);
-  padding-bottom: 10px;
+  padding-bottom: 8px;
   gap: 8px;
 }
 
@@ -3572,9 +3615,18 @@
 
 .inboundMetaGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px 14px;
   font-size: var(--t-1, 13px);
+}
+
+.inboundCardActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  flex-wrap: wrap;
 }
 
 .metaItem {
@@ -3637,14 +3689,16 @@
 
 .dischargeRow {
   display: grid;
-  grid-template-columns: 6rem 1.2fr 1fr 1fr auto;
+  grid-template-columns: 7.5rem 1.2fr 1fr 1fr auto;
   gap: 12px;
   align-items: center;
-  padding: 12px 14px;
+  padding: 10px 14px;
   background: var(--surface);
   border: 1px solid var(--line);
+  border-left: 3px solid var(--good);
   border-radius: var(--r2, 6px);
   transition: background 0.12s;
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.03);
 }
 
 .dischargeRow:hover {
@@ -3661,13 +3715,15 @@
 .leaveCard {
   background: var(--surface);
   border: 1px solid var(--line);
+  border-left: 3px solid var(--warn);
   border-radius: var(--r2, 6px);
-  padding: 14px;
+  padding: 10px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 12px;
   flex-wrap: wrap;
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.03);
 }
 
 .curfewBox {
@@ -3677,7 +3733,7 @@
   font-family: var(--mono, monospace);
   font-size: var(--t-1, 13px);
   background: var(--surface-2);
-  padding: 6px 10px;
+  padding: 4px 8px;
   border-radius: var(--r2, 6px);
   border: 1px solid var(--line);
   font-variant-numeric: tabular-nums;
@@ -3691,13 +3747,15 @@
 .barrierCard {
   background: var(--surface);
   border: 1px solid var(--line);
+  border-left: 3px solid var(--danger);
   border-radius: var(--r2, 6px);
-  padding: 12px 14px;
+  padding: 10px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.03);
 }
 
 /* ─── Tab 5: Today's Return & Shift Log ───────────────────────── */
@@ -4197,44 +4255,44 @@
 
 /* 09:30 Morning Bed Rollup Deadline & Notification Center */
 .morningRollupOverdueBanner {
-  margin: 0.75rem 0;
-  padding: 0.875rem 1.25rem;
-  background: var(--ward-warning-soft, var(--surface-2));
-  border: 1px solid var(--ward-warning, var(--line-strong));
-  border-radius: 12px;
+  margin: 0.6rem 0;
+  padding: 8px 14px;
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  border-left: 4px solid var(--warn);
+  border-radius: var(--r2, 6px);
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 1.25rem;
-  box-shadow:
-    0 4px 16px -2px rgb(var(--ward-shadow-rgb) / 0.06),
-    0 2px 6px -1px rgb(var(--ward-shadow-rgb) / 0.04);
-  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04);
 }
 
 .morningRollupBannerContent {
   display: flex;
   align-items: center;
-  gap: 0.875rem;
-  flex: 0 1 auto;
+  gap: 10px;
+  flex: 1 1 auto;
 }
 
 .morningRollupBannerIcon {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   line-height: 1;
   flex-shrink: 0;
 }
 
 .morningRollupBannerText {
   display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
   font-size: var(--t-1, 13px);
   color: var(--ink);
+  flex-wrap: wrap;
 }
 
 .morningRollupBannerText strong {
-  font-size: 0.95rem;
+  font-size: var(--t-2, 13.5px);
   font-weight: 700;
   color: var(--ink);
   letter-spacing: -0.01em;
@@ -4243,25 +4301,25 @@
 .morningRollupBannerActions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 8px;
   flex-shrink: 0;
 }
 
 .btnConfirmMorningRollup {
   background: var(--accent);
   color: var(--on-accent);
-  min-height: var(--ward-tap, 48px);
-  padding: 0 1.25rem;
+  min-height: 2.125rem;
+  padding: 0 12px;
   font-weight: 600;
   font-size: var(--t-1, 13px);
-  border-radius: var(--r2);
+  border-radius: var(--r2, 6px);
   border: 1px solid var(--accent);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  box-shadow: 0 2px 4px rgb(var(--ward-shadow-rgb) / 0.08);
+  gap: 6px;
+  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.08);
   transition:
     background 0.15s,
     transform 0.1s;

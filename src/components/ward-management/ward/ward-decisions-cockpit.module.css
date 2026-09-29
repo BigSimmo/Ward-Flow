@@ -1,347 +1,273 @@
-/* Ward Decisions Cockpit Styles - Synthesizing Option 1 and Option 2 */
+/* ═══════════════════════════════════════════════════════════════════════
+   WARD BED DECISIONS COCKPIT MODULE CSS
+   Third Edition Clinical Design System & Condensed Action Strips
+   ═══════════════════════════════════════════════════════════════════════ */
 
-.cockpitWrap {
+.container {
   display: flex;
   flex-direction: column;
-  gap: var(--ward-space-16, 16px);
+  gap: 12px;
   width: 100%;
+  color: var(--ink);
+  font-family: var(--font-geist-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
 }
 
-.cockpitBanner {
+/* Non-Duplication Contract Banner */
+.contractBanner {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--r1, 8px);
+  padding: 10px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  background: var(--surface-2, #f8fafc);
-  border: 1px solid var(--ward-border, #e2e8f0);
-  border-radius: var(--radius-md, 8px);
-  padding: 12px 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-.bannerLeft {
+.contractTitle {
+  font-size: 13.5px;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--ink);
 }
 
-.bannerTitle {
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: var(--ink, #0f172a);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.bannerRuleTag {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 700;
-  padding: 2px 7px;
-  background: var(--accent-subtle, #e0f2fe);
-  color: var(--accent-ink, #0369a1);
-  border-radius: 4px;
-}
-
-.bannerSubtext {
-  font-size: 0.85rem;
-  color: var(--muted, #64748b);
-  width: 100%;
+.contractSubtitle {
+  font-size: 12px;
+  color: var(--ink-soft);
   margin-top: 2px;
+  line-height: 1.4;
 }
 
-.bannerClock {
-  font-family: var(--font-mono, monospace);
-  font-size: 0.82rem;
-  font-weight: 600;
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--ward-border, #e2e8f0);
-  padding: 4px 10px;
-  border-radius: 20px;
-  display: inline-flex;
+.contractClock {
+  font-family: var(--font-geist-mono, ui-monospace, monospace);
+  font-size: 12px;
+  color: var(--ink-soft);
+  display: flex;
   align-items: center;
   gap: 6px;
-  color: var(--ink, #0f172a);
+  background: var(--surface-2);
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid var(--line);
 }
 
-.bannerClockDot {
+.pulseDot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--good, #16a34a);
+  background: var(--good);
+  display: inline-block;
+  box-shadow: 0 0 0 2px var(--good-soft);
 }
 
-/* ── Shift Milestone Ribbon (Option 2) ── */
-.milestonesWrap {
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--ward-border, #e2e8f0);
-  border-radius: var(--radius-md, 8px);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+/* Shift Milestone & Progress Gate Ribbon */
+.shiftRibbon {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 8px);
+  padding: 12px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-.milestonesHead {
+.ribbonHead {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 12px;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 
-.milestonesTitle {
-  font-size: 0.92rem;
-  font-weight: 700;
-  color: var(--ink, #0f172a);
+.ribbonTitle {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
-.milestonesGrid {
+.ribbonIcon {
+  font-size: 18px;
+}
+
+.ribbonMainText {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.ribbonSubText {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.gateGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: 10px;
 }
 
-.milestoneCard {
-  background: var(--surface-2, #f8fafc);
-  border: 1px solid var(--ward-border, #e2e8f0);
-  border-radius: 6px;
-  padding: 12px;
+@media (max-width: 960px) {
+  .gateGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 580px) {
+  .gateGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gateCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 9px 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  text-align: left;
-  position: relative;
+  gap: 4px;
 }
 
-.milestoneCard:hover {
-  border-color: var(--accent-ink, #0284c7);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+.gateCard:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.milestoneCard.activeWindow {
-  border-color: var(--accent-ink, #0284c7);
-  box-shadow: 0 0 0 2px var(--accent-subtle, #bae6fd);
-  background: var(--surface, #ffffff);
-}
-
-.milestoneTop {
+.gateCardTop {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
 }
 
-.milestoneGate {
-  font-family: var(--font-mono, monospace);
-  font-size: 0.72rem;
+.gateCardNum {
+  font-family: var(--font-geist-mono, ui-monospace, monospace);
+  font-size: 10px;
   font-weight: 700;
-  color: var(--muted, #64748b);
+  color: var(--muted);
   letter-spacing: 0.03em;
 }
 
-.milestoneBadge {
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.badgeComplete {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-.badgeActionDue {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.badgeWarning {
-  background: #fef3c7;
-  color: #b45309;
-}
-
-.badgeNeutral {
-  background: #e2e8f0;
-  color: #475569;
-}
-
-.milestoneName {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--ink, #0f172a);
-}
-
-.milestoneDetail {
-  font-size: 0.78rem;
-  color: var(--muted, #64748b);
+.gateCardTitle {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* ── Action Queue Filter Strip (Option 1) ── */
-.filterStrip {
+.gateCardSub {
+  font-size: 11px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gateComplete {
+  border-left: 3px solid var(--good);
+}
+
+.gateUrgent {
+  border-left: 3px solid var(--danger);
+  background: linear-gradient(90deg, var(--danger-soft) 0%, var(--surface-2) 30%);
+}
+
+.gateReady {
+  border-left: 3px solid var(--good);
+}
+
+.gatePending {
+  border-left: 3px solid var(--accent);
+}
+
+.gateActiveWindow {
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Action Queue & Filter Bar */
+.actionQueueBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
-  padding: 4px 0;
+  gap: 10px;
+  padding: 4px 2px;
 }
 
-.filterSummary {
+.queueLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.queueTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--ink, #0f172a);
 }
 
 .filterPills {
   display: flex;
   align-items: center;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 2px;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .filterPill {
-  font-size: 0.82rem;
+  font-family: inherit;
+  font-size: 12px;
   font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 20px;
-  border: 1px solid var(--ward-border, #e2e8f0);
-  background: var(--surface, #ffffff);
-  color: var(--muted, #64748b);
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
   cursor: pointer;
+  transition: all 0.15s ease;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.15s ease;
-  white-space: nowrap;
 }
 
 .filterPill:hover {
-  background: var(--surface-2, #f8fafc);
-  color: var(--ink, #0f172a);
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: var(--line-strong);
 }
 
-.filterPill.activePill {
-  background: var(--ink, #0f172a);
+.filterPill[data-active="true"] {
+  background: var(--ink);
   color: #ffffff;
-  border-color: var(--ink, #0f172a);
+  border-color: var(--ink);
 }
 
-.pillBadge {
-  font-size: 0.75rem;
-  padding: 1px 6px;
-  border-radius: 10px;
-  background: var(--surface-2, #e2e8f0);
-  color: var(--ink, #0f172a);
+/* Gate Panel Container */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 8px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
 }
 
-.activePill .pillBadge {
-  background: rgba(255, 255, 255, 0.25);
-  color: #ffffff;
-}
-
-/* ── Shift Gate Panels ── */
-.gateSection {
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--ward-border, #e2e8f0);
-  border-radius: var(--radius-md, 8px);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  transition:
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.gateSection.haloHighlight {
-  border-color: var(--accent-ink, #0284c7);
-  box-shadow: 0 0 0 3px var(--accent-subtle, #bae6fd);
-}
-
-.gateHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-  border-bottom: 1px solid var(--ward-border, #e2e8f0);
-  padding-bottom: 10px;
-}
-
-.gateTitleWrap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.gateIdTag {
-  font-family: var(--font-mono, monospace);
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 3px 8px;
-  background: #f1f5f9;
-  border-radius: 4px;
-  color: #334155;
-}
-
-.gateHeading {
-  font-size: 0.98rem;
-  font-weight: 700;
-  color: var(--ink, #0f172a);
-}
-
-.gateStatusBadge {
-  font-size: 0.78rem;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 20px;
-}
-
-/* ── Action Cards ── */
-.decisionCard {
-  border: 1px solid var(--ward-border, #e2e8f0);
-  border-radius: 6px;
-  padding: 14px 16px;
-  background: var(--surface, #ffffff);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  border-left: 4px solid var(--ward-border, #cbd5e1);
-}
-
-.decisionCard.urgentCard {
-  border-left-color: #dc2626;
-  background: #fffafa;
-}
-
-.decisionCard.barrierCard {
-  border-left-color: #d97706;
-  background: #fffdfa;
-}
-
-.decisionCard.goodCard {
-  border-left-color: #16a34a;
-  background: #fcfdfc;
-}
-
-.cardHead {
+.panelStrip {
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  padding: 8px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -349,393 +275,566 @@
   gap: 8px;
 }
 
-.cardTitle {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--ink, #0f172a);
+.panelTitleGroup {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
 }
 
-.cardTags {
+.panelTitle {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.panelBody {
+  padding: 10px 14px;
+}
+
+/* Gate 1 Capacity Row */
+.capacityRow {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
   flex-wrap: wrap;
+  gap: 12px;
+  padding: 2px 0;
 }
 
-.tagPill {
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 2px 7px;
-  border-radius: 4px;
-  background: #f1f5f9;
-  color: #475569;
-}
-
-.tagUrgent {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.tagBarrier {
-  background: #fef3c7;
-  color: #b45309;
-}
-
-.tagGood {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-.cardBody {
-  font-size: 0.88rem;
-  line-height: 1.5;
-  color: var(--ink, #1e293b);
-}
-
-.cardMeta {
+.capacityControlsWrap {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 0.8rem;
-  color: var(--muted, #64748b);
-  flex-wrap: wrap;
 }
 
-.cardActions {
-  display: flex;
+.microStepper {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
 }
 
-/* ── Primary Action Buttons ── */
-.btnPrimaryAction {
-  background: #166534;
-  color: #ffffff;
+.stepperBtn {
   border: none;
-  border-radius: 6px;
-  padding: 8px 14px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  background: transparent;
+  color: var(--ink);
+  padding: 3px 8px;
   cursor: pointer;
+  font-weight: 700;
+  font-size: 12px;
+  transition: background 0.1s ease;
+}
+
+.stepperBtn:hover {
+  background: var(--surface-2);
+}
+
+.stepperVal {
+  font-family: var(--font-geist-mono, ui-monospace, monospace);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 0 8px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.constraintPill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  transition: background 0.15s ease;
-}
-
-.btnPrimaryAction:hover {
-  background: #14532d;
-}
-
-.btnDeclineAction {
-  background: #991b1b;
-  color: #ffffff;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 14px;
-  font-size: 0.85rem;
+  font-size: 11px;
   font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: background 0.15s ease;
+  transition: all 0.12s ease;
 }
 
-.btnDeclineAction:hover {
-  background: #7f1d1d;
+.constraintPill:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
 }
 
-.btnSecondaryAction {
-  background: var(--surface, #ffffff);
-  color: var(--ink, #0f172a);
-  border: 1px solid var(--ward-border, #cbd5e1);
-  border-radius: 6px;
-  padding: 8px 14px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.15s ease;
+.constraintPill[data-active="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: rgba(47, 76, 102, 0.3);
 }
 
-.btnSecondaryAction:hover {
-  background: var(--surface-2, #f8fafc);
-  border-color: #94a3b8;
-}
-
-.btnUndoAction {
-  font-size: 0.8rem;
+.deficitBanner {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  font-size: 11.5px;
+  font-weight: 700;
   padding: 4px 10px;
   border-radius: 4px;
-  border: 1px solid var(--ward-border, #cbd5e1);
-  background: var(--surface, #ffffff);
-  color: var(--ink, #0f172a);
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Condensed Decision Card Component */
+.decisionCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 10px 14px;
+  margin-bottom: 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.decisionCard:last-child {
+  margin-bottom: 0;
+}
+
+.decisionCard:hover {
+  border-color: var(--line-strong);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.decisionCard[data-priority="urgent"] {
+  border-left: 4px solid var(--danger);
+  background: linear-gradient(90deg, var(--danger-soft) 0%, var(--surface-2) 20%);
+}
+
+.decisionCard[data-priority="ready"] {
+  border-left: 4px solid var(--good);
+  background: linear-gradient(90deg, var(--good-soft) 0%, var(--surface-2) 20%);
+}
+
+.decisionCard[data-priority="barrier"] {
+  border-left: 4px solid var(--warn);
+  background: linear-gradient(90deg, var(--warn-soft) 0%, var(--surface-2) 20%);
+}
+
+.decisionCard[data-priority="governance"] {
+  border-left: 4px solid var(--accent);
+  background: linear-gradient(90deg, var(--accent-soft) 0%, var(--surface-2) 20%);
+}
+
+.decisionCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.decisionCardMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 280px;
+}
+
+.decisionCardTitle {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.decisionCardDesc {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.decisionActions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Buttons */
+.btn {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--r2, 6px);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btnGood {
+  background: var(--good);
+  color: #ffffff;
+}
+
+.btnGood:hover {
+  filter: brightness(0.92);
+}
+
+.btnDanger {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.btnDanger:hover {
+  filter: brightness(0.92);
+}
+
+.btnOutline {
+  background: var(--surface);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.btnOutline:hover {
+  background: var(--surface-2);
+}
+
+.btnSubtle {
+  background: var(--surface-2);
+  border-color: var(--line);
+  color: var(--ink-soft);
+}
+
+.btnSubtle:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.btnSm {
+  padding: 5px 10px;
+  font-size: 11.5px;
+}
+
+/* Chips & Badges */
+.chip {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 9999px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
 
-.btnUndoAction:hover {
-  background: #f1f5f9;
+.chipGood {
+  background: var(--good-soft);
+  color: var(--good-ink);
 }
 
-/* ── Resolution Banner ── */
-.resolutionBanner {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 6px;
-  padding: 10px 14px;
+.chipDanger {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+}
+
+.chipWarn {
+  background: var(--warn-soft);
+  color: var(--warn-ink);
+}
+
+.chipAccent {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.chipNeutral {
+  background: var(--surface-3, #edf2f7);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+
+/* Decision Resolved Banner */
+.resolvedBanner {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.resolutionText {
-  font-size: 0.88rem;
-  color: #166534;
+  padding: 8px 12px;
+  border-radius: var(--r2, 6px);
+  font-size: 12px;
   font-weight: 600;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.resolutionSubtext {
-  font-size: 0.78rem;
-  color: #15803d;
-  font-weight: normal;
-}
-
-/* ── Empty State ── */
-.emptyState {
-  background: var(--surface, #ffffff);
-  border: 1px dashed var(--ward-border, #cbd5e1);
-  border-radius: var(--radius-md, 8px);
-  padding: 32px 20px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.emptyTitle {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--ink, #0f172a);
-}
-
-.emptySubtitle {
-  font-size: 0.85rem;
-  color: var(--muted, #64748b);
-  max-width: 400px;
-}
-
-/* ── Shift Audit Trail ── */
-.auditSection {
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--ward-border, #e2e8f0);
-  border-radius: var(--radius-md, 8px);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.auditHeader {
-  display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
+  animation: fadeIn 0.15s ease;
 }
 
-.auditTitle {
-  font-size: 0.92rem;
-  font-weight: 700;
-  color: var(--ink, #0f172a);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.auditSubhead {
-  font-size: 0.78rem;
-  color: var(--muted, #64748b);
+.bannerGood {
+  background: var(--good-soft);
+  color: var(--good-ink);
+  border: 1px solid rgba(34, 117, 80, 0.25);
 }
 
-.auditList {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.bannerDanger {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border: 1px solid rgba(176, 59, 46, 0.25);
+}
+
+.bannerWarn {
+  background: var(--warn-soft);
+  color: var(--warn-ink);
+  border: 1px solid rgba(130, 93, 16, 0.25);
+}
+
+.btnUndo {
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.btnUndo:hover {
+  background: var(--surface-2);
+}
+
+/* Live Shift Audit Trail */
+.auditSection {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 8px);
+  overflow: hidden;
+}
+
+.auditTable {
+  width: 100%;
+  border-collapse: collapse;
 }
 
 .auditRow {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
   gap: 12px;
-  padding: 8px 12px;
-  border-radius: 4px;
-  background: var(--surface-2, #f8fafc);
-  font-size: 0.85rem;
-  border-left: 3px solid #16a34a;
 }
 
-.auditAction {
-  font-weight: 600;
-  color: var(--ink, #0f172a);
+.auditRow:last-child {
+  border-bottom: none;
 }
 
-.auditDetail {
-  font-size: 0.8rem;
-  color: var(--muted, #64748b);
-  margin-left: 8px;
+.auditLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.auditIcon {
+  font-size: 14px;
+}
+
+.auditDesc {
+  color: var(--ink);
 }
 
 .auditMeta {
-  font-family: var(--font-mono, monospace);
-  font-size: 0.75rem;
-  color: var(--muted, #64748b);
+  font-family: var(--font-geist-mono, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--muted);
   white-space: nowrap;
 }
 
-/* ── Modal Dialogs ── */
-.modalBackdrop {
+/* Modals & Dialogs */
+.drawerBackdrop {
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(2px);
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
   padding: 16px;
 }
 
-.modalContent {
-  background: var(--surface, #ffffff);
-  border-radius: 8px;
-  width: 100%;
+.drawerDialog {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r1, 8px);
   max-width: 520px;
-  box-shadow:
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  display: flex;
-  flex-direction: column;
+  width: 100%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
   overflow: hidden;
+  animation: modalScale 0.15s ease-out;
 }
 
-.modalHeader {
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--ward-border, #e2e8f0);
+@keyframes modalScale {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.drawerHead {
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  padding: 12px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.modalTitle {
-  font-size: 1rem;
+.drawerTitle {
+  font-size: 14px;
   font-weight: 700;
-  color: var(--ink, #0f172a);
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  color: var(--ink);
+  margin: 0;
 }
 
-.modalCloseBtn {
+.drawerClose {
   background: transparent;
   border: none;
-  font-size: 1.2rem;
-  color: var(--muted, #64748b);
+  font-size: 20px;
+  line-height: 1;
+  color: var(--muted);
   cursor: pointer;
-  padding: 4px;
+  padding: 0 4px;
 }
 
-.modalBody {
-  padding: 18px;
+.drawerClose:hover {
+  color: var(--ink);
+}
+
+.drawerBody {
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
+}
+
+.drawerFoot {
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  padding: 10px 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .formGroup {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .formLabel {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--ink, #0f172a);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .formInput,
 .formSelect,
 .formTextarea {
-  padding: 8px 12px;
-  border: 1px solid var(--ward-border, #cbd5e1);
-  border-radius: 6px;
-  font-size: 0.88rem;
-  background: var(--surface, #ffffff);
-  color: var(--ink, #0f172a);
   font-family: inherit;
+  font-size: 12.5px;
+  padding: 8px 10px;
+  border-radius: var(--r2, 6px);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  outline: none;
 }
 
-.formTextarea {
-  min-height: 90px;
-  resize: vertical;
+.formInput:focus,
+.formSelect:focus,
+.formTextarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
-.modalFooter {
-  padding: 12px 18px;
-  border-top: 1px solid var(--ward-border, #e2e8f0);
-  background: var(--surface-2, #f8fafc);
+/* Toast */
+.toastBox {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--ink);
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: var(--r2, 6px);
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
+  gap: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.25);
+  z-index: 1100;
+  animation: toastSlide 0.2s ease-out;
 }
 
-/* ── Mobile Responsive Rules ── */
-@media (max-width: 768px) {
-  .milestonesGrid {
-    grid-template-columns: 1fr;
-    gap: 8px;
+@keyframes toastSlide {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-  .filterStrip {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.toastClose {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+  cursor: pointer;
+  margin-left: 6px;
+}
 
-  .filterPills {
-    width: 100%;
-  }
+.toastClose:hover {
+  color: #ffffff;
+}
 
-  .cardHead {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .cardActions {
-    width: 100%;
-    flex-direction: column;
-  }
-
-  .cardActions button {
-    width: 100%;
-    justify-content: center;
-  }
+.protoBanner {
+  font-family: var(--font-geist-mono, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  padding: 12px;
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
 }

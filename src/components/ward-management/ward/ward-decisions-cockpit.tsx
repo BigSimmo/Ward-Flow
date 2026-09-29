@@ -1,1167 +1,1284 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import type { Unit } from "@/components/ward-management/ward-model";
 import styles from "./ward-decisions-cockpit.module.css";
 
-interface WardDecisionsCockpitProps {
-  unit: Unit;
-}
-
-interface AuditEvent {
+interface AuditRecord {
   id: string;
+  icon: string;
   title: string;
   detail: string;
   time: string;
-  actor: string;
+  author: string;
+}
+
+export interface WardDecisionsCockpitProps {
+  unit: Unit;
 }
 
 export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
-  // State for decisions
-  const physicalBeds = unit.beds > 0 ? unit.beds : 20;
+  // ─── Shift Capacity Handshake (Gate 1) ───
+  const physicalBeds = unit.beds ?? 20;
   const occupiedBeds = 18;
-  const [staffedBeds, setStaffedBeds] = useState<number>(18);
-  const [handshakeConfirmed, setHandshakeConfirmed] = useState<boolean>(true);
+  const [staffedBeds, setStaffedBeds] = useState(18);
+  const [censusAffirmed, setCensusAffirmed] = useState(true);
+  const [limiters, setLimiters] = useState({
+    specialling: true,
+    deficit: false,
+    maintenance: false,
+    genderLock: true,
+  });
 
-  const [intakeDecision, setIntakeDecision] = useState<"pending" | "accepted" | "declined" | "mo_requested">("pending");
-  const [departureDecision, setDepartureDecision] = useState<"pending" | "authorized">("pending");
-  const [ndisDecision, setNdisDecision] = useState<"pending" | "escalated" | "postponed">("pending");
-  const [s17Decision, setS17Decision] = useState<"pending" | "returned" | "extended" | "breached">("pending");
-  const [bed06Decision, setBed06Decision] = useState<"blocked" | "lifted">("blocked");
+  // ─── Decisions States (Gates 2, 3, 4) ───
+  const [intakeState, setIntakeState] = useState<"pending" | "accepted" | "declined" | "deferred">("pending");
+  const [keiraState, setKeiraState] = useState<"pending" | "authorized" | "delayed">("pending");
+  const [rowanState, setRowanState] = useState<"pending" | "escalated" | "postponed">("pending");
+  const [marcusState, setMarcusState] = useState<"pending" | "returned" | "extended" | "awol">("pending");
+  const [bed06State, setBed06State] = useState<"restricted" | "cleared">("restricted");
 
+  // ─── Modals & UI States ───
   const [activeFilter, setActiveFilter] = useState<"all" | "urgent" | "barriers" | "governance">("all");
-  const [highlightedGate, setHighlightedGate] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  // Modals
-  const [mdtModalOpen, setMdtModalOpen] = useState(false);
-  const [mdtCategory, setMdtCategory] = useState("NDIS Housing Lease / SIL Barrier");
-  const [mdtText, setMdtText] = useState("Awaiting NDIS accommodation provider call back.");
-
   const [declineModalOpen, setDeclineModalOpen] = useState(false);
-  const [declineReason, setDeclineReason] = useState("clinical_mismatch");
-  const [declineNotes, setDeclineNotes] = useState("");
+  const [barrierModalOpen, setBarrierModalOpen] = useState(false);
+  const [handoverModalOpen, setHandoverModalOpen] = useState(false);
+  const [toastText, setToastText] = useState<string | null>(null);
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Audit Trail
-  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([
+  // Form selections
+  const [declineReason, setDeclineReason] = useState("acuity");
+  const [barrierPathway, setBarrierPathway] = useState("social-work");
+
+  // ─── Real-Time Audit Log ───
+  const [auditLog, setAuditLog] = useState<AuditRecord[]>([
     {
       id: "a1",
+      icon: "✓",
       title: "Morning Shift Roll-up Signed Off",
       detail: "Declared 18 staffed / 20 physical beds (1:1 specialling limiter recorded)",
       time: "10:22 AWST",
-      actor: `NUM ${unit.name || "Dabakarn"}`,
+      author: `NUM ${unit.name}`,
     },
     {
       id: "a2",
+      icon: "✓",
       title: "Bed 02 Released to Turnover",
       detail: "Discharge handover signed off; bed cleared for sanitization",
       time: "09:15 AWST",
-      actor: "Shift Coordinator Taylor",
+      author: "Shift Coordinator Taylor",
     },
   ]);
 
-  function showToast(msg: string) {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage((cur) => (cur === msg ? null : cur));
-    }, 3500);
-  }
-
-  function addAudit(title: string, detail: string, actor = `NUM ${unit.name || "Dabakarn"}`) {
-    const now = new Date();
-    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} AWST`;
-    setAuditEvents((prev) => [{ id: "aud-" + Date.now(), title, detail, time: timeStr, actor }, ...prev]);
-  }
-
-  // Keyboard accessibility for modals
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        setMdtModalOpen(false);
-        setDeclineModalOpen(false);
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+  const showToast = useCallback((msg: string) => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setToastText(msg);
+    toastTimeoutRef.current = setTimeout(() => {
+      setToastText(null);
+    }, 3200);
   }, []);
 
-  function jumpToGate(gateId: string) {
-    setActiveFilter("all");
-    setHighlightedGate(gateId);
-    const el = document.getElementById(gateId);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-    setTimeout(() => {
-      setHighlightedGate((cur) => (cur === gateId ? null : cur));
-    }, 2500);
-  }
+  const addAuditItem = useCallback(
+    (icon: string, title: string, detail: string) => {
+      const nowTime = new Date().toLocaleTimeString("en-AU", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Australia/Perth",
+      });
+      const newItem: AuditRecord = {
+        id: `aud-${Date.now()}`,
+        icon,
+        title,
+        detail,
+        time: `${nowTime} AWST`,
+        author: `NUM ${unit.name}`,
+      };
+      setAuditLog((prev) => [newItem, ...prev]);
+    },
+    [unit.name],
+  );
 
-  // Derived counts for filters
-  const urgentCount = (intakeDecision === "pending" ? 1 : 0) + (departureDecision === "pending" ? 1 : 0);
-  const barrierCount = ndisDecision === "pending" ? 1 : 0;
-  const governanceCount = (s17Decision === "pending" ? 1 : 0) + (bed06Decision === "blocked" ? 1 : 0);
+  // ─── Actions & Handlers ───
+  const toggleLimiter = (key: keyof typeof limiters) => {
+    setLimiters((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
-  const hasStaffingDeficit = staffedBeds < occupiedBeds;
+  const adjustStaffed = (delta: number) => {
+    setStaffedBeds((prev) => Math.max(1, Math.min(physicalBeds, prev + delta)));
+  };
+
+  const affirmCensus = () => {
+    setCensusAffirmed(true);
+    addAuditItem(
+      "✓",
+      "Capacity Declaration Re-Affirmed",
+      `Staffed capacity verified at ${staffedBeds} of ${physicalBeds} beds.`,
+    );
+    showToast(`Staffed capacity affirmed: ${staffedBeds} beds`);
+  };
+
+  // Intake Handlers
+  const handleAcceptIntake = () => {
+    setIntakeState("accepted");
+    addAuditItem(
+      "✓",
+      "Inbound Referral Accepted",
+      "Aaron K. allocated to Bed 04 upon departure of Keira Pellingworth (Form 3A).",
+    );
+    showToast("Aaron K. accepted into Bed 04");
+  };
+
+  const handleDeclineIntakeSubmit = () => {
+    setIntakeState("declined");
+    setDeclineModalOpen(false);
+    addAuditItem(
+      "✕",
+      "Referral Declined",
+      `Aaron K. declined: Reason: ${declineReason}. Escalated to Central Bed Flow.`,
+    );
+    showToast("Referral declined and logged to Central Bed Flow");
+  };
+
+  const handleDeferIntake = () => {
+    setIntakeState("deferred");
+    addAuditItem("⏳", "ED MO Review Requested", "Aaron K. deferred pending emergency medical officer reassessment.");
+    showToast("ED MO Review requested. SLA timer paused.");
+  };
+
+  const handleUndoIntake = () => {
+    setIntakeState("pending");
+    addAuditItem("↺", "Intake Decision Reversed", "Aaron K. returned to pending intake triage.");
+    showToast("Intake decision undone");
+  };
+
+  // Departure Handlers
+  const handleAuthorizeDeparture = () => {
+    setKeiraState("authorized");
+    addAuditItem(
+      "✓",
+      "Departure Authorized",
+      "Keira Pellingworth departed ward. Bed 04 vacated and released for turnover cleaning.",
+    );
+    showToast("Keira P. departed · Bed 04 released to cleaning");
+  };
+
+  const handleUndoDeparture = () => {
+    setKeiraState("pending");
+    addAuditItem("↺", "Departure Authorization Rolled Back", "Keira Pellingworth returned to active census.");
+    showToast("Departure authorization undone");
+  };
+
+  // Barrier Handlers
+  const handleEscalateBarrierSubmit = () => {
+    setRowanState("escalated");
+    setBarrierModalOpen(false);
+    addAuditItem(
+      "📞",
+      "Discharge Barrier Escalated",
+      `Rowan Ross (Bed 11) escalated to ${barrierPathway} for urgent NDIS housing resolution.`,
+    );
+    showToast("Barrier escalated to Social Work & Flow Manager");
+  };
+
+  const handlePostponeDischarge = () => {
+    setRowanState("postponed");
+    addAuditItem("⏳", "Discharge Postponed", "Rowan Ross (Bed 11) discharge deferred to tomorrow.");
+    showToast("Discharge postponed to tomorrow");
+  };
+
+  const handleUndoBarrier = () => {
+    setRowanState("pending");
+    addAuditItem("↺", "Barrier Escalation Rolled Back", "Rowan Ross returned to active barrier review.");
+    showToast("Barrier escalation undone");
+  };
+
+  // Marcus Leave Handlers
+  const handleConfirmReturn = () => {
+    setMarcusState("returned");
+    addAuditItem("✓", "S17 Leave Return Confirmed", "Marcus V. returned safely to Bed 12. Mental state exam verified.");
+    showToast("Marcus V. confirmed returned to ward");
+  };
+
+  const handleExtendLeave = () => {
+    setMarcusState("extended");
+    addAuditItem("⏳", "S17 Leave Window Extended", "Marcus V. leave extended by 2 hours (New return: 15:00 AWST).");
+    showToast("Leave window extended (+2h)");
+  };
+
+  const handleDeclareAwol = () => {
+    setMarcusState("awol");
+    addAuditItem("🚨", "Leave Breach / AWOL Declared", "Marcus V. declared AWOL under MHA 2014 Part 7.");
+    showToast("AWOL alert broadcast to hospital security");
+  };
+
+  const handleUndoMarcus = () => {
+    setMarcusState("pending");
+    addAuditItem("↺", "Leave Decision Rolled Back", "Marcus V. returned to pending leave return queue.");
+    showToast("Leave decision undone");
+  };
+
+  // Bed 06 Handlers
+  const handleLiftBed06 = () => {
+    setBed06State("cleared");
+    addAuditItem(
+      "✓",
+      "Bed Safety Precaution Lifted",
+      "Bed 06 droplet contact restriction lifted following UV air scrub verification.",
+    );
+    showToast("Bed 06 cleared and released to intake pool");
+  };
+
+  const handleRestoreBed06 = () => {
+    setBed06State("restricted");
+    addAuditItem("↺", "Restriction Re-Imposed", "Bed 06 droplet restriction re-imposed.");
+    showToast("Bed 06 restriction re-imposed");
+  };
+
+  // Scroll to gate
+  const jumpToGate = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  // Calculate active pending counts
+  const pendingIntakes = intakeState === "pending" ? 1 : 0;
+  const pendingDepartures = keiraState === "pending" ? 1 : 0;
+  const pendingBarriers = rowanState === "pending" ? 1 : 0;
+  const pendingLeave = marcusState === "pending" ? 1 : 0;
+  const totalPending = pendingIntakes + pendingDepartures + pendingBarriers + pendingLeave;
 
   return (
-    <div className={styles.cockpitWrap} id="wardDecisionsCockpit">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div
-          role="status"
-          style={{
-            position: "fixed",
-            bottom: "24px",
-            right: "24px",
-            zIndex: 10000,
-            background: "#0f172a",
-            color: "#ffffff",
-            padding: "12px 20px",
-            borderRadius: "6px",
-            boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.3)",
-            fontSize: "0.88rem",
-            fontWeight: 600,
-          }}
-        >
-          {toastMessage}
-        </div>
-      )}
-
-      {/* ── Top Decision Banner ── */}
-      <section className={styles.cockpitBanner} aria-label="Pure Decision Cockpit Protocol">
-        <div className={styles.bannerLeft}>
-          <span className={styles.bannerTitle}>💡 Pure Ward Decision &amp; Sign-Off Cockpit</span>
-          <span className={styles.bannerRuleTag}>NON-DUPLICATION RULE APPLIED</span>
-          <p className={styles.bannerSubtext}>
-            This tab strictly contains <strong>clinical &amp; operational human sign-offs</strong> required from ward
-            staff. Physical bed states live on <strong>Beds ({physicalBeds})</strong>, patient transport journeys on{" "}
-            <strong>Arrivals (2)</strong>, and pharmacy scripts/TTAs on <strong>Discharges (15)</strong>.
-          </p>
-        </div>
-        <div className={styles.bannerClock}>
-          <span className={styles.bannerClockDot} />
-          <span>Shift Clock: 12:29 AWST</span>
-        </div>
-      </section>
-
-      {/* ── Shift Decision Milestones & Progress Gates (Option 2) ── */}
-      <section className={styles.milestonesWrap} aria-label="Shift Milestones & Progress Gates">
-        <div className={styles.milestonesHead}>
-          <div className={styles.milestonesTitle}>
-            <span>⏱️</span>
-            <span>Shift Decision Milestones &amp; Progress Gates</span>
-            <small style={{ fontWeight: "normal", color: "var(--muted)", marginLeft: "6px" }}>
-              Chronological clinical gates for {unit.name || "Dabakarn"} Day Shift (07:00–15:30) · Click gate to
-              navigate
-            </small>
+    <div className={styles.container}>
+      {/* ─── Header Non-Duplication Contract Banner ─── */}
+      <div className={styles.contractBanner}>
+        <div>
+          <div className={styles.contractTitle}>
+            <span>🛡️ Pure Ward Decision &amp; Sign-Off Cockpit</span>
+            <span
+              className={`${styles.chip} ${styles.chipNeutral}`}
+              style={{ fontSize: "10px", textTransform: "uppercase" }}
+            >
+              Non-Duplication Rule Applied
+            </span>
           </div>
-          <span className={styles.bannerClock} style={{ fontSize: "0.78rem" }}>
-            <span className={styles.bannerClockDot} />
-            <span>Current: 12:29 AWST (Midday Window)</span>
+          <div className={styles.contractSubtitle}>
+            This tab strictly contains <strong>clinical &amp; operational human sign-offs</strong> required from ward
+            staff. Physical bed states live on <strong>Beds ({unit.beds})</strong>, patient transit on{" "}
+            <strong>Arrivals</strong>, and pharmacy scripts on <strong>Discharges</strong>.
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnOutline} ${styles.btnSm}`}
+            onClick={() => setHandoverModalOpen(true)}
+          >
+            📋 Handover Summary
+          </button>
+          <div className={styles.contractClock}>
+            <span className={styles.pulseDot} />
+            <span>
+              Shift Clock: <strong>12:29 AWST</strong>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Shift Milestone Progress Ribbon ─── */}
+      <div className={styles.shiftRibbon}>
+        <div className={styles.ribbonHead}>
+          <div className={styles.ribbonTitle}>
+            <span className={styles.ribbonIcon}>⏱️</span>
+            <div>
+              <div className={styles.ribbonMainText}>Shift Decision Milestones &amp; Progress Gates</div>
+              <div className={styles.ribbonSubText}>
+                Chronological clinical gates for {unit.name} Day Shift (07:00–15:30) · Click gate to navigate
+              </div>
+            </div>
+          </div>
+          <div className={styles.contractClock}>
+            <span className={styles.pulseDot} />
+            <span>
+              Current: <strong>12:29 AWST</strong> (Midday Window)
+            </span>
+          </div>
+        </div>
+
+        <div className={styles.gateGrid}>
+          {/* Gate 1 Card */}
+          <div
+            className={`${styles.gateCard} ${styles.gateComplete}`}
+            onClick={() => jumpToGate("gate-1-section")}
+            role="button"
+            tabIndex={0}
+          >
+            <div className={styles.gateCardTop}>
+              <span className={styles.gateCardNum}>GATE 1 · 07:00–09:30</span>
+              <span className={`${styles.chip} ${styles.chipGood}`}>✓ Complete</span>
+            </div>
+            <div className={styles.gateCardTitle}>Morning Handshake</div>
+            <div className={styles.gateCardSub}>
+              {staffedBeds} Staffed / {physicalBeds} Physical · Specialling noted
+            </div>
+          </div>
+
+          {/* Gate 2 Card */}
+          <div
+            className={`${styles.gateCard} ${intakeState === "pending" ? styles.gateUrgent : styles.gateComplete}`}
+            onClick={() => jumpToGate("gate-2-section")}
+            role="button"
+            tabIndex={0}
+          >
+            <div className={styles.gateCardTop}>
+              <span className={styles.gateCardNum}>GATE 2 · 09:30–13:00</span>
+              <span className={`${styles.chip} ${intakeState === "pending" ? styles.chipDanger : styles.chipGood}`}>
+                {intakeState === "pending" ? "🚨 Action Due" : "✓ Complete"}
+              </span>
+            </div>
+            <div className={styles.gateCardTitle}>Intake &amp; Admission Sign-off</div>
+            <div className={styles.gateCardSub}>
+              {intakeState === "pending" ? "Aaron K. (45m ED SLA) · Bed 04 proposed" : "Bed 04 allocated to Aaron K."}
+            </div>
+          </div>
+
+          {/* Gate 3 Card */}
+          <div
+            className={`${styles.gateCard} ${keiraState === "pending" || rowanState === "pending" ? styles.gateReady : styles.gateComplete} ${styles.gateActiveWindow}`}
+            onClick={() => jumpToGate("gate-3-section")}
+            role="button"
+            tabIndex={0}
+          >
+            <div className={styles.gateCardTop}>
+              <span className={styles.gateCardNum}>GATE 3 · 11:00–14:00</span>
+              <span
+                className={`${styles.chip} ${keiraState === "pending" || rowanState === "pending" ? styles.chipWarn : styles.chipGood}`}
+              >
+                {keiraState === "pending" ? "⚠️ 1 Release Ready" : "✓ All Released"}
+              </span>
+            </div>
+            <div className={styles.gateCardTitle}>Departures &amp; Barrier Escalation</div>
+            <div className={styles.gateCardSub}>
+              {keiraState === "pending"
+                ? "Keira P. release ready · Rowan NDIS delay"
+                : "Keira departed · Turnover clean ordered"}
+            </div>
+          </div>
+
+          {/* Gate 4 Card */}
+          <div
+            className={`${styles.gateCard} ${marcusState === "pending" ? styles.gatePending : styles.gateComplete}`}
+            onClick={() => jumpToGate("gate-4-section")}
+            role="button"
+            tabIndex={0}
+          >
+            <div className={styles.gateCardTop}>
+              <span className={styles.gateCardNum}>GATE 4 · 14:00–18:00</span>
+              <span className={`${styles.chip} ${marcusState === "pending" ? styles.chipAccent : styles.chipGood}`}>
+                {marcusState === "pending" ? "⏳ Due 13:00" : "✓ Leave Verified"}
+              </span>
+            </div>
+            <div className={styles.gateCardTitle}>S17 Leave &amp; Afternoon Census</div>
+            <div className={styles.gateCardSub}>
+              {marcusState === "pending"
+                ? "Marcus V. leave due 13:00 · Bed 06 block"
+                : "Marcus return confirmed · Bed 06 ready"}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Action Queue Header & Filter Pills ─── */}
+      <div className={styles.actionQueueBar}>
+        <div className={styles.queueLeft}>
+          <div className={styles.queueTitle}>
+            <span>Action Queue</span>
+            {totalPending > 0 ? (
+              <span className={`${styles.chip} ${styles.chipDanger}`}>
+                {totalPending} Decision{totalPending === 1 ? "" : "s"} Awaiting Action
+              </span>
+            ) : (
+              <span className={`${styles.chip} ${styles.chipGood}`}>✓ All Shift Decisions Executed</span>
+            )}
+          </div>
+          <span style={{ fontSize: "12px", color: "var(--muted)" }}>
+            Ranked by clinical urgency &amp; ED transfer SLA
           </span>
         </div>
 
-        <div className={styles.milestonesGrid}>
-          {/* Gate 1 */}
+        <div className={styles.filterPills} role="toolbar" aria-label="Decision Filter Controls">
           <button
             type="button"
-            className={`${styles.milestoneCard} ${highlightedGate === "gate-1" ? styles.activeWindow : ""}`}
-            onClick={() => jumpToGate("gate-1")}
-          >
-            <div className={styles.milestoneTop}>
-              <span className={styles.milestoneGate}>GATE 1 · 07:00–09:30</span>
-              {hasStaffingDeficit ? (
-                <span className={`${styles.milestoneBadge} ${styles.badgeActionDue}`}>⚠️ Deficit (Overcapacity)</span>
-              ) : (
-                <span className={`${styles.milestoneBadge} ${styles.badgeComplete}`}>✓ Complete</span>
-              )}
-            </div>
-            <div className={styles.milestoneName}>Morning Handshake</div>
-            <div className={styles.milestoneDetail}>
-              {hasStaffingDeficit
-                ? `${staffedBeds} Staffed < ${occupiedBeds} Occupied · Deficit Escalation`
-                : `${staffedBeds} Staffed / ${physicalBeds} Physical · Handshake verified`}
-            </div>
-          </button>
-
-          {/* Gate 2 */}
-          <button
-            type="button"
-            className={`${styles.milestoneCard} ${highlightedGate === "gate-2" ? styles.activeWindow : ""}`}
-            onClick={() => jumpToGate("gate-2")}
-          >
-            <div className={styles.milestoneTop}>
-              <span className={styles.milestoneGate}>GATE 2 · 09:30–13:00</span>
-              {intakeDecision === "pending" ? (
-                <span className={`${styles.milestoneBadge} ${styles.badgeActionDue}`}>🚨 Action Due</span>
-              ) : (
-                <span className={`${styles.milestoneBadge} ${styles.badgeComplete}`}>✓ Complete</span>
-              )}
-            </div>
-            <div className={styles.milestoneName}>Intake &amp; Admission Sign-off</div>
-            <div className={styles.milestoneDetail}>
-              {intakeDecision === "pending"
-                ? "Aaron K. (45m ED SLA) · Bed 04 proposed"
-                : intakeDecision === "accepted"
-                  ? "Aaron K. allocated to Bed 04"
-                  : intakeDecision === "declined"
-                    ? "Aaron K. referral declined"
-                    : "ED MO review requested"}
-            </div>
-          </button>
-
-          {/* Gate 3 */}
-          <button
-            type="button"
-            className={`${styles.milestoneCard} ${highlightedGate === "gate-3" ? styles.activeWindow : ""}`}
-            onClick={() => jumpToGate("gate-3")}
-          >
-            <div className={styles.milestoneTop}>
-              <span className={styles.milestoneGate}>GATE 3 · 11:00–14:00</span>
-              {departureDecision === "pending" || ndisDecision === "pending" ? (
-                <span className={`${styles.milestoneBadge} ${styles.badgeWarning}`}>
-                  {departureDecision === "pending" ? "1 Release Ready" : "0 Release"} ·{" "}
-                  {ndisDecision === "pending" ? "1 Barrier Active" : "0 Barrier"}
-                </span>
-              ) : (
-                <span className={`${styles.milestoneBadge} ${styles.badgeComplete}`}>✓ Complete</span>
-              )}
-            </div>
-            <div className={styles.milestoneName}>Departures &amp; Barrier Escalation</div>
-            <div className={styles.milestoneDetail}>
-              {departureDecision === "authorized" ? "Keira departed" : "Keira P. release ready"} ·{" "}
-              {ndisDecision === "escalated" ? "Rowan escalated to SW" : "Rowan NDIS delay"}
-            </div>
-          </button>
-
-          {/* Gate 4 */}
-          <button
-            type="button"
-            className={`${styles.milestoneCard} ${highlightedGate === "gate-4" ? styles.activeWindow : ""}`}
-            onClick={() => jumpToGate("gate-4")}
-          >
-            <div className={styles.milestoneTop}>
-              <span className={styles.milestoneGate}>GATE 4 · 14:00–18:00</span>
-              {s17Decision === "pending" || bed06Decision === "blocked" ? (
-                <span className={`${styles.milestoneBadge} ${styles.badgeNeutral}`}>⏳ Due 13:00</span>
-              ) : (
-                <span className={`${styles.milestoneBadge} ${styles.badgeComplete}`}>✓ Complete</span>
-              )}
-            </div>
-            <div className={styles.milestoneName}>S17 Leave &amp; Afternoon Census</div>
-            <div className={styles.milestoneDetail}>
-              {s17Decision === "returned" ? "Marcus returned" : "Marcus V. leave due 13:00"} ·{" "}
-              {bed06Decision === "lifted" ? "Bed 06 cleared" : "Bed 06 block"}
-            </div>
-          </button>
-        </div>
-      </section>
-
-      {/* ── Action Queue Filter Strip (Option 1) ── */}
-      <section className={styles.filterStrip} aria-label="Action Queue Filters">
-        <div className={styles.filterSummary}>
-          <span>Action Queue</span>
-          {urgentCount > 0 ? (
-            <span style={{ color: "#dc2626", fontWeight: 700 }}>{urgentCount} Decisions Awaiting Immediate Action</span>
-          ) : (
-            <span style={{ color: "#16a34a", fontWeight: 700 }}>All Shift Actions Signed Off ✓</span>
-          )}
-          {barrierCount > 0 && (
-            <span style={{ color: "#d97706", fontWeight: 600 }}>&middot; {barrierCount} Flow Barrier</span>
-          )}
-        </div>
-
-        <div className={styles.filterPills}>
-          <button
-            type="button"
-            className={`${styles.filterPill} ${activeFilter === "all" ? styles.activePill : ""}`}
+            className={styles.filterPill}
+            data-active={activeFilter === "all"}
             onClick={() => setActiveFilter("all")}
           >
-            <span>All Gates</span>
-            <span className={styles.pillBadge}>4</span>
+            All Gates (4)
           </button>
-
           <button
             type="button"
-            className={`${styles.filterPill} ${activeFilter === "urgent" ? styles.activePill : ""}`}
+            className={styles.filterPill}
+            data-active={activeFilter === "urgent"}
             onClick={() => setActiveFilter("urgent")}
           >
-            <span>🚨 Immediate Actions</span>
-            <span className={styles.pillBadge}>{urgentCount}</span>
+            🚨 Immediate Actions ({pendingIntakes + pendingDepartures})
           </button>
-
           <button
             type="button"
-            className={`${styles.filterPill} ${activeFilter === "barriers" ? styles.activePill : ""}`}
+            className={styles.filterPill}
+            data-active={activeFilter === "barriers"}
             onClick={() => setActiveFilter("barriers")}
           >
-            <span>⚠️ Barriers &amp; Escalation</span>
-            <span className={styles.pillBadge}>{barrierCount}</span>
+            ⚠️ Barriers &amp; Escalation ({pendingBarriers})
           </button>
-
           <button
             type="button"
-            className={`${styles.filterPill} ${activeFilter === "governance" ? styles.activePill : ""}`}
+            className={styles.filterPill}
+            data-active={activeFilter === "governance"}
             onClick={() => setActiveFilter("governance")}
           >
-            <span>⚖️ Governance &amp; Capacity</span>
-            <span className={styles.pillBadge}>{governanceCount}</span>
+            ⚖️ Governance ({pendingLeave})
           </button>
         </div>
-      </section>
+      </div>
 
-      {/* Empty State for Immediate Actions */}
-      {activeFilter === "urgent" && urgentCount === 0 && (
-        <div className={styles.emptyState}>
-          <div style={{ fontSize: "2rem" }}>🎉</div>
-          <div className={styles.emptyTitle}>No Pending Urgent Actions</div>
-          <div className={styles.emptySubtitle}>
-            All immediate admission sign-offs and departure releases have been completed for this shift.
+      {/* ═══════════════════════════════════════════════════════════════════
+          GATE 1: SHIFT CAPACITY & STAFFING HANDSHAKE (07:00–09:30)
+          ═══════════════════════════════════════════════════════════════════ */}
+      {(activeFilter === "all" || activeFilter === "governance") && (
+        <section className={styles.panel} id="gate-1-section">
+          <div className={styles.panelStrip}>
+            <div className={styles.panelTitleGroup}>
+              <span
+                className={`${styles.chip} ${styles.chipGood}`}
+                style={{ fontFamily: "var(--font-geist-mono, monospace)", fontSize: "10.5px" }}
+              >
+                GATE 1 · 07:00–09:30
+              </span>
+              <h2 className={styles.panelTitle}>Shift Capacity &amp; Staffing Handshake</h2>
+            </div>
+            <span className={`${styles.chip} ${styles.chipGood}`}>
+              {censusAffirmed ? "✓ Morning Roll-up Verified (10:22)" : "⚠️ Re-affirmation Required"}
+            </span>
           </div>
-          <button type="button" className={styles.btnSecondaryAction} onClick={() => setActiveFilter("all")}>
-            Show All Shift Gates (4)
-          </button>
-        </div>
+
+          <div className={styles.panelBody}>
+            <div className={styles.capacityRow}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--ink)" }}>
+                    Physical vs Staffed Capacity Declaration
+                  </span>
+                  <span
+                    className={`${styles.chip} ${styles.chipNeutral}`}
+                    style={{ fontFamily: "var(--font-geist-mono, monospace)" }}
+                  >
+                    {physicalBeds} Physical · {occupiedBeds} Occupied (90%)
+                  </span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "6px", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: "11px", color: "var(--muted)", fontWeight: 600 }}>Active Limiters:</span>
+                  <button
+                    type="button"
+                    className={styles.constraintPill}
+                    data-active={limiters.specialling}
+                    onClick={() => toggleLimiter("specialling")}
+                    title="1:1 Specialling nurse assigned"
+                  >
+                    1:1 Specialling (Bed 02)
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.constraintPill}
+                    data-active={limiters.deficit}
+                    onClick={() => toggleLimiter("deficit")}
+                    title="Nursing deficit"
+                  >
+                    High Acuity Deficit
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.constraintPill}
+                    data-active={limiters.maintenance}
+                    onClick={() => toggleLimiter("maintenance")}
+                    title="Physical maintenance"
+                  >
+                    Maintenance Block
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.constraintPill}
+                    data-active={limiters.genderLock}
+                    onClick={() => toggleLimiter("genderLock")}
+                    title="Bay cohort constraint"
+                  >
+                    Bay 2 Female Lock
+                  </button>
+                </div>
+              </div>
+
+              <div className={styles.capacityControlsWrap}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <div style={{ fontSize: "11px", color: "var(--muted)", textTransform: "uppercase", fontWeight: 600 }}>
+                    Staffed:
+                  </div>
+                  <div className={styles.microStepper}>
+                    <button
+                      type="button"
+                      className={styles.stepperBtn}
+                      onClick={() => adjustStaffed(-1)}
+                      aria-label="Decrease staffed beds"
+                    >
+                      -
+                    </button>
+                    <span className={styles.stepperVal}>{staffedBeds}</span>
+                    <button
+                      type="button"
+                      className={styles.stepperBtn}
+                      onClick={() => adjustStaffed(1)}
+                      aria-label="Increase staffed beds"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      fontFamily: "var(--font-geist-mono, monospace)",
+                      color: "var(--good)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Beds
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.btnOutline} ${styles.btnSm}`}
+                  onClick={affirmCensus}
+                >
+                  <span>Re-affirm Handshake</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
       )}
 
-      {/* ── GATE 1: CAPACITY & STAFFING HANDSHAKE ── */}
-      {(activeFilter === "all" || activeFilter === "governance") && (
-        <section
-          className={`${styles.gateSection} ${highlightedGate === "gate-1" ? styles.haloHighlight : ""}`}
-          id="gate-1"
-          aria-labelledby="gate1Heading"
-        >
-          <div className={styles.gateHeader}>
-            <div className={styles.gateTitleWrap}>
-              <span className={styles.gateIdTag}>GATE 1 · 07:00–09:30</span>
-              <h3 className={styles.gateHeading} id="gate1Heading">
-                Shift Capacity &amp; Staffing Handshake
-              </h3>
+      {/* ═══════════════════════════════════════════════════════════════════
+          GATE 2: INBOUND INTAKE & ADMISSION SIGN-OFF (09:30–13:00)
+          ═══════════════════════════════════════════════════════════════════ */}
+      {(activeFilter === "all" || activeFilter === "urgent") && (
+        <section className={styles.panel} id="gate-2-section">
+          <div className={styles.panelStrip}>
+            <div className={styles.panelTitleGroup}>
+              <span
+                className={`${styles.chip} ${styles.chipDanger}`}
+                style={{ fontFamily: "var(--font-geist-mono, monospace)", fontSize: "10.5px" }}
+              >
+                GATE 2 · 09:30–13:00
+              </span>
+              <h2 className={styles.panelTitle}>Inbound Intake &amp; Admission Sign-Off</h2>
             </div>
-            {hasStaffingDeficit ? (
-              <span className={`${styles.gateStatusBadge} ${styles.badgeActionDue}`}>
-                ⚠️ Staffing Deficit · Pending Re-affirmation
-              </span>
-            ) : (
-              <span className={`${styles.gateStatusBadge} ${styles.badgeComplete}`}>
-                ✓ Morning Roll-up Verified (10:22)
-              </span>
-            )}
+            <span className={`${styles.chip} ${intakeState === "pending" ? styles.chipDanger : styles.chipGood}`}>
+              {intakeState === "pending" ? "1 Clinical Decision Due Now" : "✓ Complete (Bed 04 Assigned)"}
+            </span>
           </div>
 
-          <div className={`${styles.decisionCard} ${hasStaffingDeficit ? styles.urgentCard : styles.goodCard}`}>
-            <div className={styles.cardHead}>
-              <div className={styles.cardTitle}>
-                <span>Physical vs Staffed Capacity Declaration</span>
-                {handshakeConfirmed && (
-                  <span
-                    className={`${styles.statusBadge} ${styles.badgeComplete}`}
-                    style={{ fontSize: "0.75rem", padding: "2px 8px" }}
-                  >
-                    ✓ Handshake Confirmed
-                  </span>
+          <div className={styles.panelBody}>
+            {/* Aaron K. Decision Card */}
+            <div className={styles.decisionCard} data-priority="urgent">
+              <div className={styles.decisionCardHead}>
+                <div className={styles.decisionCardMeta}>
+                  <div className={styles.decisionCardTitle}>
+                    <span>Aaron K. (32M) — RPH ED Referral</span>
+                    <span className={`${styles.chip} ${styles.chipDanger}`}>45m SLA Elapsed</span>
+                    <span className={`${styles.chip} ${styles.chipNeutral}`}>Candidate for Bed 04</span>
+                  </div>
+                  <div className={styles.decisionCardDesc}>
+                    Acute Bipolar Mania with Agitation. Central Bed Flow proposes admission to Bed 04 (High Obs Bay 1).
+                  </div>
+                </div>
+
+                {intakeState === "pending" ? (
+                  <div className={styles.decisionActions}>
+                    <button
+                      type="button"
+                      className={`${styles.btn} ${styles.btnGood} ${styles.btnSm}`}
+                      onClick={handleAcceptIntake}
+                    >
+                      <span>✓ Accept to Bed 04</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.btn} ${styles.btnDanger} ${styles.btnSm}`}
+                      onClick={() => setDeclineModalOpen(true)}
+                    >
+                      <span>✕ Decline</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.btn} ${styles.btnOutline} ${styles.btnSm}`}
+                      onClick={handleDeferIntake}
+                    >
+                      <span>⏳ Request ED MO Review</span>
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* Resolved Banner */}
+              {intakeState !== "pending" && (
+                <div
+                  className={`${styles.resolvedBanner} ${intakeState === "accepted" ? styles.bannerGood : styles.bannerDanger}`}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontSize: "16px" }}>{intakeState === "accepted" ? "✓" : "✕"}</span>
+                    <div>
+                      <div style={{ fontSize: "12.5px", fontWeight: 700 }}>
+                        {intakeState === "accepted" && "Inbound Referral Accepted · Allocated to Bed 04"}
+                        {intakeState === "declined" && "Referral Declined · Returned to Central Bed Flow"}
+                        {intakeState === "deferred" && "ED MO Review Requested · SLA Timer Paused"}
+                      </div>
+                      <div style={{ fontSize: "11px", opacity: 0.9 }}>
+                        {intakeState === "accepted" &&
+                          "Aaron K. admitted under MHA 2014 Form 3A. Bed allocated upon departure of Keira P."}
+                        {intakeState === "declined" &&
+                          `Clinical reason: ${declineReason}. Documented in statewide queue.`}
+                        {intakeState === "deferred" &&
+                          "Awaiting medical assessment from RPH Emergency Dept Senior Registrar."}
+                      </div>
+                    </div>
+                  </div>
+                  <button type="button" className={styles.btnUndo} onClick={handleUndoIntake}>
+                    <span>↺ Undo Decision</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          GATE 3: DEPARTURE AUTHORIZATIONS & BARRIER ESCALATION (11:00–14:00)
+          ═══════════════════════════════════════════════════════════════════ */}
+      {(activeFilter === "all" || activeFilter === "urgent" || activeFilter === "barriers") && (
+        <section className={styles.panel} id="gate-3-section">
+          <div className={styles.panelStrip}>
+            <div className={styles.panelTitleGroup}>
+              <span
+                className={`${styles.chip} ${styles.chipGood}`}
+                style={{ fontFamily: "var(--font-geist-mono, monospace)", fontSize: "10.5px" }}
+              >
+                GATE 3 · 11:00–14:00
+              </span>
+              <span className={`${styles.chip} ${styles.chipAccent}`} style={{ fontSize: "10px" }}>
+                ⚡ Current Midday Window
+              </span>
+              <h2 className={styles.panelTitle}>Departure Authorizations &amp; Barrier Escalation</h2>
+            </div>
+            <span
+              className={`${styles.chip} ${keiraState === "pending" || rowanState === "pending" ? styles.chipWarn : styles.chipGood}`}
+            >
+              {keiraState === "pending" ? "1 Release Ready · 1 Barrier Active" : "✓ Departures Cleared"}
+            </span>
+          </div>
+
+          <div className={styles.panelBody}>
+            {/* Keira Pellingworth */}
+            {(activeFilter === "all" || activeFilter === "urgent") && (
+              <div className={styles.decisionCard} data-priority="ready">
+                <div className={styles.decisionCardHead}>
+                  <div className={styles.decisionCardMeta}>
+                    <div className={styles.decisionCardTitle}>
+                      <span>Bed 04: Keira Pellingworth</span>
+                      <span className={`${styles.chip} ${styles.chipGood}`}>All Clearances Complete</span>
+                      <span className={`${styles.chip} ${styles.chipNeutral}`}>Vacates Bed 04 for Aaron K.</span>
+                    </div>
+                    <div className={styles.decisionCardDesc}>
+                      Discharge clearance complete on /discharges. Escort present at reception. Sign-off releases bed
+                      immediately to Environmental Services.
+                    </div>
+                  </div>
+
+                  {keiraState === "pending" ? (
+                    <div className={styles.decisionActions}>
+                      <button
+                        type="button"
+                        className={`${styles.btn} ${styles.btnGood} ${styles.btnSm}`}
+                        onClick={handleAuthorizeDeparture}
+                      >
+                        <span>✓ Sign Off Departure (Release Bed)</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.btn} ${styles.btnSubtle} ${styles.btnSm}`}
+                        onClick={() => {
+                          showToast("Transport escort delay flagged in handover log");
+                        }}
+                      >
+                        <span>⚠️ Flag Delay</span>
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+
+                {keiraState !== "pending" && (
+                  <div className={`${styles.resolvedBanner} ${styles.bannerGood}`}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ fontSize: "16px" }}>✓</span>
+                      <div>
+                        <div style={{ fontSize: "12.5px", fontWeight: 700 }}>
+                          Departure Authorized &amp; Bed 04 Vacated
+                        </div>
+                        <div style={{ fontSize: "11px", opacity: 0.9 }}>
+                          Released to Environmental Services for turnover cleaning. Escort verified at ward reception.
+                        </div>
+                      </div>
+                    </div>
+                    <button type="button" className={styles.btnUndo} onClick={handleUndoDeparture}>
+                      <span>↺ Undo Authorization</span>
+                    </button>
+                  </div>
                 )}
               </div>
-              <div className={styles.cardTags}>
-                <span className={styles.tagPill}>1:1 Specialling Active (Bed 02)</span>
-                <span className={styles.tagPill}>High Acuity Deficit</span>
-                <span className={styles.tagPill}>Physical Maintenance Block</span>
-                <span className={styles.tagPill}>Bay 2 Female Cohort Lock</span>
-              </div>
-            </div>
-
-            {hasStaffingDeficit && (
-              <div
-                style={{
-                  background: "#fee2e2",
-                  border: "1px solid #f87171",
-                  borderRadius: "6px",
-                  padding: "8px 12px",
-                  color: "#991b1b",
-                  fontWeight: 600,
-                  fontSize: "0.85rem",
-                }}
-              >
-                ⚠️ STAFFING DEFICIT: {occupiedBeds} Occupied &gt; {staffedBeds} Staffed Allocatable Beds! Staffing
-                deficit must be escalated.
-              </div>
             )}
 
-            <div className={styles.cardBody}>
-              {unit.name || "Dabakarn"} has <strong>{physicalBeds} physical beds</strong>. Declare staffed and
-              clinically allocatable beds for this shift.
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: "24px", flexWrap: "wrap" }}>
-              <div>
-                <span style={{ fontSize: "0.75rem", color: "var(--muted)", display: "block" }}>PHYSICAL</span>
-                <strong style={{ fontSize: "1.2rem" }}>{physicalBeds}</strong>
-              </div>
-
-              <div>
-                <span style={{ fontSize: "0.75rem", color: "var(--muted)", display: "block" }}>OCCUPIED</span>
-                <strong style={{ fontSize: "1.2rem", color: hasStaffingDeficit ? "#dc2626" : "inherit" }}>
-                  {occupiedBeds}{" "}
-                  <small style={{ fontSize: "0.8rem", fontWeight: "normal" }}>
-                    ({Math.round((occupiedBeds / staffedBeds) * 100)}% {hasStaffingDeficit ? "OVERCAPACITY" : ""})
-                  </small>
-                </strong>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "0.75rem", color: "var(--muted)", display: "block" }}>
-                  STAFFED ALLOCATABLE:
-                </span>
-                <button
-                  type="button"
-                  className={styles.btnSecondaryAction}
-                  style={{ padding: "4px 10px" }}
-                  onClick={() => {
-                    const next = Math.max(12, staffedBeds - 1);
-                    setStaffedBeds(next);
-                    setHandshakeConfirmed(false);
-                  }}
-                  title="Decrement Staffed Beds"
-                >
-                  -
-                </button>
-                <strong style={{ fontSize: "1.2rem", minWidth: "28px", textAlign: "center" }}>{staffedBeds}</strong>
-                <button
-                  type="button"
-                  className={styles.btnSecondaryAction}
-                  style={{ padding: "4px 10px" }}
-                  onClick={() => {
-                    const next = Math.min(physicalBeds, staffedBeds + 1);
-                    setStaffedBeds(next);
-                    setHandshakeConfirmed(false);
-                  }}
-                  title="Increment Staffed Beds"
-                >
-                  +
-                </button>
-              </div>
-
-              <button
-                type="button"
-                className={styles.btnPrimaryAction}
-                onClick={() => {
-                  setHandshakeConfirmed(true);
-                  addAudit(
-                    "Capacity Handshake Re-affirmed",
-                    `Declared ${staffedBeds} staffed beds / ${physicalBeds} physical beds`,
-                  );
-                  showToast("Capacity Handshake Re-affirmed");
-                }}
-              >
-                Re-affirm Handshake
-              </button>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── GATE 2: INBOUND INTAKE & ADMISSION SIGN-OFF ── */}
-      {(activeFilter === "all" || (activeFilter === "urgent" && intakeDecision === "pending")) && (
-        <section
-          className={`${styles.gateSection} ${highlightedGate === "gate-2" ? styles.haloHighlight : ""}`}
-          id="gate-2"
-          aria-labelledby="gate2Heading"
-        >
-          <div className={styles.gateHeader}>
-            <div className={styles.gateTitleWrap}>
-              <span className={styles.gateIdTag}>GATE 2 · 09:30–13:00</span>
-              <h3 className={styles.gateHeading} id="gate2Heading">
-                Inbound Intake &amp; Admission Sign-Off
-              </h3>
-            </div>
-            {intakeDecision === "pending" ? (
-              <span className={`${styles.gateStatusBadge} ${styles.badgeActionDue}`}>1 Clinical Decision Due Now</span>
-            ) : (
-              <span className={`${styles.gateStatusBadge} ${styles.badgeComplete}`}>✓ Decision Recorded</span>
-            )}
-          </div>
-
-          <div
-            className={`${styles.decisionCard} ${intakeDecision === "pending" ? styles.urgentCard : styles.goodCard}`}
-          >
-            <div className={styles.cardHead}>
-              <div className={styles.cardTitle}>
-                <span>Aaron K. (32M) — RPH Emergency Department Referral</span>
-              </div>
-              <div className={styles.cardTags}>
-                <span className={`${styles.tagPill} ${styles.tagUrgent}`}>45m Elapsed in ED (Target &le;60m)</span>
-                <span className={styles.tagPill}>Referral #9021</span>
-                <span className={styles.tagPill}>Form 3A Involuntary</span>
-              </div>
-            </div>
-
-            <div className={styles.cardBody}>
-              <strong>Diagnosis: Acute Bipolar Mania with Agitation.</strong> Central Bed Flow proposes{" "}
-              {unit.name || "Dabakarn"} Bed 04 (Bay 1, High Obs). Senior registrar assessment recommends
-              high-observation cohorting.
-            </div>
-
-            <div className={styles.cardMeta}>
-              <span>Target: Bed 04 (Allocatable Upon Departure)</span>
-              <span>&middot;</span>
-              <span>Primary Nurse: Staffing Safe Ratio Available</span>
-              <span>&middot;</span>
-              <span>WA Health Clinical Governance Compliance</span>
-            </div>
-
-            {intakeDecision === "pending" ? (
-              <div className={styles.cardActions}>
-                <button
-                  type="button"
-                  className={styles.btnPrimaryAction}
-                  onClick={() => {
-                    setIntakeDecision("accepted");
-                    addAudit(
-                      "Inbound Referral Accepted: Aaron K. allocated to Bed 04 (Form 3A)",
-                      "Allocated upon departure of Keira P.",
-                    );
-                    showToast("Aaron K. accepted to Bed 04");
-                  }}
-                >
-                  ✓ Accept to Bed 04
-                </button>
-
-                <button type="button" className={styles.btnDeclineAction} onClick={() => setDeclineModalOpen(true)}>
-                  ✕ Decline Referral
-                </button>
-
-                <button
-                  type="button"
-                  className={styles.btnSecondaryAction}
-                  onClick={() => {
-                    setIntakeDecision("mo_requested");
-                    addAudit(
-                      "Clarification Requested from ED MO",
-                      "Clarification requested regarding high-acuity nursing needs",
-                    );
-                    showToast("Clarification requested from ED Medical Officer");
-                  }}
-                >
-                  ⏳ Request ED MO Review
-                </button>
-              </div>
-            ) : (
-              <div className={styles.resolutionBanner}>
-                <div className={styles.resolutionText}>
-                  <span>
-                    ✓ Inbound Referral{" "}
-                    {intakeDecision === "accepted"
-                      ? "Accepted · Allocated to Bed 04"
-                      : intakeDecision === "declined"
-                        ? "Declined"
-                        : "ED MO Review Requested"}
-                  </span>
-                  <span className={styles.resolutionSubtext}>
-                    {intakeDecision === "accepted"
-                      ? "Aaron K. admitted under Form 3A. Bed allocated upon departure of Keira P."
-                      : intakeDecision === "declined"
-                        ? "Referral declined and redirected back to Central Bed Flow."
-                        : "Awaiting ED Medical Officer clinical review clarification."}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className={styles.btnUndoAction}
-                  onClick={() => {
-                    setIntakeDecision("pending");
-                    showToast("Aaron K. decision reversed to pending");
-                  }}
-                >
-                  ↺ Undo Decision
-                </button>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* ── GATE 3: DEPARTURE AUTHORIZATIONS & BARRIER ESCALATION ── */}
-      {(activeFilter === "all" ||
-        (activeFilter === "urgent" && departureDecision === "pending") ||
-        (activeFilter === "barriers" && ndisDecision === "pending")) && (
-        <section
-          className={`${styles.gateSection} ${highlightedGate === "gate-3" ? styles.haloHighlight : ""}`}
-          id="gate-3"
-          aria-labelledby="gate3Heading"
-        >
-          <div className={styles.gateHeader}>
-            <div className={styles.gateTitleWrap}>
-              <span className={styles.gateIdTag}>GATE 3 · 11:00–14:00</span>
-              <h3 className={styles.gateHeading} id="gate3Heading">
-                Departure Authorizations &amp; Barrier Escalation
-              </h3>
-            </div>
-            {departureDecision === "pending" || ndisDecision === "pending" ? (
-              <span className={`${styles.gateStatusBadge} ${styles.badgeWarning}`}>
-                {departureDecision === "pending" ? "1 Release Ready" : "0 Release"} ·{" "}
-                {ndisDecision === "pending" ? "1 Barrier Active" : "0 Barrier"}
-              </span>
-            ) : (
-              <span className={`${styles.gateStatusBadge} ${styles.badgeComplete}`}>
-                ✓ Departures &amp; Barriers Processed
-              </span>
-            )}
-          </div>
-
-          {/* Keira Pellingworth */}
-          {(activeFilter === "all" || activeFilter === "urgent") && (
-            <div
-              className={`${styles.decisionCard} ${
-                departureDecision === "pending" ? styles.goodCard : styles.goodCard
-              }`}
-            >
-              <div className={styles.cardHead}>
-                <div className={styles.cardTitle}>
-                  <span>Bed 04: Keira Pellingworth (UM100045)</span>
-                </div>
-                <div className={styles.cardTags}>
-                  <span className={`${styles.tagPill} ${styles.tagGood}`}>All Clearances Complete</span>
-                  <span className={styles.tagPill}>Community Return</span>
-                </div>
-              </div>
-
-              <div className={styles.cardBody}>
-                Medical clearance &amp; pharmacy discharge scripts (TTAs) completed on /discharges. Escort has arrived
-                at ward reception. Sign-off releases bed immediately to Environmental Services for turnaround cleaning.
-              </div>
-
-              <div className={styles.cardMeta}>
-                <span>Linked Action: Vacates Bed 04 for incoming referral Aaron K.</span>
-              </div>
-
-              {departureDecision === "pending" ? (
-                <div className={styles.cardActions}>
-                  <button
-                    type="button"
-                    className={styles.btnPrimaryAction}
-                    onClick={() => {
-                      setDepartureDecision("authorized");
-                      addAudit(
-                        "Clinical Bed Release Signed: Keira Pellingworth (Bed 04) cleared to turnover cleaning",
-                        "Escort verified at reception",
-                      );
-                      showToast("Keira Pellingworth departure authorized");
-                    }}
-                  >
-                    ✓ Authorize Departure &amp; Vacate Bed
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.btnSecondaryAction}
-                    onClick={() => showToast("Flagged delay for transport review")}
-                  >
-                    ⚠️ Flag Delay
-                  </button>
-                </div>
-              ) : (
-                <div className={styles.resolutionBanner}>
-                  <div className={styles.resolutionText}>
-                    <span>✓ Departure Authorized &amp; Bed 04 Vacated</span>
-                    <span className={styles.resolutionSubtext}>
-                      Released to Environmental Services for turnover cleaning (Order #3319). Escort verified.
-                    </span>
+            {/* Rowan Ross (Barrier) */}
+            {(activeFilter === "all" || activeFilter === "barriers") && (
+              <div className={styles.decisionCard} data-priority="barrier">
+                <div className={styles.decisionCardHead}>
+                  <div className={styles.decisionCardMeta}>
+                    <div className={styles.decisionCardTitle}>
+                      <span>Bed 11: Rowan Ross</span>
+                      <span className={`${styles.chip} ${styles.chipWarn}`}>
+                        Barrier: NDIS Supported Housing Unsigned
+                      </span>
+                      <span className={`${styles.chip} ${styles.chipNeutral}`}>Delay: Bed 11 Blocked</span>
+                    </div>
+                    <div className={styles.decisionCardDesc}>
+                      Clinically cleared for 48h. Accommodation lease pending SIL provider signature. Cannot be safely
+                      discharged without housing.
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    className={styles.btnUndoAction}
-                    onClick={() => {
-                      setDepartureDecision("pending");
-                      showToast("Keira departure reversed to pending");
-                    }}
+
+                  {rowanState === "pending" ? (
+                    <div className={styles.decisionActions}>
+                      <button
+                        type="button"
+                        className={`${styles.btn} ${styles.btnOutline} ${styles.btnSm}`}
+                        onClick={() => setBarrierModalOpen(true)}
+                      >
+                        <span>📞 Escalate to Social Work &amp; Flow</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.btn} ${styles.btnSubtle} ${styles.btnSm}`}
+                        onClick={handlePostponeDischarge}
+                      >
+                        <span>⏳ Postpone to Tomorrow</span>
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+
+                {rowanState !== "pending" && (
+                  <div
+                    className={`${styles.resolvedBanner} ${rowanState === "escalated" ? styles.bannerWarn : styles.bannerGood}`}
                   >
-                    ↺ Undo Authorization
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Rowan Ross - NDIS Barrier */}
-          {(activeFilter === "all" || activeFilter === "barriers") && (
-            <div
-              className={`${styles.decisionCard} ${ndisDecision === "pending" ? styles.barrierCard : styles.goodCard}`}
-            >
-              <div className={styles.cardHead}>
-                <div className={styles.cardTitle}>
-                  <span>Bed 11: Rowan Ross (UM100089)</span>
-                </div>
-                <div className={styles.cardTags}>
-                  <span className={`${styles.tagPill} ${styles.tagBarrier}`}>
-                    Barrier: NDIS Supported Housing Unsigned
-                  </span>
-                  <span className={styles.tagPill}>Bed 11</span>
-                </div>
-              </div>
-
-              <div className={styles.cardBody}>
-                Patient clinically stable and cleared by MDT for 48 hours. Accommodation lease pending SIL provider
-                signature. Patient cannot be safely discharged to no fixed address under duty of care.
-              </div>
-
-              <div className={styles.cardMeta}>
-                <span>Delay Impact: Bed 11 blocked from intake pool</span>
-                <span>&middot;</span>
-                <span>NDIS Coordinator: Pending Call Back</span>
-              </div>
-
-              {ndisDecision === "pending" ? (
-                <div className={styles.cardActions}>
-                  <button
-                    type="button"
-                    className={styles.btnSecondaryAction}
-                    onClick={() => {
-                      setNdisDecision("escalated");
-                      addAudit(
-                        "NDIS Barrier Escalated to Senior Social Work & Hospital Flow Hub",
-                        "Rowan Ross (Bed 11) - SIL Provider Delay",
-                      );
-                      showToast("Escalated to Social Work & Flow Hub");
-                    }}
-                  >
-                    📞 Escalate to Social Work &amp; Flow
-                  </button>
-
-                  <button
-                    type="button"
-                    className={styles.btnSecondaryAction}
-                    onClick={() => {
-                      setNdisDecision("postponed");
-                      addAudit(
-                        "Discharge Postponed to Tomorrow: Rowan Ross (Bed 11)",
-                        "Awaiting SIL accommodation lease",
-                      );
-                      showToast("Discharge postponed to tomorrow");
-                    }}
-                  >
-                    ⏳ Postpone to Tomorrow (Hold Bed)
-                  </button>
-
-                  <button type="button" className={styles.btnSecondaryAction} onClick={() => setMdtModalOpen(true)}>
-                    📝 Add MDT Note
-                  </button>
-                </div>
-              ) : (
-                <div className={styles.resolutionBanner}>
-                  <div className={styles.resolutionText}>
-                    <span>
-                      ✓ Barrier Handled:{" "}
-                      {ndisDecision === "escalated" ? "Escalated to Social Work & Flow Hub" : "Postponed to Tomorrow"}
-                    </span>
-                    <span className={styles.resolutionSubtext}>
-                      {ndisDecision === "escalated"
-                        ? "Flow Director notified. Senior Social Worker assigned for SIL provider liaison."
-                        : "Bed held on ward overnight. Re-evaluation scheduled for 09:00 MDT handover."}
-                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ fontSize: "16px" }}>{rowanState === "escalated" ? "📞" : "⏳"}</span>
+                      <div>
+                        <div style={{ fontSize: "12.5px", fontWeight: 700 }}>
+                          {rowanState === "escalated"
+                            ? "Discharge Barrier Escalated"
+                            : "Discharge Postponed to Tomorrow"}
+                        </div>
+                        <div style={{ fontSize: "11px", opacity: 0.9 }}>
+                          {rowanState === "escalated"
+                            ? "Urgent Social Work Senior Lead & NDIS Coordinator Liaison Dispatched."
+                            : "Patient bed held until tomorrow's morning MDT rounds."}
+                        </div>
+                      </div>
+                    </div>
+                    <button type="button" className={styles.btnUndo} onClick={handleUndoBarrier}>
+                      <span>↺ Undo Action</span>
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    className={styles.btnUndoAction}
-                    onClick={() => {
-                      setNdisDecision("pending");
-                      showToast("NDIS barrier reset to pending");
-                    }}
-                  >
-                    ↺ Reset Barrier
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+          </div>
         </section>
       )}
 
-      {/* ── GATE 4: PSYCHIATRIC LEAVE & BED RESTRICTIONS ── */}
+      {/* ═══════════════════════════════════════════════════════════════════
+          GATE 4: PSYCHIATRIC LEAVE & SAFETY RESTRICTIONS (14:00–18:00)
+          ═══════════════════════════════════════════════════════════════════ */}
       {(activeFilter === "all" || activeFilter === "governance") && (
-        <section
-          className={`${styles.gateSection} ${highlightedGate === "gate-4" ? styles.haloHighlight : ""}`}
-          id="gate-4"
-          aria-labelledby="gate4Heading"
-        >
-          <div className={styles.gateHeader}>
-            <div className={styles.gateTitleWrap}>
-              <span className={styles.gateIdTag}>GATE 4 · 14:00–18:00</span>
-              <h3 className={styles.gateHeading} id="gate4Heading">
-                Psychiatric Leave (Section 17) &amp; Bed Safety Restrictions
-              </h3>
-            </div>
-            {s17Decision === "pending" || bed06Decision === "blocked" ? (
-              <span className={`${styles.gateStatusBadge} ${styles.badgeNeutral}`}>2 Active Governance Items</span>
-            ) : (
-              <span className={`${styles.gateStatusBadge} ${styles.badgeComplete}`}>
-                ✓ All Governance Items Resolved
+        <section className={styles.panel} id="gate-4-section">
+          <div className={styles.panelStrip}>
+            <div className={styles.panelTitleGroup}>
+              <span
+                className={`${styles.chip} ${styles.chipAccent}`}
+                style={{ fontFamily: "var(--font-geist-mono, monospace)", fontSize: "10.5px" }}
+              >
+                GATE 4 · 14:00–18:00
               </span>
-            )}
+              <h2 className={styles.panelTitle}>Psychiatric Leave (Section 17) &amp; Bed Safety Restrictions</h2>
+            </div>
+            <span className={`${styles.chip} ${marcusState === "pending" ? styles.chipNeutral : styles.chipGood}`}>
+              {marcusState === "pending" ? "2 Active Governance Items" : "✓ Governance Complete"}
+            </span>
           </div>
 
-          {/* Marcus V. Section 17 Leave */}
-          <div className={`${styles.decisionCard} ${s17Decision === "pending" ? styles.goodCard : styles.goodCard}`}>
-            <div className={styles.cardHead}>
-              <div className={styles.cardTitle}>
-                <span>Mental Health Act Section 17 Leave Decision</span>
-              </div>
-              <div className={styles.cardTags}>
-                <span className={`${styles.tagPill} ${styles.tagBarrier}`}>Due Back in 31m (13:00 AWST)</span>
-                <span className={styles.tagPill}>Bed 12</span>
-              </div>
-            </div>
-
-            <div className={styles.cardBody}>
-              <strong>Marcus V. (UM100092)</strong> on approved 4-hour unescorted community day leave. Decide whether to
-              confirm safe return, grant authorized clinical extension, or declare leave breach under ward clinical
-              protocol.
-            </div>
-
-            <div className={styles.cardMeta}>
-              <span>Authorised Clinical Leave: Community Day Pass (Part 7 Div 2)</span>
-              <span>&middot;</span>
-              <span>Treating Team: Dr. R. Henderson (Consultant)</span>
-            </div>
-
-            {s17Decision === "pending" ? (
-              <div className={styles.cardActions}>
-                <button
-                  type="button"
-                  className={styles.btnPrimaryAction}
-                  onClick={() => {
-                    setS17Decision("returned");
-                    addAudit(
-                      "S17 Leave Return Confirmed: Marcus V. returned to Bed 12",
-                      "Mental State Exam completed. Section 17 leave closed.",
-                      "Dr. R. Henderson",
-                    );
-                    showToast("Marcus V. return confirmed");
-                  }}
-                >
-                  ✓ Confirm Patient Returned
-                </button>
-
-                <button
-                  type="button"
-                  className={styles.btnSecondaryAction}
-                  onClick={() => {
-                    setS17Decision("extended");
-                    addAudit(
-                      "Section 17 Leave Extended (+2h) for Marcus V.",
-                      "Authorized by Consultant Psychiatrist Dr. R. Henderson",
-                      "Dr. R. Henderson",
-                    );
-                    showToast("Section 17 leave extended by 2 hours");
-                  }}
-                >
-                  ⏳ Extend Window (+2h)
-                </button>
-
-                <button
-                  type="button"
-                  className={styles.btnDeclineAction}
-                  onClick={() => {
-                    setS17Decision("breached");
-                    addAudit(
-                      "SECTION 17 LEAVE BREACH / AWOL DECLARED: Marcus V.",
-                      "WA Police notification logged under Form 7A",
-                      `NUM ${unit.name || "Dabakarn"}`,
-                    );
-                    showToast("Section 17 breach declared");
-                  }}
-                >
-                  🚨 Declare Breach / AWOL
-                </button>
-              </div>
-            ) : (
-              <div className={styles.resolutionBanner}>
-                <div className={styles.resolutionText}>
-                  <span>
-                    ✓{" "}
-                    {s17Decision === "returned"
-                      ? "Safe Return Confirmed: Marcus V."
-                      : s17Decision === "extended"
-                        ? "Leave Extended (+2h): Marcus V."
-                        : "Section 17 Breach Recorded: Marcus V."}
-                  </span>
-                  <span className={styles.resolutionSubtext}>
-                    {s17Decision === "returned"
-                      ? "Verified returned to Bed 12. Mental State Exam completed. Section 17 leave closed."
-                      : s17Decision === "extended"
-                        ? "Leave window extended by 2 hours (new due time 15:00 AWST)."
-                        : "Police notification logged under Form 7A."}
-                  </span>
+          <div className={styles.panelBody}>
+            {/* Marcus V. */}
+            <div className={styles.decisionCard} data-priority="governance">
+              <div className={styles.decisionCardHead}>
+                <div className={styles.decisionCardMeta}>
+                  <div className={styles.decisionCardTitle}>
+                    <span>Bed 12: Marcus V.</span>
+                    <span className={`${styles.chip} ${styles.chipWarn}`}>S17 Leave Due 13:00 (31m)</span>
+                  </div>
+                  <div className={styles.decisionCardDesc}>
+                    Patient on 4-hour unescorted day leave. If returned, verify mental state and sign off return.
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  className={styles.btnUndoAction}
-                  onClick={() => {
-                    setS17Decision("pending");
-                    showToast("Marcus V. leave decision reset");
-                  }}
+
+                {marcusState === "pending" ? (
+                  <div className={styles.decisionActions}>
+                    <button
+                      type="button"
+                      className={`${styles.btn} ${styles.btnGood} ${styles.btnSm}`}
+                      onClick={handleConfirmReturn}
+                    >
+                      <span>✓ Confirm Return</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.btn} ${styles.btnOutline} ${styles.btnSm}`}
+                      onClick={handleExtendLeave}
+                    >
+                      <span>Extend (+2h)</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.btn} ${styles.btnDanger} ${styles.btnSm}`}
+                      onClick={handleDeclareAwol}
+                    >
+                      <span>🚨 Declare AWOL</span>
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+
+              {marcusState !== "pending" && (
+                <div
+                  className={`${styles.resolvedBanner} ${marcusState === "returned" ? styles.bannerGood : styles.bannerDanger}`}
                 >
-                  ↺ Undo Action
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Bed 06 Safety Restriction */}
-          <div className={`${styles.decisionCard} ${bed06Decision === "blocked" ? styles.goodCard : styles.goodCard}`}>
-            <div className={styles.cardHead}>
-              <div className={styles.cardTitle}>
-                <span>Bed Safety Restriction (Infection Isolation Precaution)</span>
-              </div>
-              <div className={styles.cardTags}>
-                <span className={`${styles.tagPill} ${styles.tagUrgent}`}>Bed 06 Restricted</span>
-              </div>
-            </div>
-
-            <div className={styles.cardBody}>
-              Bed 06 currently blocked from admissions due to droplet contact precautions (discharged contact patient
-              awaiting UV air scrub).
-            </div>
-
-            <div className={styles.cardMeta}>
-              <span>Infection Prevention &amp; Control Ticket #8812</span>
-            </div>
-
-            {bed06Decision === "blocked" ? (
-              <div className={styles.cardActions}>
-                <button
-                  type="button"
-                  className={styles.btnSecondaryAction}
-                  onClick={() => {
-                    setBed06Decision("lifted");
-                    addAudit(
-                      "Bed Restriction Lifted: Bed 06 cleared for intake",
-                      "UV air scrub complete. Bed returned to allocatable intake pool.",
-                      "Infection Prevention",
-                    );
-                    showToast("Bed 06 restriction lifted");
-                  }}
-                >
-                  ✓ Lift Restriction (Clear for Intake)
-                </button>
-                <button
-                  type="button"
-                  className={styles.btnSecondaryAction}
-                  onClick={() => showToast("Opened Place Bed Restriction Dialog")}
-                >
-                  + Place New Bed Restriction
-                </button>
-              </div>
-            ) : (
-              <div className={styles.resolutionBanner}>
-                <div className={styles.resolutionText}>
-                  <span>✓ Restriction Lifted · Bed 06 Cleared</span>
-                  <span className={styles.resolutionSubtext}>
-                    UV air scrub complete. Bed returned to allocatable intake pool.
-                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontSize: "16px" }}>{marcusState === "returned" ? "✓" : "🚨"}</span>
+                    <div>
+                      <div style={{ fontSize: "12.5px", fontWeight: 700 }}>
+                        {marcusState === "returned" && "Patient Returned Safely"}
+                        {marcusState === "extended" && "Leave Window Extended (+2h)"}
+                        {marcusState === "awol" && "AWOL Declared — Statutory Alert Triggered"}
+                      </div>
+                      <div style={{ fontSize: "11px", opacity: 0.9 }}>
+                        {marcusState === "returned" &&
+                          "Mental state exam verified. Section 17 Form 7 closed on ward record."}
+                        {marcusState === "extended" && "New return target: 15:00 AWST. Treating consultant notified."}
+                        {marcusState === "awol" && "Apprehension order dispatched under WA Mental Health Act 2014."}
+                      </div>
+                    </div>
+                  </div>
+                  <button type="button" className={styles.btnUndo} onClick={handleUndoMarcus}>
+                    <span>↺ Undo Action</span>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className={styles.btnUndoAction}
-                  onClick={() => {
-                    setBed06Decision("blocked");
-                    showToast("Bed 06 re-imposed as restricted");
-                  }}
-                >
-                  ↺ Re-impose Block
-                </button>
+              )}
+            </div>
+
+            {/* Bed 06 Safety Precaution */}
+            <div className={styles.decisionCard} data-priority="governance">
+              <div className={styles.decisionCardHead}>
+                <div className={styles.decisionCardMeta}>
+                  <div className={styles.decisionCardTitle}>
+                    <span>Bed 06: Droplet Precaution Restriction</span>
+                    <span
+                      className={`${styles.chip} ${bed06State === "restricted" ? styles.chipDanger : styles.chipGood}`}
+                    >
+                      {bed06State === "restricted" ? "Restricted" : "✓ Cleared"}
+                    </span>
+                  </div>
+                  <div className={styles.decisionCardDesc}>
+                    {bed06State === "restricted"
+                      ? "Bed blocked from admissions awaiting UV air scrub. Orderly report: air scrub ready."
+                      : "UV air scrub certified complete. Bed returned to active allocatable pool."}
+                  </div>
+                </div>
+
+                {bed06State === "restricted" ? (
+                  <div className={styles.decisionActions}>
+                    <button
+                      type="button"
+                      className={`${styles.btn} ${styles.btnOutline} ${styles.btnSm}`}
+                      onClick={handleLiftBed06}
+                    >
+                      <span>✓ Lift Restriction (Clear for Intake)</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.btn} ${styles.btnSubtle} ${styles.btnSm}`}
+                      onClick={() => showToast("Contact precaution template opened")}
+                    >
+                      <span>+ New Restriction</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className={styles.decisionActions}>
+                    <button type="button" className={styles.btnUndo} onClick={handleRestoreBed06}>
+                      <span>↺ Re-impose Block</span>
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </section>
       )}
 
-      {/* ── Shift Audit Trail ── */}
-      <section className={styles.auditSection} aria-label="Shift Audit Trail">
-        <div className={styles.auditHeader}>
-          <div className={styles.auditTitle}>
-            <span>✓</span>
-            <span>Completed Sign-Offs (Today&rsquo;s Shift Audit Trail)</span>
+      {/* ═══════════════════════════════════════════════════════════════════
+          SECTION 5: REAL-TIME AUDIT LOG OF COMPLETED SHIFT DECISIONS
+          ═══════════════════════════════════════════════════════════════════ */}
+      <section className={styles.auditSection}>
+        <div className={styles.panelStrip}>
+          <div className={styles.panelTitleGroup}>
+            <span style={{ color: "var(--good)", fontWeight: 700 }}>✓</span>
+            <h3 className={styles.panelTitle}>Completed Sign-Offs (Today&apos;s Shift Audit Trail)</h3>
           </div>
-          <span className={styles.auditSubhead}>Immutable WA Health clinical log &middot; 24-Hour Standard</span>
+          <span className={`${styles.chip} ${styles.chipNeutral}`} style={{ fontSize: "10.5px" }}>
+            Immutable WA Health Clinical Log · 24-Hour Standard
+          </span>
         </div>
 
-        <div className={styles.auditList}>
-          {auditEvents.map((evt) => (
-            <div key={evt.id} className={styles.auditRow}>
-              <div>
-                <span className={styles.auditAction}>✓ {evt.title}</span>
-                <span className={styles.auditDetail}>{evt.detail}</span>
+        <div className={styles.auditTable}>
+          {auditLog.map((item) => (
+            <div key={item.id} className={styles.auditRow}>
+              <div className={styles.auditLeft}>
+                <span
+                  className={styles.auditIcon}
+                  style={{ color: item.icon === "✕" || item.icon === "🚨" ? "var(--danger)" : "var(--good)" }}
+                >
+                  {item.icon}
+                </span>
+                <div>
+                  <strong className={styles.auditDesc}>{item.title}</strong>
+                  <span style={{ color: "var(--muted)", margin: "0 6px" }}>·</span>
+                  <span style={{ color: "var(--ink-soft)" }}>{item.detail}</span>
+                </div>
               </div>
               <div className={styles.auditMeta}>
-                <span>{evt.time}</span>
-                <span style={{ margin: "0 6px" }}>&middot;</span>
-                <span>{evt.actor}</span>
+                <span>{item.time}</span>
+                <span style={{ margin: "0 4px" }}>·</span>
+                <span>{item.author}</span>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── MDT Clinical Note Modal ── */}
-      {mdtModalOpen && (
-        <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-labelledby="mdtModalTitle">
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <h3 className={styles.modalTitle} id="mdtModalTitle">
-                📝 Log MDT Discharge Planning Note
+      {/* Prototype Disclaimer */}
+      <footer className={styles.protoBanner}>
+        SYNTHETIC PROTOTYPE &middot; Scoped to {unit.name} &middot; Bed decisions remain human-confirmed &middot; Not a
+        medical device
+      </footer>
+
+      {/* ─── Decline Modal ─── */}
+      {declineModalOpen && (
+        <div className={styles.drawerBackdrop} role="dialog" aria-modal="true" aria-labelledby="declineTitle">
+          <div className={styles.drawerDialog}>
+            <div className={styles.drawerHead}>
+              <h3 className={styles.drawerTitle} id="declineTitle">
+                Decline Inbound Referral
               </h3>
               <button
                 type="button"
-                className={styles.modalCloseBtn}
-                onClick={() => setMdtModalOpen(false)}
-                aria-label="Close dialog"
+                className={styles.drawerClose}
+                onClick={() => setDeclineModalOpen(false)}
+                aria-label="Close"
               >
-                ✕
+                &times;
               </button>
             </div>
-
-            <div className={styles.modalBody}>
+            <div className={styles.drawerBody}>
               <div className={styles.formGroup}>
-                <label htmlFor="mdt-patient-bed" className={styles.formLabel}>
-                  Patient &amp; Bed
+                <label className={styles.formLabel} htmlFor="patientReferralInput">
+                  Patient &amp; Referral
                 </label>
                 <input
-                  id="mdt-patient-bed"
+                  id="patientReferralInput"
                   type="text"
                   className={styles.formInput}
-                  value="Rowan Ross (Bed 11)"
-                  disabled
+                  readOnly
+                  value="Aaron K. (RPH ED Referral #9021)"
                 />
               </div>
-
               <div className={styles.formGroup}>
-                <label htmlFor="mdt-note-category" className={styles.formLabel}>
-                  Note Category
+                <label className={styles.formLabel} htmlFor="declineReason">
+                  Mandatory Clinical Refusal Reason (WA Health Governance)
                 </label>
                 <select
-                  id="mdt-note-category"
+                  id="declineReason"
                   className={styles.formSelect}
-                  value={mdtCategory}
-                  onChange={(e) => setMdtCategory(e.target.value)}
+                  value={declineReason}
+                  onChange={(e) => setDeclineReason(e.target.value)}
                 >
-                  <option value="NDIS Housing Lease / SIL Barrier">NDIS Housing Lease / SIL Barrier</option>
-                  <option value="Discharge Coordination Update">Discharge Coordination Update</option>
-                  <option value="Consultant Review Outcome">Consultant Review Outcome</option>
-                  <option value="Pharmacy TTA Clearance">Pharmacy TTA Clearance</option>
+                  <option value="Acuity exceeds current nursing safe-ratio">
+                    Acuity exceeds current nursing safe-ratio on {unit.name}
+                  </option>
+                  <option value="Gender mix cohort incompatibility">
+                    Gender mix incompatibility with current bay cohort (Bay 2 locked female)
+                  </option>
+                  <option value="Seclusion facility occupied">
+                    Requires active seclusion facility (Dabakarn seclusion currently occupied)
+                  </option>
+                  <option value="Concurrent medical deterioration">
+                    Concurrent medical deterioration requires medical admission
+                  </option>
                 </select>
               </div>
-
               <div className={styles.formGroup}>
-                <label htmlFor="mdt-clinical-note" className={styles.formLabel}>
-                  Clinical Note Text
+                <label className={styles.formLabel} htmlFor="declineNotes">
+                  Clinical Explanatory Note
                 </label>
                 <textarea
-                  id="mdt-clinical-note"
+                  id="declineNotes"
                   className={styles.formTextarea}
-                  value={mdtText}
-                  onChange={(e) => setMdtText(e.target.value)}
-                  placeholder="Enter detailed clinical progression or barrier update..."
-                  rows={4}
-                  autoFocus
+                  rows={3}
+                  placeholder="Provide clinical rationale for senior bed manager review..."
                 />
               </div>
             </div>
-
-            <div className={styles.modalFooter}>
-              <button type="button" className={styles.btnSecondaryAction} onClick={() => setMdtModalOpen(false)}>
-                Cancel
-              </button>
+            <div className={styles.drawerFoot}>
               <button
                 type="button"
-                className={styles.btnPrimaryAction}
-                onClick={() => {
-                  setMdtModalOpen(false);
-                  addAudit(`MDT Note Added: ${mdtCategory}`, `"${mdtText}" on Rowan Ross (Bed 11)`);
-                  showToast("MDT Note saved and logged to audit trail");
-                }}
+                className={`${styles.btn} ${styles.btnSubtle}`}
+                onClick={() => setDeclineModalOpen(false)}
               >
-                Save &amp; Log Note
+                Cancel
+              </button>
+              <button type="button" className={`${styles.btn} ${styles.btnDanger}`} onClick={handleDeclineIntakeSubmit}>
+                Confirm Clinical Decline
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Decline Referral Modal ── */}
-      {declineModalOpen && (
-        <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-labelledby="declineModalTitle">
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <h3 className={styles.modalTitle} id="declineModalTitle">
-                ✕ Decline Referral: Aaron K.
+      {/* ─── Barrier Escalation Modal ─── */}
+      {barrierModalOpen && (
+        <div className={styles.drawerBackdrop} role="dialog" aria-modal="true" aria-labelledby="barrierTitle">
+          <div className={styles.drawerDialog}>
+            <div className={styles.drawerHead}>
+              <h3 className={styles.drawerTitle} id="barrierTitle">
+                Escalate Discharge Flow Barrier
               </h3>
               <button
                 type="button"
-                className={styles.modalCloseBtn}
-                onClick={() => setDeclineModalOpen(false)}
-                aria-label="Close dialog"
+                className={styles.drawerClose}
+                onClick={() => setBarrierModalOpen(false)}
+                aria-label="Close"
               >
-                ✕
+                &times;
               </button>
             </div>
-
-            <div className={styles.modalBody}>
+            <div className={styles.drawerBody}>
               <div className={styles.formGroup}>
-                <label htmlFor="decline-refusal-reason" className={styles.formLabel}>
-                  Mandatory WA Health Refusal Reason
+                <label className={styles.formLabel} htmlFor="patientBedInput">
+                  Patient &amp; Bed
+                </label>
+                <input
+                  id="patientBedInput"
+                  type="text"
+                  className={styles.formInput}
+                  readOnly
+                  value="Rowan Ross (Bed 11)"
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel} htmlFor="escalationPathway">
+                  Escalation Pathway
                 </label>
                 <select
-                  id="decline-refusal-reason"
+                  id="escalationPathway"
                   className={styles.formSelect}
-                  value={declineReason}
-                  onChange={(e) => setDeclineReason(e.target.value)}
+                  value={barrierPathway}
+                  onChange={(e) => setBarrierPathway(e.target.value)}
                 >
-                  <option value="clinical_mismatch">
-                    Clinical Mismatch: Security / Acuity requires High Dependency Unit
+                  <option value="Urgent Social Work Senior Lead & NDIS Liaison">
+                    Urgent Social Work Senior Lead &amp; NDIS Coordinator Liaison
                   </option>
-                  <option value="high_acuity_staffing">High Acuity Staffing Deficit: Ratios exceeded on ward</option>
-                  <option value="cohort_lock">Gender / Vulnerability Cohort Lock</option>
-                  <option value="physical_maintenance">Physical Maintenance / Infection Precaution Block</option>
+                  <option value="Hospital Bed Flow Manager">
+                    Hospital Bed Flow Manager (Housing Voucher Emergency)
+                  </option>
+                  <option value="Clinical Director Review">Clinical Director / Consultant Psychiatrist Review</option>
                 </select>
               </div>
-
               <div className={styles.formGroup}>
-                <label htmlFor="decline-clinical-rationale" className={styles.formLabel}>
-                  Clinical Rationale &amp; Escalation Notes
+                <label className={styles.formLabel} htmlFor="barrierNotes">
+                  Action Note
                 </label>
                 <textarea
-                  id="decline-clinical-rationale"
+                  id="barrierNotes"
                   className={styles.formTextarea}
-                  value={declineNotes}
-                  onChange={(e) => setDeclineNotes(e.target.value)}
-                  placeholder="Detail clinical discussion with ED Registrar and on-call consultant..."
-                  rows={4}
-                  autoFocus
+                  rows={3}
+                  placeholder="Detail specific housing or legal roadblock..."
                 />
               </div>
             </div>
-
-            <div className={styles.modalFooter}>
-              <button type="button" className={styles.btnSecondaryAction} onClick={() => setDeclineModalOpen(false)}>
-                Cancel
-              </button>
+            <div className={styles.drawerFoot}>
               <button
                 type="button"
-                className={styles.btnDeclineAction}
-                onClick={() => {
-                  setDeclineModalOpen(false);
-                  setIntakeDecision("declined");
-                  addAudit(
-                    `Referral Declined: Aaron K. (${declineReason})`,
-                    declineNotes ? `Reason notes: ${declineNotes}` : "Clinical mismatch escalated to Bed Flow",
-                  );
-                  showToast("Aaron K. referral declined");
-                }}
+                className={`${styles.btn} ${styles.btnSubtle}`}
+                onClick={() => setBarrierModalOpen(false)}
               >
-                Confirm Decline &amp; Escalate
+                Cancel
+              </button>
+              <button type="button" className={`${styles.btn} ${styles.btnGood}`} onClick={handleEscalateBarrierSubmit}>
+                Confirm Barrier Escalation
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ─── Handover Summary Modal ─── */}
+      {handoverModalOpen && (
+        <div className={styles.drawerBackdrop} role="dialog" aria-modal="true" aria-labelledby="handoverTitle">
+          <div className={styles.drawerDialog} style={{ maxWidth: "600px" }}>
+            <div className={styles.drawerHead}>
+              <h3 className={styles.drawerTitle} id="handoverTitle">
+                📋 Shift Handover Summary — {unit.name}
+              </h3>
+              <button
+                type="button"
+                className={styles.drawerClose}
+                onClick={() => setHandoverModalOpen(false)}
+                aria-label="Close"
+              >
+                &times;
+              </button>
+            </div>
+            <div className={styles.drawerBody}>
+              <div
+                style={{
+                  background: "var(--surface-2)",
+                  padding: "10px 14px",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  border: "1px solid var(--line)",
+                }}
+              >
+                <strong>Shift Capacity:</strong> {staffedBeds} Staffed / {physicalBeds} Physical beds (1:1 Specialling
+                active on Bed 02).
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "12px" }}>
+                <strong>Current Status of Shift Gates:</strong>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    borderBottom: "1px solid var(--line)",
+                    paddingBottom: "4px",
+                  }}
+                >
+                  <span>Gate 1: Morning Roll-up Handshake</span>
+                  <span className={`${styles.chip} ${styles.chipGood}`}>Verified (10:22 AWST)</span>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    borderBottom: "1px solid var(--line)",
+                    paddingBottom: "4px",
+                  }}
+                >
+                  <span>Gate 2: Inbound ED Admission (Aaron K.)</span>
+                  <span
+                    className={`${styles.chip} ${intakeState === "accepted" ? styles.chipGood : styles.chipDanger}`}
+                  >
+                    {intakeState === "accepted" ? "Bed 04 Assigned" : "Action Pending"}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    borderBottom: "1px solid var(--line)",
+                    paddingBottom: "4px",
+                  }}
+                >
+                  <span>Gate 3: Departure Release (Keira P.)</span>
+                  <span className={`${styles.chip} ${keiraState === "authorized" ? styles.chipGood : styles.chipWarn}`}>
+                    {keiraState === "authorized" ? "Departed & Released" : "Ready for Release"}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    borderBottom: "1px solid var(--line)",
+                    paddingBottom: "4px",
+                  }}
+                >
+                  <span>Gate 3: Flow Barrier (Rowan Ross)</span>
+                  <span
+                    className={`${styles.chip} ${rowanState === "escalated" ? styles.chipWarn : styles.chipDanger}`}
+                  >
+                    {rowanState === "escalated" ? "Escalated to Social Work" : "NDIS Hold Active"}
+                  </span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Gate 4: Section 17 Leave (Marcus V.)</span>
+                  <span
+                    className={`${styles.chip} ${marcusState === "returned" ? styles.chipGood : styles.chipAccent}`}
+                  >
+                    {marcusState === "returned" ? "Returned & Verified" : "Due 13:00 AWST"}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className={styles.drawerFoot}>
+              <button
+                type="button"
+                className={`${styles.btn} ${styles.btnOutline}`}
+                onClick={() => {
+                  window.print();
+                }}
+              >
+                🖨️ Print Handover Sign-Off
+              </button>
+              <button
+                type="button"
+                className={`${styles.btn} ${styles.btnGood}`}
+                onClick={() => setHandoverModalOpen(false)}
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Non-intrusive Toast Notification ─── */}
+      {toastText && (
+        <div className={styles.toastBox} role="status" aria-live="polite">
+          <span>✓</span>
+          <span>{toastText}</span>
+          <button type="button" className={styles.toastClose} onClick={() => setToastText(null)} aria-label="Dismiss">
+            &times;
+          </button>
         </div>
       )}
     </div>
