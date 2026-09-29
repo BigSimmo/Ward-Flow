@@ -610,6 +610,7 @@ export function AlertsScreen() {
         {/* Clinical Page Header — Action & Status Deck */}
         <header className={styles.pageHeader}>
           <div className={styles.headerLeftDeck}>
+            <h1 className="sr-only">Alerts and Operational Notices</h1>
             <div className={styles.liveStreamBadge}>
               <span className={styles.liveDot} aria-hidden="true" />
               <span className={styles.liveStreamLabel}>Live Action Stream</span>
