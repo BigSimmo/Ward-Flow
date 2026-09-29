@@ -345,7 +345,8 @@ export function networkWardRows(
                 dayOf(admission.expectedDischargeAt) === dayOf(now),
             ).length,
       // 🔴 ALL FIVE FROM THE CANONICAL DERIVATIONS, NEVER COUNTED HERE — see the row type's note.
-      confirmed: releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).confirmedToday,
+      confirmed:
+        releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).confirmedToday,
       expected: releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).expectedToday,
       blocked: releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).blockedToday,
       // WLQ-10: unscoped by day, deliberately — see the field's own doc comment on `NetworkWardRow`.
@@ -356,7 +357,7 @@ export function networkWardRows(
       // are ALWAYS a number: there is no "nobody told this screen" case to represent.
       held: capacityBreakdown(unit, [], leave ?? [], now).held,
       occupied: cap.occupied,
-      surge: cap.surge ?? Math.max(0, cap.occupied - unit.beds),
+      surge: ("surge" in cap ? (cap as { surge?: number }).surge : undefined) ?? Math.max(0, cap.occupied - unit.beds),
       // `bedsPendingPreparation` is the reducer's OWN helper — the same function whose result gates
       // PULL_PATIENT — so the screen and the refusal cannot disagree about which beds are still
       // being made ready.
