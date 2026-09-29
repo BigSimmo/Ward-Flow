@@ -1134,14 +1134,6 @@
   font-weight: 700;
 }
 
-.matchUmrn {
-  font-family: var(--mono);
-  font-size: 0.9em;
-  font-weight: 600;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
 /* Review finding I1 / Task 8 finding B: the urgency tier is its own line on the match view,
    never a field inside `.matchSummary`'s dot-separated run — see `referral-match.tsx`'s own
    comment for why the layout changed rather than the words. Styled like the board's tier cell
@@ -1216,6 +1208,62 @@
   list-style: none;
 }
 
+.matchDossierHeader {
+  display: grid;
+  gap: var(--ward-space-8);
+  padding: var(--ward-space-12) var(--ward-space-14);
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: 0 0.0625rem 0.1875rem rgba(0, 0, 0, 0.03);
+}
+
+.matchDossierTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-8);
+}
+
+.matchIdCluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ward-space-8);
+}
+
+.matchDemographicsStrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ward-space-8);
+}
+
+.acceptingCountBannerPositive {
+  margin: 0;
+  padding: var(--ward-space-8) var(--ward-space-12);
+  border-radius: var(--radius-md);
+  border: 0.0625rem solid var(--success-border);
+  background: var(--ward-success-soft);
+  color: var(--ward-success);
+  font-size: var(--t-0);
+  font-weight: 700;
+  line-height: var(--ward-leading-tight);
+}
+
+.acceptingCountBannerZero {
+  margin: 0;
+  padding: var(--ward-space-8) var(--ward-space-12);
+  border-radius: var(--radius-md);
+  border: 0.0625rem solid var(--ward-border);
+  background: var(--surface-subtle);
+  color: var(--muted);
+  font-size: var(--t-0);
+  font-weight: 600;
+  line-height: var(--ward-leading-tight);
+}
+
 /*
  * A band group folds; it does not hide. The heading and both counts live in `.bandSummary`, which
  * a `<details>` renders open or shut alike — including for an empty group — so "there is nothing
@@ -1225,6 +1273,16 @@
   border: 0.0625rem solid var(--ward-border);
   border-radius: var(--radius-md);
   background: var(--surface-raised);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.bandGroupHasAvailable {
+  border-color: var(--success-border);
+  box-shadow: 0 0.0625rem 0.1875rem rgba(16, 185, 129, 0.08);
+}
+
+.bandGroupHasAvailable > .bandSummary {
+  background: var(--ward-success-soft);
 }
 
 .bandSummary {
@@ -1236,10 +1294,36 @@
   gap: var(--ward-space-8);
   padding: var(--ward-space-8) var(--ward-space-12);
   cursor: pointer;
-  /* `display: flex` suppresses the browser's own disclosure triangle, so the affordance is
-     replaced explicitly below rather than lost. A group a coordinator cannot see is openable is
-     a group whose rows they will not find. */
   list-style: none;
+  border-radius: var(--radius-md);
+  transition: background-color 150ms ease;
+}
+
+.bandSummary:hover {
+  background-color: var(--surface-subtle);
+}
+
+.bandGroupHasAvailable > .bandSummary:hover {
+  background-color: var(--ward-success-soft);
+}
+
+.bandSummaryLead {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+  flex-wrap: wrap;
+}
+
+.bandAvailableBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--ward-space-2) var(--ward-space-8);
+  border-radius: var(--radius-sm);
+  background: var(--ward-success);
+  color: #ffffff;
+  font-size: var(--t-0);
+  font-weight: 700;
+  line-height: var(--ward-leading-none);
 }
 
 .bandSummary::-webkit-details-marker {
@@ -1315,10 +1399,6 @@
   line-height: var(--ward-leading-body);
 }
 
-/* Owner ruling D-3 (docs/ward-flow/owner-decisions-2026-09-1x.md, 2026-09-10): the sentence stating
-   the travel times are invented jumps the 12px-floor queue ahead of every other sub-12px use in
-   this file, raised alone rather than as part of a sweep. `.allNotRecorded` above is a different
-   sentence and is deliberately untouched — it is raised only when this screen is rebuilt. */
 .syntheticNotice {
   font-size: var(--t-0);
 }
@@ -1368,10 +1448,13 @@
 
 .matchRowAccepts {
   border-color: var(--success-border);
+  border-left: 0.25rem solid var(--ward-success);
   background: var(--ward-success-soft);
+  box-shadow: 0 0.0625rem 0.125rem rgba(16, 185, 129, 0.05);
 }
 
 .matchRowDeclines {
+  border-left: 0.25rem solid var(--ward-border-strong);
   background: var(--surface-raised);
 }
 
@@ -1407,75 +1490,62 @@
   flex-wrap: wrap;
 }
 
-.suitabilityBadge {
+.declinedBadge {
   display: inline-flex;
   align-items: center;
-  gap: var(--ward-space-6);
-  padding: var(--ward-space-4) var(--ward-space-8);
+  padding: var(--ward-space-2) var(--ward-space-6);
   border-radius: var(--radius-sm);
+  background: var(--surface-subtle);
   border: 0.0625rem solid var(--ward-border);
-  background: var(--surface-chrome);
+  color: var(--muted);
   font-size: var(--t-0);
   font-weight: 600;
-  color: var(--ink);
 }
 
-.suitabilityBadge[data-score="100"] {
-  border-color: var(--ward-success);
-  background: var(--ward-success-soft);
-  color: var(--ward-success);
-}
-
-.suitabilityScoreVal {
-  font-weight: 800;
-  font-size: var(--t-0);
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
-}
-
-.suitabilityLabel {
-  font-size: var(--t-0);
-  color: var(--muted);
-}
-
-.suitabilityBadge[data-score="100"] .suitabilityLabel {
-  color: var(--ward-success);
-}
-
-.criteriaChecklist {
-  margin: var(--ward-space-8) 0;
-  padding: var(--ward-space-8);
+.criteriaDisclosure {
   border: 0.0625rem solid var(--ward-border);
   border-radius: var(--radius-sm);
-  background: var(--surface-chrome);
+  background: var(--surface-subtle);
+  margin: var(--ward-space-4) 0;
 }
 
-.criteriaHeader {
+.criteriaSummary {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--ward-space-6);
-  padding-bottom: var(--ward-space-4);
-  border-bottom: 0.0625rem solid var(--ward-border);
+  justify-content: space-between;
+  padding: var(--ward-space-6) var(--ward-space-8);
+  cursor: pointer;
   font-size: var(--t-0);
-  font-weight: 700;
   color: var(--ink);
+  list-style: none;
+  gap: var(--ward-space-6);
 }
 
-.criteriaTitle {
-  font-weight: 700;
+.criteriaSummary::-webkit-details-marker {
+  display: none;
 }
 
-.criteriaCount {
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
+.criteriaSummaryTitle {
+  font-size: var(--t-0);
+  color: var(--ink-soft);
+}
+
+.criteriaSummaryHint {
+  font-size: var(--t-0);
+  color: var(--clinical-accent);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.criteriaDisclosure[open] > .criteriaSummary {
+  border-bottom: 0.0625rem solid var(--ward-border);
 }
 
 .criteriaList {
   display: flex;
   flex-direction: column;
   gap: var(--ward-space-4);
+  padding: var(--ward-space-8);
 }
 
 .criteriaPass,
@@ -1556,26 +1626,43 @@
   outline-offset: 0.125rem;
 }
 
+.matchDeclineSection {
+  display: grid;
+  gap: var(--ward-space-6);
+}
+
 .matchReasonText {
   margin: 0;
-  color: var(--muted);
+  padding: var(--ward-space-4) var(--ward-space-8);
+  border-radius: var(--radius-sm);
+  background: var(--surface-subtle);
+  border-left: 0.1875rem solid var(--ward-warning);
+  color: var(--ink);
   font-size: var(--t-0);
+  font-weight: 600;
   line-height: var(--ward-leading-body);
 }
 
-/*
- * THE OVERRIDE ROW — the explanation and the way to act on it, stacked rather than side by side.
- *
- * A grid, not the `.matchAcceptRow` flex the eligible arm uses: that row is one label and one
- * button and reads across; this one is a sentence a clinician must read BEFORE the control that
- * acts against it, and reading order is the point. Tokens throughout, and the button carries the
- * production 48px tap target like every other control on this screen.
- */
 .matchOverrideRow {
   display: grid;
   gap: var(--ward-space-8);
   border-top: 0.0625rem solid var(--ward-border);
   padding-top: var(--ward-space-8);
+}
+
+.matchOverrideControls {
+  display: flex;
+  align-items: center;
+  gap: var(--ward-space-8);
+  flex-wrap: wrap;
+}
+
+.matchOverrideControls .matchOverrideSelect {
+  flex: 1 1 14rem;
+}
+
+.matchOverrideControls .matchOverrideButton {
+  flex: 0 0 auto;
 }
 
 .matchOverrideLabel {
@@ -2719,7 +2806,7 @@ input.historyField:focus-visible {
   order: 1;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.625rem;
+  gap: 0.75rem;
 }
 
 @media (max-width: 68.75rem) {
@@ -2739,14 +2826,15 @@ input.historyField:focus-visible {
   flex-direction: column;
   gap: 0.25rem;
   border: 1px solid var(--line);
+  border-top: 3px solid transparent;
   border-radius: var(--r1, 10px);
   background: var(--surface);
-  padding: 0.625rem 0.875rem;
+  padding: 0.75rem 0.875rem;
   box-shadow: var(--lift);
   text-align: left;
   cursor: pointer;
   font-family: inherit;
-  min-height: 3rem;
+  min-height: 3.5rem;
   position: relative;
   user-select: none;
   transition:
@@ -2754,6 +2842,26 @@ input.historyField:focus-visible {
     background-color 0.15s ease,
     box-shadow 0.15s ease,
     transform 0.15s ease;
+}
+
+.kpiCard:nth-child(1) {
+  border-top-color: var(--accent);
+}
+
+.kpiCard:nth-child(2) {
+  border-top-color: var(--danger);
+}
+
+.kpiCard:nth-child(3) {
+  border-top-color: var(--warn);
+}
+
+.kpiCard:nth-child(4) {
+  border-top-color: var(--svc-north);
+}
+
+.kpiCard:nth-child(5) {
+  border-top-color: var(--good);
 }
 
 .kpiCard:hover {
@@ -2925,8 +3033,8 @@ input.historyField:focus-visible {
   position: relative;
   display: flex;
   align-items: center;
-  flex: 1 1 14rem;
-  max-width: 24rem;
+  flex: 1 1 18rem;
+  max-width: 28rem;
 }
 
 .searchIcon {
@@ -2938,7 +3046,7 @@ input.historyField:focus-visible {
 
 .searchInput {
   width: 100%;
-  min-height: 2.125rem;
+  min-height: 2.25rem;
   padding: 0 2rem 0 2.25rem;
   border: 1px solid var(--line);
   border-radius: var(--r2, 6px);
@@ -3414,6 +3522,9 @@ input.historyField:focus-visible {
 }
 
 .inspectorHeader {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -3421,6 +3532,8 @@ input.historyField:focus-visible {
   border: 1px solid var(--line);
   border-radius: var(--r1, 10px);
   background: var(--surface);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   padding: 0.625rem 0.875rem;
   margin-bottom: 0.5rem;
   box-shadow: var(--lift, 0 1px 3px rgba(0, 0, 0, 0.05));
@@ -3606,7 +3719,7 @@ input.historyField:focus-visible {
   background: var(--surface-2, #f1f5f9);
   color: var(--ink-soft, #475569);
   font-family: var(--mono);
-  font-size: 0.6875rem;
+  font-size: var(--t-0, 0.75rem);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   border: 1px solid var(--line, #e2e8f0);
@@ -3835,7 +3948,7 @@ input.historyField:focus-visible {
 .cardPriorityBadge {
   display: inline-flex;
   align-items: center;
-  font-size: 0.6875rem;
+  font-size: var(--t-0, 0.75rem);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -3870,47 +3983,27 @@ input.historyField:focus-visible {
 .bedAssignedBadge {
   display: inline-flex;
   align-items: center;
-  font-size: 0.6875rem;
+  font-size: var(--t-0, 0.75rem);
   font-weight: 600;
   color: var(--ward-success, #15803d);
   background: var(--ward-success-soft, #dcfce7);
   border: 1px solid var(--success-border, #86efac);
   border-radius: 4px;
-  padding: 0.1rem 0.4rem;
+  padding: 0.15rem 0.45rem;
   line-height: 1.2;
 }
 
 .bedUnassignedBadge {
   display: inline-flex;
   align-items: center;
-  font-size: 0.6875rem;
+  font-size: var(--t-0, 0.75rem);
   font-weight: 600;
   color: var(--ward-warning, #b45309);
   background: var(--ward-warning-soft, #fef3c7);
   border: 1px solid var(--warning-border, #fde68a);
   border-radius: 4px;
-  padding: 0.1rem 0.4rem;
+  padding: 0.15rem 0.45rem;
   line-height: 1.2;
-}
-
-.bedDeclinedBadge {
-  display: inline-flex;
-  align-items: center;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  color: var(--ward-danger, #b91c1c);
-  background: var(--ward-danger-soft, #fee2e2);
-  border: 1px solid var(--danger-border, #fca5a5);
-  border-radius: 4px;
-  padding: 0.1rem 0.4rem;
-  line-height: 1.2;
-}
-
-.cardDecidedTime {
-  color: var(--muted);
-  font-size: 0.75rem;
-  margin-left: 0.25rem;
-  font-variant-numeric: tabular-nums;
 }
 
 .cardRouteRow {
@@ -3920,22 +4013,30 @@ input.historyField:focus-visible {
   font-size: 0.75rem;
   color: var(--ink-soft);
   width: 100%;
+  overflow: hidden;
 }
 
 .cardRouteOrigin {
   color: var(--muted);
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cardRouteArrow {
   color: var(--accent);
   font-weight: 700;
   font-size: 0.8125rem;
+  flex-shrink: 0;
 }
 
 .cardRouteDestination {
   color: var(--ink);
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cardRefusals {
@@ -3954,7 +4055,7 @@ input.historyField:focus-visible {
 .decidedOutcomeBadge {
   display: inline-flex;
   align-items: center;
-  font-size: 0.6875rem;
+  font-size: var(--t-0, 0.75rem);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -4232,8 +4333,8 @@ input.historyField:focus-visible {
     grid-template-columns: minmax(24rem, 1.15fr) minmax(28rem, 1.35fr);
     grid-template-rows: minmax(0, 1fr);
     min-height: 0;
-    height: clamp(38rem, calc(100dvh - 17.5rem), 56rem);
-    max-height: clamp(38rem, calc(100dvh - 17.5rem), 56rem);
+    height: clamp(24rem, calc(100dvh - 28rem), 56rem);
+    max-height: clamp(24rem, calc(100dvh - 28rem), 56rem);
     gap: var(--ward-space-16);
     align-items: stretch;
   }
@@ -4339,11 +4440,37 @@ input.historyField:focus-visible {
   grid-template-columns: minmax(0, 1fr);
   grid-auto-rows: max-content;
   align-content: start;
+  gap: 0.625rem;
+  padding: 0.75rem 0.875rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1, 10px);
+  box-shadow: var(--lift);
 }
 
 .screen[data-referral-view="register"] .registerDetail > .matchPanel > * {
   grid-column: 1;
   grid-row: auto;
+}
+
+.screen[data-referral-view="register"] .registerDetail > .matchPanel .matchHeading {
+  font-size: var(--t-1);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+}
+
+.screen[data-referral-view="register"] .registerDetail > .matchPanel .matchGovernance {
+  font-size: var(--t-0);
+  color: var(--muted);
+  border-left: 3px solid var(--accent);
+  background: var(--surface-2);
+  padding: 0.4rem 0.625rem;
+  border-radius: 0 var(--radius-sm, 4px) var(--radius-sm, 4px) 0;
+  margin: 0.25rem 0;
 }
 
 .screen[data-referral-view="register"] .sectionHeading {
@@ -4353,20 +4480,17 @@ input.historyField:focus-visible {
   color: var(--accent-ink);
 }
 
-.screen[data-referral-view="register"] .sectionLive,
-.screen[data-referral-view="register"] .section {
+.screen[data-referral-view="register"] .sectionLive {
   padding: 0;
 }
 
-.screen[data-referral-view="register"] .sectionLive > :not(.sectionHeading),
-.screen[data-referral-view="register"] .section > :not(.sectionHeading) {
+.screen[data-referral-view="register"] .sectionLive > :not(.sectionHeading) {
   margin-right: 0.875rem;
   margin-left: 0.875rem;
 }
 
 .screen[data-referral-view="register"] .sectionLive .tableScroll,
-.screen[data-referral-view="register"] .sectionLive .cardList,
-.screen[data-referral-view="register"] .cardList {
+.screen[data-referral-view="register"] .sectionLive .cardList {
   margin-right: 0;
   margin-left: 0;
   border-right: 0;

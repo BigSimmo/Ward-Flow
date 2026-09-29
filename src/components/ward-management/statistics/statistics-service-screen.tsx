@@ -362,7 +362,15 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
   const section = statisticsSectionById("service");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'service' section");
 
-  const service = HEALTH_SERVICES.find((candidate) => candidate === serviceId);
+  const SERVICE_ACRONYMS: Record<string, HealthService> = {
+    NMHS: "North Metro",
+    SMHS: "South Metro",
+    EMHS: "East Metro",
+    WACHS: "WACHS",
+    CAHS: "CAHS",
+  };
+  const resolvedServiceId = SERVICE_ACRONYMS[serviceId] ?? serviceId;
+  const service = HEALTH_SERVICES.find((candidate) => candidate === resolvedServiceId);
 
   if (!service) {
     return (

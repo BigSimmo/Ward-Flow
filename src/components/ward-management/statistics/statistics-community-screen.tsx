@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 
 import {
@@ -59,6 +60,7 @@ import pageStyles from "./statistics-community-third-edition.module.css";
  * publish a confident zero over a broken join.
  */
 export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
+  const [filterQuery, setFilterQuery] = useState("");
   const { admissions, referrals } = useWardFlow();
 
   const section = statisticsSectionById("community");
@@ -157,6 +159,10 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
     };
   });
 
+  const filteredTeams = filterQuery.trim()
+    ? allTeams.filter((row) => row.team.name.toLowerCase().includes(filterQuery.toLowerCase().trim()))
+    : allTeams;
+
   return (
     <StatisticsSectionFrame
       section={section}
@@ -165,6 +171,47 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
       testId="ward-statistics-community-screen"
       design="third-edition"
     >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "0.75rem",
+          marginBottom: "1.25rem",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <label htmlFor="communityTeamSelect" style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted)" }}>
+            Switch catchment team:
+          </label>
+          <select
+            id="communityTeamSelect"
+            value={team.id}
+            onChange={(e) => {
+              if (typeof window !== "undefined") {
+                window.location.href = communityStatisticsHref(e.target.value);
+              }
+            }}
+            style={{
+              padding: "0.375rem 0.75rem",
+              borderRadius: "var(--r2)",
+              border: "1px solid var(--border)",
+              background: "var(--surface)",
+              color: "var(--ink)",
+              fontSize: "12px",
+              fontWeight: 500,
+            }}
+          >
+            {COMMUNITY_TEAM_PAGES.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <div className={pageStyles.pageGrid}>
         {/*
         🔴 **D-44. THE DRAWING'S NOTE DENIED A COMPARISON THIS PAGE MAKES.** Its words were "A fixed
@@ -367,6 +414,25 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
               Every team the referral form can name, in the order that form offers them — never a ranking, and never a
               subset. Open a team name for its operational detail.
             </p>
+            <div style={{ margin: "0.5rem 0 1rem 0" }}>
+              <input
+                type="search"
+                placeholder="Search catchment teams by name..."
+                aria-label="Filter community teams by name"
+                value={filterQuery}
+                onChange={(e) => setFilterQuery(e.target.value)}
+                style={{
+                  width: "100%",
+                  maxWidth: "340px",
+                  padding: "0.4rem 0.75rem",
+                  borderRadius: "var(--r2)",
+                  border: "1px solid var(--border)",
+                  background: "var(--surface)",
+                  color: "var(--ink)",
+                  fontSize: "12px",
+                }}
+              />
+            </div>
             <WardTable testId="ward-statistics-community-comparison-table">
               <thead>
                 <tr>
@@ -377,7 +443,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                 </tr>
               </thead>
               <tbody>
-                {allTeams.map((row) => (
+                {filteredTeams.map((row) => (
                   <tr
                     key={row.team.id}
                     data-testid={`ward-statistics-community-compare-row-${row.team.id}`}

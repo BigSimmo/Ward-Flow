@@ -33,12 +33,7 @@ import {
   headlineAvailable,
   sinceYesterday,
 } from "@/components/ward-management/ward-board-derivations";
-import {
-  calendarDateOf,
-  formatInstantWithDay,
-  MINUTES_PER_DAY,
-  type Instant,
-} from "@/components/ward-management/ward-clock";
+import { calendarDateOf, formatInstantWithDay, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
@@ -594,7 +589,8 @@ function buildIncoming(
       const pulledAt = admission.pulledAt;
       const usablePull =
         admission.state === "pulled" && pulledAt !== null && Number.isFinite(pulledAt) && Number.isFinite(now);
-      const pullExpiresAt = admission.movementId !== null ? (pullByMovementId.get(admission.movementId) ?? null) : null;
+      const pullExpiresAt =
+        admission.movementId !== null ? (pullByMovementId.get(admission.movementId) ?? null) : null;
       return {
         key: admission.id,
         state: admission.state === "pulled" ? ("pulled" as const) : ("waitlisted" as const),
@@ -665,9 +661,7 @@ function PersonEntry({
           )}
           {occupant.pastDate && (
             <span className={styles.pastMark}>
-              <span aria-hidden="true" className={styles.statusGlyph}>
-                ▲{" "}
-              </span>
+              <span aria-hidden="true" className={styles.statusGlyph}>▲ </span>
               <span>Past date</span>
             </span>
           )}
@@ -689,9 +683,7 @@ function PersonEntry({
               className={occupant.dischargeBarrier ? styles.barrierTag : styles.barrierTagWarning}
               data-testid={`${idPrefix}-${occupant.key}-barrier`}
             >
-              {occupant.dischargeBarrier
-                ? `Discharge barrier: ${occupant.dischargeBarrier}`
-                : "Discharge barrier unrecorded (Stay ≥ 7d)"}
+              {occupant.dischargeBarrier ? `Discharge barrier: ${occupant.dischargeBarrier}` : "Discharge barrier unrecorded (Stay ≥ 7d)"}
             </span>
           </p>
         )}
@@ -750,9 +742,7 @@ function PersonEntry({
             )}
             {occupant.pastDate && (
               <span className={styles.pastMark}>
-                <span aria-hidden="true" className={styles.statusGlyph}>
-                  ▲{" "}
-                </span>
+                <span aria-hidden="true" className={styles.statusGlyph}>▲ </span>
                 <span>Past date</span>
               </span>
             )}
@@ -788,9 +778,7 @@ function PersonEntry({
               className={occupant.dischargeBarrier ? styles.barrierTag : styles.barrierTagWarning}
               data-testid={`${idPrefix}-${occupant.key}-barrier`}
             >
-              {occupant.dischargeBarrier
-                ? `Discharge barrier: ${occupant.dischargeBarrier}`
-                : "Discharge barrier unrecorded (Stay ≥ 7d)"}
+              {occupant.dischargeBarrier ? `Discharge barrier: ${occupant.dischargeBarrier}` : "Discharge barrier unrecorded (Stay ≥ 7d)"}
             </span>
           </div>
         )}
@@ -806,11 +794,11 @@ function PersonEntry({
           </div>
           <div className={styles.catchmentItem}>
             <span className={styles.catchmentLabel}>Suburb</span>
-            <span className={styles.catchmentValue}>{patient?.suburb ?? "Bassendean"}</span>
+            <span className={styles.catchmentValue}>{patient?.suburb ?? "Not recorded"}</span>
           </div>
           <div className={styles.catchmentItem}>
             <span className={styles.catchmentLabel}>Community Team</span>
-            <span className={styles.catchmentValue}>{patient?.catchmentCommunityTeam ?? "Midland Community Team"}</span>
+            <span className={styles.catchmentValue}>{patient?.catchmentCommunityTeam ?? "Not recorded"}</span>
           </div>
           <div className={styles.catchmentItem}>
             <span className={styles.catchmentLabel}>Legal Status</span>
@@ -862,7 +850,9 @@ function PersonEntry({
             {occupant.dischargeDateMoves === 1 ? "time" : "times"}.
           </div>
         )}
-        {occupant.blockReason !== null && <p className={styles.personBlocker}>Held up by: {occupant.blockReason}.</p>}
+        {occupant.blockReason !== null && (
+          <p className={styles.personBlocker}>Held up by: {occupant.blockReason}.</p>
+        )}
       </div>
     </>
   );
@@ -884,6 +874,7 @@ interface ShiftTileItem {
   acts: ShiftAction[];
   who?: string;
 }
+
 
 /**
  * Resolve which movement "Patient arrived" should close on the board.
@@ -1290,15 +1281,14 @@ export function WardBoard({
      see the stamp's own comment in the heading below. */
   const stamp = asAtStamp(now);
 
+  const occupantByKey = new Map(occupants.map((occupant) => [occupant.key, occupant]));
+
   const selectedTile = selectedKey === null ? null : (tiles.find((tile) => tile.key === selectedKey) ?? null);
   const selectedOccupant =
     selectedTile === null || (selectedTile.kind !== "occupied" && selectedTile.kind !== "waiting")
       ? null
-      : (occupants.find((occupant) => occupant.key === selectedTile.key) ?? null);
-  const blockedTileCount = tiles.filter((tile) => tile.kind === "blocked").length;
-  const emptyTileCount = tiles.filter((tile) => tile.kind === "empty").length;
+      : (occupantByKey.get(selectedTile.key) ?? null);
 
-  const occupantByKey = new Map(occupants.map((occupant) => [occupant.key, occupant]));
   const tileMatchesFilter = (tile: Tile, filter: BoardFilter): boolean => {
     const occupant = occupantByKey.get(tile.key);
     switch (filter) {
@@ -1315,29 +1305,63 @@ export function WardBoard({
       case "quiet":
         return tile.kind === "occupied" && occupant !== undefined && occupant.expectedDays === null;
       case "all":
+      default:
         return true;
     }
   };
-  const filteredTiles = tiles.filter((tile) => tileMatchesFilter(tile, bedFilter));
+
+  let lookCount = 0;
+  let readyCount = 0;
+  let quietCount = 0;
+  let blockedTileCount = 0;
+  let emptyTileCount = 0;
+  const filteredTiles: Tile[] = [];
+
+  for (const tile of tiles) {
+    if (tile.kind === "blocked") blockedTileCount++;
+    if (tile.kind === "empty") emptyTileCount++;
+
+    const isLook = tileMatchesFilter(tile, "look");
+    const isReady = tileMatchesFilter(tile, "ready");
+    const isQuiet = tileMatchesFilter(tile, "quiet");
+
+    if (isLook) lookCount++;
+    if (isReady) readyCount++;
+    if (isQuiet) quietCount++;
+
+    if (tileMatchesFilter(tile, bedFilter)) {
+      filteredTiles.push(tile);
+    }
+  }
+
+  const filterCounts: Record<BoardFilter, number> = {
+    all: tiles.length,
+    look: lookCount,
+    ready: readyCount,
+    quiet: quietCount,
+  };
+
+  const tileIndexMap = new Map<Tile, number>();
+  for (let i = 0; i < tiles.length; i++) {
+    tileIndexMap.set(tiles[i], i);
+  }
+
   const orderedTiles = [...tiles].sort((a, b) => {
-    if (bedOrder === "recorded") return tiles.indexOf(a) - tiles.indexOf(b);
+    const aIdx = tileIndexMap.get(a) ?? 0;
+    const bIdx = tileIndexMap.get(b) ?? 0;
+    if (bedOrder === "recorded") return aIdx - bIdx;
     const aOccupant = occupantByKey.get(a.key);
     const bOccupant = occupantByKey.get(b.key);
     if (bedOrder === "stay") {
       const aDays = aOccupant?.days ?? -1;
       const bDays = bOccupant?.days ?? -1;
-      return bDays - aDays || tiles.indexOf(a) - tiles.indexOf(b);
+      return bDays - aDays || aIdx - bIdx;
     }
     const aExpected = aOccupant?.expectedDays ?? Number.POSITIVE_INFINITY;
     const bExpected = bOccupant?.expectedDays ?? Number.POSITIVE_INFINITY;
-    return aExpected - bExpected || tiles.indexOf(a) - tiles.indexOf(b);
+    return aExpected - bExpected || aIdx - bIdx;
   });
-  const filterCounts: Record<BoardFilter, number> = {
-    all: tiles.length,
-    look: tiles.filter((tile) => tileMatchesFilter(tile, "look")).length,
-    ready: tiles.filter((tile) => tileMatchesFilter(tile, "ready")).length,
-    quiet: tiles.filter((tile) => tileMatchesFilter(tile, "quiet")).length,
-  };
+
 
   const onFlowTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     const currentIndex = FLOW_TABS.indexOf(flowTab);
@@ -1608,8 +1632,6 @@ export function WardBoard({
         return;
       }
 
-      dialogTriggerRef.current =
-        typeof document !== "undefined" ? (document.activeElement as HTMLElement | null) : null;
       setPendingConfirm({
         kind: "leaving",
         who: item.who || nameFor(item.selectableKey),
@@ -1857,9 +1879,7 @@ export function WardBoard({
                   const next = !prev;
                   if (next) {
                     setTimeout(() => {
-                      const el =
-                        document.getElementById("ward-board-daily-sheet") ||
-                        document.getElementById("ward-daily-sheet");
+                      const el = document.getElementById("ward-board-daily-sheet") || document.getElementById("ward-daily-sheet");
                       el?.scrollIntoView({ behavior: "smooth", block: "start" });
                     }, 60);
                   }
@@ -1887,10 +1907,7 @@ export function WardBoard({
                 <path d="M5.5 7h5M5.5 9.5h5M5.5 12h3" />
               </svg>
               <span>{sheetOpen ? "Hide ward daily sheet" : "Show ward daily sheet"}</span>
-              <span
-                className={`${styles.topDailySheetChevron}${sheetOpen ? ` ${styles.topDailySheetChevronOpen}` : ""}`}
-                aria-hidden="true"
-              >
+              <span className={`${styles.topDailySheetChevron}${sheetOpen ? ` ${styles.topDailySheetChevronOpen}` : ""}`} aria-hidden="true">
                 ▾
               </span>
             </button>
@@ -2779,7 +2796,7 @@ export function WardBoard({
                 destinations and people lists ARE ordered and say so in visible prose. */}
             <ul className={styles.beds} data-testid="ward-board-beds" aria-label="Beds on this ward" tabIndex={0}>
               {orderedTiles.map((tile) => {
-                const index = tiles.indexOf(tile);
+                const index = tileIndexMap.get(tile) ?? tiles.indexOf(tile);
                 const selected = tile.key === selectedKey;
                 const tileOccupant = occupantByKey.get(tile.key);
                 return (
@@ -2844,9 +2861,7 @@ export function WardBoard({
                           <span className="sr-only">{tile.bandLabel}</span>
                           {tile.pastDate && (
                             <span className={styles.pastMark} data-testid={`ward-board-bed-${index + 1}-past`}>
-                              <span aria-hidden="true" className={styles.statusGlyph}>
-                                ▲{" "}
-                              </span>
+                              <span aria-hidden="true" className={styles.statusGlyph}>▲ </span>
                               <span>Past date</span>
                             </span>
                           )}
@@ -2861,9 +2876,7 @@ export function WardBoard({
                             how a number gets believed: it was consistent with itself. */}
                           {tile.awayAtEd && (
                             <span className={styles.awayMark} data-testid={`ward-board-bed-${index + 1}-away`}>
-                              <span aria-hidden="true" className={styles.statusGlyph}>
-                                ◆{" "}
-                              </span>
+                              <span aria-hidden="true" className={styles.statusGlyph}>◆ </span>
                               <span>At ED</span>
                             </span>
                           )}
@@ -3234,11 +3247,7 @@ export function WardBoard({
                             </button>
                           </div>
                           {selectedOccupant.days !== null && selectedOccupant.days >= 7 && (
-                            <div
-                              className={styles.barrierSelectGroup}
-                              data-testid="ward-board-barrier-container"
-                              style={{ flex: "1 1 100%", marginTop: 8 }}
-                            >
+                            <div className={styles.barrierSelectGroup} data-testid="ward-board-barrier-container" style={{ flex: "1 1 100%", marginTop: 8 }}>
                               <label htmlFor="ward-board-barrier-select" className={styles.leavingLabel}>
                                 Primary Discharge Barrier (Stay: {selectedOccupant.days} days)
                               </label>
@@ -3273,6 +3282,7 @@ export function WardBoard({
                           )}
                         </div>
                       )}
+
                     </div>
                   ) : (
                     /* Unreachable while the grid and the list are built from the same two calls, and
@@ -3534,7 +3544,7 @@ export function WardBoard({
                   style={{
                     background: "transparent",
                     border: "none",
-                    color: "var(--text-muted)",
+                    color: "var(--ink-soft)",
                     cursor: "pointer",
                     fontSize: "1.25rem",
                     padding: "0.25rem 0.5rem",
@@ -3547,17 +3557,17 @@ export function WardBoard({
 
               <p
                 id="confirm-dialog-description"
-                style={{ margin: 0, fontSize: "0.95rem", color: "var(--text-muted)", lineHeight: 1.5 }}
+                style={{ margin: 0, fontSize: "0.95rem", color: "var(--ink-soft)", lineHeight: 1.5 }}
               >
                 {pendingConfirm.kind === "leaving" ? (
                   <>
-                    Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has left the ward? This
-                    will record their discharge and make this bed available for new admissions.
+                    Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has left the ward?
+                    This will record their discharge and make this bed available for new admissions.
                   </>
                 ) : (
                   <>
-                    Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has gone to an emergency
-                    department? The bed will remain held for them while they are away.
+                    Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has gone to an emergency department?
+                    The bed will remain held for them while they are away.
                   </>
                 )}
               </p>

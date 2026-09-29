@@ -1036,8 +1036,6 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                   now={now}
                   dispatch={dispatch}
                   rejections={rejections}
-                  patients={patients}
-                  movements={movements}
                 />
               </>
             ) : (

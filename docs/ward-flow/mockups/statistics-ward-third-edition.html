@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en-AU">
   <head>
     <meta charset="utf-8" />
@@ -24,6 +24,8 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
     />
+    <link rel="stylesheet" href="suite-nav.css" />
+    <script src="suite-nav.js" defer></script>
     <style>
       /* ═══════════════════════════════════════════════════════════════════════
          WARD FLOW COMMAND. Third edition, light and dark.
@@ -5117,25 +5119,31 @@
 
       .sovereignTabs {
         display: flex;
-        gap: 6px;
+        gap: 4px;
         border-bottom: 1px solid var(--line);
         margin-bottom: 20px;
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      .sovereignTabs::-webkit-scrollbar {
+        display: none;
       }
       .sovereignTab {
-        padding: 10px 18px;
-        font-size: var(--t-0);
+        padding: 8px 12px;
+        font-size: 12px;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.06em;
         background: transparent;
         border: none;
-        border-bottom: 1px solid transparent;
+        border-bottom: 2px solid transparent;
         color: var(--muted);
         cursor: pointer;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         white-space: nowrap;
         transition:
           color 0.12s,
@@ -5414,6 +5422,42 @@
     </style>
   </head>
   <body>
+    <header class="suiteNavBar" role="navigation" aria-label="Ward Flow Statistics Suite">
+      <a class="suiteNavBrand" href="statistics-third-edition.html">
+        <div class="suiteNavBeacon" aria-hidden="true"></div>
+        <div class="suiteNavTitle">Ward Flow <span class="suiteNavBadge">Statistics Suite</span></div>
+      </a>
+      <nav class="suiteNavTrack" aria-label="Statistics Sections">
+        <a class="suiteNavPill" href="statistics-third-edition.html"
+          ><span class="suiteNavPillNum">1</span> Hub Overview</a
+        >
+        <a class="suiteNavPill" href="statistics-overview-third-edition.html"
+          ><span class="suiteNavPillNum">2</span> Statewide Flow</a
+        >
+        <a class="suiteNavPill" href="statistics-service-third-edition.html"
+          ><span class="suiteNavPillNum">3</span> By Service</a
+        >
+        <a class="suiteNavPill active" href="statistics-ward-third-edition.html"
+          ><span class="suiteNavPillNum">4</span> By Ward</a
+        >
+        <a class="suiteNavPill" href="statistics-emergency-department-third-edition.html"
+          ><span class="suiteNavPillNum">5</span> Emergency Dept</a
+        >
+        <a class="suiteNavPill" href="statistics-community-third-edition.html"
+          ><span class="suiteNavPillNum">6</span> Community Teams</a
+        >
+        <a class="suiteNavPill" href="statistics-compare-third-edition.html"
+          ><span class="suiteNavPillNum">7</span> Ward Comparisons</a
+        >
+      </nav>
+      <div class="suiteNavActions">
+        <button type="button" class="suiteThemeBtn" id="suiteThemeToggle" aria-label="Toggle visual theme">
+          🌙 Dark
+        </button>
+        <a class="suitePortalLink" href="index.html" title="Return to Ward Flow Portal">Portal ↗</a>
+      </div>
+    </header>
+
     <div class="app hApp">
       <a class="skip" href="#bedsNow">Skip to the figures</a>
       <nav class="rail open" id="rail" aria-label="Ward Flow sections"></nav>

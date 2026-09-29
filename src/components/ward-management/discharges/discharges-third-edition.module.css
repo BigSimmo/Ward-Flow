@@ -38,45 +38,59 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 0.75rem;
+  padding: 0.25rem 0;
 }
 .populationSwitch {
-  display: flex;
-  flex-wrap: wrap;
+  display: inline-flex;
+  align-items: center;
   gap: 0.25rem;
   padding: 0.25rem;
   border: 1px solid var(--line);
-  border-radius: var(--r1);
+  border-radius: var(--pill, 9999px);
   background: var(--surface-2);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 .populationSwitch button,
 .statusFilters button,
 .quietButton {
-  min-height: 2.5rem;
+  min-height: 2.25rem;
   border: 1px solid transparent;
-  border-radius: var(--r1);
+  border-radius: var(--pill, 9999px);
   background: transparent;
-  padding: 0.4rem 0.7rem;
+  padding: 0.35rem 0.75rem;
   color: var(--ink-soft);
   font: inherit;
-  font-size: var(--t-1);
+  font-size: var(--t-0);
   cursor: pointer;
+  transition: all 0.12s ease;
 }
 .populationSwitch button {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
   font-weight: 600;
+  border-radius: var(--pill, 9999px);
+}
+.populationSwitch button:hover {
+  color: var(--ink);
 }
 .populationSwitch button[aria-pressed="true"] {
   border-color: var(--line-strong);
   background: var(--surface);
   color: var(--accent);
-  box-shadow: var(--lift);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 8%, transparent);
 }
 .populationSwitch span {
   font-family: var(--mono);
   font-size: var(--t-0);
   font-variant-numeric: tabular-nums;
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--pill, 9999px);
+  background: var(--surface-2);
+}
+.populationSwitch button[aria-pressed="true"] span {
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 .asOf {
   display: inline-flex;
@@ -135,47 +149,85 @@
     box-shadow: none;
   }
 }
+.filterControlBar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+}
 .filters {
   display: flex;
   flex-wrap: wrap;
-  align-items: end;
-  gap: 0.65rem;
+  align-items: flex-end;
+  gap: 0.75rem;
 }
-.filters label {
+.filterField {
   display: grid;
-  gap: 0.3rem;
-  color: var(--muted);
+  gap: 0.25rem;
+}
+.filterLabelText {
   font-size: var(--t-0);
-  font-weight: 600;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
 }
 .filters select {
-  min-height: 2.5rem;
+  min-height: 2.25rem;
   max-width: 19rem;
   border: 1px solid var(--line-strong);
   border-radius: var(--r1);
-  padding: 0.45rem 1.8rem 0.45rem 0.65rem;
-  background: var(--surface);
+  padding: 0.35rem 1.8rem 0.35rem 0.65rem;
+  background: var(--surface-2);
   color: var(--ink);
   font: inherit;
-  font-size: var(--t-1);
-  font-weight: 400;
+  font-size: var(--t-0);
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.12s ease;
+}
+.filters select:hover {
+  border-color: var(--ink-soft);
 }
 .statusFilters {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  align-items: center;
+  gap: 0.35rem;
 }
 .statusFilters button {
-  display: flex;
+  min-height: 2rem;
+  display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
-  border-color: var(--line);
+  gap: 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: var(--pill, 9999px);
   background: var(--surface);
+  padding: 0.2rem 0.6rem;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: var(--t-0);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.statusFilters button:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+  color: var(--ink);
 }
 .statusFilters strong {
   font-family: var(--mono);
-  font-weight: 500;
+  font-weight: 600;
+  font-size: var(--t-0);
   font-variant-numeric: tabular-nums;
+  padding: 0.05rem 0.35rem;
+  border-radius: var(--pill, 9999px);
+  background: var(--surface-2);
 }
 .statusFilters button[data-status="blocked"] {
   color: var(--warn);
@@ -183,6 +235,11 @@
 .statusFilters button[aria-pressed="true"] {
   border-color: var(--accent);
   background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+.statusFilters button[aria-pressed="true"] strong {
+  background: var(--surface);
   color: var(--accent);
 }
 .workspace {
@@ -210,14 +267,21 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.6rem;
-  min-height: 3rem;
-  padding: 0.6rem 0.85rem;
+  gap: 0.75rem;
+  min-height: 3.25rem;
+  padding: 0.5rem 0.85rem;
   border-bottom: 1px solid var(--line);
   background: var(--surface-2);
+  flex-wrap: wrap;
   box-shadow:
     0 4px 6px -1px color-mix(in srgb, var(--ink) 4%, transparent),
     0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
+}
+.panelTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
 }
 .panelHeader h2 {
   margin: 0;
@@ -748,8 +812,28 @@
   border-radius: var(--r1);
   box-shadow: var(--lift);
   padding: 0.75rem 1rem;
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   gap: 0.25rem;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+  user-select: none;
+  text-align: left;
+}
+.kpiCard:hover {
+  transform: translateY(-1px);
+  border-color: var(--line-strong);
+  box-shadow: 0 4px 12px -2px color-mix(in srgb, var(--ink) 8%, transparent);
+}
+.kpiCard:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.kpiCardActive {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 2px 8px -1px color-mix(in srgb, var(--accent) 20%, transparent);
+  background: color-mix(in srgb, var(--surface) 94%, var(--accent));
 }
 .kpiCard[data-tone="danger"] .kpiVal {
   color: var(--danger);
@@ -762,6 +846,49 @@
 }
 .kpiCard[data-tone="accent"] .kpiVal {
   color: var(--accent);
+}
+.kpiCard[data-tone="danger"].kpiCardActive {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 1px var(--danger), 0 2px 8px -1px color-mix(in srgb, var(--danger) 20%, transparent);
+  background: color-mix(in srgb, var(--surface) 94%, var(--danger));
+}
+.kpiCard[data-tone="good"].kpiCardActive {
+  border-color: var(--good);
+  box-shadow: 0 0 0 1px var(--good), 0 2px 8px -1px color-mix(in srgb, var(--good) 20%, transparent);
+  background: color-mix(in srgb, var(--surface) 94%, var(--good));
+}
+.kpiCard[data-tone="warn"].kpiCardActive {
+  border-color: var(--warn);
+  box-shadow: 0 0 0 1px var(--warn), 0 2px 8px -1px color-mix(in srgb, var(--warn) 20%, transparent);
+  background: color-mix(in srgb, var(--surface) 94%, var(--warn));
+}
+.kpiCard[data-tone="accent"].kpiCardActive {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 2px 8px -1px color-mix(in srgb, var(--accent) 20%, transparent);
+  background: color-mix(in srgb, var(--surface) 94%, var(--accent));
+}
+.kpiTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.kpiActionHint {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--pill, 9999px);
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+.kpiCardActive .kpiActionHint {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: currentColor;
 }
 .kpiLabel {
   font-size: var(--t-0);
@@ -776,6 +903,12 @@
   font-weight: 700;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.planActionWrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 .planActionBtn {
   min-height: 2.25rem;
@@ -784,7 +917,7 @@
   background: var(--accent);
   color: var(--on-accent);
   border: 1px solid var(--accent);
-  font-size: var(--t-1);
+  font-size: var(--t-0);
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
@@ -809,6 +942,7 @@
 .planActionNote {
   font-size: var(--t-0);
   color: var(--muted);
+  font-family: var(--mono);
 }
 
 @media (max-width: 55rem) {
@@ -839,11 +973,9 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
+  gap: 0.45rem;
+  padding: 0.45rem 0 0;
+  border-top: 1px solid var(--line);
 }
 
 .quickFilterTitle {
@@ -1030,4 +1162,95 @@
 :global([data-theme="dark"]) .register,
 :global([data-theme="dark"]) .detail {
   background: var(--surface-2);
+}
+
+/* ─── Interactive Row & Patient Bridge ─── */
+.interactiveRow {
+  cursor: pointer;
+  transition: background-color var(--transition-fast, 150ms ease);
+}
+
+.interactiveRow:hover {
+  background-color: var(--surface-hover, rgba(0, 0, 0, 0.02));
+}
+
+.interactiveRow:focus-visible {
+  outline: 2px solid var(--focus-ring, #0284c7);
+  outline-offset: -2px;
+}
+
+.linkedPatientBridge {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.75rem 0.85rem;
+  margin: 0.75rem 0;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--surface-raised, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+}
+
+.linkedPatientHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.linkedPatientLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted, #64748b);
+}
+
+.linkedPatientName {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-strong, #0f172a);
+}
+
+.viewPatientRecordBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary, #0284c7);
+  background: rgba(2, 132, 199, 0.08);
+  border: 1px solid rgba(2, 132, 199, 0.25);
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms ease);
+}
+
+.viewPatientRecordBtn:hover {
+  background: rgba(2, 132, 199, 0.16);
+  border-color: rgba(2, 132, 199, 0.4);
+}
+
+.patientHint {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted, #475569);
+  margin-top: 0.15rem;
+}
+
+:global([data-theme="dark"]) .linkedPatientBridge {
+  background: var(--surface-3, rgba(255, 255, 255, 0.04));
+  border-color: var(--line-strong, rgba(255, 255, 255, 0.12));
+}
+
+:global([data-theme="dark"]) .viewPatientRecordBtn {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+:global([data-theme="dark"]) .viewPatientRecordBtn:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.45);
 }

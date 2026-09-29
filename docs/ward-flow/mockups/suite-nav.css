@@ -1,13 +1,12 @@
 /* ═══════════════════════════════════════════════════════════════════════
    WARD FLOW STATISTICS SUITE MASTER NAVIGATION BAR
    Third Edition Design System Tokens & Responsive Invariants
-   Enforces text floor (>= 12px) and tabular-nums
    ═══════════════════════════════════════════════════════════════════════ */
 
-.navBar {
+.suiteNavBar {
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 10000;
   background: var(--surface, #ffffff);
   border-bottom: 1px solid var(--line-strong, rgba(22, 30, 40, 0.2));
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -19,10 +18,9 @@
   font-family: var(--display, "Geist", system-ui, -apple-system, sans-serif);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  width: 100%;
 }
 
-:global([data-theme="dark"]) .navBar {
+:root[data-theme="dark"] .suiteNavBar {
   background: var(--surface, #171b21);
   border-bottom-color: var(--line-strong, rgba(255, 255, 255, 0.18));
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
@@ -31,7 +29,7 @@
 .suiteNavBrand {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   text-decoration: none;
   color: inherit;
   flex-shrink: 0;
@@ -44,10 +42,9 @@
   background: #227550;
   box-shadow: 0 0 0 2px rgba(34, 117, 80, 0.25);
   animation: suiteNavPulse 2.2s infinite;
-  display: inline-block;
 }
 
-:global([data-theme="dark"]) .suiteNavBeacon {
+:root[data-theme="dark"] .suiteNavBeacon {
   background: #6fd39b;
   box-shadow: 0 0 0 2px rgba(111, 211, 155, 0.3);
 }
@@ -75,37 +72,35 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  white-space: nowrap;
 }
 
-:global([data-theme="dark"]) .suiteNavTitle {
+:root[data-theme="dark"] .suiteNavTitle {
   color: var(--accent-ink, #bfd0e2);
 }
 
 .suiteNavBadge {
   font-family: var(--mono, "Geist Mono", monospace);
-  font-size: 12px;
+  font-size: 10.5px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 1px 6px;
+  letter-spacing: 0.06em;
+  padding: 1px 7px;
   border-radius: 999px;
   background: var(--gilt-soft, #f1ebdf);
   color: var(--gilt, #7d612a);
   border: 1px solid rgba(125, 97, 42, 0.2);
-  white-space: nowrap;
 }
 
-:global([data-theme="dark"]) .suiteNavBadge {
+:root[data-theme="dark"] .suiteNavBadge {
   background: var(--gilt-soft, #2a251b);
   color: var(--gilt, #d3b77e);
   border-color: rgba(211, 183, 126, 0.3);
 }
 
-.scrollTrack {
+.suiteNavTrack {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   background: var(--sunk, #eef2f6);
   padding: 3px;
   border-radius: 8px;
@@ -115,59 +110,51 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
   max-width: 100%;
-  flex: 1 1 auto;
-  min-width: 0;
 }
 
-.scrollTrack::-webkit-scrollbar {
+.suiteNavTrack::-webkit-scrollbar {
   display: none;
 }
 
-:global([data-theme="dark"]) .scrollTrack {
+:root[data-theme="dark"] .suiteNavTrack {
   background: var(--sunk, #13171c);
   border-color: var(--line, rgba(255, 255, 255, 0.09));
 }
 
-.navItem {
+.suiteNavPill {
   font-family: var(--display, "Geist", system-ui, sans-serif);
   font-size: 12px;
   font-weight: 600;
   color: var(--muted, #5f6873);
   background: transparent;
   border: 0;
-  padding: 3px 6px;
+  padding: 5px 11px;
   border-radius: 6px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   text-decoration: none;
   white-space: nowrap;
   transition: all 0.15s ease;
   min-height: 28px;
-  flex-shrink: 0;
 }
 
-:global([data-theme="dark"]) .navItem {
+:root[data-theme="dark"] .suiteNavPill {
   color: var(--muted, #8a929d);
 }
 
-.navItem:hover {
+.suiteNavPill:hover {
   color: var(--ink, #161a20);
   background: rgba(255, 255, 255, 0.6);
 }
 
-:global([data-theme="dark"]) .navItem:hover {
+:root[data-theme="dark"] .suiteNavPill:hover {
   color: var(--ink, #e8ecf1);
   background: rgba(255, 255, 255, 0.08);
 }
 
-.navItem:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
-.navItemActive {
+.suiteNavPill.active {
   color: var(--ink, #161a20);
   background: var(--surface, #ffffff);
   box-shadow:
@@ -176,34 +163,33 @@
   font-weight: 700;
 }
 
-:global([data-theme="dark"]) .navItemActive {
+:root[data-theme="dark"] .suiteNavPill.active {
   color: #ffffff;
   background: var(--surface-2, #1b2026);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
-.navPillNum {
+.suiteNavPillNum {
   font-family: var(--mono, "Geist Mono", monospace);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
-  font-variant-numeric: tabular-nums;
   padding: 1px 5px;
   border-radius: 999px;
   background: var(--accent-soft, #dfe7f0);
   color: var(--accent-ink, #27405a);
 }
 
-:global([data-theme="dark"]) .navPillNum {
+:root[data-theme="dark"] .suiteNavPillNum {
   background: var(--accent-soft, #1f2a36);
   color: var(--accent-ink, #bfd0e2);
 }
 
-.navItemActive .navPillNum {
+.suiteNavPill.active .suiteNavPillNum {
   background: var(--good-soft, #e2f0e8);
   color: var(--good, #227550);
 }
 
-:global([data-theme="dark"]) .navItemActive .navPillNum {
+:root[data-theme="dark"] .suiteNavPill.active .suiteNavPillNum {
   background: var(--good-soft, #15291f);
   color: var(--good, #6fd39b);
 }
@@ -211,28 +197,28 @@
 .suiteNavActions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
 .suiteThemeBtn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   background: var(--surface, #ffffff);
   border: 1px solid var(--line-strong, rgba(22, 30, 40, 0.2));
   color: var(--ink, #161a20);
   font-family: var(--display, "Geist", system-ui, sans-serif);
   font-size: 12px;
   font-weight: 600;
-  padding: 4px 8px;
+  padding: 5px 10px;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
-  min-height: 28px;
+  min-height: 30px;
 }
 
-:global([data-theme="dark"]) .suiteThemeBtn {
+:root[data-theme="dark"] .suiteThemeBtn {
   background: var(--surface-2, #1b2026);
   border-color: var(--line-strong, rgba(255, 255, 255, 0.2));
   color: var(--ink, #e8ecf1);
@@ -242,7 +228,7 @@
   background: var(--sunk, #eef2f6);
 }
 
-:global([data-theme="dark"]) .suiteThemeBtn:hover {
+:root[data-theme="dark"] .suiteThemeBtn:hover {
   background: var(--sunk, #13171c);
 }
 
@@ -252,18 +238,18 @@
   font-weight: 600;
   color: var(--accent-ink, #27405a);
   text-decoration: none;
-  padding: 4px 8px;
+  padding: 5px 9px;
   border-radius: 6px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   background: var(--surface-2, #f4f7fa);
   border: 1px solid var(--line, rgba(22, 30, 40, 0.1));
-  min-height: 28px;
+  min-height: 30px;
   transition: all 0.15s ease;
 }
 
-:global([data-theme="dark"]) .suitePortalLink {
+:root[data-theme="dark"] .suitePortalLink {
   color: var(--accent-ink, #bfd0e2);
   background: var(--surface-2, #1b2026);
   border-color: var(--line, rgba(255, 255, 255, 0.1));
@@ -273,18 +259,18 @@
   background: var(--accent-soft, #dfe7f0);
 }
 
-:global([data-theme="dark"]) .suitePortalLink:hover {
+:root[data-theme="dark"] .suitePortalLink:hover {
   background: var(--accent-soft, #1f2a36);
 }
 
 /* ─── Responsive Breakdown ─── */
 @media (max-width: 1024px) {
-  .navBar {
+  .suiteNavBar {
     padding: 6px 12px;
     gap: 8px;
     flex-wrap: wrap;
   }
-  .scrollTrack {
+  .suiteNavTrack {
     order: 3;
     width: 100%;
     margin-top: 4px;
@@ -292,25 +278,22 @@
   }
 }
 
-@media (max-width: 1600px) {
+@media (max-width: 600px) {
   .suiteNavBadge {
     display: none;
   }
-}
-
-@media (max-width: 600px) {
-  .navItem {
-    padding: 4px 6px;
-    font-size: 12px;
+  .suiteNavPill {
+    padding: 5px 9px;
+    font-size: 11.5px;
   }
-  .navPillNum {
-    font-size: 12px;
+  .suiteNavPillNum {
+    font-size: 9.5px;
     padding: 1px 4px;
   }
   .suiteThemeBtn,
   .suitePortalLink {
-    padding: 4px 6px;
-    font-size: 12px;
+    padding: 4px 8px;
+    font-size: 11px;
     min-height: 28px;
   }
 }
