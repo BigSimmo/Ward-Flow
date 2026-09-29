@@ -9,7 +9,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Star } from "lucide-react";
+import { ArrowRight, BarChart2, Search, Star } from "lucide-react";
 
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import {
@@ -539,6 +539,44 @@ export function HubScreen() {
                 </div>
 
                 <div className={styles.overviewBody} role="region" aria-label="Network overview" tabIndex={0}>
+                  <div className={styles.quickActionsSection}>
+                    <span className={styles.quickActionsLabel}>Quick Jump</span>
+                    <div className={styles.quickActionsChips}>
+                      <button
+                        type="button"
+                        className={styles.quickChip}
+                        onClick={() => {
+                          setKind("ward");
+                          setQuery("");
+                          setSelectedId(undefined);
+                        }}
+                      >
+                        ⚡ Wards
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.quickChip}
+                        onClick={() => {
+                          setKind("ed");
+                          setQuery("");
+                          setSelectedId(undefined);
+                        }}
+                      >
+                        🏥 Emergency Depts
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.quickChip}
+                        onClick={() => {
+                          setKind("community");
+                          setQuery("");
+                          setSelectedId(undefined);
+                        }}
+                      >
+                        👥 Community Teams
+                      </button>
+                    </div>
+                  </div>
                   {/*
                     ⚠️ **FOUR NUMBERS THAT ARE NEVER ADDED UP, ONE LEVEL ABOVE THE WARD PANEL.**
                     Ready + vacant-not-cleared is the physically-empty total, which reads as
@@ -606,8 +644,7 @@ export function HubScreen() {
                         <span className={`${styles.legendSwatch} ${styles.barNotYet}`} /> Not yet cleared {network.held}
                       </span>
                       <span className={styles.legendItem}>
-                        <span className={`${styles.legendSwatch} ${styles.barBlocked}`} /> Out of service not
-                        recorded
+                        <span className={`${styles.legendSwatch} ${styles.barBlocked}`} /> Out of service not recorded
                       </span>
                     </p>
                     <p className={styles.capacityTotal}>
@@ -628,9 +665,21 @@ export function HubScreen() {
                       </thead>
                       <tbody>
                         {byService.map((row) => (
-                          <tr key={row.service}>
-                            <th scope="row">{row.service}</th>
-                            <td className={styles.numCell}>{row.ready}</td>
+                          <tr
+                            key={row.service}
+                            className={styles.serviceRow}
+                            onClick={() => {
+                              setQuery(row.service);
+                              inputRef.current?.focus();
+                            }}
+                            title={`Filter network by ${row.service}`}
+                          >
+                            <th scope="row">
+                              <span className={styles.serviceBadge}>{row.service}</span>
+                            </th>
+                            <td className={styles.numCell}>
+                              <span className={styles.serviceReadyPill}>{row.ready}</span>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -922,7 +971,8 @@ export function HubScreen() {
                       // opened" that nobody chose. This is the only control that leaves the screen.
                       onClick={() => recordHubVisit(selected.id)}
                     >
-                      {selected.kind === "community" ? "Open community teams" : `Open ${selected.name}`}
+                      <span>{selected.kind === "community" ? "Open community teams" : `Open ${selected.name}`}</span>
+                      <ArrowRight className={styles.ctaIcon} size={15} aria-hidden="true" />
                     </a>
                     {/*
                       ⚠️ **WARD AND ED ONLY, AND DELIBERATELY.** `wardStatisticsHref`/`edStatisticsHref`
@@ -934,11 +984,13 @@ export function HubScreen() {
                     */}
                     {selected.kind === "ward" ? (
                       <a className={styles.statsLink} href={wardStatisticsHref(selected.id)}>
-                        View statistics
+                        <BarChart2 className={styles.statsIcon} size={14} aria-hidden="true" />
+                        <span>View statistics</span>
                       </a>
                     ) : selected.kind === "ed" ? (
                       <a className={styles.statsLink} href={edStatisticsHref(selected.id)}>
-                        View statistics
+                        <BarChart2 className={styles.statsIcon} size={14} aria-hidden="true" />
+                        <span>View statistics</span>
                       </a>
                     ) : null}
                   </div>
@@ -975,11 +1027,16 @@ export function HubScreen() {
           nothing goes red about. They come from the same figures the rest of the page renders.
         */}
             <section className={styles.aboutPanel} aria-label="Data provenance">
-              <p className={styles.asAt}>
-                <span className={styles.liveDot} aria-hidden="true" />
-                As at <b className={styles.asAtTime}>{formatInstant(now)}</b>, Perth. {hubReconciliationLine(null)}
-              </p>
-              <div className="srOnly">
+              <div className={styles.asAtWrap}>
+                <p className={styles.asAt}>
+                  <span className={styles.liveDot} aria-hidden="true" />
+                  <span className={styles.clockPhrase}>
+                    As at <b className={styles.asAtTime}>{formatInstant(now)}</b>, Perth.
+                  </span>
+                </p>
+                <p className={styles.reconciliationNotice}>{hubReconciliationLine(null)}</p>
+              </div>
+              <div className={styles.srOnly}>
                 <h4>What is invented</h4>
                 <p>
                   Every bed figure — ready to admit, vacant but not yet cleared, and out of service — is invented for
