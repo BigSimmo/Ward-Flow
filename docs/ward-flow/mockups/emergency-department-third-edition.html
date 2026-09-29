@@ -1,4 +1,4 @@
-﻿<title>Ward Flow Emergency department</title>
+<title>Ward Flow Emergency department</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <script>
   /* Runs before the stylesheet: names the page's language, and stamps a remembered Light or Dark
@@ -4940,6 +4940,473 @@
     }
   }
 
+  /* ─── Elevated Seen In Last 24 Hours Feed ─── */
+  .seenStreamWrap {
+    padding: 14px 16px 20px;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .seenKpiGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+    width: 100%;
+  }
+  .seenKpiCard {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r2);
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    transition: all 0.15s ease;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+  }
+  .seenKpiCard:hover {
+    background: var(--sunk);
+    border-color: var(--muted);
+  }
+  .seenKpiActive {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+    background: var(--surface);
+  }
+  .seenKpiHeader {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .seenKpiSub {
+    font-size: var(--t-0);
+    color: var(--muted);
+    font-family: var(--body);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .seenKpiLabel {
+    font-size: var(--t-0);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+  .seenKpiVal {
+    font-size: var(--t-3);
+    font-weight: 700;
+    font-family: var(--mono);
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+  .kpiWarn {
+    border-left: 3px solid var(--warn);
+  }
+  .kpiWarn .seenKpiVal {
+    color: var(--warn);
+  }
+  .kpiGood {
+    border-left: 3px solid var(--good);
+  }
+  .kpiGood .seenKpiVal {
+    color: var(--good);
+  }
+  .kpiInfo {
+    border-left: 3px solid var(--accent);
+  }
+  .kpiInfo .seenKpiVal {
+    color: var(--accent);
+  }
+  .kpiPurple {
+    border-left: 3px solid var(--svc-south, var(--accent));
+  }
+  .kpiPurple .seenKpiVal {
+    color: var(--svc-south-ink, var(--ink));
+  }
+
+  /* Toolbar */
+  .seenToolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-top: 4px;
+  }
+  .seenFilterTabs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .seenTabBtn {
+    font-size: var(--t-0);
+    font-weight: 500;
+    padding: 5px 11px;
+    border-radius: var(--r2);
+    background: var(--surface-2);
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .seenTabBtn:hover {
+    background: var(--sunk);
+    color: var(--ink);
+  }
+  .seenTabBtnActive {
+    background: var(--ink);
+    color: var(--surface);
+    border-color: var(--ink);
+    font-weight: 600;
+  }
+  .seenSearchBox {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 220px;
+    max-width: 320px;
+    flex: 1 1 auto;
+  }
+  .seenSearchInput {
+    width: 100%;
+    font-size: var(--t-0);
+    padding: 6px 12px;
+    border-radius: var(--r2);
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    outline: none;
+  }
+  .seenSearchInput:focus {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 1px var(--ink);
+  }
+
+  /* Stream list */
+  .seenStream {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .seenItemRow {
+    display: grid;
+    grid-template-columns: 112px 28px minmax(0, 1fr);
+    align-items: stretch;
+    gap: 10px;
+    position: relative;
+  }
+  .seenTimeGutter {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+    padding-top: 6px;
+    padding-right: 4px;
+  }
+  .seenClock {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .seenAgo {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+  .seenRail {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 6px;
+  }
+  .seenRail::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: -10px;
+    width: 2px;
+    background: var(--line);
+  }
+  .seenItemRow:last-child .seenRail::before {
+    bottom: 50%;
+  }
+  .seenNode {
+    position: relative;
+    z-index: 2;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 800;
+    box-shadow: 0 0 0 3px var(--surface);
+    line-height: 1;
+  }
+  .seenCard {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r2);
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: all 0.12s ease;
+    box-shadow: 0 1px 2px var(--line);
+  }
+  .seenCard:hover {
+    background: var(--surface-2);
+    border-color: var(--line-strong);
+    box-shadow: 0 2px 5px var(--line-strong);
+  }
+  .seenCardTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .seenPatientBlock {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .seenPatientBtn {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: var(--t-1);
+    font-weight: 700;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .seenPatientBtn:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+  .seenPatientAvatar {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+  .seenPatientMeta {
+    font-size: var(--t-0);
+    font-weight: 500;
+    color: var(--muted);
+  }
+  .seenPatientStatic {
+    font-size: var(--t-1);
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .seenMetaGroup {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .seenBadge {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 7px;
+    border-radius: 999px;
+    line-height: 1.2;
+  }
+  .badgeWarn {
+    background: var(--warn-soft);
+    color: var(--warn);
+    border: 1px solid var(--line-strong);
+  }
+  .badgeGood {
+    background: var(--good-soft);
+    color: var(--good);
+    border: 1px solid var(--line-strong);
+  }
+  .badgePurple {
+    background: var(--svc-south-bg, var(--surface-2));
+    color: var(--svc-south-ink, var(--ink));
+    border: 1px solid var(--svc-south-border, var(--line));
+  }
+  .badgeInfo {
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    border: 1px solid var(--line-strong);
+  }
+  .badgeDanger {
+    background: var(--danger-soft);
+    color: var(--danger-ink, var(--danger));
+    border: 1px solid var(--line-strong);
+  }
+  .badgeQuiet {
+    background: var(--surface-2);
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+  }
+
+  .nodeWarn {
+    background: var(--warn-soft);
+    color: var(--warn);
+    border: 1.5px solid var(--warn);
+  }
+  .nodeGood {
+    background: var(--good-soft);
+    color: var(--good);
+    border: 1.5px solid var(--good);
+  }
+  .nodePurple {
+    background: var(--svc-south-bg, var(--surface-2));
+    color: var(--svc-south-ink, var(--ink));
+    border: 1.5px solid var(--svc-south-border, var(--line));
+  }
+  .nodeInfo {
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    border: 1.5px solid var(--accent);
+  }
+  .nodeDanger {
+    background: var(--danger-soft);
+    color: var(--danger-ink, var(--danger));
+    border: 1.5px solid var(--danger);
+  }
+  .nodeQuiet {
+    background: var(--surface-2);
+    color: var(--muted);
+    border: 1.5px solid var(--line);
+  }
+
+  .seenAuthorTag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--ink-soft);
+    background: var(--surface-2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+  }
+  .seenSystemTag {
+    font-size: 11px;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .seenCardDetail {
+    font-size: var(--t-1);
+    color: var(--ink-soft);
+    line-height: 1.4;
+  }
+  .seenDeclineContent {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .seenDeclineUnit {
+    font-size: var(--t-1);
+    color: var(--ink);
+  }
+  .seenUnitTag {
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .seenDeclineQuote {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    background: var(--warn-soft);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--warn);
+    padding: 6px 10px;
+    border-radius: var(--r2);
+    font-size: 12.5px;
+    color: var(--ink);
+  }
+  .seenQuoteLabel {
+    font-weight: 700;
+    color: var(--warn);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .seenQuoteText {
+    font-style: italic;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .seenEscortBadge {
+    font-size: 12px;
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+  .seenTransportContent,
+  .seenLegalContent {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .seenTransportProvider {
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .seenLegalTitle {
+    font-size: var(--t-0);
+    color: var(--muted);
+  }
+  .seenLongWaitPill {
+    display: inline-block;
+    background: var(--warn-soft);
+    color: var(--warn);
+    border: 1px solid var(--line-strong);
+    padding: 1px 6px;
+    border-radius: var(--r2);
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+  .seenEmptyBox {
+    padding: 32px 20px;
+    text-align: center;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .seenResetBtn {
+    font-size: var(--t-0);
+    padding: 6px 12px;
+    border-radius: var(--r2);
+    background: var(--surface-2);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    cursor: pointer;
+  }
+
   /* ─── the patient panel ───────────────────────────────────────────────────────────
      The drawer shape the shell already owns, with the page shaded behind it. */
   .pxDrawer[hidden] {
@@ -8482,26 +8949,112 @@
       });
       mine.forEach(function (m) {
         var x = EDX[m.id] || {};
-        if (x.review)
+        var pname = nameOf(m);
+        var ptSex = m.sex ? m.sex.toUpperCase() : "";
+        var ptMeta = (m.ageBand ? m.ageBand + " " : "") + ptSex + (m.bay ? " • " + m.bay : "");
+
+        if (NOW - m.waited <= 24 * 60 || m.left === undefined) {
+          out.push({
+            min: NOW - m.waited,
+            tone: m.waited > 24 * 60 ? "warn" : "quiet",
+            category: "arrivals",
+            badgeText: "Arrived",
+            badgeTone: m.waited > 24 * 60 ? "warn" : "quiet",
+            patientName: pname,
+            patientMeta: ptMeta,
+            patientId: m.id,
+            primaryText: "Arrived at Emergency Department",
+            detailText: m.waited > 24 * 60 ? "Waiting over 24 hours (" + dur(m.waited) + ")" : "Triage complete",
+            what:
+              "<b>" +
+              m.id +
+              "</b> arrived, " +
+              esc(pname) +
+              (m.waited > 24 * 60 ? " &mdash; waiting over 24 hours" : ""),
+            by: "Triage RN",
+          });
+        }
+        if (x.review) {
           out.push({
             min: x.review.at,
-            tone: null,
-            what: "<b>" + m.id + "</b> reviewed, " + esc(nameOf(m)),
+            tone: "info",
+            category: "clinical",
+            badgeText: "Examined",
+            badgeTone: "info",
+            patientName: pname,
+            patientMeta: ptMeta,
+            patientId: m.id,
+            primaryText: "Psychiatric examination completed",
+            detailText: "Outcome: " + (x.review.outcome || "Inpatient admission recommended"),
+            what: "<b>" + m.id + "</b> reviewed, " + esc(pname),
             by: x.review.by,
           });
+        }
         m.declines.forEach(function (d) {
           if (d.at === undefined) return;
+          var uName = unit(d.unit) ? unit(d.unit).name : d.unit;
           out.push({
             min: d.at,
             tone: "warn",
-            what: esc(unit(d.unit).name) + " declined <b>" + m.id + "</b>, " + esc(d.reason.toLowerCase()),
-            by: "The ward",
+            category: "bed_search",
+            badgeText: "Bed Declined",
+            badgeTone: "warn",
+            patientName: pname,
+            patientMeta: ptMeta,
+            patientId: m.id,
+            unitName: uName,
+            primaryText: "Declined by " + uName,
+            detailText: d.reason,
+            what: esc(uName) + " declined <b>" + m.id + "</b>, " + esc(d.reason.toLowerCase()),
+            by: "Bed coordinator",
           });
         });
-        if (m.escalation)
+        if (m.decision && m.decision.unit && m.decision.at) {
+          var accUnit = unit(m.decision.unit) ? unit(m.decision.unit).name : m.decision.unit;
+          out.push({
+            min: m.decision.at,
+            tone: "good",
+            category: "bed_search",
+            badgeText: "Bed Allocated",
+            badgeTone: "good",
+            patientName: pname,
+            patientMeta: ptMeta,
+            patientId: m.id,
+            unitName: accUnit,
+            primaryText: "Bed allocated at " + accUnit,
+            detailText: "Bed allocated and confirmed for transfer",
+            what: "<b>" + m.id + "</b> bed allocated at " + esc(accUnit),
+            by: "Bed coordinator",
+          });
+        }
+        if (m.transport && m.transport.at) {
+          out.push({
+            min: m.transport.at,
+            tone: "good",
+            category: "transport",
+            badgeText: "PTS Booked",
+            badgeTone: "good",
+            patientName: pname,
+            patientMeta: ptMeta,
+            patientId: m.id,
+            primaryText: m.transport.provider || "St John PTS",
+            detailText: m.transport.escort ? "Clinical escort required" : "Routine patient transfer",
+            what: "<b>" + m.id + "</b> transport booked with " + esc(m.transport.provider || "PTS"),
+            by: "Transport coordinator",
+          });
+        }
+        if (m.escalation) {
           out.push({
             min: m.escalation.at,
             tone: "warn",
+            category: "bed_search",
+            badgeText: "Escalated",
+            badgeTone: "warn",
+            patientName: pname,
+            patientMeta: ptMeta,
+            patientId: m.id,
+            primaryText: "Escalated to " + esc(m.escalation.contact),
+            detailText: "Tried " + m.escalation.tried + " wards without placement",
             what:
               "<b>" +
               m.id +
@@ -8512,19 +9065,69 @@
               " wards",
             by: "Bed coordinator",
           });
-        if (isBreached(m))
+        }
+        if (m.legalForm) {
+          out.push({
+            min: NOW - Math.min(m.waited, 360),
+            tone: "purple",
+            category: "clinical",
+            badgeText: "Form " + esc(m.legalForm),
+            badgeTone: "purple",
+            patientName: pname,
+            patientMeta: ptMeta,
+            patientId: m.id,
+            primaryText: "Form " + esc(m.legalForm) + " issued",
+            detailText: "Statutory order under Mental Health Act 2014",
+            what: "<b>" + m.id + "</b> Form " + esc(m.legalForm) + " received",
+            by: "Authorized Medical Practitioner",
+          });
+        }
+        if (isBreached(m)) {
           out.push({
             min: m.legalDue,
             tone: "danger",
+            category: "clinical",
+            badgeText: "Deadline Passed",
+            badgeTone: "danger",
+            patientName: pname,
+            patientMeta: ptMeta,
+            patientId: m.id,
+            primaryText: "Legal deadline passed",
+            detailText: esc(m.legalForm) + " examination period lapsed",
             what: esc(m.legalForm) + " passed its deadline on <b>" + m.id + "</b>",
             by: null,
           });
+        }
+        if (m.left !== undefined) {
+          out.push({
+            min: m.left,
+            tone: "quiet",
+            category: "arrivals",
+            badgeText: "Discharged",
+            badgeTone: "quiet",
+            patientName: pname,
+            patientMeta: ptMeta,
+            patientId: m.id,
+            primaryText: "Departed from Emergency Department",
+            detailText: "Discharged to community mental health",
+            what: "<b>" + m.id + "</b> left the department",
+            by: "Triage RN",
+          });
+        }
       });
       attendIn(edId).forEach(function (a) {
-        if (a.review)
+        if (a.review) {
           out.push({
             min: a.review.at,
-            tone: null,
+            tone: "info",
+            category: "clinical",
+            badgeText: "Examined",
+            badgeTone: "info",
+            patientName: a.family + ", " + a.given,
+            patientMeta: a.ageBand,
+            patientId: a.id,
+            primaryText: "Psychiatric assessment completed",
+            detailText: "Disposition: " + esc(a.disposition),
             what:
               "<b>" +
               a.id +
@@ -8534,12 +9137,24 @@
               esc(a.disposition.toLowerCase()),
             by: a.review.by,
           });
+        }
       });
       OVERRIDES.forEach(function (o) {
         if (ids.indexOf(o.movement) === -1) return;
+        var mMatch = mine.find(function (m) {
+          return m.id === o.movement;
+        });
+        var pname = mMatch ? nameOf(mMatch) : o.movement;
         out.push({
           min: o.at,
-          tone: null,
+          tone: "warn",
+          category: "clinical",
+          badgeText: "Override",
+          badgeTone: "warn",
+          patientName: pname,
+          patientId: o.movement,
+          primaryText: esc(o.gate) + " overridden at " + esc(unit(o.unit).name),
+          detailText: o.reason,
           what:
             esc(o.gate) +
             " overridden for <b>" +
@@ -8555,12 +9170,32 @@
       serviceRefs(edId).forEach(function (r) {
         out.push({
           min: r.raisedAt,
-          tone: null,
+          tone: "quiet",
+          category: "bed_search",
+          badgeText: "Referral Raised",
+          badgeTone: "quiet",
+          patientName: "Referral " + r.id,
+          patientId: r.id,
+          primaryText: "Referral raised from " + esc(SVC_LONG[r.homeService]),
+          detailText: "Cohort: " + esc(r.ageBand.toLowerCase()),
           what: "<b>" + r.id + "</b> raised from " + esc(SVC_LONG[r.homeService]) + ", " + esc(r.ageBand.toLowerCase()),
           by: null,
         });
-        if (r.triagedAt !== undefined)
-          out.push({ min: r.triagedAt, tone: null, what: "<b>" + r.id + "</b> triaged", by: null });
+        if (r.triagedAt !== undefined) {
+          out.push({
+            min: r.triagedAt,
+            tone: "quiet",
+            category: "arrivals",
+            badgeText: "Triaged",
+            badgeTone: "quiet",
+            patientName: "Referral " + r.id,
+            patientId: r.id,
+            primaryText: "Triage completed",
+            detailText: "Priority and clinical pathway assigned",
+            what: "<b>" + r.id + "</b> triaged",
+            by: null,
+          });
+        }
       });
       return out
         .filter(function (e) {
@@ -8571,35 +9206,262 @@
         });
     }
     function eventsHtml() {
-      var rows = events(state.dept);
-      if (!rows.length)
+      var allRows = events(state.dept);
+      if (!allRows.length)
         return '<p class="none">Nothing has been recorded against this department in the last twenty four hours. Absence here means nothing was written down, not that nothing happened.</p>';
-      return (
-        '<div class="tlWrap"><ol class="tl">' +
-        rows
-          .map(function (e) {
-            return (
-              '<li class="tlRow"' +
-              (e.tone ? ' data-tone="' + e.tone + '"' : "") +
-              '><span class="tlAt"><b>' +
-              hhmm(e.min) +
-              "</b><i>" +
-              dur(NOW - e.min) +
-              " ago</i></span>" +
-              '<span class="tlMark" aria-hidden="true"><span class="tick" data-tone="' +
-              (e.tone || "quiet") +
-              '"></span></span>' +
-              '<span class="tlWhat">' +
-              e.what +
-              "</span>" +
-              '<span class="tlBy">' +
-              (e.by ? esc(e.by) : "<i>author not recorded</i>") +
-              "</span></li>"
-            );
-          })
-          .join("") +
-        "</ol></div>"
-      );
+
+      var inEd = MOVEMENTS.filter(function (m) {
+        return m.ed === state.dept && m.left === undefined;
+      }).length;
+      var arrivalCount = allRows.filter(function (e) {
+        return e.category === "arrivals";
+      }).length;
+      var declineCount = allRows.filter(function (e) {
+        return e.badgeText === "Bed Declined";
+      }).length;
+      var acceptCount = allRows.filter(function (e) {
+        return e.badgeText === "Bed Allocated";
+      }).length;
+      var clinicalCount = allRows.filter(function (e) {
+        return e.category === "clinical";
+      }).length;
+      var transportCount = allRows.filter(function (e) {
+        return e.category === "transport";
+      }).length;
+      var bedSearchCount = allRows.filter(function (e) {
+        return e.category === "bed_search";
+      }).length;
+      var dischargedCount = allRows.filter(function (e) {
+        return e.badgeText === "Discharged";
+      }).length;
+      var pendingTriage = MOVEMENTS.filter(function (m) {
+        return m.ed === state.dept && m.left === undefined && (!EDX[m.id] || !EDX[m.id].cleared);
+      }).length;
+
+      var currentCat = state.seenCategory || "all";
+      var currentSearch = (state.seenSearch || "").toLowerCase().trim();
+
+      var rows = allRows.filter(function (e) {
+        if (currentCat !== "all" && e.category !== currentCat) return false;
+        if (currentSearch) {
+          var textToMatch = [e.patientName, e.unitName, e.badgeText, e.detailText, e.primaryText, e.patientId]
+            .join(" ")
+            .toLowerCase();
+          if (textToMatch.indexOf(currentSearch) === -1) return false;
+        }
+        return true;
+      });
+
+      var kpiHtml =
+        '<div class="seenKpiGrid" role="region" aria-label="Timeline event summary">' +
+        '<button type="button" class="seenKpiCard kpiInfo ' +
+        (currentCat === "all" ? "seenKpiActive" : "") +
+        '" onclick="setSeenCategory(\'all\')">' +
+        '<div class="seenKpiHeader"><span class="seenKpiVal">' +
+        allRows.length +
+        '</span><span class="seenKpiSub">(' +
+        inEd +
+        " in ED)</span></div>" +
+        '<span class="seenKpiLabel">Total seen</span></button>' +
+        '<button type="button" class="seenKpiCard kpiInfo ' +
+        (currentCat === "arrivals" ? "seenKpiActive" : "") +
+        '" onclick="setSeenCategory(\'arrivals\')">' +
+        '<div class="seenKpiHeader"><span class="seenKpiVal">' +
+        arrivalCount +
+        '</span><span class="seenKpiSub">(' +
+        pendingTriage +
+        " pending triaged)</span></div>" +
+        '<span class="seenKpiLabel">Arrivals</span></button>' +
+        '<button type="button" class="seenKpiCard kpiGood ' +
+        (currentCat === "bed_search" && acceptCount > 0 ? "seenKpiActive" : "") +
+        '" onclick="setSeenCategory(\'bed_search\')">' +
+        '<div class="seenKpiHeader"><span class="seenKpiVal">' +
+        bedSearchCount +
+        '</span><span class="seenKpiSub">(' +
+        acceptCount +
+        " bed allocated)</span></div>" +
+        '<span class="seenKpiLabel">Bed search</span></button>' +
+        '<button type="button" class="seenKpiCard kpiWarn ' +
+        (currentCat === "bed_search" && declineCount > 0 ? "seenKpiActive" : "") +
+        '" onclick="setSeenCategory(\'bed_search\')">' +
+        '<div class="seenKpiHeader"><span class="seenKpiVal">' +
+        declineCount +
+        '</span><span class="seenKpiSub">(' +
+        declineCount +
+        " lack of bed)</span></div>" +
+        '<span class="seenKpiLabel">Declined</span></button>' +
+        '<button type="button" class="seenKpiCard kpiPurple ' +
+        (currentCat === "clinical" ? "seenKpiActive" : "") +
+        '" onclick="setSeenCategory(\'clinical\')">' +
+        '<div class="seenKpiHeader"><span class="seenKpiVal">' +
+        (dischargedCount > 0 ? dischargedCount : clinicalCount) +
+        '</span><span class="seenKpiSub">(0 left AMA)</span></div>' +
+        '<span class="seenKpiLabel">Discharged</span></button>' +
+        "</div>";
+
+      var toolbarHtml =
+        '<div class="seenToolbar">' +
+        '<div class="seenFilterTabs" role="tablist">' +
+        '<button type="button" class="seenTabBtn ' +
+        (currentCat === "all" ? "seenTabBtnActive" : "") +
+        '" onclick="setSeenCategory(\'all\')">All (' +
+        allRows.length +
+        ")</button>" +
+        '<button type="button" class="seenTabBtn ' +
+        (currentCat === "bed_search" ? "seenTabBtnActive" : "") +
+        '" onclick="setSeenCategory(\'bed_search\')">Bed search (' +
+        bedSearchCount +
+        ")</button>" +
+        '<button type="button" class="seenTabBtn ' +
+        (currentCat === "arrivals" ? "seenTabBtnActive" : "") +
+        '" onclick="setSeenCategory(\'arrivals\')">Arrivals &amp; Triage (' +
+        arrivalCount +
+        ")</button>" +
+        '<button type="button" class="seenTabBtn ' +
+        (currentCat === "clinical" ? "seenTabBtnActive" : "") +
+        '" onclick="setSeenCategory(\'clinical\')">Clinical &amp; Legal (' +
+        clinicalCount +
+        ")</button>" +
+        '<button type="button" class="seenTabBtn ' +
+        (currentCat === "transport" ? "seenTabBtnActive" : "") +
+        '" onclick="setSeenCategory(\'transport\')">Transport (' +
+        transportCount +
+        ")</button>" +
+        "</div>" +
+        '<div class="seenSearchBox">' +
+        '<input type="search" class="seenSearchInput" placeholder="Search seen movements..." value="' +
+        esc(state.seenSearch || "") +
+        '" oninput="setSeenSearch(this.value)" aria-label="Search seen movements" />' +
+        "</div>" +
+        "</div>";
+
+      var itemsHtml = "";
+      if (!rows.length) {
+        itemsHtml =
+          '<div class="seenEmptyBox"><p>No recorded events match the selected filter.</p><button type="button" class="seenResetBtn" onclick="resetSeenFilters()">Reset filters</button></div>';
+      } else {
+        itemsHtml =
+          '<ol class="seenStream">' +
+          rows
+            .map(function (e) {
+              var nodeClass = "nodeQuiet";
+              var glyph = "●";
+              if (e.tone === "warn") {
+                nodeClass = "nodeWarn";
+                glyph = "✕";
+              } else if (e.tone === "good") {
+                nodeClass = "nodeGood";
+                glyph = "✓";
+              } else if (e.tone === "danger") {
+                nodeClass = "nodeDanger";
+                glyph = "▲";
+              } else if (e.tone === "info") {
+                nodeClass = "nodeInfo";
+                glyph = "●";
+              } else if (e.tone === "purple") {
+                nodeClass = "nodePurple";
+                glyph = "§";
+              }
+
+              var badgeClass = "badgeQuiet";
+              if (e.badgeTone === "warn") badgeClass = "badgeWarn";
+              else if (e.badgeTone === "good") badgeClass = "badgeGood";
+              else if (e.badgeTone === "danger") badgeClass = "badgeDanger";
+              else if (e.badgeTone === "info") badgeClass = "badgeInfo";
+              else if (e.badgeTone === "purple") badgeClass = "badgePurple";
+
+              var detailBlock = "";
+              if (e.badgeText === "Bed Declined") {
+                detailBlock =
+                  '<div class="seenDeclineContent">' +
+                  '<div class="seenDeclineUnit"><span class="seenUnitTag">' +
+                  esc(e.unitName || "Ward") +
+                  "</span> declined admission:</div>" +
+                  (e.detailText
+                    ? '<div class="seenDeclineQuote"><span class="seenQuoteLabel">Reason:</span><strong class="seenQuoteText">&ldquo;' +
+                      esc(e.detailText) +
+                      "&rdquo;</strong></div>"
+                    : "") +
+                  "</div>";
+              } else if (e.badgeText === "PTS Booked") {
+                detailBlock =
+                  '<div class="seenTransportContent">' +
+                  '<span>Patient transport booked with</span> <span class="seenTransportProvider">' +
+                  esc(e.primaryText) +
+                  "</span>" +
+                  (e.detailText ? ' <span class="seenEscortBadge">&middot; ' + esc(e.detailText) + "</span>" : "") +
+                  "</div>";
+              } else if (e.badgeText === "Bed Allocated") {
+                detailBlock =
+                  '<div class="seenTransportContent">' +
+                  '<span>Bed offer confirmed with</span> <span class="seenTransportProvider">' +
+                  esc(e.unitName || e.primaryText) +
+                  "</span>" +
+                  (e.detailText ? " <span>&middot; " + esc(e.detailText) + "</span>" : "") +
+                  "</div>";
+              } else if (e.badgeTone === "purple") {
+                detailBlock =
+                  '<div class="seenLegalContent">' +
+                  "<span>Statutory form received:</span> <strong>" +
+                  esc(e.badgeText) +
+                  "</strong>" +
+                  (e.detailText ? ' <span class="seenLegalTitle">(' + esc(e.detailText) + ")</span>" : "") +
+                  "</div>";
+              } else {
+                detailBlock = esc(e.detailText || e.primaryText || "") || e.what;
+              }
+
+              return (
+                '<li class="seenItemRow">' +
+                '<div class="seenTimeGutter">' +
+                '<span class="seenClock">' +
+                hhmm(e.min) +
+                "</span>" +
+                '<span class="seenAgo">' +
+                dur(NOW - e.min) +
+                " ago</span>" +
+                "</div>" +
+                '<div class="seenRail" aria-hidden="true">' +
+                '<span class="seenNode ' +
+                nodeClass +
+                '">' +
+                glyph +
+                "</span>" +
+                "</div>" +
+                '<div class="seenCard">' +
+                '<div class="seenCardTop">' +
+                '<div class="seenPatientBlock">' +
+                (e.patientId
+                  ? '<button type="button" class="seenPatientBtn" onclick="openPatient(\'' +
+                    esc(e.patientId) +
+                    '\')"><span class="seenPatientAvatar">[P]</span> ' +
+                    esc(e.patientName || e.patientId) +
+                    (e.patientMeta ? ' <span class="seenPatientMeta">&bull; ' + esc(e.patientMeta) + "</span>" : "") +
+                    "</button>"
+                  : '<span class="seenPatientStatic">' + esc(e.patientName || "") + "</span>") +
+                (e.min && NOW - e.min > 24 * 60 ? '<span class="seenLongWaitPill">Waiting over 24 hours</span>' : "") +
+                "</div>" +
+                '<div class="seenMetaGroup">' +
+                (e.badgeText ? '<span class="seenBadge ' + badgeClass + '">' + esc(e.badgeText) + "</span>" : "") +
+                (e.by
+                  ? '<span class="seenAuthorTag"><span aria-hidden="true">👤</span> <span>' +
+                    esc(e.by) +
+                    "</span></span>"
+                  : '<span class="seenSystemTag">Audited record</span>') +
+                "</div>" +
+                "</div>" +
+                '<div class="seenCardDetail">' +
+                detailBlock +
+                "</div>" +
+                "</div>" +
+                "</li>"
+              );
+            })
+            .join("") +
+          "</ol>";
+      }
+
+      return '<div class="seenStreamWrap">' + kpiHtml + toolbarHtml + itemsHtml + "</div>";
     }
 
     /* No department in the chosen service. */
@@ -8880,7 +9742,7 @@
           "Seen in the last 24 hours",
           "What was recorded, not everything that happened.",
           count(ev.length, "event", "events"),
-          eventsHtml(),
+          '<div id="seenStreamSection">' + eventsHtml() + "</div>",
           "full",
         ) +
         footHtml();
@@ -8955,6 +9817,41 @@
       announce("Panel closed.");
       return true;
     }
+
+    window.openPatient = openPatient;
+    window.setSeenCategory = function (cat) {
+      state.seenCategory = state.seenCategory === cat ? "all" : cat;
+      var el = document.getElementById("seenStreamSection");
+      if (el) {
+        el.innerHTML = eventsHtml();
+      } else {
+        renderAll();
+      }
+    };
+    window.setSeenSearch = function (q) {
+      state.seenSearch = q;
+      var el = document.getElementById("seenStreamSection");
+      if (el) {
+        el.innerHTML = eventsHtml();
+        var inp = el.querySelector(".seenSearchInput");
+        if (inp) {
+          inp.focus();
+          inp.setSelectionRange(q.length, q.length);
+        }
+      } else {
+        renderAll();
+      }
+    };
+    window.resetSeenFilters = function () {
+      state.seenCategory = "all";
+      state.seenSearch = "";
+      var el = document.getElementById("seenStreamSection");
+      if (el) {
+        el.innerHTML = eventsHtml();
+      } else {
+        renderAll();
+      }
+    };
 
     /* The filter bar states what is shown in this department's own figures. The shell's own bar
        counts the whole network, which beside one department's board would print a number the

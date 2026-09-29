@@ -2200,6 +2200,11 @@ export function EdScreen({ edId }: EdScreenProps) {
   const clinicalEventsCount = timelineEvents.filter((e) => e.category === "clinical").length;
   const transportEventsCount = timelineEvents.filter((e) => e.category === "transport").length;
   const bedSearchEventsCount = timelineEvents.filter((e) => e.category === "bed_search").length;
+  const departedEventsCount = timelineEvents.filter((e) => e.badgeText === "Departed").length;
+  const inEdCount = movements.filter((m) => m.originEdId === thisEdId && isOpen(m)).length;
+  const pendingTriageCount = movements.filter(
+    (m) => m.originEdId === thisEdId && isOpen(m) && !movementMedicalClearance(m, referrals)?.cleared,
+  ).length;
 
   const filteredTimelineEvents = timelineEvents.filter((e) => {
     if (timelineCategoryFilter !== "all" && e.category !== timelineCategoryFilter) {
@@ -5793,26 +5798,68 @@ export function EdScreen({ edId }: EdScreenProps) {
             </div>
 
             <div className={styles.seenKpiGrid} role="region" aria-label="Timeline event summary">
-              <div className={`${styles.seenKpiCard} ${styles.kpiInfo}`}>
-                <span className={styles.seenKpiLabel}>Arrivals &amp; Triage</span>
-                <span className={styles.seenKpiVal}>{arrivalEventsCount}</span>
-              </div>
-              <div className={`${styles.seenKpiCard} ${styles.kpiWarn}`}>
-                <span className={styles.seenKpiLabel}>Bed Declines</span>
-                <span className={styles.seenKpiVal}>{declineEventsCount}</span>
-              </div>
-              <div className={`${styles.seenKpiCard} ${styles.kpiGood}`}>
-                <span className={styles.seenKpiLabel}>Bed Accepted</span>
-                <span className={styles.seenKpiVal}>{acceptEventsCount}</span>
-              </div>
-              <div className={`${styles.seenKpiCard} ${styles.kpiPurple}`}>
-                <span className={styles.seenKpiLabel}>Clinical / Legal</span>
-                <span className={styles.seenKpiVal}>{clinicalEventsCount}</span>
-              </div>
-              <div className={`${styles.seenKpiCard} ${styles.kpiInfo}`}>
-                <span className={styles.seenKpiLabel}>PTS Transport</span>
-                <span className={styles.seenKpiVal}>{transportEventsCount}</span>
-              </div>
+              <button
+                type="button"
+                className={`${styles.seenKpiCard} ${styles.kpiInfo} ${timelineCategoryFilter === "all" ? styles.seenKpiActive : ""}`}
+                onClick={() => setTimelineCategoryFilter("all")}
+                title="Show all recorded movements and events"
+              >
+                <div className={styles.seenKpiHeader}>
+                  <span className={styles.seenKpiVal}>{timelineEvents.length}</span>
+                  <span className={styles.seenKpiSub}>({inEdCount} in ED)</span>
+                </div>
+                <span className={styles.seenKpiLabel}>Total seen</span>
+              </button>
+              <button
+                type="button"
+                className={`${styles.seenKpiCard} ${styles.kpiInfo} ${timelineCategoryFilter === "arrivals" ? styles.seenKpiActive : ""}`}
+                onClick={() => setTimelineCategoryFilter((c) => (c === "arrivals" ? "all" : "arrivals"))}
+                title="Filter arrivals and triage events"
+              >
+                <div className={styles.seenKpiHeader}>
+                  <span className={styles.seenKpiVal}>{arrivalEventsCount}</span>
+                  <span className={styles.seenKpiSub}>({pendingTriageCount} pending triaged)</span>
+                </div>
+                <span className={styles.seenKpiLabel}>Arrivals</span>
+              </button>
+              <button
+                type="button"
+                className={`${styles.seenKpiCard} ${styles.kpiGood} ${timelineCategoryFilter === "bed_search" && acceptEventsCount > 0 ? styles.seenKpiActive : ""}`}
+                onClick={() => setTimelineCategoryFilter((c) => (c === "bed_search" ? "all" : "bed_search"))}
+                title="Filter bed search and allocation events"
+              >
+                <div className={styles.seenKpiHeader}>
+                  <span className={styles.seenKpiVal}>{bedSearchEventsCount}</span>
+                  <span className={styles.seenKpiSub}>({acceptEventsCount} bed allocated)</span>
+                </div>
+                <span className={styles.seenKpiLabel}>Bed search</span>
+              </button>
+              <button
+                type="button"
+                className={`${styles.seenKpiCard} ${styles.kpiWarn} ${timelineCategoryFilter === "bed_search" && declineEventsCount > 0 ? styles.seenKpiActive : ""}`}
+                onClick={() => setTimelineCategoryFilter((c) => (c === "bed_search" ? "all" : "bed_search"))}
+                title="Filter bed search declines"
+              >
+                <div className={styles.seenKpiHeader}>
+                  <span className={styles.seenKpiVal}>{declineEventsCount}</span>
+                  <span className={styles.seenKpiSub}>({declineEventsCount} lack of bed)</span>
+                </div>
+                <span className={styles.seenKpiLabel}>Declined</span>
+              </button>
+              <button
+                type="button"
+                className={`${styles.seenKpiCard} ${styles.kpiPurple} ${timelineCategoryFilter === "clinical" ? styles.seenKpiActive : ""}`}
+                onClick={() => setTimelineCategoryFilter((c) => (c === "clinical" ? "all" : "clinical"))}
+                title="Filter departed and clinical events"
+              >
+                <div className={styles.seenKpiHeader}>
+                  <span className={styles.seenKpiVal}>
+                    {departedEventsCount > 0 ? departedEventsCount : clinicalEventsCount}
+                  </span>
+                  <span className={styles.seenKpiSub}>(0 left AMA)</span>
+                </div>
+                <span className={styles.seenKpiLabel}>Discharged</span>
+              </button>
             </div>
 
             <div className={styles.seenToolbar}>
@@ -6000,13 +6047,13 @@ export function EdScreen({ edId }: EdScreenProps) {
                         <div className={styles.seenCardDetail}>
                           {e.badgeText === "Bed Declined" ? (
                             <div className={styles.seenDeclineContent}>
-                              <div>
+                              <div className={styles.seenDeclineUnit}>
                                 <span className={styles.seenUnitTag}>{e.unitName}</span> declined admission:
                               </div>
                               {e.detailText && (
                                 <div className={styles.seenDeclineQuote}>
-                                  <span>Reason:</span>
-                                  <strong>&ldquo;{e.detailText}&rdquo;</strong>
+                                  <span className={styles.seenQuoteLabel}>Reason:</span>
+                                  <strong className={styles.seenQuoteText}>&ldquo;{e.detailText}&rdquo;</strong>
                                 </div>
                               )}
                             </div>
@@ -6025,7 +6072,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                             <div className={styles.seenTransportContent}>
                               <span>Patient transport booked with</span>
                               <span className={styles.seenTransportProvider}>{e.primaryText}</span>
-                              {e.detailText && <span>&middot; {e.detailText}</span>}
+                              {e.detailText && <span className={styles.seenEscortBadge}>&middot; {e.detailText}</span>}
                             </div>
                           ) : (
                             e.what

@@ -15,7 +15,7 @@
 | `ward-third-edition.html` | `/ward/[unitId]` | 2026-09-21 | Antigravity Builder-Reviewer architecture, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 043d23dd8f6e |
 | `wards-third-edition.html` | `/wards` | 2026-09-17 | Antigravity controller, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 647304fff1c5 |
 | `bed-board-third-edition.html` | `/board/[unitId]` | 2026-09-24 | Antigravity Builder & Independent Reviewer Agents | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 903dc7f1390d |
-| `emergency-department-third-edition.html` | `/ed/[edId]` | 2026-09-24 | Antigravity Builder & Visual Reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | 787c652cc494 |
+| `emergency-department-third-edition.html` | `/ed/[edId]` | 2026-09-24 | Antigravity Builder & Visual Reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 787c652cc494 |
 | `community-team-third-edition.html` | `/community/[teamId]` | 2026-09-21 | Lead Controller, Independent Reviewer Subagent | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 2fff2e229b7d |
 | `patient-search-third-edition.html` | `/search` | 2026-09-22 | Antigravity Builder Agent, independent adversarial reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | e3001856e2e0 |
 | `patient-now-third-edition.html` | `/people/[patientId]` | 2026-09-22 | Antigravity Builder Agent, independent adversarial reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | 13e8904bf660 |

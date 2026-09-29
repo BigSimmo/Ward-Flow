@@ -1967,11 +1967,35 @@ tr.qRow:focus-visible {
   flex-direction: column;
   gap: 2px;
   transition: all 0.15s ease;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
 }
 
 .seenKpiCard:hover {
   background: var(--surface-3, var(--surface-2));
   border-color: var(--muted);
+}
+
+.seenKpiActive {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 2px var(--accent-soft, var(--line-strong));
+  background: var(--surface-3, var(--surface-2));
+}
+
+.seenKpiHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.seenKpiSub {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--body);
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .seenKpiLabel {
@@ -1992,35 +2016,35 @@ tr.qRow:focus-visible {
 }
 
 .kpiWarn {
-  border-left: 3px solid #f59e0b;
+  border-left: 3px solid var(--warn);
 }
 
 .kpiWarn .seenKpiVal {
-  color: #b45309;
+  color: var(--warn);
 }
 
 .kpiGood {
-  border-left: 3px solid #10b981;
+  border-left: 3px solid var(--good);
 }
 
 .kpiGood .seenKpiVal {
-  color: #047857;
+  color: var(--good);
 }
 
 .kpiInfo {
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--accent);
 }
 
 .kpiInfo .seenKpiVal {
-  color: #1d4ed8;
+  color: var(--accent);
 }
 
 .kpiPurple {
-  border-left: 3px solid #8b5cf6;
+  border-left: 3px solid var(--svc-south, var(--accent));
 }
 
 .kpiPurple .seenKpiVal {
-  color: #6d28d9;
+  color: var(--svc-south-ink, var(--ink));
 }
 
 /* Controls Toolbar */
@@ -2179,7 +2203,7 @@ tr.qRow:focus-visible {
   top: 0;
   bottom: -10px;
   width: 2px;
-  background: var(--line, #e2e8f0);
+  background: var(--line);
 }
 
 .seenItemRow:last-child .seenRail::before {
@@ -2202,33 +2226,33 @@ tr.qRow:focus-visible {
 }
 
 .nodeWarn {
-  background: #fef3c7;
-  color: #b45309;
-  border: 1.5px solid #f59e0b;
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1.5px solid var(--warn);
 }
 
 .nodeGood {
-  background: #ecfdf5;
-  color: #047857;
-  border: 1.5px solid #10b981;
+  background: var(--good-soft);
+  color: var(--good);
+  border: 1.5px solid var(--good);
 }
 
 .nodePurple {
-  background: #f5f3ff;
-  color: #6d28d9;
-  border: 1.5px solid #8b5cf6;
+  background: var(--svc-south-bg, var(--surface-2));
+  color: var(--svc-south-ink, var(--ink));
+  border: 1.5px solid var(--svc-south-border, var(--line));
 }
 
 .nodeInfo {
-  background: #eff6ff;
-  color: #1d4ed8;
-  border: 1.5px solid #3b82f6;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border: 1.5px solid var(--accent);
 }
 
 .nodeDanger {
-  background: #fef2f2;
-  color: #b91c1c;
-  border: 1.5px solid #ef4444;
+  background: var(--danger-soft);
+  color: var(--danger-ink, var(--danger));
+  border: 1.5px solid var(--danger);
 }
 
 .nodeQuiet {
@@ -2247,13 +2271,13 @@ tr.qRow:focus-visible {
   flex-direction: column;
   gap: 6px;
   transition: all 0.12s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 1px 2px var(--line);
 }
 
 .seenCard:hover {
   background: var(--surface-2);
   border-color: var(--muted);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 5px var(--line-strong);
 }
 
 .seenCardTop {
@@ -2283,7 +2307,7 @@ tr.qRow:focus-visible {
 }
 
 .seenPatientBtn:hover {
-  color: var(--primary, #0284c7);
+  color: var(--accent);
   text-decoration: underline;
 }
 
@@ -2323,33 +2347,33 @@ tr.qRow:focus-visible {
 }
 
 .badgeWarn {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--line-strong);
 }
 
 .badgeGood {
-  background: #ecfdf5;
-  color: #065f46;
-  border: 1px solid #a7f3d0;
+  background: var(--good-soft);
+  color: var(--good);
+  border: 1px solid var(--line-strong);
 }
 
 .badgePurple {
-  background: #f5f3ff;
-  color: #5b21b6;
-  border: 1px solid #ddd6fe;
+  background: var(--svc-south-bg, var(--surface-2));
+  color: var(--svc-south-ink, var(--ink));
+  border: 1px solid var(--svc-south-border, var(--line));
 }
 
 .badgeInfo {
-  background: #eff6ff;
-  color: #1e40af;
-  border: 1px solid #bfdbfe;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border: 1px solid var(--line-strong);
 }
 
 .badgeDanger {
-  background: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
+  background: var(--danger-soft);
+  color: var(--danger-ink, var(--danger));
+  border: 1px solid var(--line-strong);
 }
 
 .badgeQuiet {
@@ -2386,7 +2410,13 @@ tr.qRow:focus-visible {
 .seenDeclineContent {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 6px;
+}
+
+.seenDeclineUnit {
+  font-size: var(--t-1);
+  color: var(--ink);
+  line-height: 1.4;
 }
 
 .seenUnitTag {
@@ -2396,20 +2426,41 @@ tr.qRow:focus-visible {
 }
 
 .seenDeclineQuote {
-  display: inline-flex;
+  display: flex;
   align-items: baseline;
-  gap: 6px;
-  background: #fffbeb;
-  border: 1px solid #fef3c7;
-  padding: 3px 8px;
-  border-radius: 4px;
+  gap: 8px;
+  background: var(--warn-soft);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--warn);
+  padding: 6px 10px;
+  border-radius: var(--r2);
   font-size: 12.5px;
-  color: #92400e;
+  color: var(--ink);
 }
 
-.seenDeclineQuote strong {
-  color: #78350f;
-  font-weight: 600;
+.seenQuoteLabel {
+  font-weight: 700;
+  color: var(--warn);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.seenQuoteText {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.seenEscortBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-weight: 500;
 }
 
 .seenTransportContent {
@@ -2433,11 +2484,11 @@ tr.qRow:focus-visible {
 .seenExamOutcome {
   display: inline-block;
   font-weight: 600;
-  color: #1e40af;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
   padding: 1px 7px;
-  border-radius: 4px;
+  border-radius: var(--r2);
   font-size: 12px;
 }
 
@@ -2456,11 +2507,11 @@ tr.qRow:focus-visible {
 .seenLongWaitPill {
   display: inline-block;
   margin-left: 8px;
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--line-strong);
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: var(--r2);
   font-size: 11.5px;
   font-weight: 600;
 }
@@ -4560,7 +4611,7 @@ tr.qRow:focus-visible {
 }
 
 .edDropdownItem[data-current="true"] {
-  background: var(--accent-soft, rgba(37, 99, 235, 0.08));
+  background: var(--accent-soft);
   border-left-color: var(--accent);
   font-weight: 600;
 }
@@ -4619,7 +4670,7 @@ tr.qRow:focus-visible {
   gap: 4px;
   margin-top: 4px;
   font-size: 0.74rem;
-  color: var(--accent-ink, #2563eb);
+  color: var(--accent-ink);
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: 4px;
@@ -4659,6 +4710,12 @@ tr.qRow:focus-visible {
   line-height: 1.25;
 }
 
+.reviewPillText {
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+}
+
 .reviewPill:hover {
   background: var(--surface);
   border-color: var(--accent);
@@ -4677,7 +4734,7 @@ tr.qRow:focus-visible {
 }
 
 .reviewPill[data-tone="info"] {
-  background: var(--accent-soft, rgba(37, 99, 235, 0.08));
+  background: var(--accent-soft);
   color: var(--accent-ink);
   border-color: var(--accent);
 }
@@ -4746,6 +4803,12 @@ tr.qRow:focus-visible {
   color: var(--ink-soft);
   cursor: pointer;
   transition: all 0.15s ease;
+}
+
+.clearancePillText {
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
 }
 
 .clearancePill:hover {
