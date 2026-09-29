@@ -789,17 +789,15 @@ export function HandoverPage() {
       data-ward-design="third-edition"
     >
       <main id="main-content" className={`${styles.main} ${pageStyles.main}`}>
-        {/* ── Top Bar Header ── */}
+        {/* ── Top Bar Header: Streamlined & De-cluttered ── */}
         <header className={pageStyles.topBarWrap}>
           <div className={pageStyles.titleGroup}>
-            <h1 className={pageStyles.pageHeading}>Shift handover</h1>
-            <LegalLimitsNotChecked />
-          </div>
-
-          <div className={pageStyles.headerActions}>
             <p className={styles.takenAt} data-testid="ward-handover-taken-at">
               Updated {formatSheetMoment(now, dayZero)}
             </p>
+          </div>
+
+          <div className={pageStyles.headerActions}>
 
             <button
               type="button"
@@ -944,9 +942,43 @@ export function HandoverPage() {
                 Executive Escalations
               </button>
             </div>
+
+            <div className={pageStyles.searchBoxHandover}>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className={pageStyles.searchIconSvg}
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="search"
+                className={pageStyles.searchInputHandover}
+                placeholder="Quick find patient, bed, UMRN..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Quick find in handover"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className={pageStyles.searchClearBtn}
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Clear search"
+                >
+                  ×
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Row 2: Scope pills, Unit select, Focus filter pills, and Search */}
+          {/* Row 2: Scope pills, Unit select, and Focus filter pills */}
           <div className={pageStyles.filterRow}>
             <div className={pageStyles.filterGroup}>
               <span className={pageStyles.filterLabel}>Scope:</span>
@@ -1043,40 +1075,6 @@ export function HandoverPage() {
                   1:1 Specialling &amp; HDU <span className={pageStyles.tabBadge}>{speciallingInScopeCount}</span>
                 </button>
               </div>
-            </div>
-
-            <div className={pageStyles.searchBoxHandover}>
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-                className={pageStyles.searchIconSvg}
-              >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input
-                type="search"
-                className={pageStyles.searchInputHandover}
-                placeholder="Quick find patient, bed, UMRN..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                aria-label="Quick find in handover"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  className={pageStyles.searchClearBtn}
-                  onClick={() => setSearchQuery("")}
-                  aria-label="Clear search"
-                >
-                  ×
-                </button>
-              )}
             </div>
           </div>
 
@@ -1333,7 +1331,9 @@ export function HandoverPage() {
             <div className={pageStyles.summaryTile}>
               <div className={pageStyles.tileMeta}>
                 <span className={pageStyles.tileLabel}>Form expiries passed</span>
-                <span className={pageStyles.tileSub}>On sheet and urgent outside filter</span>
+                <span className={pageStyles.tileSub}>
+                  On sheet & urgent <LegalLimitsNotChecked variant="tag" />
+                </span>
               </div>
               <span
                 className={`${pageStyles.tileValue} ${breachedOnSheetCount + urgentOutsideFilter.length > 0 ? pageStyles.danger : pageStyles.good}`}
@@ -1611,7 +1611,8 @@ export function HandoverPage() {
                                                 (flag) =>
                                                   !flag.label.includes("Observations") &&
                                                   !flag.label.includes("Specialling") &&
-                                                  !flag.label.includes("Supervision"),
+                                                  !flag.label.includes("Supervision") &&
+                                                  !(flag.label === "Urgent" && (movement.flaggedUrgent || movementObservationLabel(movement) === "Urgent")),
                                               )
                                               .map((flag, idx) => (
                                                 <span key={idx} className={`${pageStyles.statusPill} ${flag.tone}`}>
@@ -1668,22 +1669,22 @@ export function HandoverPage() {
                   <table className={pageStyles.snapSheet}>
                     <thead>
                       <tr>
-                        <th scope="col" style={{ width: "17%" }}>
+                        <th scope="col" style={{ width: "16%", minWidth: "150px" }}>
                           Patient Alias &amp; UMRN
                         </th>
-                        <th scope="col" style={{ width: "18%" }}>
+                        <th scope="col" style={{ width: "20%", minWidth: "180px" }}>
                           Current Unit / Origin
                         </th>
-                        <th scope="col" style={{ width: "12%" }}>
+                        <th scope="col" style={{ width: "12%", minWidth: "110px" }}>
                           Time Waiting
                         </th>
-                        <th scope="col" style={{ width: "12%" }}>
+                        <th scope="col" style={{ width: "12%", minWidth: "110px" }}>
                           Order Status
                         </th>
-                        <th scope="col" style={{ width: "12%" }}>
+                        <th scope="col" style={{ width: "12%", minWidth: "110px" }}>
                           Acuity / Obs
                         </th>
-                        <th scope="col" style={{ width: "29%" }}>
+                        <th scope="col" style={{ width: "28%", minWidth: "220px" }}>
                           Bedflow Handover &amp; Shift Action
                         </th>
                       </tr>
@@ -3171,8 +3172,9 @@ export function HandoverScopeControl({
   return (
     <label
       htmlFor="ward-handover-scope"
+      className={pageStyles.scopeSelectForm}
       data-print-hide
-      style={{ display: "inline-flex", alignItems: "center", margin: 0 }}
+      style={{ display: "inline-flex", alignItems: "center", margin: 0, maxWidth: "100%" }}
     >
       <span className={pageStyles.srOnly}>Filter the sheet</span>
       <select
