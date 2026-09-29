@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { Search, X } from "lucide-react";
+import { PhoneCall, Plus, Search, X } from "lucide-react";
 
 import {
   EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE,
@@ -394,6 +394,7 @@ export function OfficerScreen() {
   const lastTriggerRef = useRef<HTMLElement | null>(null);
   const formModalRef = useRef<HTMLDivElement>(null);
   const handoverModalRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!formModalJob) return;
@@ -465,7 +466,7 @@ export function OfficerScreen() {
   const awaitingDeparture = jobs.filter((job) => job.transport?.acceptedAt === undefined).length;
   const escortRequired = jobs.filter((job) => job.transport?.escortRequired).length;
 
-  // Escape key handler for dialogs
+  // Escape and global / shortcut handler
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -476,6 +477,16 @@ export function OfficerScreen() {
           setHandoverModalMovementId(null);
           lastTriggerRef.current?.focus();
         }
+      } else if (
+        e.key === "/" &&
+        !formModalJob &&
+        !handoverModalMovementId &&
+        document.activeElement?.tagName !== "INPUT" &&
+        document.activeElement?.tagName !== "TEXTAREA" &&
+        document.activeElement?.tagName !== "SELECT"
+      ) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
       }
     }
     window.addEventListener("keydown", handleKeyDown);
@@ -576,25 +587,36 @@ export function OfficerScreen() {
   return (
     <div className={styles.screen} data-testid="ward-officer-screen" data-ward-design="third-edition">
       <main id="main-content" className={styles.main}>
-        <div className={styles.commandToolbar}>
-          <div className={styles.toolbarContext}>
-            <span className={styles.livePulse} aria-hidden="true" />
-            <h1 className={styles.toolbarTitle}>Operational Transit Control</h1>
-            <span className={styles.toolbarSep} aria-hidden="true">
-              &middot;
+        <h1 className={styles.srOnly}>Transport Officer Console</h1>
+
+        {/* Executive Flight Deck Header */}
+        <div className={styles.flightDeckHeader}>
+          <div className={styles.flightDeckTitleGroup}>
+            <div className={styles.flightDeckBadge}>
+              <span className={styles.livePulse} aria-hidden="true" />
+              <span className={styles.flightDeckBadgeText}>TRANSIT DISPATCH COMMAND</span>
+            </div>
+            <span className={styles.flightDeckSep} aria-hidden="true">&middot;</span>
+            <span className={styles.flightDeckCount}>
+              <strong>{jobs.length}</strong> active patient transfers across statewide network
             </span>
-            <span className={styles.toolbarCount}>{jobs.length} Active Movements</span>
           </div>
           <div className={styles.hdrEnd}>
             <button
-              className={styles.btnSecondary}
+              className={styles.btnActionGhost}
               type="button"
               onClick={() => showToast("Not wired in this prototype.")}
             >
-              Dispatch Comms
+              <PhoneCall size={13} aria-hidden="true" />
+              <span>Dispatch Comms</span>
             </button>
-            <button className={styles.btnPrimary} type="button" onClick={(e) => openHandoverModal(selectedJob?.id, e)}>
-              + Transport Handover
+            <button
+              className={styles.btnActionPrimary}
+              type="button"
+              onClick={(e) => openHandoverModal(selectedJob?.id, e)}
+            >
+              <Plus size={14} aria-hidden="true" />
+              <span>Transport Handover</span>
             </button>
           </div>
         </div>
@@ -602,7 +624,7 @@ export function OfficerScreen() {
         {/* Unified Operational Telemetry & Provider Strip */}
         <section className={styles.fleetPanel} aria-label="Transport jobs by provider">
           <div className={styles.telemetrySection} aria-label="Transport overview metrics and provider telemetry">
-            {/* 4-card KPI Strip matching third-edition */}
+            {/* 4-card KPI Strip matching third-edition sovereign standard */}
             <div className={styles.kpiStrip} aria-label="Transport overview metrics">
               <div className={styles.kpiCard} data-tone="accent">
                 <span className={styles.kpiLabel}>Active Transit Runs</span>
@@ -619,7 +641,7 @@ export function OfficerScreen() {
                 <span className={styles.kpiVal}>{awaitingDeparture}</span>
                 <span className={styles.kpiSub}>ED Handover Pending</span>
               </div>
-              <div className={styles.kpiCard} data-tone="accent">
+              <div className={styles.kpiCard} data-tone="escort">
                 <span className={styles.kpiLabel}>Escort Required</span>
                 <span className={styles.kpiVal}>{escortRequired}</span>
                 <span className={styles.kpiSub}>Mental Health Escort</span>
@@ -629,8 +651,20 @@ export function OfficerScreen() {
             {/* Streamlined Provider Telemetry Row */}
             <div className={styles.providerStrip}>
               <div className={styles.providerStripHeader}>
-                <span className={styles.providerStripTitle}>Fleet By Provider</span>
-                <span className={styles.providerStripHint}>Filter transfers by provider fleet</span>
+                <div className={styles.providerStripTitleGroup}>
+                  <span className={styles.providerStripTitle}>Fleet By Provider</span>
+                  <span className={styles.providerStripHint}>Filter transfers by provider fleet</span>
+                </div>
+                {providerFilter !== "all" ? (
+                  <button
+                    type="button"
+                    className={styles.providerClearFilterBtn}
+                    onClick={() => setProviderFilter("all")}
+                    aria-label={`Clear provider filter, currently showing ${providerFilter}`}
+                  >
+                    Clear provider ({providerFilter})
+                  </button>
+                ) : null}
               </div>
               <div className={styles.providerGrid}>
                 {TRANSPORT_PROVIDERS.map((provider) => {
@@ -663,11 +697,13 @@ export function OfficerScreen() {
                         </span>
                       </div>
                       <div className={styles.providerCardStats}>
-                        <span className={styles.providerStatVal}>
+                        <span className={styles.providerStatPill}>
                           <strong>{moving}</strong> on road
                         </span>
-                        <span className={styles.providerStatSep}>&middot;</span>
-                        <span className={styles.providerStatSub}>
+                        <span className={styles.providerStatSep} aria-hidden="true">
+                          &middot;
+                        </span>
+                        <span className={styles.providerStatPill}>
                           <strong>{waiting}</strong> booked
                         </span>
                       </div>
@@ -737,6 +773,7 @@ export function OfficerScreen() {
           <div className={styles.searchBox}>
             <Search className={styles.searchIcon} size={15} aria-hidden="true" />
             <input
+              ref={searchInputRef}
               type="text"
               id="officer-transfer-search"
               name="transferSearch"
@@ -746,7 +783,11 @@ export function OfficerScreen() {
               onChange={(e) => setSearchQuery(e.target.value)}
               aria-label="Search transport jobs"
             />
-            {searchQuery ? (
+            {!searchQuery ? (
+              <kbd className={styles.searchKbd} aria-hidden="true" title="Press / to focus search">
+                /
+              </kbd>
+            ) : (
               <button
                 type="button"
                 className={styles.searchClearBtn}
@@ -755,7 +796,7 @@ export function OfficerScreen() {
               >
                 <X size={13} aria-hidden="true" />
               </button>
-            ) : null}
+            )}
           </div>
 
           <div className={styles.filterPills} role="group" aria-label="Filter by transport stage">
@@ -909,7 +950,7 @@ export function OfficerScreen() {
                       className={active ? styles.jobCardActive : styles.jobCard}
                     >
                       <div className={styles.jobTopHeader}>
-                        <div className={styles.jobIdentityCol}>
+                        <div className={styles.jobHeaderRibbon}>
                           <div className={styles.jobIdBadgeGroup}>
                             <span className={styles.jobIdTag}>#{movement.id}</span>
                             {/* Josh, 25 Sept 2026: the transport officer sees the patient's name. Same
@@ -931,37 +972,38 @@ export function OfficerScreen() {
                             ) : null}
                           </div>
 
-                          <div className={styles.routeCorridor}>
-                            <div className={styles.routeCorridorOrigin}>
-                              <span className={styles.routeCorridorLabel}>ORIGIN</span>
-                              <strong className={styles.routeCorridorPlace}>
-                                {departmentLabel(
-                                  movement.originEdId,
-                                  originEd && `${originEd.name} (${originEd.siteCode})`,
-                                )}
-                              </strong>
-                            </div>
-                            <span className={styles.routeCorridorArrow} aria-hidden="true">
-                              &rarr;
-                            </span>
-                            <div className={styles.routeCorridorDest}>
-                              <span className={styles.routeCorridorLabel}>DESTINATION</span>
-                              <strong className={styles.routeCorridorPlace}>{destinationLabel}</strong>
-                            </div>
+                          <div className={styles.jobHeaderActions}>
+                            <span className={styles.jobMeta}>{elapsedLabel(movement, now)}</span>
+                            <button
+                              type="button"
+                              className={styles.linkInspect}
+                              data-testid={`ward-officer-inspect-form-${movement.id}`}
+                              onClick={(e) => {
+                                openFormModal(movement, e);
+                              }}
+                            >
+                              Inspect Form
+                            </button>
                           </div>
                         </div>
-                        <div className={styles.jobHeaderActions}>
-                          <span className={styles.jobMeta}>{elapsedLabel(movement, now)}</span>
-                          <button
-                            type="button"
-                            className={styles.linkInspect}
-                            data-testid={`ward-officer-inspect-form-${movement.id}`}
-                            onClick={(e) => {
-                              openFormModal(movement, e);
-                            }}
-                          >
-                            Inspect Form
-                          </button>
+
+                        <div className={styles.routeCorridor}>
+                          <div className={styles.routeCorridorOrigin}>
+                            <span className={styles.routeCorridorLabel}>ORIGIN</span>
+                            <strong className={styles.routeCorridorPlace}>
+                              {departmentLabel(
+                                movement.originEdId,
+                                originEd && `${originEd.name} (${originEd.siteCode})`,
+                              )}
+                            </strong>
+                          </div>
+                          <span className={styles.routeCorridorArrow} aria-hidden="true">
+                            &rarr;
+                          </span>
+                          <div className={styles.routeCorridorDest}>
+                            <span className={styles.routeCorridorLabel}>DESTINATION</span>
+                            <strong className={styles.routeCorridorPlace}>{destinationLabel}</strong>
+                          </div>
                         </div>
                       </div>
 
