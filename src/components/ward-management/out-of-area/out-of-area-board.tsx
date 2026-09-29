@@ -643,8 +643,6 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                       <span className={pageStyles.unrecordedUmrn}>{patientInfo.umrn}</span>
                                     )}
                                   </div>
-                                </td>
-                                <td>
                                   <div>
                                     <strong>{entry.admission.homeRegion}</strong>
                                   </div>

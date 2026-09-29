@@ -110,7 +110,7 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
     setCensusAffirmed(true);
     addAuditItem(
       "✓",
-      "Capacity Declaration Re-Affirmed",
+      "Capacity Handshake Re-affirmed",
       `Staffed capacity verified at ${staffedBeds} of ${physicalBeds} beds.`,
     );
     showToast(`Staffed capacity affirmed: ${staffedBeds} beds`);
