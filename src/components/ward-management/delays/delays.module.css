@@ -2907,7 +2907,9 @@
   padding: 0 10px;
   height: var(--ward-tap, 44px);
   min-width: 220px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .searchBox:focus-within {
@@ -2950,7 +2952,9 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
 }
 
 .iconBtn:hover {
@@ -3192,10 +3196,19 @@
   flex-shrink: 0;
 }
 
-.legendDotYours { background: var(--accent); }
-.legendDotWards { background: var(--svc-north); }
-.legendDotTransport { background: var(--svc-south); }
-.legendDotBreached { background: var(--danger); box-shadow: 0 0 0 2px var(--danger-soft); }
+.legendDotYours {
+  background: var(--accent);
+}
+.legendDotWards {
+  background: var(--svc-north);
+}
+.legendDotTransport {
+  background: var(--svc-south);
+}
+.legendDotBreached {
+  background: var(--danger);
+  box-shadow: 0 0 0 2px var(--danger-soft);
+}
 
 .radarCanvasBox {
   position: relative;
@@ -3440,7 +3453,7 @@
 
 .waitBand {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin: 0;
   padding: 0;
@@ -3501,9 +3514,15 @@
   transition: width 0.2s;
 }
 
-.durationSegCatastrophic { background: var(--danger); }
-.durationSegAccessBlocked { background: var(--warn); }
-.durationSegRoutine { background: var(--accent); }
+.durationSegCatastrophic {
+  background: var(--danger);
+}
+.durationSegAccessBlocked {
+  background: var(--warn);
+}
+.durationSegRoutine {
+  background: var(--accent);
+}
 
 .durationPills {
   display: grid;
@@ -3797,11 +3816,11 @@
   box-shadow: var(--lift);
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
   position: sticky;
   top: 1rem;
   align-self: start;
   max-height: calc(100dvh - 2rem);
-  overflow-y: auto;
 }
 
 .dossierContainer {
@@ -4317,7 +4336,6 @@
   gap: 12px;
 }
 
-
 /* ================================================================================
  * PERFECTED THIRD EDITION: 60% / 40% MASTER-DETAIL WORKSPACE
  * ================================================================================ */
@@ -4440,7 +4458,9 @@
   color: var(--ink);
   font-size: var(--t-0, 12px);
   outline: none;
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 }
 
 .searchInput:focus {
@@ -4512,7 +4532,10 @@
   display: flex;
   flex-direction: column;
   cursor: pointer;
-  transition: border-color 0.12s, box-shadow 0.12s, background 0.12s;
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s,
+    background 0.12s;
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
@@ -4529,7 +4552,9 @@
 .patientCardSelected {
   border-color: var(--accent);
   background: var(--surface-2);
-  box-shadow: inset 3px 0 0 var(--accent), 0 2px 6px rgb(var(--ward-shadow-rgb) / 0.06);
+  box-shadow:
+    inset 3px 0 0 var(--accent),
+    0 2px 6px rgb(var(--ward-shadow-rgb) / 0.06);
 }
 
 .patientCardBreached {
@@ -4770,6 +4795,8 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-lg, 10px);
   box-shadow: var(--lift);
+  display: flex;
+  flex-direction: column;
   position: sticky;
   top: 1rem;
   align-self: start;
@@ -5413,4 +5440,1694 @@
   outline: 0.125rem solid var(--surface);
   outline-offset: 0;
   box-shadow: 0 0 0 0.25rem var(--ink);
+}
+
+/* ================================================================================
+ * LIVE PULSE DOT & LIVE PANEL COUNT
+ * ================================================================================ */
+.livePanelCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.livePulseDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--good);
+  box-shadow: 0 0 0 0 rgba(34, 117, 80, 0.7);
+  animation: livePulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  flex-shrink: 0;
+}
+
+.livePulseDotSmall {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--good);
+  box-shadow: 0 0 0 0 rgba(34, 117, 80, 0.7);
+  animation: livePulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  flex-shrink: 0;
+}
+
+@keyframes livePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 117, 80, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(34, 117, 80, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 117, 80, 0);
+  }
+}
+
+/* ================================================================================
+ * TOP EXECUTIVE CONTROL ROW & VIEW SWITCHER
+ * ================================================================================ */
+.topExecutiveControlRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0.25rem 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.execStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--pill, 9999px);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+
+.execStatusText {
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.viewSwitcherSeg {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 3px;
+  gap: 2px;
+}
+
+.viewSwitchBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  font-size: var(--t-0);
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--r1, 4px);
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  white-space: nowrap;
+}
+
+.viewSwitchBtn:hover {
+  color: var(--ink);
+  background: var(--surface-3);
+}
+
+.viewSwitchBtnActive {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* ================================================================================
+ * CRISIS RADAR MATRIX PANEL
+ * ================================================================================ */
+.radarPanel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 8px);
+  overflow: hidden;
+  box-shadow: var(--lift);
+}
+
+.radarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.radarTitleCluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.radarTitle {
+  font-size: var(--t-1);
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.radarLegend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legendDotYours {
+  background: var(--accent);
+}
+.legendDotWards {
+  background: #1d587c;
+}
+.legendDotTransport {
+  background: #4f3b78;
+}
+.legendDotBreached {
+  background: var(--danger);
+}
+
+.radarCanvasBox {
+  position: relative;
+  width: 100%;
+  background: var(--surface);
+  padding: 8px 12px 14px;
+  box-sizing: border-box;
+}
+
+.radarSvg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.radarPointGroup {
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.12s ease;
+}
+
+.radarPointGroup:hover,
+.radarPointGroup:focus-visible {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+}
+
+.radarTooltip {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  z-index: 10;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2, 6px);
+  padding: 8px 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 260px;
+  pointer-events: none;
+}
+
+.ttHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ttId {
+  font-weight: 700;
+  font-size: var(--t-1);
+  color: var(--ink);
+}
+
+.ttEd {
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.ttWait {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--ink-soft);
+}
+
+.ttAlert {
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--danger);
+}
+
+.ttStatus {
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+/* ================================================================================
+ * WORKLIST SEARCH, SORT & SCROLLER
+ * ================================================================================ */
+.searchBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 200px;
+}
+
+.searchBox svg {
+  position: absolute;
+  left: 10px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  height: 34px;
+  padding: 0 32px 0 30px;
+  border-radius: var(--pill, 9999px);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-family: var(--body);
+  font-size: var(--t-0);
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.searchInput:focus {
+  border-color: var(--accent);
+}
+
+.searchClearBtn {
+  position: absolute;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--sunk);
+  border: none;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.searchClearBtn:hover {
+  background: var(--surface-3);
+  color: var(--ink);
+}
+
+.worklistSearchSortBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sortSelectWrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sortSelectWrapper .sortSelect {
+  padding-right: 24px;
+  appearance: none;
+}
+
+.sortSelectChevron {
+  position: absolute;
+  right: 8px;
+  pointer-events: none;
+  color: var(--muted);
+}
+
+.clearFilterBtn {
+  background: none;
+  border: none;
+  color: var(--accent-ink);
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+.patientCardsList {
+  list-style: none;
+  margin: 0;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: calc(100dvh - 280px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  overscroll-behavior: contain;
+}
+
+.patientCard {
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  background: var(--surface);
+  transition: all 0.12s ease;
+  overflow: hidden;
+}
+
+.patientCard:hover {
+  border-color: var(--line-strong);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.patientCardSelected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.patientCardBreached {
+  border-left: 3px solid var(--danger);
+}
+
+.patientCardImminent {
+  border-left: 3px solid var(--warn);
+}
+
+.cardSelectButton {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+}
+
+.cardTopRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cardIdCluster {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.cardPatientId {
+  font-weight: 700;
+  font-size: var(--t-1);
+  color: var(--ink);
+}
+
+.triageTag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.triageTagT1 {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.triageTagT2 {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.triageTagT3 {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+.escalatedTag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.lockedBedFlag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--sunk);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+
+.clearedBadge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--good-soft);
+  color: var(--good);
+}
+
+.uncleared {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.markedBadge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--pill, 9999px);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.cardWaitClock {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.personWait {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.personWaitLong {
+  color: var(--warn);
+  font-weight: 700;
+}
+
+.accessBlockBadge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.cardLocRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.cardFacility {
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.cardDemographics {
+  color: var(--muted);
+}
+
+.cardLegalAlert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: var(--r1, 4px);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: var(--t-0);
+  font-weight: 600;
+}
+
+.cardLegalAlertImminent {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.cardBlockerStrip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: var(--r1, 4px);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+.cardBlockerTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.cardOwnerTag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cardOwnerTagYours {
+  color: var(--accent);
+}
+.cardOwnerTagWards {
+  color: #1d587c;
+}
+.cardOwnerTagTransport {
+  color: #4f3b78;
+}
+.cardOwnerTagEd {
+  color: var(--muted);
+}
+
+.cardStagnation {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.cardBlockerTitle {
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.cardBlockerDetail {
+  font-size: var(--t-0);
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+.personReminder {
+  font-size: var(--t-0);
+  color: var(--warn);
+  font-weight: 500;
+}
+
+.personRowDim {
+  opacity: 0.45;
+}
+
+/* ================================================================================
+ * SYSTEMIC HOLDS SUBTITLE & EMPTY STATE
+ * ================================================================================ */
+.systemicTitleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.systemicSubtitle {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.systemicEmptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px 16px;
+  text-align: center;
+  background: var(--surface-2);
+  border: 1px dashed var(--line);
+  border-radius: var(--r2, 6px);
+}
+
+/* ================================================================================
+ * 3 MOCKUP CONCEPTS: STANDALONE RADAR + RAPID UNDERNEATH INSPECTOR + FLEXIBLE CARDS
+ * ================================================================================ */
+
+/* --- MOCKUP SWITCHER BAR --- */
+.mockupSwitcherContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface-2, #f8fafc);
+  border: 1px solid var(--line, rgba(22, 30, 40, 0.12));
+  border-radius: var(--r2, 8px);
+  padding: 12px 16px;
+  margin-bottom: 14px;
+}
+
+.mockupSwitcherHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.mockupSwitcherLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.mockupBadge {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: var(--pill, 9999px);
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.mockupSwitcherHint {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.mockupTabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 960px) {
+  .mockupTabs {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mockupTabBtn {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--r2, 6px);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 52px;
+}
+
+.mockupTabBtn:hover {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.mockupTabBtnActive {
+  background: var(--accent-soft, #f0f5fa) !important;
+  border-color: var(--accent, #2f4c66) !important;
+  box-shadow:
+    0 0 0 1px var(--accent, #2f4c66),
+    0 2px 8px rgba(47, 76, 102, 0.08);
+}
+
+.mockupTabNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--sunk);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.mockupTabBtnActive .mockupTabNumber {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.mockupTabText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mockupTabText strong {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+.mockupTabBtnActive .mockupTabText strong {
+  color: var(--accent-ink, #162f46);
+}
+
+.mockupTabText span {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+/* --- STANDALONE RADAR WRAPPER --- */
+.standaloneRadarBox {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* --- PROMPT BAR (WHEN NO PATIENT CLICKED) --- */
+.rapidPromptBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--surface-2, #f8fafc);
+  border: 1px dashed var(--line-strong, rgba(22, 30, 40, 0.2));
+  border-radius: var(--r2, 6px);
+  margin-top: 12px;
+}
+
+.rapidPromptLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.rapidPromptIcon {
+  font-size: 14px;
+}
+
+.rapidPromptCount {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 2px 7px;
+  border-radius: var(--pill, 9999px);
+  white-space: nowrap;
+}
+
+/* ================================================================================
+ * CONCEPT 1: RAPID HORIZONTAL DRAWER (EXPANSIVE 3-COLUMN BANNER UNDERNEATH)
+ * ================================================================================ */
+.rapidDrawerUnderneath {
+  background: var(--surface);
+  border: 1.5px solid var(--accent, #2f4c66);
+  border-radius: var(--r2, 8px);
+  padding: 16px 18px;
+  margin-top: 12px;
+  box-shadow: 0 4px 18px rgba(47, 76, 102, 0.09);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: slideDownRapid 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDownRapid {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rapidDrawerTopBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 10px;
+}
+
+.rapidDrawerTitleCluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.rapidDrawerBadge {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.rapidDrawerPatientName {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.rapidDrawerDismissBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--r2, 4px);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.rapidDrawerDismissBtn:hover {
+  background: var(--sunk);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.rapidDrawerColumns {
+  display: grid;
+  grid-template-columns: 280px 1fr 280px;
+  gap: 16px;
+}
+
+@media (max-width: 1100px) {
+  .rapidDrawerColumns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rapidDrawerCol1,
+.rapidDrawerCol2,
+.rapidDrawerCol3 {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rapidDrawerCol1 {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 12px;
+}
+
+.rapidDrawerCol2 {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 12px;
+}
+
+.rapidDrawerCol3 {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 12px;
+}
+
+/* ================================================================================
+ * CONCEPT 2: OPERATIONAL FLIGHT DECK (STREAMLINED COMMAND STRIP UNDERNEATH)
+ * ================================================================================ */
+.rapidFlightDeck {
+  background: var(--surface);
+  border: 2px solid var(--line-strong, rgba(22, 30, 40, 0.25));
+  border-radius: var(--r2, 8px);
+  padding: 14px 16px;
+  margin-top: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.flightDeckHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.flightDeckTitleCluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.flightDeckLivePill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #1d587c;
+  color: #ffffff;
+}
+
+.flightDeckGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .flightDeckGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.flightDeckPod {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.flightDeckPodTitle {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ================================================================================
+ * CONCEPT 3: EXECUTIVE SENTINEL KPI BAR + SPLIT RAPID COCKPIT
+ * ================================================================================ */
+.sentinelKpiBar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 900px) {
+  .sentinelKpiBar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.sentinelKpiTile {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sentinelKpiTileCritical {
+  background: var(--danger-soft, #fdf2f0);
+  border-color: rgba(176, 59, 46, 0.35);
+}
+
+.sentinelKpiTileWarn {
+  background: var(--warn-soft, #fdf8ed);
+  border-color: rgba(201, 147, 24, 0.35);
+}
+
+.sentinelKpiTileLabel {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.sentinelKpiTileCritical .sentinelKpiTileLabel {
+  color: var(--danger, #b03b2e);
+}
+
+.sentinelKpiTileVal {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.sentinelKpiTileCritical .sentinelKpiTileVal {
+  color: var(--danger, #b03b2e);
+}
+
+.sentinelKpiTileWarn .sentinelKpiTileVal {
+  color: var(--warn, #825d10);
+}
+
+.rapidCockpit {
+  background: var(--surface);
+  border: 1.5px solid var(--accent, #2f4c66);
+  border-radius: var(--r2, 8px);
+  padding: 16px;
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 16px;
+  box-shadow: 0 4px 16px rgba(47, 76, 102, 0.06);
+}
+
+@media (max-width: 960px) {
+  .rapidCockpit {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cockpitLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cockpitRight {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 12px;
+}
+
+.cockpitGuideCard {
+  background: var(--surface-2, #f8fafc);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 12px 16px;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cockpitGuideTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cockpitGuideGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .cockpitGuideGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.cockpitGuideQuadrant {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 4px);
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cockpitQuadLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.cockpitQuadDesc {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+/* ================================================================================
+ * OPTION 2 REFINED: PROMINENT UNBOXED RADAR + COMPACT TWO-PANEL INFORMATION
+ * ================================================================================ */
+
+/* --- PROMINENT UNBOXED RADAR CONTAINER --- */
+.prominentRadarContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: transparent;
+}
+
+.prominentRadarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 4px 0 10px 0;
+  border-bottom: 1.5px solid var(--line, rgba(22, 30, 40, 0.12));
+}
+
+.prominentRadarCanvasBox {
+  position: relative;
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid var(--line, rgba(22, 30, 40, 0.15));
+  border-radius: var(--r2, 10px);
+  padding: 8px 12px 14px;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.04),
+    0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+}
+
+/* --- VERSION 1: FLOATING POPUP DOCKS --- */
+.popoverTriggerGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+
+.popoverTriggerBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong, rgba(22, 30, 40, 0.22));
+  border-radius: var(--pill, 9999px);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.popoverTriggerBtn:hover {
+  background: var(--surface-2);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.popoverTriggerBtnActive {
+  background: var(--accent-soft, #f0f5fa) !important;
+  border-color: var(--accent, #2f4c66) !important;
+  color: var(--accent-ink, #162f46) !important;
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 2px 8px rgba(47, 76, 102, 0.12);
+}
+
+.popoverChevron {
+  font-size: 10px;
+  transition: transform 0.15s ease;
+}
+
+.popoverTriggerBtnActive .popoverChevron {
+  transform: rotate(180deg);
+}
+
+.popoverFloatingCard {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 100;
+  background: #ffffff;
+  border: 1.5px solid var(--line-strong, rgba(22, 30, 40, 0.25));
+  border-radius: var(--r1, 10px);
+  box-shadow:
+    0 12px 36px rgba(0, 0, 0, 0.16),
+    0 2px 6px rgba(0, 0, 0, 0.06);
+  padding: 16px;
+  min-width: 360px;
+  max-width: 440px;
+  animation: popoverFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.popoverHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.popoverTitle {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.popoverCloseBtn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.popoverCloseBtn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+/* --- COMPACT WAIT CARD (inside popup or drawer) --- */
+.compactWaitGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.compactWaitTile {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.compactWaitTileLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.compactWaitTileVal {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.compactWaitTileVal span {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* --- COMPACT OWNER GRID (inside popup or drawer) --- */
+.compactOwnerGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.compactOwnerTile {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.12s ease;
+}
+
+.compactOwnerTile:hover {
+  background: var(--surface);
+  border-color: var(--line-strong);
+}
+
+.compactOwnerTileActive {
+  background: var(--accent-soft, #f0f5fa) !important;
+  border-color: var(--accent, #2f4c66) !important;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.compactOwnerTileTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.compactOwnerTileName {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.compactOwnerTileCount {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.compactOwnerTileAlert {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--danger, #b03b2e);
+}
+
+/* --- VERSION 2: INLINE MICRO-TELEMETRY BAR --- */
+.microTelemetryBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line, rgba(22, 30, 40, 0.15));
+  border-radius: var(--r2, 8px);
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  flex-wrap: wrap;
+}
+
+.microWaitSection {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.microSectionLabel {
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.microWaitChips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.microWaitChip {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.microWaitChipSevere {
+  background: var(--danger-soft, #fdf2f0);
+  border-color: rgba(176, 59, 46, 0.3);
+  color: var(--danger, #b03b2e);
+  font-weight: 700;
+}
+
+.microOwnerSection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.microOwnerPills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.microOwnerPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--pill, 9999px);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.microOwnerPill:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+
+.microOwnerPillActive {
+  background: var(--accent-soft, #f0f5fa) !important;
+  border-color: var(--accent, #2f4c66) !important;
+  color: var(--accent-ink) !important;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.microOwnerPillCrit {
+  font-size: 10px;
+  color: var(--danger, #b03b2e);
+  font-weight: 700;
+}
+
+/* --- VERSION 3: COLLAPSIBLE EXECUTIVE DRAWER --- */
+.collapsibleExecutiveDrawer {
+  background: var(--surface);
+  border: 1px solid var(--line-strong, rgba(22, 30, 40, 0.2));
+  border-radius: var(--r2, 8px);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  animation: drawerSlideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes drawerSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 900px) {
+  .collapsibleExecutiveDrawer {
+    grid-template-columns: 1fr;
+  }
+}
+
+.drawerCol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawerColHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.drawerColTitle {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* --- FLIGHT DECK COMPONENT EXTRAS --- */
+.blockerOwnerTag {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--surface);
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+}
+
+.btnActionDanger {
+  background: var(--danger-soft, #fdf2f0);
+  color: var(--danger, #b03b2e);
+  border: 1px solid rgba(176, 59, 46, 0.3);
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: var(--r2, 4px);
+  transition: all 0.12s ease;
+}
+
+.btnActionDanger:hover {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.btnJumpWorklist {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 4px);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  margin-top: 4px;
+}
+
+.btnJumpWorklist:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.clearanceVal {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-family: var(--mono);
+}
+
+.clearanceGreen {
+  background: var(--good-soft, #eef9f2);
+  color: var(--good, #1e7e48);
+  border: 1px solid rgba(30, 126, 72, 0.25);
+}
+
+.clearanceRed {
+  background: var(--danger-soft, #fdf2f0);
+  color: var(--danger, #b03b2e);
+  border: 1px solid rgba(176, 59, 46, 0.3);
+}
+
+.clearanceGray {
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.inspectorEdName {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.inspectorWaitBadge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-family: var(--mono);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.inspectorWaitSevere {
+  background: var(--danger-soft, #fdf2f0);
+  border-color: rgba(176, 59, 46, 0.35);
+  color: var(--danger, #b03b2e);
+}
+
+.selectedHalo {
+  transform-origin: center;
 }
