@@ -125,6 +125,45 @@
   flex-wrap: wrap;
 }
 
+.headerLeftDeck {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.liveStreamBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--pill);
+}
+
+.liveStreamLabel {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+}
+
+.btnBroadcast {
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: var(--t-1);
+}
+
+.kpiHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
 .pageHeader > div {
   min-width: 0;
 }
@@ -1358,23 +1397,226 @@
 }
 
 .feedHead {
-  padding: 0.75rem 1.1rem;
+  padding: 0.85rem 1.25rem;
   border-bottom: 1px solid var(--line);
   background: var(--surface-2);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
+}
+
+.feedHeadTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.feedIconAccent {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--accent);
+  flex-shrink: 0;
 }
 
 .feedHead h2 {
   margin: 0;
   font-size: var(--t-2);
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+
+.feedStreamActiveTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 2px 8px;
+  border-radius: var(--pill);
+  background: var(--good-soft);
+  border: 1px solid var(--good);
+  color: var(--good-ink);
+  font-size: var(--t-0);
+  font-family: var(--mono);
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
+}
+
+.feedPulseDot {
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  background: var(--good);
+  display: inline-block;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.feedPulseDot::after {
+  content: "";
+  position: absolute;
+  inset: -0.125rem;
+  border-radius: 50%;
+  border: 1px solid var(--good);
+  box-shadow: 0 0 0.375rem var(--good);
+  animation: alertsMetroPulse 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feedPulseDot::after {
+    animation: none;
+  }
+}
+
+.feedTelemetryGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.telemetryChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-weight: 600;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 2px 8px;
+  border-radius: var(--pill);
+}
+
+.telemetryDot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: var(--good);
+  display: inline-block;
+}
+
+.streamChannelTag {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-weight: 600;
+}
+
+/* Empty State Card */
+.feedEmptyCard {
+  padding: 2.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+  gap: 1.15rem;
+}
+
+.feedEmptyIconBox {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--pill);
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  box-shadow: 0 2px 8px rgb(var(--ward-shadow-rgb) / 0.06);
+}
+
+.feedEmptyIcon {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.feedEmptyTextGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 42rem;
+}
+
+.feedEmptyTitle {
+  margin: 0;
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.feedEmptyCard .none {
+  margin: 0;
   color: var(--ink-soft);
+  font-size: var(--t-1);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.feedEmptySub {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.5;
+}
+
+.feedStatusGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 48rem;
+  margin-top: 0.5rem;
+}
+
+.feedStatusCard {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  text-align: left;
+}
+
+.statusDotGreen {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--good);
+  flex-shrink: 0;
+}
+
+.statusDotAmber {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--warn);
+  flex-shrink: 0;
+}
+
+.feedStatusCardContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.feedStatusCardContent strong {
+  font-size: var(--t-0);
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.feedStatusCardContent span {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-family: var(--mono);
 }
 
 .feedList {
