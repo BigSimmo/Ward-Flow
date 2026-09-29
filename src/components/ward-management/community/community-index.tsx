@@ -1,8 +1,20 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowUpRight, BookOpen, ChevronRight, Download, FileText, Search, X } from "lucide-react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  AlertTriangle,
+  ArrowUpRight,
+  BookOpen,
+  ChevronRight,
+  Download,
+  FileText,
+  Layers,
+  Search,
+  ShieldCheck,
+  Users,
+  X,
+} from "lucide-react";
 
 import {
   COMMUNITY_TEAM_PAGES,
@@ -344,26 +356,25 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
           </div>
         </div>
 
-        <header className={styles.pageHeader}>
-          <h1 className={styles.pageTitle}>All community teams</h1>
-          <p className={styles.pageSubtitle}>
-            Every community team a referral can name in this prototype. Some names look alike, so check you have the
-            right one.
-          </p>
-        </header>
+        <h1 className="sr-only">All community teams</h1>
 
         <div className={styles.glanceStrip} role="region" aria-label="Directory statistics summary">
           <div className={styles.glanceCard}>
             <div className={styles.glanceCardHead}>
-              <span className={styles.glanceLabel}>DIRECTORY TEAMS</span>
+              <div className={styles.glanceCardTitleWrap}>
+                <Users aria-hidden="true" className={styles.glanceIcon} />
+                <span className={styles.glanceLabel}>DIRECTORY TEAMS</span>
+              </div>
               <span className={styles.glancePillNeutral}>Reachability not recorded</span>
             </div>
-            <div className={styles.glanceValue}>{allTeams.length}</div>
-            <div className={styles.glanceSub}>All derived catchment destinations</div>
+            <div className={styles.glanceCardMetric}>
+              <span className={styles.glanceValue}>{allTeams.length}</span>
+              <span className={styles.glanceSub}>All derived catchment destinations</span>
+            </div>
           </div>
 
           <div
-            className={`${styles.glanceCard} ${styles.glanceCardInteractive}`}
+            className={`${styles.glanceCard} ${styles.glanceCardInteractive} ${alikeOnly ? styles.glanceCardActive : ""}`}
             onClick={() => setAlikeOnly(!alikeOnly)}
             role="button"
             tabIndex={0}
@@ -374,32 +385,49 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               }
             }}
             aria-pressed={alikeOnly}
-            title="Filter names that read alike"
+            title={alikeOnly ? "Show all names" : "Filter names that read alike"}
           >
             <div className={styles.glanceCardHead}>
-              <span className={styles.glanceLabel}>NAMES READING ALIKE</span>
+              <div className={styles.glanceCardTitleWrap}>
+                <AlertTriangle aria-hidden="true" className={styles.glanceIconWarn} />
+                <span className={styles.glanceLabel}>NAMES READING ALIKE</span>
+              </div>
               <span className={styles.glancePillWarn}>Verification check</span>
             </div>
-            <div className={styles.glanceValue}>{namesInCollisionsAmongAll}</div>
-            <div className={styles.glanceSub}>In {familyGroups.length} spelling groups · Click to toggle</div>
+            <div className={styles.glanceCardMetric}>
+              <span className={styles.glanceValue}>{namesInCollisionsAmongAll}</span>
+              <span className={styles.glanceSub}>
+                In {familyGroups.length} spelling groups · {alikeOnly ? "Active filter" : "Click to toggle"}
+              </span>
+            </div>
           </div>
 
           <div className={styles.glanceCard}>
             <div className={styles.glanceCardHead}>
-              <span className={styles.glanceLabel}>ALPHABET REACH</span>
+              <div className={styles.glanceCardTitleWrap}>
+                <Layers aria-hidden="true" className={styles.glanceIcon} />
+                <span className={styles.glanceLabel}>ALPHABET REACH</span>
+              </div>
               <span className={styles.glancePill}>A–Z Index</span>
             </div>
-            <div className={styles.glanceValue}>{grouped.size} of 26</div>
-            <div className={styles.glanceSub}>Active initial letters populated</div>
+            <div className={styles.glanceCardMetric}>
+              <span className={styles.glanceValue}>{grouped.size} of 26</span>
+              <span className={styles.glanceSub}>Active initial letters populated</span>
+            </div>
           </div>
 
           <div className={styles.glanceCard}>
             <div className={styles.glanceCardHead}>
-              <span className={styles.glanceLabel}>PROVENANCE</span>
+              <div className={styles.glanceCardTitleWrap}>
+                <ShieldCheck aria-hidden="true" className={styles.glanceIcon} />
+                <span className={styles.glanceLabel}>PROVENANCE</span>
+              </div>
               <span className={styles.glancePillNeutral}>Single Source</span>
             </div>
-            <div className={styles.glanceValue}>Synthetic</div>
-            <div className={styles.glanceSub}>WA Health Mental Health Catchment</div>
+            <div className={styles.glanceCardMetric}>
+              <span className={styles.glanceValue}>Synthetic</span>
+              <span className={styles.glanceSub}>WA Health Mental Health Catchment</span>
+            </div>
           </div>
         </div>
 
@@ -535,37 +563,6 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               )}
             </section>
 
-            <details className={styles.familyPanel} ref={familyPanelRef} data-testid="community-gateway-family-panel">
-              <summary className={styles.familySummary}>
-                <ChevronRight aria-hidden="true" className={styles.familyCaret} />
-                <span>
-                  Names that read alike — <strong>{communityNamesInCollisions()}</strong> names in{" "}
-                  <strong>{familyGroups.length}</strong> groups
-                </span>
-                <span className={styles.familyWhy}>Check before you open one</span>
-              </summary>
-              <div className={styles.familyBody}>
-                <p>
-                  These entries reduce to the same or nearly the same name once brackets, punctuation and suffixes such
-                  as &ldquo;HS&rdquo; are set aside. <strong>They have not been merged.</strong> Each is still its own
-                  entry with its own page, exactly as the source document records it — this grouping is only a prompt to
-                  check you are opening the one you mean.
-                </p>
-                {familyGroups.length === 0 ? (
-                  <p className={styles.familyEmpty} data-testid="community-gateway-family-empty">
-                    No name in this list currently reads like another. That would itself be a change worth noticing,
-                    since the source document is known to hold near-duplicate spellings.
-                  </p>
-                ) : (
-                  <div className={styles.familyGrid}>
-                    {familyGroups.map((family) => (
-                      <FamilyCard key={family.names[0]?.name ?? ""} family={family} onVisit={recordVisit} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </details>
-
             <WardPanel title="Community teams" testId="community-index-teams">
               {allTeams.length === 0 ? (
                 /*
@@ -613,6 +610,37 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 </div>
               )}
             </WardPanel>
+
+            <details className={styles.familyPanel} ref={familyPanelRef} data-testid="community-gateway-family-panel">
+              <summary className={styles.familySummary}>
+                <ChevronRight aria-hidden="true" className={styles.familyCaret} />
+                <span>
+                  Names that read alike — <strong>{communityNamesInCollisions()}</strong> names in{" "}
+                  <strong>{familyGroups.length}</strong> groups
+                </span>
+                <span className={styles.familyWhy}>Check before you open one</span>
+              </summary>
+              <div className={styles.familyBody}>
+                <p>
+                  These entries reduce to the same or nearly the same name once brackets, punctuation and suffixes such
+                  as &ldquo;HS&rdquo; are set aside. <strong>They have not been merged.</strong> Each is still its own
+                  entry with its own page, exactly as the source document records it — this grouping is only a prompt to
+                  check you are opening the one you mean.
+                </p>
+                {familyGroups.length === 0 ? (
+                  <p className={styles.familyEmpty} data-testid="community-gateway-family-empty">
+                    No name in this list currently reads like another. That would itself be a change worth noticing,
+                    since the source document is known to hold near-duplicate spellings.
+                  </p>
+                ) : (
+                  <div className={styles.familyGrid}>
+                    {familyGroups.map((family) => (
+                      <FamilyCard key={family.names[0]?.name ?? ""} family={family} onVisit={recordVisit} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </details>
           </div>
         </div>
         <div className="sr-only">
