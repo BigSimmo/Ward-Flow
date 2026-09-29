@@ -97,6 +97,55 @@
   min-height: 20rem;
   scroll-padding: 0.5rem;
 }
+/* Command Toolbar — Compact Sovereign Dispatch Bar */
+.commandToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.625rem 1.125rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r2);
+  box-shadow: var(--lift);
+  flex-wrap: wrap;
+}
+
+.toolbarContext {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.livePulse {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--pill);
+  background: var(--good);
+  box-shadow: 0 0 0 2px var(--good-soft);
+  flex-shrink: 0;
+}
+
+.toolbarTitle {
+  margin: 0;
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.toolbarSep {
+  color: var(--muted);
+}
+
+.toolbarCount {
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--muted);
+  font-family: var(--mono);
+}
 
 .pageHeader {
   display: flex;
@@ -204,6 +253,130 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+/* Unified Telemetry Section */
+.telemetrySection {
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+  padding: 1.125rem 1.25rem;
+  background: var(--surface);
+}
+
+/* Streamlined Provider Telemetry Strip */
+.providerStrip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.providerStripHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.providerStripTitle {
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.providerStripHint {
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.providerGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.providerCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.providerCard:hover {
+  background: var(--surface);
+  border-color: var(--line-strong);
+}
+
+.providerCardActive {
+  composes: providerCard;
+  background: var(--surface);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.providerCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.providerVehicleType {
+  font-size: var(--t-1);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.providerBadge {
+  font-size: var(--t-0);
+  font-weight: 600;
+  padding: 0.125rem 0.4375rem;
+  border-radius: var(--pill);
+  font-family: var(--mono);
+}
+
+.providerBadge[data-tone="good"] {
+  background: var(--good-soft);
+  color: var(--good);
+  border: 1px solid var(--good);
+}
+
+.providerBadge[data-tone="neutral"] {
+  background: var(--sunk);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.providerCardStats {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.providerStatVal strong,
+.providerStatSub strong {
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.providerStatSep {
+  color: var(--line-strong);
 }
 
 .fleetHeader {
@@ -474,6 +647,206 @@
   font-size: var(--t-0);
 }
 
+/* Interactive Filter Toolbar */
+.filterToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r2);
+  box-shadow: var(--lift);
+}
+
+.searchBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 14rem;
+  flex: 1 1 14rem;
+  max-width: 22rem;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.625rem;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  height: 2.125rem;
+  padding: 0 1.875rem 0 2rem;
+  font-size: var(--t-1);
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  outline: none;
+  font-family: var(--body);
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.searchInput:focus {
+  background: var(--surface);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.searchClearBtn {
+  position: absolute;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: var(--pill);
+}
+
+.searchClearBtn:hover {
+  color: var(--ink);
+}
+
+.filterPills {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.filterPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3125rem 0.625rem;
+  border-radius: var(--pill);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.filterPill:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.filterPillActive {
+  composes: filterPill;
+  background: var(--surface);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+  font-weight: 700;
+}
+
+.filterPillBadge {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  padding: 0.0625rem 0.3125rem;
+  border-radius: var(--pill);
+  background: var(--sunk);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.filterPillActive .filterPillBadge {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+
+.filterAuxControls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.selectFilterGroup {
+  display: flex;
+  align-items: center;
+}
+
+.filterSelect {
+  height: 2.125rem;
+  padding: 0 0.625rem;
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  cursor: pointer;
+  outline: none;
+  font-family: var(--body);
+}
+
+.filterSelect:focus {
+  border-color: var(--accent);
+}
+
+.resetFilterBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3125rem 0.625rem;
+  background: none;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--pill);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.resetFilterBtn:hover {
+  background: var(--surface-2);
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.filterCountIndicator {
+  font-size: var(--t-0);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.filterCountIndicator strong {
+  font-family: var(--mono);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.filterEmptyState {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--muted);
+}
+
 /* Transport Jobs Section */
 .jobsPanel {
   min-width: 0;
@@ -614,6 +987,14 @@
   gap: 0.75rem;
 }
 
+.jobIdentityCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .jobIdAndRoute {
   display: flex;
   flex-direction: column;
@@ -626,6 +1007,70 @@
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+.jobIdTag {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  color: var(--muted);
+  padding: 0.125rem 0.375rem;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  letter-spacing: 0.04em;
+}
+
+.jobPatientName {
+  color: var(--ink);
+  font-size: 1.25rem;
+  font-weight: 750;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+/* Route Corridor Component */
+.routeCorridor {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.875rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 0.5rem 0.875rem;
+  max-width: fit-content;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.routeCorridorOrigin,
+.routeCorridorDest {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.routeCorridorLabel {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-family: var(--mono);
+  text-transform: uppercase;
+}
+
+.routeCorridorPlace {
+  font-size: var(--t-1);
+  color: var(--ink);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.routeCorridorArrow {
+  color: var(--accent-ink);
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0 0.125rem;
+  user-select: none;
 }
 
 .jobIdText {
@@ -948,14 +1393,25 @@
   box-sizing: border-box;
   padding: 0.5rem 0.75rem;
   font-size: var(--t-1);
-  font-weight: 700;
+  font-weight: 600;
   text-align: center;
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: var(--accent);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
 }
 
 .actionButton:hover:not([aria-disabled="true"]) {
+  background: var(--sunk);
+}
+
+.actionButtonPrimary {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+  font-weight: 700;
+}
+
+.actionButtonPrimary:hover:not([aria-disabled="true"]) {
   filter: brightness(1.08);
 }
 
@@ -1173,9 +1629,41 @@
     gap: 0.625rem;
   }
 
-  .fleetGrid {
+  .fleetGrid,
+  .providerGrid {
     grid-template-columns: 1fr;
     padding: 0.875rem 1rem;
+  }
+
+  .filterToolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.625rem;
+  }
+
+  .searchBox {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .filterPills {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 0.25rem;
+  }
+
+  .filterAuxControls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .routeCorridor {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    flex-wrap: wrap;
   }
 
   .stepper {
@@ -1249,10 +1737,15 @@
 
 /* Dark Mode Crisp Borders Contract */
 @media (prefers-color-scheme: dark) {
+  .commandToolbar,
   .kpiCard,
   .fleetPanel,
   .fleetCard,
+  .providerCard,
   .refusals,
+  .filterToolbar,
+  .searchInput,
+  .routeCorridor,
   .jobsPanel,
   .jobCard,
   .stepper,
