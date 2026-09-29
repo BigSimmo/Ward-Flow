@@ -15,6 +15,9 @@ function requireWorkflow(source) {
     /fail-fast: false/u,
     /WARD_GATE_SHARD: \$\{\{ matrix\.shard \}\}\/\d+/u,
     /related-tests\.mjs --base "\$WARD_BASE_SHA" --head HEAD/u,
+    /node scripts\/ward-ci-public\/changed-checks\.mjs/u,
+    /steps\.plan\.outputs\.unit == 'true'/u,
+    /steps\.plan\.outputs\.browser == 'true'/u,
     // Browser builds may skip their own type check only because the static job checks route types.
     /next\/dist\/bin\/next typegen\n\s*node node_modules\/typescript\/bin\/tsc -p tsconfig\.json --noEmit/u,
     /WARD_GATE_BUILD: "1"/u,
@@ -74,6 +77,7 @@ for (const bad of [
   workflow.replace("shard: [1, 2, 3, 4, 5]", "shard: [1, 2, 3, 4]"),
   workflow.replaceAll("fail-fast: false", "fail-fast: true"),
   workflow.replace("group: [1, 2, 3]", "group: [1, 2]"),
+  workflow.replace("node scripts/ward-ci-public/changed-checks.mjs", "echo skipped"),
   workflow.replace("node node_modules/next/dist/bin/next typegen", "echo no route types"),
   workflow.replace("tsc -p tsconfig.json --noEmit", "tsc -p tsconfig.typecheck.json --noEmit"),
 ])
@@ -87,6 +91,31 @@ assert.equal(
   true,
 );
 assert.equal(classifyChanges([{ status: "M", file: ".github/workflows/ward-flow.yml" }]).full, true);
+// Dynamic scope: narrower only for positively recognised files, never for anything else.
+const scope = (...files) => {
+  const { full, unit, browser } = classifyChanges(files.map((file) => ({ status: "M", file })));
+  return { full, unit, browser };
+};
+const everything = { full: true, unit: true, browser: true };
+assert.deepEqual(scope("docs/ward-flow/README.md"), { full: false, unit: false, browser: false });
+assert.deepEqual(scope("backend/ward-flow/server.mjs", "docs/ward-flow/README.md"), {
+  full: true,
+  unit: false,
+  browser: false,
+});
+assert.deepEqual(scope("tests/ward-nav.test.ts", "backend/ward-flow/server.mjs"), {
+  full: true,
+  unit: true,
+  browser: false,
+});
+assert.deepEqual(scope("tests/ward-patient-search.dom.test.tsx"), { full: true, unit: true, browser: false });
+assert.deepEqual(scope("tests/ui-ward-roles.spec.ts"), everything);
+assert.deepEqual(scope("tests/ward-nav.test.ts", "src/app/layout.tsx"), everything);
+assert.deepEqual(scope("tests/helpers/ward-fixture.ts"), everything);
+assert.deepEqual(scope("backend/ward-flow/server.mjs", ".github/workflows/ward-flow.yml"), everything);
+assert.deepEqual(scope("tests/ward-expected-reds.json"), everything);
+assert.deepEqual(classifyChanges([{ status: "D", file: "tests/ward-nav.test.ts" }]).browser, true);
+assert.deepEqual(classifyChanges([]).browser, true);
 assert.equal(classifyChanges([]).full, true);
 assert.equal(hasDependencyChanges([{ status: "M", file: "docs/ward-flow/README.md" }]), false);
 assert.equal(hasDependencyChanges([{ status: "M", file: "backend/ward-flow/package-lock.json" }]), true);

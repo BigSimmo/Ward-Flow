@@ -149,7 +149,7 @@ const DECLARED_UNDECIDABLE: Readonly<Record<string, string>> = {
     "a module constant about the fixture's provenance, not an environment fact",
   "tests/ci-cache-safety.test.ts :: !existsSync(ciUrl)":
     "depends on whether monorepo ci.yml is present in the checkout",
-  "tests/ci-cache-safety.test.ts :: process.platform === \"win32\" || !workflow":
+  'tests/ci-cache-safety.test.ts :: process.platform === "win32" || !workflow':
     "depends on host platform and whether monorepo ci.yml is present in the checkout",
 };
 

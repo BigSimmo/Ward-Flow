@@ -386,7 +386,7 @@ export function PatientSearchPage() {
           stage: stageCopy[m.stage].label,
           transportNeeded: Boolean(m.transport),
           transportStatus: m.transport ? "Vehicle dispatched" : isTransit ? "In-Transit" : "Pending allocation",
-          nurseEscort: Boolean((m as any).escort),
+          nurseEscort: Boolean((m as { escort?: unknown }).escort),
           presence: "live",
           presenceLabel: "Live in Hospital",
           presenceDetail: `Present in ${originText} · ${isTransit ? "In-Transit" : m.acceptedUnitId ? "Bed hold active" : "Awaiting transfer"}`,
@@ -481,25 +481,25 @@ export function PatientSearchPage() {
     return { total, live, unplaced, notIn, past, breaches, holds, transit };
   }, [unifiedCaseload]);
 
-  // Sync selected patient
-  useEffect(() => {
-    if (unifiedCaseload.length > 0) {
-      if (!selectedId || !unifiedCaseload.some((p) => p.id === selectedId)) {
-        const first = unifiedCaseload[0];
-        setSelectedId(first.id);
-        if (first.originalSubject.kind === "movement") {
-          setPreview({ kind: "movement", movement: first.originalSubject.movement });
-        } else if (first.originalSubject.kind === "referral") {
-          setPreview({ kind: "referral", referral: first.originalSubject.referral });
-        } else {
-          setPreview({ kind: "person", patient: first.originalSubject.patient });
-        }
+  // Keep a valid selection, adjusted during render rather than in an effect (react.dev "adjusting
+  // state when a prop changes"). Each branch changes state only when it is out of step, so the
+  // render settles after at most one extra pass.
+  if (unifiedCaseload.length > 0) {
+    if (!selectedId || !unifiedCaseload.some((p) => p.id === selectedId)) {
+      const first = unifiedCaseload[0];
+      setSelectedId(first.id);
+      if (first.originalSubject.kind === "movement") {
+        setPreview({ kind: "movement", movement: first.originalSubject.movement });
+      } else if (first.originalSubject.kind === "referral") {
+        setPreview({ kind: "referral", referral: first.originalSubject.referral });
+      } else {
+        setPreview({ kind: "person", patient: first.originalSubject.patient });
       }
-    } else {
-      setSelectedId(null);
-      setPreview(null);
     }
-  }, [unifiedCaseload, selectedId]);
+  } else if (selectedId !== null || preview !== null) {
+    setSelectedId(null);
+    setPreview(null);
+  }
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -1203,7 +1203,7 @@ Clinical Note: ${p.clinicalNote}`;
                     id="sortSelect"
                     className={styles.facetSelect}
                     value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
+                    onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                     aria-label="Sort patient records"
                     style={{ minWidth: "135px" }}
                   >

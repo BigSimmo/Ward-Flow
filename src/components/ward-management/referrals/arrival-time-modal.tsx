@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { AlertCircle, Clock, ShieldCheck, X } from "lucide-react";
 import {
   ARRIVAL_MODES,
@@ -72,15 +72,19 @@ export function ArrivalTimeModal({ isOpen, onClose, movement, role = "coordinato
   const dialogRef = useRef<HTMLDivElement>(null);
   const late = isArrivalLate(movement, now);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    setArrivalMode(movement.arrivalDetails?.mode ?? "mental_health_transport");
-    setTrackingNumber(movement.arrivalDetails?.trackingNumber ?? "");
-    setEtaMinutes(movement.arrivalDetails?.estimatedArrivalAt ?? now + 120);
-    // `now` is read only when the dialog opens or the movement changes. A ticking clock
-    // must not wipe an ETA the referrer is still choosing.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset on open/switch only
-  }, [isOpen, movement.id]);
+  // Reset the form when the dialog opens or switches movement, during render rather than in an
+  // effect (react.dev "adjusting state when a prop changes"). `now` is read only at that moment:
+  // a ticking clock must not wipe an ETA the referrer is still choosing.
+  const openKey = isOpen ? movement.id : null;
+  const [lastOpenKey, setLastOpenKey] = useState(openKey);
+  if (openKey !== lastOpenKey) {
+    setLastOpenKey(openKey);
+    if (openKey !== null) {
+      setArrivalMode(movement.arrivalDetails?.mode ?? "mental_health_transport");
+      setTrackingNumber(movement.arrivalDetails?.trackingNumber ?? "");
+      setEtaMinutes(movement.arrivalDetails?.estimatedArrivalAt ?? now + 120);
+    }
+  }
 
   useWardModalFocus(isOpen, dialogRef, onClose);
 
@@ -131,7 +135,7 @@ export function ArrivalTimeModal({ isOpen, onClose, movement, role = "coordinato
             </h2>
           </div>
           <button type="button" onClick={onClose} aria-label="Close dialog" className={styles.closeBtn}>
-            <X size={20} />
+            <X size={20} aria-hidden="true" />
           </button>
         </div>
 
@@ -139,10 +143,10 @@ export function ArrivalTimeModal({ isOpen, onClose, movement, role = "coordinato
           <div className={styles.note}>
             <ShieldCheck size={18} className={styles.noteIcon} aria-hidden="true" />
             <span>
-              Saving this plan records how they are arriving, any tracking number, and the estimated ward time.
-              That clears the {pullHoldLabel} pull clock. A late notice may be raised when the saved ETA is already
-              past the {LATE_ARRIVAL_GRACE_MINUTES}-minute grace window ({OPERATIONAL_DEFAULT_LABEL}) — it is sent to
-              the referrer and the accepting ward.
+              Saving this plan records how they are arriving, any tracking number, and the estimated ward time. That
+              clears the {pullHoldLabel} pull clock. A late notice may be raised when the saved ETA is already past the{" "}
+              {LATE_ARRIVAL_GRACE_MINUTES}-minute grace window ({OPERATIONAL_DEFAULT_LABEL}) — it is sent to the
+              referrer and the accepting ward.
             </span>
           </div>
 
@@ -151,8 +155,8 @@ export function ArrivalTimeModal({ isOpen, onClose, movement, role = "coordinato
               <AlertCircle size={18} className={styles.lateIcon} aria-hidden="true" />
               <span>
                 Arrival is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward time (
-                {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST). They have not been
-                marked arrived.
+                {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST). They have not been marked
+                arrived.
               </span>
             </div>
           ) : null}

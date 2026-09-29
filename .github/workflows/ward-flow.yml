@@ -57,6 +57,13 @@ jobs:
         if: ${{ !cancelled() && steps.backend-install.outcome == 'success' }}
         working-directory: backend/ward-flow
         run: npm test
+      # Prettier and ESLint (errors) on the PR's changed files, plus the test-deletion guard.
+      # Seconds, and pre-existing issues in untouched files never block the PR.
+      - name: Check changed files
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        env:
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: node scripts/ward-ci-public/changed-checks.mjs
       - name: Check Ward reference data
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm run check:ward-reference
@@ -105,7 +112,7 @@ jobs:
   unit:
     name: Ward Flow unit shard ${{ matrix.shard }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 15
     strategy:
       # Every shard reports, so one red never hides another shard's result.
       fail-fast: false
@@ -127,7 +134,7 @@ jobs:
         run: node scripts/ward-ci-public/plan.mjs
       - name: Install locked dependencies
         id: install
-        if: ${{ !cancelled() && steps.plan.outputs.full == 'true' }}
+        if: ${{ !cancelled() && steps.plan.outputs.unit == 'true' }}
         run: npm ci --ignore-scripts
       - name: Run reconciled unit suite shard
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
@@ -138,7 +145,7 @@ jobs:
   browser:
     name: Ward Flow browser journeys ${{ matrix.group }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -159,7 +166,7 @@ jobs:
         run: node scripts/ward-ci-public/plan.mjs
       - name: Install locked dependencies
         id: install
-        if: ${{ !cancelled() && steps.plan.outputs.full == 'true' }}
+        if: ${{ !cancelled() && steps.plan.outputs.browser == 'true' }}
         run: npm ci --ignore-scripts
       - name: Install Chromium
         id: chromium
