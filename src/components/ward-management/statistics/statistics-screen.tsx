@@ -11,7 +11,6 @@ import {
   refusedAndNothingPending,
 } from "@/components/ward-management/statistics/statistics-derivations";
 import { readDeclinesByReason } from "@/components/ward-management/statistics/statistics-decline-reporting";
-import { edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import {
   CoordinatorAccessDisclaimer,
   SyntheticFiguresDisclaimer,
@@ -21,31 +20,18 @@ import {
   STATISTICS_SECTIONS,
   STATISTICS_SERVICE_CHOOSER_ID,
 } from "@/components/ward-management/statistics/statistics-sections";
-import {
-  communityStatisticsHref,
-  edStatisticsHref,
-  serviceStatisticsHref,
-  wardStatisticsHref,
-} from "@/components/ward-management/shell/ward-facade";
+import { communityStatisticsHref, serviceStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
-import { communityTeamSuburbCounts } from "@/components/ward-management/community/community-vocabulary";
-import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { calendarDateOf, dayOf, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { isOpen, unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
+import { unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import type { BedRelease, Movement, Referral } from "@/components/ward-management/ward-model";
-import { referralState } from "@/components/ward-management/ward-referrals";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { StatisticsNav } from "@/components/ward-management/statistics/statistics-nav";
-import {
-  ED_SEVERE_PRESSURE_WAIT_MINUTES,
-  LONG_WAIT_MINUTES,
-  OPERATIONAL_DEFAULT_LABEL,
-} from "@/components/ward-management/ward-operational-defaults";
 
 import styles from "./statistics.module.css";
 import pageStyles from "./statistics-landing-third-edition.module.css";
@@ -215,175 +201,9 @@ export function StatisticsScreen({
   const dischargesCount = sourceAdmissions.filter((a) => a.leftAt !== null && dayOf(a.leftAt) === dayOf(now)).length;
   const reportDayCaption = `${formatReportDay(now, dayZero)}, midnight to midnight, across all wards`;
 
-  type StatsTab = "overview" | "wards" | "emergency" | "community" | "referrals";
-  const [activeTab, setActiveTab] = useState<StatsTab>("overview");
-
-  const [wardSearch, setWardSearch] = useState("");
-  const [edSearch, setEdSearch] = useState("");
-  const [teamSearch, setTeamSearch] = useState("");
-
-  type WardSortCol = "name" | "hospital" | "beds" | "ready" | "occupancy" | "referred";
-  type EdSortCol = "name" | "waiting" | "longest" | "median" | "over8h" | "over24h";
-  type TeamSortCol = "name" | "suburbs";
-
-  const [wardSort, setWardSort] = useState<{ col: WardSortCol; asc: boolean }>({ col: "ready", asc: true });
-  const [edSort, setEdSort] = useState<{ col: EdSortCol; asc: boolean }>({ col: "waiting", asc: false });
-  const [teamSort, setTeamSort] = useState<{ col: TeamSortCol; asc: boolean }>({ col: "name", asc: true });
-
   const [highlightedSegment, setHighlightedSegment] = useState<string | null>(null);
-
-  const allEds = allEmergencyDepartments();
-  const edFigures = allEds.map((ed) => edWaitFigures(sourceMovements, ed.id, now));
-  const edOnTheList = edFigures.reduce((sum, figures) => sum + figures.onTheList, 0);
-  const edWaitingMinutes = edFigures
-    .flatMap((figures) => figures.waitingMovements.map((entry) => entry.waitMinutes))
-    .sort((a, b) => a - b);
-  const edWaitReadout =
-    edWaitingMinutes.length === 0
-      ? null
-      : {
-          longestMinutes: edWaitingMinutes[edWaitingMinutes.length - 1],
-          medianMinutes:
-            edWaitingMinutes.length % 2 === 0
-              ? (edWaitingMinutes[edWaitingMinutes.length / 2 - 1] + edWaitingMinutes[edWaitingMinutes.length / 2]) / 2
-              : edWaitingMinutes[(edWaitingMinutes.length - 1) / 2],
-          over8h: edWaitingMinutes.filter((minutes) => minutes > ED_SEVERE_PRESSURE_WAIT_MINUTES).length,
-        };
-  const referralsRaised = sourceReferrals.length;
-  const referralsAccepted = sourceReferrals.filter((referral) => referralState(referral) === "accepted").length;
-  const referralsDeclined = sourceReferrals.filter((referral) => referralState(referral) === "declined").length;
-
-  const filteredWards = units.filter((u) => {
-    const q = wardSearch.toLowerCase().trim();
-    if (!q) return true;
-    const siteName = siteByCode(u.siteCode)?.name.toLowerCase() ?? "";
-    return u.name.toLowerCase().includes(q) || siteName.includes(q) || u.siteCode.toLowerCase().includes(q);
-  });
-
-  const sortedWards = [...filteredWards].sort((a, b) => {
-    const capA = unitCapacity(a, sourceBedReleases);
-    const capB = unitCapacity(b, sourceBedReleases);
-    let diff = 0;
-    if (wardSort.col === "name") diff = a.name.localeCompare(b.name);
-    else if (wardSort.col === "hospital") {
-      const hA = siteByCode(a.siteCode)?.name ?? a.siteCode;
-      const hB = siteByCode(b.siteCode)?.name ?? b.siteCode;
-      diff = hA.localeCompare(hB);
-    } else if (wardSort.col === "beds") diff = a.beds - b.beds;
-    else if (wardSort.col === "ready") diff = capA.available - capB.available;
-    else if (wardSort.col === "occupancy") {
-      const occA = a.beds > 0 ? capA.occupied / a.beds : 0;
-      const occB = b.beds > 0 ? capB.occupied / b.beds : 0;
-      diff = occA - occB;
-    } else if (wardSort.col === "referred") {
-      const refA = sourceMovements.filter((m) => isOpen(m) && m.referredUnitIds.includes(a.id)).length;
-      const refB = sourceMovements.filter((m) => isOpen(m) && m.referredUnitIds.includes(b.id)).length;
-      diff = refA - refB;
-    }
-    return wardSort.asc ? diff : -diff;
-  });
-
-  const filteredEds = allEds.filter((ed) => {
-    const q = edSearch.toLowerCase().trim();
-    if (!q) return true;
-    return ed.name.toLowerCase().includes(q) || ed.siteCode.toLowerCase().includes(q);
-  });
-
-  const sortedEds = [...filteredEds].sort((a, b) => {
-    const figA = edWaitFigures(sourceMovements, a.id, now);
-    const figB = edWaitFigures(sourceMovements, b.id, now);
-    let diff = 0;
-    if (edSort.col === "name") diff = a.name.localeCompare(b.name);
-    else if (edSort.col === "waiting") diff = figA.onTheList - figB.onTheList;
-    else if (edSort.col === "longest") {
-      const lA = figA.longestWait?.waitMinutes ?? -1;
-      const lB = figB.longestWait?.waitMinutes ?? -1;
-      diff = lA - lB;
-    } else if (edSort.col === "median") {
-      const wA = figA.waitingMovements.map((e) => e.waitMinutes).sort((x, y) => x - y);
-      const wB = figB.waitingMovements.map((e) => e.waitMinutes).sort((x, y) => x - y);
-      const mA =
-        wA.length === 0
-          ? -1
-          : wA.length % 2 === 0
-            ? (wA[wA.length / 2 - 1] + wA[wA.length / 2]) / 2
-            : wA[(wA.length - 1) / 2];
-      const mB =
-        wB.length === 0
-          ? -1
-          : wB.length % 2 === 0
-            ? (wB[wB.length / 2 - 1] + wB[wB.length / 2]) / 2
-            : wB[(wB.length - 1) / 2];
-      diff = mA - mB;
-    } else if (edSort.col === "over8h") {
-      const oA = figA.waitingMovements.filter((e) => e.waitMinutes > 480).length;
-      const oB = figB.waitingMovements.filter((e) => e.waitMinutes > 480).length;
-      diff = oA - oB;
-    } else if (edSort.col === "over24h") diff = figA.over24h - figB.over24h;
-    return edSort.asc ? diff : -diff;
-  });
-
-  const filteredTeams = COMMUNITY_TEAM_PAGES.filter((team) => {
-    const q = teamSearch.toLowerCase().trim();
-    if (!q) return true;
-    return team.name.toLowerCase().includes(q);
-  });
-
-  const sortedTeams = [...filteredTeams].sort((a, b) => {
-    let diff = 0;
-    if (teamSort.col === "name") diff = a.name.localeCompare(b.name);
-    else if (teamSort.col === "suburbs") {
-      const sA = communityTeamSuburbCounts().get(a.name) ?? 0;
-      const sB = communityTeamSuburbCounts().get(b.name) ?? 0;
-      diff = sA - sB;
-    }
-    return teamSort.asc ? diff : -diff;
-  });
-
-  const handleWardSort = (col: WardSortCol) => {
-    setWardSort((prev) => ({
-      col,
-      asc: prev.col === col ? !prev.asc : col === "name" || col === "hospital",
-    }));
-  };
-
-  const handleEdSort = (col: EdSortCol) => {
-    setEdSort((prev) => ({
-      col,
-      asc: prev.col === col ? !prev.asc : col === "name",
-    }));
-  };
-
-  const handleTeamSort = (col: TeamSortCol) => {
-    setTeamSort((prev) => ({
-      col,
-      asc: prev.col === col ? !prev.asc : true,
-    }));
-  };
-
-  const sortIndicator = (active: boolean, asc: boolean) => (
-    <span className={`${pageStyles.sortIcon} ${active ? pageStyles.sortActive : ""}`} aria-hidden="true">
-      {active ? (asc ? "▲" : "▼") : "↕"}
-    </span>
-  );
-
-  const netMovement = admissionsCount - dischargesCount;
-  const netMovementStr = netMovement > 0 ? `+${netMovement}` : `${netMovement}`;
-
-  // Radial Occupancy Gauge calibrations (r=90, cx=115, cy=115, totalArc=282.74)
-  const totalArcGauge = 282.74;
   const occPrecise = totalBeds > 0 ? (occupiedBeds / totalBeds) * 100 : 0;
-  const gaugeFrac = Math.min(Math.max(occPrecise / 100, 0), 1);
-  const gaugeArcDashoffset = totalArcGauge * (1 - gaugeFrac);
-  const gaugeAngle = Math.PI - gaugeFrac * Math.PI;
-  const gaugeHeadX = 115 + 90 * Math.cos(gaugeAngle);
-  const gaugeHeadY = 115 - 90 * Math.sin(gaugeAngle);
-  // No occupancy target until one has a source (Josh, 26 Sept 2026, question 14: the 85% target
-  // line comes off). The 95% "surge" line and its words went earlier.
-  const gaugeStrokeColor = "var(--accent)";
-  const gaugeBadgeTone = "No target recorded";
-  const gaugeBadgeBg = "var(--accent-soft)";
-  const gaugeBadgeColor = "var(--accent)";
+  const pendingPreparationPct = totalBeds > 0 ? Math.round((pendingPreparation / totalBeds) * 100) : 0;
 
   usePrintableDisclosures();
 
@@ -419,103 +239,11 @@ export function StatisticsScreen({
           </p>
         )}
 
-        {/* ══════════ TABS & TIME WINDOW NAV STRIP ══════════ */}
-        <div className={pageStyles.statsNavStrip}>
-          <div className={pageStyles.segTrack} role="tablist" aria-label="Statistics view categories">
-            <button
-              type="button"
-              className={`${pageStyles.segBtn} ${sectionStyles.segBtn ?? ""} ${activeTab === "overview" ? pageStyles.active : ""}`}
-              role="tab"
-              id="tab-overview"
-              aria-selected={activeTab === "overview"}
-              aria-controls="view-overview"
-              onClick={() => setActiveTab("overview")}
-              style={{ minHeight: "44px" }}
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7">
-                <rect x="2" y="2" width="5" height="5" rx="1" />
-                <rect x="9" y="2" width="5" height="5" rx="1" />
-                <rect x="2" y="9" width="5" height="5" rx="1" />
-                <rect x="9" y="9" width="5" height="5" rx="1" />
-              </svg>
-              <span>Executive Overview</span>
-            </button>
-            <button
-              type="button"
-              className={`${pageStyles.segBtn} ${sectionStyles.segBtn ?? ""} ${activeTab === "wards" ? pageStyles.active : ""}`}
-              role="tab"
-              id="tab-wards"
-              aria-selected={activeTab === "wards"}
-              aria-controls="view-wards"
-              onClick={() => setActiveTab("wards")}
-              style={{ minHeight: "44px" }}
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7">
-                <path d="M2 13V6a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7M1 13h14M4 8h8M4 11h8" />
-              </svg>
-              <span>Ward &amp; Bed Flow</span>
-              <span className={pageStyles.mono} id="tabBadgeWards" style={{ fontVariantNumeric: "tabular-nums" }}>
-                {units.length}
-              </span>
-            </button>
-            <button
-              type="button"
-              className={`${pageStyles.segBtn} ${sectionStyles.segBtn ?? ""} ${activeTab === "emergency" ? pageStyles.active : ""}`}
-              role="tab"
-              id="tab-emergency"
-              aria-selected={activeTab === "emergency"}
-              aria-controls="view-emergency"
-              onClick={() => setActiveTab("emergency")}
-              style={{ minHeight: "44px" }}
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7">
-                <path d="M8 2v12M2 8h12" />
-              </svg>
-              <span>Emergency Pressure</span>
-              <span className={pageStyles.mono} id="tabBadgeED" style={{ fontVariantNumeric: "tabular-nums" }}>
-                {allEds.length}
-              </span>
-            </button>
-            <button
-              type="button"
-              className={`${pageStyles.segBtn} ${sectionStyles.segBtn ?? ""} ${activeTab === "community" ? pageStyles.active : ""}`}
-              role="tab"
-              id="tab-community"
-              aria-selected={activeTab === "community"}
-              aria-controls="view-community"
-              onClick={() => setActiveTab("community")}
-              style={{ minHeight: "44px" }}
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7">
-                <path d="M3 13V7l5-4 5 4v6H3zM6 13V9h4v4" />
-              </svg>
-              <span>Community Teams</span>
-              <span className={pageStyles.mono} id="tabBadgeTeams" style={{ fontVariantNumeric: "tabular-nums" }}>
-                {COMMUNITY_TEAM_PAGES.length}
-              </span>
-            </button>
-            <button
-              type="button"
-              className={`${pageStyles.segBtn} ${sectionStyles.segBtn ?? ""} ${activeTab === "referrals" ? pageStyles.active : ""}`}
-              role="tab"
-              id="tab-referrals"
-              aria-selected={activeTab === "referrals"}
-              aria-controls="view-referrals"
-              onClick={() => setActiveTab("referrals")}
-              style={{ minHeight: "44px" }}
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7">
-                <path d="M14 8H2M9 3l5 5-5 5" />
-              </svg>
-              <span>Referrals &amp; Placement</span>
-              <span className={pageStyles.mono} id="tabBadgeRefs" style={{ fontVariantNumeric: "tabular-nums" }}>
-                {refused.openMovementCount}
-              </span>
-            </button>
-          </div>
-
-          {/* One reporting period exists: the current state. The 7-day and 30-day choices offered
-              periods Ward Flow keeps no history for, so they are gone (Josh, 25 Sept 2026). */}
+        {/* ══════════ REPORTING PERIOD STRIP ══════════ */}
+        <div
+          className={`${pageStyles.statsNavStrip} ${pageStyles.reportingPeriodBar ?? ""}`}
+          style={{ justifyContent: "space-between" }}
+        >
           <div
             className={`${pageStyles.timeWindowTrack} ${pageStyles.segTrack}`}
             role="group"
@@ -529,828 +257,125 @@ export function StatisticsScreen({
             >
               Current state
             </span>
-            <span>7-day and 30-day history is not recorded.</span>
+            <span style={{ fontSize: "var(--t-1)", color: "var(--muted)", alignSelf: "center", padding: "0 0.5rem" }}>
+              7-day and 30-day history is not recorded.
+            </span>
           </div>
+          <span className={pageStyles.reportingBadge}>No target recorded</span>
         </div>
 
-        {/* ══════════ TAB 1: EXECUTIVE OVERVIEW ══════════ */}
-        {activeTab === "overview" && (
-          <div className={pageStyles.statsView} id="view-overview" role="tabpanel" aria-labelledby="tab-overview">
-            {/* KPI Cards Grid */}
-            <div className={pageStyles.kpiGrid} id="execKpiGrid">
-              <div className={pageStyles.kpiCard} data-tone="accent">
-                <div className={pageStyles.kpiTop}>
-                  <span className={pageStyles.kpiLabel}>Total Capacity</span>
-                  <span
-                    className={pageStyles.mono}
-                    style={{ fontSize: "var(--t-0)", color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}
-                  >
-                    All Services
-                  </span>
-                </div>
-                <div className={pageStyles.kpiValRow}>
-                  <span className={pageStyles.kpiVal} id="kpiTotalBeds" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {totalBeds}
-                  </span>
-                  <span className={pageStyles.kpiSub}>beds / {units.length} wards</span>
-                </div>
-                <span className={pageStyles.kpiSub}>
-                  <strong id="kpiReadyBeds" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {availableNow}
-                  </strong>{" "}
-                  ready to admit ({availablePct}%)
-                  {pendingPreparation > 0 ? `, including ${pendingPreparation} still being made ready` : ""}
-                </span>
-              </div>
-
-              <div className={pageStyles.kpiCard} data-tone="accent">
-                <div className={pageStyles.kpiTop}>
-                  <span className={pageStyles.kpiLabel}>Occupancy Rate</span>
-                  <span className={pageStyles.mono} id="kpiOccDelta" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    —
-                  </span>
-                </div>
-                <div className={pageStyles.kpiValRow}>
-                  <span className={pageStyles.kpiVal} id="kpiOccPct" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {occupiedPct}%
-                  </span>
-                  <span className={pageStyles.kpiSub} id="kpiOccBeds" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {occupiedBeds} occupied
-                  </span>
-                </div>
-              </div>
-
-              <div className={pageStyles.kpiCard} data-tone="danger">
-                <div className={pageStyles.kpiTop}>
-                  <span className={pageStyles.kpiLabel}>ED Bed Waits</span>
-                  <span className={pageStyles.mono} style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {allEds.length} EDs
-                  </span>
-                </div>
-                <div className={pageStyles.kpiValRow}>
-                  <span className={pageStyles.kpiVal} id="kpiEDWaiting" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {edOnTheList}
-                  </span>
-                  <span className={pageStyles.kpiSub}>patients on the list</span>
-                </div>
-                {edWaitReadout === null ? (
-                  <span className={pageStyles.kpiSub}>No open ED movements</span>
-                ) : (
-                  <span className={pageStyles.kpiSub}>
-                    Longest:{" "}
-                    <strong style={{ fontVariantNumeric: "tabular-nums" }}>
-                      {splitDuration(edWaitReadout.longestMinutes)}
-                    </strong>{" "}
-                    · Median:{" "}
-                    <strong style={{ fontVariantNumeric: "tabular-nums" }}>
-                      {splitDuration(edWaitReadout.medianMinutes)}
-                    </strong>{" "}
-                    · {edWaitReadout.over8h} &gt;{ED_SEVERE_PRESSURE_WAIT_MINUTES / 60}h
-                  </span>
-                )}
-              </div>
-
-              <div className={pageStyles.kpiCard} data-tone="good">
-                <div className={pageStyles.kpiTop}>
-                  <span className={pageStyles.kpiLabel}>Net movement today</span>
-                  <span className={pageStyles.mono}>Network-wide</span>
-                </div>
-                <div className={pageStyles.kpiValRow}>
-                  <span className={pageStyles.kpiVal} id="kpiNetMove" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {netMovementStr}
-                  </span>
-                  <span className={pageStyles.kpiSub}>net daily flow</span>
-                </div>
-                <span className={pageStyles.kpiSub} style={{ fontVariantNumeric: "tabular-nums" }}>
-                  {admissionsCount} Admissions vs {dischargesCount} Discharges
-                </span>
-              </div>
-
-              <div className={pageStyles.kpiCard}>
-                <div className={pageStyles.kpiTop}>
-                  <span className={pageStyles.kpiLabel}>Bed Referrals</span>
-                  <span className={pageStyles.mono}>On record</span>
-                </div>
-                <div className={pageStyles.kpiValRow}>
-                  <span className={pageStyles.kpiVal} id="kpiOpenRefs" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {refused.openMovementCount}
-                  </span>
-                  <span className={pageStyles.kpiSub}>pending placement</span>
-                </div>
-                <span className={pageStyles.kpiSub}>
-                  {referralsRaised} raised · {referralsAccepted} accepted · {referralsDeclined} declined
-                </span>
-              </div>
-            </div>
-
-            {/* Occupancy Gauge & Bed State Waterfall */}
-            <div className={pageStyles.visualMetricsGrid}>
-              <div className={pageStyles.gaugeCard}>
-                <div className={pageStyles.gaugeHeader}>
-                  <h3>Network Occupancy</h3>
-                  <span
-                    className={pageStyles.gaugeStatusBadge}
-                    style={{ background: gaugeBadgeBg, color: gaugeBadgeColor }}
-                    id="gaugeStatusBadge"
-                  >
-                    {gaugeBadgeTone}
-                  </span>
-                </div>
-                <div className={pageStyles.gaugeBody}>
-                  <svg
-                    className={pageStyles.gaugeSvg}
-                    viewBox="0 0 230 130"
-                    id="networkGaugeSvg"
-                    role="img"
-                    aria-label={`Network Occupancy: ${occPrecise.toFixed(1)}%`}
-                  >
-                    <defs>
-                      <linearGradient id="gaugeGoodGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="var(--good)" />
-                        <stop offset="100%" stopColor="var(--warn)" />
-                      </linearGradient>
-                      <linearGradient id="gaugeSurgeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="var(--warn)" />
-                        <stop offset="100%" stopColor="var(--danger)" />
-                      </linearGradient>
-                      <filter id="gaugeHeadGlow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="rgba(0,0,0,0.3)" />
-                      </filter>
-                    </defs>
-                    {/* Background track arc (r=90, cx=115, cy=115) */}
-                    <path className={pageStyles.gaugeArcBg} d="M 25 115 A 90 90 0 0 1 205 115" />
-                    {/* 0% mark (left) */}
-                    <line
-                      x1="25"
-                      y1="115"
-                      x2="35"
-                      y2="115"
-                      stroke="var(--line-strong, var(--ink))"
-                      strokeWidth="1.5"
-                      strokeOpacity="0.4"
-                    />
-                    {/* 50% mark (top: angle PI/2) */}
-                    <line
-                      x1="115"
-                      y1="25"
-                      x2="115"
-                      y2="35"
-                      stroke="var(--line-strong, var(--ink))"
-                      strokeWidth="1.5"
-                      strokeOpacity="0.4"
-                    />
-                    {/* The 85% target tick came off with the target (Josh, 26 Sept 2026, question 14). */}
-                    {/* 100% mark (right) */}
-                    <line x1="195" y1="115" x2="205" y2="115" stroke="var(--danger)" strokeWidth="1.5" />
-                    {/* Value arc path: length = PI * 90 = 282.74 */}
-                    <path
-                      className={pageStyles.gaugeArcVal}
-                      d="M 25 115 A 90 90 0 0 1 205 115"
-                      stroke={gaugeStrokeColor}
-                      strokeDasharray="282.74"
-                      strokeDashoffset={gaugeArcDashoffset}
-                    />
-                    {/* Glowing indicator dot at arc head */}
-                    <circle
-                      cx={gaugeHeadX.toFixed(1)}
-                      cy={gaugeHeadY.toFixed(1)}
-                      r="5"
-                      fill="var(--surface)"
-                      stroke={gaugeStrokeColor}
-                      strokeWidth="3"
-                      filter="url(#gaugeHeadGlow)"
-                    />
-                  </svg>
-                  <div className={pageStyles.gaugeCenterText}>
-                    <span className={pageStyles.gaugeNum}>{occPrecise.toFixed(1)}%</span>
-                    <span className={pageStyles.gaugeDesc}>
-                      {occupiedBeds} / {totalBeds} Beds
-                    </span>
-                  </div>
-                </div>
-                <div className={pageStyles.gaugeThresholds}>
-                  <span>0%</span>
-                  <span>100%</span>
-                </div>
-              </div>
-
-              <div className={pageStyles.waterfallCard}>
-                <div className={pageStyles.waterfallHeader}>
-                  <h3>Bed State Distribution</h3>
-                  <span
-                    className={pageStyles.mono}
-                    style={{ fontSize: "var(--t-0)", color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}
-                  >
-                    {totalBeds} Total Beds
-                  </span>
-                </div>
-                <p className={pageStyles.lede} style={{ fontSize: "var(--t-1)" }}>
-                  Current bed state across {units.length} inpatient wards.
-                </p>
-                <div className={pageStyles.waterfallBar}>
-                  <div
-                    style={{ width: `${occupiedPct}%`, background: "var(--accent)" }}
-                    className={`${pageStyles.wfSegment} ${highlightedSegment === "occupied" ? pageStyles.wfSegmentHighlighted : highlightedSegment ? pageStyles.wfSegmentDimmed : ""}`}
-                    title={`Occupied: ${occupiedBeds} beds (${occPrecise.toFixed(1)}%)`}
-                    onMouseEnter={() => setHighlightedSegment("occupied")}
-                    onMouseLeave={() => setHighlightedSegment(null)}
-                  >
-                    {occupiedPct >= 18
-                      ? `${occupiedBeds} Occupied (${occPrecise.toFixed(1)}%)`
-                      : occupiedPct >= 10
-                        ? `${occupiedBeds} Occ`
-                        : occupiedPct >= 5
-                          ? `${occupiedBeds}`
-                          : null}
-                  </div>
-                  <div
-                    style={{ width: `${availablePct}%`, background: "var(--good)" }}
-                    className={`${pageStyles.wfSegment} ${highlightedSegment === "ready" ? pageStyles.wfSegmentHighlighted : highlightedSegment ? pageStyles.wfSegmentDimmed : ""}`}
-                    title={`Ready to admit: ${availableNow} beds (${availablePct}%)`}
-                    onMouseEnter={() => setHighlightedSegment("ready")}
-                    onMouseLeave={() => setHighlightedSegment(null)}
-                  >
-                    {availablePct >= 14 ? `${availableNow} Ready` : availablePct >= 6 ? `${availableNow}` : null}
-                  </div>
-                  <div
-                    style={{ width: `${heldPct}%`, background: "var(--warn)" }}
-                    className={`${pageStyles.wfSegment} ${highlightedSegment === "held" ? pageStyles.wfSegmentHighlighted : highlightedSegment ? pageStyles.wfSegmentDimmed : ""}`}
-                    title={`Held: ${heldBeds} beds (${heldPct}%)`}
-                    onMouseEnter={() => setHighlightedSegment("held")}
-                    onMouseLeave={() => setHighlightedSegment(null)}
-                  >
-                    {heldPct >= 14 ? `${heldBeds} Held` : heldPct >= 6 ? `${heldBeds}` : null}
-                  </div>
-                  <div
-                    style={{
-                      width: `${blockedPct}%`,
-                      background: "var(--danger)",
-                      color: "var(--on-accent)",
-                    }}
-                    className={`${pageStyles.wfSegment} ${highlightedSegment === "blocked" ? pageStyles.wfSegmentHighlighted : highlightedSegment ? pageStyles.wfSegmentDimmed : ""}`}
-                    title="Out of service / blocked: not recorded"
-                    onMouseEnter={() => setHighlightedSegment("blocked")}
-                    onMouseLeave={() => setHighlightedSegment(null)}
-                  >
-                    {blockedPct >= 14 ? `${blockedBeds} Blocked` : blockedPct >= 6 ? `${blockedBeds}` : null}
-                  </div>
-                </div>
-                <div className={pageStyles.wfLegend}>
-                  <div
-                    className={`${pageStyles.wfLegendItem} ${highlightedSegment === "occupied" ? pageStyles.wfLegendItemHighlighted : highlightedSegment ? pageStyles.wfLegendItemDimmed : ""}`}
-                    onMouseEnter={() => setHighlightedSegment("occupied")}
-                    onMouseLeave={() => setHighlightedSegment(null)}
-                  >
-                    <span className={pageStyles.wfColorBox} style={{ background: "var(--accent)" }} />
-                    <span>Occupied</span>
-                    <strong
-                      style={{ marginLeft: "auto", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                    >
-                      {occupiedBeds} ({occPrecise.toFixed(1)}%)
-                    </strong>
-                  </div>
-                  <div
-                    className={`${pageStyles.wfLegendItem} ${highlightedSegment === "ready" ? pageStyles.wfLegendItemHighlighted : highlightedSegment ? pageStyles.wfLegendItemDimmed : ""}`}
-                    onMouseEnter={() => setHighlightedSegment("ready")}
-                    onMouseLeave={() => setHighlightedSegment(null)}
-                  >
-                    <span className={pageStyles.wfColorBox} style={{ background: "var(--good)" }} />
-                    <span>Ready to Admit</span>
-                    <strong
-                      style={{ marginLeft: "auto", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                    >
-                      {availableNow} ({availablePct}%)
-                    </strong>
-                  </div>
-                  <div
-                    className={`${pageStyles.wfLegendItem} ${highlightedSegment === "held" ? pageStyles.wfLegendItemHighlighted : highlightedSegment ? pageStyles.wfLegendItemDimmed : ""}`}
-                    onMouseEnter={() => setHighlightedSegment("held")}
-                    onMouseLeave={() => setHighlightedSegment(null)}
-                  >
-                    <span className={pageStyles.wfColorBox} style={{ background: "var(--warn)" }} />
-                    <span>Held / Reserved</span>
-                    <strong
-                      style={{ marginLeft: "auto", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                    >
-                      {heldBeds} ({heldPct}%)
-                    </strong>
-                  </div>
-                  <div
-                    className={`${pageStyles.wfLegendItem} ${highlightedSegment === "blocked" ? pageStyles.wfLegendItemHighlighted : highlightedSegment ? pageStyles.wfLegendItemDimmed : ""}`}
-                    onMouseEnter={() => setHighlightedSegment("blocked")}
-                    onMouseLeave={() => setHighlightedSegment(null)}
-                  >
-                    <span className={pageStyles.wfColorBox} style={{ background: "var(--danger)" }} />
-                    <span>Out of Service</span>
-                    <strong
-                      style={{ marginLeft: "auto", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                    >
-                      Not recorded
-                    </strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Reconciled Operational Headline Summary */}
-            <section className={pageStyles.summarySection} aria-label="Operational Headline Summary">
-              <div className={pageStyles.summaryHeader}>
-                <h2>Operational Headline Summary</h2>
-                <span className={pageStyles.count}>{units.length} Wards</span>
-              </div>
-              <div className={pageStyles.summaryBody}>
-                <p className={pageStyles.lede}>
-                  Network mental health inpatient beds are operating at {occupiedPct}% occupancy with {availableNow}{" "}
-                  beds ready to admit.
-                </p>
-                <div className={pageStyles.factsList}>
-                  <span className={pageStyles.factChip}>
-                    <strong>Total Beds:</strong> {totalBeds}
-                  </span>
-                  <span className={pageStyles.factChip}>
-                    <strong>Occupied:</strong> {occupiedBeds}
-                  </span>
-                  <span className={pageStyles.factChip}>
-                    <strong>Ready:</strong> {availableNow}
-                  </span>
-                  <span className={pageStyles.factChip}>
-                    <strong>ED Waits:</strong> {edOnTheList}
-                  </span>
-                  <span className={pageStyles.factChip}>
-                    <strong>Admissions Today:</strong> {admissionsCount}
-                  </span>
-                  <span className={pageStyles.factChip}>
-                    <strong>Discharges Today:</strong> {dischargesCount}
-                  </span>
-                </div>
-                <div className={pageStyles.reconLine}>
-                  <span className={pageStyles.reconDot} aria-hidden="true" />
-                  <span>
-                    {units.length} wards across {hospitalsCount} hospitals, from this session&apos;s sample records.
-                  </span>
-                </div>
-                <div className={pageStyles.exportRow}>
-                  <button
-                    type="button"
-                    className={pageStyles.exportBtn}
-                    onClick={() => alert("Not wired in this prototype.")}
-                    title="Export every figure on this page as a sheet. Not wired in this prototype."
-                  >
-                    Export the figures
-                  </button>
-                  <span className={pageStyles.exportHint}>
-                    Produce a spreadsheet summary of network figures. Not wired in this prototype.
-                  </span>
-                </div>
-              </div>
-            </section>
-
-            {/* Daily history is not recorded (Josh, 25 Sept 2026): until 25 Sept this section drew a
-                14-day admissions and discharges chart from a typed series, with only today real. */}
-            <section
-              className={pageStyles.summarySection}
-              aria-label="Statewide Patient Flow Over Time"
-              data-testid="ward-statistics-flow-history"
+        {/* ══════════ BED STATE WATERFALL ══════════ */}
+        <div className={pageStyles.waterfallCard}>
+          <div className={pageStyles.waterfallHeader}>
+            <h3>Bed State Distribution</h3>
+            <span
+              className={pageStyles.mono}
+              style={{ fontSize: "var(--t-0)", color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}
             >
-              <div className={pageStyles.summaryHeader}>
-                <h2>Statewide Patient Flow Over Time</h2>
-                <span className={pageStyles.count}>Not recorded</span>
-              </div>
-              <div className={pageStyles.summaryIntro}>
-                <p>
-                  Daily admissions and discharges before today are not recorded in Ward Flow, so no trend is shown.
-                  Today so far: {admissionsCount} admissions and {dischargesCount} discharges.
-                </p>
-              </div>
-            </section>
+              {totalBeds} Total Beds
+            </span>
           </div>
-        )}
-
-        {/* ══════════ TAB 2: WARD & BED FLOW ══════════ */}
-        {activeTab === "wards" && (
-          <section className={pageStyles.summarySection} aria-label="Ward & Bed Flow Across the Network">
-            <div className={pageStyles.summaryHeader}>
-              <h2>Ward &amp; Bed Flow Across the Network</h2>
-              <span className={pageStyles.count}>{units.length} Wards</span>
+          <p className={pageStyles.lede} style={{ fontSize: "var(--t-1)" }}>
+            Current bed state across {units.length} inpatient wards.
+          </p>
+          <div className={pageStyles.waterfallBar}>
+            <div
+              style={{ width: `${occupiedPct}%`, background: "var(--accent)" }}
+              className={`${pageStyles.wfSegment} ${highlightedSegment === "occupied" ? pageStyles.wfSegmentHighlighted : highlightedSegment ? pageStyles.wfSegmentDimmed : ""}`}
+              title={`Occupied: ${occupiedBeds} beds (${occPrecise.toFixed(1)}%)`}
+              onMouseEnter={() => setHighlightedSegment("occupied")}
+              onMouseLeave={() => setHighlightedSegment(null)}
+            >
+              {occupiedPct >= 18
+                ? `${occupiedBeds} Occupied (${occPrecise.toFixed(1)}%)`
+                : occupiedPct >= 10
+                  ? `${occupiedBeds} Occ`
+                  : occupiedPct >= 5
+                    ? `${occupiedBeds}`
+                    : null}
             </div>
-            <div className={pageStyles.tableControlsBar}>
-              <div className={pageStyles.tableSearchBox}>
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="7" cy="7" r="4.5" />
-                  <path d="M10.5 10.5L14 14" />
-                </svg>
-                <input
-                  type="search"
-                  className={pageStyles.tableSearchInput}
-                  placeholder="Filter wards or hospitals..."
-                  value={wardSearch}
-                  onChange={(e) => setWardSearch(e.target.value)}
-                  aria-label="Filter wards or hospitals"
-                />
+            <div
+              style={{ width: `${availablePct}%`, background: "var(--good)" }}
+              className={`${pageStyles.wfSegment} ${highlightedSegment === "ready" ? pageStyles.wfSegmentHighlighted : highlightedSegment ? pageStyles.wfSegmentDimmed : ""}`}
+              title={`Ready to admit: ${availableNow} beds (${availablePct}%)`}
+              onMouseEnter={() => setHighlightedSegment("ready")}
+              onMouseLeave={() => setHighlightedSegment(null)}
+            >
+              {availablePct >= 18
+                ? `${availableNow} Ready (${availablePct}%)`
+                : availablePct >= 10
+                  ? `${availableNow} Ready`
+                  : availablePct >= 5
+                    ? `${availableNow}`
+                    : null}
+            </div>
+            {pendingPreparation > 0 ? (
+              <div
+                style={{ width: `${pendingPreparationPct}%`, background: "var(--warn)" }}
+                className={`${pageStyles.wfSegment} ${highlightedSegment === "pending" ? pageStyles.wfSegmentHighlighted : highlightedSegment ? pageStyles.wfSegmentDimmed : ""}`}
+                title={`Pending preparation: ${pendingPreparation} beds (${pendingPreparationPct}%)`}
+                onMouseEnter={() => setHighlightedSegment("pending")}
+                onMouseLeave={() => setHighlightedSegment(null)}
+              >
+                {pendingPreparationPct >= 18
+                  ? `${pendingPreparation} Pending (${pendingPreparationPct}%)`
+                  : pendingPreparationPct >= 10
+                    ? `${pendingPreparation} Pend`
+                    : pendingPreparationPct >= 5
+                      ? `${pendingPreparation}`
+                      : null}
               </div>
-              <span className={pageStyles.tableFilterCount}>
-                Showing {filteredWards.length} of {units.length} wards
-              </span>
+            ) : null}
+          </div>
+          <div className={pageStyles.wfLegend}>
+            <div
+              className={`${pageStyles.wfLegendItem} ${highlightedSegment === "occupied" ? pageStyles.wfLegendItemHighlighted : highlightedSegment ? pageStyles.wfLegendItemDimmed : ""}`}
+              onMouseEnter={() => setHighlightedSegment("occupied")}
+              onMouseLeave={() => setHighlightedSegment(null)}
+            >
+              <span className={pageStyles.wfColorBox} style={{ background: "var(--accent)" }} />
+              <span>Occupied</span>
+              <strong style={{ marginLeft: "auto", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}>
+                {occupiedBeds} ({occPrecise.toFixed(1)}%)
+              </strong>
             </div>
-            <div className={pageStyles.tableWrap} tabIndex={0} role="group" aria-label="Wards table">
-              <table className={pageStyles.dataTable}>
-                <thead>
-                  <tr>
-                    <th scope="col">
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        onClick={() => handleWardSort("name")}
-                        aria-label="Sort by ward name"
-                      >
-                        Ward {sortIndicator(wardSort.col === "name", wardSort.asc)}
-                      </button>
-                    </th>
-                    <th scope="col">
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        onClick={() => handleWardSort("hospital")}
-                        aria-label="Sort by hospital"
-                      >
-                        Hospital {sortIndicator(wardSort.col === "hospital", wardSort.asc)}
-                      </button>
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleWardSort("beds")}
-                        aria-label="Sort by total beds"
-                      >
-                        Beds {sortIndicator(wardSort.col === "beds", wardSort.asc)}
-                      </button>
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleWardSort("ready")}
-                        aria-label="Sort by ready beds"
-                      >
-                        Ready {sortIndicator(wardSort.col === "ready", wardSort.asc)}
-                      </button>
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleWardSort("occupancy")}
-                        aria-label="Sort by occupancy"
-                      >
-                        Occupancy {sortIndicator(wardSort.col === "occupancy", wardSort.asc)}
-                      </button>
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleWardSort("referred")}
-                        aria-label="Sort by referred count"
-                      >
-                        Referred {sortIndicator(wardSort.col === "referred", wardSort.asc)}
-                      </button>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedWards.map((u) => {
-                    const cap = unitCapacity(u, sourceBedReleases);
-                    const occ = u.beds > 0 ? Math.round((cap.occupied / u.beds) * 100) : 0;
-                    const referred = sourceMovements.filter(
-                      (movement) => isOpen(movement) && movement.referredUnitIds.includes(u.id),
-                    ).length;
-                    return (
-                      <tr key={u.id}>
-                        <td>
-                          <Link href={wardStatisticsHref(u.id)} style={{ color: "var(--accent)", fontWeight: 600 }}>
-                            {u.name}
-                          </Link>
-                        </td>
-                        <td>{siteByCode(u.siteCode)?.name ?? u.siteCode}</td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          {u.beds}
-                        </td>
-                        <td
-                          style={{
-                            textAlign: "right",
-                            fontFamily: "var(--mono)",
-                            fontVariantNumeric: "tabular-nums",
-                            color: cap.available > 0 ? "var(--good)" : undefined,
-                          }}
-                        >
-                          {cap.available}
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          {occ}%
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          {referred}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div
+              className={`${pageStyles.wfLegendItem} ${highlightedSegment === "ready" ? pageStyles.wfLegendItemHighlighted : highlightedSegment ? pageStyles.wfLegendItemDimmed : ""}`}
+              onMouseEnter={() => setHighlightedSegment("ready")}
+              onMouseLeave={() => setHighlightedSegment(null)}
+            >
+              <span className={pageStyles.wfColorBox} style={{ background: "var(--good)" }} />
+              <span>Ready to Admit</span>
+              <strong style={{ marginLeft: "auto", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}>
+                {availableNow} ({availablePct}%)
+              </strong>
             </div>
-          </section>
-        )}
-
-        {/* ══════════ TAB 3: EMERGENCY PRESSURE ══════════ */}
-        {activeTab === "emergency" && (
-          <section className={pageStyles.summarySection} aria-label="Emergency Department Pressure & Waits">
-            <div className={pageStyles.summaryHeader}>
-              <h2>Emergency Department Pressure &amp; Waits</h2>
-              <span className={pageStyles.count}>{allEds.length} EDs</span>
-            </div>
-            <div className={pageStyles.tableControlsBar}>
-              <div className={pageStyles.tableSearchBox}>
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="7" cy="7" r="4.5" />
-                  <path d="M10.5 10.5L14 14" />
-                </svg>
-                <input
-                  type="search"
-                  className={pageStyles.tableSearchInput}
-                  placeholder="Filter emergency departments..."
-                  value={edSearch}
-                  onChange={(e) => setEdSearch(e.target.value)}
-                  aria-label="Filter emergency departments"
-                />
+            {pendingPreparation > 0 ? (
+              <div
+                className={`${pageStyles.wfLegendItem} ${highlightedSegment === "pending" ? pageStyles.wfLegendItemHighlighted : highlightedSegment ? pageStyles.wfLegendItemDimmed : ""}`}
+                onMouseEnter={() => setHighlightedSegment("pending")}
+                onMouseLeave={() => setHighlightedSegment(null)}
+              >
+                <span className={pageStyles.wfColorBox} style={{ background: "var(--warn)" }} />
+                <span>Pending Prep</span>
+                <strong style={{ marginLeft: "auto", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}>
+                  {pendingPreparation} ({pendingPreparationPct}%)
+                </strong>
               </div>
-              <span className={pageStyles.tableFilterCount}>
-                Showing {filteredEds.length} of {allEds.length} EDs
-              </span>
+            ) : null}
+            <div
+              className={`${pageStyles.wfLegendItem} ${highlightedSegment === "blocked" ? pageStyles.wfLegendItemHighlighted : highlightedSegment ? pageStyles.wfLegendItemDimmed : ""}`}
+              onMouseEnter={() => setHighlightedSegment("blocked")}
+              onMouseLeave={() => setHighlightedSegment(null)}
+            >
+              <span className={pageStyles.wfColorBox} style={{ background: "var(--danger)" }} />
+              <span>Out of Service</span>
+              <strong style={{ marginLeft: "auto", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}>
+                Not recorded
+              </strong>
             </div>
-            <div className={pageStyles.tableWrap} tabIndex={0} role="group" aria-label="Emergency departments table">
-              <table className={pageStyles.dataTable}>
-                <thead>
-                  <tr>
-                    <th scope="col">
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        onClick={() => handleEdSort("name")}
-                        aria-label="Sort by site"
-                      >
-                        Site {sortIndicator(edSort.col === "name", edSort.asc)}
-                      </button>
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleEdSort("waiting")}
-                        aria-label="Sort by waiting count"
-                      >
-                        Waiting {sortIndicator(edSort.col === "waiting", edSort.asc)}
-                      </button>
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleEdSort("longest")}
-                        aria-label="Sort by longest wait"
-                      >
-                        Longest wait {sortIndicator(edSort.col === "longest", edSort.asc)}
-                      </button>
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleEdSort("median")}
-                        aria-label="Sort by median wait"
-                      >
-                        Median wait {sortIndicator(edSort.col === "median", edSort.asc)}
-                      </button>
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleEdSort("over8h")}
-                        aria-label={`Sort by over ${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60} hours (${OPERATIONAL_DEFAULT_LABEL})`}
-                        title={OPERATIONAL_DEFAULT_LABEL}
-                      >
-                        Over {ED_SEVERE_PRESSURE_WAIT_MINUTES / 60}h{" "}
-                        {sortIndicator(edSort.col === "over8h", edSort.asc)}
-                      </button>
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleEdSort("over24h")}
-                        aria-label={`Sort by over ${LONG_WAIT_MINUTES / 60} hours (${OPERATIONAL_DEFAULT_LABEL})`}
-                        title={OPERATIONAL_DEFAULT_LABEL}
-                      >
-                        Over {LONG_WAIT_MINUTES / 60}h {sortIndicator(edSort.col === "over24h", edSort.asc)}
-                      </button>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedEds.map((ed) => {
-                    const figures = edWaitFigures(sourceMovements, ed.id, now);
-                    const waits = figures.waitingMovements.map((entry) => entry.waitMinutes).sort((a, b) => a - b);
-                    const over8h = waits.filter((minutes) => minutes > ED_SEVERE_PRESSURE_WAIT_MINUTES).length;
-                    const median =
-                      waits.length === 0
-                        ? null
-                        : waits.length % 2 === 0
-                          ? (waits[waits.length / 2 - 1] + waits[waits.length / 2]) / 2
-                          : waits[(waits.length - 1) / 2];
-                    return (
-                      <tr key={ed.id}>
-                        <td>
-                          <Link href={edStatisticsHref(ed.id)} style={{ color: "var(--accent)", fontWeight: 600 }}>
-                            {ed.name}
-                          </Link>
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          {figures.onTheList}
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          {figures.longestWait ? splitDuration(figures.longestWait.waitMinutes) : "—"}
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          {median === null ? "—" : splitDuration(median)}
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          {over8h}
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          {figures.over24h}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
-
-        {/* ══════════ TAB 4: COMMUNITY TEAMS ══════════ */}
-        {activeTab === "community" && (
-          <section className={pageStyles.summarySection} aria-label="Community Mental Health Teams">
-            <div className={pageStyles.summaryHeader}>
-              <h2>Community Mental Health Teams</h2>
-              <span className={pageStyles.count}>{COMMUNITY_TEAM_PAGES.length} Teams</span>
-            </div>
-            <div className={pageStyles.tableControlsBar}>
-              <div className={pageStyles.tableSearchBox}>
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="7" cy="7" r="4.5" />
-                  <path d="M10.5 10.5L14 14" />
-                </svg>
-                <input
-                  type="search"
-                  className={pageStyles.tableSearchInput}
-                  placeholder="Filter community teams..."
-                  value={teamSearch}
-                  onChange={(e) => setTeamSearch(e.target.value)}
-                  aria-label="Filter community teams"
-                />
-              </div>
-              <span className={pageStyles.tableFilterCount}>
-                Showing {filteredTeams.length} of {COMMUNITY_TEAM_PAGES.length} teams
-              </span>
-            </div>
-            <div className={pageStyles.tableWrap} tabIndex={0} role="group" aria-label="Community teams table">
-              <table className={pageStyles.dataTable}>
-                <thead>
-                  <tr>
-                    <th scope="col">
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        onClick={() => handleTeamSort("name")}
-                        aria-label="Sort by team"
-                      >
-                        Team {sortIndicator(teamSort.col === "name", teamSort.asc)}
-                      </button>
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleTeamSort("suburbs")}
-                        aria-label="Sort by suburbs count"
-                      >
-                        Suburbs {sortIndicator(teamSort.col === "suburbs", teamSort.asc)}
-                      </button>
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      Caseload
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      New referrals
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      Discharged to community
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedTeams.map((team) => {
-                    return (
-                      <tr key={team.id}>
-                        <td>
-                          <Link
-                            href={communityStatisticsHref(team.id)}
-                            style={{ color: "var(--accent)", fontWeight: 600 }}
-                          >
-                            {team.name}
-                          </Link>
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          {communityTeamSuburbCounts().get(team.name) ?? 0}
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          Not measured
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          Not measured
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          Not measured
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
-
-        {/* ══════════ TAB 5: REFERRALS & PLACEMENT ══════════ */}
-        {activeTab === "referrals" && (
-          <section className={pageStyles.summarySection} aria-label="Referrals for Inpatient Bed Placement">
-            <div className={pageStyles.summaryHeader}>
-              <h2>Referrals for Inpatient Bed Placement</h2>
-              <span className={pageStyles.count}>{sourceReferrals.length} Referrals</span>
-            </div>
-            <div className={pageStyles.summaryBody}>
-              <div className={pageStyles.factsList}>
-                <span className={pageStyles.factChip}>
-                  <strong>Total Referrals on Record:</strong> {sourceReferrals.length}
-                </span>
-                <span className={pageStyles.factChip}>
-                  <strong>Open Movements:</strong> {refused.openMovementCount}
-                </span>
-                <span className={pageStyles.factChip}>
-                  <strong>Refused So Far:</strong> {refused.count}
-                </span>
-                <span className={pageStyles.factChip}>
-                  <strong>Parallel Referral Cap:</strong> {configuration.parallelReferralCap}
-                </span>
-              </div>
-            </div>
-          </section>
-        )}
+          </div>
+        </div>
 
         {/* ── Audience 1 ─────────────────────────────────────────────────────────────────── */}
         <div className={pageStyles.landingRegions}>
@@ -1606,6 +631,25 @@ export function StatisticsScreen({
           </WardPanel>
           <WardPanel title="Flow over time" testId="ward-statistics-patients">
             <div className={pageStyles.landingBody}>
+              {/* Daily history is not recorded (Josh, 25 Sept 2026): until 25 Sept this section drew a
+                  14-day admissions and discharges chart from a typed series, with only today real. */}
+              <div
+                className={pageStyles.summarySection}
+                aria-label="Statewide Patient Flow Over Time"
+                data-testid="ward-statistics-flow-history"
+              >
+                <div className={pageStyles.summaryHeader}>
+                  <h3>Statewide Patient Flow Over Time</h3>
+                  <span className={pageStyles.count}>Not recorded</span>
+                </div>
+                <div className={pageStyles.summaryIntro}>
+                  <p>
+                    Daily admissions and discharges before today are not recorded in Ward Flow, so no trend is shown.
+                    Today so far: {admissionsCount} admissions and {dischargesCount} discharges.
+                  </p>
+                </div>
+              </div>
+
               <section className={pageStyles.rangeSummary} aria-labelledby="ward-statistics-range-title">
                 <p className={pageStyles.rangeEyebrow}>Recorded pull-to-arrival range</p>
                 <h3 id="ward-statistics-range-title">Time from a bed being given away to arrival</h3>

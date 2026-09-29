@@ -2,15 +2,7 @@
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import {
-  ArrowUpRight,
-  BookOpen,
-  ChevronRight,
-  Download,
-  FileText,
-  Search,
-  X,
-} from "lucide-react";
+import { ArrowUpRight, BookOpen, ChevronRight, Download, FileText, Search, X } from "lucide-react";
 
 import {
   COMMUNITY_TEAM_PAGES,
@@ -355,8 +347,8 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
         <header className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>All community teams</h1>
           <p className={styles.pageSubtitle}>
-            Every community team a referral can name in this prototype. Recorded names are preserved as separate
-            single-source directory entries — an unmarked name is not a guarantee it appears only once in this list.
+            Every community team a referral can name in this prototype. Some names look alike, so check you have the
+            right one.
           </p>
         </header>
 
@@ -679,7 +671,12 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               <div className={styles.drawerHead}>
                 <div className={styles.drawerHeadTitleWrap}>
                   <BookOpen aria-hidden="true" className={styles.drawerHeadIcon} />
-                  <div id="community-catchment-guide-title" role="heading" aria-level={2} className={styles.drawerTitle}>
+                  <div
+                    id="community-catchment-guide-title"
+                    role="heading"
+                    aria-level={2}
+                    className={styles.drawerTitle}
+                  >
                     Catchment Directory Guide
                   </div>
                 </div>

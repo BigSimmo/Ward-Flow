@@ -291,18 +291,6 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
           </div>
         </WardPanel>
 
-        <WardPanel title="Referrals into the team" testId="ward-statistics-community-referrals">
-          <div className={styles.panelBody} role="group" aria-label="Community referrals content" tabIndex={0}>
-            <p className={styles.unmeasured}>No reporting-window referral count is recorded for this team.</p>
-          </div>
-        </WardPanel>
-
-        <WardPanel title="Where referrals came from" testId="ward-statistics-community-referral-sources">
-          <div className={styles.panelBody} role="group" aria-label="Referral sources content" tabIndex={0}>
-            <p className={styles.unmeasured}>Referral sources are not recorded in this prototype.</p>
-          </div>
-        </WardPanel>
-
         <WardPanel
           title="Discharges from hospital into this team's care"
           testId="ward-statistics-community-hospital-discharges"
@@ -325,17 +313,34 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
           </div>
         </WardPanel>
 
-        <WardPanel title="Time to first contact" testId="ward-statistics-community-first-contact">
-          <div className={styles.panelBody} role="group" aria-label="Time to first contact content" tabIndex={0}>
-            <p className={styles.unmeasured}>Time to first contact is not recorded in this prototype.</p>
-          </div>
-        </WardPanel>
+        <details className={`${pageStyles.unsupportedGroup} source-print`}>
+          <summary>Measures this record does not support</summary>
+          <div className={pageStyles.unsupportedGrid}>
+            <WardPanel title="Referrals into the team" testId="ward-statistics-community-referrals">
+              <div className={styles.panelBody} role="group" aria-label="Community referrals content" tabIndex={0}>
+                <p className={styles.unmeasured}>No reporting-window referral count is recorded for this team.</p>
+              </div>
+            </WardPanel>
 
-        <WardPanel title="Contacts" testId="ward-statistics-community-contacts">
-          <div className={styles.panelBody} role="group" aria-label="Community contacts content" tabIndex={0}>
-            <p className={styles.unmeasured}>Community contacts are not recorded in this prototype.</p>
+            <WardPanel title="Where referrals came from" testId="ward-statistics-community-referral-sources">
+              <div className={styles.panelBody} role="group" aria-label="Referral sources content" tabIndex={0}>
+                <p className={styles.unmeasured}>Referral sources are not recorded in this prototype.</p>
+              </div>
+            </WardPanel>
+
+            <WardPanel title="Time to first contact" testId="ward-statistics-community-first-contact">
+              <div className={styles.panelBody} role="group" aria-label="Time to first contact content" tabIndex={0}>
+                <p className={styles.unmeasured}>Time to first contact is not recorded in this prototype.</p>
+              </div>
+            </WardPanel>
+
+            <WardPanel title="Contacts" testId="ward-statistics-community-contacts">
+              <div className={styles.panelBody} role="group" aria-label="Community contacts content" tabIndex={0}>
+                <p className={styles.unmeasured}>Community contacts are not recorded in this prototype.</p>
+              </div>
+            </WardPanel>
           </div>
-        </WardPanel>
+        </details>
 
         <WardPanel title="People currently in a hospital bed" testId="ward-statistics-community-in-hospital">
           <div className={styles.panelBody} role="group" aria-label="People in hospital content" tabIndex={0}>

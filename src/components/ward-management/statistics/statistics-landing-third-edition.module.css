@@ -577,6 +577,18 @@
   margin-bottom: 1rem;
 }
 
+.reportingBadge {
+  font-size: var(--t-0);
+  font-weight: 600;
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--r2);
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--body);
+}
+
 .segTrack {
   display: inline-flex;
   flex-wrap: wrap;
@@ -804,7 +816,9 @@
   stroke: var(--warn);
   stroke-width: 14;
   stroke-linecap: round;
-  transition: stroke-dashoffset 0.5s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
+  transition:
+    stroke-dashoffset 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    stroke 0.3s ease;
 }
 
 .gaugeCenterText {
@@ -880,7 +894,10 @@
   text-overflow: clip;
   white-space: nowrap;
   padding-inline: 0.25rem;
-  transition: opacity 0.2s ease, filter 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    filter 0.2s ease,
+    transform 0.2s ease;
   cursor: pointer;
 }
 
@@ -908,7 +925,9 @@
   cursor: pointer;
   padding: 2px 4px;
   border-radius: var(--r2);
-  transition: opacity 0.2s ease, background 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    background 0.2s ease;
 }
 
 .wfLegendItemHighlighted {

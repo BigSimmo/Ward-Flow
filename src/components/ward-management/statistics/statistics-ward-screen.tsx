@@ -627,7 +627,9 @@ export function StatisticsWardScreen({
             tabIndex={0}
           >
             <p className={styles.note} data-testid="ward-stat-trends-disclaimer">
-              Neither trend below is recorded, so neither is drawn.
+              Neither trend below is recorded — both charts below are demonstration data, not a measurement of this
+              ward. This prototype keeps only the ward&apos;s current state, never a day-by-day history, so neither
+              trend was ever recorded — see each chart&apos;s own caption for what it stands in for.
             </p>
             <DemonstrationChart series={occupancySeries} testId="ward-stat-occupancy-trend" />
             <DemonstrationChart series={readySeries} testId="ward-stat-ready-trend" />
@@ -732,20 +734,23 @@ export function StatisticsWardScreen({
                 ) : null}
 
                 <h3 className={styles.subHeading}>Average wait after being accepted</h3>
-                <p className={styles.body} data-testid="ward-stat-waitlist-wait">
-                  How long somebody accepted in principle waits before a bed is given is never measured here — not for
-                  this ward, not for any ward, and not because nobody has filled it in. The admission record carries no
-                  instant marking the moment a person joined the waiting list. The instants it does carry are not all of
-                  one kind: some are about the bed, some are about the discharge plan, and at least one is a fact about
-                  the person rather than about the bed, which is how the admission record itself describes them. None of
-                  them is the moment somebody joined the waitlist. They are deliberately not listed here — that field
-                  set belongs to a record this page does not own, so a copy of it would go stale the day one is added
-                  and nothing on this page would fail. The nearest equivalent elsewhere in this prototype measures from
-                  the moment a referral was raised, which this derivation cannot see, because it is given admissions
-                  only, by design. So no amount of data entry against today&apos;s model would produce this figure: it
-                  needs the admission record to gain an instant of its own, or the derivation to be given a different
-                  input, and either is a change to the model rather than to this page.
-                </p>
+                <div data-testid="ward-stat-waitlist-wait">
+                  <p className={styles.body}>
+                    This measure cannot be formed. The admission record carries no instant marking when a person joined
+                    the waiting list.
+                  </p>
+                  <details className={`${pageStyles.measureDetails} source-print`}>
+                    <summary>Why this measure cannot be formed</summary>
+                    <p className={styles.body}>
+                      The instants the record does carry are not all of one kind: some are about the bed, some are about
+                      the discharge plan, and at least one is about the person rather than about the bed. They are
+                      deliberately not listed here because this page does not own that record shape. The nearest
+                      equivalent elsewhere in this prototype measures from the moment a referral was raised, which this
+                      derivation cannot see, because it is given admissions only, by design. Supporting this figure
+                      would require a new recorded instant or a different derivation input.
+                    </p>
+                  </details>
+                </div>
               </div>
             </WardPanel>
           </div>
