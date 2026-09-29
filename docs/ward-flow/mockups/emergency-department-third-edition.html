@@ -1189,6 +1189,14 @@
     border-bottom: 1px solid var(--line);
     background: var(--surface-2);
     overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tabbar::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
   }
   .tabsPanel .tabbar {
     border-radius: var(--r1i) var(--r1i) 0 0;
@@ -4650,7 +4658,14 @@
   /* The four lists are the tabs of section 6.5, and the strip wraps rather than scrolls, so no tab
      and no count is ever out of view. */
   .mod .tabbar {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .mod .tabbar::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
   }
 
   /* ─── the department, named under the strip that chooses it ───
@@ -4723,6 +4738,205 @@
     color: var(--muted);
   }
 
+  /* ─── Expandable Statewide ED Network Drawer ("Grey Section") ─── */
+  .edNetworkTrayWrap {
+    width: 100%;
+    margin-top: 12px;
+    border-top: 1px solid var(--line);
+    background: var(--surface-2);
+    border-radius: 0 0 var(--r1i) var(--r1i);
+    margin-left: -16px;
+    margin-right: -16px;
+    margin-bottom: -13px;
+    overflow: hidden;
+  }
+
+  .edNetworkToggleBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 9px 16px;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: var(--t-1);
+    font-weight: 500;
+    transition: background 0.15s ease;
+    text-align: left;
+  }
+
+  .edNetworkToggleBar:hover {
+    background: var(--line-strong);
+  }
+
+  .edNetworkToggleBar:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+
+  .edNetworkToggleLeft {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .edNetworkToggleIcon {
+    font-size: var(--t-0);
+    color: var(--muted);
+    width: 14px;
+    text-align: center;
+  }
+
+  .edNetworkToggleTitle {
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .edNetworkToggleBadge {
+    font-size: var(--t-0);
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: var(--sunk);
+    color: var(--muted);
+    border: 1px solid var(--line);
+  }
+
+  .edNetworkToggleHint {
+    font-size: var(--t-0);
+    color: var(--muted);
+  }
+
+  .edNetworkDrawer {
+    padding: 14px 16px 16px;
+    background: var(--surface-2);
+    border-top: 1px solid var(--line);
+  }
+
+  .edNetworkGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 10px;
+  }
+
+  .edNetworkCard {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 11px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r2);
+    text-decoration: none;
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-height: 86px;
+    text-align: left;
+    font-family: inherit;
+  }
+
+  .edNetworkCard:hover {
+    border-color: var(--accent);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+  }
+
+  .edNetworkCard[data-current="true"] {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+
+  .edNetworkCard[data-breach="true"] {
+    border-left: 3px solid var(--danger);
+  }
+
+  .edCardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .edCardIdent {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .edCardSiteCode {
+    font-family: var(--mono);
+    font-size: var(--t-0);
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+
+  .edCardName {
+    font-size: var(--t-2);
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.25;
+  }
+
+  .edCardCurrentBadge {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .edCardMetrics {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--t-0);
+    font-variant-numeric: tabular-nums;
+    margin-top: auto;
+  }
+
+  .edCardMetric {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .edCardMetricVal {
+    font-weight: 700;
+    color: var(--ink);
+    font-size: var(--t-2);
+    font-family: var(--mono);
+  }
+
+  .edCardMetricLbl {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .edCardMetricBreach {
+    display: flex;
+    flex-direction: column;
+    margin-left: auto;
+    text-align: right;
+  }
+
+  .edCardBreachCount {
+    font-weight: 700;
+    color: var(--danger);
+    font-size: var(--t-1);
+    font-family: var(--mono);
+  }
+
   /* ─── one list language for the whole page ───────────────────────────────────────
      No card and no coloured bar down the side. A row is a hairline apart from the next, a small
      tick carries the tone, and the words carry the meaning. Only a breach takes a wash, and it is
@@ -4730,15 +4944,32 @@
      says so. A row is not a control, so it has no hover: the buttons inside it do. */
   .lstWrap {
     padding: 2px 0 4px;
+    max-height: 480px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+  .lstWrap::-webkit-scrollbar {
+    width: 5px;
+  }
+  .lstWrap::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .lstWrap::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border-radius: var(--r-full, 999px);
+  }
+  .lstWrap::-webkit-scrollbar-thumb:hover {
+    background: var(--muted);
   }
   .lst {
     display: grid;
   }
   .lstRow {
     display: grid;
-    grid-template-columns: 12px minmax(0, 1fr) auto;
+    grid-template-columns: 22px minmax(0, 1fr) auto;
     align-items: start;
-    gap: 2px 9px;
+    gap: 2px 10px;
     padding: 9px 14px 10px;
     border-top: 1px solid var(--line);
   }
@@ -4749,24 +4980,42 @@
     background: var(--danger-soft);
   }
   .tick {
-    width: 7px;
-    height: 7px;
-    margin-top: 6px;
-    border-radius: 50%;
-    background: var(--muted);
-    flex: none;
+    width: 22px;
+    height: 22px;
+    border-radius: var(--r2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+    background: var(--sunk);
+    color: var(--muted);
+    border: 1px solid var(--line);
   }
   .tick[data-tone="danger"] {
-    background: var(--danger);
+    background: var(--danger-soft);
+    color: var(--danger);
+    border-color: var(--danger);
   }
   .tick[data-tone="warn"] {
-    background: var(--warn);
+    background: var(--warn-soft);
+    color: var(--warn-ink);
+    border-color: var(--warn);
   }
   .tick[data-tone="good"] {
-    background: var(--good);
+    background: var(--good-soft);
+    color: var(--good);
+    border-color: var(--good);
   }
   .tick[data-tone="quiet"] {
-    background: var(--line-strong);
+    background: var(--sunk);
+    color: var(--muted);
+    border-color: var(--line);
+  }
+  .tickSvg {
+    width: 14px;
+    height: 14px;
+    display: block;
   }
   .lstMain {
     display: grid;
@@ -8373,6 +8622,84 @@
         return !!formOf(r);
       }).length;
       var longest = longestHere(state.dept);
+      var allDepts = scopedPressure();
+      var open = !!state.edDrawerOpen;
+
+      var tray =
+        '<div class="edNetworkTrayWrap">' +
+        '<button type="button" class="edNetworkToggleBar" data-ed-tray-toggle="true" aria-expanded="' +
+        open +
+        '" aria-controls="edNetworkDrawer">' +
+        '<div class="edNetworkToggleLeft">' +
+        '<span class="edNetworkToggleIcon" aria-hidden="true">' +
+        (open ? "▾" : "▸") +
+        "</span>" +
+        '<span class="edNetworkToggleTitle">Statewide Emergency Departments</span>' +
+        '<span class="edNetworkToggleBadge">' +
+        allDepts.length +
+        " departments</span>" +
+        "</div>" +
+        '<span class="edNetworkToggleHint">' +
+        (open ? "Collapse network view" : "Quick switch &amp; network overview") +
+        "</span>" +
+        "</button>";
+
+      if (open) {
+        tray +=
+          '<div id="edNetworkDrawer" class="edNetworkDrawer">' +
+          '<div class="edNetworkGrid">' +
+          allDepts
+            .map(function (candidate) {
+              var isCurrent = candidate.ed.id === state.dept;
+              var breach = candidate.breaching > 0;
+              return (
+                '<button type="button" class="edNetworkCard" data-ed="' +
+                candidate.ed.id +
+                '"' +
+                (isCurrent ? ' data-current="true"' : "") +
+                (breach ? ' data-breach="true"' : "") +
+                ">" +
+                '<div class="edCardHeader">' +
+                '<div class="edCardIdent">' +
+                '<span class="edCardSiteCode">' +
+                esc(candidate.ed.site) +
+                "</span>" +
+                '<span class="edCardName">' +
+                esc(candidate.ed.name.replace(" Emergency Department", "")) +
+                "</span>" +
+                "</div>" +
+                (isCurrent ? '<span class="edCardCurrentBadge">Active</span>' : "") +
+                "</div>" +
+                '<div class="edCardMetrics">' +
+                '<div class="edCardMetric">' +
+                '<span class="edCardMetricVal">' +
+                candidate.waiting +
+                "</span>" +
+                '<span class="edCardMetricLbl">waiting</span>' +
+                "</div>" +
+                '<div class="edCardMetric">' +
+                '<span class="edCardMetricVal">' +
+                (candidate.waiting > 0 ? dur(candidate.longest) : "—") +
+                "</span>" +
+                '<span class="edCardMetricLbl">longest</span>' +
+                "</div>" +
+                (breach
+                  ? '<div class="edCardMetricBreach">' +
+                    '<span class="edCardBreachCount">▲ ' +
+                    candidate.breaching +
+                    "</span>" +
+                    '<span class="edCardMetricLbl">over target</span>' +
+                    "</div>"
+                  : "") +
+                "</div>" +
+                "</button>"
+              );
+            })
+            .join("") +
+          "</div></div>";
+      }
+      tray += "</div>";
+
       return (
         '<div class="edIdent">' +
         '<div class="edHead">' +
@@ -8393,7 +8720,9 @@
         chip(expect, "expected") +
         chip(forms, "under a form") +
         (longest ? '<span class="chip"><b>' + dur(longest.waited) + "</b> longest here</span>" : "") +
-        "</div></div>"
+        "</div>" +
+        tray +
+        "</div>"
       );
     }
     /* A count of none is the italic word with the label that reads with it. */
@@ -8413,6 +8742,19 @@
         (r.bay ? "<span>" + esc(r.bay) + "</span>" : "") +
         "</span>"
       );
+    }
+
+    function tickIcon(tone) {
+      if (tone === "danger") {
+        return '<svg class="tickSvg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+      }
+      if (tone === "warn") {
+        return '<svg class="tickSvg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+      }
+      if (tone === "good") {
+        return '<svg class="tickSvg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+      }
+      return '<svg class="tickSvg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="10" y1="2" x2="14" y2="2"/><line x1="12" y1="14" x2="15" y2="11"/><circle cx="12" cy="14" r="8"/></svg>';
     }
 
     /* ─── needs attention ─── */
@@ -8442,7 +8784,9 @@
               '">' +
               '<span class="tick" data-tone="' +
               n.tone +
-              '" aria-hidden="true"></span>' +
+              '" aria-hidden="true">' +
+              tickIcon(n.tone) +
+              "</span>" +
               '<span class="lstMain"><span class="lstTitle">' +
               esc(n.kind) +
               "</span>" +
@@ -8667,7 +9011,8 @@
     var TABS = [
       {
         key: "review",
-        label: "Awaiting review",
+        label: "Review",
+        fullLabel: "Awaiting review",
         body: awaitingHtml,
         n: function (d) {
           return awaitingReview(d).length;
@@ -8675,7 +9020,8 @@
       },
       {
         key: "cleared",
-        label: "Medically cleared",
+        label: "Med Clear",
+        fullLabel: "Medically cleared",
         body: clearedHtml,
         n: function (d) {
           return clearedList(d).length;
@@ -8683,7 +9029,8 @@
       },
       {
         key: "expected",
-        label: "Expected",
+        label: "Expects",
+        fullLabel: "Expected",
         body: expectedHtml,
         n: function (d) {
           return expectedIn(d).length;
@@ -8691,7 +9038,8 @@
       },
       {
         key: "forms",
-        label: "Under a form",
+        label: "Forms",
+        fullLabel: "Under a form",
         body: formsHtml,
         n: function (d) {
           return formList(d).length;
@@ -8715,6 +9063,10 @@
           t.key +
           '" data-tab="' +
           t.key +
+          '" aria-label="' +
+          esc(t.fullLabel || t.label) +
+          ", " +
+          (n === 0 ? "none" : n) +
           '" aria-controls="edpane" aria-selected="' +
           on +
           '" tabindex="' +
@@ -9722,7 +10074,9 @@
         '<p class="note">Four readings of the same department. Press a name to open the person.</p>' +
         '<span class="count">' +
         esc(
-          count(tabByKey(state.tab).n(state.dept), "person", "people") + " " + tabByKey(state.tab).label.toLowerCase(),
+          count(tabByKey(state.tab).n(state.dept), "person", "people") +
+            " " +
+            (tabByKey(state.tab).fullLabel || tabByKey(state.tab).label).toLowerCase(),
         ) +
         "</span></div>" +
         listsHtml() +
@@ -10023,6 +10377,17 @@
         var tk = b.getAttribute("data-tab");
         if (tk === state.tab) return;
         selectTab(tk, false);
+        return;
+      }
+      if (evt.target.closest("[data-ed-tray-toggle]")) {
+        state.edDrawerOpen = !state.edDrawerOpen;
+        renderAll();
+        return;
+      }
+      if ((b = evt.target.closest(".edNetworkCard[data-ed]"))) {
+        var nid = b.getAttribute("data-ed");
+        state.edDrawerOpen = false;
+        selectDept(nid, true);
         return;
       }
       if ((b = evt.target.closest(".edCard[data-ed]"))) {

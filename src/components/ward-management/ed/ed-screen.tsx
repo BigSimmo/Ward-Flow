@@ -1148,6 +1148,77 @@ function referralWardGender(referral: Referral): ReferralGender | undefined {
  */
 const ANSWERED_VISIBLE_CAP = 10;
 
+function AttentionToneIcon({ tone }: { tone: "danger" | "warn" | "good" | "quiet" }) {
+  if (tone === "danger") {
+    return (
+      <svg
+        className={styles.attentionBadgeSvg}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+        <line x1="12" y1="9" x2="12" y2="13" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+      </svg>
+    );
+  }
+  if (tone === "warn") {
+    return (
+      <svg
+        className={styles.attentionBadgeSvg}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+      </svg>
+    );
+  }
+  if (tone === "good") {
+    return (
+      <svg
+        className={styles.attentionBadgeSvg}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+        <polyline points="22 4 12 14.01 9 11.01" />
+      </svg>
+    );
+  }
+  return (
+    <svg
+      className={styles.attentionBadgeSvg}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  );
+}
+
 export function EdScreen({ edId }: EdScreenProps) {
   const {
     movements,
@@ -2602,71 +2673,14 @@ export function EdScreen({ edId }: EdScreenProps) {
                     type="button"
                     className={styles.edDropdownTriggerBtn}
                     onClick={() => setEdDropdownOpen((open) => !open)}
-                    aria-haspopup="listbox"
                     aria-expanded={edDropdownOpen}
-                    title="Switch emergency department"
+                    title="Toggle statewide emergency departments overview"
                   >
                     <h1 className={styles.edName}>{department.name}</h1>
                     <span className={styles.edDropdownCaret} aria-hidden="true">
                       ▾
                     </span>
                   </button>
-
-                  {edDropdownOpen ? (
-                    <div
-                      className={styles.edDropdownMenu}
-                      role="listbox"
-                      id="edList"
-                      tabIndex={0}
-                      aria-label="Emergency departments, the switcher for this screen"
-                    >
-                      <div className={styles.edDropdownMenuHeader}>
-                        <span>Emergency departments ({departments.length})</span>
-                        <span className={styles.edDropdownHint}>Worst wait first</span>
-                      </div>
-                      <ul className={styles.edDropdownList}>
-                        {departments.map((candidate) => {
-                          const candidateSite = siteByCode(candidate.siteCode);
-                          const candidateMovements = movements.filter(
-                            (movement) => movement.originEdId === candidate.id && movement.closure === undefined,
-                          );
-                          const openHere = candidateMovements.length;
-                          const longestWait = candidateMovements.reduce((max, m) => Math.max(max, now - m.openedAt), 0);
-                          const breachingCount = candidateMovements.filter(
-                            (m) => now - m.openedAt > accessTarget,
-                          ).length;
-                          const isCurrent = candidate.id === department.id;
-                          return (
-                            <li key={candidate.id} role="option" aria-selected={isCurrent}>
-                              <Link
-                                href={`/mockups/ward-flow/ed/${candidate.id}`}
-                                className={styles.edDropdownItem}
-                                data-ed={candidate.id}
-                                data-current={isCurrent ? "true" : undefined}
-                                onClick={() => setEdDropdownOpen(false)}
-                              >
-                                <div className={styles.edDropdownItemMain}>
-                                  <span className={styles.edItemCode}>{candidateSite?.code ?? candidate.siteCode}</span>
-                                  <span className={styles.edItemName}>{candidate.name}</span>
-                                </div>
-                                <div className={styles.edDropdownItemStats}>
-                                  <span className={styles.edItemWait}>
-                                    {openHere === 0 ? "None waiting" : `${openHere} waiting`}
-                                  </span>
-                                  {openHere > 0 ? (
-                                    <span className={styles.edItemLongest}>Longest {splitDuration(longestWait)}</span>
-                                  ) : null}
-                                  {breachingCount > 0 ? (
-                                    <span className={styles.edItemBreach}>▲ {breachingCount} over target</span>
-                                  ) : null}
-                                </div>
-                              </Link>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  ) : null}
                 </div>
 
                 <div className={styles.edNavArrows}>
@@ -2714,6 +2728,84 @@ export function EdScreen({ edId }: EdScreenProps) {
                 </span>
               ) : null}
             </div>
+
+            {/* Expandable Statewide ED Network Drawer ("Grey Section") */}
+            <div className={styles.edNetworkTrayWrap}>
+              <button
+                type="button"
+                className={styles.edNetworkToggleBar}
+                onClick={() => setEdDropdownOpen((open) => !open)}
+                aria-expanded={edDropdownOpen}
+                aria-controls="edNetworkDrawer"
+              >
+                <div className={styles.edNetworkToggleLeft}>
+                  <span className={styles.edNetworkToggleIcon} aria-hidden="true">
+                    {edDropdownOpen ? "▾" : "▸"}
+                  </span>
+                  <span className={styles.edNetworkToggleTitle}>Statewide Emergency Departments</span>
+                  <span className={styles.edNetworkToggleBadge}>{departments.length} departments</span>
+                </div>
+                <span className={styles.edNetworkToggleHint}>
+                  {edDropdownOpen ? "Collapse network view" : "Quick switch & network overview"}
+                </span>
+              </button>
+
+              {edDropdownOpen ? (
+                <div id="edNetworkDrawer" className={styles.edNetworkDrawer}>
+                  <div className={styles.edNetworkGrid}>
+                    {departments.map((candidate) => {
+                      const candidateSite = siteByCode(candidate.siteCode);
+                      const candidateMovements = movements.filter(
+                        (movement) => movement.originEdId === candidate.id && movement.closure === undefined,
+                      );
+                      const openHere = candidateMovements.length;
+                      const longestWait = candidateMovements.reduce((max, m) => Math.max(max, now - m.openedAt), 0);
+                      const breachingCount = candidateMovements.filter((m) => now - m.openedAt > accessTarget).length;
+                      const isCurrent = candidate.id === department.id;
+
+                      return (
+                        <Link
+                          key={candidate.id}
+                          href={`/mockups/ward-flow/ed/${candidate.id}`}
+                          className={styles.edNetworkCard}
+                          data-ed={candidate.id}
+                          data-current={isCurrent ? "true" : undefined}
+                          data-breach={breachingCount > 0 ? "true" : undefined}
+                          onClick={() => setEdDropdownOpen(false)}
+                        >
+                          <div className={styles.edCardHeader}>
+                            <div className={styles.edCardIdent}>
+                              <span className={styles.edCardSiteCode}>{candidateSite?.code ?? candidate.siteCode}</span>
+                              <span className={styles.edCardName}>{candidate.name}</span>
+                            </div>
+                            {isCurrent ? <span className={styles.edCardCurrentBadge}>Active</span> : null}
+                          </div>
+
+                          <div className={styles.edCardMetrics}>
+                            <div className={styles.edCardMetric}>
+                              <span className={styles.edCardMetricVal}>{openHere}</span>
+                              <span className={styles.edCardMetricLbl}>waiting</span>
+                            </div>
+                            <div className={styles.edCardMetric}>
+                              <span className={styles.edCardMetricVal}>
+                                {openHere > 0 ? splitDuration(longestWait) : "—"}
+                              </span>
+                              <span className={styles.edCardMetricLbl}>longest</span>
+                            </div>
+                            {breachingCount > 0 ? (
+                              <div className={styles.edCardMetricBreach}>
+                                <span className={styles.edCardBreachCount}>▲ {breachingCount}</span>
+                                <span className={styles.edCardMetricLbl}>over target</span>
+                              </div>
+                            ) : null}
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </header>
         </section>
 
@@ -2743,13 +2835,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                       <div className={styles.attentionHeader}>
                         <span className={styles.attentionBadge} data-tone={flag.tone} aria-hidden="true">
                           <span className={styles.attentionBadgeGlyph}>
-                            {flag.tone === "danger"
-                              ? "▲"
-                              : flag.tone === "warn"
-                                ? "■"
-                                : flag.tone === "good"
-                                  ? "✓"
-                                  : "●"}
+                            <AttentionToneIcon tone={flag.tone} />
                           </span>
                         </span>
                         <span className="sr-only">
@@ -2828,13 +2914,14 @@ export function EdScreen({ edId }: EdScreenProps) {
                 type="button"
                 role="tab"
                 id="ward-ed-review-tab"
+                aria-label={`Awaiting Review, ${awaitingReviewPatients.length === 0 ? "none" : awaitingReviewPatients.length} patients`}
                 aria-selected={departmentListTab === "review"}
                 aria-controls="ward-ed-review-panel"
                 tabIndex={departmentListTab === "review" ? 0 : -1}
                 className={styles.tabBtn}
                 onClick={() => setDepartmentListTab("review")}
               >
-                Awaiting Review{" "}
+                Review{" "}
                 <span className={styles.tabNum} data-zero={awaitingReviewPatients.length === 0 ? "true" : undefined}>
                   {awaitingReviewPatients.length === 0 ? "none" : awaitingReviewPatients.length}
                 </span>
@@ -2843,13 +2930,14 @@ export function EdScreen({ edId }: EdScreenProps) {
                 type="button"
                 role="tab"
                 id="ward-ed-cleared-tab"
+                aria-label={`Medical Clearance, ${clearedPatients.length === 0 ? "none" : clearedPatients.length}`}
                 aria-selected={departmentListTab === "cleared"}
                 aria-controls="ward-ed-cleared-panel"
                 tabIndex={departmentListTab === "cleared" ? 0 : -1}
                 className={styles.tabBtn}
                 onClick={() => setDepartmentListTab("cleared")}
               >
-                Medical Clearance{" "}
+                Med Clear{" "}
                 <span className={styles.tabNum} data-zero={clearedPatients.length === 0 ? "true" : undefined}>
                   {clearedPatients.length === 0 ? "none" : clearedPatients.length}
                 </span>
@@ -2858,6 +2946,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                 type="button"
                 role="tab"
                 id="ward-ed-expected-tab"
+                aria-label={`Expects, ${expects.length === 0 ? "none" : expects.length}`}
                 aria-selected={departmentListTab === "expected"}
                 aria-controls="ward-ed-expected-panel"
                 tabIndex={departmentListTab === "expected" ? 0 : -1}
@@ -2873,6 +2962,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                 type="button"
                 role="tab"
                 id="ward-ed-forms-tab"
+                aria-label={`Forms, ${underFormPatients.length === 0 ? "none" : underFormPatients.length}`}
                 aria-selected={departmentListTab === "forms"}
                 aria-controls="ward-ed-forms-panel"
                 tabIndex={departmentListTab === "forms" ? 0 : -1}
