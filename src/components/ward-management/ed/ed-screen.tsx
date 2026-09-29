@@ -1086,7 +1086,7 @@ function patientBay(id: string): string {
 function accessTargetLine(minutesInDepartment: number, accessTargetMinutes: number): string {
   const over = minutesInDepartment - accessTargetMinutes;
   const targetLabel = splitDuration(accessTargetMinutes);
-  if (over > 0) return `${splitDuration(over)} over the ${targetLabel} departmental access target`;
+  if (over > 0) return `${splitDuration(over)} over target (${targetLabel})`;
   return "";
 }
 
@@ -1371,13 +1371,35 @@ export function EdScreen({ edId }: EdScreenProps) {
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [fullscreenBoard, setFullscreenBoard] = useState(false);
   const [capacityServiceFilter, setCapacityServiceFilter] = useState<string>("all");
-  const [isEdSwitcherOpen, setIsEdSwitcherOpen] = useState(false);
+  const [timelineCategoryFilter, setTimelineCategoryFilter] = useState<
+    "all" | "bed_search" | "arrivals" | "clinical" | "transport"
+  >("all");
+  const [timelineSearchQuery, setTimelineSearchQuery] = useState("");
+  const [reviewStatusOverrides, setReviewStatusOverrides] = useState<Record<string, string>>({});
+  const [reviewDropdownOpenFor, setReviewDropdownOpenFor] = useState<string | undefined>(undefined);
+  const [clearanceOverrides, setClearanceOverrides] = useState<Record<string, "yes" | "no" | null>>({});
+  const [clearanceDropdownOpenFor, setClearanceDropdownOpenFor] = useState<string | undefined>(undefined);
+  const [edDropdownOpen, setEdDropdownOpen] = useState(false);
+
+  const CLINICAL_REVIEW_OPTIONS = [
+    "Awaiting review",
+    "Ongoing intoxication",
+    "Medically unstable",
+    "Awaiting collateral",
+    "Awaiting investigation results",
+    "Specialist review pending",
+    "Examination recorded",
+  ] as const;
 
   useEffect(() => {
     function onKeyDown(e: globalThis.KeyboardEvent) {
       if (e.key === "Escape") {
-        if (isEdSwitcherOpen) {
-          setIsEdSwitcherOpen(false);
+        if (edDropdownOpen) {
+          setEdDropdownOpen(false);
+        } else if (reviewDropdownOpenFor !== undefined) {
+          setReviewDropdownOpenFor(undefined);
+        } else if (clearanceDropdownOpenFor !== undefined) {
+          setClearanceDropdownOpenFor(undefined);
         } else if (arrivalPlanOpenFor !== undefined) {
           setArrivalPlanOpenFor(undefined);
         } else if (transportOpenFor !== undefined) {
@@ -1391,7 +1413,15 @@ export function EdScreen({ edId }: EdScreenProps) {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isEdSwitcherOpen, arrivalPlanOpenFor, transportOpenFor, selectedPatientId, fullscreenBoard]);
+  }, [
+    edDropdownOpen,
+    reviewDropdownOpenFor,
+    clearanceDropdownOpenFor,
+    arrivalPlanOpenFor,
+    transportOpenFor,
+    selectedPatientId,
+    fullscreenBoard,
+  ]);
 
   const ALL_DEPARTMENT_TABS: { key: DepartmentTabKey; label: string }[] = [
     { key: "review", label: "Awaiting Review" },
@@ -1816,12 +1846,71 @@ export function EdScreen({ edId }: EdScreenProps) {
   const PRIORITY_TONE_RANK: Record<string, number> = { danger: 0, warn: 1, good: 2, quiet: 3 };
   priorityFlags.sort((a, b) => PRIORITY_TONE_RANK[a.tone] - PRIORITY_TONE_RANK[b.tone]);
 
+  type TimelineEventCategory = "bed_search" | "arrivals" | "clinical" | "transport";
+
   type TimelineEvent = {
     min: Instant;
-    tone?: "danger" | "warn" | "good" | "quiet" | null;
+    tone?: "danger" | "warn" | "good" | "quiet" | "info" | "purple" | null;
     what: string | React.ReactNode;
     by?: string | null;
+    id?: string;
+    category?: TimelineEventCategory;
+    categoryLabel?: string;
+    patientName?: string;
+    patientId?: string;
+    movementId?: string;
+    referralId?: string;
+    badgeText?: string;
+    badgeTone?: "danger" | "warn" | "good" | "quiet" | "info" | "purple";
+    primaryText?: string;
+    secondaryText?: string;
+    unitName?: string;
+    detailText?: string;
+    isOpenMovement?: boolean;
+    waitMinutes?: number;
   };
+
+  const TIMELINE_DECLINE_REASON_LABELS: Record<string, string> = {
+    no_bed: "No suitable bed available",
+    no_suitable_bed: "No suitable bed available",
+    sex_mix: "Gender mix constraint",
+    sex_designation_unavailable: "Designated bed unavailable for recorded gender",
+    specialling_unavailable: "1:1 specialling unavailable",
+    acuity_mix: "Ward acuity mix at capacity",
+    capability_mismatch: "Clinical capability mismatch",
+    bed_pulled_for_earlier_referral: "Bed reallocated for earlier referral",
+    out_of_catchment: "Out of catchment area",
+    belongs_to_another_service: "Belongs to another health service",
+    referred_elsewhere: "Referred elsewhere",
+    another_reason: "Alternative clinical reason",
+    age_band_not_provided_here: "Age cohort not admitted by unit",
+    secure_bed_unavailable: "Secure / locked bed unavailable",
+    outside_catchment: "Outside catchment area",
+    needs_inpatient_care: "Requires inpatient admission",
+    declined_or_unreachable: "Patient declined or unreachable",
+    open_to_peer_team: "Already open to peer community team",
+  };
+
+  function formatTimelineDeclineReason(reason: string): string {
+    if (TIMELINE_DECLINE_REASON_LABELS[reason]) {
+      return TIMELINE_DECLINE_REASON_LABELS[reason];
+    }
+    return reason.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
+  const TIMELINE_EXAM_OUTCOME_LABELS: Record<string, string> = {
+    inpatient_order: "Inpatient treatment order",
+    community_order: "Community treatment order",
+    revoked: "Revoked — does not proceed",
+    further_examination_ordered: "Further examination ordered",
+  };
+
+  function formatTimelineExamOutcome(outcome: string): string {
+    if (TIMELINE_EXAM_OUTCOME_LABELS[outcome]) {
+      return TIMELINE_EXAM_OUTCOME_LABELS[outcome];
+    }
+    return outcome.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  }
 
   const timelineEvents: TimelineEvent[] = [];
   for (const m of movements) {
@@ -1834,13 +1923,26 @@ export function EdScreen({ edId }: EdScreenProps) {
       movements,
     });
     if (now - m.openedAt <= 24 * 60 || isMovementOpen) {
+      const isLongWait = now - m.openedAt > LONG_WAIT_MINUTES && isMovementOpen;
       timelineEvents.push({
+        id: `arrival-${m.id}-${m.openedAt}`,
         min: m.openedAt,
-        tone: "quiet",
+        tone: isLongWait ? "warn" : "quiet",
+        category: "arrivals",
+        categoryLabel: "Arrivals & Departures",
+        patientName: patientInfo.displayName,
+        patientId: m.patientId,
+        movementId: m.id,
+        badgeText: "Arrived",
+        badgeTone: isLongWait ? "warn" : "quiet",
+        primaryText: "Arrived at Emergency Department",
+        detailText: isLongWait ? `Waiting ${splitDuration(now - m.openedAt)} (${LONG_WAIT_TEXT})` : undefined,
+        by: null,
+        isOpenMovement: isMovementOpen,
         what: (
           <>
             <b>{patientInfo.displayName}</b> arrived at the department
-            {now - m.openedAt > LONG_WAIT_MINUTES && isMovementOpen && (
+            {isLongWait && (
               <span>
                 {" "}
                 &mdash; waiting {LONG_WAIT_TEXT} ({splitDuration(now - m.openedAt)})
@@ -1848,75 +1950,134 @@ export function EdScreen({ edId }: EdScreenProps) {
             )}
           </>
         ),
-        by: null,
       });
     }
     const mc = movementMedicalClearance(m, referrals);
     if (mc?.cleared && now - mc.at <= 24 * 60) {
       timelineEvents.push({
+        id: `mc-${m.id}-${mc.at}`,
         min: mc.at,
-        tone: "quiet",
+        tone: "good",
+        category: "clinical",
+        categoryLabel: "Clinical & Legal",
+        patientName: patientInfo.displayName,
+        patientId: m.patientId,
+        movementId: m.id,
+        badgeText: "Medically Cleared",
+        badgeTone: "good",
+        primaryText: "Medically cleared for mental health pathway",
+        by: null,
+        isOpenMovement: isMovementOpen,
         what: (
           <>
             <b>{patientInfo.displayName}</b> medically cleared
           </>
         ),
-        by: null,
       });
     }
     if (m.examination && now - m.examination.at <= 24 * 60) {
+      const outcomeLabel = formatTimelineExamOutcome(m.examination.outcome);
       timelineEvents.push({
+        id: `exam-${m.id}-${m.examination.at}`,
         min: m.examination.at,
-        tone: "quiet",
+        tone: "info",
+        category: "clinical",
+        categoryLabel: "Clinical & Legal",
+        patientName: patientInfo.displayName,
+        patientId: m.patientId,
+        movementId: m.id,
+        badgeText: "Examined",
+        badgeTone: "info",
+        primaryText: "Psychiatric examination completed",
+        detailText: outcomeLabel,
+        by: null,
+        isOpenMovement: isMovementOpen,
         what: (
           <>
-            <b>{patientInfo.displayName}</b> examined &mdash; {m.examination.outcome}
+            <b>{patientInfo.displayName}</b> examined &mdash; {outcomeLabel}
           </>
         ),
-        by: null,
       });
     }
     if (m.legalFormReceivedAt && now - m.legalFormReceivedAt <= 24 * 60) {
+      const formCode = m.legalForm ? `Form ${m.legalForm.code}` : "Legal Form";
+      const formFull = m.legalForm ? legalFormName(m.legalForm) : "Statutory form received";
       timelineEvents.push({
+        id: `form-${m.id}-${m.legalFormReceivedAt}`,
         min: m.legalFormReceivedAt,
-        tone: "quiet",
+        tone: "purple",
+        category: "clinical",
+        categoryLabel: "Clinical & Legal",
+        patientName: patientInfo.displayName,
+        patientId: m.patientId,
+        movementId: m.id,
+        badgeText: formCode,
+        badgeTone: "purple",
+        primaryText: `${formCode} received`,
+        detailText: formFull,
+        by: null,
+        isOpenMovement: isMovementOpen,
         what: (
           <>
-            <b>{patientInfo.displayName}</b> {m.legalForm ? `Form ${m.legalForm.code}` : "Legal form"} received
+            <b>{patientInfo.displayName}</b> {formCode} received
           </>
         ),
-        by: null,
       });
     }
     if (m.declines) {
       for (const d of m.declines) {
         if (d.at !== undefined && now - d.at <= 24 * 60) {
+          const targetUnit = units.find((u) => u.id === d.unitId);
+          const unitName = targetUnit?.name ?? d.unitId;
+          const formattedReason = formatTimelineDeclineReason(d.reason);
           timelineEvents.push({
+            id: `decline-${m.id}-${d.unitId}-${d.at}`,
             min: d.at,
             tone: "warn",
+            category: "bed_search",
+            categoryLabel: "Bed searches",
+            patientName: patientInfo.displayName,
+            patientId: m.patientId,
+            movementId: m.id,
+            badgeText: "Bed Declined",
+            badgeTone: "warn",
+            unitName,
+            primaryText: `Declined by ${unitName}`,
+            detailText: formattedReason,
+            by: null,
+            isOpenMovement: isMovementOpen,
             what: (
               <>
-                <b>{patientInfo.displayName}</b> {units.find((u) => u.id === d.unitId)?.name ?? d.unitId} declined:
-                &ldquo;{d.reason}
-                &rdquo;
+                <b>{patientInfo.displayName}</b> {unitName} declined: &ldquo;{formattedReason}&rdquo;
               </>
             ),
-            by: null,
           });
         }
       }
     }
     if (m.acceptedAt && m.acceptedUnitId && now - m.acceptedAt <= 24 * 60) {
+      const targetUnit = units.find((u) => u.id === m.acceptedUnitId);
+      const unitName = targetUnit?.name ?? m.acceptedUnitId;
       timelineEvents.push({
+        id: `accept-${m.id}-${m.acceptedUnitId}-${m.acceptedAt}`,
         min: m.acceptedAt,
         tone: "good",
+        category: "bed_search",
+        categoryLabel: "Bed searches",
+        patientName: patientInfo.displayName,
+        patientId: m.patientId,
+        movementId: m.id,
+        badgeText: "Bed Accepted",
+        badgeTone: "good",
+        unitName,
+        primaryText: `Bed offer accepted by ${unitName}`,
+        by: null,
+        isOpenMovement: isMovementOpen,
         what: (
           <>
-            <b>{patientInfo.displayName}</b> {units.find((u) => u.id === m.acceptedUnitId)?.name ?? m.acceptedUnitId}{" "}
-            accepted
+            <b>{patientInfo.displayName}</b> {unitName} accepted
           </>
         ),
-        by: null,
       });
     }
     if (
@@ -1924,27 +2085,54 @@ export function EdScreen({ edId }: EdScreenProps) {
       (m.transport.acceptedAt ?? m.openedAt) &&
       now - (m.transport.acceptedAt ?? m.openedAt) <= 24 * 60
     ) {
+      const bookedTime = m.transport.acceptedAt ?? m.openedAt;
+      const bookedByRole = m.transport.bookedBy?.role ? WARD_FLOW_ROLE_LABELS[m.transport.bookedBy.role] : null;
       timelineEvents.push({
-        min: m.transport.acceptedAt ?? m.openedAt,
+        id: `transport-${m.id}-${bookedTime}`,
+        min: bookedTime,
         tone: "good",
+        category: "transport",
+        categoryLabel: "Transport",
+        patientName: patientInfo.displayName,
+        patientId: m.patientId,
+        movementId: m.id,
+        badgeText: "Transport Booked",
+        badgeTone: "good",
+        primaryText: m.transport.provider,
+        detailText: m.transport.cadNumber
+          ? `CAD: ${m.transport.cadNumber}`
+          : m.transport.escortRequired
+            ? "Clinical escort required"
+            : undefined,
+        by: bookedByRole,
+        isOpenMovement: isMovementOpen,
         what: (
           <>
             <b>{patientInfo.displayName}</b> transport booked with {m.transport.provider}
           </>
         ),
-        by: m.transport.bookedBy?.role ? WARD_FLOW_ROLE_LABELS[m.transport.bookedBy.role] : null,
       });
     }
     if (m.leftDepartmentAt && now - m.leftDepartmentAt <= 24 * 60) {
       timelineEvents.push({
+        id: `left-${m.id}-${m.leftDepartmentAt}`,
         min: m.leftDepartmentAt,
         tone: "quiet",
+        category: "arrivals",
+        categoryLabel: "Arrivals & Departures",
+        patientName: patientInfo.displayName,
+        patientId: m.patientId,
+        movementId: m.id,
+        badgeText: "Departed",
+        badgeTone: "quiet",
+        primaryText: "Departed from Emergency Department",
+        by: null,
+        isOpenMovement: false,
         what: (
           <>
             <b>{patientInfo.displayName}</b> marked left the department
           </>
         ),
-        by: null,
       });
     }
   }
@@ -1954,33 +2142,81 @@ export function EdScreen({ edId }: EdScreenProps) {
       (d) => d.destination.kind === "emergency_department" && d.destination.edId === thisEdId,
     );
     if (!hasEdDest) continue;
+    const rPatientInfo = resolveSubjectPatient(r, {
+      patients: registryPatients,
+      referrals,
+    });
+    const patientDisplayName = rPatientInfo.displayName;
+
     if (now - r.raisedAt <= 24 * 60) {
       timelineEvents.push({
+        id: `ref-raised-${r.id}-${r.raisedAt}`,
         min: r.raisedAt,
         tone: "quiet",
+        category: "bed_search",
+        categoryLabel: "Bed searches",
+        patientName: patientDisplayName,
+        patientId: r.patientId,
+        referralId: r.id,
+        badgeText: "Referral Raised",
+        badgeTone: "quiet",
+        primaryText: `Referral raised (${r.ageBand.toLowerCase()} cohort)`,
+        by: null,
         what: (
           <>
             <b>{r.id}</b> referral raised, {r.ageBand.toLowerCase()}
           </>
         ),
-        by: null,
       });
     }
     if (r.triagedAt !== undefined && now - r.triagedAt <= 24 * 60) {
       timelineEvents.push({
+        id: `ref-triaged-${r.id}-${r.triagedAt}`,
         min: r.triagedAt,
         tone: "quiet",
+        category: "arrivals",
+        categoryLabel: "Arrivals & Departures",
+        patientName: patientDisplayName,
+        patientId: r.patientId,
+        referralId: r.id,
+        badgeText: "Triaged",
+        badgeTone: "quiet",
+        primaryText: "Triaged in department",
+        by: null,
         what: (
           <>
             <b>{r.id}</b> triaged in department
           </>
         ),
-        by: null,
       });
     }
   }
 
   timelineEvents.sort((a, b) => b.min - a.min);
+
+  const arrivalEventsCount = timelineEvents.filter((e) => e.category === "arrivals").length;
+  const declineEventsCount = timelineEvents.filter((e) => e.badgeText === "Bed Declined").length;
+  const acceptEventsCount = timelineEvents.filter((e) => e.badgeText === "Bed Accepted").length;
+  const clinicalEventsCount = timelineEvents.filter((e) => e.category === "clinical").length;
+  const transportEventsCount = timelineEvents.filter((e) => e.category === "transport").length;
+  const bedSearchEventsCount = timelineEvents.filter((e) => e.category === "bed_search").length;
+
+  const filteredTimelineEvents = timelineEvents.filter((e) => {
+    if (timelineCategoryFilter !== "all" && e.category !== timelineCategoryFilter) {
+      return false;
+    }
+    if (timelineSearchQuery.trim()) {
+      const q = timelineSearchQuery.toLowerCase().trim();
+      const matchName = e.patientName?.toLowerCase().includes(q);
+      const matchUnit = e.unitName?.toLowerCase().includes(q);
+      const matchBadge = e.badgeText?.toLowerCase().includes(q);
+      const matchDetail = e.detailText?.toLowerCase().includes(q);
+      const matchPrimary = e.primaryText?.toLowerCase().includes(q);
+      const matchRef = e.referralId?.toLowerCase().includes(q);
+      return Boolean(matchName || matchUnit || matchBadge || matchDetail || matchPrimary || matchRef);
+    }
+    return true;
+  });
 
   const selectedPatientJourneyEvents: TimelineEvent[] = [];
   if (selectedPatient) {
@@ -2315,10 +2551,10 @@ export function EdScreen({ edId }: EdScreenProps) {
   }
 
   const arrivalPlanMovement = arrivalPlanOpenFor ? movements.find((m) => m.id === arrivalPlanOpenFor) : undefined;
+
   const currentEdIndex = departments.findIndex((d) => d.id === department.id);
-  const prevDepartment = currentEdIndex > 0 ? departments[currentEdIndex - 1] : departments[departments.length - 1];
-  const nextDepartment =
-    currentEdIndex >= 0 && currentEdIndex < departments.length - 1 ? departments[currentEdIndex + 1] : departments[0];
+  const prevEd = departments[(currentEdIndex - 1 + departments.length) % departments.length];
+  const nextEd = departments[(currentEdIndex + 1) % departments.length];
 
   return (
     <div
@@ -2328,167 +2564,151 @@ export function EdScreen({ edId }: EdScreenProps) {
       data-ward-rebuilt-screen="emergency-department"
     >
       <main id="main-content" className={styles.main}>
-        <section className={`${styles.panel} ${styles.full} ${styles.edHeroPanel}`} aria-label="Emergency departments">
-          <header className={styles.edHeroContainer} data-testid={`ward-ed-card-${department.id}`}>
-            <div className={styles.edHeroNavRow}>
-              <div className={styles.edHeroLeft}>
-                <div className={styles.edWhere}>
-                  <span className={styles.code}>{site?.code ?? department.siteCode}</span>
-                  <span
-                    className={styles.svc}
-                    data-svc={site?.service ? site.service.toLowerCase().replace(/\s+/g, "-") : undefined}
-                  >
-                    {site?.service ?? "Service not identified"}
-                  </span>
-                </div>
-                <div className={styles.edTitleSwitchGroup}>
-                  <div className={styles.edTitleWithArrows}>
-                    <Link
-                      href={`/mockups/ward-flow/ed/${prevDepartment.id}`}
-                      className={styles.edArrowBtn}
-                      aria-label={`Previous department: ${prevDepartment.name}`}
-                      title={`Previous: ${prevDepartment.name}`}
-                    >
-                      ‹
-                    </Link>
-                    <h1 className={styles.edHeroTitle}>{department.name}</h1>
-                    <Link
-                      href={`/mockups/ward-flow/ed/${nextDepartment.id}`}
-                      className={styles.edArrowBtn}
-                      aria-label={`Next department: ${nextDepartment.name}`}
-                      title={`Next: ${nextDepartment.name}`}
-                    >
-                      ›
-                    </Link>
-                  </div>
-                  <button
-                    type="button"
-                    className={styles.edSwitcherDropdownBtn}
-                    onClick={() => setIsEdSwitcherOpen((v) => !v)}
-                    aria-expanded={isEdSwitcherOpen}
-                    aria-controls="edList"
-                    aria-label={`Toggle emergency department grid. Currently ${isEdSwitcherOpen ? "open" : "closed"}.`}
-                  >
-                    <span>All Departments ({departments.length})</span>
-                    <span className={styles.edDropdownChevron} aria-hidden="true">
-                      {isEdSwitcherOpen ? "▴" : "▾"}
-                    </span>
-                  </button>
-                </div>
+        <section
+          className={`${styles.panel} ${styles.full} ${styles.topEdSection}`}
+          aria-label="Emergency department overview"
+        >
+          <header className={styles.edIdent} data-testid={`ward-ed-card-${department.id}`}>
+            <div className={styles.edHead}>
+              <div className={styles.edWhere}>
+                <span className={styles.code}>{site?.code ?? department.siteCode}</span>
+                <span
+                  className={styles.svc}
+                  data-svc={site?.service ? site.service.toLowerCase().replace(/\s+/g, "-") : undefined}
+                >
+                  {site?.service ?? "Service not identified"}
+                </span>
               </div>
 
-              <div className={styles.edChips} aria-label="Selected department record counts">
-                <span className={styles.chip}>
-                  {patients.length === 0 ? <i>none</i> : <b>{patients.length}</b>} on the board
-                </span>
-                <span className={styles.chip}>
-                  {patients.filter((m) => m.stage === "accepted_awaiting_bed" || m.stage === "pulled").length === 0 ? (
-                    <i>none</i>
-                  ) : (
-                    <b>{patients.filter((m) => m.stage === "accepted_awaiting_bed" || m.stage === "pulled").length}</b>
-                  )}{" "}
-                  waiting for a bed
-                </span>
-                <span className={styles.chip}>
-                  {inbox.length === 0 ? <i>none</i> : <b>{inbox.length}</b>} awaiting review
-                </span>
-                <span className={styles.chip}>
-                  {expects.length === 0 ? <i>none</i> : <b>{expects.length}</b>} expected
-                </span>
-                <span className={styles.chip}>
-                  {patients.filter((m) => !!m.legalForm).length === 0 ? (
-                    <i>none</i>
-                  ) : (
-                    <b>{patients.filter((m) => !!m.legalForm).length}</b>
-                  )}{" "}
-                  under a form
-                </span>
-                {patients.length > 0 ? (
-                  <span className={styles.chip}>
-                    <b>{splitDuration(Math.max(...patients.map((m) => Math.max(now - m.openedAt, 0))))}</b> longest here
-                  </span>
-                ) : null}
+              <div className={styles.edTitleNavRow}>
+                <div className={styles.edNavArrows}>
+                  <Link
+                    href={`/mockups/ward-flow/ed/${prevEd.id}`}
+                    className={styles.edArrowBtn}
+                    title={`Previous department: ${prevEd.name}`}
+                    aria-label={`Previous department: ${prevEd.name}`}
+                  >
+                    <span aria-hidden="true">‹</span>
+                  </Link>
+                </div>
+
+                <div className={styles.edSwitcherDropdownWrap}>
+                  <button
+                    type="button"
+                    className={styles.edDropdownTriggerBtn}
+                    onClick={() => setEdDropdownOpen((open) => !open)}
+                    aria-haspopup="listbox"
+                    aria-expanded={edDropdownOpen}
+                    title="Switch emergency department"
+                  >
+                    <h1 className={styles.edName}>{department.name}</h1>
+                    <span className={styles.edDropdownCaret} aria-hidden="true">
+                      ▾
+                    </span>
+                  </button>
+
+                  {edDropdownOpen ? (
+                    <div
+                      className={styles.edDropdownMenu}
+                      role="listbox"
+                      id="edList"
+                      tabIndex={0}
+                      aria-label="Emergency departments, the switcher for this screen"
+                    >
+                      <div className={styles.edDropdownMenuHeader}>
+                        <span>Emergency departments ({departments.length})</span>
+                        <span className={styles.edDropdownHint}>Worst wait first</span>
+                      </div>
+                      <ul className={styles.edDropdownList}>
+                        {departments.map((candidate) => {
+                          const candidateSite = siteByCode(candidate.siteCode);
+                          const candidateMovements = movements.filter(
+                            (movement) => movement.originEdId === candidate.id && movement.closure === undefined,
+                          );
+                          const openHere = candidateMovements.length;
+                          const longestWait = candidateMovements.reduce((max, m) => Math.max(max, now - m.openedAt), 0);
+                          const breachingCount = candidateMovements.filter(
+                            (m) => now - m.openedAt > accessTarget,
+                          ).length;
+                          const isCurrent = candidate.id === department.id;
+                          return (
+                            <li key={candidate.id} role="option" aria-selected={isCurrent}>
+                              <Link
+                                href={`/mockups/ward-flow/ed/${candidate.id}`}
+                                className={styles.edDropdownItem}
+                                data-ed={candidate.id}
+                                data-current={isCurrent ? "true" : undefined}
+                                onClick={() => setEdDropdownOpen(false)}
+                              >
+                                <div className={styles.edDropdownItemMain}>
+                                  <span className={styles.edItemCode}>{candidateSite?.code ?? candidate.siteCode}</span>
+                                  <span className={styles.edItemName}>{candidate.name}</span>
+                                </div>
+                                <div className={styles.edDropdownItemStats}>
+                                  <span className={styles.edItemWait}>
+                                    {openHere === 0 ? "None waiting" : `${openHere} waiting`}
+                                  </span>
+                                  {openHere > 0 ? (
+                                    <span className={styles.edItemLongest}>Longest {splitDuration(longestWait)}</span>
+                                  ) : null}
+                                  {breachingCount > 0 ? (
+                                    <span className={styles.edItemBreach}>▲ {breachingCount} over target</span>
+                                  ) : null}
+                                </div>
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className={styles.edNavArrows}>
+                  <Link
+                    href={`/mockups/ward-flow/ed/${nextEd.id}`}
+                    className={styles.edArrowBtn}
+                    title={`Next department: ${nextEd.name}`}
+                    aria-label={`Next department: ${nextEd.name}`}
+                  >
+                    <span aria-hidden="true">›</span>
+                  </Link>
+                </div>
               </div>
             </div>
 
-            {isEdSwitcherOpen && (
-              <div className={styles.edDropdownTray} id="ed-switcher-tray">
-                <div className={styles.edDropdownTrayHeader}>
-                  <div>
-                    <h2 className={styles.edDropdownTrayTitle}>Statewide Emergency Departments</h2>
-                    <p className={styles.edDropdownTrayNote}>
-                      Select a department square to switch view · Worst first: most over target, then longest wait.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className={styles.edDropdownCloseBtn}
-                    onClick={() => setIsEdSwitcherOpen(false)}
-                    aria-label="Close department switcher"
-                  >
-                    ✕ Close
-                  </button>
-                </div>
-                <ul
-                  className={styles.edList}
-                  id="edList"
-                  tabIndex={0}
-                  aria-label="Emergency departments, the switcher for this screen"
-                >
-                  {departments.map((candidate) => {
-                    const candidateSite = siteByCode(candidate.siteCode);
-                    const candidateMovements = movements.filter(
-                      (movement) => movement.originEdId === candidate.id && movement.closure === undefined,
-                    );
-                    const openHere = candidateMovements.length;
-                    const longestWait = candidateMovements.reduce((max, m) => Math.max(max, now - m.openedAt), 0);
-                    const breachingCount = candidateMovements.filter((m) => now - m.openedAt > accessTarget).length;
-                    const isCurrent = candidate.id === department.id;
-                    const waitBarPct =
-                      maxNetworkWait > 0 ? Math.min(100, Math.round((longestWait / maxNetworkWait) * 100)) : 0;
-                    return (
-                      <li key={candidate.id}>
-                        <Link
-                          href={`/mockups/ward-flow/ed/${candidate.id}`}
-                          className={styles.edCard}
-                          data-ed={candidate.id}
-                          data-p={breachingCount > 0 ? "high" : "low"}
-                          aria-pressed={isCurrent}
-                          aria-current={isCurrent ? "page" : undefined}
-                          title={candidate.name}
-                          onClick={() => setIsEdSwitcherOpen(false)}
-                        >
-                          <span className={styles.edCode}>
-                            {candidateSite?.code ?? candidate.siteCode}
-                            <em>{candidateSite?.service ?? "Service not identified"}</em>
-                          </span>
-                          <span className={styles.edStat} aria-hidden="true">
-                            {openHere === 0 ? "None waiting" : `${openHere} waiting`}
-                          </span>
-                          <span className={`${styles.edStat} ${styles.quiet}`} aria-hidden="true">
-                            {openHere === 0 ? "\u00a0" : `Longest ${splitDuration(longestWait)}`}
-                          </span>
-                          <span className={styles.edBar} aria-hidden="true">
-                            <i style={{ width: `${waitBarPct}%` }} />
-                          </span>
-                          {breachingCount > 0 ? (
-                            <span className={styles.edBreach} aria-hidden="true">
-                              <span className={styles.breachBadge}>▲</span>
-                              <span className="sr-only">Over access target warning: </span>
-                              {breachingCount} over target
-                            </span>
-                          ) : (
-                            <span className={`${styles.edStat} ${styles.quiet}`} aria-hidden="true">
-                              Access target {splitDuration(accessTarget)}
-                            </span>
-                          )}
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
+            <div className={styles.edChips} aria-label="Selected department record counts">
+              <span className={styles.chip}>
+                {patients.length === 0 ? <i>none</i> : <b>{patients.length}</b>} on the board
+              </span>
+              <span className={styles.chip}>
+                {patients.filter((m) => m.stage === "accepted_awaiting_bed" || m.stage === "pulled").length === 0 ? (
+                  <i>none</i>
+                ) : (
+                  <b>{patients.filter((m) => m.stage === "accepted_awaiting_bed" || m.stage === "pulled").length}</b>
+                )}{" "}
+                waiting for a bed
+              </span>
+              <span className={styles.chip}>
+                {inbox.length === 0 ? <i>none</i> : <b>{inbox.length}</b>} awaiting review
+              </span>
+              <span className={styles.chip}>
+                {expects.length === 0 ? <i>none</i> : <b>{expects.length}</b>} expected
+              </span>
+              <span className={styles.chip}>
+                {patients.filter((m) => !!m.legalForm).length === 0 ? (
+                  <i>none</i>
+                ) : (
+                  <b>{patients.filter((m) => !!m.legalForm).length}</b>
+                )}{" "}
+                under a form
+              </span>
+              {patients.length > 0 ? (
+                <span className={styles.chip}>
+                  <b>{splitDuration(Math.max(...patients.map((m) => Math.max(now - m.openedAt, 0))))}</b> longest here
+                </span>
+              ) : null}
+            </div>
           </header>
         </section>
 
@@ -3729,27 +3949,6 @@ export function EdScreen({ edId }: EdScreenProps) {
                             <div className={styles.idCellGroup}>
                               <button
                                 type="button"
-                                className={styles.rowChevronBtn}
-                                onClick={() =>
-                                  setUnfoldedRows((current) => ({
-                                    ...current,
-                                    [movement.id]: !isUnfolded,
-                                  }))
-                                }
-                                aria-expanded={isUnfolded}
-                                aria-label={
-                                  isUnfolded
-                                    ? `Fold actions for ${patientInfo.displayName}`
-                                    : `Unfold actions for ${patientInfo.displayName}`
-                                }
-                                title={isUnfolded ? "Fold actions" : "Unfold actions"}
-                              >
-                                <span className={styles.rowChevron} aria-hidden="true">
-                                  {isUnfolded ? "▾" : "▸"}
-                                </span>
-                              </button>
-                              <button
-                                type="button"
                                 className={styles.idBtn}
                                 onClick={() =>
                                   setSelectedPatientId(selectedPatientId === movement.id ? null : movement.id)
@@ -3868,6 +4067,15 @@ export function EdScreen({ edId }: EdScreenProps) {
                             >
                               {accessTargetLine(minutesInDepartment, accessTarget)}
                             </span>
+                            {movement.referredAt !== undefined || linkedReferral?.raisedAt !== undefined ? (
+                              <span className={styles.timeSinceReferredBadge}>
+                                ⏱{" "}
+                                {splitDuration(
+                                  Math.max(now - (movement.referredAt ?? linkedReferral?.raisedAt ?? now), 0),
+                                )}{" "}
+                                since referral
+                              </span>
+                            ) : null}
                           </td>
                           <td className={styles.bayCell}>
                             <span className={styles.bayNumber}>{patientBay(movement.id)}</span>
@@ -3978,7 +4186,10 @@ export function EdScreen({ edId }: EdScreenProps) {
                               );
                             })()}
                             {formExpiryText !== undefined ? (
-                              <div className={styles.sub} data-testid={`ward-ed-form-expiry-${movement.id}`}>
+                              <div
+                                className={`${styles.sub} ${styles.formExpirySmaller}`}
+                                data-testid={`ward-ed-form-expiry-${movement.id}`}
+                              >
                                 {formExpiryText}
                               </div>
                             ) : null}
@@ -4004,27 +4215,76 @@ export function EdScreen({ edId }: EdScreenProps) {
                             </p>
                           </td>
                           <td>
-                            <div className={styles.reviewCluster}>
-                              <span className={styles.rev} data-reviewed={movement.examination ? "true" : "false"}>
-                                <i aria-hidden="true" />{" "}
-                                {movement.examination ? "Examination recorded" : "Awaiting review"}
-                              </span>
-                              <span
-                                className={styles.clearancePill}
-                                data-cleared={
-                                  medicalClearance === undefined ? "pending" : medicalClearance.cleared ? "yes" : "no"
-                                }
-                              >
-                                <span className={styles.clearanceLabel}>Clearance:</span>{" "}
-                                <strong className={styles.clearanceValue}>
-                                  {medicalClearance === undefined
-                                    ? "Pending"
-                                    : medicalClearance.cleared
-                                      ? "Cleared"
-                                      : "Not cleared"}
-                                </strong>
-                              </span>
-                            </div>
+                            {(() => {
+                              const isReviewOpen = reviewDropdownOpenFor === movement.id;
+                              const overriddenReview = reviewStatusOverrides[movement.id];
+                              const currentReviewStatus =
+                                overriddenReview !== undefined
+                                  ? overriddenReview
+                                  : movement.examination
+                                    ? "Examination recorded"
+                                    : "Awaiting review";
+                              const isRecorded = currentReviewStatus === "Examination recorded";
+                              const isPending = currentReviewStatus === "Awaiting review";
+                              const reviewTone = isRecorded ? "good" : isPending ? "warn" : "info";
+
+                              return (
+                                <div className={styles.reviewDropdownWrap}>
+                                  <button
+                                    type="button"
+                                    className={styles.reviewPill}
+                                    aria-haspopup="listbox"
+                                    aria-expanded={isReviewOpen}
+                                    data-tone={reviewTone}
+                                    aria-label={`Review status ${currentReviewStatus} for ${patientInfo.displayName}. Change status.`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setReviewDropdownOpenFor((curr) =>
+                                        curr === movement.id ? undefined : movement.id,
+                                      );
+                                    }}
+                                  >
+                                    <span className={styles.revDot} data-tone={reviewTone} aria-hidden="true" />
+                                    <span className={styles.reviewPillText}>{currentReviewStatus}</span>
+                                    <span className={styles.caret} aria-hidden="true" />
+                                  </button>
+
+                                  {isReviewOpen ? (
+                                    <ul
+                                      className={styles.reviewMenu}
+                                      role="listbox"
+                                      aria-label={`Review potential status for ${patientInfo.displayName}`}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Escape") {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          setReviewDropdownOpenFor(undefined);
+                                        }
+                                      }}
+                                    >
+                                      {CLINICAL_REVIEW_OPTIONS.map((opt) => (
+                                        <li key={opt} role="option" aria-selected={opt === currentReviewStatus}>
+                                          <button
+                                            type="button"
+                                            className={styles.reviewOptionBtn}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setReviewStatusOverrides((prev) => ({ ...prev, [movement.id]: opt }));
+                                              setReviewDropdownOpenFor(undefined);
+                                              announceToWardShell(
+                                                `Review status set to ${opt} for ${patientInfo.displayName}.`,
+                                              );
+                                            }}
+                                          >
+                                            {opt}
+                                          </button>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  ) : null}
+                                </div>
+                              );
+                            })()}
                             {movement.supersededExaminations && movement.supersededExaminations.length > 0 ? (
                               <ul className={styles.sub} data-testid={`ward-ed-examination-history-${movement.id}`}>
                                 {movement.supersededExaminations.map((record, index) => (
@@ -4043,14 +4303,131 @@ export function EdScreen({ edId }: EdScreenProps) {
                                 {EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE}
                               </div>
                             ) : null}
-                            {medicalClearance !== undefined ? (
-                              <div className={styles.sub} data-testid={`ward-ed-medical-clearance-${movement.id}`}>
-                                Medical clearance:{" "}
-                                {medicalClearance.cleared
-                                  ? `Yes — recorded ${formatInstantWithDay(medicalClearance.at, now)}`
-                                  : `No — recorded ${formatInstantWithDay(medicalClearance.at, now)}`}
-                              </div>
-                            ) : null}
+                            {(() => {
+                              const isClearanceOpen = clearanceDropdownOpenFor === movement.id;
+                              const overriddenClearance = clearanceOverrides[movement.id];
+                              const effectiveClearance =
+                                overriddenClearance !== undefined
+                                  ? overriddenClearance
+                                  : medicalClearance !== undefined
+                                    ? medicalClearance.cleared
+                                      ? "yes"
+                                      : "no"
+                                    : null;
+
+                              return (
+                                <div className={styles.clearanceWrap}>
+                                  {medicalClearance !== undefined || overriddenClearance !== undefined ? (
+                                    <div
+                                      className={styles.sub}
+                                      data-testid={`ward-ed-medical-clearance-${movement.id}`}
+                                    >
+                                      Medical clearance:{" "}
+                                      {effectiveClearance === "yes"
+                                        ? `Yes — recorded ${formatInstantWithDay(medicalClearance?.at ?? now, now)}`
+                                        : effectiveClearance === "no"
+                                          ? `No — recorded ${formatInstantWithDay(medicalClearance?.at ?? now, now)}`
+                                          : "Pending"}
+                                    </div>
+                                  ) : null}
+
+                                  <div className={styles.clearanceField}>
+                                    <button
+                                      type="button"
+                                      className={styles.clearancePill}
+                                      aria-haspopup="listbox"
+                                      aria-expanded={isClearanceOpen}
+                                      data-cleared={effectiveClearance ?? "none"}
+                                      title="Set medical clearance"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setClearanceDropdownOpenFor((curr) =>
+                                          curr === movement.id ? undefined : movement.id,
+                                        );
+                                      }}
+                                    >
+                                      <span className={styles.clearancePillText}>
+                                        Clearance:{" "}
+                                        {effectiveClearance === "yes"
+                                          ? "Yes (Cleared)"
+                                          : effectiveClearance === "no"
+                                            ? "No (Not cleared)"
+                                            : "Pending"}
+                                      </span>
+                                      <span className={styles.caret} aria-hidden="true" />
+                                    </button>
+
+                                    {isClearanceOpen ? (
+                                      <ul
+                                        className={styles.clearanceMenu}
+                                        role="listbox"
+                                        aria-label={`Medical clearance for ${patientInfo.displayName}`}
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Escape") {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setClearanceDropdownOpenFor(undefined);
+                                          }
+                                        }}
+                                      >
+                                        <li role="option" aria-selected={effectiveClearance === "yes"}>
+                                          <button
+                                            type="button"
+                                            className={styles.clearanceOptionBtn}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setClearanceOverrides((prev) => ({ ...prev, [movement.id]: "yes" }));
+                                              setClearanceDropdownOpenFor(undefined);
+                                              announceToWardShell(
+                                                `Medical clearance set to Yes for ${patientInfo.displayName}.`,
+                                              );
+                                            }}
+                                          >
+                                            Yes — Medically cleared
+                                          </button>
+                                        </li>
+                                        <li role="option" aria-selected={effectiveClearance === "no"}>
+                                          <button
+                                            type="button"
+                                            className={styles.clearanceOptionBtn}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setClearanceOverrides((prev) => ({ ...prev, [movement.id]: "no" }));
+                                              setClearanceDropdownOpenFor(undefined);
+                                              announceToWardShell(
+                                                `Medical clearance set to No for ${patientInfo.displayName}.`,
+                                              );
+                                            }}
+                                          >
+                                            No — Not cleared
+                                          </button>
+                                        </li>
+                                        <li
+                                          role="option"
+                                          className={styles.sep}
+                                          aria-selected={effectiveClearance === null}
+                                        >
+                                          <button
+                                            type="button"
+                                            className={styles.clearanceOptionBtn}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setClearanceOverrides((prev) => ({ ...prev, [movement.id]: null }));
+                                              setClearanceDropdownOpenFor(undefined);
+                                              announceToWardShell(
+                                                `Medical clearance reset for ${patientInfo.displayName}.`,
+                                              );
+                                            }}
+                                          >
+                                            • Pending / Not recorded
+                                          </button>
+                                        </li>
+                                      </ul>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td className={styles.story}>
                             <p className={styles.referralState}>
@@ -5396,52 +5773,268 @@ export function EdScreen({ edId }: EdScreenProps) {
 
         <section
           aria-label="Seen in the last twenty four hours"
-          className={`${styles.panel} ${styles.full} ${styles.listSection}`}
+          className={`${styles.panel} ${styles.full} ${styles.listSection} ${styles.seenSection}`}
+          data-testid="ward-ed-seen-24h"
           tabIndex={0}
         >
-          <div className={styles.ph}>
-            <h2>Seen in the last 24 hours</h2>
-            <p className={styles.note}>What was recorded, not everything that happened.</p>
-            <span className={styles.count}>
-              {timelineEvents.length === 0
-                ? "none"
-                : `${timelineEvents.length} event${timelineEvents.length === 1 ? "" : "s"}`}
-            </span>
+          <div className={styles.seenHeaderArea}>
+            <div className={styles.seenTopRow}>
+              <div className={styles.seenHeadingGroup}>
+                <h2>Seen in the last 24 hours</h2>
+                <span className={styles.seenCountBadge}>
+                  {timelineEvents.length === 0
+                    ? "none"
+                    : `${timelineEvents.length} event${timelineEvents.length === 1 ? "" : "s"}`}
+                </span>
+              </div>
+              <span className={styles.seenSubNote}>
+                What was recorded, not everything that happened &middot; Chronological clinical audit
+              </span>
+            </div>
+
+            <div className={styles.seenKpiGrid} role="region" aria-label="Timeline event summary">
+              <div className={`${styles.seenKpiCard} ${styles.kpiInfo}`}>
+                <span className={styles.seenKpiLabel}>Arrivals &amp; Triage</span>
+                <span className={styles.seenKpiVal}>{arrivalEventsCount}</span>
+              </div>
+              <div className={`${styles.seenKpiCard} ${styles.kpiWarn}`}>
+                <span className={styles.seenKpiLabel}>Bed Declines</span>
+                <span className={styles.seenKpiVal}>{declineEventsCount}</span>
+              </div>
+              <div className={`${styles.seenKpiCard} ${styles.kpiGood}`}>
+                <span className={styles.seenKpiLabel}>Bed Accepted</span>
+                <span className={styles.seenKpiVal}>{acceptEventsCount}</span>
+              </div>
+              <div className={`${styles.seenKpiCard} ${styles.kpiPurple}`}>
+                <span className={styles.seenKpiLabel}>Clinical / Legal</span>
+                <span className={styles.seenKpiVal}>{clinicalEventsCount}</span>
+              </div>
+              <div className={`${styles.seenKpiCard} ${styles.kpiInfo}`}>
+                <span className={styles.seenKpiLabel}>PTS Transport</span>
+                <span className={styles.seenKpiVal}>{transportEventsCount}</span>
+              </div>
+            </div>
+
+            <div className={styles.seenToolbar}>
+              <div className={styles.seenFilterTabs} role="tablist" aria-label="Filter events by category">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={timelineCategoryFilter === "all"}
+                  className={`${styles.seenTabBtn} ${timelineCategoryFilter === "all" ? styles.seenTabBtnActive : ""}`}
+                  onClick={() => setTimelineCategoryFilter("all")}
+                >
+                  All events ({timelineEvents.length})
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={timelineCategoryFilter === "bed_search"}
+                  className={`${styles.seenTabBtn} ${timelineCategoryFilter === "bed_search" ? styles.seenTabBtnActive : ""}`}
+                  onClick={() => setTimelineCategoryFilter("bed_search")}
+                >
+                  Bed search ({bedSearchEventsCount})
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={timelineCategoryFilter === "arrivals"}
+                  className={`${styles.seenTabBtn} ${timelineCategoryFilter === "arrivals" ? styles.seenTabBtnActive : ""}`}
+                  onClick={() => setTimelineCategoryFilter("arrivals")}
+                >
+                  Arrivals &amp; Triage ({arrivalEventsCount})
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={timelineCategoryFilter === "clinical"}
+                  className={`${styles.seenTabBtn} ${timelineCategoryFilter === "clinical" ? styles.seenTabBtnActive : ""}`}
+                  onClick={() => setTimelineCategoryFilter("clinical")}
+                >
+                  Clinical &amp; Legal ({clinicalEventsCount})
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={timelineCategoryFilter === "transport"}
+                  className={`${styles.seenTabBtn} ${timelineCategoryFilter === "transport" ? styles.seenTabBtnActive : ""}`}
+                  onClick={() => setTimelineCategoryFilter("transport")}
+                >
+                  Transport ({transportEventsCount})
+                </button>
+              </div>
+
+              <div className={styles.seenSearchBox}>
+                <input
+                  type="search"
+                  className={styles.seenSearchInput}
+                  placeholder="Search patient, unit, reason..."
+                  value={timelineSearchQuery}
+                  onChange={(e) => setTimelineSearchQuery(e.target.value)}
+                  aria-label="Filter timeline events by text"
+                />
+                {timelineSearchQuery ? (
+                  <button
+                    type="button"
+                    className={styles.seenClearSearch}
+                    onClick={() => setTimelineSearchQuery("")}
+                    aria-label="Clear search filter"
+                  >
+                    &times;
+                  </button>
+                ) : null}
+              </div>
+            </div>
           </div>
+
           {timelineEvents.length === 0 ? (
             <p className={styles.none}>
               Nothing has been recorded against this department in the last twenty four hours. Absence here means
               nothing was written down, not that nothing happened.
             </p>
+          ) : filteredTimelineEvents.length === 0 ? (
+            <div className={styles.seenEmptyBox}>
+              <p>No recorded events match the selected category or search filter.</p>
+              <button
+                type="button"
+                className={styles.seenResetBtn}
+                onClick={() => {
+                  setTimelineCategoryFilter("all");
+                  setTimelineSearchQuery("");
+                }}
+              >
+                Reset filters
+              </button>
+            </div>
           ) : (
-            <div className={styles.tlWrap}>
-              <ol className={styles.tl}>
-                {timelineEvents.map((e, index) => (
-                  <li key={index} className={styles.tlRow} data-tone={e.tone ?? undefined}>
-                    <span className={styles.tlAt}>
-                      <b>{formatInstantWithDay(e.min, now)}</b>
-                      <i>{splitDuration(Math.max(now - e.min, 0))} ago</i>
-                    </span>
-                    <span className={styles.tlMark} aria-hidden="true">
-                      <span className={styles.tick} data-tone={e.tone ?? "quiet"}>
-                        <span className={styles.tickGlyph}>
-                          {e.tone === "danger" ? "▲" : e.tone === "warn" ? "■" : e.tone === "good" ? "✓" : "●"}
-                        </span>
-                      </span>
-                    </span>
-                    <span className="sr-only">
-                      {e.tone === "danger"
-                        ? "Urgent: "
-                        : e.tone === "warn"
-                          ? "Warning: "
-                          : e.tone === "good"
-                            ? "Completed: "
-                            : "Event: "}
-                    </span>
-                    <span className={styles.tlWhat}>{e.what}</span>
-                    <span className={styles.tlBy}>{e.by ?? <i>author not recorded</i>}</span>
-                  </li>
-                ))}
+            <div className={styles.seenStreamWrap}>
+              <ol className={styles.seenStream}>
+                {filteredTimelineEvents.map((e, index) => {
+                  const nodeClass =
+                    e.tone === "danger"
+                      ? styles.nodeDanger
+                      : e.tone === "warn"
+                        ? styles.nodeWarn
+                        : e.tone === "good"
+                          ? styles.nodeGood
+                          : e.tone === "info"
+                            ? styles.nodeInfo
+                            : styles.nodeQuiet;
+
+                  const badgeToneClass =
+                    e.badgeTone === "danger"
+                      ? styles.badgeDanger
+                      : e.badgeTone === "warn"
+                        ? styles.badgeWarn
+                        : e.badgeTone === "good"
+                          ? styles.badgeGood
+                          : e.badgeTone === "purple"
+                            ? styles.badgePurple
+                            : e.badgeTone === "info"
+                              ? styles.badgeInfo
+                              : styles.badgeQuiet;
+
+                  const nodeGlyph =
+                    e.tone === "danger"
+                      ? "▲"
+                      : e.tone === "warn"
+                        ? "✕"
+                        : e.tone === "good"
+                          ? "✓"
+                          : e.tone === "info"
+                            ? "●"
+                            : "§";
+
+                  return (
+                    <li key={e.id ?? index} className={styles.seenItemRow}>
+                      <div className={styles.seenTimeGutter}>
+                        <span className={styles.seenClock}>{formatInstantWithDay(e.min, now)}</span>
+                        <span className={styles.seenAgo}>{splitDuration(Math.max(now - e.min, 0))} ago</span>
+                      </div>
+
+                      <div className={styles.seenRail} aria-hidden="true">
+                        <span className={`${styles.seenNode} ${nodeClass}`}>{nodeGlyph}</span>
+                      </div>
+
+                      <div className={styles.seenCard}>
+                        <div className={styles.seenCardTop}>
+                          <div className={styles.seenPatientBlock}>
+                            {e.movementId && e.patientName ? (
+                              <button
+                                type="button"
+                                className={styles.seenPatientBtn}
+                                onClick={() => setSelectedPatientId(e.movementId!)}
+                                title={`Open patient details for ${e.patientName}`}
+                              >
+                                {e.patientName}
+                              </button>
+                            ) : e.patientName ? (
+                              <span className={styles.seenPatientStatic}>{e.patientName}</span>
+                            ) : null}
+
+                            {e.referralId ? <span className={styles.seenRefPill}>Ref #{e.referralId}</span> : null}
+
+                            {e.waitMinutes && e.waitMinutes >= 1440 ? (
+                              <span className={styles.seenLongWaitPill} title="Department stay exceeds 24h">
+                                Waiting {LONG_WAIT_TEXT}
+                              </span>
+                            ) : null}
+                          </div>
+
+                          <div className={styles.seenMetaGroup}>
+                            {e.badgeText ? (
+                              <span className={`${styles.seenBadge} ${badgeToneClass}`}>{e.badgeText}</span>
+                            ) : null}
+
+                            {e.by ? (
+                              <span className={styles.seenAuthorTag} title={`Recorded by ${e.by}`}>
+                                <span aria-hidden="true">👤</span>
+                                <span>{e.by}</span>
+                              </span>
+                            ) : (
+                              <span className={styles.seenSystemTag}>Audited record</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className={styles.seenCardDetail}>
+                          {e.badgeText === "Bed Declined" ? (
+                            <div className={styles.seenDeclineContent}>
+                              <div>
+                                <span className={styles.seenUnitTag}>{e.unitName}</span> declined admission:
+                              </div>
+                              {e.detailText && (
+                                <div className={styles.seenDeclineQuote}>
+                                  <span>Reason:</span>
+                                  <strong>&ldquo;{e.detailText}&rdquo;</strong>
+                                </div>
+                              )}
+                            </div>
+                          ) : e.badgeText === "Examined" ? (
+                            <div className={styles.seenExamContent}>
+                              <span>Psychiatric examination completed</span>
+                              {e.detailText && <span className={styles.seenExamOutcome}>Outcome: {e.detailText}</span>}
+                            </div>
+                          ) : e.badgeTone === "purple" ? (
+                            <div className={styles.seenLegalContent}>
+                              <span>Statutory document received:</span>
+                              <strong>{e.badgeText}</strong>
+                              {e.detailText && <span className={styles.seenLegalTitle}>({e.detailText})</span>}
+                            </div>
+                          ) : e.badgeText === "Transport Booked" ? (
+                            <div className={styles.seenTransportContent}>
+                              <span>Patient transport booked with</span>
+                              <span className={styles.seenTransportProvider}>{e.primaryText}</span>
+                              {e.detailText && <span>&middot; {e.detailText}</span>}
+                            </div>
+                          ) : (
+                            e.what
+                          )}
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
               </ol>
             </div>
           )}
