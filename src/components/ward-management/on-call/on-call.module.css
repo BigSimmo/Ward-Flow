@@ -288,12 +288,14 @@
 .kpiCard {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-bottom-color: var(--line-strong);
+  border-top: 3px solid var(--line-strong);
   border-radius: var(--r2);
   box-shadow: var(--lift);
-  padding: 12px 16px;
-  display: grid;
-  gap: 4px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease;
@@ -304,33 +306,83 @@
   box-shadow: var(--e2);
 }
 
-.kpiCard[data-tone="accent"] .kpiVal {
-  color: var(--accent-ink);
+.kpiCard[data-tone="accent"] {
+  border-top-color: var(--accent);
 }
 
-.kpiCard[data-tone="good"] .kpiVal {
-  color: var(--good);
+.kpiCard[data-tone="good"] {
+  border-top-color: var(--good);
 }
 
-.kpiCard[data-tone="warn"] .kpiVal {
-  color: var(--warn);
+.kpiCard[data-tone="warn"] {
+  border-top-color: var(--warn);
+}
+
+.kpiCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .kpiLabel {
   font-size: var(--t-0);
-  font-weight: 650;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   color: var(--muted);
 }
 
+.kpiPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--pill);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+}
+
+.kpiPillAccent {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent);
+}
+
+.kpiPillGood {
+  background: var(--good-soft);
+  color: var(--good);
+  border: 1px solid var(--good);
+}
+
+.kpiPillWarn {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+}
+
+.kpiValRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0;
+}
+
+.kpiLeadIcon {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
 .kpiVal {
-  font-family: var(--mono);
-  font-size: var(--t-5);
+  font-family: var(--display);
+  font-size: var(--t-4);
   font-weight: 700;
   color: var(--ink);
   margin: 0;
-  line-height: 1.15;
+  line-height: 1.25;
 }
 
 .kpiSub {
@@ -439,7 +491,7 @@
 .contentGrid {
   display: grid;
   min-width: 0;
-  grid-template-columns: minmax(0, 1.25fr) minmax(18rem, 0.75fr);
+  grid-template-columns: minmax(0, 1.35fr) minmax(16rem, 0.85fr);
   gap: var(--ward-space-16);
   align-items: stretch;
 }
@@ -514,6 +566,26 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.sectionHeaderMetaGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.rosterCountBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  font-size: var(--t-0);
+  font-weight: 600;
+  border-radius: var(--pill);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  font-family: var(--mono);
 }
 
 .sectionHeading {
@@ -595,20 +667,27 @@
 
 /* Table Styling */
 .tableWrap {
+  position: relative;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r2);
+  width: 100%;
 }
 
 .rosterTable {
   composes: table from "../ward-table/ward-table.module.css";
-  --ward-table-min-width: 52rem;
+  --ward-table-min-width: 44rem;
 }
 
 .edDirectoryTable {
   composes: table from "../ward-table/ward-table.module.css";
-  --ward-table-min-width: 48rem;
+  --ward-table-min-width: 42rem;
+}
+
+.actionColHeader {
+  text-align: right;
 }
 
 .edDirectoryTableWrapper {
@@ -618,6 +697,12 @@
 .roleCellTitle {
   font-weight: 600;
   color: var(--ink);
+}
+
+.siteCell {
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--ink-soft);
 }
 
 .monoCell {

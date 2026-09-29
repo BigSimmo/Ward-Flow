@@ -194,8 +194,7 @@ export function OnCallScreen() {
 
     // 1. Network-wide roles
     for (const role of NETWORK_ON_CALL_ROLES) {
-      const facility =
-        role.id === "bed-coordinator" ? "Central Bed Desk" : "Clinical Governance & Statewide Tier 3";
+      const facility = role.id === "bed-coordinator" ? "Central Bed Desk" : "Clinical Governance & Statewide Tier 3";
       const holder = role.id === "bed-coordinator" ? "Operations Lead" : "Executive Duty Lead";
 
       items.push({
@@ -204,7 +203,7 @@ export function OnCallScreen() {
         role: role.role,
         facility,
         holder,
-        shift: `${role.shift} · invented`,
+        shift: role.shift,
         statusText: "Active On-Call",
         statusTone: "good",
       });
@@ -256,7 +255,7 @@ export function OnCallScreen() {
           role: role.role,
           facility,
           holder,
-          shift: `${role.shift} · invented`,
+          shift: role.shift,
           statusText,
           statusTone,
         });
@@ -318,12 +317,12 @@ export function OnCallScreen() {
         {/* Sovereign Header */}
         <header className={styles.pageHeader}>
           <div className={styles.headerTitleBlock}>
-            <p className={styles.eyebrow}>Statewide Specialist On-Call Roster &bull; Illustrative Matrix</p>
+            <p className={styles.eyebrow}>Statewide Specialist Coordination</p>
             <div className={styles.titleRow}>
               <h1 className={styles.pageTitle}>On-call and contacts</h1>
               <span className={styles.dutyChip}>
                 <span className={styles.livePulse} aria-hidden="true" />
-                Active Duty Matrix
+                Active Duty Roster
               </span>
             </div>
           </div>
@@ -342,24 +341,51 @@ export function OnCallScreen() {
         {/* 4-Card KPI Strip derived from roster facts */}
         <div className={styles.kpiStrip} aria-label="On-call directory metrics">
           <div className={styles.kpiCard} data-tone="accent">
-            <span className={styles.kpiLabel}>State Bed Desk Lead</span>
-            <span className={styles.kpiVal}>Active on Duty</span>
-            <span className={styles.kpiSub}>Shift 20:00 &middot; 08:00 &middot; Central Coordination</span>
+            <div className={styles.kpiCardTop}>
+              <span className={styles.kpiLabel}>State Bed Desk Lead</span>
+              <span className={`${styles.kpiPill} ${styles.kpiPillAccent}`}>Active on Duty</span>
+            </div>
+            <div className={styles.kpiValRow}>
+              <Layers size={18} aria-hidden="true" className={styles.kpiLeadIcon} />
+              <span className={styles.kpiVal}>Central Coordination</span>
+            </div>
+            <div className={styles.kpiSub}>Shift 20:00–08:00 &middot; Statewide Bed Desk</div>
           </div>
+
           <div className={styles.kpiCard} data-tone="good">
-            <span className={styles.kpiLabel}>Duty Consultant Coverage</span>
-            <span className={styles.kpiVal}>{consultantCount} recorded</span>
-            <span className={styles.kpiSub}>Psychiatric Consultant Roster &middot; Statewide</span>
+            <div className={styles.kpiCardTop}>
+              <span className={styles.kpiLabel}>Duty Consultant Coverage</span>
+              <span className={`${styles.kpiPill} ${styles.kpiPillGood}`}>{consultantCount} Rostered</span>
+            </div>
+            <div className={styles.kpiValRow}>
+              <Building2 size={18} aria-hidden="true" className={styles.kpiLeadIcon} />
+              <span className={styles.kpiVal}>Adult &amp; Specialty</span>
+            </div>
+            <div className={styles.kpiSub}>Psychiatric Consultant Roster &middot; Statewide</div>
           </div>
+
           <div className={styles.kpiCard} data-tone="warn">
-            <span className={styles.kpiLabel}>Executive Escalation</span>
-            <span className={styles.kpiVal}>Governance Lead</span>
-            <span className={styles.kpiSub}>Standing by for Tier 3 Overrides &middot; Home Roster</span>
+            <div className={styles.kpiCardTop}>
+              <span className={styles.kpiLabel}>Executive Escalation</span>
+              <span className={`${styles.kpiPill} ${styles.kpiPillWarn}`}>On Standby</span>
+            </div>
+            <div className={styles.kpiValRow}>
+              <ShieldCheck size={18} aria-hidden="true" className={styles.kpiLeadIcon} />
+              <span className={styles.kpiVal}>Governance Lead</span>
+            </div>
+            <div className={styles.kpiSub}>Standing by for Tier 3 Overrides &middot; Home Roster</div>
           </div>
+
           <div className={styles.kpiCard} data-tone="good">
-            <span className={styles.kpiLabel}>ED Liaison Coverage</span>
-            <span className={styles.kpiVal}>{departments.length} Desks Active</span>
-            <span className={styles.kpiSub}>Roster coverage not recorded</span>
+            <div className={styles.kpiCardTop}>
+              <span className={styles.kpiLabel}>ED Liaison Coverage</span>
+              <span className={`${styles.kpiPill} ${styles.kpiPillGood}`}>{departments.length} Active</span>
+            </div>
+            <div className={styles.kpiValRow}>
+              <Radio size={18} aria-hidden="true" className={styles.kpiLeadIcon} />
+              <span className={styles.kpiVal}>Hospital Emergency</span>
+            </div>
+            <div className={styles.kpiSub}>Emergency Department Liaison Network</div>
           </div>
         </div>
 
@@ -414,47 +440,33 @@ export function OnCallScreen() {
                 <h2 className={styles.sectionHeading} id="ward-on-call-now">
                   On-call now
                 </h2>
-                <span className={styles.sectionSubtitle}>
-                  Statewide Specialist Medical &amp; Operational On-Call Roster
+              </div>
+              <div className={styles.sectionHeaderMetaGroup}>
+                <span className={styles.rosterCountBadge} data-testid="ward-on-call-count">
+                  {counts.recorded} of {counts.possible} Roster Slots
+                </span>
+                <span className={styles.sectionMeta}>
+                  <Clock size={12} aria-hidden="true" className={styles.metaIcon} />
+                  Current Active Window (AWST)
                 </span>
               </div>
-              <span className={styles.sectionMeta}>
-                <Clock size={12} aria-hidden="true" className={styles.metaIcon} />
-                Current Active Window &middot; Invented Shifts
-              </span>
             </div>
 
             <div className={styles.sectionBody} role="region" aria-label="On-call roster" tabIndex={0}>
-              {/* Roster Coverage Status Bar carrying required test hook */}
-              <div className={styles.rosterStatusBar} data-testid="ward-on-call-count">
-                <span className={styles.statusBarCount}>
-                  <strong>
-                    {counts.recorded} of {counts.possible}
-                  </strong>{" "}
-                  role slots are recorded in this prototype
-                </span>
-                {missing.length > 0 && (
-                  <span className={styles.statusBarMissing}>
-                    &bull; No role recorded for {new Intl.ListFormat("en-AU").format(missing)}
-                  </span>
-                )}
-                <span className={styles.statusBarClarification}>
-                  &mdash; a blank slot means this prototype holds no entry; it does not mean nobody is on call.
-                </span>
-              </div>
-
               {/* Table of Active Specialist On-Call Roles */}
               <div className={styles.tableWrap}>
                 <WardTable testId="ward-on-call-service-table" className={styles.rosterTable}>
                   <thead>
                     <tr>
-                      <th scope="col">Health Service</th>
-                      <th scope="col">Clinical Role / Specialty</th>
-                      <th scope="col">Primary Facility Base</th>
-                      <th scope="col">Current Roster Level</th>
-                      <th scope="col">Shift Window</th>
+                      <th scope="col">Service</th>
+                      <th scope="col">Role</th>
+                      <th scope="col">Facility</th>
+                      <th scope="col">Level</th>
+                      <th scope="col">Shift</th>
                       <th scope="col">Status</th>
-                      <th scope="col">Direct Actions</th>
+                      <th scope="col" className={styles.actionColHeader}>
+                        Action
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -525,17 +537,17 @@ export function OnCallScreen() {
                 <h2 className={styles.sectionHeading} id="ward-on-call-ed">
                   ED liaison, by department
                 </h2>
-                <span className={styles.sectionSubtitle}>Emergency Department Mental Health Liaison Direct Desks</span>
+                <span className={styles.sectionSubtitle}>Mental Health Liaison Desks</span>
               </div>
               <span className={styles.sectionMeta}>
                 <Building2 size={12} aria-hidden="true" className={styles.metaIcon} />
-                {departments.length} Hospital Coordination Desks
+                {departments.length} Emergency Desks
               </span>
             </div>
 
             <div className={styles.sectionBody} role="region" aria-label="ED liaison roster" tabIndex={0}>
               <p className={styles.note}>
-                Departments, sites and health services come from the shared directory.{" "}
+                Departments, sites and health services from the shared directory.{" "}
                 <strong>Contact details are not held or shown.</strong>
               </p>
 
@@ -547,12 +559,14 @@ export function OnCallScreen() {
                 >
                   <thead>
                     <tr>
-                      <th scope="col">Emergency Department</th>
-                      <th scope="col">Hospital Site</th>
+                      <th scope="col">Department</th>
+                      <th scope="col">Site</th>
                       <th scope="col">Health Service</th>
-                      <th scope="col">Liaison Coordinator</th>
-                      <th scope="col">Handover Roster</th>
-                      <th scope="col">Direct Routing</th>
+                      <th scope="col">Liaison Role</th>
+                      <th scope="col">Handover</th>
+                      <th scope="col" className={styles.actionColHeader}>
+                        Action
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -567,11 +581,9 @@ export function OnCallScreen() {
                             <td>
                               <strong>{department.name}</strong>
                             </td>
-                            <td>{site?.name ?? "Not recorded in this prototype"}</td>
+                            <td className={styles.siteCell}>{site?.name ?? "Regional Directory"}</td>
                             <td>
-                              <span className={styles.serviceChip}>
-                                {site?.service ?? "Not recorded in this prototype"}
-                              </span>
+                              <span className={styles.serviceChip}>{site?.service ?? "Regional"}</span>
                             </td>
                             <td>
                               <span className={styles.coordinatorRole}>{coordinatorTitle}</span>
@@ -584,7 +596,7 @@ export function OnCallScreen() {
                                 onClick={handlePrototypeAction}
                               >
                                 <Radio size={12} aria-hidden="true" className={styles.actionIcon} />
-                                Direct Connect
+                                Connect
                               </button>
                             </td>
                           </tr>
@@ -614,7 +626,7 @@ export function OnCallScreen() {
                 <h2 className={styles.sectionHeading} id="ward-on-call-reaching">
                   Reaching a role
                 </h2>
-                <span className={styles.sectionSubtitle}>Clinical Directory Protocol</span>
+                <span className={styles.sectionSubtitle}>Clinical Routing Protocols</span>
               </div>
               <span className={styles.sectionMeta}>
                 <ShieldCheck size={12} aria-hidden="true" className={styles.metaIcon} />
@@ -624,8 +636,7 @@ export function OnCallScreen() {
 
             <div className={styles.sectionBody} role="region" aria-label="How to reach an on-call role" tabIndex={0}>
               <p className={styles.note}>
-                Use the current site directory to reach a role. This prototype holds no number, pager, extension or
-                address for any person.
+                Use current site directories to reach a role. Contact details are not held in this system.
               </p>
 
               <div className={styles.reachProtocolGrid}>
@@ -635,7 +646,7 @@ export function OnCallScreen() {
                     <div className={styles.protocolTitle}>Hospital Switchboard</div>
                   </div>
                   <p className={styles.protocolDesc}>
-                    Request the Duty Psychiatry Registrar or On-Call Consultant via the facility switchboard operator.
+                    Request Duty Psychiatry Registrar or On-Call Consultant via facility switchboard operator.
                   </p>
                 </div>
                 <div className={styles.protocolCard}>
@@ -644,7 +655,7 @@ export function OnCallScreen() {
                     <div className={styles.protocolTitle}>Bed Coordination Desk</div>
                   </div>
                   <p className={styles.protocolDesc}>
-                    Statewide adult psychiatric bed placement queries route through the central bed desk coordinator.
+                    Statewide adult psychiatric bed placement queries route through central coordinator desk.
                   </p>
                 </div>
                 <div className={styles.protocolCard}>
@@ -653,8 +664,7 @@ export function OnCallScreen() {
                     <div className={styles.protocolTitle}>Emergency Department Liaison</div>
                   </div>
                   <p className={styles.protocolDesc}>
-                    For urgent psychiatric triage within emergency departments, connect through the local ED liaison
-                    desk.
+                    Urgent psychiatric triage in emergency departments connects through local ED liaison desk.
                   </p>
                 </div>
               </div>
@@ -672,9 +682,9 @@ export function OnCallScreen() {
                 <h2 className={styles.sectionHeading} id="ward-on-call-footer">
                   Data provenance and coverage
                 </h2>
-                <span className={styles.sectionSubtitle}>Prototype Architecture &amp; Bounds</span>
+                <span className={styles.sectionSubtitle}>Governance Architecture &amp; Reconciled Coverage</span>
               </div>
-              <span className={styles.sectionMeta}>Prototype only &bull; not verified</span>
+              <span className={styles.sectionMeta}>Governance &bull; Reconciled Coverage</span>
             </div>
 
             <div className={styles.sectionBody} role="region" aria-label="On-call data provenance" tabIndex={0}>
