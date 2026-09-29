@@ -27,6 +27,18 @@
   --surface-3: var(--sunk);
 }
 
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .main {
   grid-column: auto;
   display: flex;
@@ -101,10 +113,84 @@
 .pageHeader {
   display: flex;
   min-width: 0;
-  align-items: end;
+  flex-direction: column;
+  gap: var(--ward-space-12, 0.75rem);
+}
+
+.pageActionBar {
+  display: flex;
   justify-content: space-between;
-  gap: var(--ward-space-16, 1rem);
+  align-items: center;
+  gap: 1rem;
   flex-wrap: wrap;
+  width: 100%;
+}
+
+.statutoryNoticeCard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.875rem;
+  background: color-mix(in srgb, var(--surface) 90%, var(--warn) 10%);
+  border: 1px solid color-mix(in srgb, var(--warn) 60%, var(--line));
+  border-left: 3px solid var(--warn);
+  border-radius: var(--r1);
+  box-shadow: var(--lift);
+  flex: 1 1 auto;
+  max-width: 52rem;
+}
+
+.statutoryNoticeIcon {
+  color: var(--warn);
+  flex-shrink: 0;
+}
+
+.statutoryNoticeContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.statutoryNoticeTitle {
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.recordFormPrimaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: var(--ward-tap, 44px);
+  padding: 0.5rem 1.125rem;
+  background: var(--ink);
+  color: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r1);
+  font-size: var(--t-1);
+  font-weight: 650;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.recordFormPrimaryBtn:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  transform: translateY(-1px);
 }
 
 .pageHeaderTop {
@@ -203,23 +289,51 @@
 
 /* ── Recorded-form alert banner ── */
 .formAlertBanner {
-  background: var(--danger-soft);
+  background: color-mix(in srgb, var(--surface) 94%, var(--danger) 6%);
   border: 1px solid var(--danger);
+  border-left: 4px solid var(--danger);
   border-radius: var(--r1);
-  padding: 0.75rem 1rem;
+  padding: 0.875rem 1.125rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 1rem;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--danger) 15%, transparent);
 }
 
 .formAlertBannerContent {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.875rem;
   flex: 1 1 25rem;
   min-width: 0;
+}
+
+.alertIconBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--r2);
+  background: var(--danger);
+  color: var(--on-accent);
+  flex-shrink: 0;
+}
+
+.alertTextStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.alertTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .formAlertBadge {
@@ -227,13 +341,21 @@
   align-items: center;
   background: var(--danger);
   color: var(--on-accent);
-  padding: 0.2rem 0.5rem;
+  padding: 0.15rem 0.5rem;
   border-radius: var(--r2);
   font-weight: 700;
   font-size: var(--t-0);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   flex-shrink: 0;
+}
+
+.alertTimeTag {
+  font-size: var(--t-0);
+  font-weight: 700;
+  color: var(--danger);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .formAlertBannerText {
@@ -245,10 +367,20 @@
   font-variant-numeric: tabular-nums;
 }
 
+.reauthoriseBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: var(--ward-tap, 44px);
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 /* ── Recorded-form KPI cards strip ── */
 .formKpiStrip {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.75rem;
 }
 
@@ -258,9 +390,28 @@
   border-bottom-color: var(--line-strong);
   border-radius: var(--r1);
   box-shadow: var(--lift);
-  padding: 0.75rem 1rem;
-  display: grid;
-  gap: 0.25rem;
+  padding: 0.75rem 0.875rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.kpiCard:hover {
+  border-color: var(--accent);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.kpiCardActive {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 2px var(--accent-soft),
+    var(--lift);
+  background: color-mix(in srgb, var(--surface) 96%, var(--accent) 4%);
 }
 
 .kpiCard[data-tone="danger"] .kpiVal {
@@ -521,9 +672,20 @@
 
 @media (min-width: 68.0625rem) {
   .registryLayout {
-    grid-template-columns: 310px minmax(0, 1fr);
+    grid-template-columns: 320px minmax(0, 1fr);
     gap: 1.25rem;
     align-items: start;
+  }
+
+  .leftColumn {
+    position: sticky;
+    top: 1rem;
+    align-self: start;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    padding-right: 0.25rem;
   }
 
   .authorityCardSection {
@@ -599,6 +761,144 @@
     background: var(--accent-soft);
     box-shadow: inset 0 0 0 1.5px var(--accent);
   }
+}
+
+/* ── Breakdown Container & Cards (Elevated Image 3) ── */
+.breakdownContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.breakdownGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.breakdownRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  gap: 0.5rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.breakdownRow:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.breakdownRow[data-breached="true"] {
+  border-color: color-mix(in srgb, var(--danger) 50%, transparent);
+  background: color-mix(in srgb, var(--surface) 95%, var(--danger) 5%);
+}
+
+.breakdownHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.breakdownCode {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: var(--t-0);
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 0.1rem 0.375rem;
+  border-radius: var(--r2);
+  flex-shrink: 0;
+}
+
+.breakdownFormName {
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.breakdownMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+
+.breakdownCount {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.breakdownBreachPill {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--danger);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+  padding: 0.05rem 0.35rem;
+  border-radius: var(--pill, 9999px);
+}
+
+/* ── Bounded Orders Scroll Container ── */
+.ordersScrollContainer {
+  max-height: min(700px, calc(100vh - 280px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.25rem;
+  scrollbar-width: thin;
+}
+
+.ordersScrollContainer::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ordersScrollContainer::-webkit-scrollbar-track {
+  background: var(--surface-2);
+  border-radius: 9999px;
+}
+
+.ordersScrollContainer::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 9999px;
+}
+
+/* ── Shortened Scope Summary (Image 5) ── */
+.scopeSummaryBanner {
+  padding: 0.625rem 1rem;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.scopeSummaryText {
+  margin: 0;
+  font-size: var(--t-0);
+  line-height: 1.4;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.scopePrimary {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.scopeDetails {
+  color: var(--muted);
 }
 
 .primary {
@@ -1166,14 +1466,108 @@
   flex: 1 1 auto;
 }
 
-/* Dossier Card Inside Drawer */
-.dossierCard {
+/* ── Patient Identity Hero in Dossier ── */
+.dossierPatientHero {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--r1);
-  padding: 1rem;
+  box-shadow: var(--lift);
+}
+
+.dossierAvatar {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--pill, 9999px);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-ink) 100%);
+  color: var(--on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: var(--t-1);
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.dossierPatientMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.dossierPatientName {
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.dossierPatientTags {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.dossierUmrnBadge {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--r2);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.dossierStatusChip {
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--r2);
+}
+
+.dossierCountdownBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--r2);
+  font-size: var(--t-0);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.dossierCountdownBanner[data-breached="true"] {
+  background: var(--danger-soft);
+  color: var(--danger-ink, var(--danger));
+  border: 1px solid var(--danger);
+}
+
+.dossierCountdownBanner[data-breached="false"] {
+  background: var(--good-soft);
+  color: var(--good);
+  border: 1px solid var(--good);
+}
+
+/* Dossier Card Inside Drawer */
+.dossierCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  padding: 1.125rem;
   display: grid;
-  gap: 0.875rem;
+  gap: 1rem;
+  box-shadow: var(--lift);
 }
 
 .dossierCardHead {
