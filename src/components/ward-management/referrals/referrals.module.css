@@ -32,7 +32,6 @@
   --ri-two-col-breakpoint: 40rem;
 
   display: block;
-  min-height: 100dvh;
   /* ⚠️ NO `background` HERE, DELIBERATELY, AND THIS FILE IS THE ONE THAT PREDICTED WHY IT WOULD BE
      RISKY. It was painting `var(--surface)` straight over `--ward-ground`, which `WardGround`
      (`ward-shell.module.css`) paints on a real DOM ancestor of this page's `<main>` — the defect
@@ -2858,10 +2857,60 @@ input.historyField:focus-visible {
 .toolbarSubRow {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
   gap: 0.75rem 1rem;
   width: 100%;
   padding-top: 0.375rem;
+}
+
+.toolbarSubLeft {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  flex: 1 1 auto;
+}
+
+.toolbarSubRight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.toolbarCohortStatus {
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  padding: 0.2rem 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  white-space: nowrap;
+}
+
+.toolbarResetBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--r2, 6px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--accent);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.toolbarResetBtn:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
 }
 
 .searchWrap {
@@ -2984,12 +3033,13 @@ input.historyField:focus-visible {
 .clinicalCard {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin: 0.5rem 0 0.875rem;
-  padding: 0.875rem 1rem;
+  gap: 0.5rem;
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.625rem 0.875rem;
   border: 1px solid var(--line);
   border-radius: var(--r1, 10px);
-  background: var(--surface-2);
+  background: var(--surface);
+  box-shadow: var(--lift, 0 1px 3px rgba(0, 0, 0, 0.05));
 }
 
 .clinicalCardHeader {
@@ -3002,36 +3052,45 @@ input.historyField:focus-visible {
 
 .clinicalTitle {
   margin: 0;
-  font-size: var(--t-1);
+  font-size: var(--t-0, 0.75rem);
   font-weight: 700;
   color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .clinicalOriginBadge {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.625rem;
+  padding: 0.15rem 0.5rem;
   border-radius: 9999px;
-  font-size: var(--t-0);
+  font-size: var(--t-0, 0.75rem);
   font-weight: 600;
-  background: var(--surface);
+  background: var(--surface-2);
   border: 1px solid var(--line);
-  color: var(--accent-ink);
+  color: var(--ink);
+}
+
+.synopsisBox {
+  padding: 0.45rem 0.625rem;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--surface-2);
+  border-left: 3px solid var(--accent);
 }
 
 .synopsisText {
   margin: 0;
-  font-size: var(--t-0);
-  line-height: 1.5;
+  font-size: 0.8125rem;
+  line-height: 1.45;
   color: var(--ink);
 }
 
 .clinicalMetaGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-  gap: 0.625rem;
-  padding: 0.75rem;
-  background: var(--surface);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem 0.75rem;
+  padding: 0.5rem 0.625rem;
+  background: var(--surface-2);
   border-radius: var(--radius-sm, 6px);
   border: 1px solid var(--line);
 }
@@ -3039,7 +3098,7 @@ input.historyField:focus-visible {
 .clinicalMetaItem {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: 0.1rem;
 }
 
 .metaLabel {
@@ -3051,7 +3110,7 @@ input.historyField:focus-visible {
 }
 
 .metaValue {
-  font-size: var(--t-0);
+  font-size: 0.8125rem;
   font-weight: 500;
   color: var(--ink);
 }
@@ -3059,16 +3118,16 @@ input.historyField:focus-visible {
 .clinicalBadges {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.375rem;
+  gap: 0.35rem;
   align-items: center;
 }
 
 .acuityBadge {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.625rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 4px;
-  font-size: var(--t-0);
+  font-size: var(--t-0, 0.75rem);
   font-weight: 600;
   background: var(--danger-soft);
   color: var(--danger-ink);
@@ -3078,9 +3137,9 @@ input.historyField:focus-visible {
 .legalBadge {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.625rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 4px;
-  font-size: var(--t-0);
+  font-size: var(--t-0, 0.75rem);
   font-weight: 600;
   background: var(--accent-soft);
   color: var(--accent-ink);
@@ -3090,9 +3149,9 @@ input.historyField:focus-visible {
 .secureBadge {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.625rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 4px;
-  font-size: var(--t-0);
+  font-size: var(--t-0, 0.75rem);
   font-weight: 600;
   background: var(--warn-soft);
   color: var(--warn);
@@ -3102,32 +3161,54 @@ input.historyField:focus-visible {
 .transportBadge {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.625rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 4px;
-  font-size: var(--t-0);
+  font-size: var(--t-0, 0.75rem);
   font-weight: 600;
   background: var(--good-soft);
   color: var(--good);
   border: 1px solid var(--good);
 }
 
+.statutoryCompact {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-sm, 4px);
+  background: var(--surface-2);
+  border: 1px dashed var(--line);
+  font-size: 0.75rem;
+}
+
+.statutoryCompactLabel {
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.statutoryCompactValue {
+  color: var(--ink-soft);
+}
+
 .statutoryCard {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
-  padding: 0.75rem 0.875rem;
-  border: 1px solid var(--line-strong);
+  gap: 0.35rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--accent);
   border-radius: var(--radius-sm, 6px);
-  background: var(--surface);
+  background: var(--accent-soft);
 }
 
 .statutoryHeader {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: var(--t-0);
+  gap: 0.375rem;
+  font-size: var(--t-0, 0.75rem);
   font-weight: 700;
-  color: var(--ink);
+  color: var(--accent-ink);
 }
 
 .statutoryIcon {
@@ -3137,8 +3218,8 @@ input.historyField:focus-visible {
 
 .statutoryText {
   margin: 0;
-  font-size: var(--t-0);
-  color: var(--ink-soft);
+  font-size: 0.75rem;
+  color: var(--ink);
   line-height: 1.4;
 }
 
@@ -3331,42 +3412,72 @@ input.historyField:focus-visible {
   gap: 0.75rem;
   border: 1px solid var(--line);
   border-radius: var(--r1, 10px);
-  background: var(--surface-2);
+  background: var(--surface);
   padding: 0.625rem 0.875rem;
   margin-bottom: 0.5rem;
-  box-shadow: 0 4px 6px -1px color-mix(in srgb, var(--ink) 4%, transparent), 0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
-}
-
-.ph {
-  box-shadow: 0 4px 6px -1px color-mix(in srgb, var(--ink) 4%, transparent), 0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
+  box-shadow: var(--lift, 0 1px 3px rgba(0, 0, 0, 0.05));
 }
 
 .inspectorHeaderLeft {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
+  gap: 0.5rem;
   min-width: 0;
   flex: 1 1 auto;
   flex-wrap: wrap;
 }
 
 .inspectorId {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm, 4px);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
   color: var(--ink);
   font-family: var(--mono);
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   font-weight: 700;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.inspectorPatientName {
+  font-weight: 700;
+  font-size: 1.0625rem;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.inspectorUmrn {
+  font-size: var(--t-0, 0.75rem);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+.inspectorUrgencyGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
 }
 
 .inspectorTier {
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-sm, 0.25rem);
-  background: var(--surface);
+  background: var(--surface-2);
   padding: 0.15rem 0.45rem;
   color: var(--accent-ink);
-  font-size: var(--t-0);
+  font-size: var(--t-0, 0.75rem);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .inspectorHeaderActions {
@@ -3410,7 +3521,10 @@ input.historyField:focus-visible {
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .jumpToWardBtn:hover {
@@ -3454,13 +3568,20 @@ input.historyField:focus-visible {
   border: 1px solid var(--line);
   border-radius: var(--r1, 10px);
   background: var(--surface);
-  padding: 0.75rem 0.875rem;
+  padding: 0.625rem 0.875rem;
   margin-bottom: 0.5rem;
   box-shadow: var(--lift);
 }
 
+.timelineHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
 .timelineHeading {
-  margin: 0 0 0.625rem 0;
+  margin: 0;
   color: var(--ink);
   font-size: var(--t-0);
   font-weight: 700;
@@ -3468,9 +3589,24 @@ input.historyField:focus-visible {
   letter-spacing: 0.05em;
 }
 
+.timelineSummaryClock {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-sm, 4px);
+  background: var(--surface-2, #f1f5f9);
+  color: var(--ink-soft, #475569);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--line, #e2e8f0);
+}
+
 .timelineList {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.625rem;
   margin: 0;
   padding: 0;
@@ -3606,11 +3742,209 @@ input.historyField:focus-visible {
 
 .screen[data-referral-view="register"] .cardSelectButton,
 .screen[data-referral-view="register"] .cardSelectButtonSelected {
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   min-height: 4.5rem;
-  gap: 0.35rem 1rem;
+  gap: 0.375rem;
   border-radius: 0;
   padding: 0.75rem 0.875rem;
+  width: 100%;
+  border: none;
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.screen[data-referral-view="register"] .cardSelectButton:hover {
+  background: var(--surface-2);
+}
+
+.screen[data-referral-view="register"] .cardSelectButtonSelected {
+  background: var(--accent-soft);
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+  border-left: 3.5px solid var(--accent);
+  padding-left: calc(0.875rem - 3.5px);
+}
+
+.cardHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.cardIdGroup {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.cardIdBadge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.patientCardName {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.patientCardUmrn {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.cardTierGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+
+.cardPriorityBadge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  line-height: 1.2;
+}
+
+.cardPriorityBadge[data-priority="Emergency"],
+.cardPriorityBadge[data-priority="urgent"] {
+  background: var(--ward-danger-soft, #fee2e2);
+  color: var(--ward-danger, #b91c1c);
+  border: 1px solid var(--danger-border, #fca5a5);
+}
+
+.cardPriorityBadge[data-priority="Routine"] {
+  background: var(--surface-2, #f1f5f9);
+  color: var(--ink-soft, #475569);
+  border: 1px solid var(--line, #e2e8f0);
+}
+
+.cardContextRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  width: 100%;
+}
+
+.bedAssignedBadge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--ward-success, #15803d);
+  background: var(--ward-success-soft, #dcfce7);
+  border: 1px solid var(--success-border, #86efac);
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  line-height: 1.2;
+}
+
+.bedUnassignedBadge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--ward-warning, #b45309);
+  background: var(--ward-warning-soft, #fef3c7);
+  border: 1px solid var(--warning-border, #fde68a);
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  line-height: 1.2;
+}
+
+.cardRouteRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  width: 100%;
+}
+
+.cardRouteOrigin {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.cardRouteArrow {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.8125rem;
+}
+
+.cardRouteDestination {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.cardRefusals {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--ward-danger, #b91c1c);
+  background: var(--ward-danger-soft, #fee2e2);
+  border: 1px solid var(--danger-border, #fca5a5);
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  margin-top: 0.25rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.decidedOutcomeBadge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  line-height: 1.2;
+}
+
+.decidedOutcomeBadge[data-outcome="admitted"] {
+  background: var(--ward-success-soft, #dcfce7);
+  color: var(--ward-success, #15803d);
+  border: 1px solid var(--success-border, #86efac);
+}
+
+.decidedOutcomeBadge[data-outcome="declined"] {
+  background: var(--ward-danger-soft, #fee2e2);
+  color: var(--ward-danger, #b91c1c);
+  border: 1px solid var(--danger-border, #fca5a5);
 }
 
 .screen[data-referral-view="register"] .cardTop {
@@ -3634,27 +3968,22 @@ input.historyField:focus-visible {
 }
 
 .screen[data-referral-view="register"] .waitBadge {
-  grid-column: 2;
-  grid-row: 1;
   align-self: center;
-  border: 0;
-  background: transparent;
-  padding: 0;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
   color: var(--ink-soft);
   font-family: var(--mono);
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .screen[data-referral-view="register"] .cardService {
   grid-column: 1 / -1;
   color: var(--muted);
   font-size: var(--t-1);
-}
-
-.screen[data-referral-view="register"] .cardSelectButtonSelected {
-  background: var(--accent-soft);
-  outline: 1px solid var(--accent);
-  outline-offset: -1px;
 }
 
 .screen[data-referral-view="register"] .cardBody {
@@ -3818,13 +4147,11 @@ input.historyField:focus-visible {
 @media (max-width: 32rem) {
   .screen[data-referral-view="register"] .cardSelectButton,
   .screen[data-referral-view="register"] .cardSelectButtonSelected {
-    grid-template-columns: minmax(0, 1fr);
+    padding: 0.625rem 0.75rem;
   }
 
-  .screen[data-referral-view="register"] .waitBadge {
-    grid-column: 1;
-    grid-row: auto;
-    justify-self: start;
+  .cardHeaderRow {
+    gap: 0.375rem;
   }
 }
 
@@ -4807,4 +5134,25 @@ input.historyField:focus-visible {
   height: 6px;
   border-radius: var(--pill);
   background: currentColor;
+}
+
+.suburbFilterWrap {
+  margin-bottom: var(--ward-space-8);
+}
+
+.suburbFilterInput {
+  width: 100%;
+  min-height: var(--ward-tap);
+  border: 0.0625rem solid var(--ward-border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: 0 var(--ward-space-10);
+  color: var(--ink);
+  font-size: var(--t-0);
+  font-weight: 400;
+}
+
+.suburbFilterInput:focus-visible {
+  outline: 0.125rem solid var(--focus);
+  outline-offset: 0.125rem;
 }
