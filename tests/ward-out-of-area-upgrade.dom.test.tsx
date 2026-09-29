@@ -232,4 +232,58 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     expect(facts).toBeInTheDocument();
     expect(facts).toHaveTextContent("AD-ALBA-01");
   });
+
+  it("renders patient name and interactive UMRN links in table rows and headers", () => {
+    renderBoard();
+    const table = screen.getByTestId("ward-out-of-area-table");
+    expect(within(table).getByText("Patient")).toBeInTheDocument();
+
+    const first = entries[0];
+    const row = screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`);
+    expect(row).toBeInTheDocument();
+
+    const link = within(row).getByRole("link");
+    expect(link).toHaveAttribute("href", expect.stringMatching(/^\/mockups\/ward-flow\/(people|search)/));
+    expect(link.textContent).toMatch(/UM\d+|UMRN/);
+  });
+
+  it("renders patient name and UMRN link in mobile cards", () => {
+    renderBoard();
+    const cards = screen.getByTestId("ward-out-of-area-cards");
+    const first = entries[0];
+    const card = within(cards).getByTestId(`ward-out-of-area-card-${first.admission.id}`);
+    expect(card).toBeInTheDocument();
+
+    const link = within(card).getByRole("link");
+    expect(link).toHaveAttribute("href", expect.stringMatching(/^\/mockups\/ward-flow\/(people|search)/));
+  });
+
+  it("renders patient name and interactive UMRN link in the case inspector when a case is selected", () => {
+    renderBoard();
+    const first = entries[0];
+    fireEvent.click(screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`));
+
+    const facts = screen.getByTestId("ward-out-of-area-subject-facts");
+    const link = within(facts).getByRole("link");
+    expect(link).toHaveAttribute("href", expect.stringMatching(/^\/mockups\/ward-flow\/(people|search)/));
+    expect(link.textContent).toMatch(/UM\d+|UMRN/);
+  });
+
+  it("filters placements when searching by patient name or UMRN", () => {
+    renderBoard();
+    const searchInput = screen.getByLabelText(/Filter out-of-area placements/i);
+    const first = entries[0];
+    const row = screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`);
+    const link = within(row).getByRole("link");
+    const umrn = link.textContent?.trim() ?? "";
+
+    if (umrn && umrn.startsWith("UM")) {
+      fireEvent.change(searchInput, { target: { value: umrn } });
+      expect(screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`)).toBeInTheDocument();
+      const other = entries.find((e) => e.admission.id !== first.admission.id);
+      if (other) {
+        expect(screen.queryByTestId(`ward-out-of-area-row-${other.admission.id}`)).not.toBeInTheDocument();
+      }
+    }
+  });
 });

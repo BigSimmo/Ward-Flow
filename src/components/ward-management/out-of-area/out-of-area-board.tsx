@@ -2,6 +2,7 @@
 /* eslint-disable jsx-a11y/role-supports-aria-props */
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 
 import { daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -14,6 +15,7 @@ import {
   type TransportLegalStatus,
   type TransportProvider,
 } from "@/components/ward-management/ward-model";
+import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
 import { siteByCode, wardSites } from "@/components/ward-management/ward-sites";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
@@ -205,9 +207,24 @@ function repatriationBlockedReason(
   return `Before recording, ${missing.join(", ")}. None is filled in for you.`;
 }
 
+function getPatientProfileHref(info: ResolvedPatientInfo): string | null {
+  if (info.patient?.id) {
+    return `/mockups/ward-flow/people/${encodeURIComponent(info.patient.id)}`;
+  }
+  if (info.umrn && info.umrn !== "UMRN not recorded") {
+    return `/mockups/ward-flow/search?q=${encodeURIComponent(info.umrn)}`;
+  }
+  return null;
+}
+
 export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
-  const { units, admissions: liveAdmissions, dispatch } = useWardFlow();
+  const { units, admissions: liveAdmissions, patients, referrals, movements, dispatch } = useWardFlow();
   const now = useWardFlowClock();
+
+  const resolvePatient = (admission: Admission): ResolvedPatientInfo => {
+    return resolveSubjectPatient(admission, { patients, referrals, movements });
+  };
+
   const { entries, notBanded } = outOfAreaLedger(admissions ?? liveAdmissions, units, now);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = selectedId ? entries.find((entry) => entry.admission.id === selectedId) : undefined;
@@ -288,12 +305,16 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     if (searchQuery.trim().length > 0) {
       const q = searchQuery.toLowerCase().trim();
       const site = siteByCode(entry.unit.siteCode);
+      const patientInfo = resolvePatient(entry.admission);
       const matchesId = entry.admission.id.toLowerCase().includes(q);
+      const matchesName =
+        patientInfo.displayName.toLowerCase().includes(q) || patientInfo.formalName.toLowerCase().includes(q);
+      const matchesUmrn = patientInfo.umrn.toLowerCase().includes(q);
       const matchesRegion = (entry.admission.homeRegion ?? "").toLowerCase().includes(q);
       const matchesUnit = entry.unit.name.toLowerCase().includes(q);
       const matchesSite = (site?.name ?? "").toLowerCase().includes(q);
       const matchesService = (site?.service ?? "").toLowerCase().includes(q);
-      return matchesId || matchesRegion || matchesUnit || matchesSite || matchesService;
+      return matchesId || matchesName || matchesUmrn || matchesRegion || matchesUnit || matchesSite || matchesService;
     }
     return true;
   });
@@ -462,7 +483,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                   <input
                     type="text"
                     inputMode="search"
-                    placeholder="Filter by ID, catchment region, or hospital unit..."
+                    placeholder="Filter by patient, UMRN, ID, catchment, or unit..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     aria-label="Filter out-of-area placements"
@@ -569,6 +590,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                       >
                         <thead>
                           <tr>
+                            <th scope="col">Patient</th>
                             <th scope="col">Home region</th>
                             <th scope="col">Unit</th>
                             <th scope="col">Travel time</th>
@@ -580,6 +602,9 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                           {filteredEntries.map((entry) => {
                             const site = siteByCode(entry.unit.siteCode);
                             const tone = entry.band === "air_transport_only" ? "danger" : "warn";
+                            const patientInfo = resolvePatient(entry.admission);
+                            const profileHref = getPatientProfileHref(patientInfo);
+
                             return (
                               <tr
                                 key={entry.admission.id}
@@ -591,7 +616,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                 }
                                 aria-selected={entry.admission.id === selectedId}
                                 tabIndex={0}
-                                aria-label={`View placement detail for ${entry.admission.homeRegion} in ${entry.unit.name}`}
+                                aria-label={`View placement detail for ${patientInfo.displayName} (${patientInfo.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
                                 onClick={() => setSelectedId(entry.admission.id)}
                                 onKeyDown={(event) => {
                                   if (event.key === "Enter" || event.key === " ") {
@@ -600,6 +625,25 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                   }
                                 }}
                               >
+                                <td>
+                                  <div className={pageStyles.patientNameCell}>
+                                    <strong>{patientInfo.displayName}</strong>
+                                  </div>
+                                  <div className={pageStyles.patientMetaCell}>
+                                    {profileHref ? (
+                                      <Link
+                                        href={profileHref}
+                                        className={pageStyles.umrnLink}
+                                        onClick={(e) => e.stopPropagation()}
+                                        title={`Open profile for ${patientInfo.displayName} (${patientInfo.umrn})`}
+                                      >
+                                        {patientInfo.umrn}
+                                      </Link>
+                                    ) : (
+                                      <span className={pageStyles.unrecordedUmrn}>{patientInfo.umrn}</span>
+                                    )}
+                                  </div>
+                                </td>
                                 <td>
                                   <div>
                                     <strong>{entry.admission.homeRegion}</strong>
@@ -642,6 +686,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                       {filteredEntries.map((entry) => {
                         const site = siteByCode(entry.unit.siteCode);
                         const tone = entry.band === "air_transport_only" ? "danger" : "warn";
+                        const patientInfo = resolvePatient(entry.admission);
+                        const profileHref = getPatientProfileHref(patientInfo);
 
                         return (
                           <li
@@ -655,7 +701,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                             aria-selected={entry.admission.id === selectedId}
                             tabIndex={0}
                             role="button"
-                            aria-label={`View placement detail for ${entry.admission.homeRegion} in ${entry.unit.name}`}
+                            aria-label={`View placement detail for ${patientInfo.displayName} (${patientInfo.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
                             onClick={() => setSelectedId(entry.admission.id)}
                             onKeyDown={(event) => {
                               if (event.key === "Enter" || event.key === " ") {
@@ -666,6 +712,21 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                           >
                             <div className={pageStyles.recordTop}>
                               <div>
+                                <div className={pageStyles.recordPatientRow}>
+                                  <span className={pageStyles.recordPatientName}>{patientInfo.displayName}</span>
+                                  {profileHref ? (
+                                    <Link
+                                      href={profileHref}
+                                      className={pageStyles.umrnLink}
+                                      onClick={(e) => e.stopPropagation()}
+                                      title={`Open profile for ${patientInfo.displayName} (${patientInfo.umrn})`}
+                                    >
+                                      {patientInfo.umrn}
+                                    </Link>
+                                  ) : (
+                                    <span className={pageStyles.unrecordedUmrn}>{patientInfo.umrn}</span>
+                                  )}
+                                </div>
                                 <p className={`${styles.cardUnit} ${pageStyles.recordUnit}`}>{entry.unit.name}</p>
                                 <p className={pageStyles.recordSite}>
                                   {site?.service ?? "Health service not recorded"} &bull;{" "}
@@ -780,32 +841,56 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                       </div>
                     </div>
 
-                    {maxDaysEntry && (
-                      <div className={pageStyles.defaultSection}>
-                        <span className={pageStyles.detailLabel}>Priority Case (Longest Out-of-Area)</span>
-                        <div className={pageStyles.longestCaseBox}>
-                          <div className={pageStyles.longestCaseHead}>
-                            <strong className={`${pageStyles.mono} ${pageStyles.longestCaseId}`}>
-                              {maxDaysEntry.admission.id}
-                            </strong>
-                            <span className={`${pageStyles.badge} ${pageStyles.mono}`} data-tone="accent">
-                              {longestDays}
-                            </span>
+                    {maxDaysEntry &&
+                      (() => {
+                        const longestPatientInfo = resolvePatient(maxDaysEntry.admission);
+                        const longestProfileHref = getPatientProfileHref(longestPatientInfo);
+                        return (
+                          <div className={pageStyles.defaultSection}>
+                            <span className={pageStyles.detailLabel}>Priority Case (Longest Out-of-Area)</span>
+                            <div className={pageStyles.longestCaseBox}>
+                              <div className={pageStyles.longestCaseHead}>
+                                <div className={pageStyles.longestCaseIdentity}>
+                                  <span className={pageStyles.longestCasePatientName}>
+                                    {longestPatientInfo.displayName}
+                                  </span>
+                                  <div className={pageStyles.longestCaseIdRow}>
+                                    {longestProfileHref ? (
+                                      <Link
+                                        href={longestProfileHref}
+                                        className={pageStyles.inspectorUmrnLink}
+                                        title={`Open profile for ${longestPatientInfo.displayName} (${longestPatientInfo.umrn})`}
+                                      >
+                                        {longestPatientInfo.umrn}
+                                      </Link>
+                                    ) : (
+                                      <span className={pageStyles.unrecordedUmrn}>{longestPatientInfo.umrn}</span>
+                                    )}
+                                    <span className={pageStyles.metaDot}>&bull;</span>
+                                    <span className={`${pageStyles.mono} ${pageStyles.longestCaseId}`}>
+                                      {maxDaysEntry.admission.id}
+                                    </span>
+                                  </div>
+                                </div>
+                                <span className={`${pageStyles.badge} ${pageStyles.mono}`} data-tone="accent">
+                                  {longestDays}
+                                </span>
+                              </div>
+                              <p className={pageStyles.longestCaseSub}>
+                                Home: <b>{maxDaysEntry.admission.homeRegion}</b> &bull; At{" "}
+                                {siteByCode(maxDaysEntry.unit.siteCode)?.name ?? maxDaysEntry.unit.name}
+                              </p>
+                              <button
+                                type="button"
+                                className={`${pageStyles.btn} ${pageStyles.btnSm} ${pageStyles.wFull}`}
+                                onClick={() => setSelectedId(maxDaysEntry.admission.id)}
+                              >
+                                Inspect Longest Case &rarr;
+                              </button>
+                            </div>
                           </div>
-                          <p className={pageStyles.longestCaseSub}>
-                            Home: <b>{maxDaysEntry.admission.homeRegion}</b> &bull; At{" "}
-                            {siteByCode(maxDaysEntry.unit.siteCode)?.name ?? maxDaysEntry.unit.name}
-                          </p>
-                          <button
-                            type="button"
-                            className={`${pageStyles.btn} ${pageStyles.btnSm} ${pageStyles.wFull}`}
-                            onClick={() => setSelectedId(maxDaysEntry.admission.id)}
-                          >
-                            Inspect Longest Case &rarr;
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                        );
+                      })()}
 
                     <div className={pageStyles.defaultPromptBox}>
                       <svg
@@ -850,28 +935,69 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                   </div>
                 ) : (
                   <div className={pageStyles.detailCard}>
-                    <div data-testid="ward-out-of-area-subject-facts" className={pageStyles.detailSection}>
-                      <span className={pageStyles.detailLabel}>Patient Demographics & Home Catchment</span>
-                      <div className={pageStyles.detailValue}>{selected.admission.id}</div>
-                      <p className={pageStyles.detailMetaText}>
-                        Residential Catchment: <b>{selected.admission.homeRegion}</b>
-                      </p>
-                      <p className={pageStyles.detailMetaText}>
-                        Current Unit: <b>{selected.unit.name}</b> (
-                        {siteByCode(selected.unit.siteCode)?.name ?? "Site not recorded"})
-                      </p>
-                      <p className={pageStyles.detailMetaText}>
-                        Health service:{" "}
-                        <b>{siteByCode(selected.unit.siteCode)?.service ?? "Health service not recorded"}</b>
-                      </p>
-                      <div className={pageStyles.factMetricsRow}>
-                        Travel Band: <span>{TRAVEL_BAND_LABELS[selected.band]}</span> &bull; Days Out-of-Area:{" "}
-                        <span>{sinceArrivalLabel(selected, now)}</span>
-                      </div>
-                      <p className={pageStyles.detailMetaText}>
-                        Group: <b>In a bed far from home</b>
-                      </p>
-                    </div>
+                    {(() => {
+                      const selectedPatientInfo = resolvePatient(selected.admission);
+                      const selectedProfileHref = getPatientProfileHref(selectedPatientInfo);
+                      return (
+                        <div data-testid="ward-out-of-area-subject-facts" className={pageStyles.detailSection}>
+                          <span className={pageStyles.detailLabel}>Patient Demographics & Home Catchment</span>
+                          <div className={pageStyles.inspectorPatientBox}>
+                            <div className={pageStyles.inspectorPatientName}>{selectedPatientInfo.displayName}</div>
+                            <div className={pageStyles.inspectorPatientUmrnRow}>
+                              <span className={pageStyles.umrnLabel}>UMRN:</span>
+                              {selectedProfileHref ? (
+                                <Link
+                                  href={selectedProfileHref}
+                                  className={pageStyles.inspectorUmrnLink}
+                                  title={`Open profile for ${selectedPatientInfo.displayName} (${selectedPatientInfo.umrn})`}
+                                >
+                                  <span>{selectedPatientInfo.umrn}</span>
+                                  <svg
+                                    width="12"
+                                    height="12"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    aria-hidden="true"
+                                  >
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                    <polyline points="15 3 21 3 21 9" />
+                                    <line x1="10" y1="14" x2="21" y2="3" />
+                                  </svg>
+                                </Link>
+                              ) : (
+                                <span className={pageStyles.unrecordedUmrn}>{selectedPatientInfo.umrn}</span>
+                              )}
+                              <span className={pageStyles.metaDot}>&bull;</span>
+                              <span className={`${pageStyles.mono} ${pageStyles.admissionIdText}`}>
+                                {selected.admission.id}
+                              </span>
+                            </div>
+                          </div>
+                          <p className={pageStyles.detailMetaText}>
+                            Residential Catchment: <b>{selected.admission.homeRegion}</b>
+                          </p>
+                          <p className={pageStyles.detailMetaText}>
+                            Current Unit: <b>{selected.unit.name}</b> (
+                            {siteByCode(selected.unit.siteCode)?.name ?? "Site not recorded"})
+                          </p>
+                          <p className={pageStyles.detailMetaText}>
+                            Health service:{" "}
+                            <b>{siteByCode(selected.unit.siteCode)?.service ?? "Health service not recorded"}</b>
+                          </p>
+                          <div className={pageStyles.factMetricsRow}>
+                            Travel Band: <span>{TRAVEL_BAND_LABELS[selected.band]}</span> &bull; Days Out-of-Area:{" "}
+                            <span>{sinceArrivalLabel(selected, now)}</span>
+                          </div>
+                          <p className={pageStyles.detailMetaText}>
+                            Group: <b>In a bed far from home</b>
+                          </p>
+                        </div>
+                      );
+                    })()}
 
                     <div data-testid="ward-out-of-area-subject-caveat" className={pageStyles.detailSection}>
                       <span className={pageStyles.detailLabel}>Clinical Repatriation Assessment</span>
@@ -948,7 +1074,9 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                     type="text"
                     className={`${pageStyles.modalInput} ${pageStyles.modalMono}`}
                     value={
-                      selected ? `${selected.admission.id} (${selected.admission.homeRegion})` : "General Referral"
+                      selected
+                        ? `${resolvePatient(selected.admission).displayName} · ${resolvePatient(selected.admission).umrn} · ${selected.admission.id} (${selected.admission.homeRegion})`
+                        : "General Referral"
                     }
                     readOnly
                   />
