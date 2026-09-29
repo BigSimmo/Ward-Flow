@@ -1,0 +1,741 @@
+/* Ward Decisions Cockpit Styles - Synthesizing Option 1 and Option 2 */
+
+.cockpitWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ward-space-16, 16px);
+  width: 100%;
+}
+
+.cockpitBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: var(--surface-2, #f8fafc);
+  border: 1px solid var(--ward-border, #e2e8f0);
+  border-radius: var(--radius-md, 8px);
+  padding: 12px 16px;
+}
+
+.bannerLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bannerTitle {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--ink, #0f172a);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bannerRuleTag {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  padding: 2px 7px;
+  background: var(--accent-subtle, #e0f2fe);
+  color: var(--accent-ink, #0369a1);
+  border-radius: 4px;
+}
+
+.bannerSubtext {
+  font-size: 0.85rem;
+  color: var(--muted, #64748b);
+  width: 100%;
+  margin-top: 2px;
+}
+
+.bannerClock {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--ward-border, #e2e8f0);
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink, #0f172a);
+}
+
+.bannerClockDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--good, #16a34a);
+}
+
+/* ── Shift Milestone Ribbon (Option 2) ── */
+.milestonesWrap {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--ward-border, #e2e8f0);
+  border-radius: var(--radius-md, 8px);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.milestonesHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.milestonesTitle {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.milestonesGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.milestoneCard {
+  background: var(--surface-2, #f8fafc);
+  border: 1px solid var(--ward-border, #e2e8f0);
+  border-radius: 6px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  position: relative;
+}
+
+.milestoneCard:hover {
+  border-color: var(--accent-ink, #0284c7);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.milestoneCard.activeWindow {
+  border-color: var(--accent-ink, #0284c7);
+  box-shadow: 0 0 0 2px var(--accent-subtle, #bae6fd);
+  background: var(--surface, #ffffff);
+}
+
+.milestoneTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.milestoneGate {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted, #64748b);
+  letter-spacing: 0.03em;
+}
+
+.milestoneBadge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.badgeComplete {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badgeActionDue {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.badgeWarning {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.badgeNeutral {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.milestoneName {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink, #0f172a);
+}
+
+.milestoneDetail {
+  font-size: 0.78rem;
+  color: var(--muted, #64748b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Action Queue Filter Strip (Option 1) ── */
+.filterStrip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.filterSummary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink, #0f172a);
+}
+
+.filterPills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.filterPill {
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--ward-border, #e2e8f0);
+  background: var(--surface, #ffffff);
+  color: var(--muted, #64748b);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.filterPill:hover {
+  background: var(--surface-2, #f8fafc);
+  color: var(--ink, #0f172a);
+}
+
+.filterPill.activePill {
+  background: var(--ink, #0f172a);
+  color: #ffffff;
+  border-color: var(--ink, #0f172a);
+}
+
+.pillBadge {
+  font-size: 0.75rem;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--surface-2, #e2e8f0);
+  color: var(--ink, #0f172a);
+}
+
+.activePill .pillBadge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+/* ── Shift Gate Panels ── */
+.gateSection {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--ward-border, #e2e8f0);
+  border-radius: var(--radius-md, 8px);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.gateSection.haloHighlight {
+  border-color: var(--accent-ink, #0284c7);
+  box-shadow: 0 0 0 3px var(--accent-subtle, #bae6fd);
+}
+
+.gateHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--ward-border, #e2e8f0);
+  padding-bottom: 10px;
+}
+
+.gateTitleWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gateIdTag {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  color: #334155;
+}
+
+.gateHeading {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+}
+
+.gateStatusBadge {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+/* ── Action Cards ── */
+.decisionCard {
+  border: 1px solid var(--ward-border, #e2e8f0);
+  border-radius: 6px;
+  padding: 14px 16px;
+  background: var(--surface, #ffffff);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-left: 4px solid var(--ward-border, #cbd5e1);
+}
+
+.decisionCard.urgentCard {
+  border-left-color: #dc2626;
+  background: #fffafa;
+}
+
+.decisionCard.barrierCard {
+  border-left-color: #d97706;
+  background: #fffdfa;
+}
+
+.decisionCard.goodCard {
+  border-left-color: #16a34a;
+  background: #fcfdfc;
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cardTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cardTags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tagPill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.tagUrgent {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.tagBarrier {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.tagGood {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.cardBody {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--ink, #1e293b);
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: var(--muted, #64748b);
+  flex-wrap: wrap;
+}
+
+.cardActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+/* ── Primary Action Buttons ── */
+.btnPrimaryAction {
+  background: #166534;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s ease;
+}
+
+.btnPrimaryAction:hover {
+  background: #14532d;
+}
+
+.btnDeclineAction {
+  background: #991b1b;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s ease;
+}
+
+.btnDeclineAction:hover {
+  background: #7f1d1d;
+}
+
+.btnSecondaryAction {
+  background: var(--surface, #ffffff);
+  color: var(--ink, #0f172a);
+  border: 1px solid var(--ward-border, #cbd5e1);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btnSecondaryAction:hover {
+  background: var(--surface-2, #f8fafc);
+  border-color: #94a3b8;
+}
+
+.btnUndoAction {
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--ward-border, #cbd5e1);
+  background: var(--surface, #ffffff);
+  color: var(--ink, #0f172a);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btnUndoAction:hover {
+  background: #f1f5f9;
+}
+
+/* ── Resolution Banner ── */
+.resolutionBanner {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.resolutionText {
+  font-size: 0.88rem;
+  color: #166534;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.resolutionSubtext {
+  font-size: 0.78rem;
+  color: #15803d;
+  font-weight: normal;
+}
+
+/* ── Empty State ── */
+.emptyState {
+  background: var(--surface, #ffffff);
+  border: 1px dashed var(--ward-border, #cbd5e1);
+  border-radius: var(--radius-md, 8px);
+  padding: 32px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.emptyTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+}
+
+.emptySubtitle {
+  font-size: 0.85rem;
+  color: var(--muted, #64748b);
+  max-width: 400px;
+}
+
+/* ── Shift Audit Trail ── */
+.auditSection {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--ward-border, #e2e8f0);
+  border-radius: var(--radius-md, 8px);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auditHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.auditTitle {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.auditSubhead {
+  font-size: 0.78rem;
+  color: var(--muted, #64748b);
+}
+
+.auditList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auditRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: var(--surface-2, #f8fafc);
+  font-size: 0.85rem;
+  border-left: 3px solid #16a34a;
+}
+
+.auditAction {
+  font-weight: 600;
+  color: var(--ink, #0f172a);
+}
+
+.auditDetail {
+  font-size: 0.8rem;
+  color: var(--muted, #64748b);
+  margin-left: 8px;
+}
+
+.auditMeta {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  color: var(--muted, #64748b);
+  white-space: nowrap;
+}
+
+/* ── Modal Dialogs ── */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.modalContent {
+  background: var(--surface, #ffffff);
+  border-radius: 8px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modalHeader {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--ward-border, #e2e8f0);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modalTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modalCloseBtn {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  color: var(--muted, #64748b);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.modalBody {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formLabel {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink, #0f172a);
+}
+
+.formInput,
+.formSelect,
+.formTextarea {
+  padding: 8px 12px;
+  border: 1px solid var(--ward-border, #cbd5e1);
+  border-radius: 6px;
+  font-size: 0.88rem;
+  background: var(--surface, #ffffff);
+  color: var(--ink, #0f172a);
+  font-family: inherit;
+}
+
+.formTextarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.modalFooter {
+  padding: 12px 18px;
+  border-top: 1px solid var(--ward-border, #e2e8f0);
+  background: var(--surface-2, #f8fafc);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ── Mobile Responsive Rules ── */
+@media (max-width: 768px) {
+  .milestonesGrid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .filterStrip {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filterPills {
+    width: 100%;
+  }
+
+  .cardHead {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cardActions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .cardActions button {
+    width: 100%;
+    justify-content: center;
+  }
+}

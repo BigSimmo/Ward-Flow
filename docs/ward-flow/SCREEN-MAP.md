@@ -3,7 +3,7 @@
 > 🔴 **GENERATED. DO NOT EDIT BY HAND.** `node scripts/ward-flow/screen-map.mjs`; `--check` fails
 > on a stale map or an unmapped item.
 
-**68 mockups · 44 routes · 30 screen folders.**
+**69 mockups · 44 routes · 30 screen folders.**
 
 ⚠️ The PAIRING is hand-authored — no rule derives that `command-third-edition.html` is route `/`.
 **COMPLETENESS is not**: everything is discovered from disk, so a new or renamed file shows up as
@@ -84,6 +84,7 @@ UNMAPPED rather than disappearing.
 | `delays-perfected-third-edition.html`           | —                           | —            |
 | `notification-popup-third-edition.html`         | —                           | —            |
 | `ward-before-after-redesign.html`               | —                           | —            |
+| `ward-bed-decisions-perfected.html`             | —                           | —            |
 
 ## Superseded — never build from these
 
