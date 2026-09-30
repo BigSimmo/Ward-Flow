@@ -344,15 +344,6 @@ export function StatisticsScreen({
               service that answers for it on its own screen, where the decisions are actually made.
             </p>
 
-            <p className={pageStyles.scopeNote}>
-              <strong>This is the whole service, not any one ward, department or team.</strong> Nothing here can be
-              edited or confirmed. Occupancy, waits and referrals are answered on each service&apos;s own screen, and
-              this page only totals what has already been recorded there. A figure that looks wrong belongs to a
-              specific ward, emergency department or team, so open the statistics page for wards, for emergency
-              departments or for community teams, linked under the panel that carries it, and then that service&apos;s
-              own screen.
-            </p>
-
             <div className={pageStyles.facts}>
               <span className={pageStyles.chip}>
                 <b>{totalBeds}</b>
