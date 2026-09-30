@@ -170,12 +170,19 @@ const REJECTED_DECISION_LABELS: Record<(typeof MATCH_VIEW_DECISION_EVENTS)[numbe
   RECORD_LOCAL_BED_SOUGHT: "Local bed search",
 };
 
+function formatUmrn(umrn: string): string {
+  if (!umrn || umrn === "UMRN not recorded") return "UMRN not recorded";
+  if (umrn.toUpperCase().startsWith("UMRN")) return umrn;
+  return `UMRN: ${umrn}`;
+}
+
 type ReferralMatchViewProps = {
   referral: Referral;
   units: Unit[];
   now: Instant;
   dispatch: Dispatch<WardFlowEvent>;
   rejections: Rejection[];
+  patientInfo?: { displayName: string; umrn: string };
 };
 
 /**
@@ -303,7 +310,7 @@ function ReferralHistoryAndCorrections({
  * selected always remounts fresh local state here (the decline-reason draft, the rejection banner)
  * rather than carrying one referral's leftover UI state onto the next.
  */
-export function ReferralMatchView({ referral, units, now, dispatch, rejections }: ReferralMatchViewProps) {
+export function ReferralMatchView({ referral, units, now, dispatch, rejections, patientInfo }: ReferralMatchViewProps) {
   /*
    * EVERY HOOK THIS VIEW HAS IS CALLED HERE, above the not-a-bed-question return below, and none
    * of them may move under it. React identifies a hook by its position in the call order, so a
@@ -422,7 +429,15 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections }
     return (
       <section className={styles.matchPanel} data-testid="ward-referral-match-not-a-bed-question">
         <p className={styles.matchSummary}>
-          {referral.id} was sent to {referralDestinationLabels(referral).join(", ").toLowerCase()} — none of which is
+          {patientInfo ? (
+            <>
+              <span className={styles.matchHeadingUmrn}>{formatUmrn(patientInfo.umrn)}</span>{" "}
+              <span className="sr-only">{referral.id}</span>
+            </>
+          ) : (
+            referral.id
+          )}{" "}
+          was sent to {referralDestinationLabels(referral).join(", ").toLowerCase()} — none of which is
           answered by matching a bed. There is no bed shortlist for this referral.
         </p>
         {gpSourceNotice}
@@ -807,7 +822,17 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections }
          * The paragraph below carries the proper wording, from the one home. Do not reintroduce a
          * short state word here: a second, shorter spelling is how the first one got in.
          */}
-        <h2 className={styles.matchHeading}>{referral.id}</h2>
+        <h2 className={styles.matchHeading}>
+          {patientInfo ? (
+            <>
+              <span className={styles.matchHeadingUmrn}>{formatUmrn(patientInfo.umrn)}</span>
+              <span className={styles.matchHeadingName}>{patientInfo.displayName}</span>
+              <span className="sr-only">{referral.id}</span>
+            </>
+          ) : (
+            referral.id
+          )}
+        </h2>
         <p data-testid="ward-referral-match-decided">
           {ward.state === "accepted"
             ? acceptedUnit
@@ -881,7 +906,17 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections }
       <div className={styles.matchDossierHeader}>
         <div className={styles.matchDossierTop}>
           <div className={styles.matchIdCluster}>
-            <h2 className={styles.matchHeading}>{referral.id}</h2>
+            <h2 className={styles.matchHeading}>
+              {patientInfo ? (
+                <>
+                  <span className={styles.matchHeadingUmrn}>{formatUmrn(patientInfo.umrn)}</span>
+                  <span className={styles.matchHeadingName}>{patientInfo.displayName}</span>
+                  <span className="sr-only">{referral.id}</span>
+                </>
+              ) : (
+                referral.id
+              )}
+            </h2>
             <div className={styles.matchTierRow}>
               <span
                 className={styles.priorityBadge}

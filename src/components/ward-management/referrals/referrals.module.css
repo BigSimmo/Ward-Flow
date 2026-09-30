@@ -3149,13 +3149,13 @@ input.historyField:focus-visible {
 .clinicalCard {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin: 0.25rem 0 0.5rem;
-  padding: 0.625rem 0.875rem;
+  gap: 0.625rem;
+  margin: 0;
+  padding: 0.875rem 1rem;
   border: 1px solid var(--line);
-  border-radius: var(--r1, 10px);
-  background: var(--surface);
-  box-shadow: var(--lift, 0 1px 3px rgba(0, 0, 0, 0.05));
+  border-radius: var(--radius-lg, 8px);
+  background: var(--surface-subtle, #fafafa);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .clinicalCardHeader {
@@ -3184,13 +3184,14 @@ input.historyField:focus-visible {
   font-weight: 600;
   background: var(--surface-2);
   border: 1px solid var(--line);
-  color: var(--ink);
+  color: var(--ink-soft);
 }
 
 .synopsisBox {
-  padding: 0.45rem 0.625rem;
-  border-radius: var(--radius-sm, 6px);
-  background: var(--surface-2);
+  padding: 0.625rem 0.75rem;
+  border-radius: var(--radius-sm, 4px);
+  background: var(--surface);
+  border: 1px solid var(--line-subtle, var(--line));
   border-left: 3px solid var(--accent);
 }
 
@@ -3204,11 +3205,17 @@ input.historyField:focus-visible {
 .clinicalMetaGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.45rem 0.75rem;
-  padding: 0.5rem 0.625rem;
-  background: var(--surface-2);
-  border-radius: var(--radius-sm, 6px);
-  border: 1px solid var(--line);
+  gap: 0.5rem 0.875rem;
+  padding: 0.625rem 0.75rem;
+  background: var(--surface);
+  border-radius: var(--radius-sm, 4px);
+  border: 1px solid var(--line-subtle, var(--line));
+}
+
+@media (min-width: 52rem) {
+  .clinicalMetaGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .clinicalMetaItem {
@@ -3530,32 +3537,39 @@ input.historyField:focus-visible {
   justify-content: space-between;
   gap: 0.75rem;
   border: 1px solid var(--line);
-  border-radius: var(--r1, 10px);
+  border-radius: var(--radius-lg, 8px);
   background: var(--surface);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  padding: 0.625rem 0.875rem;
-  margin-bottom: 0.5rem;
-  box-shadow: var(--lift, 0 1px 3px rgba(0, 0, 0, 0.05));
+  padding: 0.75rem 1rem;
+  margin-bottom: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .inspectorHeaderLeft {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.375rem;
   min-width: 0;
   flex: 1 1 auto;
+}
+
+.inspectorIdentityRow {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
   flex-wrap: wrap;
 }
 
 .inspectorId {
   display: inline-flex;
   align-items: center;
-  padding: 0.2rem 0.5rem;
+  padding: 0.2rem 0.55rem;
   border-radius: var(--radius-sm, 4px);
   background: var(--surface-2);
   border: 1px solid var(--line);
-  color: var(--ink);
+  color: var(--ink-soft);
   font-family: var(--mono);
   font-size: 0.8125rem;
   font-weight: 700;
@@ -3565,7 +3579,7 @@ input.historyField:focus-visible {
 
 .inspectorPatientName {
   font-weight: 700;
-  font-size: 1.0625rem;
+  font-size: 1.125rem;
   color: var(--ink);
   line-height: 1.25;
 }
@@ -3585,7 +3599,7 @@ input.historyField:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  margin-left: auto;
+  margin-left: 0;
 }
 
 .inspectorTier {
@@ -3658,18 +3672,28 @@ input.historyField:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: var(--ward-tap, 3rem);
-  min-height: var(--ward-tap, 3rem);
+  width: 2.25rem;
+  height: 2.25rem;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
   border: 1px solid var(--line);
   border-radius: var(--r2, 6px);
   background: var(--surface);
   color: var(--muted);
   cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
 .inspectorCloseButton:hover {
   background: var(--surface-2);
   color: var(--ink);
+  border-color: var(--line-strong, var(--line));
+}
+
+.inspectorCloseButton:focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: 0.125rem;
 }
 
 .jumpIcon {
@@ -3687,11 +3711,11 @@ input.historyField:focus-visible {
 
 .timelineCard {
   border: 1px solid var(--line);
-  border-radius: var(--r1, 10px);
-  background: var(--surface);
-  padding: 0.625rem 0.875rem;
-  margin-bottom: 0.5rem;
-  box-shadow: var(--lift);
+  border-radius: var(--radius-lg, 8px);
+  background: var(--surface-subtle, #fafafa);
+  padding: 0.75rem 1rem;
+  margin: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .timelineHeaderRow {
@@ -3716,13 +3740,13 @@ input.historyField:focus-visible {
   gap: 0.25rem;
   padding: 0.15rem 0.45rem;
   border-radius: var(--radius-sm, 4px);
-  background: var(--surface-2, #f1f5f9);
-  color: var(--ink-soft, #475569);
+  background: var(--surface);
+  color: var(--ink-soft);
   font-family: var(--mono);
   font-size: var(--t-0, 0.75rem);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  border: 1px solid var(--line, #e2e8f0);
+  border: 1px solid var(--line-subtle, var(--line));
 }
 
 .timelineList {
@@ -3730,7 +3754,10 @@ input.historyField:focus-visible {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.625rem;
   margin: 0;
-  padding: 0;
+  padding: 0.625rem 0.75rem;
+  background: var(--surface);
+  border-radius: var(--radius-sm, 4px);
+  border: 1px solid var(--line-subtle, var(--line));
   list-style: none;
 }
 
@@ -3892,19 +3919,17 @@ input.historyField:focus-visible {
 
 .cardHeaderRow {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.35rem;
   width: 100%;
 }
 
 .cardIdGroup {
-  display: inline-flex;
-  align-items: baseline;
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
   min-width: 0;
-  flex-wrap: wrap;
+  width: 100%;
 }
 
 .cardIdBadge {
@@ -3939,9 +3964,15 @@ input.historyField:focus-visible {
 }
 
 .cardTierGroup {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 0.375rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.cardTierGroup .waitBadge {
+  white-space: nowrap;
   flex-shrink: 0;
 }
 
@@ -4339,7 +4370,23 @@ input.historyField:focus-visible {
     align-items: stretch;
   }
 
-  .screen[data-referral-view="register"] .registerQueue,
+  .screen[data-referral-view="register"] .registerQueue {
+    min-height: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r1, 10px);
+    box-shadow: var(--lift);
+  }
+
   .screen[data-referral-view="register"] .registerDetail {
     min-height: 0 !important;
     height: 100% !important;
@@ -4355,6 +4402,9 @@ input.historyField:focus-visible {
     border: 1px solid var(--line);
     border-radius: var(--r1, 10px);
     box-shadow: var(--lift);
+    padding: var(--ward-space-16, 1rem);
+    gap: var(--ward-space-14, 0.875rem);
+    box-sizing: border-box;
   }
 
   /* The detail column scrolls as a whole, so its cards keep their natural height, as the queue's
@@ -4440,12 +4490,13 @@ input.historyField:focus-visible {
   grid-template-columns: minmax(0, 1fr);
   grid-auto-rows: max-content;
   align-content: start;
-  gap: 0.625rem;
-  padding: 0.75rem 0.875rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 10px);
-  box-shadow: var(--lift);
+  gap: var(--ward-space-12, 0.75rem);
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .screen[data-referral-view="register"] .registerDetail > .matchPanel > * {
@@ -4453,24 +4504,114 @@ input.historyField:focus-visible {
   grid-row: auto;
 }
 
-.screen[data-referral-view="register"] .registerDetail > .matchPanel .matchHeading {
-  font-size: var(--t-1);
+.screen[data-referral-view="register"] .registerDetail .matchDossierHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg, 8px);
+  background: var(--surface-subtle, #fafafa);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  margin: 0;
+}
+
+.screen[data-referral-view="register"] .registerDetail .matchHeading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--t-1, 1rem);
   font-weight: 700;
   color: var(--ink);
   margin: 0;
-  padding: 0.25rem 0;
-  border-bottom: 1px solid var(--line);
+  border: none;
+  padding: 0;
   background: transparent;
 }
 
-.screen[data-referral-view="register"] .registerDetail > .matchPanel .matchGovernance {
-  font-size: var(--t-0);
+.screen[data-referral-view="register"] .registerDetail .matchHeadingUmrn {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: var(--surface);
+  border: 1px solid var(--line-subtle, var(--line));
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-sm, 4px);
+  font-variant-numeric: tabular-nums;
+}
+
+.screen[data-referral-view="register"] .registerDetail .matchHeadingName {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.screen[data-referral-view="register"] .registerDetail .matchDemographicsStrip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.65rem;
+  background: var(--surface);
+  border: 1px solid var(--line-subtle, var(--line));
+  border-radius: var(--radius-sm, 4px);
+}
+
+.screen[data-referral-view="register"] .registerDetail .matchDemographicsStrip .matchSummary {
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.screen[data-referral-view="register"] .registerDetail .matchGovernance {
+  font-size: 0.75rem;
   color: var(--muted);
+  border: 1px solid var(--line-subtle, var(--line));
   border-left: 3px solid var(--accent);
-  background: var(--surface-2);
-  padding: 0.4rem 0.625rem;
+  background: var(--surface);
+  padding: 0.45rem 0.65rem;
   border-radius: 0 var(--radius-sm, 4px) var(--radius-sm, 4px) 0;
-  margin: 0.25rem 0;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.screen[data-referral-view="register"] .registerDetail .acceptingCountBannerPositive {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.875rem;
+  border-radius: var(--radius-md, 6px);
+  border: 1px solid var(--success-border, #86efac);
+  background: var(--ward-success-soft, #f0fdf4);
+  color: var(--ward-success, #166534);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.screen[data-referral-view="register"] .registerDetail .acceptingCountBannerZero {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.875rem;
+  border-radius: var(--radius-md, 6px);
+  border: 1px solid var(--line);
+  background: var(--surface-subtle);
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.screen[data-referral-view="register"] .registerDetail .syntheticNotice {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0;
+  padding: 0.25rem 0.5rem;
+  line-height: 1.35;
+  background: var(--surface);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-sm, 4px);
 }
 
 .screen[data-referral-view="register"] .sectionHeading {

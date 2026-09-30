@@ -800,11 +800,13 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
               <>
                 <div className={styles.inspectorHeader}>
                   <div className={styles.inspectorHeaderLeft}>
-                    <span className={styles.inspectorId}>
-                      <span className="sr-only">{selectedReferral.id} </span>
-                      {formatUmrn(selectedPatientInfo.umrn)}
-                    </span>
-                    <span className={styles.inspectorPatientName}>{selectedPatientInfo.displayName}</span>
+                    <div className={styles.inspectorIdentityRow}>
+                      <span className={styles.inspectorId}>
+                        <span className="sr-only">{selectedReferral.id} </span>
+                        {formatUmrn(selectedPatientInfo.umrn)}
+                      </span>
+                      <span className={styles.inspectorPatientName}>{selectedPatientInfo.displayName}</span>
+                    </div>
                     <div className={styles.inspectorUrgencyGroup}>
                       <span
                         className={styles.priorityBadge}
@@ -1036,6 +1038,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                   now={now}
                   dispatch={dispatch}
                   rejections={rejections}
+                  patientInfo={selectedPatientInfo}
                 />
               </>
             ) : (

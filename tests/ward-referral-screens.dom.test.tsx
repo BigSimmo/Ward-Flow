@@ -3660,7 +3660,7 @@ describe("OutOfAreaBoard — the entries", () => {
     for (const admission of subjects) {
       const expected = expectedStayLabel(admission);
       const cells = screen.getByTestId(`ward-out-of-area-row-${admission.id}`).querySelectorAll("td");
-      expect(cells[3]?.textContent, `${admission.id}'s row shows the wrong length of stay`).toBe(expected);
+      expect(cells[cells.length - 1]?.textContent, `${admission.id}'s row shows the wrong length of stay`).toBe(expected);
       expect(
         screen.getByTestId(`ward-out-of-area-card-${admission.id}`).textContent ?? "",
         `${admission.id}'s phone card shows the wrong length of stay`,

@@ -11,7 +11,6 @@ import {
 import type { StatisticsSection } from "@/components/ward-management/statistics/statistics-sections";
 import { STATISTICS_HOME_HREF } from "@/components/ward-management/statistics/statistics-sections";
 
-import { StatisticsNav } from "@/components/ward-management/statistics/statistics-nav";
 import styles from "./statistics-sections.module.css";
 import thirdEditionStyles from "./statistics-section-frame-third-edition.module.css";
 
@@ -207,7 +206,6 @@ function ThirdEditionFrame({
             </div>
           </details>
         </div>
-        <StatisticsNav />
         {children}
       </main>
     </div>
