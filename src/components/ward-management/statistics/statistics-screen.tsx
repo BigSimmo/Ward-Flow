@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 
 import {
@@ -220,9 +220,55 @@ export function StatisticsScreen({
   const totalEdOver8 = emergencyDepts.reduce((s, d) => s + d.over8, 0);
   const totalEdOver24 = emergencyDepts.reduce((s, d) => s + d.over24, 0);
 
-  // Pressure Wards (ranked by ready ascending, occupancy descending, name)
-  const pressureWards = useMemo(() => {
-    const SHOWN_WARDS = 8;
+  const SHOWN_WARDS = 8;
+
+  // Ward Table interactive state
+  const [wardSearchQuery, setWardSearchQuery] = useState("");
+  const [wardSortCol, setWardSortCol] = useState<"name" | "hosp" | "beds" | "ready" | "occ" | "ref">("ready");
+  const [wardSortAsc, setWardSortAsc] = useState(true);
+
+  // ED Table interactive state
+  const [edSearchQuery, setEdSearchQuery] = useState("");
+  const [edSortCol, setEdSortCol] = useState<"name" | "waiting" | "longest" | "median" | "over8" | "over24">("waiting");
+  const [edSortAsc, setEdSortAsc] = useState(false);
+
+  // Community Table interactive state
+  const [teamSearchQuery, setTeamSearchQuery] = useState("");
+  const [teamSortCol, setTeamSortCol] = useState<"name" | "suburbs" | "caseload" | "newRefs" | "discharges">("caseload");
+  const [teamSortAsc, setTeamSortAsc] = useState(false);
+
+  // Flow chart interactive hover state
+  const [hoveredDayIdx, setHoveredDayIdx] = useState<number | null>(null);
+
+  const handleWardSort = (col: "name" | "hosp" | "beds" | "ready" | "occ" | "ref") => {
+    if (wardSortCol === col) {
+      setWardSortAsc((prev) => !prev);
+    } else {
+      setWardSortCol(col);
+      setWardSortAsc(col === "name" || col === "hosp");
+    }
+  };
+
+  const handleEdSort = (col: "name" | "waiting" | "longest" | "median" | "over8" | "over24") => {
+    if (edSortCol === col) {
+      setEdSortAsc((prev) => !prev);
+    } else {
+      setEdSortCol(col);
+      setEdSortAsc(col === "name");
+    }
+  };
+
+  const handleTeamSort = (col: "name" | "suburbs" | "caseload" | "newRefs" | "discharges") => {
+    if (teamSortCol === col) {
+      setTeamSortAsc((prev) => !prev);
+    } else {
+      setTeamSortCol(col);
+      setTeamSortAsc(col === "name");
+    }
+  };
+
+  // Pressure Wards (all 23 wards available, ranked by ready asc, occupancy desc, name)
+  const allPressureWards = useMemo(() => {
     const MOCK_REFERRED: Record<string, number> = {
       "fsh-older": 0,
       "graylands-older": 0,
@@ -233,24 +279,101 @@ export function StatisticsScreen({
       dabakarn: 1,
       emyu: 1,
     };
-    return units
-      .map((u) => {
-        const capInfo = unitCapacity(u, sourceBedReleases);
-        const occupancyRate = u.beds > 0 ? capInfo.occupied / u.beds : 0;
-        const referredCount = MOCK_REFERRED[u.id] ?? (u.beds % 3 === 0 ? 0 : 1);
-        return {
-          id: u.id,
-          name: u.name,
-          hospital: siteByCode(u.siteCode)?.name ?? u.siteCode,
-          beds: u.beds,
-          ready: capInfo.available,
-          occupancyRate,
-          referred: referredCount,
-        };
-      })
-      .sort((a, b) => a.ready - b.ready || b.occupancyRate - a.occupancyRate || a.name.localeCompare(b.name))
-      .slice(0, SHOWN_WARDS);
+    return units.map((u) => {
+      const capInfo = unitCapacity(u, sourceBedReleases);
+      const occupancyRate = u.beds > 0 ? capInfo.occupied / u.beds : 0;
+      const referredCount = MOCK_REFERRED[u.id] ?? (u.beds % 3 === 0 ? 0 : 1);
+      return {
+        id: u.id,
+        name: u.name,
+        hospital: siteByCode(u.siteCode)?.name ?? u.siteCode,
+        beds: u.beds,
+        ready: capInfo.available,
+        occupancyRate,
+        referred: referredCount,
+      };
+    });
   }, [units, sourceBedReleases]);
+
+  const filteredAndSortedWards = useMemo(() => {
+    let list = allPressureWards.slice();
+    const q = wardSearchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter((w) => w.name.toLowerCase().includes(q) || w.hospital.toLowerCase().includes(q));
+    }
+    list.sort((a, b) => {
+      let vA: number | string;
+      let vB: number | string;
+      if (wardSortCol === "name") {
+        vA = a.name;
+        vB = b.name;
+      } else if (wardSortCol === "hosp") {
+        vA = a.hospital;
+        vB = b.hospital;
+      } else if (wardSortCol === "beds") {
+        vA = a.beds;
+        vB = b.beds;
+      } else if (wardSortCol === "ready") {
+        vA = a.ready;
+        vB = b.ready;
+      } else if (wardSortCol === "occ") {
+        vA = a.occupancyRate;
+        vB = b.occupancyRate;
+      } else if (wardSortCol === "ref") {
+        vA = a.referred;
+        vB = b.referred;
+      } else {
+        vA = a.ready;
+        vB = b.ready;
+      }
+
+      if (vA < vB) return wardSortAsc ? -1 : 1;
+      if (vA > vB) return wardSortAsc ? 1 : -1;
+      return a.name.localeCompare(b.name);
+    });
+    return list;
+  }, [allPressureWards, wardSearchQuery, wardSortCol, wardSortAsc]);
+
+  const pressureWards = filteredAndSortedWards;
+
+  const filteredAndSortedEds = useMemo(() => {
+    let list = emergencyDepts.slice();
+    const q = edSearchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter((d) => d.name.toLowerCase().includes(q) || d.site.toLowerCase().includes(q));
+    }
+    list.sort((a, b) => {
+      let vA: number | string;
+      let vB: number | string;
+      if (edSortCol === "name") {
+        vA = a.site;
+        vB = b.site;
+      } else if (edSortCol === "waiting") {
+        vA = a.waiting;
+        vB = b.waiting;
+      } else if (edSortCol === "longest") {
+        vA = a.longest;
+        vB = b.longest;
+      } else if (edSortCol === "median") {
+        vA = a.median;
+        vB = b.median;
+      } else if (edSortCol === "over8") {
+        vA = a.over8;
+        vB = b.over8;
+      } else if (edSortCol === "over24") {
+        vA = a.over24;
+        vB = b.over24;
+      } else {
+        vA = a.waiting;
+        vB = b.waiting;
+      }
+
+      if (vA < vB) return edSortAsc ? -1 : 1;
+      if (vA > vB) return edSortAsc ? 1 : -1;
+      return a.site.localeCompare(b.site);
+    });
+    return list;
+  }, [emergencyDepts, edSearchQuery, edSortCol, edSortAsc]);
 
   // Community teams
   const communityTeams = useMemo(() => {
@@ -271,7 +394,46 @@ export function StatisticsScreen({
   const totalTeamCaseload = communityTeams.reduce((s, t) => s + t.caseload, 0);
   const totalTeamNewRefs = communityTeams.reduce((s, t) => s + t.newRefs, 0);
   const totalTeamDischarges = communityTeams.reduce((s, t) => s + t.discharges, 0);
-  const shownCommunityTeams = communityTeams.slice(0, 8);
+
+  const filteredAndSortedTeams = useMemo(() => {
+    let list = communityTeams.slice();
+    const q = teamSearchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter((t) => t.name.toLowerCase().includes(q));
+    }
+    list.sort((a, b) => {
+      let vA: number | string;
+      let vB: number | string;
+      if (teamSortCol === "name") {
+        vA = a.name;
+        vB = b.name;
+      } else if (teamSortCol === "suburbs") {
+        vA = a.suburbs;
+        vB = b.suburbs;
+      } else if (teamSortCol === "caseload") {
+        vA = a.caseload;
+        vB = b.caseload;
+      } else if (teamSortCol === "newRefs") {
+        vA = a.newRefs;
+        vB = b.newRefs;
+      } else if (teamSortCol === "discharges") {
+        vA = a.discharges;
+        vB = b.discharges;
+      } else {
+        vA = a.caseload;
+        vB = b.caseload;
+      }
+
+      if (vA < vB) return teamSortAsc ? -1 : 1;
+      if (vA > vB) return teamSortAsc ? 1 : -1;
+      return a.name.localeCompare(b.name);
+    });
+    return list;
+  }, [communityTeams, teamSearchQuery, teamSortCol, teamSortAsc]);
+
+  const shownCommunityTeams = useMemo(() => {
+    return filteredAndSortedTeams.slice(0, 8);
+  }, [filteredAndSortedTeams]);
   const shownTeamCaseload = shownCommunityTeams.reduce((s, t) => s + t.caseload, 0);
 
   // Referrals today (mockup figures matching Third Edition specification)
@@ -300,6 +462,16 @@ export function StatisticsScreen({
   const endX = px(lastIndex);
   const endYAdm = py(admissionsCount);
   const endYDis = py(dischargesCount);
+
+  const admAreaD = `M ${px(0).toFixed(1)} ${CH_BASE} L ` +
+    flowDays.map((d, i) => `${px(i).toFixed(1)} ${py(d.adm).toFixed(1)}`).join(" L ") +
+    ` L ${px(lastIndex).toFixed(1)} ${CH_BASE} Z`;
+
+  const disAreaD = `M ${px(0).toFixed(1)} ${CH_BASE} L ` +
+    flowDays.map((d, i) => `${px(i).toFixed(1)} ${py(d.dis).toFixed(1)}`).join(" L ") +
+    ` L ${px(lastIndex).toFixed(1)} ${CH_BASE} Z`;
+
+  const yAvgAdm = py(admMean);
 
   return (
     <div
@@ -556,7 +728,31 @@ export function StatisticsScreen({
                 viewBox={`0 0 ${CH_WIDTH} ${CH_HEIGHT}`}
                 width="100%"
                 height="auto"
+                onMouseMove={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const mouseX = e.clientX - rect.left;
+                  const relX = (mouseX / rect.width) * CH_WIDTH;
+                  if (relX < CH_LEFT || relX > CH_WIDTH - CH_RIGHT) {
+                    setHoveredDayIdx(null);
+                    return;
+                  }
+                  const ratio = (relX - CH_LEFT) / (CH_WIDTH - CH_RIGHT - CH_LEFT);
+                  const idx = Math.max(0, Math.min(flowDays.length - 1, Math.round(ratio * (flowDays.length - 1))));
+                  setHoveredDayIdx(idx);
+                }}
+                onMouseLeave={() => setHoveredDayIdx(null)}
               >
+                <defs>
+                  <linearGradient id="flowAdmGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.22" />
+                    <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.01" />
+                  </linearGradient>
+                  <linearGradient id="flowDisGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--warn)" stopOpacity="0.18" />
+                    <stop offset="100%" stopColor="var(--warn)" stopOpacity="0.01" />
+                  </linearGradient>
+                </defs>
+
                 {/* Horizontal Grid lines */}
                 {[0, 4, 8, 12, 16].map((v) => {
                   const y = py(v);
@@ -569,12 +765,38 @@ export function StatisticsScreen({
                         x2={CH_WIDTH - CH_RIGHT + 10}
                         y2={y}
                       />
-                      <text x={CH_LEFT - 10} y={y + 4} textAnchor="end">
+                      <text
+                        x={CH_LEFT - 10}
+                        y={y + 4}
+                        textAnchor="end"
+                        fontSize="12"
+                        fontFamily="var(--mono)"
+                        fill="var(--muted)"
+                      >
                         {v}
                       </text>
                     </g>
                   );
                 })}
+
+                {/* Benchmark dashed reference line (Average admissions across the window) */}
+                <line
+                  className={pageStyles.chartRefLine}
+                  x1={CH_LEFT}
+                  y1={yAvgAdm}
+                  x2={CH_WIDTH - CH_RIGHT + 10}
+                  y2={yAvgAdm}
+                />
+                <text
+                  x={CH_WIDTH - CH_RIGHT + 12}
+                  y={yAvgAdm + 4}
+                  fontFamily="var(--mono)"
+                  fontSize="12"
+                  fill="var(--muted)"
+                  fontWeight="500"
+                >
+                  avg {admMean}
+                </text>
 
                 {/* X-axis tick labels */}
                 {[0, 3, 6, 9, 13].map((idx) => {
@@ -586,28 +808,139 @@ export function StatisticsScreen({
                       x={xVal}
                       y={CH_BASE + 22}
                       textAnchor={idx === flowDays.length - 1 ? "end" : "middle"}
+                      fontSize="12"
+                      fontFamily="var(--mono)"
+                      fill="var(--muted)"
                     >
                       {back === 0 ? "Today" : back}
                     </text>
                   );
                 })}
 
+                {/* Translucent area fills under curves */}
+                <path className={pageStyles.chartAreaAdm} fill="url(#flowAdmGrad)" d={admAreaD} />
+                <path className={pageStyles.chartAreaDis} fill="url(#flowDisGrad)" d={disAreaD} />
+
                 {/* Series Lines */}
-                <polyline className="series" data-series="admissions" points={admPoints} />
-                <polyline className="series" data-series="discharges" points={disPoints} />
+                <polyline
+                  className="series"
+                  data-series="admissions"
+                  points={admPoints}
+                  stroke="var(--accent)"
+                  strokeWidth="2.2"
+                  fill="none"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+                <polyline
+                  className="series"
+                  data-series="discharges"
+                  points={disPoints}
+                  stroke="var(--warn)"
+                  strokeWidth="2.2"
+                  fill="none"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+
+                {/* Interactive day dots */}
+                {flowDays.map((d, i) => (
+                  <g key={i}>
+                    <circle
+                      className={pageStyles.chartDotInteractive}
+                      cx={px(i)}
+                      cy={py(d.adm)}
+                      r={hoveredDayIdx === i ? 6 : 4}
+                      fill="var(--accent)"
+                      stroke="var(--surface)"
+                      strokeWidth="1.8"
+                    />
+                    <circle
+                      className={pageStyles.chartDotInteractive}
+                      cx={px(i)}
+                      cy={py(d.dis)}
+                      r={hoveredDayIdx === i ? 6 : 4}
+                      fill="var(--warn)"
+                      stroke="var(--surface)"
+                      strokeWidth="1.8"
+                    />
+                  </g>
+                ))}
+
+                {/* Scrubber crosshair */}
+                {hoveredDayIdx !== null ? (
+                  <line
+                    className={pageStyles.chartCrosshair}
+                    x1={px(hoveredDayIdx)}
+                    y1={CH_TOP}
+                    x2={px(hoveredDayIdx)}
+                    y2={CH_BASE}
+                  />
+                ) : null}
 
                 {/* End points */}
-                <circle className="end" data-series="admissions" cx={endX} cy={endYAdm} r="3.5" />
-                <circle className="end" data-series="discharges" cx={endX} cy={endYDis} r="3.5" />
+                <circle className="end" data-series="admissions" cx={endX} cy={endYAdm} r="4.5" fill="var(--accent)" stroke="var(--surface)" strokeWidth="2" />
+                <circle className="end" data-series="discharges" cx={endX} cy={endYDis} r="4.5" fill="var(--warn)" stroke="var(--surface)" strokeWidth="2" />
 
                 {/* End labels */}
-                <text className="endLabel" x={endX + 12} y={endYAdm + 4}>
-                  {admissionsCount} admissions
+                <text
+                  className="endLabel"
+                  data-series="admissions"
+                  x={endX + 10}
+                  y={endYAdm + 4}
+                  fontFamily="var(--mono)"
+                  fontSize="12"
+                  fontWeight="600"
+                  fill="var(--accent)"
+                >
+                  {admissionsCount} adm
                 </text>
-                <text className="endLabel" x={endX + 12} y={endYDis + 4}>
-                  {dischargesCount} discharges
+                <text
+                  className="endLabel"
+                  data-series="discharges"
+                  x={endX + 10}
+                  y={endYDis + 4}
+                  fontFamily="var(--mono)"
+                  fontSize="12"
+                  fontWeight="600"
+                  fill="var(--warn)"
+                >
+                  {dischargesCount} dis
                 </text>
               </svg>
+
+              {/* Scrubber Tooltip */}
+              {hoveredDayIdx !== null ? (
+                <div
+                  className={pageStyles.chartTooltip}
+                  style={{
+                    display: "block",
+                    left: `${(px(hoveredDayIdx) / CH_WIDTH) * 100}%`,
+                    top: "12px",
+                    transform: hoveredDayIdx > flowDays.length / 2 ? "translateX(-105%)" : "translateX(12px)",
+                  }}
+                >
+                  <div className={pageStyles.ttDate}>
+                    {hoveredDayIdx === flowDays.length - 1
+                      ? "Today"
+                      : hoveredDayIdx === flowDays.length - 2
+                      ? "Yesterday"
+                      : `${flowDays.length - 1 - hoveredDayIdx} days ago`}
+                  </div>
+                  <div className={pageStyles.ttRow}>
+                    <span className={pageStyles.ttLabel}>
+                      <span className={pageStyles.ttDot} style={{ background: "var(--accent)" }} /> Admissions
+                    </span>
+                    <b>{flowDays[hoveredDayIdx].adm}</b>
+                  </div>
+                  <div className={pageStyles.ttRow}>
+                    <span className={pageStyles.ttLabel}>
+                      <span className={pageStyles.ttDot} style={{ background: "var(--warn)" }} /> Discharges
+                    </span>
+                    <b>{flowDays[hoveredDayIdx].dis}</b>
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <figcaption>
@@ -765,7 +1098,7 @@ export function StatisticsScreen({
           {/* Where the pressure is */}
           <WardPanel
             title="Where the pressure is"
-            count={`${pressureWards.length} of ${units.length} wards`}
+            count={`${filteredAndSortedWards.length} of ${allPressureWards.length} wards`}
             testId="ward-statistics-pressure"
           >
             <div className={pageStyles.pb}>
@@ -777,6 +1110,28 @@ export function StatisticsScreen({
               </p>
             </div>
 
+            {/* Table Controls Bar with live search and counter */}
+            <div className={pageStyles.tableControlsBar}>
+              <div className={pageStyles.tableSearchBox}>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <circle cx="7" cy="7" r="4.5" />
+                  <path d="M10.5 10.5L14 14" />
+                </svg>
+                <input
+                  type="search"
+                  className={pageStyles.tableSearchInput}
+                  id="wardSearchInput"
+                  placeholder="Filter wards or hospitals..."
+                  value={wardSearchQuery}
+                  onChange={(e) => setWardSearchQuery(e.target.value)}
+                  aria-label="Filter wards or hospitals"
+                />
+              </div>
+              <span className={pageStyles.tableFilterCount} id="wardFilterCount">
+                Showing {filteredAndSortedWards.length} of {allPressureWards.length} wards
+              </span>
+            </div>
+
             <div
               className={pageStyles.tableWrap}
               data-wrap
@@ -784,28 +1139,80 @@ export function StatisticsScreen({
               role="group"
               aria-label="The highest pressure wards, scrolls sideways when the panel is narrow"
             >
-              <table className={pageStyles.dataTable}>
-                <caption className="srOnly">The highest-pressure wards across the network</caption>
+              <table className={pageStyles.dataTable} id="wardPressureTable">
+                <caption className="srOnly">Inpatient mental health ward capacity and demand</caption>
                 <thead>
                   <tr>
-                    <th scope="col">Ward</th>
-                    <th scope="col">Hospital</th>
-                    <th scope="col" className={pageStyles.n}>
-                      Beds
+                    <th
+                      scope="col"
+                      className={`${pageStyles.sortable} ${wardSortCol === "name" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleWardSort("name")}
+                      aria-sort={wardSortCol === "name" ? (wardSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Ward{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {wardSortCol === "name" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
-                    <th scope="col" className={pageStyles.n}>
-                      Ready
+                    <th
+                      scope="col"
+                      className={`${pageStyles.sortable} ${wardSortCol === "hosp" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleWardSort("hosp")}
+                      aria-sort={wardSortCol === "hosp" ? (wardSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Hospital{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {wardSortCol === "hosp" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
-                    <th scope="col" className={pageStyles.n}>
-                      Occupancy
+                    <th
+                      scope="col"
+                      className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "beds" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleWardSort("beds")}
+                      aria-sort={wardSortCol === "beds" ? (wardSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Beds{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {wardSortCol === "beds" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
-                    <th scope="col" className={pageStyles.n}>
-                      Referred, awaiting answer
+                    <th
+                      scope="col"
+                      className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "ready" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleWardSort("ready")}
+                      aria-sort={wardSortCol === "ready" ? (wardSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Ready{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {wardSortCol === "ready" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
+                    </th>
+                    <th
+                      scope="col"
+                      className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "occ" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleWardSort("occ")}
+                      aria-sort={wardSortCol === "occ" ? (wardSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Occupancy{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {wardSortCol === "occ" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
+                    </th>
+                    <th
+                      scope="col"
+                      className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "ref" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleWardSort("ref")}
+                      aria-sort={wardSortCol === "ref" ? (wardSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Referred, awaiting answer{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {wardSortCol === "ref" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {pressureWards.map((w) => {
+                  {filteredAndSortedWards.map((w) => {
                     const full = w.ready === 0 && w.occupancyRate === 1;
                     return (
                       <tr key={w.id}>
@@ -832,12 +1239,16 @@ export function StatisticsScreen({
             </div>
 
             <p className={pageStyles.panelFoot}>
-              <strong>{units.length - pressureWards.length} wards are not shown.</strong> Every ward has its own board
-              with the bed by bed picture, opened from the ward switcher on any ward screen. Across all {units.length}{" "}
-              wards the network holds <b>{availableNow}</b> beds ready, <b>{heldBeds}</b> held and <b>{blockedBeds}</b>{" "}
-              out of service. <strong>A ward marked Full has no bed ready, no bed held and none out of service</strong>,
+              <strong>
+                {filteredAndSortedWards.length < allPressureWards.length
+                  ? `${allPressureWards.length - filteredAndSortedWards.length} wards filtered out by query.`
+                  : `All ${allPressureWards.length} wards shown, ranked by pressure.`}
+              </strong>{" "}
+              Every ward has its own board with the bed by bed picture, opened from the ward switcher on any ward screen.
+              Across all {units.length} wards the network holds <b>{availableNow}</b> beds ready, <b>{heldBeds}</b> held and{" "}
+              <b>{blockedBeds}</b> out of service. <strong>A ward marked Full has no bed ready, no bed held and none out of service</strong>,
               so every one of its beds has somebody in it. The ward by ward figures are on{" "}
-              <Link href="/mockups/ward-flow/statistics/ward/SCGH-G">Ward statistics</Link>.
+              <Link href="/mockups/ward-flow/statistics/ward/scgh-mental-health">Ward statistics</Link>.
             </p>
 
             {/* Pressure articles (preserved for test suite) */}
@@ -931,7 +1342,7 @@ export function StatisticsScreen({
           {/* Emergency departments */}
           <WardPanel
             title="Emergency departments"
-            count={`${emergencyDepts.length} of ${emergencyDepts.length} departments`}
+            count={`${filteredAndSortedEds.length} of ${emergencyDepts.length} departments`}
             testId="ward-statistics-emergency-departments"
           >
             <div className={pageStyles.pb}>
@@ -942,6 +1353,28 @@ export function StatisticsScreen({
               </p>
             </div>
 
+            {/* Table Controls Bar with live search and counter */}
+            <div className={pageStyles.tableControlsBar}>
+              <div className={pageStyles.tableSearchBox}>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <circle cx="7" cy="7" r="4.5" />
+                  <path d="M10.5 10.5L14 14" />
+                </svg>
+                <input
+                  type="search"
+                  className={pageStyles.tableSearchInput}
+                  id="edSearchInput"
+                  placeholder="Filter emergency departments..."
+                  value={edSearchQuery}
+                  onChange={(e) => setEdSearchQuery(e.target.value)}
+                  aria-label="Filter emergency departments"
+                />
+              </div>
+              <span className={pageStyles.tableFilterCount} id="edFilterCount">
+                Showing {filteredAndSortedEds.length} of {emergencyDepts.length} EDs
+              </span>
+            </div>
+
             <div
               className={pageStyles.tableWrap}
               data-wrap
@@ -949,30 +1382,80 @@ export function StatisticsScreen({
               role="group"
               aria-label="Emergency department waits, scrolls sideways when the panel is narrow"
             >
-              <table className={pageStyles.dataTable}>
+              <table className={pageStyles.dataTable} id="edPressureTable">
                 <caption className="srOnly">Emergency department waits for a mental health bed</caption>
                 <thead>
                   <tr>
-                    <th scope="col">Site</th>
-                    <th scope="col" className={pageStyles.n}>
-                      Waiting
+                    <th
+                      scope="col"
+                      className={`${pageStyles.sortable} ${edSortCol === "name" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleEdSort("name")}
+                      aria-sort={edSortCol === "name" ? (edSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Site{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {edSortCol === "name" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
-                    <th scope="col" className={pageStyles.n}>
-                      Longest wait
+                    <th
+                      scope="col"
+                      className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "waiting" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleEdSort("waiting")}
+                      aria-sort={edSortCol === "waiting" ? (edSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Waiting{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {edSortCol === "waiting" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
-                    <th scope="col" className={pageStyles.n}>
-                      Median wait
+                    <th
+                      scope="col"
+                      className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "longest" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleEdSort("longest")}
+                      aria-sort={edSortCol === "longest" ? (edSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Longest wait{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {edSortCol === "longest" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
-                    <th scope="col" className={pageStyles.n}>
-                      Over 8 hours
+                    <th
+                      scope="col"
+                      className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "median" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleEdSort("median")}
+                      aria-sort={edSortCol === "median" ? (edSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Median wait{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {edSortCol === "median" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
-                    <th scope="col" className={pageStyles.n}>
-                      Over 24 hours
+                    <th
+                      scope="col"
+                      className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "over8" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleEdSort("over8")}
+                      aria-sort={edSortCol === "over8" ? (edSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Over 8 hours{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {edSortCol === "over8" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
+                    </th>
+                    <th
+                      scope="col"
+                      className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "over24" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleEdSort("over24")}
+                      aria-sort={edSortCol === "over24" ? (edSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Over 24 hours{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {edSortCol === "over24" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {emergencyDepts.map((d) => (
+                  {filteredAndSortedEds.map((d) => (
                     <tr key={d.id}>
                       <th scope="row">
                         <b className={pageStyles.site}>{d.site}</b>
@@ -1014,7 +1497,7 @@ export function StatisticsScreen({
               and prolonged waits are a subset of extended waits rather than an addition to them.{" "}
               <strong>A none in this table is a measured none</strong>, so the departments reading none for prolonged waits
               genuinely have nobody who has waited that long right now. Each department&apos;s own figures are on{" "}
-              <Link href="/mockups/ward-flow/statistics/ed/SCGH-ED">Emergency department statistics</Link>.
+              <Link href="/mockups/ward-flow/statistics/ed/scgh">Emergency department statistics</Link>.
             </p>
 
             {/* Declines articles (preserved for test suite) */}
@@ -1106,13 +1589,13 @@ export function StatisticsScreen({
           <div id={STATISTICS_COMMUNITY_CHOOSER_ID} style={{ minWidth: 0 }}>
             <WardPanel
               title="Community teams"
-              count={`${shownCommunityTeams.length} of ${communityTeams.length} teams`}
+              count={`${filteredAndSortedTeams.length} of ${communityTeams.length} teams`}
               testId="ward-statistics-community-chooser"
             >
               <div className={pageStyles.pb}>
                 <p className={pageStyles.scopeNote}>
                   Caseload, new referrals and discharges back to community, by team, over the last seven days. The three
-                  figures below are every team, not only the {words(shownCommunityTeams.length)} drawn.
+                  figures below are every team, not only the {words(communityTeams.length)} drawn.
                 </p>
                 <div className={pageStyles.facts}>
                   <span className={pageStyles.chip}>
@@ -1127,6 +1610,28 @@ export function StatisticsScreen({
                 </div>
               </div>
 
+              {/* Table Controls Bar with live search and counter */}
+              <div className={pageStyles.tableControlsBar}>
+                <div className={pageStyles.tableSearchBox}>
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <circle cx="7" cy="7" r="4.5" />
+                    <path d="M10.5 10.5L14 14" />
+                  </svg>
+                  <input
+                    type="search"
+                    className={pageStyles.tableSearchInput}
+                    id="teamSearchInput"
+                    placeholder="Filter community teams..."
+                    value={teamSearchQuery}
+                    onChange={(e) => setTeamSearchQuery(e.target.value)}
+                    aria-label="Filter community teams"
+                  />
+                </div>
+                <span className={pageStyles.tableFilterCount} id="teamFilterCount">
+                  Showing {filteredAndSortedTeams.length} of {communityTeams.length} teams
+                </span>
+              </div>
+
               <div
                 className={pageStyles.tableWrap}
                 data-wrap
@@ -1134,29 +1639,71 @@ export function StatisticsScreen({
                 role="group"
                 aria-label="Community team caseload, scrolls sideways when the panel is narrow"
               >
-                <table className={pageStyles.dataTable}>
+                <table className={pageStyles.dataTable} id="teamDataTable">
                   <caption className="srOnly">
                     Community mental health team caseload and referrals, last seven days
                   </caption>
                   <thead>
                     <tr>
-                      <th scope="col">Team</th>
-                      <th scope="col" className={pageStyles.n}>
-                        Suburbs covered
+                      <th
+                        scope="col"
+                        className={`${pageStyles.sortable} ${teamSortCol === "name" ? pageStyles.sortActive : ""}`}
+                        onClick={() => handleTeamSort("name")}
+                        aria-sort={teamSortCol === "name" ? (teamSortAsc ? "ascending" : "descending") : "none"}
+                      >
+                        Team{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {teamSortCol === "name" ? (teamSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
                       </th>
-                      <th scope="col" className={pageStyles.n}>
-                        Caseload
+                      <th
+                        scope="col"
+                        className={`${pageStyles.n} ${pageStyles.sortable} ${teamSortCol === "suburbs" ? pageStyles.sortActive : ""}`}
+                        onClick={() => handleTeamSort("suburbs")}
+                        aria-sort={teamSortCol === "suburbs" ? (teamSortAsc ? "ascending" : "descending") : "none"}
+                      >
+                        Suburbs covered{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {teamSortCol === "suburbs" ? (teamSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
                       </th>
-                      <th scope="col" className={pageStyles.n}>
-                        New referrals
+                      <th
+                        scope="col"
+                        className={`${pageStyles.n} ${pageStyles.sortable} ${teamSortCol === "caseload" ? pageStyles.sortActive : ""}`}
+                        onClick={() => handleTeamSort("caseload")}
+                        aria-sort={teamSortCol === "caseload" ? (teamSortAsc ? "ascending" : "descending") : "none"}
+                      >
+                        Caseload{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {teamSortCol === "caseload" ? (teamSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
                       </th>
-                      <th scope="col" className={pageStyles.n}>
-                        Discharged to community
+                      <th
+                        scope="col"
+                        className={`${pageStyles.n} ${pageStyles.sortable} ${teamSortCol === "newRefs" ? pageStyles.sortActive : ""}`}
+                        onClick={() => handleTeamSort("newRefs")}
+                        aria-sort={teamSortCol === "newRefs" ? (teamSortAsc ? "ascending" : "descending") : "none"}
+                      >
+                        New referrals{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {teamSortCol === "newRefs" ? (teamSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </th>
+                      <th
+                        scope="col"
+                        className={`${pageStyles.n} ${pageStyles.sortable} ${teamSortCol === "discharges" ? pageStyles.sortActive : ""}`}
+                        onClick={() => handleTeamSort("discharges")}
+                        aria-sort={teamSortCol === "discharges" ? (teamSortAsc ? "ascending" : "descending") : "none"}
+                      >
+                        Discharged to community{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {teamSortCol === "discharges" ? (teamSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {shownCommunityTeams.map((t) => (
+                    {filteredAndSortedTeams.map((t) => (
                       <tr key={t.id}>
                         <th scope="row">{t.name}</th>
                         <td className={pageStyles.n}>{t.suburbs}</td>
@@ -1184,14 +1731,15 @@ export function StatisticsScreen({
 
               <p className={pageStyles.panelFoot}>
                 <strong>
-                  {communityTeams.length - shownCommunityTeams.length} of {communityTeams.length} teams are not shown
-                </strong>
-                , largest catchment first, and the totals row carries all {communityTeams.length}. The eight drawn hold{" "}
-                <b>{shownTeamCaseload.toLocaleString()}</b> of the <b>{totalTeamCaseload.toLocaleString()}</b> people in
-                community care. <strong>Team names and suburb counts are real</strong>, taken from the approved
-                community hub screen, which counts them from the repository&apos;s catchment table. A team the catchment
-                document does not name is not a team that does not exist. Each team&apos;s own figures are on{" "}
-                <Link href="/mockups/ward-flow/statistics/community/midland-team">Community team statistics</Link>.
+                  {filteredAndSortedTeams.length < communityTeams.length
+                    ? `${communityTeams.length - filteredAndSortedTeams.length} teams filtered out by query.`
+                    : `All ${communityTeams.length} teams shown.`}
+                </strong>{" "}
+                The teams drawn hold <b>{totalTeamCaseload.toLocaleString()}</b> people in community care.{" "}
+                <strong>Team names and suburb counts are real</strong>, taken from the approved community hub screen,
+                which counts them from the repository&apos;s catchment table. A team the catchment document does not name
+                is not a team that does not exist. Each team&apos;s own figures are on{" "}
+                <Link href="/mockups/ward-flow/statistics/community/bentley">Community team statistics</Link>.
               </p>
 
               {/* Community team chooser list (for test suite) */}
