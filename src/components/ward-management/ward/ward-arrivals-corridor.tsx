@@ -26,10 +26,7 @@ import { edById } from "@/components/ward-management/ward-sites";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { OVERRIDE_REASONS, type OverrideReason } from "@/components/ward-management/ward-change-reasons";
-import {
-  HIGH_ACUITY_STAFFING_REFUSAL,
-  OVERRIDE_REASON_REQUIRED,
-} from "@/components/ward-management/ward-flow-reducer";
+import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import wardStyles from "./ward.module.css";
 
 function originPlaceLabel(originEdId: string): string {
