@@ -96,7 +96,7 @@
 
 .kpiBand {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr));
   margin: 0;
   border-top: 1px solid var(--line);
 }

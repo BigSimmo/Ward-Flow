@@ -887,7 +887,7 @@
 
 .kpiBand {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr));
   gap: 0;
   margin: 0 0 0.875rem 0;
   border-block: 0.0625rem solid var(--line);
@@ -936,7 +936,7 @@
 
 .bedGridCards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(8.5rem, 100%), 1fr));
   gap: 0.625rem;
   padding: 0.75rem;
 }
