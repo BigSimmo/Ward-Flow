@@ -1518,12 +1518,6 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
     dispatch({ type: "CLEAR_BED_RELEASE_BLOCK", role: "ward", now, releaseId, actingUnitId: unitId });
   }
 
-  // RELEASE_BED is the one transition here that changes a real bed count (see the reducer's own
-  // comment on the case) — accepted from `expected` and `confirmed` alike, terminal either way.
-  function releaseBedRelease(releaseId: string) {
-    dispatch({ type: "RELEASE_BED", role: "ward", now, releaseId, actingUnitId: unitId });
-  }
-
   // Josh, 26 Sept 2026 (1A). RELEASE_BED can no longer be accepted while the person is in the bed,
   // and a departure completes the release in the same write, so "Discharged" records the named
   // person leaving (RECORD_LEAVING) with the destination the ward chose. The refusal, if any, is
