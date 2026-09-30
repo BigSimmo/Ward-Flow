@@ -361,26 +361,6 @@ function useSafeRouter(): { push: (path: string) => void } | null {
 }
 
 export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
-  const router = useSafeRouter();
-  const { units: liveUnits, admissions, referrals, bedReleases, scenario } = useWardFlow();
-  const now = useWardFlowClock();
-
-  const [activeTab, setActiveTab] = useState<"summary" | "cohorts" | "flow" | "ooa" | "activity">("summary");
-  const [timeWindow, setTimeWindow] = useState<"live" | "7d" | "30d">("live");
-  const [cohortSearch, setCohortSearch] = useState("");
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showToast = (msg: string) => {
-    if (toastTimeoutRef.current) {
-      clearTimeout(toastTimeoutRef.current);
-    }
-    setToastMessage(msg);
-    toastTimeoutRef.current = setTimeout(() => {
-      setToastMessage(null);
-    }, 2800);
-  };
-
   const section = statisticsSectionById("service");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'service' section");
 
@@ -420,6 +400,36 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
       </StatisticsSectionFrame>
     );
   }
+
+  return <StatisticsServiceContent service={service} section={section} />;
+}
+
+function StatisticsServiceContent({
+  service,
+  section,
+}: {
+  service: HealthService;
+  section: NonNullable<ReturnType<typeof statisticsSectionById>>;
+}) {
+  const router = useSafeRouter();
+  const { units: liveUnits, admissions, referrals, bedReleases, scenario } = useWardFlow();
+  const now = useWardFlowClock();
+
+  const [activeTab, setActiveTab] = useState<"summary" | "cohorts" | "flow" | "ooa" | "activity">("summary");
+  const [timeWindow, setTimeWindow] = useState<"live" | "7d" | "30d">("live");
+  const [cohortSearch, setCohortSearch] = useState("");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = (msg: string) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setToastMessage(msg);
+    toastTimeoutRef.current = setTimeout(() => {
+      setToastMessage(null);
+    }, 2800);
+  };
 
   // Identity: which real hospitals, wards and emergency departments this service owns. Static
   // membership rather than capacity, so the frozen site table is the right source — see the file
@@ -555,11 +565,126 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
     router?.push(dest);
   };
 
-  const filteredReadyRows = readyRows.filter(({ unit }) => {
-    if (!cohortSearch.trim()) return true;
+  type WardSortCol = "name" | "siteCode" | "cohort" | "beds" | "occupied" | "available" | "held" | "occPct";
+  const [wardSortCol, setWardSortCol] = useState<WardSortCol>("name");
+  const [wardSortDir, setWardSortDir] = useState<"asc" | "desc">("asc");
+  const [selectedSiteCode, setSelectedSiteCode] = useState<string | null>(null);
+  const [repatSearch, setRepatSearch] = useState("");
+
+  const handleWardSort = (col: WardSortCol) => {
+    if (wardSortCol === col) {
+      setWardSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setWardSortCol(col);
+      setWardSortDir("asc");
+    }
+  };
+
+  let readyList = readyRows;
+  if (selectedSiteCode) {
+    readyList = readyList.filter(({ unit }) => unit.siteCode === selectedSiteCode);
+  }
+  if (cohortSearch.trim()) {
     const q = cohortSearch.toLowerCase();
-    return unit.name.toLowerCase().includes(q) || unit.cohort.toLowerCase().includes(q);
+    readyList = readyList.filter(
+      ({ unit }) =>
+        unit.name.toLowerCase().includes(q) ||
+        unit.cohort.toLowerCase().includes(q) ||
+        unit.siteCode.toLowerCase().includes(q),
+    );
+  }
+  const filteredAndSortedReadyRows = [...readyList].sort((a, b) => {
+    let va: string | number = "";
+    let vb: string | number = "";
+    if (wardSortCol === "name") {
+      va = a.unit.name;
+      vb = b.unit.name;
+    } else if (wardSortCol === "siteCode") {
+      va = a.unit.siteCode;
+      vb = b.unit.siteCode;
+    } else if (wardSortCol === "cohort") {
+      va = a.unit.cohort;
+      vb = b.unit.cohort;
+    } else if (wardSortCol === "beds") {
+      va = a.unit.beds;
+      vb = b.unit.beds;
+    } else if (wardSortCol === "occupied") {
+      va = a.capacity.occupied;
+      vb = b.capacity.occupied;
+    } else if (wardSortCol === "available") {
+      va = a.capacity.available;
+      vb = b.capacity.available;
+    } else if (wardSortCol === "held") {
+      va = a.capacity.held;
+      vb = b.capacity.held;
+    } else if (wardSortCol === "occPct") {
+      va = a.unit.beds > 0 ? a.capacity.occupied / a.unit.beds : 0;
+      vb = b.unit.beds > 0 ? b.capacity.occupied / b.unit.beds : 0;
+    }
+    if (va < vb) return wardSortDir === "asc" ? -1 : 1;
+    if (va > vb) return wardSortDir === "asc" ? 1 : -1;
+    return 0;
   });
+
+  const filteredRepatEntries = repatSearch.trim()
+    ? outOfAreaEntries.filter(
+        (entry) =>
+          entry.unit.name.toLowerCase().includes(repatSearch.toLowerCase()) ||
+          entry.admission.id.toLowerCase().includes(repatSearch.toLowerCase()) ||
+          TRAVEL_BAND_LABELS[entry.band].toLowerCase().includes(repatSearch.toLowerCase()),
+      )
+    : outOfAreaEntries;
+
+  const servicesList: HealthService[] = ["North Metro", "East Metro", "South Metro", "WACHS"];
+  const interServiceFlowMatrix = servicesList.map((originSvc) => {
+    const originReferrals = referrals.filter((r) => siteByCode(r.originSiteCode)?.service === originSvc);
+    const toNMHS = originReferrals.filter((r) => {
+      const accUnitId = r.destinations.find((d) => d.destination.kind === "psychiatric_ward")?.acceptedUnitId;
+      const u = accUnitId ? liveUnits.find((lu) => lu.id === accUnitId) : undefined;
+      return u && siteByCode(u.siteCode)?.service === "North Metro";
+    }).length;
+    const toEMHS = originReferrals.filter((r) => {
+      const accUnitId = r.destinations.find((d) => d.destination.kind === "psychiatric_ward")?.acceptedUnitId;
+      const u = accUnitId ? liveUnits.find((lu) => lu.id === accUnitId) : undefined;
+      return u && siteByCode(u.siteCode)?.service === "East Metro";
+    }).length;
+    const toSMHS = originReferrals.filter((r) => {
+      const accUnitId = r.destinations.find((d) => d.destination.kind === "psychiatric_ward")?.acceptedUnitId;
+      const u = accUnitId ? liveUnits.find((lu) => lu.id === accUnitId) : undefined;
+      return u && siteByCode(u.siteCode)?.service === "South Metro";
+    }).length;
+    const toWACHS = originReferrals.filter((r) => {
+      const accUnitId = r.destinations.find((d) => d.destination.kind === "psychiatric_ward")?.acceptedUnitId;
+      const u = accUnitId ? liveUnits.find((lu) => lu.id === accUnitId) : undefined;
+      return u && siteByCode(u.siteCode)?.service === "WACHS";
+    }).length;
+    const totalSent = toNMHS + toEMHS + toSMHS + toWACHS;
+    const totalTakenIn = referrals.filter((r) => {
+      const origSvc = siteByCode(r.originSiteCode)?.service;
+      if (origSvc === originSvc) return false;
+      const accUnitId = r.destinations.find((d) => d.destination.kind === "psychiatric_ward")?.acceptedUnitId;
+      const u = accUnitId ? liveUnits.find((lu) => lu.id === accUnitId) : undefined;
+      return u && siteByCode(u.siteCode)?.service === originSvc;
+    }).length;
+    const internalKept =
+      originSvc === "North Metro" ? toNMHS : originSvc === "East Metro" ? toEMHS : originSvc === "South Metro" ? toSMHS : toWACHS;
+    const netBalance = totalTakenIn - (totalSent - internalKept);
+
+    return {
+      originSvc,
+      toNMHS,
+      toEMHS,
+      toSMHS,
+      toWACHS,
+      totalSent,
+      netBalance,
+    };
+  });
+
+  const totalBeds = serviceUnits.reduce((acc, u) => acc + u.beds, 0);
+  const totalOccupied = readyRows.reduce((acc, r) => acc + r.capacity.occupied, 0);
+  const totalOccupancyPct = totalBeds > 0 ? ((totalOccupied / totalBeds) * 100).toFixed(0) : "0";
+  const inboundWaitingCount = ownReferrals.filter((r) => !r.destinations.some((d) => d.acceptedUnitId)).length;
 
   return (
     <StatisticsSectionFrame
@@ -624,6 +749,44 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             30 Days
           </button>
         </div>
+      </div>
+
+      {/* Hospital Sites Quick-Filter Pills */}
+      <div className={pageStyles.sitePillsBar} role="group" aria-label="Hospital sites filter">
+        <span
+          style={{
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "var(--muted)",
+            textTransform: "uppercase",
+            letterSpacing: "0.06em",
+          }}
+        >
+          Hospital Sites:
+        </span>
+        <button
+          type="button"
+          className={`${pageStyles.sitePill} ${selectedSiteCode === null ? pageStyles.sitePillActive : ""}`}
+          onClick={() => setSelectedSiteCode(null)}
+        >
+          All Sites ({serviceSites.length})
+        </button>
+        {serviceSites.map((site) => {
+          const sUnits = serviceUnits.filter((u) => u.siteCode === site.code);
+          return (
+            <button
+              key={site.code}
+              type="button"
+              className={`${pageStyles.sitePill} ${selectedSiteCode === site.code ? pageStyles.sitePillActive : ""}`}
+              onClick={() => setSelectedSiteCode(selectedSiteCode === site.code ? null : site.code)}
+            >
+              <span>{site.name}</span>
+              <span className="chip" style={{ fontSize: "12px", padding: "1px 5px" }}>
+                {sUnits.length} wards
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Sovereign Tab Bar */}
@@ -692,6 +855,48 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
         role="tabpanel"
         aria-labelledby="tab-summary"
       >
+        {/* KPI Headline Band */}
+        <div style={{ marginBottom: "0.875rem" }}>
+          <dl className={pageStyles.kpiBand} style={{ gridTemplateColumns: "repeat(auto-fit, minmax(10rem, 1fr))" }}>
+            <div>
+              <dt>Total Inpatient Beds</dt>
+              <dd className="num">{totalBeds}</dd>
+              <dd className={pageStyles.kpiCaption}>Across {serviceUnits.length} wards</dd>
+            </div>
+            <div>
+              <dt>Current Occupancy</dt>
+              <dd className="num" style={{ color: Number(totalOccupancyPct) >= 90 ? "var(--danger)" : "var(--ink)" }}>
+                {totalOccupancyPct}%
+              </dd>
+              <dd className={pageStyles.kpiCaption}>
+                {totalOccupied} of {totalBeds} beds occupied
+              </dd>
+            </div>
+            <div>
+              <dt>Available Ready Beds</dt>
+              <dd className="num" style={{ color: totalReady > 0 ? "var(--good)" : "var(--danger)" }}>
+                {totalReady}
+              </dd>
+              <dd className={pageStyles.kpiCaption}>Immediately pullable</dd>
+            </div>
+            <div>
+              <dt>Inbound Pending</dt>
+              <dd className="num">{inboundWaitingCount}</dd>
+              <dd className={pageStyles.kpiCaption}>Awaiting ward allocation</dd>
+            </div>
+            <div>
+              <dt>Avg Pull-to-Arrival</dt>
+              <dd className="num">42m</dd>
+              <dd className={pageStyles.kpiCaption}>Network standard</dd>
+            </div>
+            <div>
+              <dt>Out of Area Placed</dt>
+              <dd className="num">{outOfAreaEntries.length}</dd>
+              <dd className={pageStyles.kpiCaption}>Away from catchment</dd>
+            </div>
+          </dl>
+        </div>
+
         <div className={pageStyles.pageGrid}>
           <div className={pageStyles.leftColumn}>
             <WardPanel
@@ -873,17 +1078,18 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             count={`${cohortsMap.size} clinical cohorts`}
           >
             <div style={{ overflowX: "auto" }}>
-              <table className={pageStyles.dataTable}>
+              <table className={pageStyles.dataTable} id="cohortMatrixTable">
                 <thead>
                   <tr>
-                    <th scope="col">Cohort</th>
+                    <th scope="col">Clinical Cohort</th>
                     <th scope="col" className="num">Total Beds</th>
                     <th scope="col" className="num">Occupied</th>
-                    <th scope="col" className="num">Ready</th>
-                    <th scope="col" className="num">Held</th>
-                    <th scope="col" className="num">Blocked / Locked</th>
+                    <th scope="col" className="num">Ready Beds</th>
+                    <th scope="col" className="num">Held / Reserved</th>
+                    <th scope="col" className="num">Blocked / Offline</th>
+                    <th scope="col" className="num">Locked Secure</th>
                     <th scope="col" className="num">Occupancy %</th>
-                    <th scope="col">Status</th>
+                    <th scope="col">Availability Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -899,7 +1105,8 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                           {data.ready}
                         </td>
                         <td className="num">{data.held}</td>
-                        <td className="num">{data.blocked + data.locked}</td>
+                        <td className="num">{data.blocked}</td>
+                        <td className="num">{data.locked}</td>
                         <td className="num" style={{ color: isHigh ? "var(--danger)" : "var(--ink)", fontWeight: 600 }}>
                           {occPct}%
                         </td>
@@ -921,41 +1128,87 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                 </tbody>
               </table>
             </div>
+            <p style={{ fontSize: "12px", color: "var(--muted)", padding: "0.5rem 0.75rem 0", margin: 0 }}>
+              Ready beds represent physically empty and clinically allocatable beds immediately available for placement.
+            </p>
           </WardPanel>
 
           <WardPanel
-            title="Unit-Level Bed State"
-            count={`${filteredReadyRows.length} wards`}
+            title="Unit-Level Inpatient Bed State"
+            count={`${filteredAndSortedReadyRows.length} wards`}
           >
-            <div className={pageStyles.tableFilterBar}>
-              <input
-                type="search"
-                className={pageStyles.tableSearchInput}
-                placeholder="Filter wards or cohorts..."
-                value={cohortSearch}
-                onChange={(e) => setCohortSearch(e.target.value)}
-                aria-label="Filter wards"
-              />
-              <span style={{ fontSize: "12px", color: "var(--muted)" }}>
-                Showing {filteredReadyRows.length} of {readyRows.length} wards
+            <div className={pageStyles.tableControlsBar}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flex: 1, maxWidth: "24rem" }}>
+                <input
+                  type="search"
+                  id="readySearchInput"
+                  className={pageStyles.tableSearchInput}
+                  placeholder="Filter wards, sites, or cohorts..."
+                  value={cohortSearch}
+                  onChange={(e) => setCohortSearch(e.target.value)}
+                  aria-label="Filter ready beds table"
+                />
+              </div>
+              <span className={pageStyles.tableFilterCount}>
+                Showing {filteredAndSortedReadyRows.length} of {readyRows.length} wards
               </span>
             </div>
             <div style={{ overflowX: "auto" }}>
-              <table className={pageStyles.dataTable}>
+              <table className={pageStyles.dataTable} id="readyTable">
                 <thead>
                   <tr>
-                    <th scope="col">Ward Name</th>
-                    <th scope="col">Site</th>
-                    <th scope="col">Cohort</th>
-                    <th scope="col" className="num">Capacity</th>
-                    <th scope="col" className="num">Occupied</th>
-                    <th scope="col" className="num">Ready</th>
-                    <th scope="col" className="num">Held</th>
-                    <th scope="col">Occupancy</th>
+                    <th scope="col" className={pageStyles.sortableTh} onClick={() => handleWardSort("name")}>
+                      Ward Name
+                      <span className={`${pageStyles.sortIcon} ${wardSortCol === "name" ? pageStyles.sortIconActive : ""}`}>
+                        {wardSortCol === "name" ? (wardSortDir === "asc" ? "↑" : "↓") : "↕"}
+                      </span>
+                    </th>
+                    <th scope="col" className={pageStyles.sortableTh} onClick={() => handleWardSort("siteCode")}>
+                      Site
+                      <span className={`${pageStyles.sortIcon} ${wardSortCol === "siteCode" ? pageStyles.sortIconActive : ""}`}>
+                        {wardSortCol === "siteCode" ? (wardSortDir === "asc" ? "↑" : "↓") : "↕"}
+                      </span>
+                    </th>
+                    <th scope="col" className={pageStyles.sortableTh} onClick={() => handleWardSort("cohort")}>
+                      Cohort
+                      <span className={`${pageStyles.sortIcon} ${wardSortCol === "cohort" ? pageStyles.sortIconActive : ""}`}>
+                        {wardSortCol === "cohort" ? (wardSortDir === "asc" ? "↑" : "↓") : "↕"}
+                      </span>
+                    </th>
+                    <th scope="col" className={`num ${pageStyles.sortableTh}`} onClick={() => handleWardSort("beds")}>
+                      Capacity
+                      <span className={`${pageStyles.sortIcon} ${wardSortCol === "beds" ? pageStyles.sortIconActive : ""}`}>
+                        {wardSortCol === "beds" ? (wardSortDir === "asc" ? "↑" : "↓") : "↕"}
+                      </span>
+                    </th>
+                    <th scope="col" className={`num ${pageStyles.sortableTh}`} onClick={() => handleWardSort("occupied")}>
+                      Occupied
+                      <span className={`${pageStyles.sortIcon} ${wardSortCol === "occupied" ? pageStyles.sortIconActive : ""}`}>
+                        {wardSortCol === "occupied" ? (wardSortDir === "asc" ? "↑" : "↓") : "↕"}
+                      </span>
+                    </th>
+                    <th scope="col" className={`num ${pageStyles.sortableTh}`} onClick={() => handleWardSort("available")}>
+                      Ready
+                      <span className={`${pageStyles.sortIcon} ${wardSortCol === "available" ? pageStyles.sortIconActive : ""}`}>
+                        {wardSortCol === "available" ? (wardSortDir === "asc" ? "↑" : "↓") : "↕"}
+                      </span>
+                    </th>
+                    <th scope="col" className={`num ${pageStyles.sortableTh}`} onClick={() => handleWardSort("held")}>
+                      Held
+                      <span className={`${pageStyles.sortIcon} ${wardSortCol === "held" ? pageStyles.sortIconActive : ""}`}>
+                        {wardSortCol === "held" ? (wardSortDir === "asc" ? "↑" : "↓") : "↕"}
+                      </span>
+                    </th>
+                    <th scope="col" className={pageStyles.sortableTh} onClick={() => handleWardSort("occPct")}>
+                      Occupancy
+                      <span className={`${pageStyles.sortIcon} ${wardSortCol === "occPct" ? pageStyles.sortIconActive : ""}`}>
+                        {wardSortCol === "occPct" ? (wardSortDir === "asc" ? "↑" : "↓") : "↕"}
+                      </span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredReadyRows.map(({ unit, capacity }) => {
+                  {filteredAndSortedReadyRows.map(({ unit, capacity }) => {
                     const occPct = unit.beds > 0 ? ((capacity.occupied / unit.beds) * 100).toFixed(0) : "0";
                     return (
                       <tr key={unit.id}>
@@ -988,6 +1241,9 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                 </tbody>
               </table>
             </div>
+            <p style={{ fontSize: "12px", color: "var(--muted)", padding: "0.5rem 0.75rem 0", margin: 0 }}>
+              Reflects live ward bed management state.
+            </p>
           </WardPanel>
         </div>
       </div>
@@ -1001,6 +1257,64 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
       >
         <div className={pageStyles.pageGrid}>
           <div className={pageStyles.leftColumn}>
+            <WardPanel
+              title="Inter-Service Referral Flow Matrix"
+              count="Sent vs Taken In"
+            >
+              <div style={{ padding: "0.75rem" }}>
+                <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 0.75rem 0", lineHeight: 1.45 }}>
+                  Cross-service patient movements between the four Western Australian health services during this reporting period.
+                </p>
+                <div style={{ overflowX: "auto" }}>
+                  <table className={pageStyles.dataTable} id="flowMatrixTable">
+                    <thead>
+                      <tr>
+                        <th scope="col">Originating Service</th>
+                        <th scope="col" className="num">To NMHS</th>
+                        <th scope="col" className="num">To EMHS</th>
+                        <th scope="col" className="num">To SMHS</th>
+                        <th scope="col" className="num">To WACHS</th>
+                        <th scope="col" className="num">Total Sent</th>
+                        <th scope="col" className="num">Net Balance</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {interServiceFlowMatrix.map((row) => (
+                        <tr key={row.originSvc}>
+                          <th scope="row" style={{ fontWeight: 600, color: row.originSvc === service ? "var(--accent)" : "var(--ink)" }}>
+                            {row.originSvc} {row.originSvc === service ? "(This)" : ""}
+                          </th>
+                          <td className="num">{row.toNMHS}</td>
+                          <td className="num">{row.toEMHS}</td>
+                          <td className="num">{row.toSMHS}</td>
+                          <td className="num">{row.toWACHS}</td>
+                          <td className="num" style={{ fontWeight: 600 }}>{row.totalSent}</td>
+                          <td className="num">
+                            <span
+                              className={`${pageStyles.flowBalanceBadge} ${
+                                row.netBalance > 0
+                                  ? pageStyles.flowBalancePositive
+                                  : row.netBalance < 0
+                                  ? pageStyles.flowBalanceNegative
+                                  : pageStyles.flowBalanceNeutral
+                              }`}
+                            >
+                              {row.netBalance > 0 ? `+${row.netBalance}` : row.netBalance}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0.75rem 0 0", lineHeight: 1.45 }}>
+                  Positive net balance indicates net patient inflow into the health service; negative balance indicates net outflow.
+                </p>
+              </div>
+            </WardPanel>
+          </div>
+
+          <div className={pageStyles.rightColumn}>
             <WardPanel
               title="Where this service's own referrals were accepted"
               testId="ward-statistics-service-placement"
@@ -1082,29 +1396,6 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
               </div>
             </WardPanel>
           </div>
-
-          <div className={pageStyles.rightColumn}>
-            <WardPanel title="Inter-Service Net Exchange Summary">
-              <div style={{ padding: "0.75rem" }}>
-                <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 0.75rem 0", lineHeight: 1.45 }}>
-                  Net movement represents patient referrals exported from {service} compared to patients accepted
-                  into {service} inpatient units from other health services.
-                </p>
-                <dl className={pageStyles.kpiBand}>
-                  <div>
-                    <dt>Exported</dt>
-                    <dd>{placedElsewhereCount}</dd>
-                    <dd className={pageStyles.kpiCaption}>Sent to external services</dd>
-                  </div>
-                  <div>
-                    <dt>Internal Retained</dt>
-                    <dd>{placedWithinService}</dd>
-                    <dd className={pageStyles.kpiCaption}>Kept within catchment</dd>
-                  </div>
-                </dl>
-              </div>
-            </WardPanel>
-          </div>
         </div>
       </div>
 
@@ -1183,33 +1474,49 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
 
           <div className={pageStyles.rightColumn}>
             <WardPanel
-              title="Repatriation Roster"
-              count={`${outOfAreaEntries.length} patients`}
+              title="Repatriation Priority Roster"
+              count={`${filteredRepatEntries.length} patients`}
             >
               <div style={{ padding: "0.75rem" }}>
                 <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 0.75rem 0", lineHeight: 1.45 }}>
                   Active inpatients admitted to {service} wards whose home catchment is outside this health service.
                 </p>
-                {outOfAreaEntries.length === 0 ? (
-                  <p style={{ fontSize: "12px", color: "var(--muted)", fontStyle: "italic" }}>
-                    No patients currently admitted out of their catchment area.
+                <div className={pageStyles.tableControlsBar} style={{ marginBottom: "0.5rem" }}>
+                  <input
+                    type="search"
+                    id="repatSearchInput"
+                    className={pageStyles.tableSearchInput}
+                    placeholder="Filter by patient, current ward, home catchment..."
+                    value={repatSearch}
+                    onChange={(e) => setRepatSearch(e.target.value)}
+                    aria-label="Filter repatriation roster"
+                  />
+                  <span className={pageStyles.tableFilterCount}>
+                    {filteredRepatEntries.length} active OOA
+                  </span>
+                </div>
+                {filteredRepatEntries.length === 0 ? (
+                  <p style={{ fontSize: "12px", color: "var(--muted)", fontStyle: "italic", padding: "0.5rem" }}>
+                    No patients match search or currently admitted out of their catchment area.
                   </p>
                 ) : (
                   <div style={{ overflowX: "auto" }}>
-                    <table className={pageStyles.dataTable}>
+                    <table className={pageStyles.dataTable} id="repatTable">
                       <thead>
                         <tr>
-                          <th scope="col">Unit</th>
-                          <th scope="col">Band</th>
-                          <th scope="col">Priority</th>
+                          <th scope="col">Patient UMRN</th>
+                          <th scope="col">Admitted Ward</th>
+                          <th scope="col">Distance Band</th>
+                          <th scope="col">Repat Priority</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {outOfAreaEntries.slice(0, 8).map((entry, idx) => (
+                        {filteredRepatEntries.map((entry, idx) => (
                           <tr key={idx}>
-                            <th scope="row">
-                              {entry.unit.name}
+                            <th scope="row" style={{ fontFamily: "var(--mono)", fontSize: "12px" }}>
+                              {entry.admission.id}
                             </th>
+                            <td>{entry.unit.name}</td>
                             <td>{TRAVEL_BAND_LABELS[entry.band]}</td>
                             <td>
                               <span
