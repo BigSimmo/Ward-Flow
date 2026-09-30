@@ -281,6 +281,11 @@ function StatisticsWardScreenInner({
   const [politeNotice, setPoliteNotice] = useState<string | null>(null);
   const [bedSearchQuery, setBedSearchQuery] = useState<string>("");
 
+  const speciallingCount = admissions.filter(
+    (a) => a.unitId === unit.id && a.state !== "departed" && a.specialling,
+  ).length;
+  const occupancyPct = unit.beds > 0 ? ((capacity.occupied / unit.beds) * 100).toFixed(0) : "0";
+
   const triggerD4 = useCallback((actionName?: string) => {
     const msg = actionName ? `${actionName}: Not wired in this prototype.` : "Not wired in this prototype.";
     setD4Notice(msg);
@@ -450,6 +455,66 @@ function StatisticsWardScreenInner({
         </div>
       </div>
 
+      {/* Quick-switch ward pills */}
+      <div className={pageStyles.wardPillsBar} role="group" aria-label="Quick switch ward">
+        {units.slice(0, 10).map((u) => {
+          const isActive = u.id === unit.id;
+          return (
+            <button
+              key={u.id}
+              type="button"
+              className={`${pageStyles.wardPill} ${isActive ? pageStyles.wardPillActive : ""}`}
+              onClick={() => {
+                router?.push(`/mockups/ward-flow/statistics/ward/${encodeURIComponent(u.id)}`);
+              }}
+              aria-pressed={isActive}
+            >
+              {u.name} ({u.beds})
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 6-Card KPI Headline Band */}
+      <dl className={pageStyles.kpiBand} aria-label="Ward KPI summary">
+        <div>
+          <dt>Total Capacity</dt>
+          <dd>{unit.beds}</dd>
+          <span className={pageStyles.kpiCaption}>Beds on unit</span>
+        </div>
+        <div>
+          <dt>Current Occupancy</dt>
+          <dd>
+            {capacity.occupied} ({occupancyPct}%)
+          </dd>
+          <span className={pageStyles.kpiCaption}>Target &le;85%</span>
+        </div>
+        <div>
+          <dt>Ready Beds</dt>
+          <dd>{capacity.available}</dd>
+          <span className={pageStyles.kpiCaption}>Min(empty, alloc)</span>
+        </div>
+        <div>
+          <dt>1:1 Specialling</dt>
+          <dd>{speciallingCount}</dd>
+          <span className={pageStyles.kpiCaption}>Active nursed</span>
+        </div>
+        <div>
+          <dt>Blocked Discharges</dt>
+          <dd>{headlineTotal}</dd>
+          <span className={pageStyles.kpiCaption}>Ready not yet gone</span>
+        </div>
+        <div>
+          <dt>Avg Length of Stay</dt>
+          <dd>
+            {statistics.averageLengthOfStayDays === null
+              ? "Not recorded"
+              : `${statistics.averageLengthOfStayDays.toFixed(1)}d`}
+          </dd>
+          <span className={pageStyles.kpiCaption}>Completed stays</span>
+        </div>
+      </dl>
+
       {d4Notice ? (
         <div className={pageStyles.d4NoticeBanner} role="status">
           <span>{d4Notice}</span>
@@ -530,6 +595,30 @@ function StatisticsWardScreenInner({
                 <dd>{openBeds}</dd>
               </div>
             </dl>
+
+            {/* Visual Bed Grid Summary Cards */}
+            <div className={pageStyles.bedGridCards} aria-label="Bed visual overview">
+              {bedMatrixList.slice(0, 12).map((b) => (
+                <div key={b.bed} className={pageStyles.bedGridCard}>
+                  <div className={pageStyles.bedGridCardHeader}>
+                    <strong>{b.bed}</strong>
+                    <span
+                      className={`${pageStyles.chip} ${
+                        b.state === "Occupied"
+                          ? pageStyles.chipOccupied
+                          : b.state === "Available"
+                            ? pageStyles.chipReady
+                            : pageStyles.chipAlert
+                      }`}
+                    >
+                      {b.state}
+                    </span>
+                  </div>
+                  <span style={{ color: "var(--muted)", fontSize: "12px" }}>{b.pt}</span>
+                  <span style={{ fontSize: "12px" }}>{b.days > 0 ? `${b.days}d stay` : b.target}</span>
+                </div>
+              ))}
+            </div>
 
             <WardTable className={pageStyles.bedTable} wrapperClassName={pageStyles.bedTableWrap}>
               <caption className={pageStyles.srOnly}>

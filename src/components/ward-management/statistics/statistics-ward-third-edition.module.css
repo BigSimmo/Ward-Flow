@@ -845,3 +845,117 @@
   color: var(--ink);
 }
 
+.wardPillsBar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  scrollbar-width: thin;
+}
+
+.wardPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.wardPill:hover {
+  background: var(--sunk);
+  color: var(--ink);
+  border-color: var(--ink-soft);
+}
+
+.wardPillActive {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.kpiBand {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0;
+  margin: 0 0 0.875rem 0;
+  border-block: 0.0625rem solid var(--line);
+  background: var(--surface);
+}
+
+.kpiBand > div {
+  padding: 0.75rem;
+  border-right: 0.0625rem solid var(--line);
+}
+
+.kpiBand > div:last-child {
+  border-right: 0;
+}
+
+.kpiBand dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.kpiBand dd {
+  margin: 0.25rem 0;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-6);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.kpiCaption {
+  display: block;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.areaChartSvgWrap {
+  padding: 0.75rem;
+  background: var(--surface);
+  border-radius: var(--radius-card, 0.375rem);
+}
+
+.bedGridCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: 0.625rem;
+  padding: 0.75rem;
+}
+
+.bedGridCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card, 0.375rem);
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 12px;
+}
+
+.bedGridCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+
