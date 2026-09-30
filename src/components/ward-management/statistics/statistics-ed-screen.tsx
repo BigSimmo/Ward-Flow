@@ -551,6 +551,11 @@ function StatisticsEdScreenInner({
                 <dd className={pageStyles.kpiCaption}>elapsed since opening</dd>
               </div>
               <div>
+                <dt>Over 48 hours</dt>
+                <dd>{over48h}</dd>
+                <dd className={pageStyles.kpiCaption}>prolonged placement wait</dd>
+              </div>
+              <div>
                 <dt>No ward yet</dt>
                 <dd>{unplaced}</dd>
                 <dd className={pageStyles.kpiCaption}>no accepting ward recorded</dd>
@@ -727,6 +732,78 @@ function StatisticsEdScreenInner({
 
           <WardPanel title="Wait time, band by band" testId="ward-statistics-ed-bands">
             <div className={styles.panelBody} role="group" aria-label="Wait bands content" tabIndex={0}>
+              {/* Visual Wait Bands Histogram SVG Chart */}
+              <div className={pageStyles.chartContainer} aria-label="Wait time band distribution chart">
+                <svg
+                  viewBox="0 0 600 160"
+                  role="img"
+                  aria-label="Wait time distribution across 5 clinical bands"
+                  className={pageStyles.chartSvg}
+                >
+                  {bands.map((band, idx) => {
+                    const maxCount = Math.max(1, ...bands.map((b) => b.count));
+                    const barWidth = 70;
+                    const gap = 45;
+                    const x = 30 + idx * (barWidth + gap);
+                    const barHeight = onTheList === 0 ? 0 : Math.round((band.count / maxCount) * 90);
+                    const y = 120 - barHeight;
+                    const color =
+                      idx >= 4
+                        ? "var(--danger)"
+                        : idx >= 3
+                          ? "var(--warn)"
+                          : idx >= 2
+                            ? "var(--gilt)"
+                            : "var(--accent)";
+
+                    return (
+                      <g key={band.label}>
+                        <rect
+                          x={x}
+                          y={120 - 90}
+                          width={barWidth}
+                          height={90}
+                          rx={4}
+                          fill="var(--sunk)"
+                          opacity={0.4}
+                        />
+                        {barHeight > 0 && (
+                          <rect
+                            x={x}
+                            y={y}
+                            width={barWidth}
+                            height={barHeight}
+                            rx={4}
+                            fill={color}
+                          />
+                        )}
+                        <text
+                          x={x + barWidth / 2}
+                          y={barHeight > 0 ? y - 6 : 114}
+                          textAnchor="middle"
+                          fill="var(--ink)"
+                          fontSize="12"
+                          fontWeight="600"
+                          fontFamily="var(--mono)"
+                        >
+                          {band.count}
+                        </text>
+                        <text
+                          x={x + barWidth / 2}
+                          y={140}
+                          textAnchor="middle"
+                          fill="var(--muted)"
+                          fontSize="12"
+                          fontWeight="500"
+                        >
+                          {idx === 0 ? "<4h" : idx === 1 ? "4–8h" : idx === 2 ? "8–12h" : idx === 3 ? "12–24h" : ">24h"}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+              </div>
+
               <WardTable>
                 <thead>
                   <tr>

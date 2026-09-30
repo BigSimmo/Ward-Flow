@@ -8,43 +8,56 @@
 
 
 .departmentSwitcher {
-  grid-area: switcher;
-  display: flex;
-  overflow-x: auto;
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
-  background: var(--surface-2);
-}
-.departmentSwitcher a {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  min-height: 3rem;
-  flex: 0 0 auto;
-  padding: 0.5rem 0.875rem;
+  overflow-x: auto;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card, 0.375rem);
+  scrollbar-width: thin;
+}
+.departmentSwitcher a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
   color: var(--ink-soft);
-  font-size: var(--t-0);
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
   text-decoration: none;
-  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.departmentSwitcher a:hover {
+  background: var(--sunk);
+  color: var(--ink);
+  border-color: var(--ink-soft);
 }
 .departmentSwitcher a[aria-current="page"] {
-  color: var(--ink);
-  background: var(--surface);
-  border-bottom-color: var(--gilt);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  font-weight: 600;
 }
 .departmentSwitcher a:focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: -3px;
+  outline-offset: 2px;
 }
 .departmentSwitcher a span {
   border: 1px solid var(--line);
-  background: var(--sunk);
-  padding: 0 0.375rem;
+  background: var(--surface);
+  padding: 0.1rem 0.375rem;
   border-radius: var(--radius-pill);
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
-  font-weight: 400;
+  font-size: 12px;
+  font-weight: 600;
 }
 .bandValue {
   display: flex;
@@ -81,11 +94,9 @@
   width: 100%;
 }
 
-
-
 .kpiBand {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
   margin: 0;
   border-top: 1px solid var(--line);
 }
@@ -99,7 +110,7 @@
   border-right: 0;
 }
 .kpiBand dt {
-  font-size: var(--t-0);
+  font-size: 12px;
   color: var(--muted);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -117,7 +128,7 @@
 .kpiBand .kpiCaption {
   margin: 0;
   font-family: var(--body);
-  font-size: var(--t-1);
+  font-size: 12px;
   font-weight: 400;
   line-height: 1.5;
   color: var(--muted);
