@@ -4841,13 +4841,13 @@
 
   .edNetworkCard:hover {
     border-color: var(--accent);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 6px rgb(var(--ward-shadow-rgb, 15 23 42) / 0.06);
     transform: translateY(-1px);
   }
 
   .edNetworkCard[data-current="true"] {
     border-color: var(--accent);
-    box-shadow: 0 0 0 1px var(--accent);
+    box-shadow: 0 0 0 1.5px var(--accent);
   }
 
   .edNetworkCard[data-breach="true"] {
@@ -4943,41 +4943,76 @@
      the danger-soft token, because that row's whole meaning is the breach and its title already
      says so. A row is not a control, so it has no hover: the buttons inside it do. */
   .lstWrap {
-    padding: 2px 0 4px;
+    padding: 4px 0 8px;
     max-height: 480px;
     overflow-y: auto;
     scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.2s ease;
+  }
+  .lstWrap:hover {
     scrollbar-color: var(--line-strong) transparent;
   }
   .lstWrap::-webkit-scrollbar {
-    width: 5px;
+    width: 4px;
   }
   .lstWrap::-webkit-scrollbar-track {
     background: transparent;
   }
   .lstWrap::-webkit-scrollbar-thumb {
-    background: var(--line-strong);
+    background: transparent;
     border-radius: var(--r-full, 999px);
+    transition: background 0.2s ease;
+  }
+  .lstWrap:hover::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
   }
   .lstWrap::-webkit-scrollbar-thumb:hover {
     background: var(--muted);
   }
   .lst {
-    display: grid;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin: 0;
+    padding: 6px 12px 12px;
+    list-style: none;
   }
   .lstRow {
     display: grid;
-    grid-template-columns: 22px minmax(0, 1fr) auto;
+    grid-template-columns: 24px minmax(0, 1fr) auto;
     align-items: start;
-    gap: 2px 10px;
-    padding: 9px 14px 10px;
-    border-top: 1px solid var(--line);
+    gap: 4px 10px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--line-strong);
+    border-radius: var(--r2, 6px);
+    box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb, 15 23 42) / 0.03);
+    transition:
+      background 0.12s ease,
+      border-color 0.12s ease,
+      transform 0.12s ease,
+      box-shadow 0.12s ease;
   }
-  .lst > .lstRow:first-child {
-    border-top: 0;
+  .lstRow:hover {
+    background: var(--surface-2);
+    border-color: var(--line-strong);
+    box-shadow: 0 2px 5px rgb(var(--ward-shadow-rgb, 15 23 42) / 0.06);
+    transform: translateY(-1px);
   }
   .lstRow[data-tone="danger"] {
+    border-left-color: var(--danger);
     background: var(--danger-soft);
+  }
+  .lstRow[data-tone="warn"] {
+    border-left-color: var(--warn);
+  }
+  .lstRow[data-tone="good"] {
+    border-left-color: var(--good);
+  }
+  .lstRow[data-tone="quiet"] {
+    border-left-color: var(--line-strong);
   }
   .tick {
     width: 22px;
@@ -5052,23 +5087,32 @@
   }
   .stamp {
     font-family: var(--mono);
-    font-size: var(--t-0);
+    font-size: 0.74rem;
+    font-weight: 600;
     color: var(--muted);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 2px 8px;
     white-space: nowrap;
+    font-variant-numeric: tabular-nums;
   }
   .lstRow[data-tone="danger"] .stamp {
     color: var(--danger);
+    border-color: var(--danger);
+    background: var(--surface);
   }
   /* The identity line under a name: pieces divided by a hairline rather than a middle dot, so a
      wrap never leaves a dot stranded at the start of a line. */
   .meta {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
-    gap: 3px 8px;
+    align-items: center;
+    gap: 6px 8px;
     font-size: var(--t-0);
     color: var(--muted);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
+    font-variant-numeric: tabular-nums;
   }
   .meta > * + * {
     padding-left: 8px;
@@ -5080,15 +5124,20 @@
   }
   .nameBtn {
     font: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
     color: var(--ink);
-    text-decoration: underline;
-    text-decoration-color: var(--line-strong);
-    text-underline-offset: 3px;
-    text-decoration-thickness: 1px;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.12s ease;
   }
   .nameBtn:hover {
-    text-decoration-color: var(--accent);
-    color: var(--accent-ink);
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
   .lstRow[data-tone="danger"] .nameBtn {
     color: var(--danger);
