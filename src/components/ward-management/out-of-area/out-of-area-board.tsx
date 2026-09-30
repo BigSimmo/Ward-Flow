@@ -377,7 +377,25 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             aria-pressed={transportFilter === "all" && catchmentFilter === "all" && !searchQuery}
             aria-label={`Total Out-of-Area: ${entries.length} active placements. Click to view all.`}
           >
-            <span className={pageStyles.kpiLabel}>Total Out-of-Area</span>
+            <div className={pageStyles.kpiLabelRow}>
+              <span className={pageStyles.kpiLabel}>Total Out-of-Area</span>
+              <span className={pageStyles.kpiToneBadge} data-tone="accent">
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="m9 12 2 2 4-4" />
+                </svg>
+              </span>
+            </div>
             <span className={pageStyles.kpiVal}>{entries.length}</span>
             <span className={pageStyles.kpiSub}>Cross-catchment admissions</span>
           </button>
@@ -391,7 +409,9 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
           >
             <div className={pageStyles.kpiLabelRow}>
               <span className={pageStyles.kpiLabel}>Air Transport Only</span>
-              <PlacementStatusGlyph tone="danger" />
+              <span className={pageStyles.kpiToneBadge} data-tone="danger">
+                <PlacementStatusGlyph tone="danger" />
+              </span>
             </div>
             <span className={`${pageStyles.kpiVal} ${pageStyles.dangerVal}`}>{airCount}</span>
             <span className={pageStyles.kpiSub}>Aeromedical flight required</span>
@@ -408,7 +428,9 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
           >
             <div className={pageStyles.kpiLabelRow}>
               <span className={pageStyles.kpiLabel}>Road Travel (&ge;3h)</span>
-              <PlacementStatusGlyph tone="warn" />
+              <span className={pageStyles.kpiToneBadge} data-tone="warn">
+                <PlacementStatusGlyph tone="warn" />
+              </span>
             </div>
             <span className={`${pageStyles.kpiVal} ${pageStyles.warnVal}`}>{roadCount}</span>
             <span className={pageStyles.kpiSub}>Ground transfer (&ge;3 hours)</span>
@@ -424,7 +446,25 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             }}
             aria-label={`Longest Out-of-Area: ${longestDays}, ${longestSub}. Click to inspect case.`}
           >
-            <span className={pageStyles.kpiLabel}>Longest Out-of-Area</span>
+            <div className={pageStyles.kpiLabelRow}>
+              <span className={pageStyles.kpiLabel}>Longest Out-of-Area</span>
+              <span className={pageStyles.kpiToneBadge} data-tone="accent">
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </span>
+            </div>
             <span className={`${pageStyles.kpiVal} ${pageStyles.accentVal}`}>{longestDays}</span>
             <span className={pageStyles.kpiSub}>{longestSub}</span>
           </button>
@@ -642,19 +682,22 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                     ) : (
                                       <span className={pageStyles.unrecordedUmrn}>{patientInfo.umrn}</span>
                                     )}
-                                  </div>
-                                  <div>
-                                    <strong>{entry.admission.homeRegion}</strong>
-                                  </div>
-                                  <div
-                                    className={pageStyles.mono}
-                                    style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}
-                                  >
-                                    {entry.admission.id}
+                                    <span className={pageStyles.metaDot}>&bull;</span>
+                                    <span
+                                      className={pageStyles.mono}
+                                      style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}
+                                    >
+                                      {entry.admission.id}
+                                    </span>
                                   </div>
                                 </td>
                                 <td>
-                                  <div>{entry.unit.name}</div>
+                                  <div className={pageStyles.homeRegionText}>
+                                    <strong>{entry.admission.homeRegion}</strong>
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className={pageStyles.unitNameText}>{entry.unit.name}</div>
                                   <div style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
                                     {site?.name ?? "Site not recorded"}
                                   </div>
@@ -669,7 +712,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                     <span>{TRAVEL_BAND_LABELS[entry.band]}</span>
                                   </span>
                                 </td>
-                                <td className={pageStyles.mono} style={{ fontWeight: 700 }}>
+                                <td className={`${pageStyles.mono} ${pageStyles.stayCell}`}>
                                   {sinceArrivalLabel(entry, now)}
                                 </td>
                               </tr>
@@ -975,22 +1018,45 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                               </span>
                             </div>
                           </div>
-                          <p className={pageStyles.detailMetaText}>
-                            Residential Catchment: <b>{selected.admission.homeRegion}</b>
-                          </p>
-                          <p className={pageStyles.detailMetaText}>
-                            Current Unit: <b>{selected.unit.name}</b> (
-                            {siteByCode(selected.unit.siteCode)?.name ?? "Site not recorded"})
-                          </p>
-                          <p className={pageStyles.detailMetaText}>
-                            Health service:{" "}
-                            <b>{siteByCode(selected.unit.siteCode)?.service ?? "Health service not recorded"}</b>
-                          </p>
-                          <div className={pageStyles.factMetricsRow}>
-                            Travel Band: <span>{TRAVEL_BAND_LABELS[selected.band]}</span> &bull; Days Out-of-Area:{" "}
-                            <span>{sinceArrivalLabel(selected, now)}</span>
+                          <div className={pageStyles.inspectorPlacementGrid}>
+                            <div className={pageStyles.placementGridItem}>
+                              <span className={pageStyles.gridItemLabel}>Catchment</span>
+                              <span className={pageStyles.gridItemVal}>
+                                <b>{selected.admission.homeRegion}</b>
+                              </span>
+                            </div>
+                            <div className={pageStyles.placementGridItem}>
+                              <span className={pageStyles.gridItemLabel}>Current Placement</span>
+                              <span className={pageStyles.gridItemVal}>
+                                <b>{selected.unit.name}</b>
+                                <span className={pageStyles.gridItemSub}>
+                                  {siteByCode(selected.unit.siteCode)?.name ?? "Site not recorded"}
+                                </span>
+                              </span>
+                            </div>
+                            <div className={pageStyles.placementGridItem}>
+                              <span className={pageStyles.gridItemLabel}>Travel Band</span>
+                              <span className={pageStyles.gridItemVal}>
+                                <span
+                                  className={pageStyles.travelBadge}
+                                  data-tone={selected.band === "air_transport_only" ? "danger" : "warn"}
+                                  data-ward-type-floor="badge"
+                                >
+                                  <PlacementStatusGlyph
+                                    tone={selected.band === "air_transport_only" ? "danger" : "warn"}
+                                  />
+                                  <span>{TRAVEL_BAND_LABELS[selected.band]}</span>
+                                </span>
+                              </span>
+                            </div>
+                            <div className={pageStyles.placementGridItem}>
+                              <span className={pageStyles.gridItemLabel}>Days Out-of-Area</span>
+                              <span className={`${pageStyles.gridItemVal} ${pageStyles.mono}`}>
+                                <b>{sinceArrivalLabel(selected, now)}</b>
+                              </span>
+                            </div>
                           </div>
-                          <p className={pageStyles.detailMetaText}>
+                          <p className={pageStyles.detailMetaText} style={{ marginTop: "4px" }}>
                             Group: <b>In a bed far from home</b>
                           </p>
                         </div>
@@ -1006,13 +1072,15 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                     </div>
 
                     <div className={pageStyles.detailSection}>
-                      <span className={pageStyles.detailLabel}>Target Destination Service</span>
-                      <div className={`${pageStyles.detailValue} ${pageStyles.accentVal}`}>
-                        {selected.admission.homeRegion} Adult MHU
+                      <div className={pageStyles.destinationRow}>
+                        <div>
+                          <span className={pageStyles.detailLabel}>Target Destination</span>
+                          <div className={`${pageStyles.detailValue} ${pageStyles.accentVal}`}>
+                            {selected.admission.homeRegion} Adult MHU
+                          </div>
+                        </div>
+                        <span className={pageStyles.enquiryBadge}>Awaiting bed vacancy</span>
                       </div>
-                      <p className={pageStyles.detailMetaText}>
-                        Bed enquiry status: <b>Awaiting home bed vacancy</b>
-                      </p>
                     </div>
 
                     <div className={pageStyles.detailActionWrap}>
@@ -1063,175 +1131,206 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                 </button>
               </div>
               <div className={pageStyles.modalBody}>
-                <div>
-                  <label className={pageStyles.modalLabel} htmlFor="repat-patient">
-                    Patient (URM &amp; Catchment)
-                  </label>
-                  <input
-                    id="repat-patient"
-                    type="text"
-                    className={`${pageStyles.modalInput} ${pageStyles.modalMono}`}
-                    value={
-                      selected
-                        ? `${resolvePatient(selected.admission).displayName} · ${resolvePatient(selected.admission).umrn} · ${selected.admission.id} (${selected.admission.homeRegion})`
-                        : "General Referral"
-                    }
-                    readOnly
-                  />
-                </div>
-                <div>
-                  <label className={pageStyles.modalLabel} htmlFor="repat-home-hospital">
-                    Home hospital
-                  </label>
-                  <select
-                    id="repat-home-hospital"
-                    className={pageStyles.modalSelect}
-                    data-testid="ward-out-of-area-repat-home-hospital"
-                    value={repatDraft.homeHospital}
-                    onChange={(e) => setRepatDraft((current) => ({ ...current, homeHospital: e.target.value }))}
-                  >
-                    <option value={NO_HOME_HOSPITAL_VALUE}>Choose the home hospital</option>
-                    {HOME_HOSPITAL_GROUPS.map((group) => (
-                      <optgroup key={group.service} label={SERVICE_DISPLAY_NAMES[group.service] ?? group.service}>
-                        {group.sites.map((site) => (
-                          <option key={site.code} value={site.code}>
-                            {site.name}
+                <div className={pageStyles.modalTwoColGrid}>
+                  {/* Left Column: Context & Receiving Destination */}
+                  <div className={pageStyles.modalCol}>
+                    <div className={pageStyles.modalField}>
+                      <label className={pageStyles.modalLabel} htmlFor="repat-patient">
+                        Patient (URM &amp; Catchment)
+                      </label>
+                      <input
+                        id="repat-patient"
+                        type="text"
+                        className={`${pageStyles.modalInput} ${pageStyles.modalMono}`}
+                        value={
+                          selected
+                            ? `${resolvePatient(selected.admission).displayName} · ${resolvePatient(selected.admission).umrn} · ${selected.admission.id} (${selected.admission.homeRegion})`
+                            : "General Referral"
+                        }
+                        readOnly
+                      />
+                    </div>
+                    <div className={pageStyles.modalField}>
+                      <label className={pageStyles.modalLabel} htmlFor="repat-home-hospital">
+                        Home hospital
+                      </label>
+                      <select
+                        id="repat-home-hospital"
+                        className={pageStyles.modalSelect}
+                        data-testid="ward-out-of-area-repat-home-hospital"
+                        value={repatDraft.homeHospital}
+                        onChange={(e) => setRepatDraft((current) => ({ ...current, homeHospital: e.target.value }))}
+                      >
+                        <option value={NO_HOME_HOSPITAL_VALUE}>Choose the home hospital</option>
+                        {HOME_HOSPITAL_GROUPS.map((group) => (
+                          <optgroup key={group.service} label={SERVICE_DISPLAY_NAMES[group.service] ?? group.service}>
+                            {group.sites.map((site) => (
+                              <option key={site.code} value={site.code}>
+                                {site.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </div>
+                    <fieldset className={pageStyles.modalFieldset} data-testid="ward-out-of-area-repat-ward-agreed">
+                      <legend className={pageStyles.modalLabel}>Has the receiving ward agreed?</legend>
+                      <div className={pageStyles.segmentedControl}>
+                        {(
+                          [
+                            { value: true, label: "Yes — receiving ward has agreed" },
+                            { value: false, label: "Not yet agreed" },
+                          ] as const
+                        ).map((answer) => (
+                          <label
+                            key={answer.label}
+                            className={`${pageStyles.segmentedOption} ${repatDraft.receivingWardAgreed === answer.value ? pageStyles.segmentedOptionActive : ""}`}
+                          >
+                            <input
+                              type="radio"
+                              name="repat-ward-agreed"
+                              className={pageStyles.accessibleHiddenInput}
+                              checked={repatDraft.receivingWardAgreed === answer.value}
+                              onChange={() =>
+                                setRepatDraft((current) => ({ ...current, receivingWardAgreed: answer.value }))
+                              }
+                            />
+                            <span>{answer.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                    <fieldset className={pageStyles.modalFieldset} data-testid="ward-out-of-area-repat-legal">
+                      <legend className={pageStyles.modalLabel}>Is the transport voluntary or involuntary?</legend>
+                      <div className={pageStyles.segmentedControl}>
+                        {TRANSPORT_LEGAL_STATUSES.map((status) => (
+                          <label
+                            key={status}
+                            className={`${pageStyles.segmentedOption} ${repatDraft.transportLegalStatus === status ? pageStyles.segmentedOptionActive : ""}`}
+                          >
+                            <input
+                              type="radio"
+                              name="repat-legal"
+                              className={pageStyles.accessibleHiddenInput}
+                              value={status}
+                              checked={repatDraft.transportLegalStatus === status}
+                              onChange={() =>
+                                setRepatDraft((current) => ({ ...current, transportLegalStatus: status }))
+                              }
+                            />
+                            <span>{TRANSPORT_LEGAL_STATUS_LABELS[status]}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                  </div>
+
+                  {/* Right Column: Transport Logistics & Timing */}
+                  <div className={pageStyles.modalCol}>
+                    <div className={pageStyles.modalField}>
+                      <label className={pageStyles.modalLabel} htmlFor="repat-mode">
+                        Road or flight
+                      </label>
+                      <select
+                        id="repat-mode"
+                        className={pageStyles.modalSelect}
+                        data-testid="ward-out-of-area-repat-mode"
+                        value={repatDraft.mode}
+                        onChange={(e) =>
+                          setRepatDraft((current) => ({
+                            ...current,
+                            mode: (REPAT_MODES as readonly string[]).includes(e.target.value)
+                              ? (e.target.value as RepatMode)
+                              : "",
+                          }))
+                        }
+                      >
+                        <option value={NO_REPAT_MODE_VALUE}>Choose road or flight</option>
+                        {REPAT_MODES.map((mode) => (
+                          <option key={mode} value={mode}>
+                            {mode === "road" ? "Road" : "Flight"}
                           </option>
                         ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </div>
-                <fieldset className={pageStyles.modalFieldset} data-testid="ward-out-of-area-repat-ward-agreed">
-                  <legend className={pageStyles.modalLabel}>Has the receiving ward agreed?</legend>
-                  {(
-                    [
-                      { value: true, label: "Yes — receiving ward has agreed" },
-                      { value: false, label: "Not yet agreed" },
-                    ] as const
-                  ).map((answer) => (
-                    <label key={answer.label} className={pageStyles.modalOption}>
+                      </select>
+                    </div>
+                    <div className={pageStyles.modalField}>
+                      <label className={pageStyles.modalLabel} htmlFor="repat-provider">
+                        Transport provider
+                      </label>
+                      <select
+                        id="repat-provider"
+                        className={pageStyles.modalSelect}
+                        data-testid="ward-out-of-area-repat-provider"
+                        value={repatDraft.provider ?? NO_TRANSPORT_PROVIDER_VALUE}
+                        onChange={(e) => {
+                          const next = e.target.value;
+                          setRepatDraft((current) => ({
+                            ...current,
+                            provider: TRANSPORT_PROVIDERS.includes(next as TransportProvider)
+                              ? (next as TransportProvider)
+                              : undefined,
+                          }));
+                        }}
+                      >
+                        <option value={NO_TRANSPORT_PROVIDER_VALUE}>Choose the provider</option>
+                        {TRANSPORT_PROVIDERS.map((provider) => (
+                          <option key={provider} value={provider}>
+                            {provider}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className={pageStyles.modalField}>
+                      <label className={pageStyles.modalLabel} htmlFor="repat-cad">
+                        CAD (dispatch) number
+                      </label>
                       <input
-                        type="radio"
-                        name="repat-ward-agreed"
-                        checked={repatDraft.receivingWardAgreed === answer.value}
-                        onChange={() => setRepatDraft((current) => ({ ...current, receivingWardAgreed: answer.value }))}
+                        id="repat-cad"
+                        type="text"
+                        className={pageStyles.modalInput}
+                        data-testid="ward-out-of-area-repat-cad"
+                        value={repatDraft.cadNumber}
+                        onChange={(e) => setRepatDraft((current) => ({ ...current, cadNumber: e.target.value }))}
                       />
-                      {answer.label}
-                    </label>
-                  ))}
-                </fieldset>
-                <div>
-                  <label className={pageStyles.modalLabel} htmlFor="repat-mode">
-                    Road or flight
-                  </label>
-                  <select
-                    id="repat-mode"
-                    className={pageStyles.modalSelect}
-                    data-testid="ward-out-of-area-repat-mode"
-                    value={repatDraft.mode}
-                    onChange={(e) =>
-                      setRepatDraft((current) => ({
-                        ...current,
-                        mode: (REPAT_MODES as readonly string[]).includes(e.target.value)
-                          ? (e.target.value as RepatMode)
-                          : "",
-                      }))
-                    }
-                  >
-                    <option value={NO_REPAT_MODE_VALUE}>Choose road or flight</option>
-                    {REPAT_MODES.map((mode) => (
-                      <option key={mode} value={mode}>
-                        {mode === "road" ? "Road" : "Flight"}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={pageStyles.modalLabel} htmlFor="repat-provider">
-                    Transport provider
-                  </label>
-                  <select
-                    id="repat-provider"
-                    className={pageStyles.modalSelect}
-                    data-testid="ward-out-of-area-repat-provider"
-                    value={repatDraft.provider ?? NO_TRANSPORT_PROVIDER_VALUE}
-                    onChange={(e) => {
-                      const next = e.target.value;
-                      setRepatDraft((current) => ({
-                        ...current,
-                        provider: TRANSPORT_PROVIDERS.includes(next as TransportProvider)
-                          ? (next as TransportProvider)
-                          : undefined,
-                      }));
-                    }}
-                  >
-                    <option value={NO_TRANSPORT_PROVIDER_VALUE}>Choose the provider</option>
-                    {TRANSPORT_PROVIDERS.map((provider) => (
-                      <option key={provider} value={provider}>
-                        {provider}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={pageStyles.modalLabel} htmlFor="repat-cad">
-                    CAD (dispatch) number
-                  </label>
-                  <input
-                    id="repat-cad"
-                    type="text"
-                    className={pageStyles.modalInput}
-                    data-testid="ward-out-of-area-repat-cad"
-                    value={repatDraft.cadNumber}
-                    onChange={(e) => setRepatDraft((current) => ({ ...current, cadNumber: e.target.value }))}
-                  />
-                </div>
-                <fieldset className={pageStyles.modalFieldset} data-testid="ward-out-of-area-repat-legal">
-                  <legend className={pageStyles.modalLabel}>Is the transport voluntary or involuntary?</legend>
-                  {TRANSPORT_LEGAL_STATUSES.map((status) => (
-                    <label key={status} className={pageStyles.modalOption}>
+                    </div>
+                    <div className={pageStyles.modalField}>
+                      <label className={pageStyles.modalLabel} htmlFor="repat-estimated-time">
+                        Estimated time (24-hour, HH:MM)
+                      </label>
                       <input
-                        type="radio"
-                        name="repat-legal"
-                        value={status}
-                        checked={repatDraft.transportLegalStatus === status}
-                        onChange={() => setRepatDraft((current) => ({ ...current, transportLegalStatus: status }))}
+                        id="repat-estimated-time"
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="HH:MM"
+                        className={pageStyles.modalInput}
+                        data-testid="ward-out-of-area-repat-estimated-time"
+                        value={repatDraft.estimatedTime}
+                        onChange={(e) => setRepatDraft((current) => ({ ...current, estimatedTime: e.target.value }))}
                       />
-                      {TRANSPORT_LEGAL_STATUS_LABELS[status]}
-                    </label>
-                  ))}
-                </fieldset>
-                <div>
-                  <label className={pageStyles.modalLabel} htmlFor="repat-estimated-time">
-                    Estimated time (24-hour, HH:MM)
-                  </label>
-                  <input
-                    id="repat-estimated-time"
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="HH:MM"
-                    className={pageStyles.modalInput}
-                    data-testid="ward-out-of-area-repat-estimated-time"
-                    value={repatDraft.estimatedTime}
-                    onChange={(e) => setRepatDraft((current) => ({ ...current, estimatedTime: e.target.value }))}
-                  />
+                    </div>
+                    <fieldset className={pageStyles.modalFieldset} data-testid="ward-out-of-area-repat-estimated-day">
+                      <legend className={pageStyles.modalLabel}>Today or tomorrow?</legend>
+                      <div className={pageStyles.segmentedControl}>
+                        {(["today", "tomorrow"] as const).map((day) => (
+                          <label
+                            key={day}
+                            className={`${pageStyles.segmentedOption} ${repatDraft.estimatedDay === day ? pageStyles.segmentedOptionActive : ""}`}
+                          >
+                            <input
+                              type="radio"
+                              name="repat-estimated-day"
+                              className={pageStyles.accessibleHiddenInput}
+                              value={day}
+                              checked={repatDraft.estimatedDay === day}
+                              onChange={() => setRepatDraft((current) => ({ ...current, estimatedDay: day }))}
+                            />
+                            <span>{day === "today" ? "Today" : "Tomorrow"}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                  </div>
                 </div>
-                <fieldset className={pageStyles.modalFieldset} data-testid="ward-out-of-area-repat-estimated-day">
-                  <legend className={pageStyles.modalLabel}>Today or tomorrow?</legend>
-                  {(["today", "tomorrow"] as const).map((day) => (
-                    <label key={day} className={pageStyles.modalOption}>
-                      <input
-                        type="radio"
-                        name="repat-estimated-day"
-                        value={day}
-                        checked={repatDraft.estimatedDay === day}
-                        onChange={() => setRepatDraft((current) => ({ ...current, estimatedDay: day }))}
-                      />
-                      {day === "today" ? "Today" : "Tomorrow"}
-                    </label>
-                  ))}
-                </fieldset>
                 {repatFormNotice ? (
                   <p className={pageStyles.modalNotice} role="alert" data-testid="ward-out-of-area-repat-blocked">
                     {repatFormNotice}
