@@ -648,17 +648,22 @@ export function CapacityScreen() {
                 />
                 <label className={styles.sortControl}>
                   <span className={styles.sortLabel}>Order</span>
-                  <select
-                    id="capacity-ward-sort"
-                    name="wardSort"
-                    aria-label="Sort wards"
-                    value={wardSort}
-                    onChange={(event) => setWardSort(event.target.value)}
-                  >
-                    <option value="name">Ward A–Z</option>
-                    <option value="ready">Most ready</option>
-                    <option value="confirmation">Oldest confirmation</option>
-                  </select>
+                  <div className={styles.sortSelectWrap}>
+                    <select
+                      id="capacity-ward-sort"
+                      name="wardSort"
+                      aria-label="Sort wards"
+                      value={wardSort}
+                      onChange={(event) => setWardSort(event.target.value)}
+                    >
+                      <option value="name">Ward A–Z</option>
+                      <option value="ready">Most ready</option>
+                      <option value="confirmation">Oldest confirmation</option>
+                    </select>
+                    <span className={styles.sortChevron} aria-hidden="true">
+                      ▾
+                    </span>
+                  </div>
                 </label>
               </div>
               <div className={styles.networkBody} role="region" aria-label="Ward capacity table" tabIndex={0}>

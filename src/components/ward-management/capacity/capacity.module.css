@@ -881,11 +881,11 @@
 .gapTable tbody td:first-child,
 .gapTable tfoot th {
   grid-column: 1 / -1;
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .gapTable tbody td:nth-child(4),
@@ -983,8 +983,7 @@
   padding: 0.125rem 0.5rem;
   font-size: 0.6875rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: normal;
   display: inline-flex;
   align-items: center;
 }
@@ -1051,22 +1050,22 @@
 
 .gapNeedText {
   font-family: var(--display);
-  font-size: var(--t-0);
+  font-size: var(--t-0, 0.75rem);
   font-weight: 700;
   color: var(--ink);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
 }
 
 .gapMicroGauge {
   width: 100%;
-  height: 0.3125rem;
+  height: 0.375rem;
   border-radius: 9999px;
   background: var(--surface-2);
   border: 1px solid var(--line);
   overflow: hidden;
   margin-top: 0.4375rem;
   grid-column: 1 / -1;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .gapGaugeFill {
@@ -1292,7 +1291,8 @@
  * so the filter remains visible while rows move beneath it. */
 @media (min-width: 64rem) {
   .capacityGrid {
-    height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
+    height: auto;
+    min-height: 0;
     align-items: stretch;
   }
 
@@ -1300,7 +1300,7 @@
     display: flex;
     min-height: 0;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .capacityGrid > :global([data-ward-primitive="panel"]) > :global([data-ward-primitive="panel-header"]),
@@ -1327,16 +1327,14 @@
   .capacityPanelBody {
     min-height: 0;
     flex: 1;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
+    overflow: visible;
   }
 }
 
 @media (min-width: 62.5625rem) {
   .wardsSection > :global([data-ward-primitive="panel"]) {
     display: flex;
-    height: var(--ward-workspace-height, clamp(36rem, calc(100dvh - 9rem), 64rem));
+    height: auto;
     min-height: 0;
     flex-direction: column;
   }
@@ -1839,16 +1837,56 @@
   gap: 0.5rem;
   color: var(--muted);
   font-size: var(--t-0);
+  font-weight: 500;
+}
+.sortLabel {
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.sortSelectWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
 }
 .sortControl select {
   min-height: 2.25rem;
   max-width: 100%;
-  padding: 0.375rem 1.5rem 0.375rem 0.5rem;
-  border: 1px solid var(--line-strong);
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 0.375rem 1.875rem 0.375rem 0.75rem;
+  border: 1px solid var(--line);
   border-radius: var(--r2);
   background: var(--surface);
   color: var(--ink);
-  font: inherit;
+  font-family: var(--body);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--lift);
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+.sortControl select:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+.sortControl select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.sortChevron {
+  position: absolute;
+  right: 0.625rem;
+  pointer-events: none;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 700;
+  line-height: 1;
 }
 
 .networkBody {
@@ -1919,7 +1957,9 @@
   min-width: 14rem;
   white-space: normal;
   background: var(--surface);
-  box-shadow: 1px 0 0 var(--line);
+  box-shadow:
+    1px 0 0 var(--line),
+    var(--lift);
 }
 .screen .networkTable thead th:first-child {
   position: sticky;
@@ -1927,7 +1967,9 @@
   top: 0;
   z-index: 20;
   background: var(--surface-2);
-  box-shadow: 1px 0 0 var(--line);
+  box-shadow:
+    1px 0 0 var(--line),
+    var(--lift);
 }
 .screen .networkTable .groupSummaryRow th:first-child,
 .screen .networkTable .totalRow th:first-child {
@@ -1935,7 +1977,9 @@
   left: 0;
   z-index: 5;
   background: var(--surface-2);
-  box-shadow: 1px 0 0 var(--line);
+  box-shadow:
+    1px 0 0 var(--line),
+    var(--lift);
 }
 .networkTable tbody tr:hover td:first-child {
   background: var(--sunk);
@@ -2134,7 +2178,7 @@
 @media (min-width: 62.5625rem) {
   .wardsSection > :global([data-ward-primitive="panel"]) {
     height: auto;
-    max-height: var(--ward-workspace-height, clamp(36rem, calc(100dvh - 9rem), 64rem));
+    max-height: none;
   }
 }
 /* D1 #2917: tablet 820 + phone/coarse — interactive capacity rows/controls ≥ tap floor */
