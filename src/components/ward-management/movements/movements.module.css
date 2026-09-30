@@ -590,7 +590,9 @@
   background: var(--surface);
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
   box-sizing: border-box;
 }
 
@@ -1172,9 +1174,13 @@
   border-radius: var(--radius-md, 6px);
   color: var(--ink);
   background: var(--surface);
-  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04), 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.02);
+  box-shadow:
+    0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04),
+    0 1px 2px rgb(var(--ward-shadow-rgb) / 0.02);
   scroll-margin-block: 0.5rem;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .movementRecord:last-child {
@@ -1822,7 +1828,6 @@
   font-size: var(--t-0);
 }
 
-
 @media (max-width: 78.125rem) {
   .trafficSplit {
     grid-template-columns: 1fr;
@@ -2362,7 +2367,10 @@
   line-height: 1.3;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .jumpToWardBtn:hover {
@@ -2393,7 +2401,10 @@
   line-height: 1.3;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .jumpToWardLink:hover {
@@ -2404,5 +2415,7 @@
 
 .ph,
 .inspectorHeader {
-  box-shadow: 0 4px 6px -1px color-mix(in srgb, var(--ink) 4%, transparent), 0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
+  box-shadow:
+    0 4px 6px -1px color-mix(in srgb, var(--ink) 4%, transparent),
+    0 2px 4px -2px color-mix(in srgb, var(--ink) 3%, transparent);
 }

@@ -180,16 +180,19 @@ export function standingFigures(input: FigureInput): StandingFigure[] {
         key: "waiting-here",
         label: "Waiting here",
         value: String(mine?.waiting ?? open.length),
-        sub: mine === undefined ? "all departments" : mine.ed.name },
+        sub: mine === undefined ? "all departments" : mine.ed.name,
+      },
       {
         key: "longest-here",
         label: "Longest here",
-        value: mine === undefined ? longestOpen(open, now).value : `${Math.floor(mine.longestWaitMinutes / 60)}h` },
+        value: mine === undefined ? longestOpen(open, now).value : `${Math.floor(mine.longestWaitMinutes / 60)}h`,
+      },
       {
         key: "ready-statewide",
         label: "Ready statewide",
         value: String(rollup.service.availableNow),
-        sub: withSub("not all eligible", preparationNote(pendingEverywhere)) },
+        sub: withSub("not all eligible", preparationNote(pendingEverywhere)),
+      },
       ...legalFigures,
     ];
   }
@@ -211,7 +214,8 @@ export function standingFigures(input: FigureInput): StandingFigure[] {
           key: "ready-here",
           label: "Ready here",
           value: String(breakdown.availableNow),
-          sub: withSub(unit.name, preparationNote(pendingAt(unit.id), openBedsNow(unit, [...bedReleases]))) },
+          sub: withSub(unit.name, preparationNote(pendingAt(unit.id), openBedsNow(unit, [...bedReleases]))),
+        },
         { key: "out-today", label: "Out today", value: String(breakdown.expectedToday) },
         /*
          * ⚠️ **"FREE OF STAFFED", never "staffed" alone.** A bare "2" beside a bed figure reads as
@@ -223,7 +227,8 @@ export function standingFigures(input: FigureInput): StandingFigure[] {
           key: "one-to-one",
           label: "One-to-one free",
           value: `${oneToOne} of ${unit.speciallingCapacity}`,
-          sub: "staffed establishment" },
+          sub: "staffed establishment",
+        },
         ...legalFigures,
       ];
     }
@@ -260,7 +265,8 @@ export function standingFigures(input: FigureInput): StandingFigure[] {
       key: "ready",
       label: "Ready now",
       value: String(rollup.service.availableNow),
-      sub: withSub(undefined, preparationNote(pendingEverywhere, openEverywhere)) },
+      sub: withSub(undefined, preparationNote(pendingEverywhere, openEverywhere)),
+    },
     { key: "out-today", label: "Out today", value: String(rollup.service.expectedToday) },
     { key: "waiting", label: "Waiting", value: String(open.length) },
     /*

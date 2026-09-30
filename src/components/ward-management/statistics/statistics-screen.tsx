@@ -29,7 +29,12 @@ import { calendarDateOf, dayOf, splitDuration, type Instant } from "@/components
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { HEALTH_SERVICES, type BedRelease, type Movement, type Referral } from "@/components/ward-management/ward-model";
+import {
+  HEALTH_SERVICES,
+  type BedRelease,
+  type Movement,
+  type Referral,
+} from "@/components/ward-management/ward-model";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 
@@ -234,7 +239,9 @@ export function StatisticsScreen({
 
   // Community Table interactive state
   const [teamSearchQuery, setTeamSearchQuery] = useState("");
-  const [teamSortCol, setTeamSortCol] = useState<"name" | "suburbs" | "caseload" | "newRefs" | "discharges">("caseload");
+  const [teamSortCol, setTeamSortCol] = useState<"name" | "suburbs" | "caseload" | "newRefs" | "discharges">(
+    "caseload",
+  );
   const [teamSortAsc, setTeamSortAsc] = useState(false);
 
   // Flow chart interactive hover state
@@ -463,11 +470,13 @@ export function StatisticsScreen({
   const endYAdm = py(admissionsCount);
   const endYDis = py(dischargesCount);
 
-  const admAreaD = `M ${px(0).toFixed(1)} ${CH_BASE} L ` +
+  const admAreaD =
+    `M ${px(0).toFixed(1)} ${CH_BASE} L ` +
     flowDays.map((d, i) => `${px(i).toFixed(1)} ${py(d.adm).toFixed(1)}`).join(" L ") +
     ` L ${px(lastIndex).toFixed(1)} ${CH_BASE} Z`;
 
-  const disAreaD = `M ${px(0).toFixed(1)} ${CH_BASE} L ` +
+  const disAreaD =
+    `M ${px(0).toFixed(1)} ${CH_BASE} L ` +
     flowDays.map((d, i) => `${px(i).toFixed(1)} ${py(d.dis).toFixed(1)}`).join(" L ") +
     ` L ${px(lastIndex).toFixed(1)} ${CH_BASE} Z`;
 
@@ -879,8 +888,26 @@ export function StatisticsScreen({
                 ) : null}
 
                 {/* End points */}
-                <circle className="end" data-series="admissions" cx={endX} cy={endYAdm} r="4.5" fill="var(--accent)" stroke="var(--surface)" strokeWidth="2" />
-                <circle className="end" data-series="discharges" cx={endX} cy={endYDis} r="4.5" fill="var(--warn)" stroke="var(--surface)" strokeWidth="2" />
+                <circle
+                  className="end"
+                  data-series="admissions"
+                  cx={endX}
+                  cy={endYAdm}
+                  r="4.5"
+                  fill="var(--accent)"
+                  stroke="var(--surface)"
+                  strokeWidth="2"
+                />
+                <circle
+                  className="end"
+                  data-series="discharges"
+                  cx={endX}
+                  cy={endYDis}
+                  r="4.5"
+                  fill="var(--warn)"
+                  stroke="var(--surface)"
+                  strokeWidth="2"
+                />
 
                 {/* End labels */}
                 <text
@@ -924,8 +951,8 @@ export function StatisticsScreen({
                     {hoveredDayIdx === flowDays.length - 1
                       ? "Today"
                       : hoveredDayIdx === flowDays.length - 2
-                      ? "Yesterday"
-                      : `${flowDays.length - 1 - hoveredDayIdx} days ago`}
+                        ? "Yesterday"
+                        : `${flowDays.length - 1 - hoveredDayIdx} days ago`}
                   </div>
                   <div className={pageStyles.ttRow}>
                     <span className={pageStyles.ttLabel}>
@@ -1244,10 +1271,11 @@ export function StatisticsScreen({
                   ? `${allPressureWards.length - filteredAndSortedWards.length} wards filtered out by query.`
                   : `All ${allPressureWards.length} wards shown, ranked by pressure.`}
               </strong>{" "}
-              Every ward has its own board with the bed by bed picture, opened from the ward switcher on any ward screen.
-              Across all {units.length} wards the network holds <b>{availableNow}</b> beds ready, <b>{heldBeds}</b> held and{" "}
-              <b>{blockedBeds}</b> out of service. <strong>A ward marked Full has no bed ready, no bed held and none out of service</strong>,
-              so every one of its beds has somebody in it. The ward by ward figures are on{" "}
+              Every ward has its own board with the bed by bed picture, opened from the ward switcher on any ward
+              screen. Across all {units.length} wards the network holds <b>{availableNow}</b> beds ready,{" "}
+              <b>{heldBeds}</b> held and <b>{blockedBeds}</b> out of service.{" "}
+              <strong>A ward marked Full has no bed ready, no bed held and none out of service</strong>, so every one of
+              its beds has somebody in it. The ward by ward figures are on{" "}
               <Link href="/mockups/ward-flow/statistics/ward/scgh-mental-health">Ward statistics</Link>.
             </p>
 
@@ -1493,10 +1521,10 @@ export function StatisticsScreen({
               single longest wait anywhere in the network, <b>{networkLongestWait}h</b> at{" "}
               {longestAtDept?.site ?? "PEEL"}, {longestAtDept?.name ?? "Peel Health Campus ED"}. Median is the middle
               wait across all <b>{totalEdWaiting}</b> people waiting, not an average of the{" "}
-              {words(emergencyDepts.length)} departments&apos; own medians. Waiting, extended waits and prolonged waits are true sums,
-              and prolonged waits are a subset of extended waits rather than an addition to them.{" "}
-              <strong>A none in this table is a measured none</strong>, so the departments reading none for prolonged waits
-              genuinely have nobody who has waited that long right now. Each department&apos;s own figures are on{" "}
+              {words(emergencyDepts.length)} departments&apos; own medians. Waiting, extended waits and prolonged waits
+              are true sums, and prolonged waits are a subset of extended waits rather than an addition to them.{" "}
+              <strong>A none in this table is a measured none</strong>, so the departments reading none for prolonged
+              waits genuinely have nobody who has waited that long right now. Each department&apos;s own figures are on{" "}
               <Link href="/mockups/ward-flow/statistics/ed/scgh">Emergency department statistics</Link>.
             </p>
 
@@ -1574,8 +1602,9 @@ export function StatisticsScreen({
                     </>
                   )}
                   <p className={styles.figureNote}>
-                    Model vocabulary order, not frequency rank. `DECLINE_REASON_LABELS` (`ward-referrals.ts`) is keyed by
-                    the referral-side vocabulary rather than this movement list. Closed movements remain in this historical count.
+                    Model vocabulary order, not frequency rank. `DECLINE_REASON_LABELS` (`ward-referrals.ts`) is keyed
+                    by the referral-side vocabulary rather than this movement list. Closed movements remain in this
+                    historical count.
                   </p>
                 </article>
               </div>
@@ -1737,8 +1766,8 @@ export function StatisticsScreen({
                 </strong>{" "}
                 The teams drawn hold <b>{totalTeamCaseload.toLocaleString()}</b> people in community care.{" "}
                 <strong>Team names and suburb counts are real</strong>, taken from the approved community hub screen,
-                which counts them from the repository&apos;s catchment table. A team the catchment document does not name
-                is not a team that does not exist. Each team&apos;s own figures are on{" "}
+                which counts them from the repository&apos;s catchment table. A team the catchment document does not
+                name is not a team that does not exist. Each team&apos;s own figures are on{" "}
                 <Link href="/mockups/ward-flow/statistics/community/bentley">Community team statistics</Link>.
               </p>
 

@@ -137,7 +137,9 @@ function StatisticsCommunityScreenInner({
   }, []);
 
   const triggerD4 = useCallback((w: string) => {
-    setD4Notice(`Reporting window '${w}' selected: note that this prototype does not persist historical logs, showing live data.`);
+    setD4Notice(
+      `Reporting window '${w}' selected: note that this prototype does not persist historical logs, showing live data.`,
+    );
     const timer = setTimeout(() => setD4Notice(null), 5000);
     return () => clearTimeout(timer);
   }, []);
@@ -214,7 +216,16 @@ function StatisticsCommunityScreenInner({
         {/* Sovereign Community Header: Selector + Reporting Time Window */}
         <div className={pageStyles.communityHeaderBar}>
           <div className={pageStyles.communitySelectWrap}>
-            <label htmlFor="cmhtSelect" style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>
+            <label
+              htmlFor="cmhtSelect"
+              style={{
+                fontSize: "12px",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                color: "var(--muted)",
+              }}
+            >
               Community Team:
             </label>
             <select
@@ -232,9 +243,7 @@ function StatisticsCommunityScreenInner({
                 </option>
               ))}
             </select>
-            <span className={pageStyles.chip}>
-              {figureText(figures.admitted)} admitted
-            </span>
+            <span className={pageStyles.chip}>{figureText(figures.admitted)} admitted</span>
           </div>
 
           <div className={pageStyles.pillGroup} role="group" aria-label="Reporting Time Window">
@@ -378,11 +387,16 @@ function StatisticsCommunityScreenInner({
           <div className={pageStyles.grid2}>
             <div className={pageStyles.col}>
               <WardPanel title={team.name} testId="ward-statistics-community-identity">
-                <div className={styles.panelBody} role="group" aria-label="Community team identity content" tabIndex={0}>
+                <div
+                  className={styles.panelBody}
+                  role="group"
+                  aria-label="Community team identity content"
+                  tabIndex={0}
+                >
                   <p className={styles.note} data-testid="ward-statistics-community-scope-note">
                     <strong>Caseload</strong> is this team&apos;s fixed reporting window.{" "}
-                    <strong>Where this team sits</strong> is the whole-network comparison. This is read-only: nothing here
-                    opens a case, accepts a referral or books a contact.
+                    <strong>Where this team sits</strong> is the whole-network comparison. This is read-only: nothing
+                    here opens a case, accepts a referral or books a contact.
                   </p>
                   <div className={pageStyles.actionRow}>
                     <Link
@@ -447,18 +461,20 @@ function StatisticsCommunityScreenInner({
 
                       {lists.currentlyAdmitted.length === 0 && resolution.state === "measured-empty" ? (
                         <p className={styles.emptyNote} data-testid="ward-statistics-community-empty-measured">
-                          Every admission was checked against this team and none named it. Nobody referred to {team.name} is
-                          in a bed right now.
+                          Every admission was checked against this team and none named it. Nobody referred to{" "}
+                          {team.name} is in a bed right now.
                         </p>
                       ) : null}
 
                       {resolution.state === "not-computable" ? (
                         <p className={styles.unmeasured} data-testid="ward-statistics-community-not-computable">
                           This team&apos;s figures are not a measurement. {resolution.unresolvable}{" "}
-                          {resolution.unresolvable === 1 ? "admission carries a referral" : "admissions carry referrals"} that
-                          point at no referral held here, so the join that puts a person on a team cannot run for{" "}
-                          {resolution.unresolvable === 1 ? "that record" : "those records"}. A zero above would be a confident
-                          answer over a question that was never asked.
+                          {resolution.unresolvable === 1
+                            ? "admission carries a referral"
+                            : "admissions carry referrals"}{" "}
+                          that point at no referral held here, so the join that puts a person on a team cannot run for{" "}
+                          {resolution.unresolvable === 1 ? "that record" : "those records"}. A zero above would be a
+                          confident answer over a question that was never asked.
                         </p>
                       ) : null}
 
@@ -490,47 +506,80 @@ function StatisticsCommunityScreenInner({
               <WardPanel title="Caseload Duration Distribution Curve" testId="ward-statistics-community-duration-curve">
                 <div className={styles.panelBody} role="group" aria-label="Caseload duration distribution" tabIndex={0}>
                   <div className={pageStyles.chartContainer}>
-                    <svg viewBox="0 0 480 180" width="100%" height="160" aria-label="Duration distribution curve illustration">
+                    <svg
+                      viewBox="0 0 480 180"
+                      width="100%"
+                      height="160"
+                      aria-label="Duration distribution curve illustration"
+                    >
                       <defs>
                         <linearGradient id="durationGrad" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.32" />
                           <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.02" />
                         </linearGradient>
                       </defs>
-                      <path d="M 40 140 C 90 135, 130 50, 180 40 C 230 30, 270 90, 320 115 C 370 130, 420 138, 440 140 L 440 145 L 40 145 Z" fill="url(#durationGrad)" />
-                      <path d="M 40 140 C 90 135, 130 50, 180 40 C 230 30, 270 90, 320 115 C 370 130, 420 138, 440 140" fill="none" stroke="var(--accent)" strokeWidth="2.5" />
+                      <path
+                        d="M 40 140 C 90 135, 130 50, 180 40 C 230 30, 270 90, 320 115 C 370 130, 420 138, 440 140 L 440 145 L 40 145 Z"
+                        fill="url(#durationGrad)"
+                      />
+                      <path
+                        d="M 40 140 C 90 135, 130 50, 180 40 C 230 30, 270 90, 320 115 C 370 130, 420 138, 440 140"
+                        fill="none"
+                        stroke="var(--accent)"
+                        strokeWidth="2.5"
+                      />
                       <line x1="40" y1="145" x2="440" y2="145" stroke="var(--line-strong)" strokeWidth="1.5" />
-                      <text x="50" y="162" fontSize="12" fill="var(--muted)" fontFamily="var(--mono)">&lt;30d</text>
-                      <text x="140" y="162" fontSize="12" fill="var(--muted)" fontFamily="var(--mono)">30–90d</text>
-                      <text x="230" y="162" fontSize="12" fill="var(--muted)" fontFamily="var(--mono)">90–180d</text>
-                      <text x="320" y="162" fontSize="12" fill="var(--muted)" fontFamily="var(--mono)">180–365d</text>
-                      <text x="410" y="162" fontSize="12" fill="var(--muted)" fontFamily="var(--mono)">&gt;1 yr</text>
+                      <text x="50" y="162" fontSize="12" fill="var(--muted)" fontFamily="var(--mono)">
+                        &lt;30d
+                      </text>
+                      <text x="140" y="162" fontSize="12" fill="var(--muted)" fontFamily="var(--mono)">
+                        30–90d
+                      </text>
+                      <text x="230" y="162" fontSize="12" fill="var(--muted)" fontFamily="var(--mono)">
+                        90–180d
+                      </text>
+                      <text x="320" y="162" fontSize="12" fill="var(--muted)" fontFamily="var(--mono)">
+                        180–365d
+                      </text>
+                      <text x="410" y="162" fontSize="12" fill="var(--muted)" fontFamily="var(--mono)">
+                        &gt;1 yr
+                      </text>
                     </svg>
                   </div>
                   <ul className={pageStyles.distList} role="list">
                     <li className={pageStyles.distItem}>
                       <span>&lt; 30 days</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "24%", background: "var(--good)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "24%", background: "var(--good)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>18%</span>
                     </li>
                     <li className={pageStyles.distItem}>
                       <span>30–90 days</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "42%", background: "var(--accent)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "42%", background: "var(--accent)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>34%</span>
                     </li>
                     <li className={pageStyles.distItem}>
                       <span>90–180 days</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "32%", background: "var(--warn)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "32%", background: "var(--warn)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>26%</span>
                     </li>
                     <li className={pageStyles.distItem}>
                       <span>180–365 days</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "16%", background: "var(--muted)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "16%", background: "var(--muted)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>14%</span>
                     </li>
                     <li className={pageStyles.distItem}>
                       <span>&gt; 1 year</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "10%", background: "var(--danger)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "10%", background: "var(--danger)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>8%</span>
                     </li>
                   </ul>
@@ -571,7 +620,9 @@ function StatisticsCommunityScreenInner({
                           declinesReadout.value.tallies.map((item) => (
                             <tr key={item.reason}>
                               <th scope="row">{item.reason}</th>
-                              <td style={{ fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}>{item.count}</td>
+                              <td style={{ fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}>
+                                {item.count}
+                              </td>
                             </tr>
                           ))
                         ) : (
@@ -593,22 +644,30 @@ function StatisticsCommunityScreenInner({
                   <ul className={pageStyles.distList} style={{ marginTop: "0.75rem" }} role="list">
                     <li className={pageStyles.distItem}>
                       <span>Inpatient Unit</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "45%", background: "var(--accent)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "45%", background: "var(--accent)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>Inpatient</span>
                     </li>
                     <li className={pageStyles.distItem}>
                       <span>Emergency Dept</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "30%", background: "var(--warn)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "30%", background: "var(--warn)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>ED</span>
                     </li>
                     <li className={pageStyles.distItem}>
                       <span>General Practice</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "15%", background: "var(--good)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "15%", background: "var(--good)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>GP</span>
                     </li>
                     <li className={pageStyles.distItem}>
                       <span>Self / Carer</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "10%", background: "var(--muted)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "10%", background: "var(--muted)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>Direct</span>
                     </li>
                   </ul>
@@ -630,17 +689,46 @@ function StatisticsCommunityScreenInner({
         >
           <div className={pageStyles.grid2}>
             <div className={pageStyles.col}>
-              <WardPanel title="Post-Discharge Follow-up" count="7-day follow-up" testId="ward-statistics-community-followup">
-                <div className={styles.panelBody} role="group" aria-label="Post-discharge follow-up content" tabIndex={0}>
+              <WardPanel
+                title="Post-Discharge Follow-up"
+                count="7-day follow-up"
+                testId="ward-statistics-community-followup"
+              >
+                <div
+                  className={styles.panelBody}
+                  role="group"
+                  aria-label="Post-discharge follow-up content"
+                  tabIndex={0}
+                >
                   <p className={styles.unmeasured}>
-                    Not recorded. Whether follow-up was arranged is a field on each admission, but nothing in this prototype
-                    writes it, so there is no follow-up percentage to show.
+                    Not recorded. Whether follow-up was arranged is a field on each admission, but nothing in this
+                    prototype writes it, so there is no follow-up percentage to show.
                   </p>
                   <div className={pageStyles.gaugeContainer}>
                     <svg viewBox="0 0 200 120" width="180" height="110" aria-label="Followup target gauge">
-                      <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="var(--sunk)" strokeWidth="18" strokeLinecap="round" />
-                      <path d="M 20 100 A 80 80 0 0 1 164 56" fill="none" stroke="var(--good)" strokeWidth="18" strokeLinecap="round" />
-                      <text x="100" y="85" textAnchor="middle" fontSize="22" fontWeight="700" fill="var(--ink)" fontFamily="var(--mono)">
+                      <path
+                        d="M 20 100 A 80 80 0 0 1 180 100"
+                        fill="none"
+                        stroke="var(--sunk)"
+                        strokeWidth="18"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M 20 100 A 80 80 0 0 1 164 56"
+                        fill="none"
+                        stroke="var(--good)"
+                        strokeWidth="18"
+                        strokeLinecap="round"
+                      />
+                      <text
+                        x="100"
+                        y="85"
+                        textAnchor="middle"
+                        fontSize="22"
+                        fontWeight="700"
+                        fill="var(--ink)"
+                        fontFamily="var(--mono)"
+                      >
                         &ge;90.0%
                       </text>
                       <text x="100" y="104" textAnchor="middle" fontSize="12" fill="var(--muted)">
@@ -683,22 +771,30 @@ function StatisticsCommunityScreenInner({
                   <ul className={pageStyles.distList} role="list">
                     <li className={pageStyles.distItem}>
                       <span>Day 1–2 (48h)</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "52%", background: "var(--good)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "52%", background: "var(--good)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>High Priority</span>
                     </li>
                     <li className={pageStyles.distItem}>
                       <span>Day 3–4</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "28%", background: "var(--accent)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "28%", background: "var(--accent)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>Routine</span>
                     </li>
                     <li className={pageStyles.distItem}>
                       <span>Day 5–7</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "12%", background: "var(--warn)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "12%", background: "var(--warn)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>Target Window</span>
                     </li>
                     <li className={pageStyles.distItem}>
                       <span>&gt; 7 days / Overdue</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "8%", background: "var(--danger)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "8%", background: "var(--danger)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>Overdue</span>
                     </li>
                   </ul>
@@ -739,17 +835,23 @@ function StatisticsCommunityScreenInner({
                   <ul className={pageStyles.distList} style={{ marginTop: "0.875rem" }} role="list">
                     <li className={pageStyles.distItem}>
                       <span>Emergency (&le;24h)</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "95%", background: "var(--danger)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "95%", background: "var(--danger)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>ATS 1–2</span>
                     </li>
                     <li className={pageStyles.distItem}>
                       <span>Urgent (&le;72h)</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "85%", background: "var(--warn)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "85%", background: "var(--warn)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>ATS 3</span>
                     </li>
                     <li className={pageStyles.distItem}>
                       <span>Routine (&le;14d)</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "90%", background: "var(--good)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "90%", background: "var(--good)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>ATS 4–5</span>
                     </li>
                   </ul>
@@ -764,22 +866,30 @@ function StatisticsCommunityScreenInner({
                   <ul className={pageStyles.distList} style={{ marginTop: "0.875rem" }} role="list">
                     <li className={pageStyles.distItem}>
                       <span>Face-to-face Clinic</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "45%", background: "var(--accent)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "45%", background: "var(--accent)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>45%</span>
                     </li>
                     <li className={pageStyles.distItem}>
                       <span>Home / Domiciliary</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "25%", background: "var(--good)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "25%", background: "var(--good)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>25%</span>
                     </li>
                     <li className={pageStyles.distItem}>
                       <span>Telehealth Video</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "20%", background: "var(--warn)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "20%", background: "var(--warn)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>20%</span>
                     </li>
                     <li className={pageStyles.distItem}>
                       <span>Telephone Clinical</span>
-                      <div className={pageStyles.distTrack}><div className={pageStyles.distFill} style={{ width: "10%", background: "var(--muted)" }} /></div>
+                      <div className={pageStyles.distTrack}>
+                        <div className={pageStyles.distFill} style={{ width: "10%", background: "var(--muted)" }} />
+                      </div>
                       <span className={pageStyles.distCount}>10%</span>
                     </li>
                   </ul>
@@ -804,7 +914,8 @@ function StatisticsCommunityScreenInner({
                   data-testid="ward-statistics-community-in-hospital-count"
                   data-unmeasured={isUnmeasured(figures.admitted) || undefined}
                 >
-                  <strong>{figureText(figures.admitted)}</strong> referred to this team and occupying or holding a bed now.
+                  <strong>{figureText(figures.admitted)}</strong> referred to this team and occupying or holding a bed
+                  now.
                 </p>
                 <p
                   className={styles.measuredCount}
@@ -830,7 +941,11 @@ function StatisticsCommunityScreenInner({
                 </span>
               </div>
 
-              <div tabIndex={0} aria-label="People currently in a hospital bed, scrolls sideways" style={{ overflowX: "auto" }}>
+              <div
+                tabIndex={0}
+                aria-label="People currently in a hospital bed, scrolls sideways"
+                style={{ overflowX: "auto" }}
+              >
                 <WardTable testId="ward-statistics-community-inpatient-table">
                   <thead>
                     <tr>
@@ -851,18 +966,26 @@ function StatisticsCommunityScreenInner({
                       </tr>
                     ) : (
                       filteredInpatient.map((adm) => {
-                        const stayDays = adm.arrivedAt === null ? 0 : Math.max(1, Math.round((now - adm.arrivedAt) / MINUTES_PER_DAY));
+                        const stayDays =
+                          adm.arrivedAt === null ? 0 : Math.max(1, Math.round((now - adm.arrivedAt) / MINUTES_PER_DAY));
                         return (
                           <tr key={adm.id}>
-                            <th scope="row" style={{ fontFamily: "var(--mono)" }}>{adm.id}</th>
+                            <th scope="row" style={{ fontFamily: "var(--mono)" }}>
+                              {adm.id}
+                            </th>
                             <td>{adm.unitId}</td>
                             <td>{adm.arrivedAt === null ? "Not arrived yet" : `${stayDays}d ago`}</td>
-                            <td style={{ fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}>{stayDays}</td>
+                            <td style={{ fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}>
+                              {stayDays}
+                            </td>
                             <td>
                               {adm.expectedDischargeAt === null ? (
                                 <span style={{ color: "var(--muted)" }}>No date written</span>
                               ) : (
-                                <span className={pageStyles.chip} style={{ background: "var(--good-soft)", color: "var(--good)" }}>
+                                <span
+                                  className={pageStyles.chip}
+                                  style={{ background: "var(--good-soft)", color: "var(--good)" }}
+                                >
                                   Date set
                                 </span>
                               )}
@@ -931,19 +1054,31 @@ function StatisticsCommunityScreenInner({
                       <th scope="row">
                         {row.team.id === team.id ? (
                           <span data-testid="ward-statistics-community-compare-self">
-                            {row.team.name} <span className={pageStyles.chip} style={{ marginLeft: "0.5rem" }}>Current</span>
+                            {row.team.name}{" "}
+                            <span className={pageStyles.chip} style={{ marginLeft: "0.5rem" }}>
+                              Current
+                            </span>
                           </span>
                         ) : (
                           <Link href={communityStatisticsHref(row.team.id)}>{row.team.name}</Link>
                         )}
                       </th>
-                      <td data-unmeasured={isUnmeasured(row.figures.admitted) || undefined} style={{ fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}>
+                      <td
+                        data-unmeasured={isUnmeasured(row.figures.admitted) || undefined}
+                        style={{ fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
+                      >
                         {figureText(row.figures.admitted)}
                       </td>
-                      <td data-unmeasured={isUnmeasured(row.figures.expected) || undefined} style={{ fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}>
+                      <td
+                        data-unmeasured={isUnmeasured(row.figures.expected) || undefined}
+                        style={{ fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
+                      >
                         {figureText(row.figures.expected)}
                       </td>
-                      <td data-unmeasured={isUnmeasured(row.figures.discharged) || undefined} style={{ fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}>
+                      <td
+                        data-unmeasured={isUnmeasured(row.figures.discharged) || undefined}
+                        style={{ fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
+                      >
                         {figureText(row.figures.discharged)}
                       </td>
                     </tr>
@@ -959,24 +1094,34 @@ function StatisticsCommunityScreenInner({
           <summary>Data provenance &amp; coverage limits</summary>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem", padding: "0.75rem 1rem 1rem" }}>
             <WardPanel title="Data provenance" testId="ward-statistics-community-provenance">
-              <div className={styles.panelBody} role="group" aria-label="Community data provenance content" tabIndex={0}>
+              <div
+                className={styles.panelBody}
+                role="group"
+                aria-label="Community data provenance content"
+                tabIndex={0}
+              >
                 <p className={styles.body}>
                   Every figure on this page is invented and describes no real person or day, including{" "}
                   {figureRows.map((row) => row.label).join(", ")} and the cross-team comparison.
                 </p>
                 <p className={styles.note}>
                   <strong>Team names are real referral vocabulary</strong> from a 2015 statewide catchment table, not a
-                  current roster of WA community services. Every figure beside those names is invented, and this panel makes
-                  no claim about wards, sites or services shown elsewhere.
+                  current roster of WA community services. Every figure beside those names is invented, and this panel
+                  makes no claim about wards, sites or services shown elsewhere.
                 </p>
               </div>
             </WardPanel>
 
             <WardPanel title="Coverage limits" testId="ward-statistics-community-limits">
-              <div className={styles.panelBody} role="group" aria-label="Community coverage limits content" tabIndex={0}>
+              <div
+                className={styles.panelBody}
+                role="group"
+                aria-label="Community coverage limits content"
+                tabIndex={0}
+              >
                 <p className={styles.body} data-testid="ward-statistics-community-unseen">
-                  <strong>{unseen.length}</strong> {unseen.length === 1 ? "admission belongs" : "admissions belong"} to no
-                  community team on this page, out of {admissions.length}.
+                  <strong>{unseen.length}</strong> {unseen.length === 1 ? "admission belongs" : "admissions belong"} to
+                  no community team on this page, out of {admissions.length}.
                 </p>
                 <p className={styles.body}>
                   <Link href={communityTeamHref(team)} data-testid="ward-statistics-community-operational-link">

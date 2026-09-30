@@ -6,7 +6,6 @@
   min-width: 0;
 }
 
-
 .departmentSwitcher {
   display: flex;
   align-items: center;
@@ -155,7 +154,6 @@
   }
 }
 
-
 @media (min-width: 62.5625rem) {
   .pageGrid {
     align-items: start;
@@ -217,7 +215,9 @@
   z-index: 100;
   min-width: 180px;
   max-width: 280px;
-  transition: transform 0.04s ease-out, opacity 0.15s ease;
+  transition:
+    transform 0.04s ease-out,
+    opacity 0.15s ease;
   line-height: 1.45;
 }
 :global([data-theme="dark"]) .chartTooltipCard {
@@ -637,7 +637,6 @@
   width: 100%;
 }
 
-
 .d4NoticeBanner {
   display: flex;
   align-items: center;
@@ -761,5 +760,3 @@
   grid-column: 1 / -1;
   max-height: none !important;
 }
-
-

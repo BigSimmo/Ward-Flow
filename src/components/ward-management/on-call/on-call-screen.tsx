@@ -710,8 +710,6 @@ export function OnCallScreen() {
               </div>
             </div>
           </section>
-
-
         </div>
 
         {/* Tier 3 Escalation Modal */}

@@ -678,7 +678,13 @@ function StatisticsServiceContent({
       return u && siteByCode(u.siteCode)?.service === originSvc;
     }).length;
     const internalKept =
-      originSvc === "North Metro" ? toNMHS : originSvc === "East Metro" ? toEMHS : originSvc === "South Metro" ? toSMHS : toWACHS;
+      originSvc === "North Metro"
+        ? toNMHS
+        : originSvc === "East Metro"
+          ? toEMHS
+          : originSvc === "South Metro"
+            ? toSMHS
+            : toWACHS;
     const netBalance = totalTakenIn - (totalSent - internalKept);
 
     return {
@@ -952,8 +958,9 @@ function StatisticsServiceContent({
                   <summary>Service scope</summary>
                   <div className={pageStyles.measureDetailsBody}>
                     <p className={styles.body} data-testid="ward-statistics-service-summary">
-                      Recorded network scope: {serviceSites.length} {serviceSites.length === 1 ? "hospital" : "hospitals"}
-                      ; {serviceUnits.length} {serviceUnits.length === 1 ? "ward" : "wards"}; {serviceEds.length}{" "}
+                      Recorded network scope: {serviceSites.length}{" "}
+                      {serviceSites.length === 1 ? "hospital" : "hospitals"}; {serviceUnits.length}{" "}
+                      {serviceUnits.length === 1 ? "ward" : "wards"}; {serviceEds.length}{" "}
                       {serviceEds.length === 1 ? "emergency department" : "emergency departments"}.
                     </p>
                   </div>
@@ -1022,7 +1029,9 @@ function StatisticsServiceContent({
                         {pendingPreparation} of this service&apos;s empty{" "}
                         {pendingPreparation === 1 ? "bed is" : "beds are"} marked Pending and included in Ready.{" "}
                         {totalOpenNow < totalReady ? (
-                          <strong>Available to act on now: {totalOpenNow}, because Pending beds cannot be pulled.</strong>
+                          <strong>
+                            Available to act on now: {totalOpenNow}, because Pending beds cannot be pulled.
+                          </strong>
                         ) : null}
                       </p>
                       <p className={serviceStyles.measuredCount} data-testid="ward-statistics-service-zero-ready-wards">
@@ -1084,22 +1093,33 @@ function StatisticsServiceContent({
         aria-labelledby="tab-cohorts"
       >
         <div style={{ display: "grid", gap: "0.875rem" }}>
-          <WardPanel
-            title="Clinical Cohort Availability Matrix"
-            count={`${cohortsMap.size} clinical cohorts`}
-          >
+          <WardPanel title="Clinical Cohort Availability Matrix" count={`${cohortsMap.size} clinical cohorts`}>
             <div style={{ overflowX: "auto" }}>
               <table className={pageStyles.dataTable} id="cohortMatrixTable">
                 <thead>
                   <tr>
                     <th scope="col">Clinical Cohort</th>
-                    <th scope="col" className="num">Total Beds</th>
-                    <th scope="col" className="num">Occupied</th>
-                    <th scope="col" className="num">Ready Beds</th>
-                    <th scope="col" className="num">Held / Reserved</th>
-                    <th scope="col" className="num">Blocked / Offline</th>
-                    <th scope="col" className="num">Locked Secure</th>
-                    <th scope="col" className="num">Occupancy %</th>
+                    <th scope="col" className="num">
+                      Total Beds
+                    </th>
+                    <th scope="col" className="num">
+                      Occupied
+                    </th>
+                    <th scope="col" className="num">
+                      Ready Beds
+                    </th>
+                    <th scope="col" className="num">
+                      Held / Reserved
+                    </th>
+                    <th scope="col" className="num">
+                      Blocked / Offline
+                    </th>
+                    <th scope="col" className="num">
+                      Locked Secure
+                    </th>
+                    <th scope="col" className="num">
+                      Occupancy %
+                    </th>
                     <th scope="col">Availability Status</th>
                   </tr>
                 </thead>
@@ -1109,10 +1129,15 @@ function StatisticsServiceContent({
                     const isHigh = Number(occPct) >= 90;
                     return (
                       <tr key={cohort}>
-                        <th scope="row" style={{ fontWeight: 600 }}>{cohort}</th>
+                        <th scope="row" style={{ fontWeight: 600 }}>
+                          {cohort}
+                        </th>
                         <td className="num">{data.total}</td>
                         <td className="num">{data.occupied}</td>
-                        <td className="num" style={{ fontWeight: 600, color: data.ready > 0 ? "var(--good)" : "var(--muted)" }}>
+                        <td
+                          className="num"
+                          style={{ fontWeight: 600, color: data.ready > 0 ? "var(--good)" : "var(--muted)" }}
+                        >
                           {data.ready}
                         </td>
                         <td className="num">{data.held}</td>
@@ -1144,10 +1169,7 @@ function StatisticsServiceContent({
             </p>
           </WardPanel>
 
-          <WardPanel
-            title="Unit-Level Inpatient Bed State"
-            count={`${filteredAndSortedReadyRows.length} wards`}
-          >
+          <WardPanel title="Unit-Level Inpatient Bed State" count={`${filteredAndSortedReadyRows.length} wards`}>
             <div className={pageStyles.tableControlsBar}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flex: 1, maxWidth: "24rem" }}>
                 <input
@@ -1170,49 +1192,73 @@ function StatisticsServiceContent({
                   <tr>
                     <th scope="col" className={pageStyles.sortableTh} onClick={() => handleWardSort("name")}>
                       Ward Name
-                      <span className={`${pageStyles.sortIcon} ${wardSortCol === "name" ? pageStyles.sortIconActive : ""}`}>
+                      <span
+                        className={`${pageStyles.sortIcon} ${wardSortCol === "name" ? pageStyles.sortIconActive : ""}`}
+                      >
                         {wardSortCol === "name" ? (wardSortDir === "asc" ? "↑" : "↓") : "↕"}
                       </span>
                     </th>
                     <th scope="col" className={pageStyles.sortableTh} onClick={() => handleWardSort("siteCode")}>
                       Site
-                      <span className={`${pageStyles.sortIcon} ${wardSortCol === "siteCode" ? pageStyles.sortIconActive : ""}`}>
+                      <span
+                        className={`${pageStyles.sortIcon} ${wardSortCol === "siteCode" ? pageStyles.sortIconActive : ""}`}
+                      >
                         {wardSortCol === "siteCode" ? (wardSortDir === "asc" ? "↑" : "↓") : "↕"}
                       </span>
                     </th>
                     <th scope="col" className={pageStyles.sortableTh} onClick={() => handleWardSort("cohort")}>
                       Cohort
-                      <span className={`${pageStyles.sortIcon} ${wardSortCol === "cohort" ? pageStyles.sortIconActive : ""}`}>
+                      <span
+                        className={`${pageStyles.sortIcon} ${wardSortCol === "cohort" ? pageStyles.sortIconActive : ""}`}
+                      >
                         {wardSortCol === "cohort" ? (wardSortDir === "asc" ? "↑" : "↓") : "↕"}
                       </span>
                     </th>
                     <th scope="col" className={`num ${pageStyles.sortableTh}`} onClick={() => handleWardSort("beds")}>
                       Capacity
-                      <span className={`${pageStyles.sortIcon} ${wardSortCol === "beds" ? pageStyles.sortIconActive : ""}`}>
+                      <span
+                        className={`${pageStyles.sortIcon} ${wardSortCol === "beds" ? pageStyles.sortIconActive : ""}`}
+                      >
                         {wardSortCol === "beds" ? (wardSortDir === "asc" ? "↑" : "↓") : "↕"}
                       </span>
                     </th>
-                    <th scope="col" className={`num ${pageStyles.sortableTh}`} onClick={() => handleWardSort("occupied")}>
+                    <th
+                      scope="col"
+                      className={`num ${pageStyles.sortableTh}`}
+                      onClick={() => handleWardSort("occupied")}
+                    >
                       Occupied
-                      <span className={`${pageStyles.sortIcon} ${wardSortCol === "occupied" ? pageStyles.sortIconActive : ""}`}>
+                      <span
+                        className={`${pageStyles.sortIcon} ${wardSortCol === "occupied" ? pageStyles.sortIconActive : ""}`}
+                      >
                         {wardSortCol === "occupied" ? (wardSortDir === "asc" ? "↑" : "↓") : "↕"}
                       </span>
                     </th>
-                    <th scope="col" className={`num ${pageStyles.sortableTh}`} onClick={() => handleWardSort("available")}>
+                    <th
+                      scope="col"
+                      className={`num ${pageStyles.sortableTh}`}
+                      onClick={() => handleWardSort("available")}
+                    >
                       Ready
-                      <span className={`${pageStyles.sortIcon} ${wardSortCol === "available" ? pageStyles.sortIconActive : ""}`}>
+                      <span
+                        className={`${pageStyles.sortIcon} ${wardSortCol === "available" ? pageStyles.sortIconActive : ""}`}
+                      >
                         {wardSortCol === "available" ? (wardSortDir === "asc" ? "↑" : "↓") : "↕"}
                       </span>
                     </th>
                     <th scope="col" className={`num ${pageStyles.sortableTh}`} onClick={() => handleWardSort("held")}>
                       Held
-                      <span className={`${pageStyles.sortIcon} ${wardSortCol === "held" ? pageStyles.sortIconActive : ""}`}>
+                      <span
+                        className={`${pageStyles.sortIcon} ${wardSortCol === "held" ? pageStyles.sortIconActive : ""}`}
+                      >
                         {wardSortCol === "held" ? (wardSortDir === "asc" ? "↑" : "↓") : "↕"}
                       </span>
                     </th>
                     <th scope="col" className={pageStyles.sortableTh} onClick={() => handleWardSort("occPct")}>
                       Occupancy
-                      <span className={`${pageStyles.sortIcon} ${wardSortCol === "occPct" ? pageStyles.sortIconActive : ""}`}>
+                      <span
+                        className={`${pageStyles.sortIcon} ${wardSortCol === "occPct" ? pageStyles.sortIconActive : ""}`}
+                      >
                         {wardSortCol === "occPct" ? (wardSortDir === "asc" ? "↑" : "↓") : "↕"}
                       </span>
                     </th>
@@ -1232,7 +1278,10 @@ function StatisticsServiceContent({
                         <td>{unit.cohort}</td>
                         <td className="num">{unit.beds}</td>
                         <td className="num">{capacity.occupied}</td>
-                        <td className="num" style={{ fontWeight: 600, color: capacity.available > 0 ? "var(--good)" : "var(--muted)" }}>
+                        <td
+                          className="num"
+                          style={{ fontWeight: 600, color: capacity.available > 0 ? "var(--good)" : "var(--muted)" }}
+                        >
                           {capacity.available}
                         </td>
                         <td className="num">{capacity.held}</td>
@@ -1241,7 +1290,13 @@ function StatisticsServiceContent({
                             <div className={pageStyles.bandTrack} style={{ width: "3.5rem" }} aria-hidden="true">
                               <span style={{ width: `${occPct}%` }} />
                             </div>
-                            <span style={{ fontSize: "12px", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}>
+                            <span
+                              style={{
+                                fontSize: "12px",
+                                fontFamily: "var(--mono)",
+                                fontVariantNumeric: "tabular-nums",
+                              }}
+                            >
                               {occPct}%
                             </span>
                           </div>
@@ -1268,46 +1323,64 @@ function StatisticsServiceContent({
       >
         <div className={pageStyles.pageGrid}>
           <div className={pageStyles.leftColumn}>
-            <WardPanel
-              title="Inter-Service Referral Flow Matrix"
-              count="Sent vs Taken In"
-            >
+            <WardPanel title="Inter-Service Referral Flow Matrix" count="Sent vs Taken In">
               <div style={{ padding: "0.75rem" }}>
                 <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 0.75rem 0", lineHeight: 1.45 }}>
-                  Cross-service patient movements between the four Western Australian health services during this reporting period.
+                  Cross-service patient movements between the four Western Australian health services during this
+                  reporting period.
                 </p>
                 <div style={{ overflowX: "auto" }}>
                   <table className={pageStyles.dataTable} id="flowMatrixTable">
                     <thead>
                       <tr>
                         <th scope="col">Originating Service</th>
-                        <th scope="col" className="num">To NMHS</th>
-                        <th scope="col" className="num">To EMHS</th>
-                        <th scope="col" className="num">To SMHS</th>
-                        <th scope="col" className="num">To WACHS</th>
-                        <th scope="col" className="num">Total Sent</th>
-                        <th scope="col" className="num">Net Balance</th>
+                        <th scope="col" className="num">
+                          To NMHS
+                        </th>
+                        <th scope="col" className="num">
+                          To EMHS
+                        </th>
+                        <th scope="col" className="num">
+                          To SMHS
+                        </th>
+                        <th scope="col" className="num">
+                          To WACHS
+                        </th>
+                        <th scope="col" className="num">
+                          Total Sent
+                        </th>
+                        <th scope="col" className="num">
+                          Net Balance
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {interServiceFlowMatrix.map((row) => (
                         <tr key={row.originSvc}>
-                          <th scope="row" style={{ fontWeight: 600, color: row.originSvc === service ? "var(--accent)" : "var(--ink)" }}>
+                          <th
+                            scope="row"
+                            style={{
+                              fontWeight: 600,
+                              color: row.originSvc === service ? "var(--accent)" : "var(--ink)",
+                            }}
+                          >
                             {row.originSvc} {row.originSvc === service ? "(This)" : ""}
                           </th>
                           <td className="num">{row.toNMHS}</td>
                           <td className="num">{row.toEMHS}</td>
                           <td className="num">{row.toSMHS}</td>
                           <td className="num">{row.toWACHS}</td>
-                          <td className="num" style={{ fontWeight: 600 }}>{row.totalSent}</td>
+                          <td className="num" style={{ fontWeight: 600 }}>
+                            {row.totalSent}
+                          </td>
                           <td className="num">
                             <span
                               className={`${pageStyles.flowBalanceBadge} ${
                                 row.netBalance > 0
                                   ? pageStyles.flowBalancePositive
                                   : row.netBalance < 0
-                                  ? pageStyles.flowBalanceNegative
-                                  : pageStyles.flowBalanceNeutral
+                                    ? pageStyles.flowBalanceNegative
+                                    : pageStyles.flowBalanceNeutral
                               }`}
                             >
                               {row.netBalance > 0 ? `+${row.netBalance}` : row.netBalance}
@@ -1319,7 +1392,8 @@ function StatisticsServiceContent({
                   </table>
                 </div>
                 <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0.75rem 0 0", lineHeight: 1.45 }}>
-                  Positive net balance indicates net patient inflow into the health service; negative balance indicates net outflow.
+                  Positive net balance indicates net patient inflow into the health service; negative balance indicates
+                  net outflow.
                 </p>
               </div>
             </WardPanel>
@@ -1358,10 +1432,10 @@ function StatisticsServiceContent({
                   <summary>Referral placement caveat</summary>
                   <div className={pageStyles.measureDetailsBody}>
                     <p className={styles.note} data-testid="ward-statistics-service-placement-caveat">
-                      {notYetAcceptedAtWard} {notYetAcceptedAtWard === 1 ? "referral has" : "referrals have"} no recorded
-                      ward acceptance. This includes queued or declined referrals and any accepted by a community team or
-                      emergency department; the record does not separate those states. These are acceptances, not
-                      arrivals.
+                      {notYetAcceptedAtWard} {notYetAcceptedAtWard === 1 ? "referral has" : "referrals have"} no
+                      recorded ward acceptance. This includes queued or declined referrals and any accepted by a
+                      community team or emergency department; the record does not separate those states. These are
+                      acceptances, not arrivals.
                     </p>
                   </div>
                 </details>
@@ -1399,9 +1473,11 @@ function StatisticsServiceContent({
 
                 {placedAtUnresolvedWard > 0 ? (
                   <p className={serviceStyles.absence} data-testid="ward-statistics-service-placement-unresolved">
-                    <span data-testid="ward-statistics-service-placement-unresolved-count">{placedAtUnresolvedWard}</span>{" "}
-                    {placedAtUnresolvedWard === 1 ? "referral names" : "referrals name"} an accepting ward this prototype
-                    cannot place at any hospital, so it cannot be counted as within {service} or as exported.
+                    <span data-testid="ward-statistics-service-placement-unresolved-count">
+                      {placedAtUnresolvedWard}
+                    </span>{" "}
+                    {placedAtUnresolvedWard === 1 ? "referral names" : "referrals name"} an accepting ward this
+                    prototype cannot place at any hospital, so it cannot be counted as within {service} or as exported.
                   </p>
                 ) : null}
               </div>
@@ -1439,7 +1515,9 @@ function StatisticsServiceContent({
 
                 <DistanceBandsBar total={outOfAreaEntries.length} bandCounts={bandCounts} />
 
-                <h3 className={pageStyles.sectionHeading} style={{ marginTop: "0.75rem" }}>By band</h3>
+                <h3 className={pageStyles.sectionHeading} style={{ marginTop: "0.75rem" }}>
+                  By band
+                </h3>
                 <ul
                   className={`${serviceStyles.tallyList} ${pageStyles.bandList}`}
                   data-testid="ward-statistics-service-out-of-area-bands"
@@ -1484,10 +1562,7 @@ function StatisticsServiceContent({
           </div>
 
           <div className={pageStyles.rightColumn}>
-            <WardPanel
-              title="Repatriation Priority Roster"
-              count={`${filteredRepatEntries.length} patients`}
-            >
+            <WardPanel title="Repatriation Priority Roster" count={`${filteredRepatEntries.length} patients`}>
               <div style={{ padding: "0.75rem" }}>
                 <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 0.75rem 0", lineHeight: 1.45 }}>
                   Active inpatients admitted to {service} wards whose home catchment is outside this health service.
@@ -1502,9 +1577,7 @@ function StatisticsServiceContent({
                     onChange={(e) => setRepatSearch(e.target.value)}
                     aria-label="Filter repatriation roster"
                   />
-                  <span className={pageStyles.tableFilterCount}>
-                    {filteredRepatEntries.length} active OOA
-                  </span>
+                  <span className={pageStyles.tableFilterCount}>{filteredRepatEntries.length} active OOA</span>
                 </div>
                 {filteredRepatEntries.length === 0 ? (
                   <p style={{ fontSize: "12px", color: "var(--muted)", fontStyle: "italic", padding: "0.5rem" }}>
@@ -1534,7 +1607,8 @@ function StatisticsServiceContent({
                                 className="chip"
                                 style={{
                                   fontSize: "12px",
-                                  background: entry.band === "air_transport_only" ? "var(--danger-soft)" : "var(--accent-soft)",
+                                  background:
+                                    entry.band === "air_transport_only" ? "var(--danger-soft)" : "var(--accent-soft)",
                                   color: entry.band === "air_transport_only" ? "var(--danger)" : "var(--accent-ink)",
                                 }}
                               >
@@ -1565,7 +1639,9 @@ function StatisticsServiceContent({
             <p className={styles.body}>
               <strong>Not recorded.</strong> No daily history is recorded, so neither 30-day series is shown.
             </p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(18rem, 1fr))", gap: "0.875rem" }}>
+            <div
+              style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(18rem, 1fr))", gap: "0.875rem" }}
+            >
               <DemonstrationChart series={sentSeries} testId="ward-statistics-service-sent-chart" />
               <DemonstrationChart series={takenInSeries} testId="ward-statistics-service-taken-in-chart" />
             </div>
@@ -1573,26 +1649,26 @@ function StatisticsServiceContent({
         </WardPanel>
       </div>
 
-        <div className={pageStyles.pageFoot}>
-          <StatFootnote
-            groups={[
-              {
-                heading: "Measures unavailable from the current record",
-                items: [
-                  "Current net flow is not calculated from these placement counts.",
-                  "Declines by service: referral and movement declines have different attribution.",
-                  "Measured distance: travel bands are synthetic and do not come from a map.",
-                ],
-              },
-            ]}
-          />
+      <div className={pageStyles.pageFoot}>
+        <StatFootnote
+          groups={[
+            {
+              heading: "Measures unavailable from the current record",
+              items: [
+                "Current net flow is not calculated from these placement counts.",
+                "Declines by service: referral and movement declines have different attribution.",
+                "Measured distance: travel bands are synthetic and do not come from a map.",
+              ],
+            },
+          ]}
+        />
 
-          <p className={styles.body}>
-            <Link href={STATISTICS_SERVICE_CHOOSER_HREF} data-testid="ward-statistics-service-chooser-link">
-              Choose a different health service
-            </Link>
-          </p>
-        </div>
+        <p className={styles.body}>
+          <Link href={STATISTICS_SERVICE_CHOOSER_HREF} data-testid="ward-statistics-service-chooser-link">
+            Choose a different health service
+          </Link>
+        </p>
+      </div>
 
       {toastMessage && (
         <div className={pageStyles.actionToast} role="status" aria-live="polite" aria-atomic="true">

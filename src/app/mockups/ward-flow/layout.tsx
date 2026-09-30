@@ -116,4 +116,3 @@ export default function WardFlowMockupLayout({ children }: { children: ReactNode
     </WardFlowProvider>
   );
 }
-

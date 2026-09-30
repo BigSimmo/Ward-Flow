@@ -160,7 +160,8 @@
 }
 
 @keyframes pulseBeacon {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
@@ -335,8 +336,6 @@
   font-family: var(--body);
   font-weight: 500;
 }
-
-
 
 /* Fleet Asset Status Panel */
 .fleetPanel {
@@ -1475,7 +1474,6 @@
 .linkInspect:hover {
   background: var(--sunk);
 }
-
 
 .linkInspect:hover {
   background: var(--sunk);

@@ -11,14 +11,7 @@ import {
 } from "./statistics-sections";
 import styles from "./statistics-nav.module.css";
 
-export type StatisticsNavSection =
-  | "hub"
-  | "overview"
-  | "compare"
-  | "service"
-  | "ward"
-  | "ed"
-  | "community";
+export type StatisticsNavSection = "hub" | "overview" | "compare" | "service" | "ward" | "ed" | "community";
 
 interface StatisticsNavProps {
   currentSection?: StatisticsNavSection;
@@ -32,8 +25,7 @@ export function StatisticsNav({ currentSection, activeSlug }: StatisticsNavProps
   useEffect(() => {
     // Initial sync from localStorage to DOM
     try {
-      const saved = localStorage.getItem("ward-flow-statistics-appearance") ||
-                    localStorage.getItem("ward-flow-theme");
+      const saved = localStorage.getItem("ward-flow-statistics-appearance") || localStorage.getItem("ward-flow-theme");
       if (saved === "light" || saved === "dark") {
         document.documentElement.setAttribute("data-theme", saved);
       }

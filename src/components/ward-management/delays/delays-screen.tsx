@@ -136,9 +136,11 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
 
   useEffect(() => {
     if (aliasFromProp !== undefined) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync prop alias into state
       setAliasFrom(aliasFromProp);
       return;
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read URL search param into state
     setAliasFrom(parseDelaysAliasFrom(new URLSearchParams(window.location.search).get("from")));
   }, [aliasFromProp]);
 
@@ -537,6 +539,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
     }
 
     return result;
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization -- radar points depend on open movements and wall clock
   }, [open, now]);
 
   // The severe-wait mark is the ward's own labelled default (ward-operational-defaults.ts), not a

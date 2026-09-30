@@ -107,13 +107,7 @@ function waitDotColor(tone: "danger" | "warning" | undefined): string {
  * bed pull, arrival), and any split of where a movement's closure sent somebody are explained in the
  * section below the figures.
  */
-export function StatisticsEdScreen({
-  edId,
-  movements: movementsOverride,
-}: {
-  edId: string;
-  movements?: Movement[];
-}) {
+export function StatisticsEdScreen({ edId, movements: movementsOverride }: { edId: string; movements?: Movement[] }) {
   const { movements: liveMovements, configuration, patients, referrals } = useWardFlow();
   const now = useWardFlowClock();
   const movements = movementsOverride ?? liveMovements;
@@ -372,7 +366,9 @@ function StatisticsEdScreenInner({
   }, []);
 
   const triggerD4 = useCallback((feature: string) => {
-    setD4Notice(`Reporting window '${feature}' selected: note that this prototype does not persist historical logs, showing live data.`);
+    setD4Notice(
+      `Reporting window '${feature}' selected: note that this prototype does not persist historical logs, showing live data.`,
+    );
     setTimeout(() => setD4Notice(null), 5000);
   }, []);
 
@@ -399,7 +395,16 @@ function StatisticsEdScreenInner({
         {/* Sovereign ED Header Bar: Dropdown + Time Window */}
         <div className={pageStyles.edHeaderBar}>
           <div className={pageStyles.edSelectWrap}>
-            <label htmlFor="ed-select" style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>
+            <label
+              htmlFor="ed-select"
+              style={{
+                fontSize: "12px",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                color: "var(--muted)",
+              }}
+            >
               Emergency Department:
             </label>
             <select
@@ -537,7 +542,9 @@ function StatisticsEdScreenInner({
                 <dd>{longestWait ? splitDuration(longestWait.waitMinutes) : "none"}</dd>
                 {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
                 <dd className={pageStyles.kpiCaption}>
-                  {longestWait ? resolveSubjectPatient(longestWait.movement, { patients, referrals }).formalName : "no open placement"}
+                  {longestWait
+                    ? resolveSubjectPatient(longestWait.movement, { patients, referrals }).formalName
+                    : "no open placement"}
                 </dd>
               </div>
               <div>
@@ -573,19 +580,21 @@ function StatisticsEdScreenInner({
                 <>
                   <h3 className={styles.subHeading}>Past {LONG_WAIT_MINUTES / 60} hours</h3>
                   <p className={styles.body} data-testid="ward-stat-ed-over-24h">
-                    {over24h} of the {onTheList} above {over24h === 1 ? "has" : "have"} been waiting more than {LONG_WAIT_MINUTES / 60} hours ({OPERATIONAL_DEFAULT_LABEL}).
+                    {over24h} of the {onTheList} above {over24h === 1 ? "has" : "have"} been waiting more than{" "}
+                    {LONG_WAIT_MINUTES / 60} hours ({OPERATIONAL_DEFAULT_LABEL}).
                   </p>
 
                   <h3 className={styles.subHeading}>Past {VERY_LONG_WAIT_MINUTES / 60} hours</h3>
                   <p className={styles.body} data-testid="ward-stat-ed-over-48h">
-                    {over48h} of the {onTheList} above {over48h === 1 ? "has" : "have"} been waiting more than {VERY_LONG_WAIT_MINUTES / 60} hours ({OPERATIONAL_DEFAULT_LABEL}).
+                    {over48h} of the {onTheList} above {over48h === 1 ? "has" : "have"} been waiting more than{" "}
+                    {VERY_LONG_WAIT_MINUTES / 60} hours ({OPERATIONAL_DEFAULT_LABEL}).
                   </p>
 
                   <h3 className={styles.subHeading}>Longest wait</h3>
                   {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
                   <p className={styles.body} data-testid="ward-stat-ed-longest-wait">
-                    {longestWait ? resolveSubjectPatient(longestWait.movement, { patients, referrals }).formalName : ""} —{" "}
-                    {longestWait ? splitDuration(longestWait.waitMinutes) : ""} waiting.
+                    {longestWait ? resolveSubjectPatient(longestWait.movement, { patients, referrals }).formalName : ""}{" "}
+                    — {longestWait ? splitDuration(longestWait.waitMinutes) : ""} waiting.
                   </p>
 
                   <div
@@ -687,7 +696,10 @@ function StatisticsEdScreenInner({
                             <td className={chartStyles.n}>{splitDuration(waitMinutes)}</td>
                             <td>
                               {movement.flaggedUrgent ? (
-                                <span className={pageStyles.chip} style={{ background: "var(--danger-soft)", color: "var(--danger)", fontWeight: 600 }}>
+                                <span
+                                  className={pageStyles.chip}
+                                  style={{ background: "var(--danger-soft)", color: "var(--danger)", fontWeight: 600 }}
+                                >
                                   Urgent
                                 </span>
                               ) : (
@@ -722,7 +734,12 @@ function StatisticsEdScreenInner({
             count="Australasian Triage Scale"
             testId="ward-statistics-ed-urgency"
           >
-            <div className={styles.panelBody} role="group" aria-label="Urgency category wait times content" tabIndex={0}>
+            <div
+              className={styles.panelBody}
+              role="group"
+              aria-label="Urgency category wait times content"
+              tabIndex={0}
+            >
               <p className={styles.notBuilt} data-testid="ward-statistics-ed-urgency-not-recorded">
                 Urgency category wait times against benchmark: not recorded in Ward Flow. This prototype does not track
                 which Australasian Triage Scale category a movement was assigned or how long each category waited.
@@ -758,25 +775,8 @@ function StatisticsEdScreenInner({
 
                     return (
                       <g key={band.label}>
-                        <rect
-                          x={x}
-                          y={120 - 90}
-                          width={barWidth}
-                          height={90}
-                          rx={4}
-                          fill="var(--sunk)"
-                          opacity={0.4}
-                        />
-                        {barHeight > 0 && (
-                          <rect
-                            x={x}
-                            y={y}
-                            width={barWidth}
-                            height={barHeight}
-                            rx={4}
-                            fill={color}
-                          />
-                        )}
+                        <rect x={x} y={120 - 90} width={barWidth} height={90} rx={4} fill="var(--sunk)" opacity={0.4} />
+                        {barHeight > 0 && <rect x={x} y={y} width={barWidth} height={barHeight} rx={4} fill={color} />}
                         <text
                           x={x + barWidth / 2}
                           y={barHeight > 0 ? y - 6 : 114}
@@ -818,7 +818,9 @@ function StatisticsEdScreenInner({
                       data-testid={`ward-statistics-ed-band-${band.label.replace(/\s+/gu, "-").toLowerCase()}`}
                     >
                       <th scope="row">{band.label}</th>
-                      <td data-testid={`ward-statistics-ed-band-count-${band.label.replace(/\s+/gu, "-").toLowerCase()}`}>
+                      <td
+                        data-testid={`ward-statistics-ed-band-count-${band.label.replace(/\s+/gu, "-").toLowerCase()}`}
+                      >
                         <span className={pageStyles.bandValue}>
                           <span className={pageStyles.bandTrack} aria-hidden="true">
                             <span style={{ width: `${onTheList === 0 ? 0 : (band.count / onTheList) * 100}%` }} />
@@ -877,8 +879,8 @@ function StatisticsEdScreenInner({
 
             <div className={styles.panelBody} role="group" aria-label="WEAT history content" tabIndex={0}>
               <p className={styles.notBuilt} data-testid="ward-statistics-ed-weat-not-recorded">
-                30-day WEAT performance history: not recorded in Ward Flow. This prototype keeps no history at all — only
-                the current state of each movement — so no day-by-day or trend figure can be formed from it.
+                30-day WEAT performance history: not recorded in Ward Flow. This prototype keeps no history at all —
+                only the current state of each movement — so no day-by-day or trend figure can be formed from it.
               </p>
             </div>
           </WardPanel>
@@ -940,19 +942,19 @@ function StatisticsEdScreenInner({
               </WardTable>
 
               <p className={styles.note}>
-                Due times passed counts only an overdue transport or transfer order. Neither an examination form nor a detention
-                form carries a due-by time in this model at all, so this column can never report a missed Mental Health
-                Act deadline — only a transport or transfer order that has run past when it was due.
+                Due times passed counts only an overdue transport or transfer order. Neither an examination form nor a
+                detention form carries a due-by time in this model at all, so this column can never report a missed
+                Mental Health Act deadline — only a transport or transfer order that has run past when it was due.
               </p>
               <LegalLimitsNotChecked />
 
               <p className={styles.notBuilt} data-testid="ward-stat-ed-comparison-not-built">
                 <strong>Three comparison measures are unavailable</strong>, and none stands as a nought or a dash.{" "}
-                <em>Accepted, 7 days</em> and <em>Out of area, 7 days</em> both need a rolling seven-day window, and this
-                prototype keeps no history at all — only the current state of each movement — so neither can be formed
-                from anything it stores. <em>Median wait</em> needs a minimum sample size below which it is suppressed,
-                and the one such threshold this prototype has was ruled by the owner for a different measure. No threshold
-                is applied here.
+                <em>Accepted, 7 days</em> and <em>Out of area, 7 days</em> both need a rolling seven-day window, and
+                this prototype keeps no history at all — only the current state of each movement — so neither can be
+                formed from anything it stores. <em>Median wait</em> needs a minimum sample size below which it is
+                suppressed, and the one such threshold this prototype has was ruled by the owner for a different
+                measure. No threshold is applied here.
               </p>
             </div>
           </WardPanel>
@@ -1011,8 +1013,8 @@ function StatisticsEdScreenInner({
 
                     <h3 className={styles.subHeading}>No ward yet</h3>
                     <p className={styles.body} data-testid="ward-stat-ed-unplaced">
-                      {unplaced} of the {onTheList} above {unplaced === 1 ? "has" : "have"} no ward that has accepted them
-                      yet.
+                      {unplaced} of the {onTheList} above {unplaced === 1 ? "has" : "have"} no ward that has accepted
+                      them yet.
                     </p>
                   </div>
                 </details>
@@ -1027,57 +1029,58 @@ function StatisticsEdScreenInner({
                 >
                   <p className={styles.notBuilt} data-testid="ward-statistics-ed-not-built-body">
                     <strong>
-                      The figures above are the only ones this page shows — nothing else here is a nought, and nothing stands
-                      as a dash where a further number would go.
+                      The figures above are the only ones this page shows — nothing else here is a nought, and nothing
+                      stands as a dash where a further number would go.
                     </strong>{" "}
-                    Which of the rest are a derivation away and which the record cannot support at all are different answers,
-                    and this page keeps them apart rather than calling everything absent.
+                    Which of the rest are a derivation away and which the record cannot support at all are different
+                    answers, and this page keeps them apart rather than calling everything absent.
                   </p>
 
                   <p className={styles.body} data-testid="ward-statistics-ed-attributable">
-                    <strong>Nothing is stored on a department itself.</strong> A department record holds an id, a site code, a
-                    name and a pointer to the Western Australian service register, and no figure could ever sit on it. Two
-                    other records name one, and they are where a department&apos;s figures would come from. A movement says
-                    which department a person is physically in — always, never missing — alongside when their movement opened,
-                    what stage it has reached and every ward decline against it. And a referral addressed to this
-                    department&apos;s psychiatry service names the department on its destination. The referral&apos;s own
-                    clocks are weaker than they look: the moment it was raised is always recorded, but the moment it was
-                    triaged is optional, so a referral may carry no triage instant at all — and where both exist the triage
-                    can precede the referral, because somebody can be in a department for hours before psychiatry is called.
-                    So how many people this department is currently waiting on is derivable from the movement side, and is
-                    shown above; how long each has been waiting draws on that same required field, and the wait chart below is
-                    built from exactly that subtraction.
+                    <strong>Nothing is stored on a department itself.</strong> A department record holds an id, a site
+                    code, a name and a pointer to the Western Australian service register, and no figure could ever sit
+                    on it. Two other records name one, and they are where a department&apos;s figures would come from. A
+                    movement says which department a person is physically in — always, never missing — alongside when
+                    their movement opened, what stage it has reached and every ward decline against it. And a referral
+                    addressed to this department&apos;s psychiatry service names the department on its destination. The
+                    referral&apos;s own clocks are weaker than they look: the moment it was raised is always recorded,
+                    but the moment it was triaged is optional, so a referral may carry no triage instant at all — and
+                    where both exist the triage can precede the referral, because somebody can be in a department for
+                    hours before psychiatry is called. So how many people this department is currently waiting on is
+                    derivable from the movement side, and is shown above; how long each has been waiting draws on that
+                    same required field, and the wait chart below is built from exactly that subtraction.
                   </p>
 
                   <p className={styles.body} data-testid="ward-statistics-ed-unrecordable">
                     <strong>
                       How busy the department is, though, is not a derivation away — the model has no field for it.
                     </strong>{" "}
-                    Every record above describes somebody mental health has been told about. Emergency department medical
-                    staff are not users of this system: their request arrives verbally, and psychiatry then raise the
-                    referral. So attendances this service was never told about are outside the model entirely, and no figure
-                    on this page could count them.
+                    Every record above describes somebody mental health has been told about. Emergency department
+                    medical staff are not users of this system: their request arrives verbally, and psychiatry then
+                    raise the referral. So attendances this service was never told about are outside the model entirely,
+                    and no figure on this page could count them.
                   </p>
 
                   <p className={styles.body} data-testid="ward-statistics-ed-near-miss">
-                    <strong>And one figure would be easy to publish and wrong.</strong> A movement can close with an outcome
-                    meaning it did not proceed, which looks like a count of people who left without a bed and is not one: it
-                    records a movement that ended without admission, typically because an examination found admission was not
-                    needed. Publishing it under that heading would rename a clinical outcome as a failure of flow. Whether
-                    anything here should be counted as leaving without a bed is a question for the owner, and until it is
-                    answered this page shows no such figure — deliberately, and never as a nought.
+                    <strong>And one figure would be easy to publish and wrong.</strong> A movement can close with an
+                    outcome meaning it did not proceed, which looks like a count of people who left without a bed and is
+                    not one: it records a movement that ended without admission, typically because an examination found
+                    admission was not needed. Publishing it under that heading would rename a clinical outcome as a
+                    failure of flow. Whether anything here should be counted as leaving without a bed is a question for
+                    the owner, and until it is answered this page shows no such figure — deliberately, and never as a
+                    nought.
                   </p>
 
                   <p className={styles.body} data-testid="ward-statistics-ed-left-before-seen-absent">
                     <strong>
-                      &quot;Left before being seen&quot; is a different claim again, and this model has no field for it at
-                      all.
+                      &quot;Left before being seen&quot; is a different claim again, and this model has no field for it
+                      at all.
                     </strong>{" "}
                     That phrase names a person who leaves an emergency department before anyone examines them — a safety
                     event, not a throughput number, and a different thing from the closure outcome above. Nothing on a
-                    movement, a referral or any other record here says whether that happened. This page does not show it, does
-                    not approximate it from a nearby field under that name, and does not count it as a nought: a wrong figure
-                    claiming to measure a safety event would be worse than showing none.
+                    movement, a referral or any other record here says whether that happened. This page does not show
+                    it, does not approximate it from a nearby field under that name, and does not count it as a nought:
+                    a wrong figure claiming to measure a safety event would be worse than showing none.
                   </p>
 
                   <p className={styles.body} data-testid="ward-statistics-ed-legs-not-built">
@@ -1085,10 +1088,10 @@ function StatisticsEdScreenInner({
                       The individual legs of a journey — referral raised, ward acceptance, bed pulled, arrival — are not
                       broken out here either.
                     </strong>{" "}
-                    Each leg needs a clock at both ends, and for the earliest two legs each clock is optional on the type: a
-                    movement can be raised, referred and accepted while either instant is still unset. A table built across
-                    clocks that may be missing would have to say, leg by leg, whether both ends are even on record, rather
-                    than quietly reading an absent one as no time at all.
+                    Each leg needs a clock at both ends, and for the earliest two legs each clock is optional on the
+                    type: a movement can be raised, referred and accepted while either instant is still unset. A table
+                    built across clocks that may be missing would have to say, leg by leg, whether both ends are even on
+                    record, rather than quietly reading an absent one as no time at all.
                   </p>
 
                   <p className={styles.body}>
@@ -1108,39 +1111,39 @@ function StatisticsEdScreenInner({
                 >
                   <h3 className={styles.subHeading}>Every figure here is invented</h3>
                   <p className={styles.body} data-testid="ward-statistics-ed-about-invented">
-                    Every count and every wait above is invented, derived from this prototype&apos;s own invented movement
-                    records — who is on this department&apos;s list, when each movement opened, whether a ward has accepted
-                    them, and every decline recorded against them. These invented figures have never been measured against a
-                    real department or a real patient. Nothing on this screen is real, and no identifier above belongs to
-                    anybody.
+                    Every count and every wait above is invented, derived from this prototype&apos;s own invented
+                    movement records — who is on this department&apos;s list, when each movement opened, whether a ward
+                    has accepted them, and every decline recorded against them. These invented figures have never been
+                    measured against a real department or a real patient. Nothing on this screen is real, and no
+                    identifier above belongs to anybody.
                   </p>
 
                   <h3 className={styles.subHeading}>What is real</h3>
                   <p className={styles.body} data-testid="ward-statistics-ed-about-real">
-                    The department named at the top of this page is a real Western Australian emergency department, and so is
-                    the health service it belongs to. Both are read from this prototype&apos;s own site list, and this page
-                    cannot show a department that is not on it. Neither is a measurement, so unlike every figure above,
-                    neither can be wrong in the way a count can be wrong.
+                    The department named at the top of this page is a real Western Australian emergency department, and
+                    so is the health service it belongs to. Both are read from this prototype&apos;s own site list, and
+                    this page cannot show a department that is not on it. Neither is a measurement, so unlike every
+                    figure above, neither can be wrong in the way a count can be wrong.
                   </p>
 
                   <h3 className={styles.subHeading}>A department is not a ward</h3>
                   <p className={styles.body} data-testid="ward-statistics-ed-about-not-a-ward">
-                    This screen only ever describes people standing in a department: how many, how long, and where they went
-                    next. It never shows a bed count, an occupancy figure or a length of stay for a department, because a
-                    department has none of its own. Those belong to Capacity and to the ward screens.
+                    This screen only ever describes people standing in a department: how many, how long, and where they
+                    went next. It never shows a bed count, an occupancy figure or a length of stay for a department,
+                    because a department has none of its own. Those belong to Capacity and to the ward screens.
                   </p>
 
                   <h3 className={styles.subHeading}>What a nought means, and what a stated absence means</h3>
                   <p className={styles.body} data-testid="ward-statistics-ed-about-nought">
-                    A nought here is a measured answer: nobody flagged urgent, nobody without a ward, nobody past twenty-four
-                    hours — every movement was checked and none matched. A stated absence is a different thing, and this page
-                    carries one: where the count of declines for any reason other than no free bed cannot be formed, this page
-                    says so in words instead of showing a number. The two are never the same thing, and neither is ever left
-                    blank.
+                    A nought here is a measured answer: nobody flagged urgent, nobody without a ward, nobody past
+                    twenty-four hours — every movement was checked and none matched. A stated absence is a different
+                    thing, and this page carries one: where the count of declines for any reason other than no free bed
+                    cannot be formed, this page says so in words instead of showing a number. The two are never the same
+                    thing, and neither is ever left blank.
                   </p>
                   <p className={styles.body} data-testid="ward-statistics-ed-about-zero">
-                    Every zero on this page is a real, measured zero unless the words beside it say the figure could not be
-                    taken. None of them means not tracked.
+                    Every zero on this page is a real, measured zero unless the words beside it say the figure could not
+                    be taken. None of them means not tracked.
                   </p>
                 </div>
               </WardPanel>
@@ -1156,5 +1159,3 @@ function StatisticsEdScreenInner({
     </StatisticsSectionFrame>
   );
 }
-
-

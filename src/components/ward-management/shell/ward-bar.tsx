@@ -1,13 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, BookOpen, Check, ChevronDown, Clock, FileText, ListChecks, Plus, Settings, Wrench } from "lucide-react";
+import {
+  Activity,
+  BookOpen,
+  Check,
+  ChevronDown,
+  Clock,
+  FileText,
+  ListChecks,
+  Plus,
+  Settings,
+  Wrench,
+} from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Sheet } from "@/components/ui/sheet";
 import { createBrowserStore } from "@/lib/client-store-factory";
-import { calendarDateOf, formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
+import {
+  calendarDateOf,
+  formatInstant,
+  formatInstantWithDay,
+  splitDuration,
+} from "@/components/ward-management/ward-clock";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardDemoControls } from "@/components/ward-management/ward-demo-controls";
@@ -872,9 +888,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
               aria-expanded={isFixedJurisdiction ? undefined : openPanel === "service"}
               aria-controls={isFixedJurisdiction ? undefined : "ward-bar-service-panel"}
               aria-label={
-                isFixedJurisdiction
-                  ? `Jurisdiction: ${activeService}`
-                  : `Service: ${activeService ?? "All services"}`
+                isFixedJurisdiction ? `Jurisdiction: ${activeService}` : `Service: ${activeService ?? "All services"}`
               }
               onClick={() => {
                 if (isFixedJurisdiction) {
@@ -891,13 +905,9 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
               <span className={styles.scopeBadgeInner}>
                 <span className={styles.scopeDot} aria-hidden="true" />
                 <span>{activeServiceBadgeLabel}</span>
-                {!isFixedJurisdiction && (
-                  <ChevronDown className={styles.scopeCaret} aria-hidden="true" />
-                )}
+                {!isFixedJurisdiction && <ChevronDown className={styles.scopeCaret} aria-hidden="true" />}
               </span>
-              <span className="sr-only">
-                {activeService ?? "All services"}
-              </span>
+              <span className="sr-only">{activeService ?? "All services"}</span>
             </button>
 
             {!isFixedJurisdiction && openPanel === "service" ? (

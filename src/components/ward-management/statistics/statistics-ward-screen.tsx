@@ -938,8 +938,8 @@ function StatisticsWardScreenInner({
                       the discharge plan, and at least one is about the person rather than about the bed. They are
                       deliberately not listed here because this page does not own that record shape. The nearest
                       equivalent elsewhere in this prototype measures from the moment a referral was raised, which this
-                      derivation cannot see, because it is given admissions only, by design. Supporting this figure would
-                      require a new recorded instant or a different derivation input.
+                      derivation cannot see, because it is given admissions only, by design. Supporting this figure
+                      would require a new recorded instant or a different derivation input.
                     </p>
                   </details>
                 </div>

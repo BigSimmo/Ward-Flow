@@ -1794,6 +1794,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     // Walkthrough code-read, 25 Sept 2026: only once the bed is pulled (before that no bed is held and
     // the booking panel stays shut), and never when "no transport needed" is recorded.
     if (m.stage === "pulled" && !m.transport && (m.transportNeed?.needed ?? true) !== false) {
+      // eslint-disable-next-line react-hooks/refs -- onAction callback references transportTriggerRef for focus restoration on click
       priorityFlags.push({
         tone: "warn",
         kind: "Transport not booked",

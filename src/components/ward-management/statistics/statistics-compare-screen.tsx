@@ -146,10 +146,9 @@ function StatisticsCompareScreenInner({
   const readyBeds = units.reduce((acc, u) => acc + unitCapacity(u, bedReleases).available, 0);
   const alosMean =
     wardStats.length > 0
-      ? (
-          wardStats.reduce((acc, s) => acc + (s.statistics.averageLengthOfStayDays ?? 0), 0) /
-          wardStats.length
-        ).toFixed(1)
+      ? (wardStats.reduce((acc, s) => acc + (s.statistics.averageLengthOfStayDays ?? 0), 0) / wardStats.length).toFixed(
+          1,
+        )
       : "0.0";
   const totalBlockers = wardStats.reduce((acc, s) => acc + s.statistics.readyToLeaveCannot, 0);
   const totalLongStays = wardStats.reduce((acc, s) => acc + s.statistics.longStays, 0);
@@ -162,10 +161,7 @@ function StatisticsCompareScreenInner({
   const bufferRatio = edWaitingCount > 0 ? (readyBeds / edWaitingCount).toFixed(1) + "x" : "—";
 
   const sortedStayWards = [...wardStats]
-    .sort(
-      (a, b) =>
-        (b.statistics.averageLengthOfStayDays ?? 0) - (a.statistics.averageLengthOfStayDays ?? 0),
-    )
+    .sort((a, b) => (b.statistics.averageLengthOfStayDays ?? 0) - (a.statistics.averageLengthOfStayDays ?? 0))
     .slice(0, 3);
 
   const edDemandCounts = emergencyDepartments
@@ -222,9 +218,9 @@ function StatisticsCompareScreenInner({
                   accepts. An acceptance is attributable to a named ward and a decline is not.
                 </p>
                 <p data-testid="ward-statistics-compare-double-count-example">
-                  <strong>Referrals received fail differently.</strong> Referred wards are stored as a LIST, not a single
-                  ward, because one referral can be live at several wards. A per-ward total would therefore sum to more
-                  than the number of referrals that exist.
+                  <strong>Referrals received fail differently.</strong> Referred wards are stored as a LIST, not a
+                  single ward, because one referral can be live at several wards. A per-ward total would therefore sum
+                  to more than the number of referrals that exist.
                 </p>
               </div>
             </details>
@@ -236,12 +232,7 @@ function StatisticsCompareScreenInner({
           <div className={pageStyles.segTrack} role="tablist" aria-label="Comparison view categories">
             {COMPARE_TABS.map((tab) => {
               const isActive = activeTab === tab.id;
-              const badge =
-                tab.id === "wards"
-                  ? units.length
-                  : tab.id === "eds"
-                    ? emergencyDepartments.length
-                    : null;
+              const badge = tab.id === "wards" ? units.length : tab.id === "eds" ? emergencyDepartments.length : null;
               return (
                 <button
                   key={tab.id}
@@ -320,7 +311,8 @@ function StatisticsCompareScreenInner({
               <span className={pageStyles.kpiSub}>wards / {totalBeds} beds</span>
             </div>
             <span className={pageStyles.kpiSub}>
-              <strong>{readyBeds}</strong> beds ready ({totalBeds > 0 ? ((readyBeds / totalBeds) * 100).toFixed(1) : 0}%)
+              <strong>{readyBeds}</strong> beds ready ({totalBeds > 0 ? ((readyBeds / totalBeds) * 100).toFixed(1) : 0}
+              %)
             </span>
           </div>
 
@@ -408,15 +400,28 @@ function StatisticsCompareScreenInner({
           <div className={pageStyles.splitGrid}>
             <WardPanel title="Inpatient Wards Overview" count={`${units.length} units`}>
               <div className={styles.panelBody}>
-                <p className={styles.note}>
-                  Specialized adult, youth, and older adult units across 4 health services.
-                </p>
+                <p className={styles.note}>Specialized adult, youth, and older adult units across 4 health services.</p>
                 <div className={pageStyles.overviewFacts}>
-                  <span className={pageStyles.factChip}><strong>{units.length}</strong> wards</span>
-                  <span className={pageStyles.factChip}><strong>4</strong> health services</span>
-                  <span className={pageStyles.factChip}><strong>{alosMean}d</strong> avg stay</span>
+                  <span className={pageStyles.factChip}>
+                    <strong>{units.length}</strong> wards
+                  </span>
+                  <span className={pageStyles.factChip}>
+                    <strong>4</strong> health services
+                  </span>
+                  <span className={pageStyles.factChip}>
+                    <strong>{alosMean}d</strong> avg stay
+                  </span>
                 </div>
-                <div style={{ fontSize: "12px", color: "var(--muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: "0.5rem" }}>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "var(--muted)",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    marginTop: "0.5rem",
+                  }}
+                >
                   Highest Length of Stay
                 </div>
                 <div className={pageStyles.outlierList}>
@@ -436,11 +441,26 @@ function StatisticsCompareScreenInner({
                   Patients currently in emergency departments requiring transfer to an inpatient bed.
                 </p>
                 <div className={pageStyles.overviewFacts}>
-                  <span className={pageStyles.factChip}><strong>{emergencyDepartments.length}</strong> EDs</span>
-                  <span className={pageStyles.factChip}><strong>{edWaitingCount}</strong> waiting</span>
-                  <span className={pageStyles.factChip}><strong>{urgentCount}</strong> urgent</span>
+                  <span className={pageStyles.factChip}>
+                    <strong>{emergencyDepartments.length}</strong> EDs
+                  </span>
+                  <span className={pageStyles.factChip}>
+                    <strong>{edWaitingCount}</strong> waiting
+                  </span>
+                  <span className={pageStyles.factChip}>
+                    <strong>{urgentCount}</strong> urgent
+                  </span>
                 </div>
-                <div style={{ fontSize: "12px", color: "var(--muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: "0.5rem" }}>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "var(--muted)",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    marginTop: "0.5rem",
+                  }}
+                >
                   Highest Placement Demand
                 </div>
                 <div className={pageStyles.outlierList}>
@@ -543,7 +563,9 @@ function StatisticsCompareScreenInner({
 
                 <div className={pageStyles.tableControlsBar}>
                   <div className={pageStyles.tableSearchBox}>
-                    <label htmlFor="wardSearchInput" className="sr-only">Filter wards</label>
+                    <label htmlFor="wardSearchInput" className="sr-only">
+                      Filter wards
+                    </label>
                     <input
                       id="wardSearchInput"
                       type="search"
@@ -601,7 +623,9 @@ function StatisticsCompareScreenInner({
 
                 <div className={pageStyles.tableControlsBar}>
                   <div className={pageStyles.tableSearchBox}>
-                    <label htmlFor="edSearchInput" className="sr-only">Filter emergency departments</label>
+                    <label htmlFor="edSearchInput" className="sr-only">
+                      Filter emergency departments
+                    </label>
                     <input
                       id="edSearchInput"
                       type="search"
@@ -623,7 +647,9 @@ function StatisticsCompareScreenInner({
                   rowHeader="Department"
                   columns={ED_COLUMNS}
                   rows={filteredEdRows.map((department) => {
-                    const mine = movements.filter((movement) => movement.originEdId === department.id && isOpen(movement));
+                    const mine = movements.filter(
+                      (movement) => movement.originEdId === department.id && isOpen(movement),
+                    );
                     return {
                       id: department.id,
                       name: department.name,
@@ -657,7 +683,9 @@ function StatisticsCompareScreenInner({
                 <table className={pageStyles.matrixTable} aria-label="Demand and capacity correlation matrix">
                   <thead>
                     <tr>
-                      <th className={pageStyles.rowHeader} scope="col">Inpatient Capacity</th>
+                      <th className={pageStyles.rowHeader} scope="col">
+                        Inpatient Capacity
+                      </th>
                       <th scope="col">High ED Demand (&gt;5 Waiting)</th>
                       <th scope="col">Moderate ED Demand (2–5 Waiting)</th>
                       <th scope="col">Low ED Demand (0–1 Waiting)</th>
@@ -673,15 +701,21 @@ function StatisticsCompareScreenInner({
                       </th>
                       <td className={`${pageStyles.matrixCell} ${pageStyles.matrixSevere}`}>
                         <strong style={{ color: "var(--danger, #b91c1c)" }}>Severe Chokepoint</strong>
-                        <div><span className={pageStyles.matrixCellTag}>RPH ED &harr; RPH Adult Secure</span></div>
+                        <div>
+                          <span className={pageStyles.matrixCellTag}>RPH ED &harr; RPH Adult Secure</span>
+                        </div>
                       </td>
                       <td className={`${pageStyles.matrixCell} ${pageStyles.matrixElevated}`}>
                         <strong style={{ color: "var(--warn, #b45309)" }}>Elevated Delay Risk</strong>
-                        <div><span className={pageStyles.matrixCellTag}>FSH ED &harr; Ward 4B</span></div>
+                        <div>
+                          <span className={pageStyles.matrixCellTag}>FSH ED &harr; Ward 4B</span>
+                        </div>
                       </td>
                       <td className={`${pageStyles.matrixCell} ${pageStyles.matrixModerate}`}>
                         <strong style={{ color: "var(--good, #15803d)" }}>Manageable Queue</strong>
-                        <div><span className={pageStyles.matrixCellTag}>SCGH ED &harr; SCGH MHU</span></div>
+                        <div>
+                          <span className={pageStyles.matrixCellTag}>SCGH ED &harr; SCGH MHU</span>
+                        </div>
                       </td>
                     </tr>
                     <tr>
@@ -693,15 +727,21 @@ function StatisticsCompareScreenInner({
                       </th>
                       <td className={`${pageStyles.matrixCell} ${pageStyles.matrixElevated}`}>
                         <strong style={{ color: "var(--warn, #b45309)" }}>High Transfer Risk</strong>
-                        <div><span className={pageStyles.matrixCellTag}>Joondalup ED &harr; Joondalup MHU</span></div>
+                        <div>
+                          <span className={pageStyles.matrixCellTag}>Joondalup ED &harr; Joondalup MHU</span>
+                        </div>
                       </td>
                       <td className={`${pageStyles.matrixCell} ${pageStyles.matrixModerate}`}>
                         <strong style={{ color: "var(--good, #15803d)" }}>Equilibrium</strong>
-                        <div><span className={pageStyles.matrixCellTag}>Rockingham ED &harr; Mimidi</span></div>
+                        <div>
+                          <span className={pageStyles.matrixCellTag}>Rockingham ED &harr; Mimidi</span>
+                        </div>
                       </td>
                       <td className={`${pageStyles.matrixCell} ${pageStyles.matrixModerate}`}>
                         <strong style={{ color: "var(--good, #15803d)" }}>Open Capacity</strong>
-                        <div><span className={pageStyles.matrixCellTag}>Midland ED &harr; Midland MHU</span></div>
+                        <div>
+                          <span className={pageStyles.matrixCellTag}>Midland ED &harr; Midland MHU</span>
+                        </div>
                       </td>
                     </tr>
                     <tr>
@@ -713,15 +753,21 @@ function StatisticsCompareScreenInner({
                       </th>
                       <td className={`${pageStyles.matrixCell} ${pageStyles.matrixModerate}`}>
                         <strong style={{ color: "var(--good, #15803d)" }}>Absorption Capacity</strong>
-                        <div><span className={pageStyles.matrixCellTag}>Armadale ED &harr; Moodjar</span></div>
+                        <div>
+                          <span className={pageStyles.matrixCellTag}>Armadale ED &harr; Moodjar</span>
+                        </div>
                       </td>
                       <td className={`${pageStyles.matrixCell} ${pageStyles.matrixModerate}`}>
                         <strong style={{ color: "var(--good, #15803d)" }}>Fluid Inflow</strong>
-                        <div><span className={pageStyles.matrixCellTag}>Bunbury ED &harr; Bunbury Acute</span></div>
+                        <div>
+                          <span className={pageStyles.matrixCellTag}>Bunbury ED &harr; Bunbury Acute</span>
+                        </div>
                       </td>
                       <td className={`${pageStyles.matrixCell} ${pageStyles.matrixModerate}`}>
                         <strong style={{ color: "var(--good, #15803d)" }}>Unconstrained</strong>
-                        <div><span className={pageStyles.matrixCellTag}>Albany ED &harr; Albany MHU</span></div>
+                        <div>
+                          <span className={pageStyles.matrixCellTag}>Albany ED &harr; Albany MHU</span>
+                        </div>
                       </td>
                     </tr>
                   </tbody>
@@ -1020,7 +1066,7 @@ function CompareTable<Row>({
           {rows.map(({ id, name, row }) => (
             <tr key={id}>
               <th scope="row">{name}</th>
-                {columns.map((column) => {
+              {columns.map((column) => {
                 const cell = column.cell(row);
                 return (
                   <td key={column.header} className={styles.num}>
@@ -1055,15 +1101,7 @@ interface HoveredWardState {
   unit: Unit;
 }
 
-function WardAlosBarChart({
-  units,
-  admissions,
-  now,
-}: {
-  units: Unit[];
-  admissions: Admission[];
-  now: number;
-}) {
+function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admissions: Admission[]; now: number }) {
   const [hoveredWard, setHoveredWard] = useState<HoveredWardState | null>(null);
 
   if (units.length === 0) return null;
@@ -1100,14 +1138,7 @@ function WardAlosBarChart({
           const y = py(v);
           return (
             <g key={v}>
-              <line
-                x1={padLeft}
-                y1={y}
-                x2={W - padRight}
-                y2={y}
-                stroke="var(--line)"
-                strokeWidth="1"
-              />
+              <line x1={padLeft} y1={y} x2={W - padRight} y2={y} stroke="var(--line)" strokeWidth="1" />
               <text
                 x={padLeft - 10}
                 y={y + 4}
@@ -1362,14 +1393,7 @@ function EdWaitingBarChart({
           const y = py(v);
           return (
             <g key={v}>
-              <line
-                x1={padLeft}
-                y1={y}
-                x2={W - padRight}
-                y2={y}
-                stroke="var(--line)"
-                strokeWidth="1"
-              />
+              <line x1={padLeft} y1={y} x2={W - padRight} y2={y} stroke="var(--line)" strokeWidth="1" />
               <text
                 x={padLeft - 10}
                 y={y + 4}
@@ -1403,7 +1427,10 @@ function EdWaitingBarChart({
 
           const site = siteByCode(department.siteCode);
           const shortName = site
-            ? site.name.replace(/ Emergency Department$| Hospital$| Health Service$| Health Campus$| Public Hospital$/, "")
+            ? site.name.replace(
+                / Emergency Department$| Hospital$| Health Service$| Health Campus$| Public Hospital$/,
+                "",
+              )
             : department.name;
 
           const urgentH = (urgent / maxVal) * plotH;

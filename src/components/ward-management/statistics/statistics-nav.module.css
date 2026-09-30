@@ -52,9 +52,18 @@
 }
 
 @keyframes navPulse {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 117, 80, 0.5); }
-  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(34, 117, 80, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 117, 80, 0); }
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(34, 117, 80, 0.5);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(34, 117, 80, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(34, 117, 80, 0);
+  }
 }
 
 .brandTitle {
@@ -150,7 +159,9 @@
 .navItemActive {
   color: var(--ink, #161a20);
   background: var(--surface, #ffffff);
-  box-shadow: 0 1px 2px rgba(30, 48, 66, 0.06), 0 3px 6px -2px rgba(30, 48, 66, 0.15);
+  box-shadow:
+    0 1px 2px rgba(30, 48, 66, 0.06),
+    0 3px 6px -2px rgba(30, 48, 66, 0.15);
   font-weight: 700;
 }
 

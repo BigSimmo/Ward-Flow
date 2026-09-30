@@ -59,8 +59,7 @@ interface WardHomeTabProps {
   toggleDecline: (movementId: string) => void;
   declineReason: DeclineReason | "" | undefined;
   setDeclineReason:
-    | React.Dispatch<React.SetStateAction<DeclineReason | undefined>>
-    | ((reason: DeclineReason | undefined) => void);
+    React.Dispatch<React.SetStateAction<DeclineReason | undefined>> | ((reason: DeclineReason | undefined) => void);
   submitDecline: (event: React.FormEvent<HTMLFormElement>, movementId: string) => void;
   priorRejectionCountRef: React.MutableRefObject<number>;
   rejections: Rejection[];
