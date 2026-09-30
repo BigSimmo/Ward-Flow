@@ -180,7 +180,7 @@
   font-size: var(--t-1);
   font-weight: 650;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--lift);
   transition: all 0.15s ease;
   white-space: nowrap;
 }
@@ -189,7 +189,7 @@
   background: var(--accent);
   color: var(--on-accent);
   border-color: var(--accent);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--float);
   transform: translateY(-1px);
 }
 
@@ -380,8 +380,14 @@
 /* ── Recorded-form KPI cards strip ── */
 .formKpiStrip {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 0.75rem;
+}
+
+@media (min-width: 68.0625rem) {
+  .formKpiStrip {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
 }
 
 .kpiCard {
@@ -402,7 +408,7 @@
 
 .kpiCard:hover {
   border-color: var(--accent);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--lift);
   transform: translateY(-1px);
 }
 
@@ -672,25 +678,86 @@
 
 @media (min-width: 68.0625rem) {
   .registryLayout {
-    grid-template-columns: 320px minmax(0, 1fr);
+    grid-template-columns: 340px minmax(0, 1fr);
     gap: 1.25rem;
-    align-items: start;
+    align-items: stretch;
+    min-height: max(960px, calc(100dvh + 6rem));
   }
 
   .leftColumn {
-    position: sticky;
-    top: 1rem;
-    align-self: start;
-    max-height: calc(100vh - 2rem);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-    padding-right: 0.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    height: 100%;
+    min-height: 100%;
+    align-self: stretch;
+    max-height: none;
+    overflow-y: visible;
+    padding-right: 0;
   }
 
   .authorityCardSection {
     display: block;
     width: 100%;
+    flex: 0 0 auto;
+  }
+
+  .deadlineContextCard {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .deadlineContextCard > [data-ward-primitive="panel"] {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+  }
+
+  .deadlineContextCard > [data-ward-primitive="panel"] > .panelBody {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .rightColumn {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 100%;
+    align-self: stretch;
+    min-width: 0;
+  }
+
+  .rightColumn > [data-ward-primitive="panel"] {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+  }
+
+  .rightColumn > [data-ward-primitive="panel"] > .panelBody {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .ordersScrollContainer {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: max(600px, calc(100vh - 360px));
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 0.25rem;
+    scrollbar-width: thin;
   }
 
   .catalogueSummary {
@@ -767,6 +834,7 @@
 .breakdownContainer {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
   gap: 0.5rem;
   padding: 0.75rem;
 }
@@ -793,7 +861,7 @@
 .breakdownRow:hover {
   background: var(--surface);
   border-color: var(--accent);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--lift);
 }
 
 .breakdownRow[data-breached="true"] {
@@ -1491,7 +1559,7 @@
   font-size: var(--t-1);
   letter-spacing: 0.04em;
   flex-shrink: 0;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--lift);
 }
 
 .dossierPatientMeta {
