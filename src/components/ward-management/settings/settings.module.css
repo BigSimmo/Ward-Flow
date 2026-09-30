@@ -1792,6 +1792,12 @@
   gap: 0.5rem;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .statusDotSurge {
+    animation: none;
+  }
+}
+
 .stationBtn {
   display: flex;
   align-items: center;

@@ -66,6 +66,7 @@ import styles from "./ward-table.module.css";
  * there is no shared visual rule to centralise until a second one does.
  */
 export function WardTable({
+  id,
   className,
   wrapperClassName,
   testId,
@@ -73,6 +74,7 @@ export function WardTable({
   overflowing = false,
   children,
 }: {
+  id?: string;
   className?: string;
   wrapperClassName?: string;
   testId?: string;
@@ -89,7 +91,9 @@ export function WardTable({
         data-ward-scroll-hint={hasScrollThreshold ? "true" : undefined}
         data-overflowing={overflowing ? "true" : undefined}
       >
-        <table className={className ? `${styles.table} ${className}` : styles.table}>{children}</table>
+        <table id={id} className={className ? `${styles.table} ${className}` : styles.table}>
+          {children}
+        </table>
       </div>
       {hasScrollThreshold ? (
         <p className={styles.scrollNotice}>This table scrolls sideways on narrow screens.</p>

@@ -1611,6 +1611,12 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
+
 /* Patient Identity & UMRN Link Conventions */
 .patientNameCell {
   font-weight: 600;

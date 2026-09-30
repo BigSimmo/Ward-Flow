@@ -33,7 +33,12 @@ import {
   headlineAvailable,
   sinceYesterday,
 } from "@/components/ward-management/ward-board-derivations";
-import { calendarDateOf, formatInstantWithDay, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  calendarDateOf,
+  formatInstantWithDay,
+  MINUTES_PER_DAY,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
@@ -589,8 +594,7 @@ function buildIncoming(
       const pulledAt = admission.pulledAt;
       const usablePull =
         admission.state === "pulled" && pulledAt !== null && Number.isFinite(pulledAt) && Number.isFinite(now);
-      const pullExpiresAt =
-        admission.movementId !== null ? (pullByMovementId.get(admission.movementId) ?? null) : null;
+      const pullExpiresAt = admission.movementId !== null ? (pullByMovementId.get(admission.movementId) ?? null) : null;
       return {
         key: admission.id,
         state: admission.state === "pulled" ? ("pulled" as const) : ("waitlisted" as const),
@@ -661,7 +665,9 @@ function PersonEntry({
           )}
           {occupant.pastDate && (
             <span className={styles.pastMark}>
-              <span aria-hidden="true" className={styles.statusGlyph}>▲ </span>
+              <span aria-hidden="true" className={styles.statusGlyph}>
+                ▲{" "}
+              </span>
               <span>Past date</span>
             </span>
           )}
@@ -683,7 +689,9 @@ function PersonEntry({
               className={occupant.dischargeBarrier ? styles.barrierTag : styles.barrierTagWarning}
               data-testid={`${idPrefix}-${occupant.key}-barrier`}
             >
-              {occupant.dischargeBarrier ? `Discharge barrier: ${occupant.dischargeBarrier}` : "Discharge barrier unrecorded (Stay ≥ 7d)"}
+              {occupant.dischargeBarrier
+                ? `Discharge barrier: ${occupant.dischargeBarrier}`
+                : "Discharge barrier unrecorded (Stay ≥ 7d)"}
             </span>
           </p>
         )}
@@ -742,7 +750,9 @@ function PersonEntry({
             )}
             {occupant.pastDate && (
               <span className={styles.pastMark}>
-                <span aria-hidden="true" className={styles.statusGlyph}>▲ </span>
+                <span aria-hidden="true" className={styles.statusGlyph}>
+                  ▲{" "}
+                </span>
                 <span>Past date</span>
               </span>
             )}
@@ -778,7 +788,9 @@ function PersonEntry({
               className={occupant.dischargeBarrier ? styles.barrierTag : styles.barrierTagWarning}
               data-testid={`${idPrefix}-${occupant.key}-barrier`}
             >
-              {occupant.dischargeBarrier ? `Discharge barrier: ${occupant.dischargeBarrier}` : "Discharge barrier unrecorded (Stay ≥ 7d)"}
+              {occupant.dischargeBarrier
+                ? `Discharge barrier: ${occupant.dischargeBarrier}`
+                : "Discharge barrier unrecorded (Stay ≥ 7d)"}
             </span>
           </div>
         )}
@@ -850,9 +862,7 @@ function PersonEntry({
             {occupant.dischargeDateMoves === 1 ? "time" : "times"}.
           </div>
         )}
-        {occupant.blockReason !== null && (
-          <p className={styles.personBlocker}>Held up by: {occupant.blockReason}.</p>
-        )}
+        {occupant.blockReason !== null && <p className={styles.personBlocker}>Held up by: {occupant.blockReason}.</p>}
       </div>
     </>
   );
@@ -874,7 +884,6 @@ interface ShiftTileItem {
   acts: ShiftAction[];
   who?: string;
 }
-
 
 /**
  * Resolve which movement "Patient arrived" should close on the board.
@@ -1361,7 +1370,6 @@ export function WardBoard({
     const bExpected = bOccupant?.expectedDays ?? Number.POSITIVE_INFINITY;
     return aExpected - bExpected || aIdx - bIdx;
   });
-
 
   const onFlowTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     const currentIndex = FLOW_TABS.indexOf(flowTab);
@@ -1879,7 +1887,9 @@ export function WardBoard({
                   const next = !prev;
                   if (next) {
                     setTimeout(() => {
-                      const el = document.getElementById("ward-board-daily-sheet") || document.getElementById("ward-daily-sheet");
+                      const el =
+                        document.getElementById("ward-board-daily-sheet") ||
+                        document.getElementById("ward-daily-sheet");
                       el?.scrollIntoView({ behavior: "smooth", block: "start" });
                     }, 60);
                   }
@@ -1907,7 +1917,10 @@ export function WardBoard({
                 <path d="M5.5 7h5M5.5 9.5h5M5.5 12h3" />
               </svg>
               <span>{sheetOpen ? "Hide ward daily sheet" : "Show ward daily sheet"}</span>
-              <span className={`${styles.topDailySheetChevron}${sheetOpen ? ` ${styles.topDailySheetChevronOpen}` : ""}`} aria-hidden="true">
+              <span
+                className={`${styles.topDailySheetChevron}${sheetOpen ? ` ${styles.topDailySheetChevronOpen}` : ""}`}
+                aria-hidden="true"
+              >
                 ▾
               </span>
             </button>
@@ -2861,7 +2874,9 @@ export function WardBoard({
                           <span className="sr-only">{tile.bandLabel}</span>
                           {tile.pastDate && (
                             <span className={styles.pastMark} data-testid={`ward-board-bed-${index + 1}-past`}>
-                              <span aria-hidden="true" className={styles.statusGlyph}>▲ </span>
+                              <span aria-hidden="true" className={styles.statusGlyph}>
+                                ▲{" "}
+                              </span>
                               <span>Past date</span>
                             </span>
                           )}
@@ -2876,7 +2891,9 @@ export function WardBoard({
                             how a number gets believed: it was consistent with itself. */}
                           {tile.awayAtEd && (
                             <span className={styles.awayMark} data-testid={`ward-board-bed-${index + 1}-away`}>
-                              <span aria-hidden="true" className={styles.statusGlyph}>◆ </span>
+                              <span aria-hidden="true" className={styles.statusGlyph}>
+                                ◆{" "}
+                              </span>
                               <span>At ED</span>
                             </span>
                           )}
@@ -3012,21 +3029,56 @@ export function WardBoard({
             </div>
 
             {selectedTile === null ? (
-              /*
-               * THE EMPTY-SELECTION STATE, MOVED HERE from a separate hint under the grid.
-               *
-               * The original decision stands and is why this is not a blank box: auto-selecting an
-               * occupant would read as the system having picked a person out of the ward, and an
-               * empty column reads as a panel that failed to load. Both are still refused — the
-               * absence is STATED, in the same words, including "nobody is chosen for you".
-               *
-               * What changed is where it is said. The hint and this panel were about to carry the
-               * same sentence a column apart, which is the duplication the owner objected to
-               * elsewhere on this page. It belongs in the region it describes.
-               */
-              <p className={styles.detailEmpty} data-testid="ward-board-select-hint">
-                Choose a bed to view its record.
-              </p>
+              <div className={styles.detailEmptyWrapper}>
+                <div className={styles.detailEmptyCard}>
+                  <div className={styles.detailEmptyIcon} aria-hidden="true">
+                    <svg
+                      width="28"
+                      height="28"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M2 4v16" />
+                      <path d="M2 8h18a2 2 0 0 1 2 2v10" />
+                      <path d="M2 17h20" />
+                      <path d="M6 8v9" />
+                    </svg>
+                  </div>
+                  <div className={styles.detailEmptyTitle}>Bed Inspector & Trajectory</div>
+                  <p className={styles.detailEmpty} data-testid="ward-board-select-hint">
+                    Choose a bed to view its record.
+                  </p>
+                  <div className={styles.detailEmptyGuide}>
+                    <div className={styles.detailEmptyGuideItem}>
+                      <span className={styles.detailEmptyBullet} aria-hidden="true">
+                        ●
+                      </span>
+                      <span>Occupant identity, stay length & trajectory</span>
+                    </div>
+                    <div className={styles.detailEmptyGuideItem}>
+                      <span className={styles.detailEmptyBullet} aria-hidden="true">
+                        ●
+                      </span>
+                      <span>Discharge barriers & expected departure plan</span>
+                    </div>
+                    <div className={styles.detailEmptyGuideItem}>
+                      <span className={styles.detailEmptyBullet} aria-hidden="true">
+                        ●
+                      </span>
+                      <span>Catchment corridor & destination clinic link</span>
+                    </div>
+                  </div>
+                  <div className={styles.detailEmptyStats}>
+                    <span className={styles.detailEmptyBadge}>
+                      {unit.beds} beds · {available} ready now
+                    </span>
+                  </div>
+                </div>
+              </div>
             ) : (
               <>
                 {selectedTile.kind === "occupied" || selectedTile.kind === "waiting" ? (
@@ -3247,7 +3299,11 @@ export function WardBoard({
                             </button>
                           </div>
                           {selectedOccupant.days !== null && selectedOccupant.days >= 7 && (
-                            <div className={styles.barrierSelectGroup} data-testid="ward-board-barrier-container" style={{ flex: "1 1 100%", marginTop: 8 }}>
+                            <div
+                              className={styles.barrierSelectGroup}
+                              data-testid="ward-board-barrier-container"
+                              style={{ flex: "1 1 100%", marginTop: 8 }}
+                            >
                               <label htmlFor="ward-board-barrier-select" className={styles.leavingLabel}>
                                 Primary Discharge Barrier (Stay: {selectedOccupant.days} days)
                               </label>
@@ -3282,7 +3338,6 @@ export function WardBoard({
                           )}
                         </div>
                       )}
-
                     </div>
                   ) : (
                     /* Unreachable while the grid and the list are built from the same two calls, and
@@ -3561,13 +3616,13 @@ export function WardBoard({
               >
                 {pendingConfirm.kind === "leaving" ? (
                   <>
-                    Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has left the ward?
-                    This will record their discharge and make this bed available for new admissions.
+                    Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has left the ward? This
+                    will record their discharge and make this bed available for new admissions.
                   </>
                 ) : (
                   <>
-                    Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has gone to an emergency department?
-                    The bed will remain held for them while they are away.
+                    Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has gone to an emergency
+                    department? The bed will remain held for them while they are away.
                   </>
                 )}
               </p>

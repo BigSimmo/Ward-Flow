@@ -292,7 +292,8 @@ function placeIdFrom(pathname: string): string | undefined {
 export function WardStatsToggle({
   figures,
   open,
-  onToggle }: {
+  onToggle,
+}: {
   figures: StandingFigure[];
   open: boolean;
   onToggle: () => void;
@@ -307,8 +308,12 @@ export function WardStatsToggle({
       aria-expanded={open}
       onClick={onToggle}
       data-testid="ward-stats-toggle"
+      data-ward-dynamic-island="true"
+      title={flagged.length > 0 ? `Clinical telemetry: ${alarm}` : "Clinical telemetry: Nominal"}
     >
+      <span className={flagged.length > 0 ? styles.hudPipAlarm : styles.hudPipNominal} aria-hidden="true" />
       <span className={styles.toggleLabel}>{open ? "Hide figures" : "Figures"}</span>
+      <span className={styles.hudDivider} aria-hidden="true" />
       {/*
        * 🔴 **THE ALARM IS ON THE BUTTON, NOT ONLY INSIDE THE PANEL.** A collapsed panel must never
        * be able to mean "nothing is wrong" — so whatever is flagged is stated here in WORDS, not
@@ -380,7 +385,7 @@ export function WardStandingStrip() {
     placeId: placeIdFrom(pathname),
   });
   return (
-    <div data-chrome-role={chromeRole}>
+    <div data-chrome-role={chromeRole} className={styles.hudAnchor}>
       <WardStatsToggle figures={figures} open={open} onToggle={() => setOpen(!open)} />
       <WardStatsPanel figures={figures} open={open} />
     </div>

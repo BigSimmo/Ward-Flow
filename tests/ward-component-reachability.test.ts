@@ -211,10 +211,10 @@ const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
     module: "src/components/ward-management/ward-chrome-search.tsx",
     why: "RETIRED 2026-09-11 — reached only from ward-chrome-header; the bar owns the one search box",
   },
-  {
-    module: "src/components/ward-management/ward-standing-strip.tsx",
-    why: "RETIRED 2026-09-11 — reached only from ward-chrome-header; the bar carries no figures panel",
-  },
+  /*
+   * ✅ **`ward-standing-strip.tsx` CAME BACK AS FLOATING DYNAMIC ISLAND HUD — 2026-09-30.**
+   * Mounted in `src/app/mockups/ward-flow/layout.tsx` so the Dynamic Island HUD floats site-wide.
+   */
   {
     module: "src/components/ward-management/movements/traffic-diagram.tsx",
     why: "standalone movements visual component; tested directly in ward-movements-traffic-diagram.dom.test.tsx",

@@ -567,7 +567,7 @@
 
 .barrierVerdictPill {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--t-0);
   font-weight: 700;
   color: var(--danger-ink);
   background: var(--danger-soft);
@@ -797,7 +797,7 @@
   background: var(--surface);
   border: 2px solid var(--line-strong);
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--t-0);
   font-weight: 700;
   z-index: 1;
 }
@@ -904,7 +904,7 @@
 }
 
 .stageDetailBadge {
-  font-size: 10px;
+  font-size: var(--t-0);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -960,13 +960,13 @@
   display: flex;
   align-items: baseline;
   gap: 6px;
-  font-size: 11px;
+  font-size: var(--t-0);
   line-height: 1.35;
 }
 
 .stageMilestoneTime {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--t-0);
   font-weight: 700;
   color: var(--muted);
   flex-shrink: 0;
@@ -1887,7 +1887,7 @@
 }
 
 .transportFactLabel {
-  font-size: 11px;
+  font-size: var(--t-0);
   font-weight: 600;
   color: var(--muted);
   text-transform: uppercase;
@@ -2033,7 +2033,7 @@
 .pulledBanner {
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-left: 4px solid var(--accent);
+  border-bottom-color: var(--line-strong);
   border-radius: var(--r1, 8px);
   padding: 16px 20px;
   margin: 12px 20px 16px;
@@ -2273,4 +2273,463 @@
   .tabbar {
     overflow-y: hidden;
   }
+}
+
+/* ==========================================================================
+   Elevated Third Edition Patient Screen Extensions (Option 1)
+   ========================================================================== */
+
+.umrnBadge {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.teleBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--r2);
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid var(--line);
+}
+
+.teleBadgeTier1 {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border-color: var(--danger);
+}
+
+.teleBadgeAcuity {
+  background: var(--gilt-soft);
+  color: var(--gilt);
+}
+
+.teleBadgeLegal {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: var(--line);
+}
+
+.teleBadgeClock {
+  background: var(--surface-2);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.pulseDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 0 2px var(--danger-soft);
+}
+
+.blockerCorridor {
+  padding: 12px 18px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.blockerHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.blockerTitle {
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--danger-ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.blockerCount {
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.blockerGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 10px;
+}
+
+.blockerCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r2);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.blockerCardCleared {
+  background: var(--good-soft);
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r2);
+  padding: 10px 14px;
+}
+
+.blockerTop {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.blockerIcon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--danger-soft);
+  color: var(--danger);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-size: var(--t-0);
+  font-weight: 700;
+}
+
+.blockerMain {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.blockerLabelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.blockerLabel {
+  font-size: var(--t-1);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.blockerVerdict {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: var(--r1);
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+}
+
+.blockerDetail {
+  font-size: var(--t-0);
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.blockerActionRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
+.btnInlineAction {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: var(--t-0);
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+}
+
+.btnInlineAction:hover {
+  text-decoration: underline;
+}
+
+.communityMasthead {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: var(--r1);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.commBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: var(--r1);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  width: fit-content;
+}
+
+.commTitle {
+  font-size: var(--t-3);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.commDesc {
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.referralTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-0);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.referralTable th {
+  background: var(--surface-2);
+  text-align: left;
+  padding: 6px 10px;
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+
+.referralTable td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+  color: var(--ink-soft);
+}
+
+.referralTable tr:last-child td {
+  border-bottom: none;
+}
+
+.referralTable tr:hover td {
+  background: var(--surface-2);
+}
+
+.unitNameCell {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.statusBadgeDeclined {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: var(--r1);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.reAskCell {
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+.reAskCell strong {
+  color: var(--accent-ink);
+}
+
+.contactGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.contactCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.contactTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.contactWho {
+  font-size: var(--t-1);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.contactExt {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--accent-ink);
+  background: var(--surface);
+  padding: 1px 6px;
+  border-radius: var(--r1);
+  border: 1px solid var(--line);
+}
+
+.contactRole {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.contactNote {
+  font-size: var(--t-0);
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.clearanceModalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clearanceModalBox {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r3);
+  box-shadow: var(--lift);
+  width: 100%;
+  max-width: 480px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.clearanceModalHead {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface-2);
+}
+
+.clearanceModalTitle {
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.clearanceModalClose {
+  background: transparent;
+  border: none;
+  font-size: var(--t-3);
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.clearanceModalBody {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+}
+
+.clearanceModalFoot {
+  padding: 10px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Community Overview Panel (Outpatient view) */
+.communityOverviewCard {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.commMetricGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+}
+
+.commMetricLabel {
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.commMetricValue {
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.commMetricSub {
+  font-size: var(--t-0);
+  color: var(--ink-soft);
 }
