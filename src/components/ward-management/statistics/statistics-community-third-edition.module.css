@@ -1,73 +1,178 @@
-.pageGrid {
-  display: grid;
-  min-width: 0;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-areas:
-    "identity discharges"
-    "figures hospital"
-    "unsupported unsupported"
-    "comparison comparison"
-    "provenance provenance"
-    "limits limits";
-  gap: 0.875rem;
-  align-items: start;
-}
+/* ═══════════════════════════════════════════════════════════════════════
+   WARD FLOW STATISTICS — Community Teams (Third Edition)
+   Sovereign Tabbed Telemetry Cockpit
+   Zero text below 12px strictly enforced
+   ═══════════════════════════════════════════════════════════════════════ */
 
-.pageGrid > :global([data-testid="ward-statistics-community-identity"]),
-.pageGrid > :global([data-testid="ward-statistics-community-provenance"]),
-.pageGrid > :global([data-testid="ward-statistics-community-unresolved"]) {
-  grid-column: 1 / -1;
+.pageGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  width: 100%;
+  min-width: 0;
 }
 
 @media print {
   .pageGrid {
     display: block;
   }
-
   .pageGrid > * {
     margin-bottom: 0.75rem;
   }
 }
 
-/* Third-edition drawing flow: identity and the primary measured panels lead. */
-.pageGrid > :global([data-testid="ward-statistics-community-identity"]) {
-  grid-column: auto;
-  order: 1;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-hospital-discharges"]) {
-  order: 2;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-followup"]) {
-  order: 3;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-figures"]) {
-  order: 4;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-referrals"]) {
-  order: 5;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-referral-sources"]) {
-  order: 6;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-first-contact"]) {
-  order: 7;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-contacts"]) {
-  order: 8;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-in-hospital"]) {
-  order: 9;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-comparison"]) {
-  order: 10;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-provenance"]) {
-  order: 11;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-limits"]) {
-  order: 12;
+/* ─── Sovereign Community Header & Selector Bar ─── */
+.communityHeaderBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.625rem 0.875rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card, 0.375rem);
 }
 
+.communitySelectWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+
+.communitySelect {
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-card, 0.375rem);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.pillGroup {
+  display: flex;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card, 0.375rem);
+  padding: 2px;
+  gap: 2px;
+}
+
+.pillBtn {
+  padding: 0.25rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--body);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: calc(var(--radius-card, 0.375rem) - 2px);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.pillBtn.pillActive,
+.pillBtn:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+/* ─── Sovereign Tab Navigation Bar ─── */
+.sovereignTabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.tabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-family: var(--body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.tabBtn:hover {
+  color: var(--ink);
+}
+
+.tabActive {
+  color: var(--ink) !important;
+  border-bottom-color: var(--gilt) !important;
+}
+
+.tabBadge {
+  padding: 0.125rem 0.375rem;
+  border-radius: 9999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--mono);
+}
+
+.tabPane {
+  display: none;
+}
+
+.tabPaneActive {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  width: 100%;
+}
+
+/* ─── Layout Grids ─── */
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.875rem;
+  width: 100%;
+  align-items: start;
+}
+
+@media (max-width: 64rem) {
+  .grid2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  min-width: 0;
+}
+
+/* ─── KPI Band ─── */
 .kpiBand {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -85,53 +190,21 @@
 .kpi:last-child {
   border-right: 0;
 }
+
 .kpiLabel {
   color: var(--ink-soft);
-  font-size: var(--t-0);
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+
 .kpiValue {
   color: var(--ink);
   font-family: var(--mono);
-  font-size: var(--t-6);
+  font-size: var(--t-6, 1.75rem);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-}
-.figureDetails {
-  margin-top: 0.75rem;
-}
-.figureDetails > summary {
-  min-height: 3rem;
-  padding: 0.75rem;
-  color: var(--ink);
-  cursor: pointer;
-  font-weight: 700;
-}
-.figureDetails > summary:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 2px;
-}
-.figureDetailsBody {
-  overflow-x: auto;
-}
-
-.nestedMeasure {
-  margin-top: 0.875rem;
-  border-top: 1px solid var(--line);
-  padding-top: 0.875rem;
-}
-
-.nestedMeasure h3 {
-  margin: 0 0 0.5rem;
-  color: var(--ink);
-  font-size: var(--t-2);
-  font-weight: 600;
-}
-
-.nestedMeasure p {
-  margin-bottom: 0;
 }
 
 @media (max-width: 48rem) {
@@ -146,150 +219,155 @@
   }
 }
 
-/* Explicit tracks preserve the drawing's left/right reading order. */
-.pageGrid > :global([data-testid="ward-statistics-community-identity"]) {
-  grid-area: identity;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-figures"]) {
-  grid-area: figures;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-hospital-discharges"]) {
-  grid-area: discharges;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-in-hospital"]) {
-  grid-area: hospital;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-comparison"]) {
-  grid-area: comparison;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-provenance"]) {
-  grid-area: provenance;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-limits"]) {
-  grid-area: limits;
-}
-
-.unsupportedGroup {
-  grid-area: unsupported;
-  min-width: 0;
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
+/* ─── Action Controls Row ─── */
+.actionRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0.75rem 1rem;
   background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
 }
 
-.unsupportedGroup > summary {
-  min-height: var(--ward-tap);
-  align-content: center;
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 12px;
+  font-family: var(--body);
+  font-weight: 600;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card, 0.375rem);
+  color: var(--ink);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.actionBtn:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+}
+
+.actionBtnPrimary {
+  background: var(--ink);
+  color: var(--surface);
+  border-color: var(--ink);
+}
+
+.actionBtnPrimary:hover {
+  filter: brightness(1.15);
+}
+
+/* ─── Filter Bar & Search ─── */
+.tableFilterBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.tableSearchInput {
+  flex: 1;
+  max-width: 24rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card, 0.375rem);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 12px;
+}
+
+.tableSearchInput:focus {
+  outline: 2px solid var(--accent);
+  border-color: var(--accent);
+}
+
+.tableFilterCount {
+  font-size: 12px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ─── Details and Nested Sections ─── */
+.figureDetails {
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+
+.figureDetails > summary {
+  min-height: 2.75rem;
   padding: 0.75rem 1rem;
   color: var(--ink);
   cursor: pointer;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
 }
 
-.unsupportedGroup > summary:focus-visible {
+.figureDetails > summary:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-.unsupportedGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-  padding: 0 0.75rem 0.75rem;
-}
-@media (max-width: 62.5rem) {
-  .pageGrid {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "identity" "figures" "discharges" "hospital" "unsupported" "comparison" "provenance" "limits";
-  }
-
-  .unsupportedGrid {
-    grid-template-columns: minmax(0, 1fr);
-  }
+.figureDetailsBody {
+  overflow-x: auto;
+  padding: 0 1rem 0.75rem;
 }
 
-@media (min-width: 62.5625rem) {
-  .pageGrid {
-    align-items: start;
-  }
-
-  .pageGrid > :global([data-ward-primitive="panel"]) {
-    display: flex;
-    height: auto;
-    max-height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
-    min-height: 0;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .pageGrid > :global([data-testid="ward-statistics-community-identity"]),
-  .pageGrid > :global([data-testid="ward-statistics-community-provenance"]),
-  .pageGrid > :global([data-testid="ward-statistics-community-limits"]),
-  .pageGrid > :global([data-testid="ward-statistics-community-figures"]),
-  .pageGrid > :global([data-testid="ward-statistics-community-followup"]),
-  .pageGrid > :global([data-testid="ward-statistics-community-referral-sources"]) {
-    display: block;
-    height: auto;
-    max-height: none;
-  }
+.nestedMeasure {
+  margin-top: 0.875rem;
+  border-top: 1px solid var(--line);
+  padding: 0.875rem 1rem 0;
 }
 
-@media print {
-  .pageGrid > :global([data-ward-primitive="panel"]) {
-    height: auto;
-    max-height: none;
-    overflow: visible;
-  }
-}
-
-/* ─── Community Screen Diagram Styles ─── */
-.chartContainer {
-  position: relative;
-  width: 100%;
-  padding: 14px 16px;
-  overflow: hidden;
-}
-.chartSvg {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-.chartTooltipCard {
-  position: absolute;
-  pointer-events: none;
-  background: var(--surface);
+.nestedMeasure h3 {
+  margin: 0 0 0.5rem;
   color: var(--ink);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r2);
-  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.nestedMeasure p {
+  margin-bottom: 0;
   font-size: 12px;
-  font-family: var(--body);
-  box-shadow: 0 4px 18px rgb(var(--ward-shadow-rgb) / 0.16);
-  z-index: 100;
-  max-width: 260px;
-  line-height: 1.4;
 }
-:global([data-theme="dark"]) .chartTooltipCard {
+
+/* ─── Notice & Toast ─── */
+.d4NoticeBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.625rem 1rem;
   background: var(--surface-2);
-  border-color: var(--line-strong);
-  box-shadow: 0 6px 22px rgb(var(--ward-shadow-rgb) / 0.55);
+  border-left: 3px solid var(--gilt);
+  border-top: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  border-radius: var(--radius-card, 0.375rem);
+  font-size: 12px;
+  color: var(--ink);
 }
-.gaugeWrap {
-  text-align: center;
-  padding: 14px 16px;
-}
-.timelineTrack {
-  height: 8px;
-  background: var(--sunk);
-  border-radius: 4px;
-  overflow: hidden;
+
+.d4NoticeDismiss {
+  background: transparent;
   border: 1px solid var(--line);
+  border-radius: var(--radius-card, 0.25rem);
+  color: var(--muted);
+  font-size: 12px;
+  padding: 2px 8px;
+  cursor: pointer;
 }
-.timelineFill {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.3s ease;
-}
+
 .actionToast {
   position: fixed;
   bottom: 24px;
@@ -298,33 +376,95 @@
   padding: 12px 18px;
   background: var(--ink);
   color: var(--surface);
-  border-radius: var(--r2);
-  font-size: var(--t-1);
+  border-radius: var(--radius-card, 0.375rem);
+  font-size: 13px;
   font-family: var(--body);
   box-shadow: 0 6px 24px rgb(var(--ward-shadow-rgb) / 0.3);
   z-index: 99999;
   border-left: 4px solid var(--gilt);
 }
 
-.actionBtn {
-  padding: 6px 12px;
-  font-size: 12px;
-  font-family: var(--body);
-  font-weight: 500;
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ─── Visual Charts & Gauges ─── */
+.chartContainer {
+  padding: 1rem;
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.gaugeContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+  text-align: center;
+}
+
+.gaugeValue {
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   color: var(--ink);
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
-}
-.actionBtn:hover {
-  background: var(--sunk);
-  border-color: var(--line-strong);
-}
-.actionBtn:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 2px;
 }
 
+.gaugeLabel {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
 
+.distList {
+  list-style: none;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.distItem {
+  display: grid;
+  grid-template-columns: 8rem 1fr 3.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12px;
+}
+
+.distTrack {
+  height: 0.5rem;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.distFill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.3s ease;
+}
+
+.distCount {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  font-weight: 600;
+}
