@@ -489,11 +489,11 @@
 
 /* Content Grid & Panels */
 .contentGrid {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
-  grid-template-columns: minmax(0, 1.35fr) minmax(16rem, 0.85fr);
   gap: var(--ward-space-16);
-  align-items: stretch;
+  width: 100%;
 }
 
 .section {
@@ -505,50 +505,32 @@
   background: var(--surface);
   box-shadow: var(--lift);
   overflow: hidden;
+  width: 100%;
 }
 
 .nowPanel,
-.footPanel {
-  grid-column: 1 / -1;
-}
-
-.edPanel {
-  grid-column: 1;
-}
-
+.edPanel,
 .reachPanel {
-  grid-column: 2;
+  width: 100%;
 }
 
-@media (min-width: 1025px) {
-  .edPanel,
-  .reachPanel {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    height: clamp(34rem, calc(100dvh - 14rem), 54rem);
-    overflow: hidden;
-  }
-
-  .edPanel > .sectionHeader,
-  .reachPanel > .sectionHeader {
-    flex: 0 0 auto;
-  }
-
-  .edPanel > .sectionBody,
-  .reachPanel > .sectionBody {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-  }
+.edPanel,
+.reachPanel {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  overflow: visible;
 }
 
-@media (max-width: 1024px) {
-  .edPanel,
-  .reachPanel {
-    height: auto;
-    max-height: 34rem;
-  }
+.edPanel > .sectionHeader,
+.reachPanel > .sectionHeader {
+  flex: 0 0 auto;
+}
+
+.edPanel > .sectionBody,
+.reachPanel > .sectionBody {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .sectionHeader {
@@ -678,12 +660,12 @@
 
 .rosterTable {
   composes: table from "../ward-table/ward-table.module.css";
-  --ward-table-min-width: 44rem;
+  --ward-table-min-width: 52rem;
 }
 
 .edDirectoryTable {
   composes: table from "../ward-table/ward-table.module.css";
-  --ward-table-min-width: 42rem;
+  --ward-table-min-width: 48rem;
 }
 
 .actionColHeader {
@@ -788,12 +770,14 @@
 /* Gap Callout Banner */
 .gapCallout {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 10px 14px;
-  background: var(--warn-soft);
-  border: 1px solid var(--warn);
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--warn);
   border-radius: var(--r2);
+  margin-top: var(--ward-space-8);
 }
 
 .gapCalloutHeader {
@@ -802,129 +786,187 @@
   gap: 6px;
   color: var(--warn);
   font-size: var(--t-0);
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .gapIcon {
   flex-shrink: 0;
+  color: var(--warn);
 }
 
 .gapCalloutText {
   margin: 0;
-  color: var(--ink);
+  color: var(--ink-soft);
   font-size: var(--t-1);
   line-height: 1.45;
+}
+
+/* Department Cell */
+.deptCell {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.deptTitle {
+  font-weight: 650;
+  color: var(--ink);
+  line-height: 1.35;
 }
 
 /* Reaching Protocol Grid */
 .reachProtocolGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+@media (max-width: 960px) {
+  .reachProtocolGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }
 
 .protocolCard {
-  background: var(--surface-2);
+  background: var(--surface);
   border: 1px solid var(--line);
+  border-left: 4px solid var(--line-strong);
   border-radius: var(--r2);
-  padding: 12px 14px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
+  box-shadow: var(--lift);
   transition:
     transform 0.15s ease,
+    border-color 0.15s ease,
     box-shadow 0.15s ease;
+}
+
+.protocolCard[data-tone="good"] {
+  border-left-color: var(--good);
+}
+
+.protocolCard[data-tone="accent"] {
+  border-left-color: var(--accent);
+}
+
+.protocolCard[data-tone="lead"] {
+  border-left-color: var(--ink-soft);
 }
 
 .protocolCard:hover {
   transform: translateY(-1px);
-  box-shadow: var(--lift);
+  border-color: var(--line-strong);
+  box-shadow: var(--float);
 }
 
 .protocolCardHeader {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 12px;
 }
 
-.protocolIcon {
-  color: var(--accent);
+.protocolIconWrap {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--r2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sunk);
   flex-shrink: 0;
 }
 
+.protocolIconWrap[data-tone="good"] {
+  background: var(--good-soft);
+  color: var(--good);
+}
+
+.protocolIconWrap[data-tone="accent"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.protocolIconWrap[data-tone="lead"] {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.protocolIcon {
+  flex-shrink: 0;
+}
+
+.protocolTitleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.protocolBadge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-family: var(--mono);
+}
+
+.protocolBadge[data-tone="good"] {
+  color: var(--good);
+}
+
+.protocolBadge[data-tone="accent"] {
+  color: var(--accent);
+}
+
+.protocolBadge[data-tone="lead"] {
+  color: var(--muted);
+}
+
 .protocolTitle {
-  font-weight: 650;
-  font-size: var(--t-1);
-  color: var(--accent-ink);
+  font-weight: 700;
+  font-size: var(--t-2);
+  color: var(--ink);
+  line-height: 1.25;
 }
 
 .protocolDesc {
   margin: 0;
-  font-size: var(--t-0);
-  color: var(--muted);
-  line-height: 1.45;
-}
-
-/* Provenance Details */
-.disclosureGrid {
-  display: grid;
-  gap: var(--ward-space-12);
-  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-}
-
-.disclosurePanel {
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  background: var(--surface-2);
-  padding: var(--ward-space-12);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.disclosureHeading {
-  margin: 0;
-  color: var(--text-heading);
   font-size: var(--t-1);
-  font-weight: 700;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  flex: 1 1 auto;
 }
 
-.disclosureDetails {
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  background: var(--surface);
-  overflow: hidden;
-}
-
-.disclosureDetails > summary {
-  min-height: var(--ward-tap);
+.protocolFooter {
   display: flex;
   align-items: center;
-  cursor: pointer;
-  padding: 0 var(--ward-space-14);
-  color: var(--accent-ink);
-  font-size: var(--t-1);
-  font-weight: 650;
-  background: var(--surface-2);
-  transition: background 0.15s ease;
+  gap: 6px;
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-family: var(--mono);
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
 }
 
-.disclosureDetails > summary:hover {
-  background: var(--sunk);
+.protocolRouteLabel {
+  font-weight: 600;
+  color: var(--ink-soft);
 }
 
-.disclosureDetails > summary:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
+.protocolBullet {
+  color: var(--line-strong);
 }
 
-.disclosureDetails[open] > summary {
-  border-bottom: 1px solid var(--line);
-}
-
-.disclosureDetails .disclosureGrid {
-  padding: var(--ward-space-14);
+.protocolDirective {
+  color: var(--muted);
 }
 
 /* Tier 3 Escalation Modal */

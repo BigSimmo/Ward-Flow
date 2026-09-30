@@ -579,7 +579,9 @@ export function OnCallScreen() {
                         return (
                           <tr key={department.id} data-testid={`ward-on-call-ed-row-${department.id}`}>
                             <td>
-                              <strong>{department.name}</strong>
+                              <div className={styles.deptCell}>
+                                <strong className={styles.deptTitle}>{department.name}</strong>
+                              </div>
                             </td>
                             <td className={styles.siteCell}>{site?.name ?? "Regional Directory"}</td>
                             <td>
@@ -640,83 +642,76 @@ export function OnCallScreen() {
               </p>
 
               <div className={styles.reachProtocolGrid}>
-                <div className={styles.protocolCard}>
+                <div className={styles.protocolCard} data-tone="good">
                   <div className={styles.protocolCardHeader}>
-                    <Building2 size={16} aria-hidden="true" className={styles.protocolIcon} />
-                    <div className={styles.protocolTitle}>Hospital Switchboard</div>
+                    <div className={styles.protocolIconWrap} data-tone="good">
+                      <Building2 size={16} aria-hidden="true" className={styles.protocolIcon} />
+                    </div>
+                    <div className={styles.protocolTitleGroup}>
+                      <span className={styles.protocolBadge} data-tone="good">
+                        Facility Routing
+                      </span>
+                      <div className={styles.protocolTitle}>Hospital Switchboard</div>
+                    </div>
                   </div>
                   <p className={styles.protocolDesc}>
                     Request Duty Psychiatry Registrar or On-Call Consultant via facility switchboard operator.
                   </p>
+                  <div className={styles.protocolFooter}>
+                    <span className={styles.protocolRouteLabel}>24/7 Facility Access</span>
+                    <span className={styles.protocolBullet}>&bull;</span>
+                    <span className={styles.protocolDirective}>Operator Transfer</span>
+                  </div>
                 </div>
-                <div className={styles.protocolCard}>
+
+                <div className={styles.protocolCard} data-tone="accent">
                   <div className={styles.protocolCardHeader}>
-                    <Layers size={16} aria-hidden="true" className={styles.protocolIcon} />
-                    <div className={styles.protocolTitle}>Bed Coordination Desk</div>
+                    <div className={styles.protocolIconWrap} data-tone="accent">
+                      <Layers size={16} aria-hidden="true" className={styles.protocolIcon} />
+                    </div>
+                    <div className={styles.protocolTitleGroup}>
+                      <span className={styles.protocolBadge} data-tone="accent">
+                        Central Coordination
+                      </span>
+                      <div className={styles.protocolTitle}>Bed Coordination Desk</div>
+                    </div>
                   </div>
                   <p className={styles.protocolDesc}>
                     Statewide adult psychiatric bed placement queries route through central coordinator desk.
                   </p>
+                  <div className={styles.protocolFooter}>
+                    <span className={styles.protocolRouteLabel}>Statewide Bed Desk</span>
+                    <span className={styles.protocolBullet}>&bull;</span>
+                    <span className={styles.protocolDirective}>Coordinator Desk</span>
+                  </div>
                 </div>
-                <div className={styles.protocolCard}>
+
+                <div className={styles.protocolCard} data-tone="lead">
                   <div className={styles.protocolCardHeader}>
-                    <Radio size={16} aria-hidden="true" className={styles.protocolIcon} />
-                    <div className={styles.protocolTitle}>Emergency Department Liaison</div>
+                    <div className={styles.protocolIconWrap} data-tone="lead">
+                      <Radio size={16} aria-hidden="true" className={styles.protocolIcon} />
+                    </div>
+                    <div className={styles.protocolTitleGroup}>
+                      <span className={styles.protocolBadge} data-tone="lead">
+                        Acute ED Desks
+                      </span>
+                      <div className={styles.protocolTitle}>Emergency Department Liaison</div>
+                    </div>
                   </div>
                   <p className={styles.protocolDesc}>
                     Urgent psychiatric triage in emergency departments connects through local ED liaison desk.
                   </p>
+                  <div className={styles.protocolFooter}>
+                    <span className={styles.protocolRouteLabel}>Local Hospital Desks</span>
+                    <span className={styles.protocolBullet}>&bull;</span>
+                    <span className={styles.protocolDirective}>Shift Handovers</span>
+                  </div>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Section 4: Data provenance and coverage */}
-          <section
-            aria-labelledby="ward-on-call-footer"
-            className={`${styles.section} ${styles.footPanel}`}
-            data-testid="ward-on-call-footer"
-          >
-            <div className={styles.sectionHeader}>
-              <div className={styles.sectionHeaderTitleGroup}>
-                <h2 className={styles.sectionHeading} id="ward-on-call-footer">
-                  Data provenance and coverage
-                </h2>
-                <span className={styles.sectionSubtitle}>Governance Architecture &amp; Reconciled Coverage</span>
-              </div>
-              <span className={styles.sectionMeta}>Governance &bull; Reconciled Coverage</span>
-            </div>
 
-            <div className={styles.sectionBody} role="region" aria-label="On-call data provenance" tabIndex={0}>
-              <details className={`${styles.disclosureDetails} source-print`}>
-                <summary>Sources, omissions and reconciliation</summary>
-                <div className={styles.disclosureGrid}>
-                  <div className={styles.disclosurePanel}>
-                    <h3 className={styles.disclosureHeading}>What is real</h3>
-                    <p className={styles.note}>
-                      <strong>What is real</strong> &mdash; the emergency departments above, their hospital sites and
-                      their health services, read from the same tables the rest of Ward Flow uses.
-                    </p>
-                  </div>
-                  <div className={styles.disclosurePanel}>
-                    <h3 className={styles.disclosureHeading}>What is not held at all</h3>
-                    <p className={styles.note}>
-                      <strong>What is not held at all</strong> &mdash; any way of contacting anybody. This prototype has
-                      nowhere to keep a name, a number or a shift for a real person, so it keeps none and shows none.
-                    </p>
-                  </div>
-                  <div className={styles.disclosurePanel}>
-                    <h3 className={styles.disclosureHeading}>Reconciled coverage</h3>
-                    <p className={styles.note}>
-                      <strong>Reconciled</strong> &mdash; {counts.recorded} of {counts.possible} invented role slots are
-                      recorded, and all {departments.length} emergency departments from the shared site table are listed
-                      above.
-                    </p>
-                  </div>
-                </div>
-              </details>
-            </div>
-          </section>
         </div>
 
         {/* Tier 3 Escalation Modal */}

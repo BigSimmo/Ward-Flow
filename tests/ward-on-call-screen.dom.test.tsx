@@ -50,14 +50,9 @@ describe("the on-call screen", () => {
     );
   });
 
-  it("renders all four operational and provenance sections", () => {
+  it("renders all operational on-call and liaison sections", () => {
     renderOnCall();
-    for (const heading of [
-      "On-call now",
-      "ED liaison, by department",
-      "Reaching a role",
-      "Data provenance and coverage",
-    ]) {
+    for (const heading of ["On-call now", "ED liaison, by department", "Reaching a role"]) {
       expect(
         screen.getByRole("heading", { name: heading }),
         `"${heading}" is not a heading on this screen — it may have been renamed, or demoted to a ` +
