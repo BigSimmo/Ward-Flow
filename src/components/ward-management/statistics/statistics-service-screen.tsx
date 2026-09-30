@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
 import { generateDemonstrationSeries } from "@/components/ward-management/statistics/statistics-demonstration";
@@ -111,26 +112,35 @@ function DistanceBandsBar({
   const barH = 32;
   const barY = 16;
 
-  let curX = padL;
-  const segmentData = DISTANCE_THRESHOLDS.map((thresh, i) => {
+  const segmentData = DISTANCE_THRESHOLDS.reduce<
+    Array<{
+      idx: number;
+      x: number;
+      w: number;
+      mid: number;
+      pct: string;
+      color: string;
+      range: string;
+      label: string;
+      n: number;
+    }>
+  >((acc, thresh, i) => {
+    const prevX = acc.length > 0 ? acc[acc.length - 1].x + acc[acc.length - 1].w : padL;
     const n = bandCounts.get(thresh.band) ?? 0;
     const segW = total > 0 ? (n / total) * barW : 0;
-    const pct = total > 0 ? ((n / total) * 100).toFixed(1) : "0.0";
-    const segMid = curX + segW / 2;
-    const segStartX = curX;
-    curX += segW;
-    return {
+    acc.push({
       idx: i,
-      x: segStartX,
+      x: prevX,
       w: segW,
-      mid: segMid,
-      pct,
+      mid: prevX + segW / 2,
+      pct: total > 0 ? ((n / total) * 100).toFixed(1) : "0.0",
       color: thresh.color,
       range: thresh.range,
       label: thresh.label,
       n,
-    };
-  });
+    });
+    return acc;
+  }, []);
 
   const handleFocusOrHover = (seg: (typeof segmentData)[number]) => {
     if (!wrapRef.current) return;
@@ -342,10 +352,22 @@ function DistanceBandsBar({
   );
 }
 
+function useSafeRouter(): { push: (path: string) => void } | null {
+  try {
+    return useRouter();
+  } catch {
+    return null;
+  }
+}
+
 export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
+  const router = useSafeRouter();
   const { units: liveUnits, admissions, referrals, bedReleases, scenario } = useWardFlow();
   const now = useWardFlowClock();
 
+  const [activeTab, setActiveTab] = useState<"summary" | "cohorts" | "flow" | "ooa" | "activity">("summary");
+  const [timeWindow, setTimeWindow] = useState<"live" | "7d" | "30d">("live");
+  const [cohortSearch, setCohortSearch] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -503,10 +525,6 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
     { baseline: 1, volatility: 1.1, minValue: 0 },
   );
 
-  const [activeTab, setActiveTab] = useState<"summary" | "cohorts" | "flow" | "ooa" | "activity">("summary");
-  const [timeWindow, setTimeWindow] = useState<"live" | "7d" | "30d">("live");
-  const [cohortSearch, setCohortSearch] = useState("");
-
   // Cohort aggregations for Tab 2
   const cohortsMap = new Map<
     string,
@@ -533,9 +551,8 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
 
   const handleServiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const targetService = e.target.value;
-    if (typeof window !== "undefined") {
-      window.location.href = `/mockups/ward-flow/statistics/service/${encodeURIComponent(targetService)}`;
-    }
+    const dest = `/mockups/ward-flow/statistics/service/${encodeURIComponent(targetService)}`;
+    router?.push(dest);
   };
 
   const filteredReadyRows = readyRows.filter(({ unit }) => {

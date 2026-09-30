@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { StatisticsSectionFrame } from "@/components/ward-management/statistics/statistics-section-frame";
 import { generateDemonstrationSeries } from "@/components/ward-management/statistics/statistics-demonstration";
@@ -12,6 +13,7 @@ import { readyNotYetGone, type ReadyNotYetGone } from "@/components/ward-managem
 import { wardReferralTally } from "@/components/ward-management/statistics/statistics-ward-referrals";
 import {
   statisticsSectionById,
+  type StatisticsSection,
   STATISTICS_UNIT_CHOOSER_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
 
@@ -20,7 +22,8 @@ import { MINUTES_PER_DAY, splitDuration } from "@/components/ward-management/war
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import type { Unit } from "@/components/ward-management/ward-model";
+import type { Unit, Movement, BedRelease } from "@/components/ward-management/ward-model";
+import type { WardScenario } from "@/components/ward-management/ward-scenarios";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { wardStatistics } from "@/components/ward-management/ward-statistics";
@@ -102,6 +105,48 @@ export function StatisticsWardScreen({
     );
   }
 
+  return (
+    <StatisticsWardScreenInner
+      section={section}
+      unit={unit}
+      units={units}
+      admissions={admissions}
+      movements={movements}
+      bedReleases={bedReleases}
+      scenario={scenario}
+      now={now}
+    />
+  );
+}
+
+function useSafeRouter(): { push: (path: string) => void } | null {
+  try {
+    return useRouter();
+  } catch {
+    return null;
+  }
+}
+
+function StatisticsWardScreenInner({
+  section,
+  unit,
+  units,
+  admissions,
+  movements,
+  bedReleases,
+  scenario,
+  now,
+}: {
+  section: StatisticsSection;
+  unit: Unit;
+  units: Unit[];
+  admissions: Admission[];
+  movements: Movement[];
+  bedReleases: BedRelease[];
+  scenario: WardScenario;
+  now: number;
+}) {
+  const router = useSafeRouter();
   const site = siteByCode(unit.siteCode);
   const statistics = wardStatistics(unit.id, admissions, now);
 
@@ -230,7 +275,8 @@ export function StatisticsWardScreen({
     { baseline: capacity.available, volatility: 1, minValue: 0, maxValue: unit.beds },
   );
 
-  const [activeTab, setActiveTab] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState<string>("occ");
+  const [timeWindow, setTimeWindow] = useState<"today" | "7d" | "30d">("today");
   const [d4Notice, setD4Notice] = useState<string | null>(null);
   const [politeNotice, setPoliteNotice] = useState<string | null>(null);
   const [bedSearchQuery, setBedSearchQuery] = useState<string>("");
@@ -241,7 +287,7 @@ export function StatisticsWardScreen({
     setPoliteNotice(msg);
   }, []);
 
-  const bedMatrixList = useMemo(() => {
+  const bedMatrixList = (() => {
     const occupiedCount = capacity.occupied;
     const availableCount = capacity.available;
     const pendingCount = pendingPreparation;
@@ -303,22 +349,19 @@ export function StatisticsWardScreen({
       }
     }
     return list;
-  }, [unit.beds, capacity.occupied, capacity.available, pendingPreparation, admissions, unit.id, now]);
+  })();
 
-  const filteredBedMatrix = useMemo(() => {
-    if (!bedSearchQuery.trim()) return bedMatrixList;
-    const q = bedSearchQuery.toLowerCase().trim();
-    return bedMatrixList.filter(
-      (b) =>
-        b.bed.toLowerCase().includes(q) ||
-        b.state.toLowerCase().includes(q) ||
-        b.pt.toLowerCase().includes(q) ||
-        b.target.toLowerCase().includes(q),
-    );
-  }, [bedMatrixList, bedSearchQuery]);
+  const filteredBedMatrix = !bedSearchQuery.trim()
+    ? bedMatrixList
+    : bedMatrixList.filter(
+        (b) =>
+          b.bed.toLowerCase().includes(bedSearchQuery.toLowerCase().trim()) ||
+          b.state.toLowerCase().includes(bedSearchQuery.toLowerCase().trim()) ||
+          b.pt.toLowerCase().includes(bedSearchQuery.toLowerCase().trim()) ||
+          b.target.toLowerCase().includes(bedSearchQuery.toLowerCase().trim()),
+      );
 
   const TABS = [
-    { id: "all", label: "All Sections", badge: "All" },
     { id: "occ", label: "Beds & Occupancy", badge: `${capacity.occupied}/${unit.beds}` },
     {
       id: "los",
@@ -331,6 +374,7 @@ export function StatisticsWardScreen({
     { id: "flow", label: "Admissions & Discharges", badge: "7d Flow" },
     { id: "ready", label: "Discharge Readiness", badge: `${headlineTotal} delayed` },
     { id: "longStay", label: "Long Stays", badge: `${statistics.longStays}` },
+    { id: "all", label: "All Sections", badge: "All" },
   ] as const;
 
   return (
@@ -346,6 +390,65 @@ export function StatisticsWardScreen({
           {politeNotice}
         </div>
       ) : null}
+
+      {/* Header controls: Ward Selector and Reporting Window */}
+      <div className={pageStyles.wardHeaderBar}>
+        <div className={pageStyles.wardSelectWrap}>
+          <label htmlFor="ward-select" style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted)" }}>
+            Inpatient Ward:
+          </label>
+          <select
+            id="ward-select"
+            className={pageStyles.wardSelect}
+            value={unit.id}
+            onChange={(e) => {
+              router?.push(`/mockups/ward-flow/statistics/ward/${encodeURIComponent(e.target.value)}`);
+            }}
+            aria-label="Switch inpatient ward"
+          >
+            {units.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name} ({u.beds} beds) - {u.siteCode}
+              </option>
+            ))}
+          </select>
+          <span className="chip" style={{ fontSize: "12px", fontWeight: 600 }}>
+            {unit.cohort} &middot; {unit.beds} beds
+          </span>
+        </div>
+        <div className={pageStyles.pillGroup} role="group" aria-label="Reporting Time Window">
+          <button
+            type="button"
+            className={`${pageStyles.pillBtn} ${timeWindow === "today" ? pageStyles.pillActive : ""}`}
+            onClick={() => setTimeWindow("today")}
+            aria-pressed={timeWindow === "today"}
+          >
+            Today (Live)
+          </button>
+          <button
+            type="button"
+            className={`${pageStyles.pillBtn} ${timeWindow === "7d" ? pageStyles.pillActive : ""}`}
+            onClick={() => {
+              setTimeWindow("7d");
+              triggerD4("7-day window");
+            }}
+            aria-pressed={timeWindow === "7d"}
+          >
+            7 Days
+          </button>
+          <button
+            type="button"
+            className={`${pageStyles.pillBtn} ${timeWindow === "30d" ? pageStyles.pillActive : ""}`}
+            onClick={() => {
+              setTimeWindow("30d");
+              triggerD4("30-day window");
+            }}
+            aria-pressed={timeWindow === "30d"}
+          >
+            30 Days
+          </button>
+        </div>
+      </div>
 
       {d4Notice ? (
         <div className={pageStyles.d4NoticeBanner} role="status">
