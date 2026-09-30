@@ -4592,7 +4592,7 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
                 aria-pressed={selectedPod === "all"}
                 onClick={() => setSelectedPod("all")}
               >
-                All Beds ({unit.beds})
+                All beds ({unit.beds})
               </button>
               {isMixed ? (
                 <>
