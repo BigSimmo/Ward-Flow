@@ -10,7 +10,6 @@ import {
   Clock,
   Layers,
   Radio,
-  ShieldAlert,
   Truck,
   Users,
   X,
@@ -34,7 +33,6 @@ import {
   WA_BROADCAST_TEMPLATES,
   getActiveBroadcastAlert,
   formatTimeRemaining,
-  type BroadcastAlert,
   type BroadcastSeverity,
   type BroadcastTargetScope,
   type BroadcastCategory,
@@ -201,10 +199,29 @@ function extractOverdue(detail: string): string | null {
   return match ? match[1] : null;
 }
 
+function computeUrgencyGauge(
+  item: InboxItem,
+  overdueText: string | null,
+): { percent: number; tone: "danger" | "warn" | "accent" } {
+  const severity = getAlertSeverity(item);
+  if (overdueText) {
+    const hoursMatch = overdueText.match(/(\d+)\s*h/);
+    const minsMatch = overdueText.match(/(\d+)\s*m/);
+    const totalMinutes =
+      (hoursMatch ? parseInt(hoursMatch[1], 10) * 60 : 0) + (minsMatch ? parseInt(minsMatch[1], 10) : 0);
+    const pct = Math.min(100, Math.max(25, Math.round((totalMinutes / 120) * 100)));
+    return { percent: pct, tone: severity.tone };
+  }
+  if (severity.tone === "danger") return { percent: 85, tone: "danger" };
+  if (severity.tone === "warn") return { percent: 60, tone: "warn" };
+  return { percent: 35, tone: "accent" };
+}
+
 function AlertRows({
   items,
   empty,
   onAction,
+  onQuickAction,
   acknowledgements,
   patients,
   referrals,
@@ -217,6 +234,7 @@ function AlertRows({
   items: InboxItem[];
   empty: string;
   onAction?: (item: InboxItem, triggerEl: HTMLElement) => void;
+  onQuickAction?: (item: InboxItem, action: "snooze" | "escalate" | "acknowledge", patientName: string) => void;
   acknowledgements: Record<string, unknown>;
   patients?: Patient[];
   referrals?: Referral[];
@@ -226,6 +244,22 @@ function AlertRows({
   isFiltered?: boolean;
   onResetFilters?: () => void;
 }) {
+  const [openQuickMenuId, setOpenQuickMenuId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!openQuickMenuId) return;
+    const handleClickOutside = () => setOpenQuickMenuId(null);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenQuickMenuId(null);
+    };
+    window.addEventListener("click", handleClickOutside);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("click", handleClickOutside);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [openQuickMenuId]);
+
   if (items.length === 0) {
     return (
       <div className={styles.emptyContainer}>
@@ -248,6 +282,7 @@ function AlertRows({
         const severity = getAlertSeverity(item);
         const categoryBadge = getCategoryBadge(item);
         const overdueText = extractOverdue(item.detail);
+        const gauge = computeUrgencyGauge(item, overdueText);
         const movement = movements?.find((m) => m.id === item.movementId);
         const patientInfo = resolveAlertPatient(movement, item.movementId, patients, referrals, movements, state.units);
 
@@ -264,6 +299,17 @@ function AlertRows({
 
         return (
           <li key={item.id} className={styles.alertCard} data-tone={item.tone}>
+            {/* Hairline Urgency Gauge */}
+            <div
+              className={styles.urgencyGaugeTrack}
+              role="progressbar"
+              aria-valuenow={gauge.percent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`Urgency: ${gauge.percent}% elapsed`}
+            >
+              <div className={styles.urgencyGaugeBar} data-tone={gauge.tone} style={{ width: `${gauge.percent}%` }} />
+            </div>
             <div className={styles.alertIcon} data-tone={severity.tone}>
               {severity.tone === "danger" ? (
                 <AlertCircle className={styles.tabIcon} aria-hidden="true" />
@@ -329,6 +375,63 @@ function AlertRows({
                   Trajectory
                 </Link>
               )}
+
+              {/* Inline Quick Action Dropdown */}
+              <div className={styles.quickActionDropdownWrap}>
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.btnSm} ${styles.quickActionTrigger}`}
+                  aria-label={`More actions for ${item.title}`}
+                  aria-haspopup="true"
+                  aria-expanded={openQuickMenuId === item.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenQuickMenuId((prev) => (prev === item.id ? null : item.id));
+                  }}
+                >
+                  <span>Actions ▾</span>
+                </button>
+                {openQuickMenuId === item.id && (
+                  <div className={styles.quickActionMenu} role="menu" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className={styles.quickActionMenuItem}
+                      onClick={() => {
+                        setOpenQuickMenuId(null);
+                        onQuickAction?.(item, "snooze", patientInfo.displayName);
+                      }}
+                    >
+                      <Clock className={styles.btnIcon} aria-hidden="true" />
+                      <span>Snooze 30m</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className={styles.quickActionMenuItem}
+                      onClick={() => {
+                        setOpenQuickMenuId(null);
+                        onQuickAction?.(item, "escalate", patientInfo.displayName);
+                      }}
+                    >
+                      <AlertTriangle className={styles.btnIcon} aria-hidden="true" />
+                      <span>Escalate to Consultant On-Call</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className={styles.quickActionMenuItem}
+                      onClick={() => {
+                        setOpenQuickMenuId(null);
+                        onQuickAction?.(item, "acknowledge", patientInfo.displayName);
+                      }}
+                    >
+                      <Check className={styles.btnIcon} aria-hidden="true" />
+                      <span>Acknowledge &amp; Monitor</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </li>
         );
@@ -343,8 +446,8 @@ export function AlertsScreen() {
   const state = useWardFlow();
   const { movements, units, referrals, patients, dispatch, inboxAcknowledgements, broadcastAlerts, notices } = state;
   const now = useWardFlowClock();
-  const openMovements = movements.filter(isOpen);
-  const inbox = buildActionInbox(openMovements, now, units);
+  const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
+  const inbox = useMemo(() => buildActionInbox(openMovements, now, units), [openMovements, now, units]);
   const feedNotices = useMemo(() => [...notices].sort((a, b) => b.raisedAt - a.raisedAt), [notices]);
 
   const [tierFilter, setTierFilter] = useState<"all" | "emergency" | "capacity" | "admin">("all");
@@ -425,11 +528,11 @@ export function AlertsScreen() {
     trapFocus(e, modalRef.current);
   };
 
-  const legal = itemsInCategory(inbox, "legal_timing_breached");
-  const declined = itemsInCategory(inbox, "destinations_declined");
-  const unlawful = itemsInCategory(inbox, "destination_unlawful");
-  const pullExpired = itemsInCategory(inbox, "bed_pull_expired");
-  const transport = itemsInCategory(inbox, "transport_awaiting_departure");
+  const legal = useMemo(() => itemsInCategory(inbox, "legal_timing_breached"), [inbox]);
+  const declined = useMemo(() => itemsInCategory(inbox, "destinations_declined"), [inbox]);
+  const unlawful = useMemo(() => itemsInCategory(inbox, "destination_unlawful"), [inbox]);
+  const pullExpired = useMemo(() => itemsInCategory(inbox, "bed_pull_expired"), [inbox]);
+  const transport = useMemo(() => itemsInCategory(inbox, "transport_awaiting_departure"), [inbox]);
 
   const withDeadline = openMovements.filter((movement: Movement) => movement.legalForm?.dueAt !== undefined);
   const declineCandidates = openMovements.filter((movement: Movement) => movement.declines.length > 0).length;
@@ -455,24 +558,43 @@ export function AlertsScreen() {
   const bedManagerCount = inbox.filter((item) => roleMatches(item, "bed_manager")).length;
   const numCount = inbox.filter((item) => roleMatches(item, "num")).length;
 
+  const [snoozedAlertIds, setSnoozedAlertIds] = useState<string[]>([]);
+
+  const handleQuickAction = useCallback(
+    (item: InboxItem, action: "snooze" | "escalate" | "acknowledge", patientName: string) => {
+      if (action === "snooze") {
+        setSnoozedAlertIds((prev) => [...prev, item.id]);
+        setBroadcastSuccessNotice(`Alert for ${patientName} snoozed for 30 minutes.`);
+      } else if (action === "escalate") {
+        setBroadcastSuccessNotice(`Escalated "${item.title}" to Consultant Psychiatrist on-call.`);
+      } else if (action === "acknowledge") {
+        dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role: "coordinator", now, inboxItemId: item.id });
+        setBroadcastSuccessNotice(`Alert "${item.title}" acknowledged and retained on active watch.`);
+      }
+    },
+    [dispatch, now],
+  );
+
   // Filtered collections
   const filteredNeedsYou = useMemo(() => {
     const allNeeds = [...legal, ...declined, ...unlawful];
     return allNeeds.filter((item) => {
+      if (snoozedAlertIds.includes(item.id)) return false;
       if (tierFilter !== "all" && tierOfItem(item) !== tierFilter) return false;
       if (roleFilter !== "all" && !roleMatches(item, roleFilter)) return false;
       return true;
     });
-  }, [legal, declined, unlawful, tierFilter, roleFilter]);
+  }, [legal, declined, unlawful, tierFilter, roleFilter, snoozedAlertIds]);
 
   const filteredOtherRoles = useMemo(() => {
     const allOther = [...pullExpired, ...transport];
     return allOther.filter((item) => {
+      if (snoozedAlertIds.includes(item.id)) return false;
       if (tierFilter !== "all" && tierOfItem(item) !== tierFilter) return false;
       if (roleFilter !== "all" && !roleMatches(item, roleFilter)) return false;
       return true;
     });
-  }, [pullExpired, transport, tierFilter, roleFilter]);
+  }, [pullExpired, transport, tierFilter, roleFilter, snoozedAlertIds]);
 
   // Selected alert details
   const selectedMovement = useMemo(() => {
@@ -646,39 +768,6 @@ export function AlertsScreen() {
           </div>
         </header>
 
-        {/* Third-Edition 4-KPI Summary Strip */}
-        <div className={styles.kpiStrip}>
-          <div className={styles.kpiCard} data-tone={legal.length > 0 ? "danger" : "good"}>
-            <div className={styles.kpiHeaderRow}>
-              <span className={styles.kpiLabel}>Form expiries passed</span>
-              <LegalLimitsNotChecked variant="tag" />
-            </div>
-            <span className={styles.kpiVal}>{legal.length}</span>
-            <span className={styles.kpiSub}>
-              {legal.length > 0
-                ? "Form past expiry / action required"
-                : `0 of ${withDeadline.length} with a written deadline passed`}
-            </span>
-          </div>
-          <div className={styles.kpiCard} data-tone={declined.length > 0 ? "danger" : "good"}>
-            <span className={styles.kpiLabel}>Placement Gridlock</span>
-            <span className={styles.kpiVal}>{declined.length}</span>
-            <span className={styles.kpiSub}>
-              {declined.length > 0 ? "≥3 Parallel Declines" : `0 of ${declineCandidates} declined by every ward asked`}
-            </span>
-          </div>
-          <div className={styles.kpiCard} data-tone={prolongedEdCount > 0 ? "warn" : "good"}>
-            <span className={styles.kpiLabel}>Prolonged ED Wait (&gt;24h)</span>
-            <span className={styles.kpiVal}>{prolongedEdCount}</span>
-            <span className={styles.kpiSub}>Metropolitan Emergency Hubs</span>
-          </div>
-          <div className={styles.kpiCard} data-tone="accent">
-            <span className={styles.kpiLabel}>Active Monitored</span>
-            <span className={styles.kpiVal}>{totalActive}</span>
-            <span className={styles.kpiSub}>Separated by Role</span>
-          </div>
-        </div>
-
         {/* Broadcast Toast Notification */}
         {broadcastSuccessNotice && (
           <div className={styles.toastSuccess} role="status">
@@ -756,6 +845,39 @@ export function AlertsScreen() {
             </div>
           </div>
         )}
+
+        {/* Third-Edition 4-KPI Summary Strip */}
+        <div className={styles.kpiStrip}>
+          <div className={styles.kpiCard} data-tone={legal.length > 0 ? "danger" : "good"}>
+            <div className={styles.kpiHeaderRow}>
+              <span className={styles.kpiLabel}>Form expiries passed</span>
+              <LegalLimitsNotChecked variant="tag" />
+            </div>
+            <span className={styles.kpiVal}>{legal.length}</span>
+            <span className={styles.kpiSub}>
+              {legal.length > 0
+                ? "Form past expiry / action required"
+                : `0 of ${withDeadline.length} with a written deadline passed`}
+            </span>
+          </div>
+          <div className={styles.kpiCard} data-tone={declined.length > 0 ? "danger" : "good"}>
+            <span className={styles.kpiLabel}>Placement Gridlock</span>
+            <span className={styles.kpiVal}>{declined.length}</span>
+            <span className={styles.kpiSub}>
+              {declined.length > 0 ? "≥3 Parallel Declines" : `0 of ${declineCandidates} declined by every ward asked`}
+            </span>
+          </div>
+          <div className={styles.kpiCard} data-tone={prolongedEdCount > 0 ? "warn" : "good"}>
+            <span className={styles.kpiLabel}>Prolonged ED Wait (&gt;24h)</span>
+            <span className={styles.kpiVal}>{prolongedEdCount}</span>
+            <span className={styles.kpiSub}>Metropolitan Emergency Hubs</span>
+          </div>
+          <div className={styles.kpiCard} data-tone="accent">
+            <span className={styles.kpiLabel}>Active Monitored</span>
+            <span className={styles.kpiVal}>{totalActive}</span>
+            <span className={styles.kpiSub}>Separated by Role</span>
+          </div>
+        </div>
 
         {/* Unified Operational Filter & Control Toolbar */}
         <div className={styles.toolbarCard}>
@@ -882,6 +1004,7 @@ export function AlertsScreen() {
                 items={filteredNeedsYou}
                 empty="No high-priority clinical or legal conditions are currently active."
                 onAction={handleOpenAction}
+                onQuickAction={handleQuickAction}
                 acknowledgements={inboxAcknowledgements}
                 patients={patients}
                 referrals={referrals}
@@ -903,6 +1026,7 @@ export function AlertsScreen() {
                 items={filteredOtherRoles}
                 empty="No bed-hold or accepted-transport alert is firing for another role."
                 onAction={handleOpenAction}
+                onQuickAction={handleQuickAction}
                 acknowledgements={inboxAcknowledgements}
                 patients={patients}
                 referrals={referrals}

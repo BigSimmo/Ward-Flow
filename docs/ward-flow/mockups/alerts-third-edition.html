@@ -273,7 +273,9 @@
         justify-content: center;
         gap: 6px;
         text-decoration: none;
-        transition: background 0.15s, border-color 0.15s;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
       }
       .btn:hover {
         background: var(--sunk);
@@ -293,9 +295,9 @@
         color: #fff;
       }
       .btn.sm {
-        min-height: 34px;
-        padding: 0 10px;
-        font-size: var(--t-0);
+        min-height: var(--ward-tap);
+        padding: 0 12px;
+        font-size: var(--t-1);
       }
 
       /* Workspace */
@@ -380,10 +382,19 @@
       .kpiCard {
         background: var(--surface);
         border: 1px solid var(--line);
+        border-bottom: 2px solid var(--line-strong);
         border-radius: var(--r2);
         padding: 12px 14px;
         display: grid;
         gap: 4px;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s,
+          transform 0.15s;
+      }
+      .kpiCard:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.08);
       }
       .kpiHeadRow {
         display: flex;
@@ -400,7 +411,7 @@
         font-family: var(--mono);
       }
       .legalTag {
-        font-size: 11px;
+        font-size: var(--t-0);
         font-family: var(--mono);
         color: var(--muted);
         background: var(--surface-2);
@@ -415,9 +426,34 @@
         color: var(--ink);
         font-variant-numeric: tabular-nums;
       }
-      .kpiCard[data-tone="good"] .kpiVal { color: var(--good); }
-      .kpiCard[data-tone="danger"] .kpiVal { color: var(--danger); }
-      .kpiCard[data-tone="warn"] .kpiVal { color: var(--warn); }
+      .kpiCard[data-tone="good"] {
+        border-bottom: 2px solid var(--good);
+        background: linear-gradient(180deg, var(--good-soft) 0%, var(--surface) 40%);
+      }
+      .kpiCard[data-tone="good"] .kpiVal {
+        color: var(--good);
+      }
+      .kpiCard[data-tone="danger"] {
+        border-bottom: 2px solid var(--danger);
+        background: linear-gradient(180deg, var(--danger-soft) 0%, var(--surface) 40%);
+      }
+      .kpiCard[data-tone="danger"] .kpiVal {
+        color: var(--danger);
+      }
+      .kpiCard[data-tone="warn"] {
+        border-bottom: 2px solid var(--warn);
+        background: linear-gradient(180deg, var(--warn-soft) 0%, var(--surface) 40%);
+      }
+      .kpiCard[data-tone="warn"] .kpiVal {
+        color: var(--warn);
+      }
+      .kpiCard[data-tone="accent"] {
+        border-bottom: 2px solid var(--accent);
+        background: linear-gradient(180deg, var(--accent-soft) 0%, var(--surface) 40%);
+      }
+      .kpiCard[data-tone="accent"] .kpiVal {
+        color: var(--accent);
+      }
       .kpiSub {
         font-size: var(--t-0);
         color: var(--muted);
@@ -455,8 +491,8 @@
         font-family: var(--mono);
       }
       .filterBtn {
-        min-height: 36px;
-        padding: 4px 12px;
+        min-height: var(--ward-tap);
+        padding: 0 14px;
         border-radius: var(--r2);
         border: 1px solid var(--line);
         background: var(--surface-2);
@@ -470,7 +506,7 @@
       }
       .filterBtn.pill {
         border-radius: var(--pill);
-        padding: 4px 12px;
+        padding: 0 14px;
       }
       .filterBtn.active {
         background: var(--accent);
@@ -485,7 +521,7 @@
         height: 18px;
         padding: 0 5px;
         border-radius: var(--pill);
-        font-size: 11px;
+        font-size: var(--t-0);
         font-family: var(--mono);
         font-weight: 700;
         background: var(--surface);
@@ -541,9 +577,33 @@
         background: var(--surface);
         border: 1px solid var(--line);
         border-radius: var(--r2);
-        padding: 12px 14px;
+        padding: 16px 14px 12px;
         display: grid;
         gap: 8px;
+        position: relative;
+        overflow: hidden;
+      }
+      .urgencyGaugeTrack {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--surface-3);
+        overflow: hidden;
+      }
+      .urgencyGaugeBar {
+        height: 100%;
+        transition: width 0.3s ease;
+      }
+      .urgencyGaugeBar[data-tone="danger"] {
+        background: var(--danger);
+      }
+      .urgencyGaugeBar[data-tone="warn"] {
+        background: var(--warn);
+      }
+      .urgencyGaugeBar[data-tone="accent"] {
+        background: var(--accent);
       }
       .alertTop {
         display: flex;
@@ -581,7 +641,7 @@
         gap: 4px;
         padding: 2px 8px;
         border-radius: var(--pill);
-        font-size: 11px;
+        font-size: var(--t-0);
         font-family: var(--mono);
         font-weight: 700;
         text-transform: uppercase;
@@ -618,7 +678,154 @@
       }
       .alertActions {
         display: flex;
+        align-items: center;
         gap: 6px;
+      }
+      .quickActionDropdownWrap {
+        position: relative;
+        display: inline-flex;
+      }
+      .quickActionTrigger {
+        min-height: var(--ward-tap);
+        padding: 0 12px;
+        border-radius: var(--r2);
+        font-size: var(--t-1);
+        font-weight: 600;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        color: var(--ink);
+        cursor: pointer;
+      }
+      .quickActionTrigger:hover {
+        background: var(--sunk);
+      }
+      .quickActionMenu {
+        position: absolute;
+        top: calc(100% + 4px);
+        right: 0;
+        min-width: 220px;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--r2);
+        box-shadow: var(--lift);
+        z-index: 50;
+        padding: 4px;
+        display: none;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .quickActionDropdownWrap.open .quickActionMenu {
+        display: flex;
+      }
+      .quickActionMenuItem {
+        min-height: var(--ward-tap);
+        padding: 0 12px;
+        border: none;
+        background: transparent;
+        color: var(--ink);
+        font-size: var(--t-1);
+        font-weight: 500;
+        text-align: left;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: var(--r2);
+        width: 100%;
+        font-family: inherit;
+      }
+      .quickActionMenuItem:hover {
+        background: var(--surface-2);
+      }
+
+      /* Active Statewide Broadcast Directive */
+      .activeDirectiveCard {
+        background: var(--surface);
+        border: 2px solid var(--danger);
+        border-radius: var(--r1);
+        padding: 14px 16px;
+        box-shadow: var(--lift);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: var(--danger-soft);
+      }
+      .directiveHead {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .directiveTitleRow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        flex: 1 1 auto;
+      }
+      .directivePulse {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--danger);
+        display: inline-block;
+        box-shadow: 0 0 6px var(--danger);
+      }
+      .directiveTitle {
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .directiveBody {
+        font-size: var(--t-2);
+        color: var(--ink);
+        line-height: 1.5;
+        margin: 0;
+      }
+      .directiveMetaRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: var(--t-1);
+        color: var(--muted);
+        flex-wrap: wrap;
+      }
+      .directiveFoot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding-top: 8px;
+        border-top: 1px solid var(--line);
+      }
+      .ackTally {
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink-soft);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .btnDangerOutline {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: var(--ward-tap);
+        padding: 0 14px;
+        border-radius: var(--r2);
+        font-size: var(--t-1);
+        font-weight: 600;
+        cursor: pointer;
+        background: var(--surface);
+        color: var(--danger-ink);
+        border: 1px solid var(--danger);
+        transition: all 0.12s ease;
+      }
+      .btnDangerOutline:hover {
+        background: var(--danger-soft);
       }
 
       /* Shift Feed Section */
@@ -657,7 +864,7 @@
         background: var(--good-soft);
         border: 1px solid var(--good);
         color: var(--good-ink);
-        font-size: 11px;
+        font-size: var(--t-0);
         font-family: var(--mono);
         font-weight: 700;
         text-transform: uppercase;
@@ -739,7 +946,7 @@
         display: block;
       }
       .feedTeleCard span {
-        font-size: 11px;
+        font-size: var(--t-0);
         font-family: var(--mono);
         color: var(--muted);
       }
@@ -885,7 +1092,9 @@
         align-items: center;
         gap: 8px;
         z-index: 1000;
-        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+        transition:
+          transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+          opacity 0.25s ease;
         opacity: 0;
         pointer-events: none;
       }
@@ -895,14 +1104,26 @@
       }
 
       @media (max-width: 1000px) {
-        .app { grid-template-columns: 1fr; }
-        .rail { display: none; }
-        .gridTwoCol { grid-template-columns: 1fr; }
-        .kpiStrip { grid-template-columns: repeat(2, 1fr); }
+        .app {
+          grid-template-columns: 1fr;
+        }
+        .rail {
+          display: none;
+        }
+        .gridTwoCol {
+          grid-template-columns: 1fr;
+        }
+        .kpiStrip {
+          grid-template-columns: repeat(2, 1fr);
+        }
       }
       @media (max-width: 640px) {
-        .kpiStrip { grid-template-columns: 1fr; }
-        .workspace { padding: 12px; }
+        .kpiStrip {
+          grid-template-columns: 1fr;
+        }
+        .workspace {
+          padding: 12px;
+        }
       }
     </style>
   </head>
@@ -952,7 +1173,9 @@
           </div>
           <div class="hdrEnd">
             <button class="btn sm" id="themeToggle" type="button">Dark Theme</button>
-            <button class="btn sm primary" type="button" onclick="openBroadcastModal()">+ Broadcast Network Alert</button>
+            <button class="btn sm primary" type="button" onclick="openBroadcastModal()">
+              + Broadcast Network Alert
+            </button>
           </div>
         </header>
 
@@ -971,7 +1194,35 @@
               </ul>
             </div>
             <div>
-              <button class="btn sm primary" type="button" onclick="openBroadcastModal()">((•)) + Broadcast Network Alert</button>
+              <button class="btn sm primary" type="button" onclick="openBroadcastModal()">
+                ((•)) + Broadcast Network Alert
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Statewide Broadcast Directive Banner Card -->
+          <div class="activeDirectiveCard" data-severity="critical" id="activeDirectiveBanner">
+            <div class="directiveHead">
+              <div class="directiveTitleRow">
+                <span class="directivePulse" aria-hidden="true"></span>
+                <span class="badgePill danger">CRITICAL DIRECTIVE</span>
+                <span class="directiveTitle">Critical HDU Capacity: Immediate Discharge &amp; Step-Down Review</span>
+              </div>
+              <span class="badgePill danger">⏱ 3h 45m remaining</span>
+            </div>
+            <p class="directiveBody">
+              Metropolitan adult acute HDU capacity has reached 100%. Clinical teams must expedite morning step-down
+              reviews and notify the State Bed Desk of any emergent transfers immediately.
+            </p>
+            <div class="directiveMetaRow">
+              <span><strong>Target Scope:</strong> All Inpatient Units &amp; ED Liaison Desks</span>
+              <span><strong>Dispatched By:</strong> State Mental Health Bed Desk Coordinator</span>
+            </div>
+            <div class="directiveFoot">
+              <span class="ackTally">✓ 19 of 23 Clinical Units Acknowledged</span>
+              <button type="button" class="btnDangerOutline" onclick="standDownDirective()">
+                ⚠ Stand down this alert
+              </button>
             </div>
           </div>
 
@@ -999,7 +1250,7 @@
               <span class="kpiVal">5</span>
               <span class="kpiSub">Metropolitan Emergency Hubs</span>
             </div>
-            <div class="kpiCard">
+            <div class="kpiCard" data-tone="accent">
               <div class="kpiHeadRow">
                 <span class="kpiLabel">Active Monitored</span>
               </div>
@@ -1026,10 +1277,18 @@
             </div>
             <div class="roleRow">
               <span class="rowLabel">Addressed Role:</span>
-              <button class="filterBtn pill active" type="button" onclick="filterRole('all', this)">All Roles (7)</button>
-              <button class="filterBtn pill" type="button" onclick="filterRole('coordinator', this)">Coordinator (4)</button>
-              <button class="filterBtn pill" type="button" onclick="filterRole('registrar', this)">Duty Registrar (1)</button>
-              <button class="filterBtn pill" type="button" onclick="filterRole('bedmanager', this)">Bed Manager (0)</button>
+              <button class="filterBtn pill active" type="button" onclick="filterRole('all', this)">
+                All Roles (7)
+              </button>
+              <button class="filterBtn pill" type="button" onclick="filterRole('coordinator', this)">
+                Coordinator (4)
+              </button>
+              <button class="filterBtn pill" type="button" onclick="filterRole('registrar', this)">
+                Duty Registrar (1)
+              </button>
+              <button class="filterBtn pill" type="button" onclick="filterRole('bedmanager', this)">
+                Bed Manager (0)
+              </button>
               <button class="filterBtn pill" type="button" onclick="filterRole('num', this)">NUM (2)</button>
             </div>
           </div>
@@ -1044,19 +1303,65 @@
               </div>
               <div class="alertList" id="needsYouList">
                 <div class="alertCard" data-tier="t2" data-role="coordinator" id="alert-wf-009">
+                  <div
+                    class="urgencyGaugeTrack"
+                    role="progressbar"
+                    aria-valuenow="85"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  >
+                    <div class="urgencyGaugeBar" data-tone="danger" style="width: 85%"></div>
+                  </div>
                   <div class="alertTop">
                     <div class="alertBadgeRow">
                       <span class="alertGlyph">!</span>
                       <span class="badgePill danger">Multiple Declines</span>
                     </div>
                     <div class="alertActions">
-                      <button class="btn sm danger" type="button" onclick="openActionModal('WF-009 (Tobias Wren)', 'Intervene in Placement Gridlock', 'alert-wf-009')">Intervene</button>
+                      <button
+                        class="btn sm danger"
+                        type="button"
+                        onclick="
+                          openActionModal('WF-009 (Tobias Wren)', 'Intervene in Placement Gridlock', 'alert-wf-009')
+                        "
+                      >
+                        Intervene
+                      </button>
                       <a class="btn sm" href="patient-now-third-edition.html">Trajectory</a>
+                      <div class="quickActionDropdownWrap">
+                        <button class="btn sm quickActionTrigger" type="button" onclick="toggleQuickMenu(event, this)">
+                          Actions ▾
+                        </button>
+                        <div class="quickActionMenu">
+                          <button
+                            class="quickActionMenuItem"
+                            type="button"
+                            onclick="snoozeAlert('alert-wf-009', 'Tobias Wren')"
+                          >
+                            ⏱ Snooze 30m
+                          </button>
+                          <button
+                            class="quickActionMenuItem"
+                            type="button"
+                            onclick="escalateAlert('alert-wf-009', 'Multiple destinations declined')"
+                          >
+                            ⚠ Escalate to Consultant On-Call
+                          </button>
+                          <button
+                            class="quickActionMenuItem"
+                            type="button"
+                            onclick="acknowledgeAlert('alert-wf-009', 'Multiple destinations declined')"
+                          >
+                            ✓ Acknowledge &amp; Monitor
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div class="alertTitle">Multiple destinations declined</div>
                   <div class="alertMeta">
-                    &bull; Patient: <strong>Tobias Wren</strong> &bull; UMRN: <strong>UM100023</strong> &bull; Peel Health Campus Emergency Department &bull; Owner: Flow coordinator
+                    &bull; Patient: <strong>Tobias Wren</strong> &bull; UMRN: <strong>UM100023</strong> &bull; Peel
+                    Health Campus Emergency Department &bull; Owner: Flow coordinator
                   </div>
                   <div class="alertSub">WF-009 &bull; 5 destinations have declined</div>
                 </div>
@@ -1072,6 +1377,15 @@
               <div class="alertList" id="otherRolesList">
                 <!-- Alert 2 -->
                 <div class="alertCard" data-tier="t2" data-role="coordinator" id="alert-wf-004">
+                  <div
+                    class="urgencyGaugeTrack"
+                    role="progressbar"
+                    aria-valuenow="95"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  >
+                    <div class="urgencyGaugeBar" data-tone="danger" style="width: 95%"></div>
+                  </div>
                   <div class="alertTop">
                     <div class="alertBadgeRow">
                       <span class="alertGlyph warn">!</span>
@@ -1079,18 +1393,68 @@
                       <span class="badgePill danger">15m overdue</span>
                     </div>
                     <div class="alertActions">
-                      <button class="btn sm danger" type="button" onclick="openActionModal('WF-004 (Rhys Cadwaller)', 'Extend Bed Hold / Dispatch Transport', 'alert-wf-004')">Extend Hold</button>
+                      <button
+                        class="btn sm danger"
+                        type="button"
+                        onclick="
+                          openActionModal(
+                            'WF-004 (Rhys Cadwaller)',
+                            'Extend Bed Hold / Dispatch Transport',
+                            'alert-wf-004',
+                          )
+                        "
+                      >
+                        Extend Hold
+                      </button>
+                      <div class="quickActionDropdownWrap">
+                        <button class="btn sm quickActionTrigger" type="button" onclick="toggleQuickMenu(event, this)">
+                          Actions ▾
+                        </button>
+                        <div class="quickActionMenu">
+                          <button
+                            class="quickActionMenuItem"
+                            type="button"
+                            onclick="snoozeAlert('alert-wf-004', 'Rhys Cadwaller')"
+                          >
+                            ⏱ Snooze 30m
+                          </button>
+                          <button
+                            class="quickActionMenuItem"
+                            type="button"
+                            onclick="escalateAlert('alert-wf-004', 'Bed pull expired')"
+                          >
+                            ⚠ Escalate to Consultant On-Call
+                          </button>
+                          <button
+                            class="quickActionMenuItem"
+                            type="button"
+                            onclick="acknowledgeAlert('alert-wf-004', 'Bed pull expired')"
+                          >
+                            ✓ Acknowledge &amp; Monitor
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div class="alertTitle">Bed pull expired</div>
                   <div class="alertMeta">
-                    &bull; Patient: <strong>Rhys Cadwaller</strong> &bull; UMRN: <strong>UM100046</strong> &bull; St John of God Midland Emergency Department &bull; Owner: Flow coordinator
+                    &bull; Patient: <strong>Rhys Cadwaller</strong> &bull; UMRN: <strong>UM100046</strong> &bull; St
+                    John of God Midland Emergency Department &bull; Owner: Flow coordinator
                   </div>
                   <div class="alertSub">WF-004 &bull; 15m overdue</div>
                 </div>
 
                 <!-- Alert 3 -->
                 <div class="alertCard" data-tier="t3" data-role="coordinator" id="alert-wf-005">
+                  <div
+                    class="urgencyGaugeTrack"
+                    role="progressbar"
+                    aria-valuenow="50"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  >
+                    <div class="urgencyGaugeBar" data-tone="warn" style="width: 50%"></div>
+                  </div>
                   <div class="alertTop">
                     <div class="alertBadgeRow">
                       <span class="alertGlyph warn">&#9200;</span>
@@ -1098,17 +1462,55 @@
                     </div>
                     <div class="alertActions">
                       <a class="btn sm" href="transport-officer-third-edition.html">Review Leg</a>
+                      <div class="quickActionDropdownWrap">
+                        <button class="btn sm quickActionTrigger" type="button" onclick="toggleQuickMenu(event, this)">
+                          Actions ▾
+                        </button>
+                        <div class="quickActionMenu">
+                          <button
+                            class="quickActionMenuItem"
+                            type="button"
+                            onclick="snoozeAlert('alert-wf-005', 'Noor Tremalow')"
+                          >
+                            ⏱ Snooze 30m
+                          </button>
+                          <button
+                            class="quickActionMenuItem"
+                            type="button"
+                            onclick="escalateAlert('alert-wf-005', 'Transport awaiting departure')"
+                          >
+                            ⚠ Escalate to Consultant On-Call
+                          </button>
+                          <button
+                            class="quickActionMenuItem"
+                            type="button"
+                            onclick="acknowledgeAlert('alert-wf-005', 'Transport awaiting departure')"
+                          >
+                            ✓ Acknowledge &amp; Monitor
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div class="alertTitle">Transport awaiting departure</div>
                   <div class="alertMeta">
-                    &bull; Patient: <strong>Noor Tremalow</strong> &bull; UMRN: <strong>UM100047</strong> &bull; Peel Health Campus Emergency Department &bull; Owner: ED mental health team
+                    &bull; Patient: <strong>Noor Tremalow</strong> &bull; UMRN: <strong>UM100047</strong> &bull; Peel
+                    Health Campus Emergency Department &bull; Owner: ED mental health team
                   </div>
                   <div class="alertSub">WF-005 &bull; accepted 10:12</div>
                 </div>
 
                 <!-- Alert 4 -->
                 <div class="alertCard" data-tier="t3" data-role="num" id="alert-wf-015">
+                  <div
+                    class="urgencyGaugeTrack"
+                    role="progressbar"
+                    aria-valuenow="45"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  >
+                    <div class="urgencyGaugeBar" data-tone="warn" style="width: 45%"></div>
+                  </div>
                   <div class="alertTop">
                     <div class="alertBadgeRow">
                       <span class="alertGlyph warn">&#9200;</span>
@@ -1116,17 +1518,55 @@
                     </div>
                     <div class="alertActions">
                       <a class="btn sm" href="transport-officer-third-edition.html">Review Leg</a>
+                      <div class="quickActionDropdownWrap">
+                        <button class="btn sm quickActionTrigger" type="button" onclick="toggleQuickMenu(event, this)">
+                          Actions ▾
+                        </button>
+                        <div class="quickActionMenu">
+                          <button
+                            class="quickActionMenuItem"
+                            type="button"
+                            onclick="snoozeAlert('alert-wf-015', 'Alastair Pendelbury')"
+                          >
+                            ⏱ Snooze 30m
+                          </button>
+                          <button
+                            class="quickActionMenuItem"
+                            type="button"
+                            onclick="escalateAlert('alert-wf-015', 'Transport awaiting departure')"
+                          >
+                            ⚠ Escalate to Consultant On-Call
+                          </button>
+                          <button
+                            class="quickActionMenuItem"
+                            type="button"
+                            onclick="acknowledgeAlert('alert-wf-015', 'Transport awaiting departure')"
+                          >
+                            ✓ Acknowledge &amp; Monitor
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div class="alertTitle">Transport awaiting departure</div>
                   <div class="alertMeta">
-                    &bull; Patient: <strong>Alastair Pendelbury</strong> &bull; UMRN: <strong>UM100026</strong> &bull; Rockingham General Hospital Emergency Department &bull; Owner: Ward nurse in charge
+                    &bull; Patient: <strong>Alastair Pendelbury</strong> &bull; UMRN: <strong>UM100026</strong> &bull;
+                    Rockingham General Hospital Emergency Department &bull; Owner: Ward nurse in charge
                   </div>
                   <div class="alertSub">WF-015 &bull; accepted 10:27</div>
                 </div>
 
                 <!-- Alert 5 -->
                 <div class="alertCard" data-tier="t3" data-role="num" id="alert-wf-021">
+                  <div
+                    class="urgencyGaugeTrack"
+                    role="progressbar"
+                    aria-valuenow="40"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  >
+                    <div class="urgencyGaugeBar" data-tone="warn" style="width: 40%"></div>
+                  </div>
                   <div class="alertTop">
                     <div class="alertBadgeRow">
                       <span class="alertGlyph warn">&#9200;</span>
@@ -1134,11 +1574,40 @@
                     </div>
                     <div class="alertActions">
                       <a class="btn sm" href="transport-officer-third-edition.html">Review Leg</a>
+                      <div class="quickActionDropdownWrap">
+                        <button class="btn sm quickActionTrigger" type="button" onclick="toggleQuickMenu(event, this)">
+                          Actions ▾
+                        </button>
+                        <div class="quickActionMenu">
+                          <button
+                            class="quickActionMenuItem"
+                            type="button"
+                            onclick="snoozeAlert('alert-wf-021', 'Ivo Bramblewick')"
+                          >
+                            ⏱ Snooze 30m
+                          </button>
+                          <button
+                            class="quickActionMenuItem"
+                            type="button"
+                            onclick="escalateAlert('alert-wf-021', 'Transport awaiting departure')"
+                          >
+                            ⚠ Escalate to Consultant On-Call
+                          </button>
+                          <button
+                            class="quickActionMenuItem"
+                            type="button"
+                            onclick="acknowledgeAlert('alert-wf-021', 'Transport awaiting departure')"
+                          >
+                            ✓ Acknowledge &amp; Monitor
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div class="alertTitle">Transport awaiting departure</div>
                   <div class="alertMeta">
-                    &bull; Patient: <strong>Ivo Bramblewick</strong> &bull; UMRN: <strong>UM100024</strong> &bull; Armadale Hospital Emergency Department &bull; Owner: Ward nurse in charge
+                    &bull; Patient: <strong>Ivo Bramblewick</strong> &bull; UMRN: <strong>UM100024</strong> &bull;
+                    Armadale Hospital Emergency Department &bull; Owner: Ward nurse in charge
                   </div>
                   <div class="alertSub">WF-021 &bull; accepted 10:22</div>
                 </div>
@@ -1164,7 +1633,8 @@
               <h3 class="feedEmptyTitle">Active Shift Telemetry Channel</h3>
               <p class="feedEmptyNone">No notices have been raised this session.</p>
               <p class="feedEmptySub">
-                Operational broadcasts, capacity alerts, and urgent shift handovers recorded across the hospital network will stream into this console automatically.
+                Operational broadcasts, capacity alerts, and urgent shift handovers recorded across the hospital network
+                will stream into this console automatically.
               </p>
               <div class="feedTelemetryGrid">
                 <div class="feedTeleCard">
@@ -1182,7 +1652,7 @@
                   </div>
                 </div>
                 <div class="feedTeleCard">
-                  <span class="feedDot" style="background:var(--warn)"></span>
+                  <span class="feedDot" style="background: var(--warn)"></span>
                   <div>
                     <strong>Directives Service</strong>
                     <span>Standing by &bull; Broadcast ready</span>
@@ -1258,7 +1728,8 @@
           </div>
           <div class="formGroup">
             <label class="formLabel">Clinician Sign-off Notes</label>
-            <textarea class="formTextarea" id="actionNotes">Action verified by State Duty Bed Coordinator. Relevant clinical teams and ED liaison desks notified.</textarea>
+            <textarea class="formTextarea" id="actionNotes">
+Action verified by State Duty Bed Coordinator. Relevant clinical teams and ED liaison desks notified.</textarea>
           </div>
         </div>
         <div class="modalFoot">
@@ -1296,7 +1767,8 @@
           </div>
           <div class="formGroup">
             <label class="formLabel">Broadcast Message Content</label>
-            <textarea class="formTextarea">URGENT: Metropolitan secure HDU occupancy at 100%. All units requested to expedite morning discharge verifications and report candidate surge beds immediately.</textarea>
+            <textarea class="formTextarea">
+URGENT: Metropolitan secure HDU occupancy at 100%. All units requested to expedite morning discharge verifications and report candidate surge beds immediately.</textarea>
           </div>
         </div>
         <div class="modalFoot">
@@ -1400,6 +1872,62 @@
           card.style.display = matchTier && matchRole ? "" : "none";
         });
       }
+
+      // Quick Action dropdowns
+      function toggleQuickMenu(e, btn) {
+        e.stopPropagation();
+        const wrap = btn.closest(".quickActionDropdownWrap");
+        const isOpen = wrap.classList.contains("open");
+        document.querySelectorAll(".quickActionDropdownWrap.open").forEach((w) => w.classList.remove("open"));
+        if (!isOpen) {
+          wrap.classList.add("open");
+        }
+      }
+
+      function snoozeAlert(alertId, patientName) {
+        document.querySelectorAll(".quickActionDropdownWrap.open").forEach((w) => w.classList.remove("open"));
+        const card = document.getElementById(alertId);
+        if (card) {
+          card.style.display = "none";
+        }
+        showToast(`Alert for ${patientName} snoozed for 30 minutes.`);
+      }
+
+      function escalateAlert(alertId, alertTitle) {
+        document.querySelectorAll(".quickActionDropdownWrap.open").forEach((w) => w.classList.remove("open"));
+        showToast(`Escalated "${alertTitle}" to Consultant Psychiatrist on-call.`);
+      }
+
+      function acknowledgeAlert(alertId, alertTitle) {
+        document.querySelectorAll(".quickActionDropdownWrap.open").forEach((w) => w.classList.remove("open"));
+        const card = document.getElementById(alertId);
+        if (card) {
+          const badge = card.querySelector(".badgePill");
+          if (badge) {
+            badge.textContent = "Acknowledged & Watched";
+            badge.className = "badgePill";
+          }
+        }
+        showToast(`Alert "${alertTitle}" acknowledged and retained on active watch.`);
+      }
+
+      function standDownDirective() {
+        const banner = document.getElementById("activeDirectiveBanner");
+        if (banner) {
+          banner.style.display = "none";
+        }
+        showToast("Statewide broadcast directive stood down.");
+      }
+
+      window.addEventListener("click", () => {
+        document.querySelectorAll(".quickActionDropdownWrap.open").forEach((w) => w.classList.remove("open"));
+      });
+
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          document.querySelectorAll(".quickActionDropdownWrap.open").forEach((w) => w.classList.remove("open"));
+        }
+      });
     </script>
   </body>
 </html>
