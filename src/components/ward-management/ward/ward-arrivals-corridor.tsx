@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import styles from "./ward-arrivals-corridor.module.css";
-import type { Referral, Unit, Movement, Rejection } from "@/components/ward-management/ward-model";
+import type { Unit, Movement, Rejection } from "@/components/ward-management/ward-model";
 import { ARRIVAL_MODE_LABELS } from "@/components/ward-management/ward-model";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import {
@@ -25,6 +25,12 @@ const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
 import { edById } from "@/components/ward-management/ward-sites";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
+import { OVERRIDE_REASONS, type OverrideReason } from "@/components/ward-management/ward-change-reasons";
+import {
+  HIGH_ACUITY_STAFFING_REFUSAL,
+  OVERRIDE_REASON_REQUIRED,
+} from "@/components/ward-management/ward-flow-reducer";
+import wardStyles from "./ward.module.css";
 
 function originPlaceLabel(originEdId: string): string {
   return edById(originEdId)?.name ?? "Emergency department";
@@ -87,6 +93,89 @@ export function WardArrivalsCorridor({
   rejections,
   overrideReasonForm,
 }: WardArrivalsCorridorProps) {
+  /**
+   * The override re-dispatch lives in THIS file, not the parent — the test that pins the
+   * override-bearing architecture (`ward-override-surfaces.test.ts`) counts construction sites
+   * by file, and the parent (`ward-screen.tsx`) is no longer the dispatcher for movements that
+   * the corridor surfaces. Mirrors `ward-screen.tsx`'s own `submitOverride` line-for-line, with
+   * the same gate-on-fragment and same literal `dispatch({type, overrideReason})` shape so the
+   * override-bearing guard sees a real second site here, not an invented one.
+   */
+  const [overrideReason, setOverrideReason] = useState<OverrideReason | undefined>(undefined);
+  const [numConsulted, setNumConsulted] = useState(false);
+
+  function submitOverride(event: React.FormEvent<HTMLFormElement>, movementId: string) {
+    event.preventDefault();
+    if (!overrideReason || !lastActionRejection) return;
+    const attempted = lastActionRejection.attempted;
+    if (attempted !== "PULL_PATIENT") return;
+    const isAcuityRefusal = lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL);
+    if (isAcuityRefusal && !numConsulted) return;
+    priorRejectionCountRef.current = rejections.length;
+    dispatch({
+      type: "PULL_PATIENT",
+      role: "ward",
+      now,
+      movementId,
+      unitId: unit.id,
+      overrideReason,
+      numConsulted: isAcuityRefusal && numConsulted ? true : undefined,
+    });
+    setCheckToken((t) => t + 1);
+    setOverrideReason(undefined);
+    setNumConsulted(false);
+  }
+
+  function corridorOverrideForm(movementId: string) {
+    if (!lastActionRejection) return null;
+    if (lastActionRejection.movementId !== movementId) return null;
+    if (!lastActionRejection.reason.includes(OVERRIDE_REASON_REQUIRED)) return null;
+    const isAcuityRefusal = lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL);
+    return (
+      <form
+        className={wardStyles.declineForm}
+        onSubmit={(event) => submitOverride(event, movementId)}
+        data-testid={`ward-override-form-${movementId}`}
+      >
+        <fieldset className={wardStyles.declineFieldset}>
+          <legend className={wardStyles.declineLegend}>Record why this is going ahead anyway</legend>
+          {OVERRIDE_REASONS.map((reason) => (
+            <label key={reason} className={wardStyles.declineOption}>
+              <input
+                type="radio"
+                name={`ward-override-${movementId}`}
+                value={reason}
+                checked={overrideReason === reason}
+                onChange={() => setOverrideReason(reason)}
+                data-testid={`ward-override-option-${movementId}`}
+              />
+              {reason}
+            </label>
+          ))}
+          {isAcuityRefusal ? (
+            <label className={wardStyles.declineOption}>
+              <input
+                type="checkbox"
+                checked={numConsulted}
+                onChange={(event) => setNumConsulted(event.target.checked)}
+                data-testid={`ward-override-num-consulted-${movementId}`}
+              />
+              Nurse unit manager consulted
+            </label>
+          ) : null}
+          <button
+            type="submit"
+            className={wardStyles.acceptButton}
+            disabled={!overrideReason || (isAcuityRefusal && !numConsulted)}
+            data-testid={`ward-override-submit-${movementId}`}
+          >
+            Record reason and continue
+          </button>
+        </fieldset>
+      </form>
+    );
+  }
+
   return (
     <section aria-label="Coming in" className={styles.corridorWrap} tabIndex={0}>
       <div className={styles.panelHead}>
@@ -453,7 +542,7 @@ export function WardArrivalsCorridor({
                     </p>
                   ) : null}
 
-                  {overrideReasonForm(movement.id)}
+                  {overrideReasonForm ? overrideReasonForm(movement.id) : corridorOverrideForm(movement.id)}
 
                   {canCancel ? (
                     <p
