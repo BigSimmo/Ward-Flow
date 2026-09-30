@@ -271,6 +271,26 @@ function StatisticsCommunityScreenInner({
           </div>
         </div>
 
+        {/* Quick-switch team pills */}
+        <div className={pageStyles.teamPillsBar} role="group" aria-label="Quick switch community team">
+          {COMMUNITY_TEAM_PAGES.map((t) => {
+            const isActive = t.id === team.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                className={`${pageStyles.teamPill} ${isActive ? pageStyles.teamPillActive : ""}`}
+                onClick={() => {
+                  router?.push(`/mockups/ward-flow/statistics/community/${encodeURIComponent(t.id)}`);
+                }}
+                aria-pressed={isActive}
+              >
+                {t.name}
+              </button>
+            );
+          })}
+        </div>
+
         {/* D-4 Notice Banner */}
         {d4Notice ? (
           <div className={pageStyles.d4NoticeBanner} role="status">
@@ -321,6 +341,40 @@ function StatisticsCommunityScreenInner({
           role="tabpanel"
           aria-labelledby="tab-caseload"
         >
+          {/* 6-Card KPI Headline Band */}
+          <dl className={pageStyles.kpiHeadlineBand} aria-label="Community team KPI headline summary">
+            <div>
+              <dt>In Bed / Holding</dt>
+              <dd>{figureText(figures.admitted)}</dd>
+              <span className={pageStyles.kpiCaption}>Current inpatients</span>
+            </div>
+            <div>
+              <dt>Discharge Date Set</dt>
+              <dd>{figureText(figures.expected)}</dd>
+              <span className={pageStyles.kpiCaption}>Expected back</span>
+            </div>
+            <div>
+              <dt>Discharged</dt>
+              <dd>{figureText(figures.discharged)}</dd>
+              <span className={pageStyles.kpiCaption}>Into catchment</span>
+            </div>
+            <div>
+              <dt>Departed Other</dt>
+              <dd>{figureText(figures.other)}</dd>
+              <span className={pageStyles.kpiCaption}>Transfer or route</span>
+            </div>
+            <div>
+              <dt>Unresolved</dt>
+              <dd>{resolution.state === "not-computable" ? resolution.unresolvable : 0}</dd>
+              <span className={pageStyles.kpiCaption}>Unlinked referrals</span>
+            </div>
+            <div>
+              <dt>Inpatient Total</dt>
+              <dd>{lists.currentlyAdmitted.length}</dd>
+              <span className={pageStyles.kpiCaption}>Active admitted list</span>
+            </div>
+          </dl>
+
           <div className={pageStyles.grid2}>
             <div className={pageStyles.col}>
               <WardPanel title={team.name} testId="ward-statistics-community-identity">
