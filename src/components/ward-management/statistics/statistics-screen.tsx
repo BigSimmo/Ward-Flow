@@ -29,7 +29,7 @@ import { calendarDateOf, dayOf, splitDuration, type Instant } from "@/components
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import type { BedRelease, Movement, Referral } from "@/components/ward-management/ward-model";
+import { HEALTH_SERVICES, type BedRelease, type Movement, type Referral } from "@/components/ward-management/ward-model";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 
@@ -1100,7 +1100,8 @@ export function StatisticsScreen({
                     </>
                   )}
                   <p className={styles.figureNote}>
-                    Model vocabulary order, not frequency rank. Closed movements remain in this historical count.
+                    Model vocabulary order, not frequency rank. `DECLINE_REASON_LABELS` (`ward-referrals.ts`) is keyed by
+                    the referral-side vocabulary rather than this movement list. Closed movements remain in this historical count.
                   </p>
                 </article>
               </div>
@@ -1430,7 +1431,29 @@ export function StatisticsScreen({
             </ul>
           </div>
 
-          <div id={STATISTICS_SERVICE_CHOOSER_ID} style={{ display: "none" }} aria-hidden="true" />
+          <div id={STATISTICS_SERVICE_CHOOSER_ID}>
+            <WardPanel title="Choose a health service" testId="ward-statistics-service-chooser">
+              <div className={styles.panelBody}>
+                <p className={styles.figureNote} data-testid="ward-statistics-service-chooser-rationale">
+                  Select a health service for its capacity, referral flow and distance measures. All services are listed
+                  in recorded order, without ranking.
+                </p>
+                <ul className={styles.indexList} data-testid="ward-statistics-service-list">
+                  {HEALTH_SERVICES.map((svc) => (
+                    <li key={svc} className={styles.indexItem}>
+                      <Link
+                        href={serviceStatisticsHref(svc)}
+                        className={styles.indexLink}
+                        data-testid={`ward-statistics-service-link-${svc}`}
+                      >
+                        <span className={styles.indexLabel}>{svc}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </WardPanel>
+          </div>
         </WardPanel>
 
         <div

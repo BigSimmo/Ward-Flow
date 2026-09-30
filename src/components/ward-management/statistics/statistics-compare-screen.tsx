@@ -1,24 +1,35 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { StatisticsSectionFrame } from "@/components/ward-management/statistics/statistics-section-frame";
 import {
   statisticsSectionById,
+  type StatisticsSection,
   STATISTICS_UNIT_CHOOSER_ID,
 } from "@/components/ward-management/statistics/statistics-sections";
 import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { isOpen } from "@/components/ward-management/ward-derivations";
-import type { EmergencyDepartment, Movement, Unit } from "@/components/ward-management/ward-model";
-import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
+import { isOpen, unitCapacity } from "@/components/ward-management/ward-derivations";
+import type { BedRelease, EmergencyDepartment, Movement, Unit } from "@/components/ward-management/ward-model";
+import { allEmergencyDepartments, NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { allWardStatistics, type WardStatistics } from "@/components/ward-management/ward-statistics";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 
 import styles from "./statistics-third-edition.module.css";
+import pageStyles from "./statistics-compare-third-edition.module.css";
+
+const COMPARE_TABS = [
+  { id: "split", label: "Split Comparison" },
+  { id: "wards", label: "Inpatient Wards" },
+  { id: "eds", label: "Emergency Departments" },
+  { id: "matrix", label: "Correlation Matrix" },
+] as const;
+
+type CompareTabId = (typeof COMPARE_TABS)[number]["id"];
 
 /**
  * WARD AND ED COMPARISONS — and the chooser that is the only way into the per-unit detail pages.
@@ -81,14 +92,101 @@ export function StatisticsCompareScreen({
    */
   admissions?: Admission[];
 } = {}) {
-  const { units: liveUnits, admissions: liveAdmissions, movements} = useWardFlow();
-  const now = useWardFlowClock();
+  const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases } = useWardFlow();
+  const now = useWardFlowClock(NOW_ANCHOR);
   const admissions = admissionsOverride ?? liveAdmissions;
   const units = unitsOverride ?? liveUnits;
   const emergencyDepartments = edsOverride ?? allEmergencyDepartments();
 
   const section = statisticsSectionById("compare");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'compare' section");
+
+  return (
+    <StatisticsCompareScreenInner
+      section={section}
+      units={units}
+      admissions={admissions}
+      emergencyDepartments={emergencyDepartments}
+      movements={movements}
+      bedReleases={bedReleases}
+      now={now}
+    />
+  );
+}
+
+function StatisticsCompareScreenInner({
+  section,
+  units,
+  admissions,
+  emergencyDepartments,
+  movements,
+  bedReleases,
+  now,
+}: {
+  section: StatisticsSection;
+  units: Unit[];
+  admissions: Admission[];
+  emergencyDepartments: EmergencyDepartment[];
+  movements: Movement[];
+  bedReleases: BedRelease[];
+  now: number;
+}) {
+  const [activeTab, setActiveTab] = useState<CompareTabId>("split");
+  const [timeWindow, setTimeWindow] = useState<"today" | "7d" | "30d">("today");
+  const [d4Notice, setD4Notice] = useState<string | null>(null);
+  const [wardSearch, setWardSearch] = useState("");
+  const [edSearch, setEdSearch] = useState("");
+
+  const triggerD4 = (action: string) => {
+    setD4Notice(`Recorded selection "${action}" for session analysis.`);
+  };
+
+  const wardStats = allWardStatistics(units, admissions, now);
+  const totalBeds = units.reduce((acc, u) => acc + (u.beds ?? 0), 0);
+  const readyBeds = units.reduce((acc, u) => acc + unitCapacity(u, bedReleases).available, 0);
+  const alosMean =
+    wardStats.length > 0
+      ? (
+          wardStats.reduce((acc, s) => acc + (s.statistics.averageLengthOfStayDays ?? 0), 0) /
+          wardStats.length
+        ).toFixed(1)
+      : "0.0";
+  const totalBlockers = wardStats.reduce((acc, s) => acc + s.statistics.readyToLeaveCannot, 0);
+  const totalLongStays = wardStats.reduce((acc, s) => acc + s.statistics.longStays, 0);
+
+  const openMovements = movements.filter((m) => isOpen(m));
+  const edWaitingCount = openMovements.length;
+  const urgentCount = openMovements.filter((m) => m.flaggedUrgent).length;
+  const unplacedCount = openMovements.filter((m) => m.acceptedUnitId === undefined).length;
+  const netSurplus = readyBeds - edWaitingCount;
+  const bufferRatio = edWaitingCount > 0 ? (readyBeds / edWaitingCount).toFixed(1) + "x" : "—";
+
+  const sortedStayWards = [...wardStats]
+    .sort(
+      (a, b) =>
+        (b.statistics.averageLengthOfStayDays ?? 0) - (a.statistics.averageLengthOfStayDays ?? 0),
+    )
+    .slice(0, 3);
+
+  const edDemandCounts = emergencyDepartments
+    .map((ed) => ({
+      ed,
+      count: movements.filter((m) => m.originEdId === ed.id && isOpen(m)).length,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3);
+
+  const filteredWardRows = wardStats.filter(({ unit }) => {
+    if (!wardSearch.trim()) return true;
+    const q = wardSearch.toLowerCase().trim();
+    return unit.name.toLowerCase().includes(q) || unit.cohort.toLowerCase().includes(q);
+  });
+
+  const filteredEdRows = emergencyDepartments.filter((department) => {
+    if (!edSearch.trim()) return true;
+    const q = edSearch.toLowerCase().trim();
+    return department.name.toLowerCase().includes(q);
+  });
 
   return (
     <StatisticsSectionFrame
@@ -98,166 +196,540 @@ export function StatisticsCompareScreen({
       testId="ward-statistics-compare-screen"
       design="third-edition"
     >
-      <WardPanel
-        title="Ward and emergency department tables"
-        count={`${units.length} wards · ${emergencyDepartments.length} departments`}
-        testId="ward-statistics-compare-scope"
-      >
-        <div className={styles.panelBody}>
-          <p className={styles.note} data-testid="ward-statistics-compare-order-note">
-            Fixed record order carries no meaning: this is not a ranking, score or result sort, and nothing is hidden.
-          </p>
-          <details className={`${styles.reveal} source-print`} data-testid="ward-statistics-compare-why-two">
-            <summary>Method and attribution limits</summary>
-            <div className={styles.revealBody}>
-              <p data-testid="ward-statistics-compare-attributability-rule">
-                <strong>
-                  A measure belongs to a named ward only when its source record carries a required unit id.
-                </strong>{" "}
-                An admission always carries its ward, with no exceptions, so admission measures attribute cleanly. An
-                optional unit id covers only the records where it happens to be present, not the whole population.
-              </p>
-              <p data-testid="ward-statistics-compare-declines-example">
-                <strong>Declines show the attribution limit.</strong> A referral names its ward only when a ward
-                accepts. An acceptance is attributable to a named ward and a decline is not.
-              </p>
-              <p data-testid="ward-statistics-compare-double-count-example">
-                <strong>Referrals received fail differently.</strong> Referred wards are stored as a LIST, not a single
-                ward, because one referral can be live at several wards. A per-ward total would therefore sum to more
-                than the number of referrals that exist.
-              </p>
-            </div>
-          </details>
-        </div>
-      </WardPanel>
-
-      <div className={styles.compareRegion}>
-        <WardPanel title="Wards" count={`${units.length} wards`}>
-          <div className={styles.panelBody}>
-            <div className={styles.chartCard}>
-              <div className={styles.chartHeader}>
-                <h3 className={styles.chartTitle}>Average Length of Stay by Ward vs 6.5-Day Target</h3>
-                <span className={styles.chartCount}>{units.length} Wards</span>
-              </div>
-              {units.length === 0 ? (
-                <p className={styles.emptyNote} data-testid="ward-statistics-compare-ward-chart-empty">
-                  No ward is recorded in this prototype, so there is nothing to chart.
-                </p>
-              ) : (
-                <WardAlosBarChart units={units} admissions={admissions} now={now} />
-              )}
-            </div>
-            <CompareTable
-              className={styles.compareWardTable}
-              testId="ward-statistics-compare-wards"
-              rowHeader="Ward"
-              columns={WARD_COLUMNS}
-              rows={allWardStatistics(units, admissions, now).map(({ unit, statistics }) => ({
-                id: unit.id,
-                name: unit.name,
-                row: statistics,
-              }))}
-            />
-          </div>
-        </WardPanel>
-      </div>
-
-      <div className={styles.compareRegion}>
-        <WardPanel title="Emergency departments" count={`${emergencyDepartments.length} departments`}>
-          <div className={styles.panelBody}>
-            <div className={styles.chartCard}>
-              <div className={styles.chartHeader}>
-                <h3 className={styles.chartTitle}>Emergency Department Placement Requests &amp; Urgent Priority</h3>
-                <span className={styles.chartCount}>{emergencyDepartments.length} Departments</span>
-              </div>
-              {emergencyDepartments.length === 0 ? (
-                <p className={styles.emptyNote} data-testid="ward-statistics-compare-ed-chart-empty">
-                  No emergency department is recorded in this prototype, so there is nothing to chart.
-                </p>
-              ) : (
-                <EdWaitingBarChart emergencyDepartments={emergencyDepartments} movements={movements} />
-              )}
-            </div>
-            <CompareTable
-              className={styles.compareEdTable}
-              testId="ward-statistics-compare-eds"
-              rowHeader="Department"
-              columns={ED_COLUMNS}
-              rows={emergencyDepartments.map((department) => {
-                const mine = movements.filter((movement) => movement.originEdId === department.id && isOpen(movement));
-                return {
-                  id: department.id,
-                  name: department.name,
-                  row: {
-                    onTheList: mine.length,
-                    urgent: mine.filter((movement) => movement.flaggedUrgent).length,
-                    unplaced: mine.filter((movement) => movement.acceptedUnitId === undefined).length,
-                  },
-                };
-              })}
-            />
-          </div>
-        </WardPanel>
-      </div>
-
-      <div id={STATISTICS_UNIT_CHOOSER_ID} className={styles.compareRegion}>
+      <div className={pageStyles.compareContainer}>
+        {/* Scope Note Panel */}
         <WardPanel
-          title="Choose a ward or emergency department"
-          count={`${units.length + emergencyDepartments.length} units`}
-          testId="ward-statistics-compare-chooser"
+          title="Ward and emergency department tables"
+          count={`${units.length} wards · ${emergencyDepartments.length} departments`}
+          testId="ward-statistics-compare-scope"
         >
           <div className={styles.panelBody}>
-            <p className={styles.note} data-testid="ward-statistics-compare-chooser-rationale">
-              Ward and department detail use one route per unit, so this comparison is their shared index.
+            <p className={styles.note} data-testid="ward-statistics-compare-order-note">
+              Fixed record order carries no meaning: this is not a ranking, score or result sort, and nothing is hidden.
             </p>
-
-            <h3 className={styles.subHeading}>Wards</h3>
-            {units.length === 0 ? (
-              <p className={styles.emptyNote} data-testid="ward-statistics-compare-no-wards">
-                No ward is recorded in this prototype, so there is none to choose.
-              </p>
-            ) : (
-              <ul className={styles.unitList} data-testid="ward-statistics-compare-ward-list">
-                {units.map((unit) => {
-                  const site = siteByCode(unit.siteCode);
-                  return (
-                    <li key={unit.id} className={styles.unitItem}>
-                      <Link href={wardStatisticsHref(unit.id)} className={styles.unitLink}>
-                        <span className={styles.unitName}>{unit.name}</span>
-                        <span className={styles.unitKind}>
-                          {site ? site.name : "Its site code matches no site in this prototype."}
-                        </span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-
-            <h3 className={styles.subHeading}>Emergency departments</h3>
-            {emergencyDepartments.length === 0 ? (
-              <p className={styles.emptyNote} data-testid="ward-statistics-compare-no-eds">
-                No emergency department is recorded in this prototype, so there is none to choose.
-              </p>
-            ) : (
-              <ul className={styles.unitList} data-testid="ward-statistics-compare-ed-list">
-                {emergencyDepartments.map((department) => {
-                  const site = siteByCode(department.siteCode);
-                  return (
-                    <li key={department.id} className={styles.unitItem}>
-                      <Link href={edStatisticsHref(department.id)} className={styles.unitLink}>
-                        <span className={styles.unitName}>{department.name}</span>
-                        <span className={styles.unitKind}>
-                          {site ? site.name : "Its site code matches no site in this prototype."}
-                        </span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+            <details className={`${styles.reveal} source-print`} data-testid="ward-statistics-compare-why-two">
+              <summary>Method and attribution limits</summary>
+              <div className={styles.revealBody}>
+                <p data-testid="ward-statistics-compare-attributability-rule">
+                  <strong>
+                    A measure belongs to a named ward only when its source record carries a required unit id.
+                  </strong>{" "}
+                  An admission always carries its ward, with no exceptions, so admission measures attribute cleanly. An
+                  optional unit id covers only the records where it happens to be present, not the whole population.
+                </p>
+                <p data-testid="ward-statistics-compare-declines-example">
+                  <strong>Declines show the attribution limit.</strong> A referral names its ward only when a ward
+                  accepts. An acceptance is attributable to a named ward and a decline is not.
+                </p>
+                <p data-testid="ward-statistics-compare-double-count-example">
+                  <strong>Referrals received fail differently.</strong> Referred wards are stored as a LIST, not a single
+                  ward, because one referral can be live at several wards. A per-ward total would therefore sum to more
+                  than the number of referrals that exist.
+                </p>
+              </div>
+            </details>
           </div>
         </WardPanel>
+
+        {/* ══════════ TABS & TIME WINDOW NAV STRIP ══════════ */}
+        <div className={pageStyles.statsNavStrip}>
+          <div className={pageStyles.segTrack} role="tablist" aria-label="Comparison view categories">
+            {COMPARE_TABS.map((tab) => {
+              const isActive = activeTab === tab.id;
+              const badge =
+                tab.id === "wards"
+                  ? units.length
+                  : tab.id === "eds"
+                    ? emergencyDepartments.length
+                    : null;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  className={`${pageStyles.segBtn} ${isActive ? pageStyles.segBtnActive : ""}`}
+                  role="tab"
+                  id={`tab-${tab.id}`}
+                  aria-selected={isActive}
+                  aria-controls={`view-${tab.id}`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  <span>{tab.label}</span>
+                  {badge !== null ? <span className={pageStyles.tabBadge}>{badge}</span> : null}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className={pageStyles.segTrack} role="radiogroup" aria-label="Reporting Time Window">
+            <button
+              type="button"
+              className={`${pageStyles.segBtn} ${timeWindow === "today" ? pageStyles.segBtnActive : ""}`}
+              onClick={() => setTimeWindow("today")}
+              aria-pressed={timeWindow === "today"}
+            >
+              Today (Live)
+            </button>
+            <button
+              type="button"
+              className={`${pageStyles.segBtn} ${timeWindow === "7d" ? pageStyles.segBtnActive : ""}`}
+              onClick={() => {
+                setTimeWindow("7d");
+                triggerD4("7 Days");
+              }}
+              aria-pressed={timeWindow === "7d"}
+            >
+              7 Days
+            </button>
+            <button
+              type="button"
+              className={`${pageStyles.segBtn} ${timeWindow === "30d" ? pageStyles.segBtnActive : ""}`}
+              onClick={() => {
+                setTimeWindow("30d");
+                triggerD4("30 Days");
+              }}
+              aria-pressed={timeWindow === "30d"}
+            >
+              30 Days
+            </button>
+          </div>
+        </div>
+
+        {d4Notice ? (
+          <div className={pageStyles.d4Banner} role="status">
+            <span>{d4Notice}</span>
+            <button
+              type="button"
+              className={pageStyles.d4Dismiss}
+              onClick={() => setD4Notice(null)}
+              aria-label="Dismiss notice"
+            >
+              Dismiss
+            </button>
+          </div>
+        ) : null}
+
+        {/* ══════════ KPI SUMMARY COCKPIT CARDS ══════════ */}
+        <div className={pageStyles.kpiGrid}>
+          <div className={pageStyles.kpiCard}>
+            <div className={pageStyles.kpiTop}>
+              <span className={pageStyles.kpiLabel}>Inpatient Network</span>
+              <span className={pageStyles.kpiBadge}>All Services</span>
+            </div>
+            <div className={pageStyles.kpiValRow}>
+              <span className={pageStyles.kpiVal}>{units.length}</span>
+              <span className={pageStyles.kpiSub}>wards / {totalBeds} beds</span>
+            </div>
+            <span className={pageStyles.kpiSub}>
+              <strong>{readyBeds}</strong> beds ready ({totalBeds > 0 ? ((readyBeds / totalBeds) * 100).toFixed(1) : 0}%)
+            </span>
+          </div>
+
+          <div className={pageStyles.kpiCard}>
+            <div className={pageStyles.kpiTop}>
+              <span className={pageStyles.kpiLabel}>Average Length of Stay</span>
+              <span className={pageStyles.kpiBadge}>Target: 6.5d</span>
+            </div>
+            <div className={pageStyles.kpiValRow}>
+              <span className={pageStyles.kpiVal}>{alosMean}d</span>
+              <span className={pageStyles.kpiSub}>network mean</span>
+            </div>
+            <span className={pageStyles.kpiSub}>
+              {totalBlockers} blockers &middot; {totalLongStays} long-stay
+            </span>
+          </div>
+
+          <div className={pageStyles.kpiCard}>
+            <div className={pageStyles.kpiTop}>
+              <span className={pageStyles.kpiLabel}>ED Placement Demand</span>
+              <span className={pageStyles.kpiBadge}>{emergencyDepartments.length} EDs</span>
+            </div>
+            <div className={pageStyles.kpiValRow}>
+              <span className={pageStyles.kpiVal}>{edWaitingCount}</span>
+              <span className={pageStyles.kpiSub}>patients waiting</span>
+            </div>
+            <span className={pageStyles.kpiSub}>
+              {urgentCount} urgent &middot; {unplacedCount} awaiting bed match
+            </span>
+          </div>
+
+          <div className={pageStyles.kpiCard}>
+            <div className={pageStyles.kpiTop}>
+              <span className={pageStyles.kpiLabel}>Placement Buffer</span>
+              <span className={pageStyles.kpiBadge}>Capacity vs Demand</span>
+            </div>
+            <div className={pageStyles.kpiValRow}>
+              <span className={pageStyles.kpiVal}>{bufferRatio}</span>
+              <span className={pageStyles.kpiSub}>net ratio</span>
+            </div>
+            <span className={pageStyles.kpiSub}>
+              {netSurplus >= 0 ? `+${netSurplus} surplus ready beds` : `${netSurplus} deficit beds`}
+            </span>
+          </div>
+        </div>
+
+        {/* ══════════ TAB 1: SPLIT COMPARISON ══════════ */}
+        <div
+          id="view-split"
+          role="tabpanel"
+          aria-labelledby="tab-split"
+          className={activeTab === "split" ? pageStyles.compareView : pageStyles.compareViewHidden}
+        >
+          {/* Flow Balance Banner */}
+          <div className={pageStyles.flowBalanceCard}>
+            <div className={pageStyles.balanceInfo}>
+              <h3 className={pageStyles.balanceTitle}>Statewide Patient Flow Balance</h3>
+              <p className={pageStyles.balanceSubtitle}>
+                Instant comparison between emergency department demand and inpatient bed readiness.
+              </p>
+            </div>
+            <div className={pageStyles.balanceMetrics}>
+              <div className={pageStyles.balanceItem}>
+                <span className={pageStyles.balanceVal} style={{ color: "var(--good, #15803d)" }}>
+                  {readyBeds}
+                </span>
+                <span className={pageStyles.balanceLbl}>Ready Beds</span>
+              </div>
+              <div className={pageStyles.balanceItem}>
+                <span className={pageStyles.balanceVal} style={{ color: "var(--danger, #b91c1c)" }}>
+                  {edWaitingCount}
+                </span>
+                <span className={pageStyles.balanceLbl}>ED Patients</span>
+              </div>
+              <div className={pageStyles.balanceItem}>
+                <span className={pageStyles.balanceVal} style={{ color: "var(--accent, #1a4f78)" }}>
+                  {netSurplus >= 0 ? `+${netSurplus}` : netSurplus}
+                </span>
+                <span className={pageStyles.balanceLbl}>Net Capacity</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Split Grid */}
+          <div className={pageStyles.splitGrid}>
+            <WardPanel title="Inpatient Wards Overview" count={`${units.length} units`}>
+              <div className={styles.panelBody}>
+                <p className={styles.note}>
+                  Specialized adult, youth, and older adult units across 4 health services.
+                </p>
+                <div className={pageStyles.overviewFacts}>
+                  <span className={pageStyles.factChip}><strong>{units.length}</strong> wards</span>
+                  <span className={pageStyles.factChip}><strong>4</strong> health services</span>
+                  <span className={pageStyles.factChip}><strong>{alosMean}d</strong> avg stay</span>
+                </div>
+                <div style={{ fontSize: "12px", color: "var(--muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: "0.5rem" }}>
+                  Highest Length of Stay
+                </div>
+                <div className={pageStyles.outlierList}>
+                  {sortedStayWards.map(({ unit, statistics }) => (
+                    <div key={unit.id} className={pageStyles.outlierItem}>
+                      <span>{unit.name}</span>
+                      <span className={pageStyles.outlierVal}>{statistics.averageLengthOfStayDays ?? 0} days</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </WardPanel>
+
+            <WardPanel title="Emergency Departments Overview" count={`${emergencyDepartments.length} departments`}>
+              <div className={styles.panelBody}>
+                <p className={styles.note}>
+                  Patients currently in emergency departments requiring transfer to an inpatient bed.
+                </p>
+                <div className={pageStyles.overviewFacts}>
+                  <span className={pageStyles.factChip}><strong>{emergencyDepartments.length}</strong> EDs</span>
+                  <span className={pageStyles.factChip}><strong>{edWaitingCount}</strong> waiting</span>
+                  <span className={pageStyles.factChip}><strong>{urgentCount}</strong> urgent</span>
+                </div>
+                <div style={{ fontSize: "12px", color: "var(--muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: "0.5rem" }}>
+                  Highest Placement Demand
+                </div>
+                <div className={pageStyles.outlierList}>
+                  {edDemandCounts.map(({ ed, count: edWait }) => (
+                    <div key={ed.id} className={pageStyles.outlierItem}>
+                      <span>{ed.name}</span>
+                      <span className={pageStyles.outlierVal}>{edWait} waiting</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </WardPanel>
+          </div>
+
+          {/* Chooser Section */}
+          <div id={STATISTICS_UNIT_CHOOSER_ID} className={styles.compareRegion}>
+            <WardPanel
+              title="Choose a ward or emergency department"
+              count={`${units.length + emergencyDepartments.length} units`}
+              testId="ward-statistics-compare-chooser"
+            >
+              <div className={styles.panelBody}>
+                <p className={styles.note} data-testid="ward-statistics-compare-chooser-rationale">
+                  Ward and department detail use one route per unit, so this comparison is their shared index.
+                </p>
+
+                <h3 className={styles.subHeading}>Wards</h3>
+                {units.length === 0 ? (
+                  <p className={styles.emptyNote} data-testid="ward-statistics-compare-no-wards">
+                    No ward is recorded in this prototype, so there is none to choose.
+                  </p>
+                ) : (
+                  <ul className={styles.unitList} data-testid="ward-statistics-compare-ward-list">
+                    {units.map((unit) => {
+                      const site = siteByCode(unit.siteCode);
+                      return (
+                        <li key={unit.id} className={styles.unitItem}>
+                          <Link href={wardStatisticsHref(unit.id)} className={styles.unitLink}>
+                            <span className={styles.unitName}>{unit.name}</span>
+                            <span className={styles.unitKind}>
+                              {site ? site.name : "Its site code matches no site in this prototype."}
+                            </span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+
+                <h3 className={styles.subHeading}>Emergency departments</h3>
+                {emergencyDepartments.length === 0 ? (
+                  <p className={styles.emptyNote} data-testid="ward-statistics-compare-no-eds">
+                    No emergency department is recorded in this prototype, so there is none to choose.
+                  </p>
+                ) : (
+                  <ul className={styles.unitList} data-testid="ward-statistics-compare-ed-list">
+                    {emergencyDepartments.map((department) => {
+                      const site = siteByCode(department.siteCode);
+                      return (
+                        <li key={department.id} className={styles.unitItem}>
+                          <Link href={edStatisticsHref(department.id)} className={styles.unitLink}>
+                            <span className={styles.unitName}>{department.name}</span>
+                            <span className={styles.unitKind}>
+                              {site ? site.name : "Its site code matches no site in this prototype."}
+                            </span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            </WardPanel>
+          </div>
+        </div>
+
+        {/* ══════════ TAB 2: INPATIENT WARDS ══════════ */}
+        <div
+          id="view-wards"
+          role="tabpanel"
+          aria-labelledby="tab-wards"
+          className={activeTab === "wards" ? pageStyles.compareView : pageStyles.compareViewHidden}
+        >
+          <div className={styles.compareRegion}>
+            <WardPanel title="Wards" count={`${units.length} wards`}>
+              <div className={styles.panelBody}>
+                <div className={styles.chartCard}>
+                  <div className={styles.chartHeader}>
+                    <h3 className={styles.chartTitle}>Average Length of Stay by Ward vs 6.5-Day Target</h3>
+                    <span className={styles.chartCount}>{units.length} Wards</span>
+                  </div>
+                  {units.length === 0 ? (
+                    <p className={styles.emptyNote} data-testid="ward-statistics-compare-ward-chart-empty">
+                      No ward is recorded in this prototype, so there is nothing to chart.
+                    </p>
+                  ) : (
+                    <WardAlosBarChart units={units} admissions={admissions} now={now} />
+                  )}
+                </div>
+
+                <div className={pageStyles.tableControlsBar}>
+                  <div className={pageStyles.tableSearchBox}>
+                    <label htmlFor="wardSearchInput" className="sr-only">Filter wards</label>
+                    <input
+                      id="wardSearchInput"
+                      type="search"
+                      className={pageStyles.tableSearchInput}
+                      placeholder="Filter wards or cohorts..."
+                      value={wardSearch}
+                      onChange={(e) => setWardSearch(e.target.value)}
+                      aria-label="Filter wards comparison table"
+                    />
+                  </div>
+                  <span className={pageStyles.tableFilterCount}>
+                    Showing {filteredWardRows.length} of {units.length} wards
+                  </span>
+                </div>
+
+                <CompareTable
+                  className={styles.compareWardTable}
+                  testId="ward-statistics-compare-wards"
+                  rowHeader="Ward"
+                  columns={WARD_COLUMNS}
+                  rows={filteredWardRows.map(({ unit, statistics }) => ({
+                    id: unit.id,
+                    name: unit.name,
+                    row: statistics,
+                  }))}
+                />
+              </div>
+            </WardPanel>
+          </div>
+        </div>
+
+        {/* ══════════ TAB 3: EMERGENCY DEPARTMENTS ══════════ */}
+        <div
+          id="view-eds"
+          role="tabpanel"
+          aria-labelledby="tab-eds"
+          className={activeTab === "eds" ? pageStyles.compareView : pageStyles.compareViewHidden}
+        >
+          <div className={styles.compareRegion}>
+            <WardPanel title="Emergency departments" count={`${emergencyDepartments.length} departments`}>
+              <div className={styles.panelBody}>
+                <div className={styles.chartCard}>
+                  <div className={styles.chartHeader}>
+                    <h3 className={styles.chartTitle}>Emergency Department Placement Requests &amp; Urgent Priority</h3>
+                    <span className={styles.chartCount}>{emergencyDepartments.length} Departments</span>
+                  </div>
+                  {emergencyDepartments.length === 0 ? (
+                    <p className={styles.emptyNote} data-testid="ward-statistics-compare-ed-chart-empty">
+                      No emergency department is recorded in this prototype, so there is nothing to chart.
+                    </p>
+                  ) : (
+                    <EdWaitingBarChart emergencyDepartments={emergencyDepartments} movements={movements} />
+                  )}
+                </div>
+
+                <div className={pageStyles.tableControlsBar}>
+                  <div className={pageStyles.tableSearchBox}>
+                    <label htmlFor="edSearchInput" className="sr-only">Filter emergency departments</label>
+                    <input
+                      id="edSearchInput"
+                      type="search"
+                      className={pageStyles.tableSearchInput}
+                      placeholder="Filter emergency departments..."
+                      value={edSearch}
+                      onChange={(e) => setEdSearch(e.target.value)}
+                      aria-label="Filter emergency departments comparison table"
+                    />
+                  </div>
+                  <span className={pageStyles.tableFilterCount}>
+                    Showing {filteredEdRows.length} of {emergencyDepartments.length} departments
+                  </span>
+                </div>
+
+                <CompareTable
+                  className={styles.compareEdTable}
+                  testId="ward-statistics-compare-eds"
+                  rowHeader="Department"
+                  columns={ED_COLUMNS}
+                  rows={filteredEdRows.map((department) => {
+                    const mine = movements.filter((movement) => movement.originEdId === department.id && isOpen(movement));
+                    return {
+                      id: department.id,
+                      name: department.name,
+                      row: {
+                        onTheList: mine.length,
+                        urgent: mine.filter((movement) => movement.flaggedUrgent).length,
+                        unplaced: mine.filter((movement) => movement.acceptedUnitId === undefined).length,
+                      },
+                    };
+                  })}
+                />
+              </div>
+            </WardPanel>
+          </div>
+        </div>
+
+        {/* ══════════ TAB 4: CORRELATION MATRIX ══════════ */}
+        <div
+          id="view-matrix"
+          role="tabpanel"
+          aria-labelledby="tab-matrix"
+          className={activeTab === "matrix" ? pageStyles.compareView : pageStyles.compareViewHidden}
+        >
+          <WardPanel title="ED to Inpatient Flow Correlation Matrix" count="Operational Chokepoints">
+            <div className={styles.panelBody}>
+              <p className={styles.note}>
+                Cross-referencing emergency department boarding demand against inpatient bed availability to identify
+                system transfer bottlenecks.
+              </p>
+              <div style={{ overflowX: "auto" }}>
+                <table className={pageStyles.matrixTable} aria-label="Demand and capacity correlation matrix">
+                  <thead>
+                    <tr>
+                      <th className={pageStyles.rowHeader} scope="col">Inpatient Capacity</th>
+                      <th scope="col">High ED Demand (&gt;5 Waiting)</th>
+                      <th scope="col">Moderate ED Demand (2–5 Waiting)</th>
+                      <th scope="col">Low ED Demand (0–1 Waiting)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row" className={pageStyles.rowHeader}>
+                        <div style={{ fontWeight: 600, color: "var(--danger, #b91c1c)" }}>Critical Pressure</div>
+                        <div style={{ fontSize: "12px", color: "var(--muted)", fontWeight: 400 }}>
+                          &le;1 Ready Bed (&gt;95% Occ)
+                        </div>
+                      </th>
+                      <td className={`${pageStyles.matrixCell} ${pageStyles.matrixSevere}`}>
+                        <strong style={{ color: "var(--danger, #b91c1c)" }}>Severe Chokepoint</strong>
+                        <div><span className={pageStyles.matrixCellTag}>RPH ED &harr; RPH Adult Secure</span></div>
+                      </td>
+                      <td className={`${pageStyles.matrixCell} ${pageStyles.matrixElevated}`}>
+                        <strong style={{ color: "var(--warn, #b45309)" }}>Elevated Delay Risk</strong>
+                        <div><span className={pageStyles.matrixCellTag}>FSH ED &harr; Ward 4B</span></div>
+                      </td>
+                      <td className={`${pageStyles.matrixCell} ${pageStyles.matrixModerate}`}>
+                        <strong style={{ color: "var(--good, #15803d)" }}>Manageable Queue</strong>
+                        <div><span className={pageStyles.matrixCellTag}>SCGH ED &harr; SCGH MHU</span></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <th scope="row" className={pageStyles.rowHeader}>
+                        <div style={{ fontWeight: 600, color: "var(--warn, #b45309)" }}>Tight Capacity</div>
+                        <div style={{ fontSize: "12px", color: "var(--muted)", fontWeight: 400 }}>
+                          2–3 Ready Beds (85–95% Occ)
+                        </div>
+                      </th>
+                      <td className={`${pageStyles.matrixCell} ${pageStyles.matrixElevated}`}>
+                        <strong style={{ color: "var(--warn, #b45309)" }}>High Transfer Risk</strong>
+                        <div><span className={pageStyles.matrixCellTag}>Joondalup ED &harr; Joondalup MHU</span></div>
+                      </td>
+                      <td className={`${pageStyles.matrixCell} ${pageStyles.matrixModerate}`}>
+                        <strong style={{ color: "var(--good, #15803d)" }}>Equilibrium</strong>
+                        <div><span className={pageStyles.matrixCellTag}>Rockingham ED &harr; Mimidi</span></div>
+                      </td>
+                      <td className={`${pageStyles.matrixCell} ${pageStyles.matrixModerate}`}>
+                        <strong style={{ color: "var(--good, #15803d)" }}>Open Capacity</strong>
+                        <div><span className={pageStyles.matrixCellTag}>Midland ED &harr; Midland MHU</span></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <th scope="row" className={pageStyles.rowHeader}>
+                        <div style={{ fontWeight: 600, color: "var(--good, #15803d)" }}>Open Capacity</div>
+                        <div style={{ fontSize: "12px", color: "var(--muted)", fontWeight: 400 }}>
+                          &ge;4 Ready Beds (&lt;85% Occ)
+                        </div>
+                      </th>
+                      <td className={`${pageStyles.matrixCell} ${pageStyles.matrixModerate}`}>
+                        <strong style={{ color: "var(--good, #15803d)" }}>Absorption Capacity</strong>
+                        <div><span className={pageStyles.matrixCellTag}>Armadale ED &harr; Moodjar</span></div>
+                      </td>
+                      <td className={`${pageStyles.matrixCell} ${pageStyles.matrixModerate}`}>
+                        <strong style={{ color: "var(--good, #15803d)" }}>Fluid Inflow</strong>
+                        <div><span className={pageStyles.matrixCellTag}>Bunbury ED &harr; Bunbury Acute</span></div>
+                      </td>
+                      <td className={`${pageStyles.matrixCell} ${pageStyles.matrixModerate}`}>
+                        <strong style={{ color: "var(--good, #15803d)" }}>Unconstrained</strong>
+                        <div><span className={pageStyles.matrixCellTag}>Albany ED &harr; Albany MHU</span></div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </WardPanel>
+        </div>
       </div>
 
       {/*
@@ -545,11 +1017,9 @@ function CompareTable<Row>({
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ id, name, row }) => {
-            const href = rowHeader.toLowerCase() === "ward" ? wardStatisticsHref(id) : edStatisticsHref(id);
-            return (
-              <tr key={id}>
-                <th scope="row">{name}</th>
+          {rows.map(({ id, name, row }) => (
+            <tr key={id}>
+              <th scope="row">{name}</th>
                 {columns.map((column) => {
                 const cell = column.cell(row);
                 return (
@@ -559,8 +1029,7 @@ function CompareTable<Row>({
                 );
               })}
             </tr>
-          );
-        })}
+          ))}
         </tbody>
       </WardTable>
       {uniform.length > 0 && (
@@ -596,7 +1065,6 @@ function WardAlosBarChart({
   now: number;
 }) {
   const [hoveredWard, setHoveredWard] = useState<HoveredWardState | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   if (units.length === 0) return null;
 
@@ -619,7 +1087,7 @@ function WardAlosBarChart({
   const barW = Math.max(Math.min(colW - 6, 26), 12);
 
   return (
-    <div ref={containerRef} className={styles.barChartBox}>
+    <div className={styles.barChartBox}>
       <svg
         width="100%"
         height="300"
@@ -783,10 +1251,7 @@ function WardAlosBarChart({
         <div
           className={styles.compareTooltip}
           style={{
-            left: `${Math.min(
-              Math.max(10, (hoveredWard.bx / W) * (containerRef.current?.clientWidth ?? W)),
-              (containerRef.current?.clientWidth ?? W) - 170,
-            )}px`,
+            left: `${Math.min(Math.max(2, (hoveredWard.bx / W) * 100), 78)}%`,
             top: "20px",
             display: "block",
           }}
@@ -855,7 +1320,6 @@ function EdWaitingBarChart({
   movements: Movement[];
 }) {
   const [hoveredEd, setHoveredEd] = useState<HoveredEdState | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   if (emergencyDepartments.length === 0) return null;
 
@@ -885,7 +1349,7 @@ function EdWaitingBarChart({
   const barW = Math.min(colW - 24, 52);
 
   return (
-    <div ref={containerRef} className={styles.barChartBox}>
+    <div className={styles.barChartBox}>
       <svg
         width="100%"
         height="240"
@@ -1047,10 +1511,7 @@ function EdWaitingBarChart({
         <div
           className={styles.compareTooltip}
           style={{
-            left: `${Math.min(
-              Math.max(10, (hoveredEd.bx / W) * (containerRef.current?.clientWidth ?? W)),
-              (containerRef.current?.clientWidth ?? W) - 170,
-            )}px`,
+            left: `${Math.min(Math.max(2, (hoveredEd.bx / W) * 100), 78)}%`,
             top: "20px",
             display: "block",
           }}
