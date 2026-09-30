@@ -20,6 +20,7 @@ import {
   STATISTICS_SECTIONS,
   STATISTICS_SERVICE_CHOOSER_ID,
 } from "@/components/ward-management/statistics/statistics-sections";
+import { StatisticsNav } from "@/components/ward-management/statistics/statistics-nav";
 import { communityStatisticsHref, serviceStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
@@ -484,6 +485,8 @@ export function StatisticsScreen({
         <header className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>Statistics</h1>
         </header>
+
+        <StatisticsNav currentSection="hub" />
 
         {/* ══════════ REPORTING PERIOD STRIP (Test contract preserved, styled cleanly) ══════════ */}
         <div data-testid="ward-statistics-reporting-period" style={{ display: "none" }} aria-hidden="true">
