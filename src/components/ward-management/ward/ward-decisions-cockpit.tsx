@@ -200,13 +200,13 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
 
   const handleExtendLeave = () => {
     setMarcusState("extended");
-    addAuditItem("⏳", "S17 Leave Window Extended", "Marcus V. leave extended by 2 hours (New return: 15:00 AWST).");
-    showToast("Leave window extended (+2h)");
+    addAuditItem("⏳", "S17 Leave Window Extended", "Marcus V. leave window extended (New return: 15:00 AWST).");
+    showToast("Leave window extended");
   };
 
   const handleDeclareAwol = () => {
     setMarcusState("awol");
-    addAuditItem("🚨", "Leave Breach / AWOL Declared", "Marcus V. declared AWOL under MHA 2014 Part 7.");
+    addAuditItem("🚨", "Leave Overdue / AWOL Declared", "Marcus V. declared AWOL under MHA 2014 Part 7.");
     showToast("AWOL alert broadcast to hospital security");
   };
 
@@ -471,7 +471,7 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
                     className={`${styles.chip} ${styles.chipNeutral}`}
                     style={{ fontFamily: "var(--font-geist-mono, monospace)" }}
                   >
-                    {physicalBeds} Physical · {occupiedBeds} Occupied (90%)
+                    {physicalBeds} Physical · {occupiedBeds} Occupied
                   </span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "6px", flexWrap: "wrap" }}>
@@ -756,8 +756,8 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
                       <span className={`${styles.chip} ${styles.chipNeutral}`}>Delay: Bed 11 Blocked</span>
                     </div>
                     <div className={styles.decisionCardDesc}>
-                      Clinically cleared for 48h. Accommodation lease pending SIL provider signature. Cannot be safely
-                      discharged without housing.
+                      Clinically cleared for discharge. Accommodation lease pending SIL provider signature. Cannot be
+                      safely discharged without housing.
                     </div>
                   </div>
 
@@ -841,7 +841,7 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
                     <span className={`${styles.chip} ${styles.chipWarn}`}>S17 Leave Due 13:00 (31m)</span>
                   </div>
                   <div className={styles.decisionCardDesc}>
-                    Patient on 4-hour unescorted day leave. If returned, verify mental state and sign off return.
+                    Patient on unescorted day leave. If returned, verify mental state and sign off return.
                   </div>
                 </div>
 
@@ -859,7 +859,7 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
                       className={`${styles.btn} ${styles.btnOutline} ${styles.btnSm}`}
                       onClick={handleExtendLeave}
                     >
-                      <span>Extend (+2h)</span>
+                      <span>Extend leave</span>
                     </button>
                     <button
                       type="button"
@@ -881,7 +881,7 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
                     <div>
                       <div style={{ fontSize: "12.5px", fontWeight: 700 }}>
                         {marcusState === "returned" && "Patient Returned Safely"}
-                        {marcusState === "extended" && "Leave Window Extended (+2h)"}
+                        {marcusState === "extended" && "Leave Window Extended"}
                         {marcusState === "awol" && "AWOL Declared — Statutory Alert Triggered"}
                       </div>
                       <div style={{ fontSize: "11px", opacity: 0.9 }}>
@@ -958,7 +958,7 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
             <h3 className={styles.panelTitle}>Completed Sign-Offs (Today&apos;s Shift Audit Trail)</h3>
           </div>
           <span className={`${styles.chip} ${styles.chipNeutral}`} style={{ fontSize: "10.5px" }}>
-            Immutable WA Health Clinical Log · 24-Hour Standard
+            Immutable WA Health Clinical Audit Log
           </span>
         </div>
 

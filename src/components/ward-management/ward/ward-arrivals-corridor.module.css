@@ -1,0 +1,255 @@
+/* Ward Arrivals Transit Corridor Styles */
+.corridorWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.headingGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.inboundStream {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inboundCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--r2);
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: 280px 1fr 240px;
+  gap: 20px;
+  align-items: center;
+  box-shadow: var(--lift-sm, 0 1px 2px rgba(18, 30, 49, 0.04));
+  transition: all 0.15s ease;
+}
+
+@media (max-width: 1024px) {
+  .inboundCard {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+.inboundCard[data-state="warn"] {
+  border-left-color: var(--warn);
+}
+
+.inboundCard[data-state="good"] {
+  border-left-color: var(--good);
+}
+
+/* Patient Meta */
+.patientMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.patientHeaderRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.patientName {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.patientUmrn {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--surface-2);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.patientOrigin {
+  font-size: 12px;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tagCluster {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.statusTag {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: var(--r1);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+}
+
+.statusTag[data-type="legal"] {
+  background: rgba(176, 59, 46, 0.08);
+  border-color: rgba(176, 59, 46, 0.25);
+  color: var(--danger);
+}
+
+.statusTag[data-type="acuity"] {
+  background: rgba(130, 93, 16, 0.08);
+  border-color: rgba(130, 93, 16, 0.25);
+  color: var(--warn);
+}
+
+.statusTag[data-type="mode"] {
+  background: rgba(47, 76, 102, 0.08);
+  border-color: rgba(47, 76, 102, 0.25);
+  color: var(--accent);
+}
+
+/* Corridor Stepper */
+.stepperWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stepperLabelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.corridorTrack {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  height: 8px;
+}
+
+.trackStep {
+  background: var(--line);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.trackStep[data-filled="true"] {
+  background: var(--accent);
+}
+
+.trackStep[data-current="true"] {
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft, rgba(47, 76, 102, 0.2));
+}
+
+.corridorSubtext {
+  font-size: 11.5px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Corridor Actions */
+.corridorActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.btnCorridorPull {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--r1);
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btnCorridorPull:hover {
+  filter: brightness(1.1);
+}
+
+.btnCorridorGood {
+  background: var(--good);
+}
+
+.btnCorridorSec {
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--line-strong, var(--line));
+}
+
+.btnCorridorSec:hover {
+  background: var(--surface);
+}
+
+.selectInput {
+  padding: 6px 10px;
+  font-size: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.placeholder {
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  background: var(--surface-2);
+  border: 1px dashed var(--line);
+  border-radius: var(--r2);
+}
+
+.explanationNote {
+  font-size: 12px;
+  color: var(--ink-soft);
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  line-height: 1.5;
+}

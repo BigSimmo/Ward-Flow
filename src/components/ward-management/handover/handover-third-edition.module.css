@@ -74,6 +74,66 @@
   flex-wrap: wrap;
 }
 
+.institutionalBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: var(--pill);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: var(--t-2);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.badgeGovLogo {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.badgeDivider {
+  color: var(--line-strong);
+  font-weight: 400;
+}
+
+.badgeTitle {
+  color: var(--ink);
+  font-size: 0.6875rem;
+}
+
+.liveSyncDot {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--good);
+  font-size: 0.6875rem;
+  padding-left: 6px;
+  border-left: 1px solid var(--line);
+}
+
+.pulsingDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--good);
+  box-shadow: 0 0 6px var(--good);
+  animation: pulseSync 2s infinite ease-in-out;
+}
+
+@keyframes pulseSync {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
 .headerActions {
   display: flex;
   align-items: center;
@@ -552,6 +612,41 @@
   line-height: 1;
 }
 
+.searchFeedbackGroup {
+  position: absolute;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.searchMatchPill {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: var(--pill);
+  padding: 1px 7px;
+  font-weight: 600;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.searchKbdHint {
+  position: absolute;
+  right: 8px;
+  pointer-events: none;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 5px;
+  line-height: 1.2;
+}
+
 /* Transparency Banner — Streamlined, compact metadata bar (24px-28px height) */
 .filterSummaryLine {
   display: flex;
@@ -716,12 +811,55 @@
   align-items: center;
   box-shadow: var(--lift);
   min-width: 0;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.summaryTile::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: transparent;
+  transition: background 0.15s ease;
 }
 
 .summaryTile:hover {
+  transform: translateY(-2px);
   border-color: var(--line-strong);
   box-shadow: var(--float);
+}
+
+.summaryTileCaseload::before {
+  background: var(--accent);
+}
+
+.summaryTileReferrals::before {
+  background: var(--warn);
+}
+
+.summaryTileVacancies::before {
+  background: var(--good);
+}
+
+.summaryTileExpiries::before {
+  background: var(--danger);
+}
+
+.summaryTileExpiries {
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.summaryTileExpiriesClean::before {
+  background: var(--good);
+}
+
+.summaryTileSpecialling::before {
+  background: #8b5cf6;
 }
 
 .tileMeta {
@@ -2170,6 +2308,108 @@ table.snapSheet {
   border: 1px solid var(--line-strong);
 }
 
+:global([data-theme="dark"]) .viewModeToggle,
+:global(:root:not([data-theme="light"])) .screen .viewModeToggle {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+}
+
+:global([data-theme="dark"]) .viewModeBtn.active,
+:global(:root:not([data-theme="light"])) .screen .viewModeBtn.active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* ── NSQHS STANDARD 6 CLINICAL HANDOVER ACCREDITATION FOOTER ── */
+.accreditationFooter {
+  margin-top: 24px;
+  padding: 16px 20px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.accreditationGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .accreditationGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.accreditationField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.accreditationField:nth-child(3) {
+  grid-column: 1 / -1;
+}
+
+.accreditationLabel {
+  font-family: var(--display);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.accreditationLine {
+  height: 28px;
+  border-bottom: 1.5px dashed var(--line-strong);
+  background: var(--surface);
+  border-radius: var(--r1);
+}
+
+.accreditationChecks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+}
+
+.checkItem {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.accreditationLegal {
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-family: var(--display);
+  font-size: 0.6875rem;
+  color: var(--muted);
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+:global([data-theme="dark"]) .accreditationFooter,
+:global(:root:not([data-theme="light"])) .screen .accreditationFooter {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+}
+
+:global([data-theme="dark"]) .accreditationLine,
+:global([data-theme="dark"]) .accreditationChecks {
+  background: var(--surface);
+  border-color: var(--line-strong);
+}
+
 /* ── PRINT RULES (EXACT A4 PERFECTION) ── */
 @page {
   size: A4 portrait;
@@ -2309,12 +2549,23 @@ table.snapSheet {
   .summaryTile,
   .huddleSafetyCard,
   .panel,
-  .breachCard {
+  .breachCard,
+  .accreditationFooter {
     background: none !important;
     border: 1px solid var(--line) !important;
     box-shadow: none !important;
     color: CanvasText !important;
     break-inside: avoid;
+  }
+
+  .accreditationLine {
+    border-bottom: 1px solid CanvasText !important;
+    background: none !important;
+  }
+
+  .accreditationChecks {
+    border: 1px solid var(--line) !important;
+    background: none !important;
   }
 
   .signBlock {
