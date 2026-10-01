@@ -1,5 +1,13 @@
 # Verification Gates and the Gate Arbiter
 
+> **Ward Flow scope — 1 October 2026.** This file contains inherited PsychSift guidance. The current [Ward Flow repository boundary](../../AGENTS.md) governs. References to PsychSift, Database, Supabase, OpenAI, foreign Railway targets or their credentials are historical and must not be followed here. Ward Flow stays synthetic; it must not reuse PsychSift resources. Read the [current hosting decisions](../hosting.md) before any separately authorised provider action.
+
+The tier table remains useful for selecting local checks, but copied claims about GitHub required checks, Production UI jobs, hosted receipts and CI coverage are historical. GitHub Actions is disabled under the current hosting decisions; an arbiter deferral is not proof that CI will run. Inspect this repository's actual scripts and workflow state, preserve all applicable local, security and clinical gates, and report missing evidence.
+
+**Current Ward Flow commands.** The copied `plan:browser`, `verify:phone-chrome`, `check:production-readiness` and `check:gate-manifest` commands below are absent from this repository's package scripts and are historical examples only. Use `node scripts/ward-flow/select-journeys.mjs --base <task-base> --head HEAD --json` with the actual task base to preview committed browser scope; pending edits are not included. Inspect the selected journeys and shared-foundation requirements before running the applicable Ward gate. Use the on-demand [task guide](task-efficiency.md) for current verification entry points, continuation and evidence conventions.
+
+The inherited arbiter reads an absent `.github/workflows/ci.yml` and establishes no Ward CI coverage. Unknown coverage requires running the selected gate or reporting a precise blocker. Neither the declared Ward workflow nor a historical Production UI example authorises gate deferral. A preview, skipped check or deferred check is never passing evidence. Preserve all applicable security, privacy and clinical acceptance requirements.
+
 <!-- BEGIN:verification-gates -->
 
 ## Gate selection
