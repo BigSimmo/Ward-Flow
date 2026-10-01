@@ -90,10 +90,10 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
   overflow-x: clip;
   overflow-y: visible;
-  padding: 1.25rem 1.5rem 2rem;
+  padding: 1rem clamp(0.75rem, 2vw, 1.5rem) 2rem;
   min-height: 20rem;
   scroll-padding: 0.5rem;
 }

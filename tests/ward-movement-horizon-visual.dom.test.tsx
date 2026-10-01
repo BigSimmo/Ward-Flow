@@ -195,7 +195,7 @@ describe("48-Hour Bed Movement Horizon (Gantt Chart)", () => {
     expect(badge).toHaveTextContent("NOW (+0h)");
   });
 
-  it("toggles full-width Enlarge mode and restores split view", () => {
+  it("opens a modal timeline, retains corridors and restores focus on Escape", () => {
     renderMovementsScreen();
     const trafficPanel = screen.getByRole("region", { name: "Today’s traffic" });
     const enlargeBtn = within(trafficPanel).getByRole("button", { name: "Enlarge" });
@@ -204,15 +204,21 @@ describe("48-Hour Bed Movement Horizon (Gantt Chart)", () => {
     expect(within(trafficPanel).getByRole("complementary", { name: "Ranked corridors" })).toBeInTheDocument();
 
     // Click Enlarge
+    enlargeBtn.focus();
     fireEvent.click(enlargeBtn);
     expect(enlargeBtn).toHaveAttribute("aria-pressed", "true");
-    expect(enlargeBtn).toHaveTextContent("Normal view");
-    expect(within(trafficPanel).queryByRole("complementary", { name: "Ranked corridors" })).toBeNull();
+    expect(enlargeBtn).toHaveTextContent("Close full screen");
+    const dialog = screen.getByRole("dialog", { name: "Full screen movement timeline" });
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(within(dialog).getByRole("complementary", { name: "Ranked corridors" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Hide" })).toBeDisabled();
 
     // Restore
-    fireEvent.click(enlargeBtn);
+    fireEvent.keyDown(window, { key: "Escape" });
     expect(enlargeBtn).toHaveAttribute("aria-pressed", "false");
     expect(enlargeBtn).toHaveTextContent("Enlarge");
+    expect(enlargeBtn).toHaveFocus();
+    expect(screen.queryByRole("dialog", { name: "Full screen movement timeline" })).toBeNull();
     expect(within(trafficPanel).getByRole("complementary", { name: "Ranked corridors" })).toBeInTheDocument();
   });
 
@@ -234,7 +240,10 @@ describe("48-Hour Bed Movement Horizon (Gantt Chart)", () => {
     expect(drawer).toBeInTheDocument();
     // Owner, 26 Sept 2026: the drawer is titled by the patient's name, resolved from the seed register.
     const seed = seedWardFlowState();
-    const wf014 = resolveSubjectPatient(seed.movements.find((movement) => movement.id === "WF-014"), seed);
+    const wf014 = resolveSubjectPatient(
+      seed.movements.find((movement) => movement.id === "WF-014"),
+      seed,
+    );
     expect(within(drawer).getByRole("heading", { name: `${wf014.formalName} — what is recorded` })).toBeInTheDocument();
     expect(within(drawer).getByRole("heading", { name: "Person" })).toBeInTheDocument();
     expect(within(drawer).getByRole("heading", { name: "Journey" })).toBeInTheDocument();
@@ -267,7 +276,7 @@ describe("48-Hour Bed Movement Horizon (Gantt Chart)", () => {
     const trafficPanel = screen.getByRole("region", { name: "Today’s traffic" });
     const densityGroup = within(trafficPanel).getByRole("group", { name: "Row density" });
     const btnCompact = within(densityGroup).getByRole("button", { name: "Compact" });
-    const btnExpand = within(densityGroup).getByRole("button", { name: "Expand" });
+    const btnExpand = within(densityGroup).getByRole("button", { name: "Roomy" });
 
     // Defaults to compact
     expect(btnCompact).toHaveAttribute("aria-pressed", "true");

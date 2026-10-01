@@ -1,6 +1,7 @@
 "use client";
 
-import { useId, useState, type CSSProperties, type MouseEvent } from "react";
+import { useId, useRef, useState, type CSSProperties, type MouseEvent } from "react";
+import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
@@ -63,14 +64,14 @@ export const DENSITY_CONFIG: Record<HorizonDensity, DensitySettings> = {
     barHeight: 24,
     barGap: 4,
     barTop: 5,
-    fontSize: "11px",
+    fontSize: "var(--text-xs)",
     labelPadding: "4px 14px",
   },
   expanded: {
     barHeight: 36,
     barGap: 8,
     barTop: 8,
-    fontSize: "12px",
+    fontSize: "var(--text-xs)",
     labelPadding: "0 14px",
   },
 };
@@ -118,6 +119,8 @@ export function MovementHorizonGantt({
 
   const scrubberId = useId();
   const serviceFilterId = useId();
+  const horizonRef = useRef<HTMLDivElement>(null);
+  useWardModalFocus(isEnlarged, horizonRef, () => setIsEnlarged(false));
 
   // Handle zoom changes
   const handleZoomChange = (newZoom: ZoomHours) => {
@@ -139,6 +142,7 @@ export function MovementHorizonGantt({
 
   // Toggle enlarge
   const handleToggleEnlarge = () => {
+    setIsCollapsed(false);
     setIsEnlarged(!isEnlarged);
   };
 
@@ -183,9 +187,21 @@ export function MovementHorizonGantt({
   };
 
   const visibleLanes = lanes.filter((lane) => serviceFilter === "ALL" || lane.service === serviceFilter);
+  const selectMovement = (id: string) => {
+    setIsEnlarged(false);
+    onSelectMovement?.(id);
+  };
 
   return (
-    <div className={styles.horizonContainer} data-testid="ward-movement-horizon">
+    <div
+      ref={horizonRef}
+      className={`${styles.horizonContainer}${isEnlarged ? ` ${styles.fullscreen}` : ""}`}
+      data-testid="ward-movement-horizon"
+      role={isEnlarged ? "dialog" : undefined}
+      aria-modal={isEnlarged ? true : undefined}
+      aria-label={isEnlarged ? "Full screen movement timeline" : undefined}
+      tabIndex={isEnlarged ? -1 : undefined}
+    >
       {/* Panel SubHeader / Toolbar */}
       <div className={styles.panelSubHeader}>
         <div className={styles.phScopeInfo}>
@@ -238,7 +254,7 @@ export function MovementHorizonGantt({
               title="Expanded row height"
               onClick={() => setDensity("expanded")}
             >
-              Expand
+              Roomy
             </button>
           </div>
 
@@ -262,9 +278,9 @@ export function MovementHorizonGantt({
             id="enlargeHorizonGantt"
             aria-pressed={isEnlarged}
             onClick={handleToggleEnlarge}
-            title="Toggle full-width horizon"
+            title={isEnlarged ? "Close full screen timeline (Esc)" : "Open full screen timeline"}
           >
-            {isEnlarged ? "Normal view" : "Enlarge"}
+            {isEnlarged ? "Close full screen" : "Enlarge"}
           </button>
           <button
             type="button"
@@ -272,6 +288,7 @@ export function MovementHorizonGantt({
             id="toggleHorizonDiagram"
             aria-controls="horizonDiagramArea"
             aria-expanded={!isCollapsed}
+            disabled={isEnlarged}
             onClick={() => setIsCollapsed(!isCollapsed)}
           >
             {isCollapsed ? "Show" : "Hide"}
@@ -280,7 +297,7 @@ export function MovementHorizonGantt({
       </div>
 
       {!isCollapsed && (
-        <div id="horizonDiagramArea">
+        <div id="horizonDiagramArea" className={styles.diagramArea}>
           {/* Controls Bar (Scrubber) */}
           <div className={styles.ganttControlsBar}>
             <div className={styles.ganttScrubberWrap}>
@@ -364,17 +381,12 @@ export function MovementHorizonGantt({
                   <div
                     className={styles.ganttCursor}
                     style={{
-                      left: `calc(220px + (100% - 220px) * ${cursorFraction})`,
+                      left: `calc(var(--horizon-ward-width) + (100% - var(--horizon-ward-width)) * ${cursorFraction})`,
                     }}
                     aria-hidden="true"
                   >
                     <div className={styles.ganttCursorPin} />
-                    <div
-                      className={styles.ganttCursorTime}
-                      style={scrub === 0 ? { left: "0", transform: "none" } : undefined}
-                    >
-                      {scrub === 0 ? `NOW ${formatInstant(now)}` : `+${scrub}h`}
-                    </div>
+                    {scrub > 0 && <div className={styles.ganttCursorTime}>+{scrub}h</div>}
                   </div>
 
                   {/* Header Row */}
@@ -416,7 +428,7 @@ export function MovementHorizonGantt({
                         <div
                           key={lane.id}
                           className={styles.ganttLaneRow}
-                          style={{ height: `${trackHeight}px`, minHeight: `${trackHeight}px` } as CSSProperties}
+                          style={{ height: `${trackHeight}px` } as CSSProperties}
                         >
                           <div
                             className={styles.ganttLaneLabel}
@@ -476,11 +488,11 @@ export function MovementHorizonGantt({
                                   tabIndex={0}
                                   role="button"
                                   aria-label={`${barPatientName(ev)}, ${ev.title}: ${ev.origin} to ${ev.dest}${ev.carrier ? `, ${ev.carrier}` : ""}${ev.bed ? `, ${ev.bed}` : ""}`}
-                                  onClick={() => onSelectMovement?.(ev.id)}
+                                  onClick={() => selectMovement(ev.id)}
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter" || e.key === " ") {
                                       e.preventDefault();
-                                      onSelectMovement?.(ev.id);
+                                      selectMovement(ev.id);
                                     }
                                   }}
                                   onMouseMove={(e) => handleMouseMove(e, ev)}
@@ -509,42 +521,12 @@ export function MovementHorizonGantt({
 
               {/* Diagram Footer */}
               <div className={styles.diagFoot}>
-                <span className={styles.diagScope}>
-                  48-Hour Bed Movement Horizon · Click any event bar to select in worklist
-                </span>
-                <div className={styles.ganttLegend} aria-label="Event Key">
-                  <span className={styles.legendTitle}>Key:</span>
-                  <div className={styles.ganttLegendItem}>
-                    <span className={`${styles.ganttSwatch} ${styles.swatchAdmit}`} aria-hidden="true" />
-                    <span>Admit</span>
-                  </div>
-                  <div className={styles.ganttLegendItem}>
-                    <span className={`${styles.ganttSwatch} ${styles.swatchTransit}`} aria-hidden="true" />
-                    <span>Transit</span>
-                  </div>
-                  <div className={styles.ganttLegendItem}>
-                    <span className={`${styles.ganttSwatch} ${styles.swatchLeave}`} aria-hidden="true" />
-                    <span>Leave Return</span>
-                  </div>
-                  <div className={styles.ganttLegendItem}>
-                    <span className={`${styles.ganttSwatch} ${styles.swatchDisch}`} aria-hidden="true" />
-                    <span>Discharge</span>
-                  </div>
-                  <div className={styles.ganttLegendItem}>
-                    <span className={`${styles.ganttSwatch} ${styles.swatchPred}`} aria-hidden="true" />
-                    <span>Predicted</span>
-                  </div>
-                  <div className={styles.ganttLegendItem}>
-                    <span className={`${styles.ganttSwatch} ${styles.swatchDelay}`} aria-hidden="true" />
-                    <span>Delay</span>
-                  </div>
-                </div>
-                <span className={styles.schematic}>Statewide mental health bed churn</span>
+                <span className={styles.diagScope}>Select a movement to open its record.</span>
               </div>
             </div>
 
-            {/* Side Corridor Rail (Hidden when enlarged) */}
-            {!isEnlarged && (
+            {/* Side Corridor Rail */}
+            {
               <aside className={styles.corridorRail} aria-label="Ranked corridors">
                 <div className={styles.corridorRailHeader}>
                   <h3>Corridors</h3>
@@ -615,7 +597,7 @@ export function MovementHorizonGantt({
                   <p className={styles.stripNote}>Declines have no journey stage of their own.</p>
                 )}
               </aside>
-            )}
+            }
           </div>
         </div>
       )}
