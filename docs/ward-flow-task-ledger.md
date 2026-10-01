@@ -7864,3 +7864,15 @@ Perform an exhaustive, meticulous audit of all 41 routes and every interactive c
 - `tests/ward-alerts-screen.dom.test.tsx` & `tests/ward-statistics-community-provenance.dom.test.tsx` (10/10 passed)
 - `npm run typecheck` (zero TypeScript errors across the repository)
 - Zero uncommitted code drift, working tree clean, local ward line only.
+
+## WF-RULES-20261002 — stale rules review and repair, 2 October 2026
+
+Owning project: Ward Flow; repository `BigSimmo/Ward-Flow`. Branch `codex/chat-ward-rules-repair-7a69`, accepted local-main base `981a4a8a52e0c235b888e4c9470c94c34808cf33`.
+
+Status: In progress; local implementation and verification. The current accepted app design is preserved. No application API, engine, clinical, storage, scheduling or visual changes.
+
+Implemented: current appearance authority in active guidance; historical-spec and engine-audit notices; origin/main selector defaults with missing-ref failure; central decisions indexed with provenance; bounded screen hashes and optional checked revision; route coverage and parsed SSR safeguards; isolated ownership tests; repository-only historical lesson indexing; dated hosting/CI claims. Josh approved both exact-file documentation/tooling takeovers; other owners' work is preserved.
+
+Evidence: [canonical checkpoint](ward-flow/plans/2026-10-02-rules-repair.md). Focused batches passed 12, 181 and 83 tests (the last reruns the landmark checks). Generated owner index passes structurally; browser and hosted state are unverified. Final normal hooks and local receipt export remain pending. Unsubstantiated scroll-mask performance and timestamp-collision allegations are deferred.
+
+Next action: finish local checks and commit, then export the sanitised receipt for canonical reconciliation. No main integration, push, PR, deployment, provider action or Notion delivery is authorised by this task. Last verified: 2 October 2026, offline evidence only.

@@ -47,7 +47,9 @@ export function drawingStatus(verified, manifestHash) {
   if (verified === null || verified === undefined) return "NOT YET LOOKED AT";
   if (!verified.mockupSha256) return "UNAGEABLE - no hash recorded";
   if (manifestHash === null) return "MANIFEST NOT AVAILABLE";
-  return manifestHash === verified.mockupSha256 ? "DRAWING UNCHANGED since look" : "🔴 STALE - the drawing changed since";
+  return manifestHash === verified.mockupSha256
+    ? "DRAWING UNCHANGED since look"
+    : "🔴 STALE - the drawing changed since";
 }
 
 function walk(dir) {
@@ -59,8 +61,11 @@ function walk(dir) {
 }
 
 /**
- * Every source file that makes up a screen's BUILT implementation: the whole component folder
- * plus its page file. Read `scripts/ward-flow/screen-pairs.mjs` before calling this for a
+ * Bounded local implementation inputs: the mapped component folder plus its page file.
+ * This is NOT a transitive dependency hash: it excludes shared shell, imported primitives,
+ * global CSS, dependencies and runtime flags. A matching hash cannot prove whole-screen freshness.
+ * Record the actual checked revision and dirty inputs alongside the browser evidence.
+ * Read `scripts/ward-flow/screen-pairs.mjs` before calling this for a
  * mockup not already in the roster — `folder` and `route` come from there, and the folder for
  * one roster row (`sign-in-third-edition.html`) is the relative escape `"../ward-flow-sign-in"`,
  * deliberately outside `ward-management/`.

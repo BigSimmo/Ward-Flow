@@ -1,4 +1,5 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -112,6 +113,13 @@ describe("implementationStatus", () => {
 });
 
 describe("implementationFiles", () => {
+  it("does not imply whole-screen freshness when shared shell or global styles change", () => {
+    const files = implementationFiles(repositoryRoot, "capacity", "/mockups/ward-flow/capacity");
+    const relativePaths = files.map((file) => path.relative(repositoryRoot, file).split(path.sep).join("/"));
+    expect(relativePaths).toContain("src/app/mockups/ward-flow/capacity/page.tsx");
+    expect(relativePaths).not.toContain("src/app/globals.css");
+    expect(relativePaths.some((file) => file.startsWith("src/components/ward-management/shell/"))).toBe(false);
+  });
   it("resolves a /mockups/-prefixed route under src/app<route>/page.tsx", () => {
     const dir = tempDir("wf-lib-files-");
     try {
@@ -178,5 +186,38 @@ describe("implementationFiles", () => {
     const files = implementationFiles(repositoryRoot, folder, route);
     const relativePaths = files.map((f) => path.relative(repositoryRoot, f).split(path.sep).join("/"));
     expect(relativePaths).toContain("src/components/ward-management/statistics/statistics-ward-screen.tsx");
+  });
+});
+
+describe("screen verification checked revision", () => {
+  it("retains missing historical revisions, renders recorded revisions and rejects malformed values", () => {
+    const dir = tempDir("wf-verification-revision-");
+    const docs = path.join(dir, "docs/ward-flow");
+    const script = path.join(repositoryRoot, "scripts/ward-flow/screen-verification.mjs");
+    const run = (...args: string[]) => spawnSync(process.execPath, [script, ...args], { cwd: dir, encoding: "utf8" });
+    try {
+      mkdirSync(docs, { recursive: true });
+      const record = JSON.parse(
+        readFileSync(path.join(repositoryRoot, "docs/ward-flow/screen-verification.json"), "utf8"),
+      );
+      const jsonPath = path.join(docs, "screen-verification.json");
+      const checkedRevision = "a".repeat(40);
+      record.screens[0].verified.checkedRevision = checkedRevision;
+      writeFileSync(jsonPath, JSON.stringify(record));
+      const result = run();
+      expect(result.status, result.stderr).toBe(0);
+      const output = readFileSync(path.join(docs, "SCREEN-VERIFICATION.md"), "utf8");
+      expect(output).toContain(checkedRevision);
+      expect(output).toContain("not recorded");
+      expect(output).toContain("excluding shared shell");
+      expect(run("--check").status).toBe(0);
+      record.screens[0].verified.checkedRevision = "not-a-commit";
+      writeFileSync(jsonPath, JSON.stringify(record));
+      const invalid = run("--check");
+      expect(invalid.status).toBe(1);
+      expect(invalid.stderr).toContain('"checkedRevision" must be a full 40-character commit SHA');
+    } finally {
+      cleanup(dir);
+    }
   });
 });

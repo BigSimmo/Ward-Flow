@@ -8,9 +8,9 @@ A ward and bed-coordination prototype for mental health services: referrals, pat
 
 [Open Ward Flow](https://ward-flow-production.up.railway.app/).
 
-Railway hosts this repository in a separate **Ward Flow** project, connected to `main`. See [hosting and database decisions](docs/hosting.md) for configuration and limitations.
+The 27 September 2026 hosting record describes a separate **Ward Flow** Railway project connected to `main`. Its current hosted state was not rechecked in the 2 October documentation repair. See [hosting and database decisions](docs/hosting.md) for the dated configuration and limitations.
 
-**Ward Flow must not connect to Supabase. Azure is the intended future database platform.** No Azure database has been provisioned or connected; the current prototype uses browser-local synthetic state.
+**Ward Flow must not connect to Supabase. Azure is the intended backend platform.** The UI uses browser-local synthetic state; the separate backend work is documented in [the backend guide](backend/ward-flow/README.md). Local source does not prove hosted provisioning, credentials or connectivity.
 
 ## About this repository
 
@@ -37,9 +37,9 @@ Use the URL printed by the launcher and open `/mockups/ward-flow`. Ward Flow use
 
 This upload preserves the current project; it does not claim a fresh build or test pass. Existing scripts, historical documents and local workflow instructions may still refer to the original workstation, local-only development policy or retired PsychSift tooling. Those references do not connect this repository to the original deployment.
 
-GitHub Actions remains disabled because the inherited workflow still includes unrelated provider and deployment checks. Railway deployment is a separate GitHub integration. Do not enable inherited automation without adapting and reviewing it for this repository. No database connection has been configured.
+The upload record reported GitHub Actions disabled on 27 September 2026. By the 2 October local inspection, this repository includes a dedicated Ward Flow CI workflow; hosted enablement and run status were not checked. Railway deployment was documented as a separate GitHub integration. Do not enable inherited automation without adapting and reviewing it for this repository.
 
-Git history, uncommitted work from other sessions, local environment files, installed dependencies, build output and machine-specific agent/editor configuration were not uploaded. All retained original files except this README are unchanged from the recorded source snapshot; the original README is preserved above.
+The 27 September upload excluded Git history, uncommitted work from other sessions, local environment files, installed dependencies, build output and machine-specific agent/editor configuration. Later commits have changed the source snapshot; inspect this repository's history for the current revision. The original source README remains linked above.
 
 ## Licence
 
