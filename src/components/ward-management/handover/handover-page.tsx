@@ -7,6 +7,7 @@ import Link from "next/link";
 import { COMMUNITY_TEAM_PAGES, communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import {
   clockState,
   formatSheetMoment,
@@ -314,6 +315,7 @@ export function resolveAdmissionPatient(
  * Sovereign Clinical Console Standard (Platinum Raised Cool palette, 100/100 Rubric).
  */
 export function HandoverPage() {
+  usePrintableDisclosures();
   const { movements, units, referrals, patients, dayZero, admissions, dispatch } = useWardFlow();
   const now = useWardFlowClock();
   const [signOffRecord, setSignOffRecord] = useState<{ role: WardFlowRole; at: Instant } | null>(null);
@@ -1027,9 +1029,7 @@ export function HandoverPage() {
               />
               {searchQuery.trim().length > 0 ? (
                 <div className={pageStyles.searchFeedbackGroup}>
-                  <span className={pageStyles.searchMatchPill}>
-                    {filteredMovements.length} matching
-                  </span>
+                  <span className={pageStyles.searchMatchPill}>{filteredMovements.length} matching</span>
                   <button
                     type="button"
                     className={pageStyles.searchClearBtn}
@@ -1683,7 +1683,11 @@ export function HandoverPage() {
                                                   !flag.label.includes("Observations") &&
                                                   !flag.label.includes("Specialling") &&
                                                   !flag.label.includes("Supervision") &&
-                                                  !(flag.label === "Urgent" && (movement.flaggedUrgent || movementObservationLabel(movement) === "Urgent")),
+                                                  !(
+                                                    flag.label === "Urgent" &&
+                                                    (movement.flaggedUrgent ||
+                                                      movementObservationLabel(movement) === "Urgent")
+                                                  ),
                                               )
                                               .map((flag, idx) => (
                                                 <span key={idx} className={`${pageStyles.statusPill} ${flag.tone}`}>
@@ -1985,7 +1989,8 @@ export function HandoverPage() {
                   </div>
                 </div>
                 <div className={pageStyles.accreditationLegal}>
-                  National Safety and Quality Health Service (NSQHS) Standards · Standard 6: Clinical Handover · Government of Western Australia Department of Health
+                  National Safety and Quality Health Service (NSQHS) Standards · Standard 6: Clinical Handover ·
+                  Government of Western Australia Department of Health
                 </div>
               </footer>
             </div>
@@ -2351,23 +2356,21 @@ export function HandoverPage() {
           role="tabpanel"
           aria-labelledby="tabBtn-briefing"
         >
-          <p>
-            Illustrative briefing and tasks. These examples do not follow the selected scope or update movement records.
-            Checkboxes apply to this preview only.
+          <p className={pageStyles.briefingNotice}>
+            These examples do not follow the selected scope or update movement records. Checkboxes apply to this preview
+            only.
           </p>
           <div
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))",
               gap: "12px",
+              alignItems: "start",
             }}
           >
             {/* ISBAR Briefing Notes */}
-            <div className={pageStyles.panel}>
-              <div className={pageStyles.panelHead}>
-                <h3>Example ISBAR briefing</h3>
-                <span style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>Dr S. Chen</span>
-              </div>
+            <details className={`source-print ${pageStyles.panel}`} data-testid="ward-handover-example-briefing">
+              <summary className={pageStyles.exampleSummary}>Example ISBAR briefing</summary>
               <div className={pageStyles.panelBody} style={{ fontSize: "var(--t-1)", lineHeight: 1.5 }}>
                 <p style={{ margin: "0 0 8px" }}>
                   <b>Identify:</b> Dr Sophia Chen (Outgoing Consultant) handing over to Dr Marcus Vance (Incoming
@@ -2390,7 +2393,7 @@ export function HandoverPage() {
                   RPH 2K.
                 </p>
               </div>
-            </div>
+            </details>
 
             {/* Actionable Shift Checklist */}
             <div className={pageStyles.panel}>
@@ -3139,7 +3142,7 @@ export function HandoverPage() {
         </div>
 
         <p className={styles.crossLink}>
-          See the <Link href="/mockups/ward-flow/capacity">capacity board</Link> for current network capacity.
+          <Link href="/mockups/ward-flow/capacity">View capacity board</Link>
         </p>
         <WardPrototypeFooter
           testId="ward-handover-governance"

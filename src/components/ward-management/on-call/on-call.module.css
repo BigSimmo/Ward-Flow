@@ -231,8 +231,7 @@
 }
 
 .actionBtn {
-  height: 1.75rem;
-  min-height: 1.75rem;
+  min-height: var(--ward-tap, 3rem);
   padding: 0 10px;
   border-radius: var(--r2);
   font-size: var(--t-0);
@@ -592,10 +591,8 @@
 .sectionHeading {
   margin: 0;
   color: var(--text-heading);
-  font-size: var(--t-2);
+  font-size: var(--t-4);
   font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 .sectionSubtitle {

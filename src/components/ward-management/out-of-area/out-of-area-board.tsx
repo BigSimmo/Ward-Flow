@@ -951,8 +951,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                         <line x1="12" y1="8" x2="12.01" y2="8" />
                       </svg>
                       <p className={pageStyles.defaultPromptText}>
-                        Select any inpatient row to review individual transfer assessment, receiving unit requirements,
-                        or execute a repatriation order.
+                        Select an inpatient to review their transfer requirements or start repatriation.
                       </p>
                     </div>
 
