@@ -1,73 +1,109 @@
 # Ward Flow polish: 34 screens
 
 Task/source identity: `BigSimmo/Ward-Flow:polish-34-screens-20261002`.
-Coordinator: `codex/chat-polish-34-screens-6c8b` in the Codex 6c8b worktree.
-Base: local main `981a4a8a52e0c235b888e4c9470c94c34808cf33`.
-Status: In progress. Local Fast Preview; no publication, main integration or deployment.
+Coordinator: `codex/chat-polish-34-screens-6c8b` in
+`C:/Users/joshs/.codex/worktrees/6c8b/Ward-Flow`.
+Base: verified local main `981a4a8a52e0c235b888e4c9470c94c34808cf33`.
+App HEAD: `530dc67`. Status: **Needs you** for one exact CSS ownership overlap.
+Last verified: 2026-10-01T23:12:01.856Z.
+Local Fast Preview only; no main integration, publication or deployment.
 
 ## Agreed outcome
 
 Polish all 34 application designs except Discharge Board, Referral Board and Community
 Directory. Include New Referral, Community Hub and Community Statistics. Exclude the
-optional showcase. Preserve the current identity, behavior, clinical/legal meaning,
-synthetic provenance, privacy and access boundaries. Remove redundant explanatory prose.
-Replacement concepts are separate local artifacts only, presented together at the end;
-never apply them to working pages during this task. Continue autonomously.
+optional showcase. Preserve identity, working features, calculations, clinical/legal
+meaning, permissions, persistence and synthetic-data boundaries. Remove redundant prose;
+retain metric definitions, scope, provenance and essential notices.
+Replacement concepts stay separate, are presented together at the end, and are never
+applied to working pages during this task. Desktop acceptance uses **1920 x 1080 viewport
+captures only**; earlier 1440/full-page images are preliminary and excluded.
 
-## Ownership and order
+## Coverage and ownership
 
-| Batch                                  | Owner/branch                                  | State       | Acceptance                                                                                                             |
-| -------------------------------------- | --------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Reporting: seven designs               | reporting / `codex/polish-reporting-20261002` | In progress | Compact truthful reporting; no fabricated history; focused regression and rendered checks                              |
-| Patients/intake: five designs          | patients / `codex/polish-patients-20261002`   | In progress | Search, both patient views, Add Patient and New Referral polished; privacy and form gates retained                     |
-| Services: six designs                  | services / `codex/polish-services-20261002`   | In progress | Ward directory/hub/answer/board, ED and Community Hub polished; availability and response meaning retained             |
-| Access/preferences: two designs        | coordinator                                   | Next        | Sign-in simulation clear; Settings imports fully validated; existing persistence retained                              |
-| Operational overview: four designs     | worker wave 2                                 | Next        | Command, Capacity, Network and Service Search polished; supported scope/navigation retained                            |
-| Movement/transport: three designs      | worker wave 2                                 | Next        | Board/workspace/Transport Hub polished; inspect committed movement recovery first                                      |
-| Coordination/governance: seven designs | worker wave 2                                 | Next        | Delay, handover, alerts, on-call, out-of-area, legal and governance polished; accepted/refused alert feedback truthful |
+| Batch                   | Designs                                                                        | Result                                                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| Access/preferences      | Sign In, Settings                                                              | Polished; imports validated; visible feedback and honest role preview                                                 |
+| Operational overview    | Command, Capacity, Network, Service Search                                     | Polished; current-state meaning preserved                                                                             |
+| Movement/transport      | Movement Board, Movement Workspace, Transport Hub                              | Polished; enlarged timeline/focus recovery retained; mobile chips wrap                                                |
+| Services                | Ward Directory, Ward Hub, Ward Response, Ward Bed Board, ED Hub, Community Hub | Reviewed; response header overlap and Community dark notice repaired; Community spacing commit awaits exact ownership |
+| Patients/intake         | Patient Search, Patient Overview, Governed Record, Add Patient, New Referral   | Polished; malformed IDs and unknown-record recovery preserved; lower actions checked                                  |
+| Coordination/governance | Delays, Handover, Alerts, On-Call, Out-of-Area, Legal, Governance              | Polished; accepted/refused feedback follows scope/state; examples disclosed; empty-state claims corrected             |
+| Reporting               | Dashboard, Statewide, Comparison, Service, Ward, ED, Community                 | Polished; invented history removed; comparison scale/hydration repaired                                               |
 
-## Coordination rulings
+Three concurrent screen workers used disjoint main-derived branches. Coordinator applied
+scoped patches and owned shared styles, Git and records. Completed worker units:
+`c60b1eb`, `bcbcf24`, `5bacbf4`, `409fac3`, `17be650`, `c19acd4`,
+`841cd925`, `1f7a14e`. Recovery `ffd61d2` inspected before movement work.
+Both remote destinations were verified as `BigSimmo/Ward-Flow`; history anchor and base
+were checked. Task bootstrap ran once; exact-lock dependencies belong to this repository.
 
-- Independent editing threads use separate main-derived worktrees under repository rules.
-  Coordinator applies reviewed scoped patches to this task branch; no branch merge/rebase.
-- Shared shell, generated records and Git operations have one coordinator owner.
-- Statistics shared CSS is single-owner; patient default/governed route is single-owner.
-- Community detail is included, directory excluded. Referral intake included, board excluded.
-- Existing paused candidates remain recoverable; none is automatically adopted wholesale.
-- Existing source is reused. No new backend, public APIs, identity flow, provider, dependency
-  or security-policy change. New tests cover actual corrected behavior rather than styling.
+## Saved implementation and remaining overlap
 
-## Evidence and next step
+Coordinator commits: `7493135` guard repair, `cb75d91` access/settings/alerts,
+`e44e1bb` workspaces/comparison, `e8cf2f7` reporting, `e4dd9f7` readability,
+`a480278` hydration/unavailable controls/print, `530dc67` honest contrast target.
+All normal commit hooks passed. No hook bypass, reset, clean, rebase, push or provider call.
 
-Setup verified dedicated fetch/push remotes, clean source and main base; Node 24.19.0/npm
-11.17.0. Dependencies reused by supported setup with exact lock parity. Last verified
-baseline preview: port 3174, clean `ag-hud-fold` root at base. Separate movement-recovery
-preview: port 3787, a42c root at `ffd61d2`; not the integrated candidate.
+Fresh shared-signout probes cleared released movement/statistics/generated-map claims.
+Only `src/components/ward-management/community/community.module.css` remains blocked by
+`ward/ag-community-v2-elevation`: three already prepared spacing declarations at the
+content workspace/governance panel. Do not commit or further edit that file without its
+owner's release or Josh's scoped takeover approval. Preserve the existing local candidate.
+The original ownership question is unanswered; silence is not approval. Shared legal-notice
+CSS was separately clear and its dark contrast repair is committed.
 
-Checkpoint: guard repair `7493135` independently reviewed and regression checked. Reporting
-`c60b1eb` (162 focused tests/typecheck), services `5bacbf4` (96 tests), movement `409fac3`
-(31 tests), patient recovery `17be650` and patient polish in progress (135 focused tests).
-Those are worker evidence, not final combined-candidate acceptance. Desktop reviews use
-**1920 x 1080 viewport captures only** following the user's correction; prior smaller/full-page
-images are preliminary and excluded from desktop acceptance.
+## Decisive local evidence
 
-Reporting/service patches are preserved staged in the coordinator; combined commit was
-blocked by new concurrent migration-restoration claims at sign-out lines709/719. Scoped user
-approval is pending for seven statistics TSX files, Community CSS and movement-board CSS.
-Other owner worktrees are intact. Settings imports now reuse complete validation and visibly
-render feedback (previous toast state had no markup); seven import regressions pass. Sign-in
-copy no longer claims authentication or shows drawing filenames; focused assertion update
-pending. Actual screens remain ordinary refinements; no replacement concept has been applied.
+- Fresh `npm run ensure`: **http://localhost:3302**. API project
+  `clinical-kb:3eb35f2e4a07`, own PID47396, exact implementation worktree verified.
+  Earlier owned PID37260 stopped after control/compile stalls; unrelated servers untouched.
+- Final focused Vitest: **19 files, 233 tests passed**, maxWorkers1. Includes imports,
+  broadcasts/reset, sign-in, handover, movement, patient recovery, statistics, primary
+  actions, signout/pre-commit guards and print coverage. Exact command recorded by the
+  repository gate receipt. Latest full `gate-tsc` (tsconfig.typecheck.json): exit0 in9s.
+- Desktop: 34 included + three excluded regression routes, 37 HTTP200, no page errors or
+  document horizontal overflow in the initial source-bound pass; all34 original pixels
+  inspected by coordinator/workers. Targeted fresh checks replace affected initial evidence.
+- Final actions: selected-scope broadcast/reset, Settings invalid import/draft/save,
+  inert role preview, timeline dialog Tab/Escape/focus return, Handover disclosure,
+  relevant lower forms/records and fixed response-header scrolling checked.
+- Comparison final browser: all22 bars within actual range, keyboard focus and **no
+  hydration error**. Patient lower pane retargeted after an initial capture hit navigation.
+  Search inspector and Delays real shell lower content recaptured and inspected.
+- All34 phone routes checked at390x844 with no document horizontal overflow. Affected
+  phone controls and layout representatives inspected; shared-style regressions checked
+  on allthree excluded routes. Six desktop dark representatives inspected. Community
+  legal notice measured **5.496:1** against its actual dark background, previously2.810:1.
+- `screen-map.mjs --check` and `screen-verification.mjs --check`: current, no hard/structural
+  problems. Canonical record updated for32 included contract screens; patient governed
+  view and Movement Workspace are additional checked designs. Prior verification preserved.
+  Latest app review records deliberate adaptation, not new literal drawing equality.
 
-Coordinator `ensure` verified3302/project3eb35f2e4a07/PID37260. This task-owned server was
-stopped after repeated compile/control timeouts to release memory; fresh ensure/identity are
-required before final preview. Baseline3174 belongs to clean `ag-hud-fold` at981a4a8,
-identity98f1cf4a6cc2/PID36996; unrelated servers were not stopped. CUA control failed repeatedly;
-bounded local automated Chrome visual harnesses are used with synthetic fixtures. Patient
-record-only governed fixture is PT-001; movement fixtureWF-009 is default-view only.
+Primary evidence directory: `D:/Temp/ward-polish-34-20261002/`.
+Receipts: `final-desktop-1920`, `final-desktop-sections-1920`,
+`final-actions-responsive`, `final-targeted-recheck`, `final-last-recheck`,
+`settings-copy-final`, `concepts-1920`. Each executed browser run closes its owned browser;
+app runs verify source unchanged. Local-only requests and synthetic fixtures are enforced.
 
-Next: finish independent operational/coordination/access polish, integrate released reviewed
-patches, resolve the scoped ownership question, then fresh combined1920visual/actions and
-selected offline gates. No main integration, publication or deployment authority.
-Private worker reports/evidence: `%TEMP%/ward-polish-34-20261002/`.
-Canonical receipt reconciliation: unsynced; prepare the existing local receipt bridge.
+Resolved failures remain in evidence: wrong scroll target/capture gaps; unsupported browser
+role selector; pre-commit test timeout passed alone and in final233; normal lint ref-read
+failure moved measurement to event handlers; stale generated map regenerated after release;
+disabled hover cascade corrected; split SVG title hydration corrected; existing unreset
+HUD print selectors repaired and print guard12 passed. Never report these failed runs as green.
+CUA control repeatedly timed out, so purpose-built installed-Chrome local harnesses supplied
+browser evidence. Old IAB tabs could not be controlled/closed; no unrelated browser was killed.
+
+## Separate concepts and limits
+
+Two isolated HTML artifacts in the task visualizations directory: role selection and
+horizontal comparison. Localfile1920 browser checks and independent pixel review passed;
+role interaction is inert and comparison values are explicitly illustrative. No app adoption.
+Long comparison names, physical devices, exhaustive states, printed browser appearance,
+backend/provider/hosted behaviour and release readiness are unverified. No measured token
+or time savings claimed. Browser emulation is not physical-device evidence.
+
+Next exact action: obtain release/scoped takeover for the sole Community CSS file, then
+commit its three prepared spacing declarations with normal hooks. No other worktree/main
+writes. Refresh only relevant evidence if those declarations change. Existing local receipt
+bridge prepared for this original task; canonical Notion reconciliation remains unsynced.
