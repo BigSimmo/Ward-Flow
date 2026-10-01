@@ -40,7 +40,6 @@ import type {
   Unit,
 } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
-import { edPressure } from "@/components/ward-management/ward-pressure";
 import {
   candidateAccepts,
   groupCandidatesByTravelBand,
@@ -539,15 +538,6 @@ export function WardNetworkWorkspace() {
   const [view, setView] = useState<NetworkView>("overview");
   const [selectedEdId, setSelectedEdId] = useState<string | undefined>();
   const [selectedUnitId, setSelectedUnitId] = useState<string | undefined>();
-  const pressureServiceContext = useMemo(
-    () =>
-      edPressure(now, movements).map(({ ed }) => ({
-        id: ed.id,
-        code: ed.siteCode,
-        service: siteByCode(ed.siteCode)?.service ?? "Health service not recorded",
-      })),
-    [movements, now],
-  );
 
   function onViewTabsKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
     const order: NetworkView[] = ["overview", "placement"];
@@ -569,8 +559,7 @@ export function WardNetworkWorkspace() {
     <div className={thirdEdition.networkRoute}>
       <div className={thirdEdition.governanceBanner} data-testid="ward-network-governance">
         <p data-ward-type-floor="banner">
-          Synthetic network records. All figures, bed statuses and hospital sites are prototype demonstration data.{" "}
-          <strong>Not a medical device.</strong>
+          Synthetic network figures and bed statuses. <strong>Not a medical device.</strong>
         </p>
       </div>
 
@@ -613,15 +602,7 @@ export function WardNetworkWorkspace() {
       >
         <div className={thirdEdition.pressureFrame}>
           <PressureStrip now={now} movements={movements} selectedEdId={selectedEdId} onSelectEd={setSelectedEdId} />
-          <div className={thirdEdition.pressureContext} aria-label="Emergency department service context">
-            <ul>
-              {pressureServiceContext.map((item) => (
-                <li key={item.id}>
-                  <strong>{item.code}</strong>
-                  <span>{item.service}</span>
-                </li>
-              ))}
-            </ul>
+          <div className={thirdEdition.pressureContext}>
             <p>No common deadline scale, because these departments don&apos;t share one.</p>
           </div>
         </div>
