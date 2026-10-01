@@ -24,6 +24,7 @@
 // exactly one square. A map built on `NetworkWardRow.ready` could one day draw more squares than a
 // ward has beds, or fewer, the moment a future feed lets `allocatable` exceed `empty`.
 import { useState, useRef, useEffect, useCallback } from "react";
+import { createBrowserStore } from "@/lib/client-store-factory";
 import { unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { siteByCode } from "@/components/ward-management/ward-sites";
@@ -306,6 +307,8 @@ function WardBlock({
   return (
     <div
       ref={cardRef}
+      tabIndex={-1}
+      data-unit-id={ward.unit.id}
       className={styles.wardBlock}
       data-selected={selectedUnitId === ward.unit.id || undefined}
       data-interactive={Boolean(onSelectWard) || undefined}
@@ -334,37 +337,72 @@ function WardBlock({
           </span>
         </div>
 
-        {/* Elevated Status Chips */}
-        <div className={styles.statusChipsRow}>
+        <div className={styles.wardAvailability}>
           {ward.ready > 0 ? (
             <span className={styles.chipReady}>
               <span className={styles.statusDotReady} aria-hidden="true" />
-              {countCellText(ward.ready)} ready
+              <strong>{countCellText(ward.ready)}</strong> ready
             </span>
           ) : (
             <span className={styles.chipZero}>none ready</span>
           )}
-
+          <span className={styles.chipOccupied}>{countCellText(ward.occupied)} occupied</span>
+        </div>
+        <div className={styles.statusChipsRow}>
           {ward.pendingPreparation > 0 ? (
             <span className={styles.chipTurnover} title={`${ward.pendingPreparation} still being made ready`}>
-              <span aria-hidden="true">⚙</span> {ward.pendingPreparation} turnover
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                aria-hidden="true"
+              >
+                <path d="M20 7v5h-5M4 17v-5h5" />
+                <path d="M6 7a7 7 0 0 1 12-1l2 6M18 17a7 7 0 0 1-12 1l-2-6" />
+              </svg>{" "}
+              {ward.pendingPreparation} turnover
               <span className={styles.srOnly}> ({ward.pendingPreparation} still being made ready)</span>
             </span>
           ) : null}
 
           {ward.held > 0 ? (
             <span className={styles.chipHeld}>
-              <span aria-hidden="true">🔒</span> {countCellText(ward.held)} held
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                aria-hidden="true"
+              >
+                <rect x="5" y="10" width="14" height="11" rx="2" />
+                <path d="M8 10V6a4 4 0 0 1 8 0v4M12 14v3" />
+              </svg>{" "}
+              {countCellText(ward.held)} held
             </span>
           ) : null}
 
           {ward.blocked > 0 ? (
             <span className={styles.chipBlocked}>
-              <span aria-hidden="true">✕</span> {countCellText(ward.blocked)} blocked
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <path d="m6 6 12 12" />
+              </svg>{" "}
+              {countCellText(ward.blocked)} blocked
             </span>
           ) : null}
-
-          <span className={styles.chipOccupied}>{countCellText(ward.occupied)} occupied</span>
         </div>
       </div>
 
@@ -438,6 +476,7 @@ function WardBlock({
                     role="img"
                     tabIndex={0}
                     aria-label={squareLabel(square)}
+                    aria-describedby={hoveredBed?.index === index ? `bed-map-tooltip-${ward.unit.id}` : undefined}
                     data-testid={`ward-bed-map-square-${ward.unit.id}`}
                     data-bed-map-state={square.state}
                     data-bed-map-preparing={square.preparing ? "true" : undefined}
@@ -496,6 +535,7 @@ function WardBlock({
         <div
           className={styles.tooltipFloating}
           role="tooltip"
+          id={`bed-map-tooltip-${ward.unit.id}`}
           style={{
             left: `${hoveredBed.x}px`,
             top: `${hoveredBed.y}px`,
@@ -526,15 +566,17 @@ function WardBlock({
  * One health service's wards, or a sentence stating it reports nothing — never a heading over an
  * empty group.
  *
- * All ward cards sit in ONE single horizontal line (.serviceWardTrack), never wrapping.
- * Smooth carousel navigation controls (‹ and ›) allow scrolling horizontally along the single track.
+ * Grid keeps the full service census visible; row gives a horizontal ward track.
+ * Carousel controls are shown only in row mode and respect reduced motion.
  */
 function ServiceGroup({
   group,
   selectedUnitId,
   onSelectWard,
+  layout,
 }: {
   group: BedMapServiceGroup;
+  layout: "grid" | "row";
   selectedUnitId?: string;
   onSelectWard?: (unitId: string) => void;
 }) {
@@ -543,6 +585,14 @@ function ServiceGroup({
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [hasOverflow, setHasOverflow] = useState(false);
   const [activeWardIndex, setActiveWardIndex] = useState(0);
+  const [visibleWardEnd, setVisibleWardEnd] = useState(Math.min(3, group.wards.length));
+
+  const cardStep = (el: HTMLDivElement) => {
+    const cards = el.children;
+    return cards.length > 1
+      ? (cards[1] as HTMLElement).offsetLeft - (cards[0] as HTMLElement).offsetLeft
+      : (cards[0] as HTMLElement | undefined)?.offsetWidth || 262;
+  };
 
   const totalBeds = group.wards.reduce((sum, w) => sum + w.unit.beds, 0);
   const totalReady = group.wards.reduce((sum, w) => sum + w.ready, 0);
@@ -551,6 +601,12 @@ function ServiceGroup({
   const occPct = totalBeds > 0 ? Math.round((totalOccupied / totalBeds) * 100) : 0;
 
   const checkScrollState = useCallback(() => {
+    if (layout === "grid") {
+      setHasOverflow(false);
+      setCanScrollLeft(false);
+      setCanScrollRight(false);
+      return;
+    }
     const el = trackRef.current;
     if (!el) return;
     const isJSDOM = el.clientWidth === 0;
@@ -571,16 +627,25 @@ function ServiceGroup({
     setCanScrollLeft(overflow && !atStart);
     setCanScrollRight(overflow && !atEnd);
 
-    const cardStep = 262;
-    const idx = Math.max(0, Math.min(group.wards.length - 1, Math.round(el.scrollLeft / cardStep)));
-    setActiveWardIndex(idx);
-  }, [group.wards.length, activeWardIndex]);
+    const cards = Array.from(el.children) as HTMLElement[];
+    const origin = cards[0]?.offsetLeft ?? 0;
+    const first = cards.findIndex((card) => card.offsetLeft - origin + card.offsetWidth > el.scrollLeft + 4);
+    const end = cards.filter((card) => card.offsetLeft - origin < el.scrollLeft + el.clientWidth - 4).length;
+    setActiveWardIndex(Math.max(0, first));
+    setVisibleWardEnd(end);
+  }, [group.wards.length, activeWardIndex, layout]);
 
   useEffect(() => {
-    checkScrollState();
+    const frame = requestAnimationFrame(checkScrollState);
     const handleResize = () => checkScrollState();
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(handleResize);
+    if (trackRef.current) observer?.observe(trackRef.current);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", handleResize);
+      observer?.disconnect();
+    };
   }, [checkScrollState]);
 
   const handleScroll = () => {
@@ -591,18 +656,24 @@ function ServiceGroup({
     event.stopPropagation();
     const el = trackRef.current;
     if (!el) return;
-    const cardStep = 262;
-    if (el.scrollLeft <= cardStep * 1.2) {
+    const step = cardStep(el);
+    if (el.scrollLeft <= step * 1.2) {
       if (typeof el.scrollTo === "function") {
-        el.scrollTo({ left: 0, behavior: "smooth" });
+        el.scrollTo({
+          left: 0,
+          behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+        });
       } else {
         el.scrollLeft = 0;
       }
     } else {
       if (typeof el.scrollBy === "function") {
-        el.scrollBy({ left: -cardStep, behavior: "smooth" });
+        el.scrollBy({
+          left: -step,
+          behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+        });
       } else {
-        el.scrollLeft = Math.max(0, el.scrollLeft - cardStep);
+        el.scrollLeft = Math.max(0, el.scrollLeft - step);
       }
     }
     if (el.clientWidth === 0) {
@@ -616,19 +687,25 @@ function ServiceGroup({
     event.stopPropagation();
     const el = trackRef.current;
     if (!el) return;
-    const cardStep = 262;
+    const step = cardStep(el);
     const maxScroll = el.scrollWidth - el.clientWidth;
-    if (el.scrollLeft + cardStep * 1.5 >= maxScroll) {
+    if (el.scrollLeft + step * 1.5 >= maxScroll) {
       if (typeof el.scrollTo === "function") {
-        el.scrollTo({ left: maxScroll, behavior: "smooth" });
+        el.scrollTo({
+          left: maxScroll,
+          behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+        });
       } else {
         el.scrollLeft = maxScroll;
       }
     } else {
       if (typeof el.scrollBy === "function") {
-        el.scrollBy({ left: cardStep, behavior: "smooth" });
+        el.scrollBy({
+          left: step,
+          behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+        });
       } else {
-        el.scrollLeft = Math.min(maxScroll, el.scrollLeft + cardStep);
+        el.scrollLeft = Math.min(maxScroll, el.scrollLeft + step);
       }
     }
     if (el.clientWidth === 0) {
@@ -650,13 +727,14 @@ function ServiceGroup({
   return (
     <section
       className={styles.serviceGroup}
+      data-layout={layout}
+      data-service={group.service}
       aria-labelledby={headingId}
       data-testid={`ward-bed-map-service-${group.service}`}
     >
       <div className={styles.serviceHeaderBar}>
         <div className={styles.serviceTitleGroup}>
           <h3 id={headingId} className={styles.serviceHeading}>
-            <span className={styles.serviceAccentIndicator} aria-hidden="true" />
             <span className={styles.serviceNameText}>{group.service}</span>
             <span className={styles.serviceCount}>
               {group.wards.length === 1 ? "1 ward" : `${group.wards.length} wards`}
@@ -668,7 +746,7 @@ function ServiceGroup({
         </div>
 
         {/* Carousel controls embedded in health service region header */}
-        {group.wards.length > 1 && (
+        {layout === "row" && group.wards.length > 1 && (
           <div className={styles.serviceCarouselControls}>
             <button
               type="button"
@@ -693,7 +771,7 @@ function ServiceGroup({
               </svg>
             </button>
             <span className={styles.serviceCarouselIndicator}>
-              {activeWardIndex + 1}–{Math.min(activeWardIndex + 3, group.wards.length)} of {group.wards.length}
+              {activeWardIndex + 1}–{Math.max(activeWardIndex + 1, visibleWardEnd)} of {group.wards.length}
             </span>
             <button
               type="button"
@@ -723,7 +801,7 @@ function ServiceGroup({
 
       {/* Single-line horizontal ward track container with non-overlapping flanking navigation buttons */}
       <div className={styles.trackContainer}>
-        {hasOverflow && (
+        {layout === "row" && hasOverflow && (
           <button
             type="button"
             className={`${styles.flankingArrow} ${styles.flankingArrowPrev}`}
@@ -761,7 +839,7 @@ function ServiceGroup({
           ))}
         </div>
 
-        {hasOverflow && (
+        {layout === "row" && hasOverflow && (
           <button
             type="button"
             className={`${styles.flankingArrow} ${styles.flankingArrowNext}`}
@@ -810,28 +888,199 @@ function ServiceGroup({
  * claim about it; the scope bar `CapacityScreen` mounts alongside this map is what discloses the
  * narrowing in words.
  */
+// Only these two view enums may be remembered; Find ward text never enters this store.
+const MAP_VIEW_KEY = "ward-flow-capacity-map-view";
+const MAP_VIEW_EVENT = "ward-flow-capacity-map-view-change";
+let mapViewFallback: string | null = null;
+function readMapView() {
+  if (mapViewFallback !== null) return mapViewFallback;
+  try {
+    const raw = window.localStorage.getItem(MAP_VIEW_KEY);
+    return /^(grid|row):(overview|detail)$/u.test(raw ?? "") ? raw! : "";
+  } catch {
+    return "";
+  }
+}
+const useMapView = createBrowserStore(
+  (onChange) => {
+    window.addEventListener("storage", onChange);
+    window.addEventListener(MAP_VIEW_EVENT, onChange);
+    return () => {
+      window.removeEventListener("storage", onChange);
+      window.removeEventListener(MAP_VIEW_EVENT, onChange);
+    };
+  },
+  readMapView,
+  "",
+);
+function rememberMapView(layout: "grid" | "row", detail: boolean) {
+  const value = `${layout}:${detail ? "detail" : "overview"}`;
+  try {
+    window.localStorage.setItem(MAP_VIEW_KEY, value);
+    mapViewFallback = null;
+  } catch {
+    mapViewFallback = value;
+  }
+  window.dispatchEvent(new Event(MAP_VIEW_EVENT));
+}
+
 export function BedMap({
   units,
   bedReleases,
   selectedUnitId,
   onSelectWard,
   service,
+  initialLayout,
+  initialBedDetail,
 }: {
+  initialLayout?: "grid" | "row";
+  initialBedDetail?: boolean;
   units: Unit[];
   bedReleases: BedRelease[];
   selectedUnitId?: string;
   onSelectWard?: (unitId: string) => void;
   service?: HealthService | null;
 }) {
+  const storedView = useMapView();
+  const layout = storedView ? (storedView.startsWith("grid:") ? "grid" : "row") : (initialLayout ?? "row");
+  const bedDetail = storedView ? storedView.endsWith(":detail") : (initialBedDetail ?? true);
+  const setLayout = (next: "grid" | "row") => rememberMapView(next, bedDetail);
+  const setBedDetail = (next: boolean) => rememberMapView(layout, next);
+  const [activeService, setActiveService] = useState<string>();
+  // Free text stays in component memory, never in storage, the URL or the world state.
+  const [query, setQuery] = useState("");
+  const [findFeedback, setFindFeedback] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
   const wards = bedMapWards(units, bedReleases);
   const groups = groupBedMapWardsByService(wards);
   const renderedGroups = service ? groups.filter((group) => group.service === service) : groups;
+  const findWard = (event: React.FormEvent) => {
+    event.preventDefault();
+    const term = query.trim().toLocaleLowerCase();
+    if (!term) {
+      setFindFeedback("Enter a ward name to find it. All wards remain visible.");
+      return;
+    }
+    const match = renderedGroups
+      .flatMap((group) => group.wards)
+      .find((ward) => ward.unit.name.toLocaleLowerCase().includes(term));
+    if (!match) {
+      setFindFeedback("No matching ward in this service scope. All wards remain visible.");
+      return;
+    }
+    const card = Array.from(mapRef.current?.querySelectorAll<HTMLElement>("[data-unit-id]") ?? []).find(
+      (node) => node.dataset.unitId === match.unit.id,
+    );
+    card?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    const target = card?.querySelector<HTMLButtonElement>("button") ?? card;
+    target?.focus({ preventScroll: true });
+    setActiveService(
+      renderedGroups.find((group) => group.wards.some((ward) => ward.unit.id === match.unit.id))?.service,
+    );
+    setFindFeedback(`Found ${match.unit.name}. All wards remain visible.`);
+  };
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (visible) setActiveService((visible.target as HTMLElement).dataset.service);
+      },
+      { rootMargin: "-80px 0px -65% 0px", threshold: 0 },
+    );
+    mapRef.current?.querySelectorAll("[data-service]").forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
+  }, [service, layout, bedDetail]);
   return (
-    <div className={styles.map} data-ward-primitive="bed-map">
-      <BedMapLegend />
+    <div ref={mapRef} className={styles.map} data-ward-primitive="bed-map" data-bed-detail={bedDetail}>
+      <div className={styles.mapToolbar}>
+        <div role="group" aria-label="Ward detail level" className={styles.layoutSwitch}>
+          <button type="button" aria-pressed={!bedDetail} onClick={() => setBedDetail(false)}>
+            Overview
+          </button>
+          <button type="button" aria-pressed={bedDetail} onClick={() => setBedDetail(true)}>
+            Bed detail
+          </button>
+        </div>
+        <div role="group" aria-label="Bed map layout" className={styles.layoutSwitch}>
+          <button type="button" aria-pressed={layout === "grid"} onClick={() => setLayout("grid")}>
+            Grid view
+          </button>
+          <button type="button" aria-pressed={layout === "row"} onClick={() => setLayout("row")}>
+            Row view
+          </button>
+        </div>
+      </div>
+      <nav className={styles.serviceNav} aria-label="Bed map service shortcuts">
+        {renderedGroups
+          .filter((group) => group.wards.length > 0)
+          .map((group) => (
+            <button
+              type="button"
+              key={group.service}
+              aria-current={
+                (activeService ?? renderedGroups.find((item) => item.wards.length > 0)?.service) === group.service
+                  ? "location"
+                  : undefined
+              }
+              onClick={() => {
+                setActiveService(group.service);
+                document
+                  .getElementById(`ward-bed-map-service-heading-${group.service.replace(/\s+/gu, "-")}`)
+                  ?.scrollIntoView?.({ block: "start" });
+              }}
+            >
+              {group.service}
+              <span>{group.wards.length}</span>
+            </button>
+          ))}
+      </nav>
+      <form className={styles.findWard} onSubmit={findWard} role="search" aria-label="Find ward in bed map">
+        <label htmlFor="bed-map-find-ward">Find ward</label>
+        <input
+          ref={searchRef}
+          id="bed-map-find-ward"
+          type="search"
+          autoComplete="off"
+          value={query}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setFindFeedback("");
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              setQuery("");
+              setFindFeedback("Ward search cleared. All wards remain visible.");
+            }
+          }}
+        />
+        <button type="submit">Find</button>
+        <button
+          type="button"
+          disabled={!query}
+          onClick={() => {
+            setQuery("");
+            setFindFeedback("Ward search cleared. All wards remain visible.");
+            searchRef.current?.focus();
+          }}
+        >
+          Clear
+        </button>
+        <span role="status">{findFeedback}</span>
+      </form>
+      {bedDetail ? <BedMapLegend /> : null}
       <div className={styles.services}>
         {renderedGroups.map((group) => (
-          <ServiceGroup key={group.service} group={group} selectedUnitId={selectedUnitId} onSelectWard={onSelectWard} />
+          <ServiceGroup
+            key={group.service}
+            group={group}
+            layout={layout}
+            selectedUnitId={selectedUnitId}
+            onSelectWard={onSelectWard}
+          />
         ))}
       </div>
     </div>
