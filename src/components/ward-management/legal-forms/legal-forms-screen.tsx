@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, Clock, Plus, ShieldAlert, X } from "lucide-react";
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, Clock, ShieldAlert, X } from "lucide-react";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { formatInstantWithDay, type Instant, minutesUntil } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -354,7 +354,7 @@ export function LegalFormsScreen() {
             </div>
             <div className={styles.headerActions}>
               <button type="button" className={styles.recordFormPrimaryBtn} onClick={handleOpenNewForm}>
-                <Plus size={16} aria-hidden="true" />+ Record a form
+                + Record a form
               </button>
             </div>
           </div>
@@ -370,7 +370,7 @@ export function LegalFormsScreen() {
               ? `${passed} statutory deadlines passed`
               : upcoming > 0
                 ? `${upcoming} upcoming deadlines`
-                : "All statutory forms valid"
+                : "No recorded deadlines"
           }
           ariaLabel="Mental health legal forms status summary"
           metrics={[
