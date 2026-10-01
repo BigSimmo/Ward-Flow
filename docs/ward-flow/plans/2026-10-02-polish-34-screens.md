@@ -16,15 +16,15 @@ never apply them to working pages during this task. Continue autonomously.
 
 ## Ownership and order
 
-| Batch | Owner/branch | State | Acceptance |
-| --- | --- | --- | --- |
-| Reporting: seven designs | reporting / `codex/polish-reporting-20261002` | In progress | Compact truthful reporting; no fabricated history; focused regression and rendered checks |
-| Patients/intake: five designs | patients / `codex/polish-patients-20261002` | In progress | Search, both patient views, Add Patient and New Referral polished; privacy and form gates retained |
-| Services: six designs | services / `codex/polish-services-20261002` | In progress | Ward directory/hub/answer/board, ED and Community Hub polished; availability and response meaning retained |
-| Access/preferences: two designs | coordinator | Next | Sign-in simulation clear; Settings imports fully validated; existing persistence retained |
-| Operational overview: four designs | worker wave 2 | Next | Command, Capacity, Network and Service Search polished; supported scope/navigation retained |
-| Movement/transport: three designs | worker wave 2 | Next | Board/workspace/Transport Hub polished; inspect committed movement recovery first |
-| Coordination/governance: seven designs | worker wave 2 | Next | Delay, handover, alerts, on-call, out-of-area, legal and governance polished; accepted/refused alert feedback truthful |
+| Batch                                  | Owner/branch                                  | State       | Acceptance                                                                                                             |
+| -------------------------------------- | --------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Reporting: seven designs               | reporting / `codex/polish-reporting-20261002` | In progress | Compact truthful reporting; no fabricated history; focused regression and rendered checks                              |
+| Patients/intake: five designs          | patients / `codex/polish-patients-20261002`   | In progress | Search, both patient views, Add Patient and New Referral polished; privacy and form gates retained                     |
+| Services: six designs                  | services / `codex/polish-services-20261002`   | In progress | Ward directory/hub/answer/board, ED and Community Hub polished; availability and response meaning retained             |
+| Access/preferences: two designs        | coordinator                                   | Next        | Sign-in simulation clear; Settings imports fully validated; existing persistence retained                              |
+| Operational overview: four designs     | worker wave 2                                 | Next        | Command, Capacity, Network and Service Search polished; supported scope/navigation retained                            |
+| Movement/transport: three designs      | worker wave 2                                 | Next        | Board/workspace/Transport Hub polished; inspect committed movement recovery first                                      |
+| Coordination/governance: seven designs | worker wave 2                                 | Next        | Delay, handover, alerts, on-call, out-of-area, legal and governance polished; accepted/refused alert feedback truthful |
 
 ## Coordination rulings
 
@@ -44,8 +44,30 @@ Setup verified dedicated fetch/push remotes, clean source and main base; Node 24
 baseline preview: port 3174, clean `ag-hud-fold` root at base. Separate movement-recovery
 preview: port 3787, a42c root at `ffd61d2`; not the integrated candidate.
 
-Next: bind edited preview to coordinator source; collect baseline/rendered findings and
-integrate independent owned batches. Focused tests and relevant viewport/action checks,
-then required selected final-candidate gates. All completion/visual claims remain pending.
+Checkpoint: guard repair `7493135` independently reviewed and regression checked. Reporting
+`c60b1eb` (162 focused tests/typecheck), services `5bacbf4` (96 tests), movement `409fac3`
+(31 tests), patient recovery `17be650` and patient polish in progress (135 focused tests).
+Those are worker evidence, not final combined-candidate acceptance. Desktop reviews use
+**1920 x 1080 viewport captures only** following the user's correction; prior smaller/full-page
+images are preliminary and excluded from desktop acceptance.
+
+Reporting/service patches are preserved staged in the coordinator; combined commit was
+blocked by new concurrent migration-restoration claims at sign-out lines709/719. Scoped user
+approval is pending for seven statistics TSX files, Community CSS and movement-board CSS.
+Other owner worktrees are intact. Settings imports now reuse complete validation and visibly
+render feedback (previous toast state had no markup); seven import regressions pass. Sign-in
+copy no longer claims authentication or shows drawing filenames; focused assertion update
+pending. Actual screens remain ordinary refinements; no replacement concept has been applied.
+
+Coordinator `ensure` verified3302/project3eb35f2e4a07/PID37260. This task-owned server was
+stopped after repeated compile/control timeouts to release memory; fresh ensure/identity are
+required before final preview. Baseline3174 belongs to clean `ag-hud-fold` at981a4a8,
+identity98f1cf4a6cc2/PID36996; unrelated servers were not stopped. CUA control failed repeatedly;
+bounded local automated Chrome visual harnesses are used with synthetic fixtures. Patient
+record-only governed fixture is PT-001; movement fixtureWF-009 is default-view only.
+
+Next: finish independent operational/coordination/access polish, integrate released reviewed
+patches, resolve the scoped ownership question, then fresh combined1920visual/actions and
+selected offline gates. No main integration, publication or deployment authority.
 Private worker reports/evidence: `%TEMP%/ward-polish-34-20261002/`.
 Canonical receipt reconciliation: unsynced; prepare the existing local receipt bridge.

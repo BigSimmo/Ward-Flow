@@ -26,7 +26,11 @@ import {
 import { applyAppearance, useAppearanceStore } from "@/components/ward-management/shell/ward-bar";
 import { setRailOpenPreference, useRailOpenStore } from "@/components/ward-management/shell/ward-rail";
 import type { WardAppearance } from "@/components/ward-management/shell/ward-shell-types";
-import { defaultWardConfiguration, type WardConfiguration } from "@/components/ward-management/ward-configuration";
+import {
+  defaultWardConfiguration,
+  validateConfiguration,
+  type WardConfiguration,
+} from "@/components/ward-management/ward-configuration";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -509,22 +513,14 @@ export function SettingsScreen() {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const parsed = JSON.parse(event.target?.result as string);
-        const conf = parsed.configuration || parsed;
-        if (
-          typeof conf.parallelReferralCap === "number" &&
-          typeof conf.edAccessTargetMinutes === "number" &&
-          typeof conf.pullHoldMinutes === "number"
-        ) {
-          setDraft((prev) => ({
-            ...prev,
-            parallelReferralCap: conf.parallelReferralCap,
-            edAccessTargetMinutes: conf.edAccessTargetMinutes,
-            pullHoldMinutes: conf.pullHoldMinutes,
-            morningRollupDeadlineMinutes: conf.morningRollupDeadlineMinutes ?? prev.morningRollupDeadlineMinutes,
-            dueSoonUrgentMinutes: conf.dueSoonUrgentMinutes ?? prev.dueSoonUrgentMinutes,
-            dueSoonMinutes: conf.dueSoonMinutes ?? prev.dueSoonMinutes,
-          }));
+        const parsed: unknown = JSON.parse(event.target?.result as string);
+        const payload =
+          parsed && typeof parsed === "object" && !Array.isArray(parsed) && "configuration" in parsed
+            ? parsed.configuration
+            : parsed;
+        const conf = validateConfiguration(payload);
+        if (conf) {
+          setDraft(conf);
           showToast("Configuration backup loaded into draft. Save coordination rules to apply.");
         } else {
           showToast("Invalid configuration file format.");
@@ -3061,6 +3057,11 @@ export function SettingsScreen() {
           testId="ward-settings-governance"
           note="Synthetic records · Not a medical device · Changes remembered for this browser only"
         />
+        {toastMessage && (
+          <div className={`${styles.toast} ${styles.toastShow}`} role="status">
+            {toastMessage}
+          </div>
+        )}
       </main>
     </div>
   );

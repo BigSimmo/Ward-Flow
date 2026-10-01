@@ -201,8 +201,15 @@
 }
 
 @keyframes pulseSurge {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(1.2); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.2);
+  }
 }
 
 .eyebrow {
@@ -363,8 +370,14 @@
 }
 
 @keyframes popoverFadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .popoverHdr {
@@ -698,7 +711,9 @@
   background: var(--surface);
   color: var(--ink);
   outline: none;
-  transition: border-color 0.12s, box-shadow 0.12s;
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s;
   min-height: var(--ward-tap, 48px);
 }
 
@@ -1499,7 +1514,7 @@
 
 .themeSelectorGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
   gap: 0.875rem;
   width: 100%;
   margin-bottom: 0.875rem;
@@ -1531,7 +1546,9 @@
 .themePreviewCardActive {
   border-color: var(--accent);
   background: var(--surface);
-  box-shadow: 0 0 0 1px var(--accent), var(--lift);
+  box-shadow:
+    0 0 0 1px var(--accent),
+    var(--lift);
 }
 
 .themePreviewCard:focus-visible {
@@ -1842,7 +1859,7 @@
 /* Accessibility & Ergonomic Badges Grid */
 .accessibilityBadgesGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
   gap: 0.875rem;
   padding: 1.125rem 1.25rem;
   background: var(--surface-2);
@@ -1862,6 +1879,7 @@
 
 .a11yCardHeader {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
@@ -1902,7 +1920,9 @@
   background: color-mix(in srgb, var(--danger-soft) 25%, var(--surface));
   border-color: var(--danger);
   border-left-color: var(--danger);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger) 30%, transparent), var(--lift);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--danger) 30%, transparent),
+    var(--lift);
 }
 
 .surgeBannerHeader {
@@ -2225,7 +2245,6 @@
   color: var(--ink-soft);
   font-weight: 600;
 }
-
 
 /* Canonical Table */
 .tableCard {
@@ -2654,7 +2673,9 @@
 .stationArrow {
   color: var(--muted);
   flex-shrink: 0;
-  transition: transform 0.15s ease, color 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    color 0.15s ease;
 }
 
 .stationBtn:hover .stationArrow {
@@ -2668,9 +2689,10 @@
   bottom: 1.5rem;
   left: 50%;
   transform: translateX(-50%) translateY(5rem);
+  max-width: min(42rem, calc(100vw - 2rem));
   background: var(--surface);
-  border: 1px solid var(--good);
-  color: var(--good);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
   box-shadow: var(--lift);
   padding: 0.625rem 1.25rem;
   border-radius: var(--pill);
@@ -2857,7 +2879,10 @@
   border: 1px solid var(--line);
   flex-shrink: 0;
   color: var(--muted);
-  transition: color 0.12s ease, border-color 0.12s ease, background-color 0.12s ease;
+  transition:
+    color 0.12s ease,
+    border-color 0.12s ease,
+    background-color 0.12s ease;
 }
 
 .catItemContent {
@@ -3477,7 +3502,9 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 1rem;
-  box-shadow: 0 10px 30px -5px rgba(22, 30, 40, 0.25), 0 0 0 1px var(--accent);
+  box-shadow:
+    0 10px 30px -5px rgba(22, 30, 40, 0.25),
+    0 0 0 1px var(--accent);
 }
 
 .draftDiffMeta {
@@ -3646,7 +3673,9 @@
 .stationBtnActive {
   background: var(--surface) !important;
   border-color: var(--accent) !important;
-  box-shadow: inset 0 0 0 1px var(--accent), var(--lift);
+  box-shadow:
+    inset 0 0 0 1px var(--accent),
+    var(--lift);
 }
 
 .stationHeaderLine {

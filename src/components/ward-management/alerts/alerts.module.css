@@ -60,7 +60,7 @@
 @media (min-width: 62.5625rem) {
   .panelGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: stretch;
+    align-items: start;
     gap: 1.25rem;
   }
 
@@ -68,7 +68,7 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
-    height: clamp(34rem, calc(100dvh - 14rem), 54rem);
+    max-height: clamp(34rem, calc(100dvh - 14rem), 54rem);
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--r1);
@@ -2155,4 +2155,10 @@
   font-weight: 600;
   font-size: var(--t-2);
   margin-bottom: 0.75rem;
+}
+
+.toastRefused {
+  background: var(--warn-soft);
+  color: var(--warn-ink);
+  border-color: var(--warn);
 }
