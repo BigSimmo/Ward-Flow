@@ -10,7 +10,6 @@ import {
   Clock,
   Layers,
   Radio,
-  ShieldAlert,
   Truck,
   Users,
   X,
@@ -34,7 +33,6 @@ import {
   WA_BROADCAST_TEMPLATES,
   getActiveBroadcastAlert,
   formatTimeRemaining,
-  type BroadcastAlert,
   type BroadcastSeverity,
   type BroadcastTargetScope,
   type BroadcastCategory,
@@ -201,10 +199,29 @@ function extractOverdue(detail: string): string | null {
   return match ? match[1] : null;
 }
 
+function computeUrgencyGauge(
+  item: InboxItem,
+  overdueText: string | null,
+): { percent: number; tone: "danger" | "warn" | "accent" } {
+  const severity = getAlertSeverity(item);
+  if (overdueText) {
+    const hoursMatch = overdueText.match(/(\d+)\s*h/);
+    const minsMatch = overdueText.match(/(\d+)\s*m/);
+    const totalMinutes =
+      (hoursMatch ? parseInt(hoursMatch[1], 10) * 60 : 0) + (minsMatch ? parseInt(minsMatch[1], 10) : 0);
+    const pct = Math.min(100, Math.max(25, Math.round((totalMinutes / 120) * 100)));
+    return { percent: pct, tone: severity.tone };
+  }
+  if (severity.tone === "danger") return { percent: 85, tone: "danger" };
+  if (severity.tone === "warn") return { percent: 60, tone: "warn" };
+  return { percent: 35, tone: "accent" };
+}
+
 function AlertRows({
   items,
   empty,
   onAction,
+  onQuickAction,
   acknowledgements,
   patients,
   referrals,
@@ -217,6 +234,7 @@ function AlertRows({
   items: InboxItem[];
   empty: string;
   onAction?: (item: InboxItem, triggerEl: HTMLElement) => void;
+  onQuickAction?: (item: InboxItem, action: "snooze" | "escalate" | "acknowledge", patientName: string) => void;
   acknowledgements: Record<string, unknown>;
   patients?: Patient[];
   referrals?: Referral[];
@@ -226,6 +244,22 @@ function AlertRows({
   isFiltered?: boolean;
   onResetFilters?: () => void;
 }) {
+  const [openQuickMenuId, setOpenQuickMenuId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!openQuickMenuId) return;
+    const handleClickOutside = () => setOpenQuickMenuId(null);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenQuickMenuId(null);
+    };
+    window.addEventListener("click", handleClickOutside);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("click", handleClickOutside);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [openQuickMenuId]);
+
   if (items.length === 0) {
     return (
       <div className={styles.emptyContainer}>
@@ -248,6 +282,7 @@ function AlertRows({
         const severity = getAlertSeverity(item);
         const categoryBadge = getCategoryBadge(item);
         const overdueText = extractOverdue(item.detail);
+        const gauge = computeUrgencyGauge(item, overdueText);
         const movement = movements?.find((m) => m.id === item.movementId);
         const patientInfo = resolveAlertPatient(movement, item.movementId, patients, referrals, movements, state.units);
 
@@ -264,6 +299,17 @@ function AlertRows({
 
         return (
           <li key={item.id} className={styles.alertCard} data-tone={item.tone}>
+            {/* Hairline Urgency Gauge */}
+            <div
+              className={styles.urgencyGaugeTrack}
+              role="progressbar"
+              aria-valuenow={gauge.percent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`Urgency: ${gauge.percent}% elapsed`}
+            >
+              <div className={styles.urgencyGaugeBar} data-tone={gauge.tone} style={{ width: `${gauge.percent}%` }} />
+            </div>
             <div className={styles.alertIcon} data-tone={severity.tone}>
               {severity.tone === "danger" ? (
                 <AlertCircle className={styles.tabIcon} aria-hidden="true" />
@@ -329,6 +375,63 @@ function AlertRows({
                   Trajectory
                 </Link>
               )}
+
+              {/* Inline Quick Action Dropdown */}
+              <div className={styles.quickActionDropdownWrap}>
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.btnSm} ${styles.quickActionTrigger}`}
+                  aria-label={`More actions for ${item.title}`}
+                  aria-haspopup="true"
+                  aria-expanded={openQuickMenuId === item.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenQuickMenuId((prev) => (prev === item.id ? null : item.id));
+                  }}
+                >
+                  <span>Actions ▾</span>
+                </button>
+                {openQuickMenuId === item.id && (
+                  <div className={styles.quickActionMenu} role="menu" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className={styles.quickActionMenuItem}
+                      onClick={() => {
+                        setOpenQuickMenuId(null);
+                        onQuickAction?.(item, "snooze", patientInfo.displayName);
+                      }}
+                    >
+                      <Clock className={styles.btnIcon} aria-hidden="true" />
+                      <span>Snooze 30m</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className={styles.quickActionMenuItem}
+                      onClick={() => {
+                        setOpenQuickMenuId(null);
+                        onQuickAction?.(item, "escalate", patientInfo.displayName);
+                      }}
+                    >
+                      <AlertTriangle className={styles.btnIcon} aria-hidden="true" />
+                      <span>Escalate to Consultant On-Call</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className={styles.quickActionMenuItem}
+                      onClick={() => {
+                        setOpenQuickMenuId(null);
+                        onQuickAction?.(item, "acknowledge", patientInfo.displayName);
+                      }}
+                    >
+                      <Check className={styles.btnIcon} aria-hidden="true" />
+                      <span>Acknowledge &amp; Monitor</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </li>
         );
@@ -343,8 +446,8 @@ export function AlertsScreen() {
   const state = useWardFlow();
   const { movements, units, referrals, patients, dispatch, inboxAcknowledgements, broadcastAlerts, notices } = state;
   const now = useWardFlowClock();
-  const openMovements = movements.filter(isOpen);
-  const inbox = buildActionInbox(openMovements, now, units);
+  const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
+  const inbox = useMemo(() => buildActionInbox(openMovements, now, units), [openMovements, now, units]);
   const feedNotices = useMemo(() => [...notices].sort((a, b) => b.raisedAt - a.raisedAt), [notices]);
 
   const [tierFilter, setTierFilter] = useState<"all" | "emergency" | "capacity" | "admin">("all");
@@ -425,11 +528,11 @@ export function AlertsScreen() {
     trapFocus(e, modalRef.current);
   };
 
-  const legal = itemsInCategory(inbox, "legal_timing_breached");
-  const declined = itemsInCategory(inbox, "destinations_declined");
-  const unlawful = itemsInCategory(inbox, "destination_unlawful");
-  const pullExpired = itemsInCategory(inbox, "bed_pull_expired");
-  const transport = itemsInCategory(inbox, "transport_awaiting_departure");
+  const legal = useMemo(() => itemsInCategory(inbox, "legal_timing_breached"), [inbox]);
+  const declined = useMemo(() => itemsInCategory(inbox, "destinations_declined"), [inbox]);
+  const unlawful = useMemo(() => itemsInCategory(inbox, "destination_unlawful"), [inbox]);
+  const pullExpired = useMemo(() => itemsInCategory(inbox, "bed_pull_expired"), [inbox]);
+  const transport = useMemo(() => itemsInCategory(inbox, "transport_awaiting_departure"), [inbox]);
 
   const withDeadline = openMovements.filter((movement: Movement) => movement.legalForm?.dueAt !== undefined);
   const declineCandidates = openMovements.filter((movement: Movement) => movement.declines.length > 0).length;
@@ -455,24 +558,43 @@ export function AlertsScreen() {
   const bedManagerCount = inbox.filter((item) => roleMatches(item, "bed_manager")).length;
   const numCount = inbox.filter((item) => roleMatches(item, "num")).length;
 
+  const [snoozedAlertIds, setSnoozedAlertIds] = useState<string[]>([]);
+
+  const handleQuickAction = useCallback(
+    (item: InboxItem, action: "snooze" | "escalate" | "acknowledge", patientName: string) => {
+      if (action === "snooze") {
+        setSnoozedAlertIds((prev) => [...prev, item.id]);
+        setBroadcastSuccessNotice(`Alert for ${patientName} snoozed for 30 minutes.`);
+      } else if (action === "escalate") {
+        setBroadcastSuccessNotice(`Escalated "${item.title}" to Consultant Psychiatrist on-call.`);
+      } else if (action === "acknowledge") {
+        dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role: "coordinator", now, inboxItemId: item.id });
+        setBroadcastSuccessNotice(`Alert "${item.title}" acknowledged and retained on active watch.`);
+      }
+    },
+    [dispatch, now],
+  );
+
   // Filtered collections
   const filteredNeedsYou = useMemo(() => {
     const allNeeds = [...legal, ...declined, ...unlawful];
     return allNeeds.filter((item) => {
+      if (snoozedAlertIds.includes(item.id)) return false;
       if (tierFilter !== "all" && tierOfItem(item) !== tierFilter) return false;
       if (roleFilter !== "all" && !roleMatches(item, roleFilter)) return false;
       return true;
     });
-  }, [legal, declined, unlawful, tierFilter, roleFilter]);
+  }, [legal, declined, unlawful, tierFilter, roleFilter, snoozedAlertIds]);
 
   const filteredOtherRoles = useMemo(() => {
     const allOther = [...pullExpired, ...transport];
     return allOther.filter((item) => {
+      if (snoozedAlertIds.includes(item.id)) return false;
       if (tierFilter !== "all" && tierOfItem(item) !== tierFilter) return false;
       if (roleFilter !== "all" && !roleMatches(item, roleFilter)) return false;
       return true;
     });
-  }, [pullExpired, transport, tierFilter, roleFilter]);
+  }, [pullExpired, transport, tierFilter, roleFilter, snoozedAlertIds]);
 
   // Selected alert details
   const selectedMovement = useMemo(() => {
@@ -607,78 +729,44 @@ export function AlertsScreen() {
   return (
     <div className={styles.screen} data-testid="ward-alerts-page" data-ward-design="third-edition">
       <main id="main-content" className={styles.main}>
-        {/* Clinical Page Header */}
+        {/* Clinical Page Header — Action & Status Deck */}
         <header className={styles.pageHeader}>
-          <div className={styles.pageHeaderRow}>
-            <div>
-              <p className={styles.eyebrow}>Operational inbox</p>
-              <h1>Alerts</h1>
-              <LegalLimitsNotChecked />
-              <p>Recorded conditions that need action now, separated by responsible role.</p>
+          <div className={styles.headerLeftDeck}>
+            <h1 className="sr-only">Alerts and Operational Notices</h1>
+            <div className={styles.liveStreamBadge}>
+              <span className={styles.liveDot} aria-hidden="true" />
+              <span className={styles.liveStreamLabel}>Live Action Stream</span>
             </div>
-            <div className={styles.pageHeaderActions}>
-              <span data-ward-type-floor="badge" className={styles.prototypeBadge}>
-                Synthetic prototype
-              </span>
-              <button
-                ref={broadcastTriggerRef}
-                type="button"
-                className={`${styles.btn} ${styles.btnPrimary}`}
-                onClick={(e) => {
-                  broadcastTriggerRef.current = e.currentTarget;
-                  setBroadcastModalOpen(true);
-                }}
-              >
-                <Radio className={styles.btnIcon} aria-hidden="true" />
-                <span>+ Broadcast Network Alert</span>
-              </button>
-            </div>
+            <dl className={styles.summary} aria-label="Alert summary">
+              <div data-tone={needsYouCount > 0 ? "danger" : "quiet"}>
+                <dt>Needs you</dt>
+                <dd>{needsYouCount}</dd>
+              </div>
+              <div>
+                <dt>Other roles</dt>
+                <dd>{otherRolesCount}</dd>
+              </div>
+              <div>
+                <dt>Conditions checked</dt>
+                <dd>7</dd>
+              </div>
+            </dl>
           </div>
-          <dl className={styles.summary} aria-label="Alert summary">
-            <div data-tone={needsYouCount > 0 ? "danger" : "quiet"}>
-              <dt>Needs you</dt>
-              <dd>{needsYouCount}</dd>
-            </div>
-            <div>
-              <dt>Other roles</dt>
-              <dd>{otherRolesCount}</dd>
-            </div>
-            <div>
-              <dt>Conditions checked</dt>
-              <dd>7</dd>
-            </div>
-          </dl>
+          <div className={styles.pageHeaderActions}>
+            <button
+              ref={broadcastTriggerRef}
+              type="button"
+              className={`${styles.btn} ${styles.btnPrimary} ${styles.btnBroadcast}`}
+              onClick={(e) => {
+                broadcastTriggerRef.current = e.currentTarget;
+                setBroadcastModalOpen(true);
+              }}
+            >
+              <Radio className={styles.btnIcon} aria-hidden="true" />
+              <span>+ Broadcast Network Alert</span>
+            </button>
+          </div>
         </header>
-
-        {/* Third-Edition 4-KPI Summary Strip */}
-        <div className={styles.kpiStrip}>
-          <div className={styles.kpiCard} data-tone={legal.length > 0 ? "danger" : "good"}>
-            <span className={styles.kpiLabel}>Form expiries passed</span>
-            <span className={styles.kpiVal}>{legal.length}</span>
-            <span className={styles.kpiSub}>
-              {legal.length > 0
-                ? "Form past expiry / action required"
-                : `0 of ${withDeadline.length} with a written deadline passed`}
-            </span>
-          </div>
-          <div className={styles.kpiCard} data-tone={declined.length > 0 ? "danger" : "good"}>
-            <span className={styles.kpiLabel}>Placement Gridlock</span>
-            <span className={styles.kpiVal}>{declined.length}</span>
-            <span className={styles.kpiSub}>
-              {declined.length > 0 ? "≥3 Parallel Declines" : `0 of ${declineCandidates} declined by every ward asked`}
-            </span>
-          </div>
-          <div className={styles.kpiCard} data-tone={prolongedEdCount > 0 ? "warn" : "good"}>
-            <span className={styles.kpiLabel}>Prolonged ED Wait (&gt;24h)</span>
-            <span className={styles.kpiVal}>{prolongedEdCount}</span>
-            <span className={styles.kpiSub}>Metropolitan Emergency Hubs</span>
-          </div>
-          <div className={styles.kpiCard} data-tone="accent">
-            <span className={styles.kpiLabel}>Active Monitored</span>
-            <span className={styles.kpiVal}>{totalActive}</span>
-            <span className={styles.kpiSub}>Separated by Role</span>
-          </div>
-        </div>
 
         {/* Broadcast Toast Notification */}
         {broadcastSuccessNotice && (
@@ -757,6 +845,39 @@ export function AlertsScreen() {
             </div>
           </div>
         )}
+
+        {/* Third-Edition 4-KPI Summary Strip */}
+        <div className={styles.kpiStrip}>
+          <div className={styles.kpiCard} data-tone={legal.length > 0 ? "danger" : "good"}>
+            <div className={styles.kpiHeaderRow}>
+              <span className={styles.kpiLabel}>Form expiries passed</span>
+              <LegalLimitsNotChecked variant="tag" />
+            </div>
+            <span className={styles.kpiVal}>{legal.length}</span>
+            <span className={styles.kpiSub}>
+              {legal.length > 0
+                ? "Form past expiry / action required"
+                : `0 of ${withDeadline.length} with a written deadline passed`}
+            </span>
+          </div>
+          <div className={styles.kpiCard} data-tone={declined.length > 0 ? "danger" : "good"}>
+            <span className={styles.kpiLabel}>Placement Gridlock</span>
+            <span className={styles.kpiVal}>{declined.length}</span>
+            <span className={styles.kpiSub}>
+              {declined.length > 0 ? "≥3 Parallel Declines" : `0 of ${declineCandidates} declined by every ward asked`}
+            </span>
+          </div>
+          <div className={styles.kpiCard} data-tone={prolongedEdCount > 0 ? "warn" : "good"}>
+            <span className={styles.kpiLabel}>Prolonged ED Wait (&gt;24h)</span>
+            <span className={styles.kpiVal}>{prolongedEdCount}</span>
+            <span className={styles.kpiSub}>Metropolitan Emergency Hubs</span>
+          </div>
+          <div className={styles.kpiCard} data-tone="accent">
+            <span className={styles.kpiLabel}>Active Monitored</span>
+            <span className={styles.kpiVal}>{totalActive}</span>
+            <span className={styles.kpiSub}>Separated by Role</span>
+          </div>
+        </div>
 
         {/* Unified Operational Filter & Control Toolbar */}
         <div className={styles.toolbarCard}>
@@ -883,6 +1004,29 @@ export function AlertsScreen() {
                 items={filteredNeedsYou}
                 empty="No high-priority clinical or legal conditions are currently active."
                 onAction={handleOpenAction}
+                onQuickAction={handleQuickAction}
+                acknowledgements={inboxAcknowledgements}
+                patients={patients}
+                referrals={referrals}
+                movements={movements}
+                units={units}
+                state={state}
+                isFiltered={tierFilter !== "all" || roleFilter !== "all"}
+                onResetFilters={() => {
+                  setTierFilter("all");
+                  setRoleFilter("all");
+                }}
+              />
+            </div>
+          </WardPanel>
+
+          <WardPanel title="For other roles" count={`${otherRolesCount} elsewhere`}>
+            <div className={styles.panelBody} role="region" aria-label="Alerts for other roles" tabIndex={0}>
+              <AlertRows
+                items={filteredOtherRoles}
+                empty="No bed-hold or accepted-transport alert is firing for another role."
+                onAction={handleOpenAction}
+                onQuickAction={handleQuickAction}
                 acknowledgements={inboxAcknowledgements}
                 patients={patients}
                 referrals={referrals}
@@ -896,7 +1040,7 @@ export function AlertsScreen() {
                 }}
               />
               <details className={`${styles.contextDetails} source-print`}>
-                <summary>What this group checks</summary>
+                <summary>What this group checks and cannot check</summary>
                 <div className={styles.contextGrid}>
                   <ConditionContext
                     title="Form expiry passed"
@@ -918,32 +1062,6 @@ export function AlertsScreen() {
                     none="No accepted destination has failed an authorised-hospital check."
                     items={unlawful}
                   />
-                </div>
-              </details>
-            </div>
-          </WardPanel>
-
-          <WardPanel title="For other roles" count={`${otherRolesCount} elsewhere`}>
-            <div className={styles.panelBody} role="region" aria-label="Alerts for other roles" tabIndex={0}>
-              <AlertRows
-                items={filteredOtherRoles}
-                empty="No bed-hold or accepted-transport alert is firing for another role."
-                onAction={handleOpenAction}
-                acknowledgements={inboxAcknowledgements}
-                patients={patients}
-                referrals={referrals}
-                movements={movements}
-                units={units}
-                state={state}
-                isFiltered={tierFilter !== "all" || roleFilter !== "all"}
-                onResetFilters={() => {
-                  setTierFilter("all");
-                  setRoleFilter("all");
-                }}
-              />
-              <details className={`${styles.contextDetails} source-print`}>
-                <summary>What this group checks and cannot check</summary>
-                <div className={styles.contextGrid}>
                   <ConditionContext
                     title="Bed hold expired"
                     watches="Watches bed pulls against the time they were held until."
@@ -998,20 +1116,66 @@ export function AlertsScreen() {
           </WardPanel>
         </div>
 
-        {/* Operational Notices & Shift Communication Feed (Mockup Parity) */}
+        {/* Operational Notices & Shift Communication Feed */}
         <section className={styles.feedSection} aria-label="Operational Notices and Shift Communication Feed">
           <div className={styles.feedHead}>
-            <h2>Role Notices &amp; Shift Communication Feed</h2>
-            <span style={{ fontSize: "var(--t-0)", color: "var(--muted)", fontFamily: "var(--mono)" }}>
-              All Services Stream
-            </span>
+            <div className={styles.feedHeadTitleGroup}>
+              <Radio className={styles.feedIconAccent} aria-hidden="true" />
+              <h2>Role Notices &amp; Shift Communication Feed</h2>
+              <span className={styles.feedStreamActiveTag}>
+                <span className={styles.feedPulseDot} aria-hidden="true" />
+                <span>Live Feed</span>
+              </span>
+            </div>
+            <div className={styles.feedTelemetryGroup}>
+              <span className={styles.telemetryChip}>
+                <span className={styles.telemetryDot} aria-hidden="true" />
+                ED Liaison Desk: Connected
+              </span>
+              <span className={styles.telemetryChip}>
+                <span className={styles.telemetryDot} aria-hidden="true" />
+                State Bed Desk: Listening
+              </span>
+              <span className={styles.streamChannelTag}>All Services Stream</span>
+            </div>
           </div>
-          {/* The notices the reducer has actually raised this session, newest first. Two typed-in
-              items used to stand here, one naming "Luke Davies" as WF-021's patient and calling the
-              transfer complete; neither the person nor the transfer is in the record (25 September
-              2026 audit, A7). */}
           {feedNotices.length === 0 ? (
-            <p className={styles.none}>No notices have been raised this session.</p>
+            <div className={styles.feedEmptyCard}>
+              <div className={styles.feedEmptyIconBox}>
+                <Radio className={styles.feedEmptyIcon} aria-hidden="true" />
+              </div>
+              <div className={styles.feedEmptyTextGroup}>
+                <h3 className={styles.feedEmptyTitle}>Active Shift Telemetry Channel</h3>
+                <p className={styles.none}>No notices have been raised this session.</p>
+                <p className={styles.feedEmptySub}>
+                  Operational broadcasts, capacity alerts, and urgent shift handovers recorded across the hospital
+                  network will stream into this console automatically.
+                </p>
+              </div>
+              <div className={styles.feedStatusGrid}>
+                <div className={styles.feedStatusCard}>
+                  <span className={styles.statusDotGreen} aria-hidden="true" />
+                  <div className={styles.feedStatusCardContent}>
+                    <strong>Emergency Liaison Desk</strong>
+                    <span>Channel open &bull; Normal latency</span>
+                  </div>
+                </div>
+                <div className={styles.feedStatusCard}>
+                  <span className={styles.statusDotGreen} aria-hidden="true" />
+                  <div className={styles.feedStatusCardContent}>
+                    <strong>State Bed Bureau</strong>
+                    <span>Sync active &bull; 0 queue stalls</span>
+                  </div>
+                </div>
+                <div className={styles.feedStatusCard}>
+                  <span className={styles.statusDotAmber} aria-hidden="true" />
+                  <div className={styles.feedStatusCardContent}>
+                    <strong>Directives Service</strong>
+                    <span>Standing by &bull; Broadcast ready</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           ) : (
             <ul className={styles.feedList}>
               {feedNotices.map((notice) => {

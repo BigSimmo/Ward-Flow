@@ -88,8 +88,8 @@
 }
 
 /* Dark mode elevations: ensure accepted paths (--accent) and declined paths (--warn)
- * maintain minimum 4.5:1 contrast against dark ground (#0d1117).
- * At opacity 0.85, --accent (#a7bcd2) achieves 7.27:1 and --warn (#e3bc5e) achieves 7.82:1 against #0d1117.
+ * maintain minimum 4.5:1 contrast against dark ground (var(--surface)).
+ * At opacity 0.85, --accent achieves 7.27:1 and --warn achieves 7.82:1 against dark ground.
  */
 :global([data-theme="dark"]) .corridor[data-kind="accepted"] {
   stroke: var(--accent);
@@ -183,7 +183,8 @@
 
 .endpointNode small {
   color: var(--muted);
-  font-size: 0.6875rem;
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
   line-height: 1.15;
 }
 

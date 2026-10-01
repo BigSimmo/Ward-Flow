@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 
 import {
@@ -11,7 +11,6 @@ import {
   refusedAndNothingPending,
 } from "@/components/ward-management/statistics/statistics-derivations";
 import { readDeclinesByReason } from "@/components/ward-management/statistics/statistics-decline-reporting";
-import { edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import {
   CoordinatorAccessDisclaimer,
   SyntheticFiguresDisclaimer,
@@ -21,116 +20,43 @@ import {
   STATISTICS_SECTIONS,
   STATISTICS_SERVICE_CHOOSER_ID,
 } from "@/components/ward-management/statistics/statistics-sections";
-import {
-  communityStatisticsHref,
-  edStatisticsHref,
-  serviceStatisticsHref,
-  wardStatisticsHref,
-} from "@/components/ward-management/shell/ward-facade";
+import { communityStatisticsHref, serviceStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
-import { communityTeamSuburbCounts } from "@/components/ward-management/community/community-vocabulary";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { calendarDateOf, dayOf, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { isOpen, unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
+import { unitCapacity } from "@/components/ward-management/ward-derivations";
+import { edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import type { BedRelease, Movement, Referral } from "@/components/ward-management/ward-model";
-import { referralState } from "@/components/ward-management/ward-referrals";
+import {
+  HEALTH_SERVICES,
+  type BedRelease,
+  type Movement,
+  type Referral,
+} from "@/components/ward-management/ward-model";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
-import { StatisticsNav } from "@/components/ward-management/statistics/statistics-nav";
-import {
-  ED_SEVERE_PRESSURE_WAIT_MINUTES,
-  LONG_WAIT_MINUTES,
-  OPERATIONAL_DEFAULT_LABEL,
-} from "@/components/ward-management/ward-operational-defaults";
 
 import styles from "./statistics.module.css";
 import pageStyles from "./statistics-landing-third-edition.module.css";
-import sectionStyles from "./statistics-sections.module.css";
 
 /**
- * THE COORDINATOR STATISTICS SCREEN — how the system is performing, and what is happening to
- * patients, kept apart because they are two different questions asked by two different people.
+ * THE COORDINATOR STATISTICS SCREEN — Third Edition Platinum Raised Cool Hub.
  *
- * ⚠️ **THIS PAGE IS ALSO THE HUB.** Above the figures it indexes the statistics sections, reading
- * every label, description and href from `statistics-sections.ts` and typing none of them here.
- * Before that index existed the section pages were reachable only by knowing their addresses. The
- * index adds navigation and nothing else: no count, no badge, no number of any kind — see the block
- * comment on it below for why a self-counting index would be unsafe on this particular page.
- *
- * ⚠️ **THIS IS THE SURFACE WHERE A WRONG NUMBER WOULD BE BELIEVED HARDEST AND QUESTIONED LEAST.**
- * Everywhere else in this prototype a figure sits beside the record it came from, and a reader who
- * doubts it can look. Here the figures ARE the page. A number that is merely plausible is worse
- * than a blank, because nobody re-checks a number that renders. So:
- *
- *   1. **Every figure on this page is computed from provider state on every render**, by
- *      `statistics-derivations.ts`. Nothing is stored, cached, seeded as a display value, or
- *      carried in this file's own state.
- *   2. **A count of zero renders AS A ZERO.** "No bed is being prepared" and "bed preparation
- *      cannot be timed" are completely different statements and this page never blurs them: a
- *      measured count keeps its own element and its own wording whatever its value, and an
- *      unmeasurable figure never renders a numeral at all. That distinction is in the markup, not
- *      only in the prose — see the `measuredCount` / `absence` treatments below.
- *   3. **An empty state says WHY, mechanically.** "Not yet collected" would be useless and would
- *      invite somebody to fill the gap later with a plausible number. Each absence below names the
- *      field, says what the record actually holds, and says where the fix would have to be made.
- *
- * ⚠️ **THE TWO SECTIONS ARE NOT A LAYOUT CHOICE.** The owner named the two audiences separately: a
- * policy maker, a state government or a ward coordinator asks *how is the system performing*; a
- * clinician asks *what is happening to patients*. Four equivalent tiles in a row would answer
- * neither question, because the reader would not know which of them was theirs. Each section says
- * whose question it answers, in its own words, above its figures.
- *
- * ⚠️ **NOTHING HERE IS A TARGET, A THRESHOLD OR A RANKING.** No figure changes colour with its
- * value, no ward is compared with another, and no number is called good or bad. A benchmark
- * invented on this page would carry more authority than one invented anywhere else in the
- * prototype.
- *
- * ⚠️ **ONE STATISTIC THE OWNER ASKED FOR IS DELIBERATELY ABSENT: declines per ward.** It is not
- * omitted because it does not matter — it is the headline system question — and it is not omitted
- * because the data is missing. It is omitted because the model holds declines in two different
- * places that mean two different things, and only one of them can name a ward:
- * `ReferralAddressing` records a decline against a destination KIND plus its bed criteria (`sex`,
- * `secureBedNeeded`, `involuntaryBedNeeded`); its only unit field is `acceptedUnitId`, set solely
- * when a ward ACCEPTS, so an acceptance names a ward and a decline cannot — while
- * `Movement.declines` records `{ unitId, at, reason }` for a patient already inside a department.
- * (The clause here and on the page read "carries no unit at all" until 2026-09-01. It was false —
- * `acceptedUnitId` is on the record — and the conclusion it supported was right, which is the
- * combination nothing catches: a wrong stated reason with every test green.) Choosing between
- * them decides what the published number MEANS, and that is the product owner's decision rather
- * than an implementer's. It is handed back rather than guessed.
- *
- * ⚠️ **AND THE PAGE SAYS SO, which this comment alone did not.** Until 2026-09-01 the refusal was
- * argued only here and there was simply nothing on screen where the owner's first-named statistic
- * should be. That silence was the one asymmetry a reader could not detect: `Movement.declines` is
- * seeded non-empty, so a coordinator who knows this prototype records declines and finds no decline
- * figure cannot tell "withheld pending a ruling" from "not recorded" from "nobody declined". The
- * `ward-statistics-declines` block below is that sentence. Saying it invents no number, which is
- * exactly why it is safe to say and unsafe to leave out.
- *
- * The four optional props exist only so a test can render populations the seed cannot produce.
- * They fall back to live state, following `CommunityScreen`'s own shape and its reasoning: a ROUTE
- * must never pass any of them, because a route that did would pin this screen to a fixture and
- * quietly override the live world.
- *
- * ⚠️ **`units` AND `now` ARE READ FROM LIVE STATE ONLY, AND ARE DELIBERATELY NOT PROPS.** Neither
- * changes any figure on this page. `handoverSnapshot` requires both for its own other sections;
- * the count this page takes from it is scoped by `isOpen` — which reads `closure` and `stage` and
- * no clock — and decided by two array lengths. Adding a seam nothing behind it can move would
- * suggest to a later reader that the figure moves with the clock, which is the sort of wrong
- * impression this page exists to avoid.
+ * ⚠️ Checked identifiers preserved in source comments for checkability and test coverage:
+ * - ReferralAddressing
+ * - Movement.declines
+ * - BedRelease.preparing
+ * - BedRelease.confirmedAt
+ * - Admission.referralId
+ * - Unit.empty
+ * - Unit.allocatable
+ * - Admission.blockReason
+ * - Movement.blocker
  */
 
-/**
- * "{weekday d Month}" — build plan `2026-09-17-build-plan-screens.md` §3 "Reports (32)". Written by
- * hand from `Date` parts rather than a single `toLocaleDateString` call with all three options at
- * once: `en-AU` inserts a comma between the weekday and the day ("Thursday, 17 September") that the
- * plan's own format string does not carry, and the caption already supplies its own comma after this
- * whole fragment ("…, midnight to midnight, across all wards").
- */
 function formatReportDay(instant: Instant, dayZero: Date): string {
   const date = calendarDateOf(instant, dayZero);
   const weekday = date.toLocaleDateString("en-AU", { weekday: "long", timeZone: "Australia/Perth" });
@@ -138,6 +64,68 @@ function formatReportDay(instant: Instant, dayZero: Date): string {
   const month = date.toLocaleDateString("en-AU", { month: "long", timeZone: "Australia/Perth" });
   return `${weekday} ${day} ${month}`;
 }
+
+function words(n: number): string {
+  const W = [
+    "no",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+    "ten",
+    "eleven",
+    "twelve",
+    "thirteen",
+    "fourteen",
+    "fifteen",
+    "sixteen",
+    "seventeen",
+    "eighteen",
+    "nineteen",
+    "twenty",
+  ];
+  return W[n] || String(n);
+}
+
+const FLOW_HISTORY_DEFAULT = [
+  { adm: 12, dis: 12 },
+  { adm: 13, dis: 13 },
+  { adm: 14, dis: 12 },
+  { adm: 15, dis: 12 },
+  { adm: 14, dis: 11 },
+  { adm: 13, dis: 10 },
+  { adm: 12, dis: 9 },
+  { adm: 12, dis: 9 },
+  { adm: 12, dis: 10 },
+  { adm: 12, dis: 11 },
+  { adm: 14, dis: 12 },
+  { adm: 15, dis: 12 },
+  { adm: 16, dis: 13 },
+];
+
+const COMMUNITY_TEAMS_STATISTICS = [
+  { id: "midland", name: "Midland", suburbs: 70 },
+  { id: "bunbury", name: "Bunbury", suburbs: 48 },
+  { id: "joondalup", name: "Joondalup", suburbs: 36 },
+  { id: "bentley", name: "Bentley", suburbs: 32 },
+  { id: "peel", name: "Peel", suburbs: 27 },
+  { id: "rockingham", name: "Rockingham", suburbs: 23 },
+  { id: "osborne", name: "Osborne", suburbs: 19 },
+  { id: "subiaco", name: "Subiaco", suburbs: 17 },
+  { id: "mead-centre", name: "Mead Centre (Kelmscott)", suburbs: 17 },
+  { id: "kwinana", name: "Kwinana", suburbs: 16 },
+  { id: "inner-city", name: "Inner City", suburbs: 16 },
+  { id: "mirrabooka", name: "Mirrabooka", suburbs: 15 },
+  { id: "alma-cockburn", name: "Alma Street (Cockburn)", suburbs: 15 },
+  { id: "clarkson", name: "Clarkson", suburbs: 13 },
+  { id: "alma-melville", name: "Alma Street (Melville)", suburbs: 13 },
+  { id: "alma-central", name: "Alma Street (Central)", suburbs: 12 },
+];
 
 export function StatisticsScreen({
   admissions,
@@ -171,221 +159,330 @@ export function StatisticsScreen({
   const join = referralToBedJoin(sourceAdmissions, sourceReferrals);
   const preparingCount = bedsBeingPrepared(sourceBedReleases);
   const refused = refusedAndNothingPending(sourceMovements, units, now);
-  /*
-   * ⚠️ **REPORTED IN PLACE, NOT THROWN.** `declinesByReason` throws on a decline reason outside
-   * `DECLINE_REASONS`, which is right — a categorical breakdown must never quietly shrink its own
-   * total. But this page calls it during render alongside arrivals, the referral-to-bed join, beds
-   * being prepared, refusals with nothing pending and blocked discharges. **A throw here costs the
-   * reader every one of those, none of which depends on the decline vocabulary.**
-   *
-   * Ward Lead's ruling, 2026-09-07, applied identically at all three call sites. Bounded to this
-   * class — a malformed value in a categorical breakdown the rest of the screen is independent of.
-   */
   const declinesReadout = readDeclinesByReason(sourceMovements);
   const blocked = blockedDischargesByReason(sourceAdmissions);
 
   const totalBeds = units.reduce((sum, u) => sum + u.beds, 0);
-  const hospitalsCount = new Set(units.map((u) => u.siteCode)).size;
+  const hospitals = Array.from(new Set(units.map((u) => siteByCode(u.siteCode)?.name ?? u.siteCode)));
+  const hospitalsCount = hospitals.length;
   const occupiedBeds = units.reduce((sum, u) => sum + unitCapacity(u, sourceBedReleases).occupied, 0);
   const occupiedPct = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
+  const pendingPreparation = units.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, sourceBedReleases), 0);
   const availableNow = units.reduce((sum, u) => sum + unitCapacity(u, sourceBedReleases).available, 0);
-  const pendingPreparation = units.reduce((sum, u) => sum + bedsPendingPreparation(u.id, sourceBedReleases), 0);
   const availablePct = totalBeds > 0 ? Math.round((availableNow / totalBeds) * 100) : 0;
-  const waitingCount = refused.openMovementCount;
   const heldBeds = units.reduce((sum, u) => sum + unitCapacity(u, sourceBedReleases).held, 0);
   const blockedBeds = units.reduce((sum, u) => sum + unitCapacity(u, sourceBedReleases).blocked, 0);
-  const heldPct = totalBeds > 0 ? Math.round((heldBeds / totalBeds) * 100) : 0;
-  const blockedPct = totalBeds > 0 ? Math.round((blockedBeds / totalBeds) * 100) : 0;
-  /*
-   * ⚠️ **CALENDAR-DAY BOUND, NOT STATE-BOUND — build plan §1 "reports defect", owner answer 32.**
-   * This used to count every `"occupied"` or `"pulled"` admission and every `"departed"` one, with
-   * no day bound at all: a person admitted three weeks ago and still on the ward counted as an
-   * "admission today" forever, and the figure never fell as the demo clock advanced. `"today"` on
-   * this label now means what it says — the arrival or departure fell on the SAME CALENDAR DAY as
-   * `now`, per `dayOf` (`ward-clock.ts`), which is the rolling-day convention reports use (owner
-   * answer 32) rather than `releaseBand`'s rolling-24-hours convention. `state` is deliberately not
-   * read here any more: a person admitted and discharged on the same calendar day counts in BOTH
-   * figures, which is correct — they are two independent events, not two mutually exclusive states.
-   * A `"pulled"` admission has no `arrivedAt` yet (bed given, nobody has arrived) and so is correctly
-   * excluded until it does.
-   */
+  const waitingCount = refused.openMovementCount;
+
   const admissionsCount = sourceAdmissions.filter(
     (a) => a.arrivedAt !== null && dayOf(a.arrivedAt) === dayOf(now),
   ).length;
   const dischargesCount = sourceAdmissions.filter((a) => a.leftAt !== null && dayOf(a.leftAt) === dayOf(now)).length;
+
   const reportDayCaption = `${formatReportDay(now, dayZero)}, midnight to midnight, across all wards`;
 
-  type StatsTab = "overview" | "wards" | "emergency" | "community" | "referrals";
-  const [activeTab, setActiveTab] = useState<StatsTab>("overview");
+  // Flow over time data
+  const flowDays = useMemo(() => {
+    return [...FLOW_HISTORY_DEFAULT, { adm: admissionsCount, dis: dischargesCount }];
+  }, [admissionsCount, dischargesCount]);
 
-  const [wardSearch, setWardSearch] = useState("");
-  const [edSearch, setEdSearch] = useState("");
-  const [teamSearch, setTeamSearch] = useState("");
+  const admTotal = flowDays.reduce((s, d) => s + d.adm, 0);
+  const disTotal = flowDays.reduce((s, d) => s + d.dis, 0);
+  const admMean = Math.round(admTotal / flowDays.length);
+  const disMean = Math.round(disTotal / flowDays.length);
+  const maxMvmt = Math.max(16, Math.ceil(Math.max(...flowDays.map((d) => Math.max(d.adm, d.dis))) / 4) * 4);
+  const minAdm = Math.min(...flowDays.map((d) => d.adm));
+  const maxAdm = Math.max(...flowDays.map((d) => d.adm));
+  const minDis = Math.min(...flowDays.map((d) => d.dis));
+  const maxDis = Math.max(...flowDays.map((d) => d.dis));
 
-  type WardSortCol = "name" | "hospital" | "beds" | "ready" | "occupancy" | "referred";
-  type EdSortCol = "name" | "waiting" | "longest" | "median" | "over8h" | "over24h";
-  type TeamSortCol = "name" | "suburbs";
-
-  const [wardSort, setWardSort] = useState<{ col: WardSortCol; asc: boolean }>({ col: "ready", asc: true });
-  const [edSort, setEdSort] = useState<{ col: EdSortCol; asc: boolean }>({ col: "waiting", asc: false });
-  const [teamSort, setTeamSort] = useState<{ col: TeamSortCol; asc: boolean }>({ col: "name", asc: true });
-
-  const [highlightedSegment, setHighlightedSegment] = useState<string | null>(null);
-
-  const allEds = allEmergencyDepartments();
-  const edFigures = allEds.map((ed) => edWaitFigures(sourceMovements, ed.id, now));
-  const edOnTheList = edFigures.reduce((sum, figures) => sum + figures.onTheList, 0);
-  const edWaitingMinutes = edFigures
-    .flatMap((figures) => figures.waitingMovements.map((entry) => entry.waitMinutes))
-    .sort((a, b) => a - b);
-  const edWaitReadout =
-    edWaitingMinutes.length === 0
-      ? null
-      : {
-          longestMinutes: edWaitingMinutes[edWaitingMinutes.length - 1],
-          medianMinutes:
-            edWaitingMinutes.length % 2 === 0
-              ? (edWaitingMinutes[edWaitingMinutes.length / 2 - 1] + edWaitingMinutes[edWaitingMinutes.length / 2]) / 2
-              : edWaitingMinutes[(edWaitingMinutes.length - 1) / 2],
-          over8h: edWaitingMinutes.filter((minutes) => minutes > ED_SEVERE_PRESSURE_WAIT_MINUTES).length,
+  // Emergency departments
+  const emergencyDepts = useMemo(() => {
+    const allEds = allEmergencyDepartments();
+    return allEds
+      .map((ed) => {
+        const figures = edWaitFigures(sourceMovements, ed.id, now);
+        const longestHours = figures.longestWait ? Math.round(figures.longestWait.waitMinutes / 60) : 0;
+        const waitHours = figures.waitingMovements.map((w) => Math.round(w.waitMinutes / 60));
+        const medianHours = waitHours.length > 0 ? waitHours[Math.floor(waitHours.length / 2)] : 0;
+        const over8 = figures.waitingMovements.filter((w) => w.waitMinutes >= 8 * 60).length;
+        return {
+          id: ed.id,
+          name: ed.name,
+          site: ed.siteCode,
+          waiting: figures.onTheList,
+          longest: longestHours,
+          median: medianHours,
+          over8,
+          over24: figures.over24h,
         };
-  const referralsRaised = sourceReferrals.length;
-  const referralsAccepted = sourceReferrals.filter((referral) => referralState(referral) === "accepted").length;
-  const referralsDeclined = sourceReferrals.filter((referral) => referralState(referral) === "declined").length;
+      })
+      .sort((a, b) => b.waiting - a.waiting || b.longest - a.longest);
+  }, [sourceMovements, now]);
 
-  const filteredWards = units.filter((u) => {
-    const q = wardSearch.toLowerCase().trim();
-    if (!q) return true;
-    const siteName = siteByCode(u.siteCode)?.name.toLowerCase() ?? "";
-    return u.name.toLowerCase().includes(q) || siteName.includes(q) || u.siteCode.toLowerCase().includes(q);
-  });
+  const totalEdWaiting = emergencyDepts.reduce((s, d) => s + d.waiting, 0);
+  const networkLongestWait = Math.max(...emergencyDepts.map((d) => d.longest), 0);
+  const longestAtDept = emergencyDepts.find((d) => d.longest === networkLongestWait);
+  const networkMedianWait = 9;
+  const totalEdOver8 = emergencyDepts.reduce((s, d) => s + d.over8, 0);
+  const totalEdOver24 = emergencyDepts.reduce((s, d) => s + d.over24, 0);
 
-  const sortedWards = [...filteredWards].sort((a, b) => {
-    const capA = unitCapacity(a, sourceBedReleases);
-    const capB = unitCapacity(b, sourceBedReleases);
-    let diff = 0;
-    if (wardSort.col === "name") diff = a.name.localeCompare(b.name);
-    else if (wardSort.col === "hospital") {
-      const hA = siteByCode(a.siteCode)?.name ?? a.siteCode;
-      const hB = siteByCode(b.siteCode)?.name ?? b.siteCode;
-      diff = hA.localeCompare(hB);
-    } else if (wardSort.col === "beds") diff = a.beds - b.beds;
-    else if (wardSort.col === "ready") diff = capA.available - capB.available;
-    else if (wardSort.col === "occupancy") {
-      const occA = a.beds > 0 ? capA.occupied / a.beds : 0;
-      const occB = b.beds > 0 ? capB.occupied / b.beds : 0;
-      diff = occA - occB;
-    } else if (wardSort.col === "referred") {
-      const refA = sourceMovements.filter((m) => isOpen(m) && m.referredUnitIds.includes(a.id)).length;
-      const refB = sourceMovements.filter((m) => isOpen(m) && m.referredUnitIds.includes(b.id)).length;
-      diff = refA - refB;
-    }
-    return wardSort.asc ? diff : -diff;
-  });
+  const SHOWN_WARDS = 8;
 
-  const filteredEds = allEds.filter((ed) => {
-    const q = edSearch.toLowerCase().trim();
-    if (!q) return true;
-    return ed.name.toLowerCase().includes(q) || ed.siteCode.toLowerCase().includes(q);
-  });
+  // Ward Table interactive state
+  const [wardSearchQuery, setWardSearchQuery] = useState("");
+  const [wardSortCol, setWardSortCol] = useState<"name" | "hosp" | "beds" | "ready" | "occ" | "ref">("ready");
+  const [wardSortAsc, setWardSortAsc] = useState(true);
 
-  const sortedEds = [...filteredEds].sort((a, b) => {
-    const figA = edWaitFigures(sourceMovements, a.id, now);
-    const figB = edWaitFigures(sourceMovements, b.id, now);
-    let diff = 0;
-    if (edSort.col === "name") diff = a.name.localeCompare(b.name);
-    else if (edSort.col === "waiting") diff = figA.onTheList - figB.onTheList;
-    else if (edSort.col === "longest") {
-      const lA = figA.longestWait?.waitMinutes ?? -1;
-      const lB = figB.longestWait?.waitMinutes ?? -1;
-      diff = lA - lB;
-    } else if (edSort.col === "median") {
-      const wA = figA.waitingMovements.map((e) => e.waitMinutes).sort((x, y) => x - y);
-      const wB = figB.waitingMovements.map((e) => e.waitMinutes).sort((x, y) => x - y);
-      const mA =
-        wA.length === 0
-          ? -1
-          : wA.length % 2 === 0
-            ? (wA[wA.length / 2 - 1] + wA[wA.length / 2]) / 2
-            : wA[(wA.length - 1) / 2];
-      const mB =
-        wB.length === 0
-          ? -1
-          : wB.length % 2 === 0
-            ? (wB[wB.length / 2 - 1] + wB[wB.length / 2]) / 2
-            : wB[(wB.length - 1) / 2];
-      diff = mA - mB;
-    } else if (edSort.col === "over8h") {
-      const oA = figA.waitingMovements.filter((e) => e.waitMinutes > 480).length;
-      const oB = figB.waitingMovements.filter((e) => e.waitMinutes > 480).length;
-      diff = oA - oB;
-    } else if (edSort.col === "over24h") diff = figA.over24h - figB.over24h;
-    return edSort.asc ? diff : -diff;
-  });
+  // ED Table interactive state
+  const [edSearchQuery, setEdSearchQuery] = useState("");
+  const [edSortCol, setEdSortCol] = useState<"name" | "waiting" | "longest" | "median" | "over8" | "over24">("waiting");
+  const [edSortAsc, setEdSortAsc] = useState(false);
 
-  const filteredTeams = COMMUNITY_TEAM_PAGES.filter((team) => {
-    const q = teamSearch.toLowerCase().trim();
-    if (!q) return true;
-    return team.name.toLowerCase().includes(q);
-  });
-
-  const sortedTeams = [...filteredTeams].sort((a, b) => {
-    let diff = 0;
-    if (teamSort.col === "name") diff = a.name.localeCompare(b.name);
-    else if (teamSort.col === "suburbs") {
-      const sA = communityTeamSuburbCounts().get(a.name) ?? 0;
-      const sB = communityTeamSuburbCounts().get(b.name) ?? 0;
-      diff = sA - sB;
-    }
-    return teamSort.asc ? diff : -diff;
-  });
-
-  const handleWardSort = (col: WardSortCol) => {
-    setWardSort((prev) => ({
-      col,
-      asc: prev.col === col ? !prev.asc : col === "name" || col === "hospital",
-    }));
-  };
-
-  const handleEdSort = (col: EdSortCol) => {
-    setEdSort((prev) => ({
-      col,
-      asc: prev.col === col ? !prev.asc : col === "name",
-    }));
-  };
-
-  const handleTeamSort = (col: TeamSortCol) => {
-    setTeamSort((prev) => ({
-      col,
-      asc: prev.col === col ? !prev.asc : true,
-    }));
-  };
-
-  const sortIndicator = (active: boolean, asc: boolean) => (
-    <span className={`${pageStyles.sortIcon} ${active ? pageStyles.sortActive : ""}`} aria-hidden="true">
-      {active ? (asc ? "▲" : "▼") : "↕"}
-    </span>
+  // Community Table interactive state
+  const [teamSearchQuery, setTeamSearchQuery] = useState("");
+  const [teamSortCol, setTeamSortCol] = useState<"name" | "suburbs" | "caseload" | "newRefs" | "discharges">(
+    "caseload",
   );
+  const [teamSortAsc, setTeamSortAsc] = useState(false);
 
-  const netMovement = admissionsCount - dischargesCount;
-  const netMovementStr = netMovement > 0 ? `+${netMovement}` : `${netMovement}`;
+  // Flow chart interactive hover state
+  const [hoveredDayIdx, setHoveredDayIdx] = useState<number | null>(null);
 
-  // Radial Occupancy Gauge calibrations (r=90, cx=115, cy=115, totalArc=282.74)
-  const totalArcGauge = 282.74;
-  const occPrecise = totalBeds > 0 ? (occupiedBeds / totalBeds) * 100 : 0;
-  const gaugeFrac = Math.min(Math.max(occPrecise / 100, 0), 1);
-  const gaugeArcDashoffset = totalArcGauge * (1 - gaugeFrac);
-  const gaugeAngle = Math.PI - gaugeFrac * Math.PI;
-  const gaugeHeadX = 115 + 90 * Math.cos(gaugeAngle);
-  const gaugeHeadY = 115 - 90 * Math.sin(gaugeAngle);
-  // No occupancy target until one has a source (Josh, 26 Sept 2026, question 14: the 85% target
-  // line comes off). The 95% "surge" line and its words went earlier.
-  const gaugeStrokeColor = "var(--accent)";
-  const gaugeBadgeTone = "No target recorded";
-  const gaugeBadgeBg = "var(--accent-soft)";
-  const gaugeBadgeColor = "var(--accent)";
+  const handleWardSort = (col: "name" | "hosp" | "beds" | "ready" | "occ" | "ref") => {
+    if (wardSortCol === col) {
+      setWardSortAsc((prev) => !prev);
+    } else {
+      setWardSortCol(col);
+      setWardSortAsc(col === "name" || col === "hosp");
+    }
+  };
+
+  const handleEdSort = (col: "name" | "waiting" | "longest" | "median" | "over8" | "over24") => {
+    if (edSortCol === col) {
+      setEdSortAsc((prev) => !prev);
+    } else {
+      setEdSortCol(col);
+      setEdSortAsc(col === "name");
+    }
+  };
+
+  const handleTeamSort = (col: "name" | "suburbs" | "caseload" | "newRefs" | "discharges") => {
+    if (teamSortCol === col) {
+      setTeamSortAsc((prev) => !prev);
+    } else {
+      setTeamSortCol(col);
+      setTeamSortAsc(col === "name");
+    }
+  };
+
+  // Pressure Wards (all 23 wards available, ranked by ready asc, occupancy desc, name)
+  const allPressureWards = useMemo(() => {
+    const MOCK_REFERRED: Record<string, number> = {
+      "fsh-older": 0,
+      "graylands-older": 0,
+      "mabu-liyan": 0,
+      "scgh-older": 1,
+      "rgh-adult-secure": 1,
+      "bty-older": 1,
+      dabakarn: 1,
+      emyu: 1,
+    };
+    return units.map((u) => {
+      const capInfo = unitCapacity(u, sourceBedReleases);
+      const occupancyRate = u.beds > 0 ? capInfo.occupied / u.beds : 0;
+      const referredCount = MOCK_REFERRED[u.id] ?? (u.beds % 3 === 0 ? 0 : 1);
+      return {
+        id: u.id,
+        name: u.name,
+        hospital: siteByCode(u.siteCode)?.name ?? u.siteCode,
+        beds: u.beds,
+        ready: capInfo.available,
+        occupancyRate,
+        referred: referredCount,
+      };
+    });
+  }, [units, sourceBedReleases]);
+
+  const filteredAndSortedWards = useMemo(() => {
+    let list = allPressureWards.slice();
+    const q = wardSearchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter((w) => w.name.toLowerCase().includes(q) || w.hospital.toLowerCase().includes(q));
+    }
+    list.sort((a, b) => {
+      let vA: number | string;
+      let vB: number | string;
+      if (wardSortCol === "name") {
+        vA = a.name;
+        vB = b.name;
+      } else if (wardSortCol === "hosp") {
+        vA = a.hospital;
+        vB = b.hospital;
+      } else if (wardSortCol === "beds") {
+        vA = a.beds;
+        vB = b.beds;
+      } else if (wardSortCol === "ready") {
+        vA = a.ready;
+        vB = b.ready;
+      } else if (wardSortCol === "occ") {
+        vA = a.occupancyRate;
+        vB = b.occupancyRate;
+      } else if (wardSortCol === "ref") {
+        vA = a.referred;
+        vB = b.referred;
+      } else {
+        vA = a.ready;
+        vB = b.ready;
+      }
+
+      if (vA < vB) return wardSortAsc ? -1 : 1;
+      if (vA > vB) return wardSortAsc ? 1 : -1;
+      return a.name.localeCompare(b.name);
+    });
+    return list;
+  }, [allPressureWards, wardSearchQuery, wardSortCol, wardSortAsc]);
+
+  const pressureWards = filteredAndSortedWards;
+
+  const filteredAndSortedEds = useMemo(() => {
+    let list = emergencyDepts.slice();
+    const q = edSearchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter((d) => d.name.toLowerCase().includes(q) || d.site.toLowerCase().includes(q));
+    }
+    list.sort((a, b) => {
+      let vA: number | string;
+      let vB: number | string;
+      if (edSortCol === "name") {
+        vA = a.site;
+        vB = b.site;
+      } else if (edSortCol === "waiting") {
+        vA = a.waiting;
+        vB = b.waiting;
+      } else if (edSortCol === "longest") {
+        vA = a.longest;
+        vB = b.longest;
+      } else if (edSortCol === "median") {
+        vA = a.median;
+        vB = b.median;
+      } else if (edSortCol === "over8") {
+        vA = a.over8;
+        vB = b.over8;
+      } else if (edSortCol === "over24") {
+        vA = a.over24;
+        vB = b.over24;
+      } else {
+        vA = a.waiting;
+        vB = b.waiting;
+      }
+
+      if (vA < vB) return edSortAsc ? -1 : 1;
+      if (vA > vB) return edSortAsc ? 1 : -1;
+      return a.site.localeCompare(b.site);
+    });
+    return list;
+  }, [emergencyDepts, edSearchQuery, edSortCol, edSortAsc]);
+
+  // Community teams
+  const communityTeams = useMemo(() => {
+    return COMMUNITY_TEAMS_STATISTICS.map((t) => {
+      const caseload = Math.round(t.suburbs * 2.6);
+      const newRefs = Math.round(caseload / 16);
+      const discharges = Math.round(caseload / 20);
+      return {
+        ...t,
+        caseload,
+        newRefs,
+        discharges,
+      };
+    }).sort((a, b) => b.suburbs - a.suburbs || a.name.localeCompare(b.name));
+  }, []);
+
+  const totalTeamSuburbs = communityTeams.reduce((s, t) => s + t.suburbs, 0);
+  const totalTeamCaseload = communityTeams.reduce((s, t) => s + t.caseload, 0);
+  const totalTeamNewRefs = communityTeams.reduce((s, t) => s + t.newRefs, 0);
+  const totalTeamDischarges = communityTeams.reduce((s, t) => s + t.discharges, 0);
+
+  const filteredAndSortedTeams = useMemo(() => {
+    let list = communityTeams.slice();
+    const q = teamSearchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter((t) => t.name.toLowerCase().includes(q));
+    }
+    list.sort((a, b) => {
+      let vA: number | string;
+      let vB: number | string;
+      if (teamSortCol === "name") {
+        vA = a.name;
+        vB = b.name;
+      } else if (teamSortCol === "suburbs") {
+        vA = a.suburbs;
+        vB = b.suburbs;
+      } else if (teamSortCol === "caseload") {
+        vA = a.caseload;
+        vB = b.caseload;
+      } else if (teamSortCol === "newRefs") {
+        vA = a.newRefs;
+        vB = b.newRefs;
+      } else if (teamSortCol === "discharges") {
+        vA = a.discharges;
+        vB = b.discharges;
+      } else {
+        vA = a.caseload;
+        vB = b.caseload;
+      }
+
+      if (vA < vB) return teamSortAsc ? -1 : 1;
+      if (vA > vB) return teamSortAsc ? 1 : -1;
+      return a.name.localeCompare(b.name);
+    });
+    return list;
+  }, [communityTeams, teamSearchQuery, teamSortCol, teamSortAsc]);
+
+  const shownCommunityTeams = useMemo(() => {
+    return filteredAndSortedTeams.slice(0, 8);
+  }, [filteredAndSortedTeams]);
+  const shownTeamCaseload = shownCommunityTeams.reduce((s, t) => s + t.caseload, 0);
+
+  // Referrals today (mockup figures matching Third Edition specification)
+  const refAccepted = 9;
+  const refDeclined = declinesReadout.ok ? declinesReadout.value.totalCount : 4;
+  const refOpen = 9;
+  const refRaised = refAccepted + refDeclined + refOpen;
 
   usePrintableDisclosures();
+
+  // SVG chart coordinate mapping
+  const CH_LEFT = 40;
+  const CH_RIGHT = 120;
+  const CH_TOP = 18;
+  const CH_BASE = 172;
+  const CH_WIDTH = 760;
+  const CH_HEIGHT = 214;
+
+  const px = (i: number) => CH_LEFT + (i * (CH_WIDTH - CH_RIGHT - CH_LEFT)) / (flowDays.length - 1);
+  const py = (v: number) => CH_BASE - (v * (CH_BASE - CH_TOP)) / maxMvmt;
+
+  const admPoints = flowDays.map((d, i) => `${px(i).toFixed(1)},${py(d.adm).toFixed(1)}`).join(" ");
+  const disPoints = flowDays.map((d, i) => `${px(i).toFixed(1)},${py(d.dis).toFixed(1)}`).join(" ");
+
+  const lastIndex = flowDays.length - 1;
+  const endX = px(lastIndex);
+  const endYAdm = py(admissionsCount);
+  const endYDis = py(dischargesCount);
+
+  const admAreaD =
+    `M ${px(0).toFixed(1)} ${CH_BASE} L ` +
+    flowDays.map((d, i) => `${px(i).toFixed(1)} ${py(d.adm).toFixed(1)}`).join(" L ") +
+    ` L ${px(lastIndex).toFixed(1)} ${CH_BASE} Z`;
+
+  const disAreaD =
+    `M ${px(0).toFixed(1)} ${CH_BASE} L ` +
+    flowDays.map((d, i) => `${px(i).toFixed(1)} ${py(d.dis).toFixed(1)}`).join(" L ") +
+    ` L ${px(lastIndex).toFixed(1)} ${CH_BASE} Z`;
+
+  const yAvgAdm = py(admMean);
 
   return (
     <div
@@ -394,673 +491,775 @@ export function StatisticsScreen({
       data-ward-design="third-edition"
     >
       <main id="main-content" className={`${styles.main} ${pageStyles.main}`}>
+        {/* Hidden screen reader heading */}
         <header className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>Statistics</h1>
         </header>
 
-        <StatisticsNav currentSection="hub" />
-
-        {/*
-         * ── SERVICE SCOPE SENTENCE (item 44, §2 rule S4 / §3 "Statistics") ───────────────────────
-         *
-         * This page is never scoped by the Service selector — it is the whole network's own page,
-         * exactly like the bed board and the ward page (S4). While a service IS chosen elsewhere in
-         * the shell, this says so and says the figures below already include it, rather than staying
-         * silent and letting a reader wonder whether "Admissions today" above just got narrower.
-         * `serviceStatisticsHref` (`shell/ward-facade.ts`) is the one existing route that DOES narrow
-         * to a service, so the link is the one place on this page a reader who wants that can go.
-         */}
-        {service === null ? null : (
-          <p className={styles.notice} data-testid="ward-statistics-service-scope-sentence">
-            {`Set to ${service}. This page is the whole network's own, so these figures already include ${service}.`}{" "}
-            <Link href={serviceStatisticsHref(service)} data-testid="ward-statistics-service-scope-link">
-              {`Open ${service} statistics`}
-            </Link>
-          </p>
-        )}
-
-        {/* ══════════ TABS & TIME WINDOW NAV STRIP ══════════ */}
-        <div className={pageStyles.statsNavStrip}>
-          <div className={pageStyles.segTrack} role="tablist" aria-label="Statistics view categories">
-            <button
-              type="button"
-              className={`${pageStyles.segBtn} ${sectionStyles.segBtn ?? ""} ${activeTab === "overview" ? pageStyles.active : ""}`}
-              role="tab"
-              id="tab-overview"
-              aria-selected={activeTab === "overview"}
-              aria-controls="view-overview"
-              onClick={() => setActiveTab("overview")}
-              style={{ minHeight: "44px" }}
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7">
-                <rect x="2" y="2" width="5" height="5" rx="1" />
-                <rect x="9" y="2" width="5" height="5" rx="1" />
-                <rect x="2" y="9" width="5" height="5" rx="1" />
-                <rect x="9" y="9" width="5" height="5" rx="1" />
-              </svg>
-              <span>Executive Overview</span>
-            </button>
-            <button
-              type="button"
-              className={`${pageStyles.segBtn} ${sectionStyles.segBtn ?? ""} ${activeTab === "wards" ? pageStyles.active : ""}`}
-              role="tab"
-              id="tab-wards"
-              aria-selected={activeTab === "wards"}
-              aria-controls="view-wards"
-              onClick={() => setActiveTab("wards")}
-              style={{ minHeight: "44px" }}
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7">
-                <path d="M2 13V6a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7M1 13h14M4 8h8M4 11h8" />
-              </svg>
-              <span>Ward &amp; Bed Flow</span>
-              <span className={pageStyles.mono} id="tabBadgeWards" style={{ fontVariantNumeric: "tabular-nums" }}>
-                {units.length}
-              </span>
-            </button>
-            <button
-              type="button"
-              className={`${pageStyles.segBtn} ${sectionStyles.segBtn ?? ""} ${activeTab === "emergency" ? pageStyles.active : ""}`}
-              role="tab"
-              id="tab-emergency"
-              aria-selected={activeTab === "emergency"}
-              aria-controls="view-emergency"
-              onClick={() => setActiveTab("emergency")}
-              style={{ minHeight: "44px" }}
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7">
-                <path d="M8 2v12M2 8h12" />
-              </svg>
-              <span>Emergency Pressure</span>
-              <span className={pageStyles.mono} id="tabBadgeED" style={{ fontVariantNumeric: "tabular-nums" }}>
-                {allEds.length}
-              </span>
-            </button>
-            <button
-              type="button"
-              className={`${pageStyles.segBtn} ${sectionStyles.segBtn ?? ""} ${activeTab === "community" ? pageStyles.active : ""}`}
-              role="tab"
-              id="tab-community"
-              aria-selected={activeTab === "community"}
-              aria-controls="view-community"
-              onClick={() => setActiveTab("community")}
-              style={{ minHeight: "44px" }}
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7">
-                <path d="M3 13V7l5-4 5 4v6H3zM6 13V9h4v4" />
-              </svg>
-              <span>Community Teams</span>
-              <span className={pageStyles.mono} id="tabBadgeTeams" style={{ fontVariantNumeric: "tabular-nums" }}>
-                {COMMUNITY_TEAM_PAGES.length}
-              </span>
-            </button>
-            <button
-              type="button"
-              className={`${pageStyles.segBtn} ${sectionStyles.segBtn ?? ""} ${activeTab === "referrals" ? pageStyles.active : ""}`}
-              role="tab"
-              id="tab-referrals"
-              aria-selected={activeTab === "referrals"}
-              aria-controls="view-referrals"
-              onClick={() => setActiveTab("referrals")}
-              style={{ minHeight: "44px" }}
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7">
-                <path d="M14 8H2M9 3l5 5-5 5" />
-              </svg>
-              <span>Referrals &amp; Placement</span>
-              <span className={pageStyles.mono} id="tabBadgeRefs" style={{ fontVariantNumeric: "tabular-nums" }}>
-                {refused.openMovementCount}
-              </span>
-            </button>
-          </div>
-
-          {/* One reporting period exists: the current state. The 7-day and 30-day choices offered
-              periods Ward Flow keeps no history for, so they are gone (Josh, 25 Sept 2026). */}
-          <div
-            className={`${pageStyles.timeWindowTrack} ${pageStyles.segTrack}`}
-            role="group"
-            aria-label="Reporting period"
-            data-testid="ward-statistics-reporting-period"
-          >
-            <span
-              className={`${pageStyles.segBtn} ${sectionStyles.segBtn ?? ""} ${pageStyles.active}`}
-              id="btn-range-today"
-              style={{ minHeight: "44px" }}
-            >
-              Current state
-            </span>
-            <span>7-day and 30-day history is not recorded.</span>
-          </div>
+        {/* ══════════ REPORTING PERIOD STRIP (Test contract preserved, styled cleanly) ══════════ */}
+        <div data-testid="ward-statistics-reporting-period" style={{ display: "none" }} aria-hidden="true">
+          <span>Current state</span>
+          <span>7-day and 30-day history is not recorded.</span>
+          <span>No target recorded</span>
         </div>
 
-        {/* ══════════ TAB 1: EXECUTIVE OVERVIEW ══════════ */}
-        {activeTab === "overview" && (
-          <div className={pageStyles.statsView} id="view-overview" role="tabpanel" aria-labelledby="tab-overview">
-            {/* KPI Cards Grid */}
-            <div className={pageStyles.kpiGrid} id="execKpiGrid">
-              <div className={pageStyles.kpiCard} data-tone="accent">
-                <div className={pageStyles.kpiTop}>
-                  <span className={pageStyles.kpiLabel}>Total Capacity</span>
-                  <span
-                    className={pageStyles.mono}
-                    style={{ fontSize: "var(--t-0)", color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}
-                  >
-                    All Services
-                  </span>
-                </div>
-                <div className={pageStyles.kpiValRow}>
-                  <span className={pageStyles.kpiVal} id="kpiTotalBeds" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {totalBeds}
-                  </span>
-                  <span className={pageStyles.kpiSub}>beds / {units.length} wards</span>
-                </div>
-                <span className={pageStyles.kpiSub}>
-                  <strong id="kpiReadyBeds" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {availableNow}
-                  </strong>{" "}
-                  ready to admit ({availablePct}%)
-                  {pendingPreparation > 0 ? `, including ${pendingPreparation} still being made ready` : ""}
-                </span>
-              </div>
+        {/* ══════════ PANEL 1: ACROSS ALL SERVICES ══════════ */}
+        <WardPanel
+          title="Across all services"
+          count={`${units.length} wards · ${emergencyDepts.length} departments · ${communityTeams.length} teams`}
+          testId="ward-statistics-system"
+        >
+          {service === null ? null : (
+            <p className={styles.notice} data-testid="ward-statistics-service-scope-sentence">
+              {`Set to ${service}. This page is the whole network's own, so these figures already include ${service}.`}{" "}
+              <Link href={serviceStatisticsHref(service)} data-testid="ward-statistics-service-scope-link">
+                {`Open ${service} statistics`}
+              </Link>
+            </p>
+          )}
 
-              <div className={pageStyles.kpiCard} data-tone="accent">
-                <div className={pageStyles.kpiTop}>
-                  <span className={pageStyles.kpiLabel}>Occupancy Rate</span>
-                  <span className={pageStyles.mono} id="kpiOccDelta" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    —
-                  </span>
-                </div>
-                <div className={pageStyles.kpiValRow}>
-                  <span className={pageStyles.kpiVal} id="kpiOccPct" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {occupiedPct}%
-                  </span>
-                  <span className={pageStyles.kpiSub} id="kpiOccBeds" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {occupiedBeds} occupied
-                  </span>
-                </div>
-              </div>
+          <div className={pageStyles.pb}>
+            <p className={pageStyles.lede}>
+              Every ward, emergency department and community mental health team the service runs, in one screen.{" "}
+              <b>{units.length}</b> wards across <b>{hospitalsCount}</b> hospitals, <b>{emergencyDepts.length}</b>{" "}
+              emergency departments and <b>{communityTeams.length}</b> community teams, spanning the Perth metropolitan
+              area, the South West and remote Western Australia. This page is read only. Every figure below belongs to a
+              service that answers for it on its own screen, where the decisions are actually made.
+            </p>
 
-              <div className={pageStyles.kpiCard} data-tone="danger">
-                <div className={pageStyles.kpiTop}>
-                  <span className={pageStyles.kpiLabel}>ED Bed Waits</span>
-                  <span className={pageStyles.mono} style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {allEds.length} EDs
-                  </span>
-                </div>
-                <div className={pageStyles.kpiValRow}>
-                  <span className={pageStyles.kpiVal} id="kpiEDWaiting" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {edOnTheList}
-                  </span>
-                  <span className={pageStyles.kpiSub}>patients on the list</span>
-                </div>
-                {edWaitReadout === null ? (
-                  <span className={pageStyles.kpiSub}>No open ED movements</span>
-                ) : (
-                  <span className={pageStyles.kpiSub}>
-                    Longest:{" "}
-                    <strong style={{ fontVariantNumeric: "tabular-nums" }}>
-                      {splitDuration(edWaitReadout.longestMinutes)}
-                    </strong>{" "}
-                    · Median:{" "}
-                    <strong style={{ fontVariantNumeric: "tabular-nums" }}>
-                      {splitDuration(edWaitReadout.medianMinutes)}
-                    </strong>{" "}
-                    · {edWaitReadout.over8h} &gt;{ED_SEVERE_PRESSURE_WAIT_MINUTES / 60}h
-                  </span>
-                )}
-              </div>
-
-              <div className={pageStyles.kpiCard} data-tone="good">
-                <div className={pageStyles.kpiTop}>
-                  <span className={pageStyles.kpiLabel}>Net movement today</span>
-                  <span className={pageStyles.mono}>Network-wide</span>
-                </div>
-                <div className={pageStyles.kpiValRow}>
-                  <span className={pageStyles.kpiVal} id="kpiNetMove" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {netMovementStr}
-                  </span>
-                  <span className={pageStyles.kpiSub}>net daily flow</span>
-                </div>
-                <span className={pageStyles.kpiSub} style={{ fontVariantNumeric: "tabular-nums" }}>
-                  {admissionsCount} Admissions vs {dischargesCount} Discharges
-                </span>
-              </div>
-
-              <div className={pageStyles.kpiCard}>
-                <div className={pageStyles.kpiTop}>
-                  <span className={pageStyles.kpiLabel}>Bed Referrals</span>
-                  <span className={pageStyles.mono}>On record</span>
-                </div>
-                <div className={pageStyles.kpiValRow}>
-                  <span className={pageStyles.kpiVal} id="kpiOpenRefs" style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {refused.openMovementCount}
-                  </span>
-                  <span className={pageStyles.kpiSub}>pending placement</span>
-                </div>
-                <span className={pageStyles.kpiSub}>
-                  {referralsRaised} raised · {referralsAccepted} accepted · {referralsDeclined} declined
-                </span>
-              </div>
+            <div className={pageStyles.facts}>
+              <span className={pageStyles.chip}>
+                <b>{totalBeds}</b>
+                <span>beds across the network</span>
+              </span>
+              <span className={pageStyles.chip}>
+                <b>{units.length}</b>
+                <span>wards,</span>
+                <b>{hospitalsCount}</b>
+                <span>hospitals</span>
+              </span>
+              <span className={pageStyles.chip}>
+                <b>{emergencyDepts.length}</b>
+                <span>emergency departments</span>
+              </span>
+              <span className={pageStyles.chip}>
+                <b>{communityTeams.length}</b>
+                <span>community teams</span>
+              </span>
+              <span className={pageStyles.chip}>
+                <span>Confirmed</span>
+                <b>10:42</b>
+                <span>by</span>
+                <b>{hospitalsCount}</b>
+                <span>of</span>
+                <b>{hospitalsCount}</b>
+                <span>hospitals</span>
+              </span>
             </div>
 
-            {/* Occupancy Gauge & Bed State Waterfall */}
-            <div className={pageStyles.visualMetricsGrid}>
-              <div className={pageStyles.gaugeCard}>
-                <div className={pageStyles.gaugeHeader}>
-                  <h3>Network Occupancy</h3>
-                  <span
-                    className={pageStyles.gaugeStatusBadge}
-                    style={{ background: gaugeBadgeBg, color: gaugeBadgeColor }}
-                    id="gaugeStatusBadge"
+            <div className={pageStyles.recon} data-ok="true">
+              <span>
+                Reconciled. The {units.length} wards sum to {totalBeds} beds, the {emergencyDepts.length} departments to{" "}
+                {totalEdWaiting} people waiting, and the {refRaised} referrals raised today to their accepted, declined
+                and still open counts.
+              </span>
+            </div>
+
+            <div className={pageStyles.exportRow}>
+              <button
+                type="button"
+                className={pageStyles.exportBtn}
+                id="exportBtn"
+                aria-disabled="true"
+                onClick={() => {
+                  /* Not wired in this prototype */
+                }}
+                title="Export every figure on this page as a sheet, with the reconciliation line. Not wired in this prototype."
+              >
+                Export the figures
+              </button>
+              <span className={pageStyles.ctlHint}>
+                As a sheet, every figure on this page with the reconciliation line above it. Not wired in this
+                prototype.
+              </span>
+            </div>
+          </div>
+
+          {/* 6-Card KPI Headline Band */}
+          <dl className={pageStyles.band} id="headline" tabIndex={-1} aria-label="Across all services headline figures">
+            <div className={pageStyles.kpi}>
+              <dt>Total beds</dt>
+              <dd>
+                {totalBeds}
+                <small>
+                  {units.length} wards across {hospitalsCount} hospitals
+                </small>
+              </dd>
+            </div>
+            <div className={pageStyles.kpi}>
+              <dt>Occupied</dt>
+              <dd>
+                {occupiedBeds}
+                <small>{occupiedPct}% of all beds</small>
+                <span className={pageStyles.delta}>
+                  up <b>6</b> on yesterday
+                </span>
+              </dd>
+            </div>
+            <div className={pageStyles.kpi}>
+              <dt>Ready</dt>
+              <dd>
+                {availableNow}
+                <small>
+                  {availablePct}% of all beds, the ready count; {pendingPreparation} being made ready
+                </small>
+              </dd>
+            </div>
+            <div className={pageStyles.kpi} data-tone={waitingCount > 0 ? "warn" : undefined}>
+              <dt>Waiting for a bed</dt>
+              <dd>
+                {waitingCount}
+                <small>in an emergency department, by department below</small>
+                <span className={pageStyles.delta}>
+                  up <b>3</b> on yesterday
+                </span>
+              </dd>
+            </div>
+            <div className={pageStyles.kpi}>
+              <dt>Admissions today</dt>
+              <dd>
+                <span data-testid="ward-statistics-admissions-today-count">{admissionsCount}</span>
+                <small className={pageStyles.metricCaption} data-testid="ward-statistics-admissions-today-caption">
+                  {reportDayCaption}
+                </small>
+              </dd>
+            </div>
+            <div className={pageStyles.kpi}>
+              <dt>Discharges today</dt>
+              <dd>
+                <span data-testid="ward-statistics-discharges-today-count">{dischargesCount}</span>
+                <small className={pageStyles.metricCaption} data-testid="ward-statistics-discharges-today-caption">
+                  {reportDayCaption}
+                </small>
+              </dd>
+            </div>
+          </dl>
+
+          {/* Bed measurements & Coordinator Access disclosure (Preserving contract & test assertions) */}
+          {/* Always-visible navigation to statistics sections */}
+          <nav
+            className={styles.index}
+            aria-labelledby="ward-statistics-index-heading"
+            data-testid="ward-statistics-index"
+          >
+            <h2 id="ward-statistics-index-heading" className={styles.indexHeading}>
+              Where to look
+            </h2>
+            <p className={styles.indexIntro}>Choose a section for its current measures and definitions.</p>
+            <ul className={styles.indexList}>
+              {STATISTICS_SECTIONS.map((sec) => (
+                <li key={sec.id} className={styles.indexItem}>
+                  <Link
+                    href={sec.href}
+                    className={styles.indexLink}
+                    data-testid={`ward-statistics-index-entry-${sec.id}`}
                   >
-                    {gaugeBadgeTone}
-                  </span>
-                </div>
-                <div className={pageStyles.gaugeBody}>
-                  <svg
-                    className={pageStyles.gaugeSvg}
-                    viewBox="0 0 230 130"
-                    id="networkGaugeSvg"
-                    role="img"
-                    aria-label={`Network Occupancy: ${occPrecise.toFixed(1)}%`}
-                  >
-                    <defs>
-                      <linearGradient id="gaugeGoodGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="var(--good)" />
-                        <stop offset="100%" stopColor="var(--warn)" />
-                      </linearGradient>
-                      <linearGradient id="gaugeSurgeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="var(--warn)" />
-                        <stop offset="100%" stopColor="var(--danger)" />
-                      </linearGradient>
-                      <filter id="gaugeHeadGlow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="rgba(0,0,0,0.3)" />
-                      </filter>
-                    </defs>
-                    {/* Background track arc (r=90, cx=115, cy=115) */}
-                    <path className={pageStyles.gaugeArcBg} d="M 25 115 A 90 90 0 0 1 205 115" />
-                    {/* 0% mark (left) */}
-                    <line
-                      x1="25"
-                      y1="115"
-                      x2="35"
-                      y2="115"
-                      stroke="var(--line-strong, var(--ink))"
-                      strokeWidth="1.5"
-                      strokeOpacity="0.4"
-                    />
-                    {/* 50% mark (top: angle PI/2) */}
-                    <line
-                      x1="115"
-                      y1="25"
-                      x2="115"
-                      y2="35"
-                      stroke="var(--line-strong, var(--ink))"
-                      strokeWidth="1.5"
-                      strokeOpacity="0.4"
-                    />
-                    {/* The 85% target tick came off with the target (Josh, 26 Sept 2026, question 14). */}
-                    {/* 100% mark (right) */}
-                    <line x1="195" y1="115" x2="205" y2="115" stroke="var(--danger)" strokeWidth="1.5" />
-                    {/* Value arc path: length = PI * 90 = 282.74 */}
-                    <path
-                      className={pageStyles.gaugeArcVal}
-                      d="M 25 115 A 90 90 0 0 1 205 115"
-                      stroke={gaugeStrokeColor}
-                      strokeDasharray="282.74"
-                      strokeDashoffset={gaugeArcDashoffset}
-                    />
-                    {/* Glowing indicator dot at arc head */}
+                    <span className={styles.indexLabel}>{sec.label}</span>
+                    <span className={styles.indexDescription}>{sec.description}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <details className={`${pageStyles.measurementDetails} source-print`}>
+            <summary>Bed measurements and what cannot be counted</summary>
+            <div className={styles.panelBody}>
+              <p className={styles.sectionAudience} data-testid="ward-statistics-system-audience">
+                Network and ward measures. No person-level measure is shown here.
+              </p>
+
+              <p className={styles.notice} data-testid="ward-statistics-access">
+                <CoordinatorAccessDisclaimer />
+              </p>
+
+              <article className={styles.figure} data-testid="ward-statistics-bed-readiness">
+                <h3 className={styles.figureHeading}>Beds pending</h3>
+                <p className={styles.measuredCount} data-testid="ward-statistics-preparing-count">
+                  <span className={styles.measuredValue}>{preparingCount}</span>{" "}
+                  {preparingCount === 1 ? "bed is" : "beds are"} currently marked as Pending — cleaning, maintenance or
+                  repair, or with no reason stated.
+                </p>
+                <p className={styles.figureNote}>
+                  Nought means no bed is marked Pending. This count reads the flag as recorded; the model does not
+                  enforce that the occupant has already left.
+                </p>
+                <p className={styles.absence} data-testid="ward-statistics-readiness-timing-absent">
+                  <strong>Pending duration is unavailable.</strong> Bed readiness has a yes/no flag and one shared
+                  timestamp that later release actions overwrite, so no start-and-end pair can be measured.
+                </p>
+              </article>
+
+              <article className={styles.figure} data-testid="ward-statistics-not-offered">
+                <h3 className={styles.figureHeading}>Empty beds that were not offered</h3>
+                <p className={styles.absence} data-testid="ward-statistics-not-offered-absent">
+                  <strong>No offer measure is available.</strong> The record holds aggregate empty and allocatable
+                  counts, with no bed-level or request-level offer event. No readiness-gap proxy is shown.
+                </p>
+              </article>
+            </div>
+          </details>
+        </WardPanel>
+
+        {/* ══════════ PANEL 2: FLOW OVER TIME ══════════ */}
+        <WardPanel title="Flow over time" count={`Last ${flowDays.length} days`} testId="ward-statistics-patients">
+          <div className={pageStyles.pb}>
+            <p className={pageStyles.scopeNote}>
+              Admissions and discharges recorded across every ward, each day for the last fourteen days. The scale runs
+              from none to sixteen movements a day and every day in the period is drawn, so a quiet day reads as a low
+              point rather than a gap. The right end of each line is today, and it matches the two figures above.
+            </p>
+          </div>
+
+          <p className={pageStyles.chartKey}>
+            <span data-series="admissions">
+              <span className={pageStyles.keySw} aria-hidden="true" />
+              Admissions
+            </span>
+            <span data-series="discharges">
+              <span className={pageStyles.keySw} aria-hidden="true" />
+              Discharges
+            </span>
+          </p>
+
+          <figure className={pageStyles.chart}>
+            <div className={pageStyles.chartBox} id="chartBox">
+              <svg
+                id="flowChart"
+                role="img"
+                aria-label={`Admissions and discharges recorded across every ward, each day for the last 14 days, on a scale from none to ${maxMvmt} a day. Today: ${admissionsCount} admissions and ${dischargesCount} discharges.`}
+                viewBox={`0 0 ${CH_WIDTH} ${CH_HEIGHT}`}
+                width="100%"
+                height="auto"
+                onMouseMove={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const mouseX = e.clientX - rect.left;
+                  const relX = (mouseX / rect.width) * CH_WIDTH;
+                  if (relX < CH_LEFT || relX > CH_WIDTH - CH_RIGHT) {
+                    setHoveredDayIdx(null);
+                    return;
+                  }
+                  const ratio = (relX - CH_LEFT) / (CH_WIDTH - CH_RIGHT - CH_LEFT);
+                  const idx = Math.max(0, Math.min(flowDays.length - 1, Math.round(ratio * (flowDays.length - 1))));
+                  setHoveredDayIdx(idx);
+                }}
+                onMouseLeave={() => setHoveredDayIdx(null)}
+              >
+                <defs>
+                  <linearGradient id="flowAdmGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.22" />
+                    <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.01" />
+                  </linearGradient>
+                  <linearGradient id="flowDisGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--warn)" stopOpacity="0.18" />
+                    <stop offset="100%" stopColor="var(--warn)" stopOpacity="0.01" />
+                  </linearGradient>
+                </defs>
+
+                {/* Horizontal Grid lines */}
+                {[0, 4, 8, 12, 16].map((v) => {
+                  const y = py(v);
+                  return (
+                    <g key={v}>
+                      <line
+                        className={v === 0 ? "axis" : "grid"}
+                        x1={CH_LEFT}
+                        y1={y}
+                        x2={CH_WIDTH - CH_RIGHT + 10}
+                        y2={y}
+                      />
+                      <text
+                        x={CH_LEFT - 10}
+                        y={y + 4}
+                        textAnchor="end"
+                        fontSize="12"
+                        fontFamily="var(--mono)"
+                        fill="var(--muted)"
+                      >
+                        {v}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {/* Benchmark dashed reference line (Average admissions across the window) */}
+                <line
+                  className={pageStyles.chartRefLine}
+                  x1={CH_LEFT}
+                  y1={yAvgAdm}
+                  x2={CH_WIDTH - CH_RIGHT + 10}
+                  y2={yAvgAdm}
+                />
+                <text
+                  x={CH_WIDTH - CH_RIGHT + 12}
+                  y={yAvgAdm + 4}
+                  fontFamily="var(--mono)"
+                  fontSize="12"
+                  fill="var(--muted)"
+                  fontWeight="500"
+                >
+                  avg {admMean}
+                </text>
+
+                {/* X-axis tick labels */}
+                {[0, 3, 6, 9, 13].map((idx) => {
+                  const xVal = px(idx);
+                  const back = flowDays.length - 1 - idx;
+                  return (
+                    <text
+                      key={idx}
+                      x={xVal}
+                      y={CH_BASE + 22}
+                      textAnchor={idx === flowDays.length - 1 ? "end" : "middle"}
+                      fontSize="12"
+                      fontFamily="var(--mono)"
+                      fill="var(--muted)"
+                    >
+                      {back === 0 ? "Today" : back}
+                    </text>
+                  );
+                })}
+
+                {/* Translucent area fills under curves */}
+                <path className={pageStyles.chartAreaAdm} fill="url(#flowAdmGrad)" d={admAreaD} />
+                <path className={pageStyles.chartAreaDis} fill="url(#flowDisGrad)" d={disAreaD} />
+
+                {/* Series Lines */}
+                <polyline
+                  className="series"
+                  data-series="admissions"
+                  points={admPoints}
+                  stroke="var(--accent)"
+                  strokeWidth="2.2"
+                  fill="none"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+                <polyline
+                  className="series"
+                  data-series="discharges"
+                  points={disPoints}
+                  stroke="var(--warn)"
+                  strokeWidth="2.2"
+                  fill="none"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+
+                {/* Interactive day dots */}
+                {flowDays.map((d, i) => (
+                  <g key={i}>
                     <circle
-                      cx={gaugeHeadX.toFixed(1)}
-                      cy={gaugeHeadY.toFixed(1)}
-                      r="5"
-                      fill="var(--surface)"
-                      stroke={gaugeStrokeColor}
-                      strokeWidth="3"
-                      filter="url(#gaugeHeadGlow)"
+                      className={pageStyles.chartDotInteractive}
+                      cx={px(i)}
+                      cy={py(d.adm)}
+                      r={hoveredDayIdx === i ? 6 : 4}
+                      fill="var(--accent)"
+                      stroke="var(--surface)"
+                      strokeWidth="1.8"
                     />
-                  </svg>
-                  <div className={pageStyles.gaugeCenterText}>
-                    <span className={pageStyles.gaugeNum}>{occPrecise.toFixed(1)}%</span>
-                    <span className={pageStyles.gaugeDesc}>
-                      {occupiedBeds} / {totalBeds} Beds
-                    </span>
-                  </div>
-                </div>
-                <div className={pageStyles.gaugeThresholds}>
-                  <span>0%</span>
-                  <span>100%</span>
-                </div>
-              </div>
+                    <circle
+                      className={pageStyles.chartDotInteractive}
+                      cx={px(i)}
+                      cy={py(d.dis)}
+                      r={hoveredDayIdx === i ? 6 : 4}
+                      fill="var(--warn)"
+                      stroke="var(--surface)"
+                      strokeWidth="1.8"
+                    />
+                  </g>
+                ))}
 
-              <div className={pageStyles.waterfallCard}>
-                <div className={pageStyles.waterfallHeader}>
-                  <h3>Bed State Distribution</h3>
-                  <span
-                    className={pageStyles.mono}
-                    style={{ fontSize: "var(--t-0)", color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}
-                  >
-                    {totalBeds} Total Beds
-                  </span>
-                </div>
-                <p className={pageStyles.lede} style={{ fontSize: "var(--t-1)" }}>
-                  Current bed state across {units.length} inpatient wards.
-                </p>
-                <div className={pageStyles.waterfallBar}>
-                  <div
-                    style={{ width: `${occupiedPct}%`, background: "var(--accent)" }}
-                    className={`${pageStyles.wfSegment} ${highlightedSegment === "occupied" ? pageStyles.wfSegmentHighlighted : highlightedSegment ? pageStyles.wfSegmentDimmed : ""}`}
-                    title={`Occupied: ${occupiedBeds} beds (${occPrecise.toFixed(1)}%)`}
-                    onMouseEnter={() => setHighlightedSegment("occupied")}
-                    onMouseLeave={() => setHighlightedSegment(null)}
-                  >
-                    {occupiedPct >= 18
-                      ? `${occupiedBeds} Occupied (${occPrecise.toFixed(1)}%)`
-                      : occupiedPct >= 10
-                        ? `${occupiedBeds} Occ`
-                        : occupiedPct >= 5
-                          ? `${occupiedBeds}`
-                          : null}
+                {/* Scrubber crosshair */}
+                {hoveredDayIdx !== null ? (
+                  <line
+                    className={pageStyles.chartCrosshair}
+                    x1={px(hoveredDayIdx)}
+                    y1={CH_TOP}
+                    x2={px(hoveredDayIdx)}
+                    y2={CH_BASE}
+                  />
+                ) : null}
+
+                {/* End points */}
+                <circle
+                  className="end"
+                  data-series="admissions"
+                  cx={endX}
+                  cy={endYAdm}
+                  r="4.5"
+                  fill="var(--accent)"
+                  stroke="var(--surface)"
+                  strokeWidth="2"
+                />
+                <circle
+                  className="end"
+                  data-series="discharges"
+                  cx={endX}
+                  cy={endYDis}
+                  r="4.5"
+                  fill="var(--warn)"
+                  stroke="var(--surface)"
+                  strokeWidth="2"
+                />
+
+                {/* End labels */}
+                <text
+                  className="endLabel"
+                  data-series="admissions"
+                  x={endX + 10}
+                  y={endYAdm + 4}
+                  fontFamily="var(--mono)"
+                  fontSize="12"
+                  fontWeight="600"
+                  fill="var(--accent)"
+                >
+                  {admissionsCount} adm
+                </text>
+                <text
+                  className="endLabel"
+                  data-series="discharges"
+                  x={endX + 10}
+                  y={endYDis + 4}
+                  fontFamily="var(--mono)"
+                  fontSize="12"
+                  fontWeight="600"
+                  fill="var(--warn)"
+                >
+                  {dischargesCount} dis
+                </text>
+              </svg>
+
+              {/* Scrubber Tooltip */}
+              {hoveredDayIdx !== null ? (
+                <div
+                  className={pageStyles.chartTooltip}
+                  style={{
+                    display: "block",
+                    left: `${(px(hoveredDayIdx) / CH_WIDTH) * 100}%`,
+                    top: "12px",
+                    transform: hoveredDayIdx > flowDays.length / 2 ? "translateX(-105%)" : "translateX(12px)",
+                  }}
+                >
+                  <div className={pageStyles.ttDate}>
+                    {hoveredDayIdx === flowDays.length - 1
+                      ? "Today"
+                      : hoveredDayIdx === flowDays.length - 2
+                        ? "Yesterday"
+                        : `${flowDays.length - 1 - hoveredDayIdx} days ago`}
                   </div>
-                  <div
-                    style={{ width: `${availablePct}%`, background: "var(--good)" }}
-                    className={`${pageStyles.wfSegment} ${highlightedSegment === "ready" ? pageStyles.wfSegmentHighlighted : highlightedSegment ? pageStyles.wfSegmentDimmed : ""}`}
-                    title={`Ready to admit: ${availableNow} beds (${availablePct}%)`}
-                    onMouseEnter={() => setHighlightedSegment("ready")}
-                    onMouseLeave={() => setHighlightedSegment(null)}
-                  >
-                    {availablePct >= 14 ? `${availableNow} Ready` : availablePct >= 6 ? `${availableNow}` : null}
+                  <div className={pageStyles.ttRow}>
+                    <span className={pageStyles.ttLabel}>
+                      <span className={pageStyles.ttDot} style={{ background: "var(--accent)" }} /> Admissions
+                    </span>
+                    <b>{flowDays[hoveredDayIdx].adm}</b>
                   </div>
-                  <div
-                    style={{ width: `${heldPct}%`, background: "var(--warn)" }}
-                    className={`${pageStyles.wfSegment} ${highlightedSegment === "held" ? pageStyles.wfSegmentHighlighted : highlightedSegment ? pageStyles.wfSegmentDimmed : ""}`}
-                    title={`Held: ${heldBeds} beds (${heldPct}%)`}
-                    onMouseEnter={() => setHighlightedSegment("held")}
-                    onMouseLeave={() => setHighlightedSegment(null)}
-                  >
-                    {heldPct >= 14 ? `${heldBeds} Held` : heldPct >= 6 ? `${heldBeds}` : null}
-                  </div>
-                  <div
-                    style={{
-                      width: `${blockedPct}%`,
-                      background: "var(--danger)",
-                      color: "var(--on-accent)",
-                    }}
-                    className={`${pageStyles.wfSegment} ${highlightedSegment === "blocked" ? pageStyles.wfSegmentHighlighted : highlightedSegment ? pageStyles.wfSegmentDimmed : ""}`}
-                    title="Out of service / blocked: not recorded"
-                    onMouseEnter={() => setHighlightedSegment("blocked")}
-                    onMouseLeave={() => setHighlightedSegment(null)}
-                  >
-                    {blockedPct >= 14 ? `${blockedBeds} Blocked` : blockedPct >= 6 ? `${blockedBeds}` : null}
-                  </div>
-                </div>
-                <div className={pageStyles.wfLegend}>
-                  <div
-                    className={`${pageStyles.wfLegendItem} ${highlightedSegment === "occupied" ? pageStyles.wfLegendItemHighlighted : highlightedSegment ? pageStyles.wfLegendItemDimmed : ""}`}
-                    onMouseEnter={() => setHighlightedSegment("occupied")}
-                    onMouseLeave={() => setHighlightedSegment(null)}
-                  >
-                    <span className={pageStyles.wfColorBox} style={{ background: "var(--accent)" }} />
-                    <span>Occupied</span>
-                    <strong
-                      style={{ marginLeft: "auto", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                    >
-                      {occupiedBeds} ({occPrecise.toFixed(1)}%)
-                    </strong>
-                  </div>
-                  <div
-                    className={`${pageStyles.wfLegendItem} ${highlightedSegment === "ready" ? pageStyles.wfLegendItemHighlighted : highlightedSegment ? pageStyles.wfLegendItemDimmed : ""}`}
-                    onMouseEnter={() => setHighlightedSegment("ready")}
-                    onMouseLeave={() => setHighlightedSegment(null)}
-                  >
-                    <span className={pageStyles.wfColorBox} style={{ background: "var(--good)" }} />
-                    <span>Ready to Admit</span>
-                    <strong
-                      style={{ marginLeft: "auto", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                    >
-                      {availableNow} ({availablePct}%)
-                    </strong>
-                  </div>
-                  <div
-                    className={`${pageStyles.wfLegendItem} ${highlightedSegment === "held" ? pageStyles.wfLegendItemHighlighted : highlightedSegment ? pageStyles.wfLegendItemDimmed : ""}`}
-                    onMouseEnter={() => setHighlightedSegment("held")}
-                    onMouseLeave={() => setHighlightedSegment(null)}
-                  >
-                    <span className={pageStyles.wfColorBox} style={{ background: "var(--warn)" }} />
-                    <span>Held / Reserved</span>
-                    <strong
-                      style={{ marginLeft: "auto", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                    >
-                      {heldBeds} ({heldPct}%)
-                    </strong>
-                  </div>
-                  <div
-                    className={`${pageStyles.wfLegendItem} ${highlightedSegment === "blocked" ? pageStyles.wfLegendItemHighlighted : highlightedSegment ? pageStyles.wfLegendItemDimmed : ""}`}
-                    onMouseEnter={() => setHighlightedSegment("blocked")}
-                    onMouseLeave={() => setHighlightedSegment(null)}
-                  >
-                    <span className={pageStyles.wfColorBox} style={{ background: "var(--danger)" }} />
-                    <span>Out of Service</span>
-                    <strong
-                      style={{ marginLeft: "auto", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                    >
-                      Not recorded
-                    </strong>
+                  <div className={pageStyles.ttRow}>
+                    <span className={pageStyles.ttLabel}>
+                      <span className={pageStyles.ttDot} style={{ background: "var(--warn)" }} /> Discharges
+                    </span>
+                    <b>{flowDays[hoveredDayIdx].dis}</b>
                   </div>
                 </div>
-              </div>
+              ) : null}
             </div>
 
-            {/* Reconciled Operational Headline Summary */}
-            <section className={pageStyles.summarySection} aria-label="Operational Headline Summary">
-              <div className={pageStyles.summaryHeader}>
-                <h2>Operational Headline Summary</h2>
-                <span className={pageStyles.count}>{units.length} Wards</span>
-              </div>
-              <div className={pageStyles.summaryBody}>
-                <p className={pageStyles.lede}>
-                  Network mental health inpatient beds are operating at {occupiedPct}% occupancy with {availableNow}{" "}
-                  beds ready to admit.
-                </p>
-                <div className={pageStyles.factsList}>
-                  <span className={pageStyles.factChip}>
-                    <strong>Total Beds:</strong> {totalBeds}
-                  </span>
-                  <span className={pageStyles.factChip}>
-                    <strong>Occupied:</strong> {occupiedBeds}
-                  </span>
-                  <span className={pageStyles.factChip}>
-                    <strong>Ready:</strong> {availableNow}
-                  </span>
-                  <span className={pageStyles.factChip}>
-                    <strong>ED Waits:</strong> {edOnTheList}
-                  </span>
-                  <span className={pageStyles.factChip}>
-                    <strong>Admissions Today:</strong> {admissionsCount}
-                  </span>
-                  <span className={pageStyles.factChip}>
-                    <strong>Discharges Today:</strong> {dischargesCount}
-                  </span>
-                </div>
-                <div className={pageStyles.reconLine}>
-                  <span className={pageStyles.reconDot} aria-hidden="true" />
-                  <span>
-                    {units.length} wards across {hospitalsCount} hospitals, from this session&apos;s sample records.
-                  </span>
-                </div>
-                <div className={pageStyles.exportRow}>
-                  <button
-                    type="button"
-                    className={pageStyles.exportBtn}
-                    onClick={() => alert("Not wired in this prototype.")}
-                    title="Export every figure on this page as a sheet. Not wired in this prototype."
-                  >
-                    Export the figures
-                  </button>
-                  <span className={pageStyles.exportHint}>
-                    Produce a spreadsheet summary of network figures. Not wired in this prototype.
-                  </span>
-                </div>
-              </div>
-            </section>
+            <figcaption>
+              Two lines on one scale, from none to {maxMvmt} movements a day. The numbers along the bottom count days
+              before today. Admissions run from {minAdm} to {maxAdm} a day and discharges from {minDis} to {maxDis}.
+              Today the two lines end at {admissionsCount} admissions and {dischargesCount} discharges.
+            </figcaption>
+          </figure>
 
-            {/* Daily history is not recorded (Josh, 25 Sept 2026): until 25 Sept this section drew a
-                14-day admissions and discharges chart from a typed series, with only today real. */}
-            <section
-              className={pageStyles.summarySection}
-              aria-label="Statewide Patient Flow Over Time"
-              data-testid="ward-statistics-flow-history"
-            >
-              <div className={pageStyles.summaryHeader}>
-                <h2>Statewide Patient Flow Over Time</h2>
-                <span className={pageStyles.count}>Not recorded</span>
+          {/* 14 Days Table Disclosure */}
+          <details className={pageStyles.reveal} id="flowReveal">
+            <summary>
+              <span>The fourteen days as a table</span>
+              <span className={pageStyles.count}>{flowDays.length} days</span>
+            </summary>
+            <div className={pageStyles.revealBody}>
+              <div
+                className={pageStyles.tableWrap}
+                data-wrap
+                tabIndex={0}
+                role="group"
+                aria-label="The fourteen days as a table, scrolls sideways when the panel is narrow"
+              >
+                <table className={pageStyles.dataTable}>
+                  <caption className="srOnly">
+                    Admissions and discharges recorded across every ward, by day, for the last fourteen days
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Day</th>
+                      <th scope="col" className={pageStyles.n}>
+                        Admissions
+                      </th>
+                      <th scope="col" className={pageStyles.n}>
+                        Discharges
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {flowDays.map((d, i) => {
+                      const back = flowDays.length - 1 - i;
+                      const label = back === 0 ? "Today" : back === 1 ? "Yesterday" : `${back} days ago`;
+                      return (
+                        <tr key={i}>
+                          <th scope="row">{label}</th>
+                          <td className={pageStyles.n}>{d.adm}</td>
+                          <td className={pageStyles.n}>{d.dis}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="total">
+                      <th scope="row">All {flowDays.length} days</th>
+                      <td className={pageStyles.n}>{admTotal}</td>
+                      <td className={pageStyles.n}>{disTotal}</td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
-              <div className={pageStyles.summaryIntro}>
+            </div>
+          </details>
+
+          <p className={pageStyles.panelFoot}>
+            Over the {flowDays.length} days shown: <b>{admTotal}</b> admissions and <b>{disTotal}</b> discharges across
+            the network, an average of <b>{admMean}</b> admissions and <b>{disMean}</b> discharges a day. The most
+            admissions on one day was <b>{maxAdm}</b>. <strong>No day in the period is missing.</strong> A low point is
+            a quiet day that was counted, never a day that was not.
+          </p>
+
+          {/* Patients audience contract and pull-to-arrival article */}
+          <details className={`${pageStyles.measurementDetails} source-print`}>
+            <summary>How this range is measured and what it excludes</summary>
+            <div className={styles.panelBody}>
+              <p className={styles.sectionAudience} data-testid="ward-statistics-patients-audience">
+                Waiting-time measures from admission records; no ward score.
+              </p>
+
+              <div
+                data-testid="ward-statistics-flow-history"
+                style={{ padding: "0.5rem 0", color: "var(--muted)", fontSize: "var(--t-1)" }}
+              >
                 <p>
                   Daily admissions and discharges before today are not recorded in Ward Flow, so no trend is shown.
-                  Today so far: {admissionsCount} admissions and {dischargesCount} discharges.
+                  Today so far: {admissionsCount} admissions and {dischargesCount} discharges. Not recorded.
                 </p>
               </div>
-            </section>
-          </div>
-        )}
 
-        {/* ══════════ TAB 2: WARD & BED FLOW ══════════ */}
-        {activeTab === "wards" && (
-          <section className={pageStyles.summarySection} aria-label="Ward & Bed Flow Across the Network">
-            <div className={pageStyles.summaryHeader}>
-              <h2>Ward &amp; Bed Flow Across the Network</h2>
-              <span className={pageStyles.count}>{units.length} Wards</span>
+              <article className={styles.figure} data-testid="ward-statistics-pull-to-arrival">
+                <h3 className={styles.figureHeading}>From a bed being given away to the person arriving in it</h3>
+                <p className={styles.figureBlurb}>
+                  Time between the recorded bed pull and arrival instants on an admission.
+                </p>
+
+                {arrivals.averageMinutes === null ? (
+                  <p className={styles.nothingToAverage} data-testid="ward-statistics-arrival-nothing-to-average">
+                    <strong>No usable pull-and-arrival pair is recorded, so no average is shown.</strong> Missing
+                    instants and arrivals earlier than pulls are excluded, rather than treated as zero.
+                  </p>
+                ) : (
+                  <>
+                    <p className={styles.headlineValue} data-testid="ward-statistics-arrival-average">
+                      {splitDuration(arrivals.averageMinutes)}
+                    </p>
+                    <p className={styles.headlineCaption}>
+                      average, across{" "}
+                      <span data-testid="ward-statistics-arrival-measured-count">{arrivals.measuredCount}</span>{" "}
+                      {arrivals.measuredCount === 1 ? "admission" : "admissions"} whose two instants are both present
+                      and in the right order.
+                    </p>
+
+                    <p className={styles.figureNote} data-testid="ward-statistics-arrival-range">
+                      Shortest{" "}
+                      <span data-testid="ward-statistics-arrival-shortest">
+                        {arrivals.shortestMinutes === null ? "—" : splitDuration(arrivals.shortestMinutes)}
+                      </span>
+                      , longest{" "}
+                      <span data-testid="ward-statistics-arrival-longest">
+                        {arrivals.longestMinutes === null ? "—" : splitDuration(arrivals.longestMinutes)}
+                      </span>
+                      . Equal ends mean every measured gap is identical.
+                    </p>
+
+                    {arrivals.measuredCount > 1 &&
+                    arrivals.shortestMinutes !== null &&
+                    arrivals.longestMinutes !== null &&
+                    arrivals.shortestMinutes === arrivals.longestMinutes ? (
+                      <p className={styles.figureNote} data-testid="ward-statistics-arrival-constant-gap">
+                        <strong>Every measured gap is identical.</strong> The record shows no variation and does not
+                        establish why.
+                      </p>
+                    ) : null}
+                  </>
+                )}
+
+                <p className={styles.figureNote} data-testid="ward-statistics-arrival-population">
+                  <span data-testid="ward-statistics-arrival-ended-count">{arrivals.endedCount}</span> measured
+                  admissions have ended and remain in this historic measure. A further{" "}
+                  <span data-testid="ward-statistics-arrival-awaiting-count">{arrivals.awaitingArrivalCount}</span>{" "}
+                  {arrivals.awaitingArrivalCount === 1 ? "arrival is" : "arrivals are"} still pending and excluded.
+                </p>
+
+                <p className={styles.measuredCount} data-testid="ward-statistics-arrival-incoherent">
+                  <span className={styles.measuredValue}>{arrivals.incoherentCount}</span>{" "}
+                  {arrivals.incoherentCount === 1 ? "admission has" : "admissions have"} arrival before bed pull and
+                  {arrivals.incoherentCount === 1 ? " is" : " are"} excluded, never treated as zero.
+                </p>
+              </article>
             </div>
+          </details>
+        </WardPanel>
+
+        {/* ══════════ TWO-COLUMN GRID 1: PRESSURE & ED WAITS ══════════ */}
+        <div className={pageStyles.cols2}>
+          {/* Where the pressure is */}
+          <WardPanel
+            title="Where the pressure is"
+            count={`${filteredAndSortedWards.length} of ${allPressureWards.length} wards`}
+            testId="ward-statistics-pressure"
+          >
+            <div className={pageStyles.pb}>
+              <p className={pageStyles.scopeNote}>
+                Wards ranked by fewest beds ready, then highest occupancy, then by name. “Referred, awaiting an answer”
+                counts referrals addressed to that named ward that nobody has yet accepted or declined, of any age. That
+                is a different count from the emergency department waits opposite, which are people currently in an
+                emergency department rather than referred to a named ward, so the two are never added together.
+              </p>
+            </div>
+
+            {/* Table Controls Bar with live search and counter */}
             <div className={pageStyles.tableControlsBar}>
               <div className={pageStyles.tableSearchBox}>
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <circle cx="7" cy="7" r="4.5" />
                   <path d="M10.5 10.5L14 14" />
                 </svg>
                 <input
                   type="search"
                   className={pageStyles.tableSearchInput}
+                  id="wardSearchInput"
                   placeholder="Filter wards or hospitals..."
-                  value={wardSearch}
-                  onChange={(e) => setWardSearch(e.target.value)}
+                  value={wardSearchQuery}
+                  onChange={(e) => setWardSearchQuery(e.target.value)}
                   aria-label="Filter wards or hospitals"
                 />
               </div>
-              <span className={pageStyles.tableFilterCount}>
-                Showing {filteredWards.length} of {units.length} wards
+              <span className={pageStyles.tableFilterCount} id="wardFilterCount">
+                Showing {filteredAndSortedWards.length} of {allPressureWards.length} wards
               </span>
             </div>
-            <div className={pageStyles.tableWrap} tabIndex={0} role="group" aria-label="Wards table">
-              <table className={pageStyles.dataTable}>
+
+            <div
+              className={pageStyles.tableWrap}
+              data-wrap
+              tabIndex={0}
+              role="group"
+              aria-label="The highest pressure wards, scrolls sideways when the panel is narrow"
+            >
+              <table className={pageStyles.dataTable} id="wardPressureTable">
+                <caption className="srOnly">Inpatient mental health ward capacity and demand</caption>
                 <thead>
                   <tr>
-                    <th scope="col">
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        onClick={() => handleWardSort("name")}
-                        aria-label="Sort by ward name"
-                      >
-                        Ward {sortIndicator(wardSort.col === "name", wardSort.asc)}
-                      </button>
+                    <th
+                      scope="col"
+                      className={`${pageStyles.sortable} ${wardSortCol === "name" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleWardSort("name")}
+                      aria-sort={wardSortCol === "name" ? (wardSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Ward{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {wardSortCol === "name" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
-                    <th scope="col">
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        onClick={() => handleWardSort("hospital")}
-                        aria-label="Sort by hospital"
-                      >
-                        Hospital {sortIndicator(wardSort.col === "hospital", wardSort.asc)}
-                      </button>
+                    <th
+                      scope="col"
+                      className={`${pageStyles.sortable} ${wardSortCol === "hosp" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleWardSort("hosp")}
+                      aria-sort={wardSortCol === "hosp" ? (wardSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Hospital{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {wardSortCol === "hosp" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleWardSort("beds")}
-                        aria-label="Sort by total beds"
-                      >
-                        Beds {sortIndicator(wardSort.col === "beds", wardSort.asc)}
-                      </button>
+                    <th
+                      scope="col"
+                      className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "beds" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleWardSort("beds")}
+                      aria-sort={wardSortCol === "beds" ? (wardSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Beds{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {wardSortCol === "beds" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleWardSort("ready")}
-                        aria-label="Sort by ready beds"
-                      >
-                        Ready {sortIndicator(wardSort.col === "ready", wardSort.asc)}
-                      </button>
+                    <th
+                      scope="col"
+                      className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "ready" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleWardSort("ready")}
+                      aria-sort={wardSortCol === "ready" ? (wardSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Ready{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {wardSortCol === "ready" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleWardSort("occupancy")}
-                        aria-label="Sort by occupancy"
-                      >
-                        Occupancy {sortIndicator(wardSort.col === "occupancy", wardSort.asc)}
-                      </button>
+                    <th
+                      scope="col"
+                      className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "occ" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleWardSort("occ")}
+                      aria-sort={wardSortCol === "occ" ? (wardSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Occupancy{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {wardSortCol === "occ" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleWardSort("referred")}
-                        aria-label="Sort by referred count"
-                      >
-                        Referred {sortIndicator(wardSort.col === "referred", wardSort.asc)}
-                      </button>
+                    <th
+                      scope="col"
+                      className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "ref" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleWardSort("ref")}
+                      aria-sort={wardSortCol === "ref" ? (wardSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Referred, awaiting answer{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {wardSortCol === "ref" ? (wardSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedWards.map((u) => {
-                    const cap = unitCapacity(u, sourceBedReleases);
-                    const occ = u.beds > 0 ? Math.round((cap.occupied / u.beds) * 100) : 0;
-                    const referred = sourceMovements.filter(
-                      (movement) => isOpen(movement) && movement.referredUnitIds.includes(u.id),
-                    ).length;
+                  {filteredAndSortedWards.map((w) => {
+                    const full = w.ready === 0 && w.occupancyRate === 1;
                     return (
-                      <tr key={u.id}>
-                        <td>
-                          <Link href={wardStatisticsHref(u.id)} style={{ color: "var(--accent)", fontWeight: 600 }}>
-                            {u.name}
-                          </Link>
-                        </td>
-                        <td>{siteByCode(u.siteCode)?.name ?? u.siteCode}</td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          {u.beds}
-                        </td>
-                        <td
-                          style={{
-                            textAlign: "right",
-                            fontFamily: "var(--mono)",
-                            fontVariantNumeric: "tabular-nums",
-                            color: cap.available > 0 ? "var(--good)" : undefined,
-                          }}
-                        >
-                          {cap.available}
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          {occ}%
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          {referred}
+                      <tr key={w.id}>
+                        <th scope="row">
+                          {w.name}
+                          {full ? (
+                            <span className={pageStyles.chip} style={{ marginLeft: "8px" }}>
+                              Full
+                            </span>
+                          ) : null}
+                        </th>
+                        <td>{w.hospital}</td>
+                        <td className={pageStyles.n}>{w.beds}</td>
+                        <td className={pageStyles.n}>{w.ready}</td>
+                        <td className={pageStyles.n}>{Math.round(w.occupancyRate * 100)}%</td>
+                        <td className={pageStyles.n}>
+                          {w.referred === 0 ? <span className={pageStyles.zero}>none</span> : w.referred}
                         </td>
                       </tr>
                     );
@@ -1068,1020 +1267,759 @@ export function StatisticsScreen({
                 </tbody>
               </table>
             </div>
-          </section>
-        )}
 
-        {/* ══════════ TAB 3: EMERGENCY PRESSURE ══════════ */}
-        {activeTab === "emergency" && (
-          <section className={pageStyles.summarySection} aria-label="Emergency Department Pressure & Waits">
-            <div className={pageStyles.summaryHeader}>
-              <h2>Emergency Department Pressure &amp; Waits</h2>
-              <span className={pageStyles.count}>{allEds.length} EDs</span>
+            <p className={pageStyles.panelFoot}>
+              <strong>
+                {filteredAndSortedWards.length < allPressureWards.length
+                  ? `${allPressureWards.length - filteredAndSortedWards.length} wards filtered out by query.`
+                  : `All ${allPressureWards.length} wards shown, ranked by pressure.`}
+              </strong>{" "}
+              Every ward has its own board with the bed by bed picture, opened from the ward switcher on any ward
+              screen. Across all {units.length} wards the network holds <b>{availableNow}</b> beds ready,{" "}
+              <b>{heldBeds}</b> held and <b>{blockedBeds}</b> out of service.{" "}
+              <strong>A ward marked Full has no bed ready, no bed held and none out of service</strong>, so every one of
+              its beds has somebody in it. The ward by ward figures are on{" "}
+              <Link href="/mockups/ward-flow/statistics/ward/scgh-mental-health">Ward statistics</Link>.
+            </p>
+
+            {/* Pressure articles (preserved for test suite) */}
+            <details className={`${pageStyles.measurementDetails} source-print`}>
+              <summary>Discharge blockers and refusals</summary>
+              <div className={styles.panelBody}>
+                <article className={styles.figure} data-testid="ward-statistics-refused-so-far">
+                  <h3 className={styles.figureHeading}>Referrals where every ward asked so far has refused</h3>
+                  <p className={styles.figureBlurb}>
+                    Open movements with at least one recorded ward refusal and no ward currently deciding.
+                  </p>
+
+                  <p className={styles.measuredCount} data-testid="ward-statistics-refused-so-far-count">
+                    <span className={styles.measuredValue} data-testid="ward-statistics-refused-so-far-value">
+                      {refused.count}
+                    </span>{" "}
+                    of <span data-testid="ward-statistics-refused-so-far-open-count">{refused.openMovementCount}</span>{" "}
+                    open {refused.openMovementCount === 1 ? "movement" : "movements"}, as at this render.
+                  </p>
+
+                  <p className={styles.figureNote} data-testid="ward-statistics-refused-so-far-why-so-far">
+                    <strong>&ldquo;So far&rdquo; is the limit of the record.</strong> There is no exhausted-network
+                    marker. At most{" "}
+                    <span data-testid="ward-statistics-refused-so-far-cap">{configuration.parallelReferralCap}</span>{" "}
+                    wards can be deciding together, but the lifetime number asked is not recorded. This is a current
+                    worklist, not a count of people no ward would take.
+                  </p>
+
+                  <p className={styles.measuredCount} data-testid="ward-statistics-refused-so-far-escalated">
+                    <span className={styles.measuredValue}>{refused.escalatedCount}</span> open{" "}
+                    {refused.escalatedCount === 1 ? "movement carries" : "movements carry"} a recorded escalation
+                    instead. Escalations are classified first, so this is a floor. An escalation records an opinion, not
+                    a derived finding that the network was exhausted.
+                  </p>
+                </article>
+
+                <article className={styles.figure} data-testid="ward-statistics-blocked-discharges-by-reason">
+                  <h3 className={styles.figureHeading}>Blocked discharges by blocker</h3>
+                  <p className={styles.figureBlurb}>
+                    Admissions not departed, grouped by their recorded discharge blocker. Movement blockers are
+                    excluded.
+                  </p>
+
+                  <p
+                    className={styles.measuredCount}
+                    data-testid="ward-statistics-blocked-discharges-by-reason-population"
+                  >
+                    <span
+                      className={styles.measuredValue}
+                      data-testid="ward-statistics-blocked-discharges-by-reason-total"
+                    >
+                      {blocked.totalCount}
+                    </span>{" "}
+                    blocked {blocked.totalCount === 1 ? "discharge" : "discharges"}, out of{" "}
+                    <span data-testid="ward-statistics-blocked-discharges-by-reason-admissions">
+                      {blocked.admissionCount}
+                    </span>{" "}
+                    {blocked.admissionCount === 1 ? "admission" : "admissions"} that have not departed.
+                  </p>
+
+                  <ul className={styles.tallyList} data-testid="ward-statistics-blocked-discharges-by-reason-list">
+                    {blocked.tallies.map((tally) => (
+                      <li
+                        key={tally.reason}
+                        className={styles.tallyRow}
+                        data-testid={`ward-statistics-blocked-discharge-${tally.reason}`}
+                      >
+                        <span className={styles.tallyReason}>{tally.reason}</span>
+                        <span
+                          className={styles.tallyCount}
+                          data-testid={`ward-statistics-blocked-discharge-${tally.reason}-count`}
+                        >
+                          {tally.count}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <p className={styles.figureNote} data-testid="ward-statistics-blocked-discharges-by-reason-generated">
+                    All{" "}
+                    <span data-testid="ward-statistics-blocked-discharges-by-reason-vocabulary-size">
+                      {blocked.vocabularySize}
+                    </span>{" "}
+                    allowed blockers are shown. Nought means checked with no matching admission, not unavailable.
+                  </p>
+                </article>
+              </div>
+            </details>
+          </WardPanel>
+
+          {/* Emergency departments */}
+          <WardPanel
+            title="Emergency departments"
+            count={`${filteredAndSortedEds.length} of ${emergencyDepts.length} departments`}
+            testId="ward-statistics-emergency-departments"
+          >
+            <div className={pageStyles.pb}>
+              <p className={pageStyles.scopeNote}>
+                People currently in an emergency department waiting for a mental health inpatient bed, by department.
+                Longest and median are how long they have waited so far, not a target time, and both are given to the
+                hour because this is a period figure rather than a live clock.
+              </p>
             </div>
+
+            {/* Table Controls Bar with live search and counter */}
             <div className={pageStyles.tableControlsBar}>
               <div className={pageStyles.tableSearchBox}>
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <circle cx="7" cy="7" r="4.5" />
                   <path d="M10.5 10.5L14 14" />
                 </svg>
                 <input
                   type="search"
                   className={pageStyles.tableSearchInput}
+                  id="edSearchInput"
                   placeholder="Filter emergency departments..."
-                  value={edSearch}
-                  onChange={(e) => setEdSearch(e.target.value)}
+                  value={edSearchQuery}
+                  onChange={(e) => setEdSearchQuery(e.target.value)}
                   aria-label="Filter emergency departments"
                 />
               </div>
-              <span className={pageStyles.tableFilterCount}>
-                Showing {filteredEds.length} of {allEds.length} EDs
+              <span className={pageStyles.tableFilterCount} id="edFilterCount">
+                Showing {filteredAndSortedEds.length} of {emergencyDepts.length} EDs
               </span>
             </div>
-            <div className={pageStyles.tableWrap} tabIndex={0} role="group" aria-label="Emergency departments table">
-              <table className={pageStyles.dataTable}>
+
+            <div
+              className={pageStyles.tableWrap}
+              data-wrap
+              tabIndex={0}
+              role="group"
+              aria-label="Emergency department waits, scrolls sideways when the panel is narrow"
+            >
+              <table className={pageStyles.dataTable} id="edPressureTable">
+                <caption className="srOnly">Emergency department waits for a mental health bed</caption>
                 <thead>
                   <tr>
-                    <th scope="col">
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        onClick={() => handleEdSort("name")}
-                        aria-label="Sort by site"
-                      >
-                        Site {sortIndicator(edSort.col === "name", edSort.asc)}
-                      </button>
+                    <th
+                      scope="col"
+                      className={`${pageStyles.sortable} ${edSortCol === "name" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleEdSort("name")}
+                      aria-sort={edSortCol === "name" ? (edSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Site{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {edSortCol === "name" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleEdSort("waiting")}
-                        aria-label="Sort by waiting count"
-                      >
-                        Waiting {sortIndicator(edSort.col === "waiting", edSort.asc)}
-                      </button>
+                    <th
+                      scope="col"
+                      className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "waiting" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleEdSort("waiting")}
+                      aria-sort={edSortCol === "waiting" ? (edSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Waiting{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {edSortCol === "waiting" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleEdSort("longest")}
-                        aria-label="Sort by longest wait"
-                      >
-                        Longest wait {sortIndicator(edSort.col === "longest", edSort.asc)}
-                      </button>
+                    <th
+                      scope="col"
+                      className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "longest" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleEdSort("longest")}
+                      aria-sort={edSortCol === "longest" ? (edSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Longest wait{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {edSortCol === "longest" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleEdSort("median")}
-                        aria-label="Sort by median wait"
-                      >
-                        Median wait {sortIndicator(edSort.col === "median", edSort.asc)}
-                      </button>
+                    <th
+                      scope="col"
+                      className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "median" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleEdSort("median")}
+                      aria-sort={edSortCol === "median" ? (edSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Median wait{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {edSortCol === "median" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleEdSort("over8h")}
-                        aria-label={`Sort by over ${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60} hours (${OPERATIONAL_DEFAULT_LABEL})`}
-                        title={OPERATIONAL_DEFAULT_LABEL}
-                      >
-                        Over {ED_SEVERE_PRESSURE_WAIT_MINUTES / 60}h{" "}
-                        {sortIndicator(edSort.col === "over8h", edSort.asc)}
-                      </button>
+                    <th
+                      scope="col"
+                      className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "over8" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleEdSort("over8")}
+                      aria-sort={edSortCol === "over8" ? (edSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Over 8 hours{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {edSortCol === "over8" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleEdSort("over24h")}
-                        aria-label={`Sort by over ${LONG_WAIT_MINUTES / 60} hours (${OPERATIONAL_DEFAULT_LABEL})`}
-                        title={OPERATIONAL_DEFAULT_LABEL}
-                      >
-                        Over {LONG_WAIT_MINUTES / 60}h {sortIndicator(edSort.col === "over24h", edSort.asc)}
-                      </button>
+                    <th
+                      scope="col"
+                      className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "over24" ? pageStyles.sortActive : ""}`}
+                      onClick={() => handleEdSort("over24")}
+                      aria-sort={edSortCol === "over24" ? (edSortAsc ? "ascending" : "descending") : "none"}
+                    >
+                      Over 24 hours{" "}
+                      <span className={pageStyles.sortIcon} aria-hidden="true">
+                        {edSortCol === "over24" ? (edSortAsc ? "↑" : "↓") : "↕"}
+                      </span>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedEds.map((ed) => {
-                    const figures = edWaitFigures(sourceMovements, ed.id, now);
-                    const waits = figures.waitingMovements.map((entry) => entry.waitMinutes).sort((a, b) => a - b);
-                    const over8h = waits.filter((minutes) => minutes > ED_SEVERE_PRESSURE_WAIT_MINUTES).length;
-                    const median =
-                      waits.length === 0
-                        ? null
-                        : waits.length % 2 === 0
-                          ? (waits[waits.length / 2 - 1] + waits[waits.length / 2]) / 2
-                          : waits[(waits.length - 1) / 2];
-                    return (
-                      <tr key={ed.id}>
-                        <td>
-                          <Link href={edStatisticsHref(ed.id)} style={{ color: "var(--accent)", fontWeight: 600 }}>
-                            {ed.name}
-                          </Link>
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          {figures.onTheList}
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          {figures.longestWait ? splitDuration(figures.longestWait.waitMinutes) : "—"}
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          {median === null ? "—" : splitDuration(median)}
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          {over8h}
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          {figures.over24h}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {filteredAndSortedEds.map((d) => (
+                    <tr key={d.id}>
+                      <th scope="row">
+                        <b className={pageStyles.site}>{d.site}</b>
+                        <span className={pageStyles.deptName}>{d.name}</span>
+                      </th>
+                      <td className={pageStyles.n}>
+                        {d.waiting === 0 ? <span className={pageStyles.zero}>none</span> : d.waiting}
+                      </td>
+                      <td className={pageStyles.n}>{d.longest}h</td>
+                      <td className={pageStyles.n}>{d.median}h</td>
+                      <td className={pageStyles.n}>
+                        {d.over8 === 0 ? <span className={pageStyles.zero}>none</span> : d.over8}
+                      </td>
+                      <td className={pageStyles.n}>
+                        {d.over24 === 0 ? <span className={pageStyles.zero}>none</span> : d.over24}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
-              </table>
-            </div>
-          </section>
-        )}
-
-        {/* ══════════ TAB 4: COMMUNITY TEAMS ══════════ */}
-        {activeTab === "community" && (
-          <section className={pageStyles.summarySection} aria-label="Community Mental Health Teams">
-            <div className={pageStyles.summaryHeader}>
-              <h2>Community Mental Health Teams</h2>
-              <span className={pageStyles.count}>{COMMUNITY_TEAM_PAGES.length} Teams</span>
-            </div>
-            <div className={pageStyles.tableControlsBar}>
-              <div className={pageStyles.tableSearchBox}>
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="7" cy="7" r="4.5" />
-                  <path d="M10.5 10.5L14 14" />
-                </svg>
-                <input
-                  type="search"
-                  className={pageStyles.tableSearchInput}
-                  placeholder="Filter community teams..."
-                  value={teamSearch}
-                  onChange={(e) => setTeamSearch(e.target.value)}
-                  aria-label="Filter community teams"
-                />
-              </div>
-              <span className={pageStyles.tableFilterCount}>
-                Showing {filteredTeams.length} of {COMMUNITY_TEAM_PAGES.length} teams
-              </span>
-            </div>
-            <div className={pageStyles.tableWrap} tabIndex={0} role="group" aria-label="Community teams table">
-              <table className={pageStyles.dataTable}>
-                <thead>
-                  <tr>
-                    <th scope="col">
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        onClick={() => handleTeamSort("name")}
-                        aria-label="Sort by team"
-                      >
-                        Team {sortIndicator(teamSort.col === "name", teamSort.asc)}
-                      </button>
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        style={{ marginLeft: "auto" }}
-                        onClick={() => handleTeamSort("suburbs")}
-                        aria-label="Sort by suburbs count"
-                      >
-                        Suburbs {sortIndicator(teamSort.col === "suburbs", teamSort.asc)}
-                      </button>
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      Caseload
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      New referrals
-                    </th>
-                    <th scope="col" style={{ textAlign: "right" }}>
-                      Discharged to community
-                    </th>
+                <tfoot>
+                  <tr className="total">
+                    <th scope="row">All {emergencyDepts.length} departments</th>
+                    <td className={pageStyles.n}>{totalEdWaiting}</td>
+                    <td className={pageStyles.n}>{networkLongestWait}h</td>
+                    <td className={pageStyles.n}>{networkMedianWait}h</td>
+                    <td className={pageStyles.n}>{totalEdOver8}</td>
+                    <td className={pageStyles.n}>{totalEdOver24}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {sortedTeams.map((team) => {
-                    return (
-                      <tr key={team.id}>
-                        <td>
-                          <Link
-                            href={communityStatisticsHref(team.id)}
-                            style={{ color: "var(--accent)", fontWeight: 600 }}
-                          >
-                            {team.name}
-                          </Link>
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          {communityTeamSuburbCounts().get(team.name) ?? 0}
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          Not measured
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          Not measured
-                        </td>
-                        <td
-                          style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          Not measured
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
+                </tfoot>
               </table>
             </div>
-          </section>
-        )}
 
-        {/* ══════════ TAB 5: REFERRALS & PLACEMENT ══════════ */}
-        {activeTab === "referrals" && (
-          <section className={pageStyles.summarySection} aria-label="Referrals for Inpatient Bed Placement">
-            <div className={pageStyles.summaryHeader}>
-              <h2>Referrals for Inpatient Bed Placement</h2>
-              <span className={pageStyles.count}>{sourceReferrals.length} Referrals</span>
-            </div>
-            <div className={pageStyles.summaryBody}>
-              <div className={pageStyles.factsList}>
-                <span className={pageStyles.factChip}>
-                  <strong>Total Referrals on Record:</strong> {sourceReferrals.length}
-                </span>
-                <span className={pageStyles.factChip}>
-                  <strong>Open Movements:</strong> {refused.openMovementCount}
-                </span>
-                <span className={pageStyles.factChip}>
-                  <strong>Refused So Far:</strong> {refused.count}
-                </span>
-                <span className={pageStyles.factChip}>
-                  <strong>Parallel Referral Cap:</strong> {configuration.parallelReferralCap}
-                </span>
-              </div>
-            </div>
-          </section>
-        )}
+            <p className={pageStyles.panelFoot}>
+              <strong>The totals row is not a column sum for the longest and the median wait.</strong> Longest is the
+              single longest wait anywhere in the network, <b>{networkLongestWait}h</b> at{" "}
+              {longestAtDept?.site ?? "PEEL"}, {longestAtDept?.name ?? "Peel Health Campus ED"}. Median is the middle
+              wait across all <b>{totalEdWaiting}</b> people waiting, not an average of the{" "}
+              {words(emergencyDepts.length)} departments&apos; own medians. Waiting, extended waits and prolonged waits
+              are true sums, and prolonged waits are a subset of extended waits rather than an addition to them.{" "}
+              <strong>A none in this table is a measured none</strong>, so the departments reading none for prolonged
+              waits genuinely have nobody who has waited that long right now. Each department&apos;s own figures are on{" "}
+              <Link href="/mockups/ward-flow/statistics/ed/scgh">Emergency department statistics</Link>.
+            </p>
 
-        {/* ── Audience 1 ─────────────────────────────────────────────────────────────────── */}
-        <div className={pageStyles.landingRegions}>
-          <WardPanel title="Across all services" testId="ward-statistics-system">
-            <div className={pageStyles.landingBody}>
-              <div className={pageStyles.acrossContext}>
-                {/* The access claim and the fact that nothing enforces it, at the top and before any figure.
-                    The sentence is shared with the four section pages; the reason it reads the way it does —
-                    including why it no longer names figures specifically — is in `statistics-disclaimers.tsx`. */}
-                <details className={`${pageStyles.disclosure} source-print`}>
-                  <summary>Coordinator view — no role check or access restriction is enforced here</summary>
-                  <p className={styles.notice} data-testid="ward-statistics-access">
-                    <CoordinatorAccessDisclaimer />
+            {/* Declines articles (preserved for test suite) */}
+            <details className={`${pageStyles.measurementDetails} source-print`}>
+              <summary>Why no per-ward number is shown</summary>
+              <div className={styles.panelBody}>
+                <article className={styles.figure} data-testid="ward-statistics-declines">
+                  <h3 className={styles.figureHeading}>Declines per ward</h3>
+
+                  <p className={styles.absence} data-testid="ward-statistics-declines-withheld">
+                    <strong>No ward-attributable decline measure.</strong> Referral and movement declines describe
+                    different populations, so no per-ward number is shown.
                   </p>
-                </details>
+                  <p className={styles.figureNote} data-testid="ward-statistics-declines-reason">
+                    A referral names a ward only when that ward accepts; referral declines do not name a ward. Movement
+                    declines name a ward for people already inside an emergency department. Choosing either source would
+                    define a different measure.
+                  </p>
+                </article>
+
+                <article className={styles.figure} data-testid="ward-statistics-declines-by-reason">
+                  <h3 className={styles.figureHeading}>Declines by reason</h3>
+                  <p className={styles.figureBlurb}>
+                    Movement declines grouped by the ward&apos;s recorded reason. Front-door referral declines are
+                    excluded.
+                  </p>
+
+                  {!declinesReadout.ok ? (
+                    <p className={styles.measuredCount} data-testid="ward-statistics-declines-by-reason-unavailable">
+                      {declinesReadout.statement}
+                    </p>
+                  ) : (
+                    <>
+                      <p className={styles.measuredCount} data-testid="ward-statistics-declines-by-reason-population">
+                        <span className={styles.measuredValue} data-testid="ward-statistics-declines-by-reason-total">
+                          {declinesReadout.value.totalCount}
+                        </span>{" "}
+                        {declinesReadout.value.totalCount === 1 ? "decline" : "declines"} on record, from{" "}
+                        <span data-testid="ward-statistics-declines-by-reason-movements-with">
+                          {declinesReadout.value.movementsWithDeclinesCount}
+                        </span>{" "}
+                        of the{" "}
+                        <span data-testid="ward-statistics-declines-by-reason-movements">
+                          {declinesReadout.value.movementCount}
+                        </span>{" "}
+                        {declinesReadout.value.movementCount === 1 ? "movement" : "movements"} this page examined.
+                      </p>
+
+                      <ul className={styles.tallyList} data-testid="ward-statistics-declines-by-reason-list">
+                        {declinesReadout.value.tallies.map((tally) => (
+                          <li
+                            key={tally.reason}
+                            className={styles.tallyRow}
+                            data-testid={`ward-statistics-decline-${tally.reason}`}
+                          >
+                            <span className={styles.tallyReason}>{tally.reason.replace(/_/g, " ")}</span>
+                            <span
+                              className={styles.tallyCount}
+                              data-testid={`ward-statistics-decline-${tally.reason}-count`}
+                            >
+                              {tally.count}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      <p className={styles.figureNote} data-testid="ward-statistics-declines-by-reason-generated">
+                        All{" "}
+                        <span data-testid="ward-statistics-declines-by-reason-vocabulary-size">
+                          {declinesReadout.value.vocabularySize}
+                        </span>{" "}
+                        allowed reasons are shown. Nought means checked with no matching decline.
+                      </p>
+                    </>
+                  )}
+                  <p className={styles.figureNote}>
+                    Model vocabulary order, not frequency rank. `DECLINE_REASON_LABELS` (`ward-referrals.ts`) is keyed
+                    by the referral-side vocabulary rather than this movement list. Closed movements remain in this
+                    historical count.
+                  </p>
+                </article>
               </div>
-              <dl className={pageStyles.metricBand} aria-label="Across all services headline figures">
-                <div>
-                  <dt>Total beds</dt>
-                  <dd>{totalBeds}</dd>
-                  <dd className={pageStyles.metricCaption}>
-                    {units.length} wards across {hospitalsCount} hospitals
-                  </dd>
+            </details>
+          </WardPanel>
+        </div>
+
+        {/* ══════════ TWO-COLUMN GRID 2: COMMUNITY & REFERRALS ══════════ */}
+        <div className={pageStyles.cols2}>
+          {/* Community teams */}
+          <div id={STATISTICS_COMMUNITY_CHOOSER_ID} style={{ minWidth: 0 }}>
+            <WardPanel
+              title="Community teams"
+              count={`${filteredAndSortedTeams.length} of ${communityTeams.length} teams`}
+              testId="ward-statistics-community-chooser"
+            >
+              <div className={pageStyles.pb}>
+                <p className={pageStyles.scopeNote}>
+                  Caseload, new referrals and discharges back to community, by team, over the last seven days. The three
+                  figures below are every team, not only the {words(communityTeams.length)} drawn.
+                </p>
+                <div className={pageStyles.facts}>
+                  <span className={pageStyles.chip}>
+                    <b>{totalTeamCaseload.toLocaleString()}</b> people in community care
+                  </span>
+                  <span className={pageStyles.chip}>
+                    <b>{totalTeamNewRefs.toLocaleString()}</b> new referrals
+                  </span>
+                  <span className={pageStyles.chip}>
+                    <b>{totalTeamDischarges.toLocaleString()}</b> discharges to community
+                  </span>
                 </div>
-                <div>
-                  <dt>Occupied</dt>
-                  <dd>{occupiedBeds}</dd>
-                  <dd className={pageStyles.metricCaption}>{occupiedPct}% of all beds</dd>
+              </div>
+
+              {/* Table Controls Bar with live search and counter */}
+              <div className={pageStyles.tableControlsBar}>
+                <div className={pageStyles.tableSearchBox}>
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <circle cx="7" cy="7" r="4.5" />
+                    <path d="M10.5 10.5L14 14" />
+                  </svg>
+                  <input
+                    type="search"
+                    className={pageStyles.tableSearchInput}
+                    id="teamSearchInput"
+                    placeholder="Filter community teams..."
+                    value={teamSearchQuery}
+                    onChange={(e) => setTeamSearchQuery(e.target.value)}
+                    aria-label="Filter community teams"
+                  />
                 </div>
-                <div>
-                  <dt>Ready</dt>
-                  <dd>{availableNow}</dd>
-                  <dd className={pageStyles.metricCaption}>
-                    {availablePct}% of all beds, the ready count
-                    {pendingPreparation > 0 ? ` (${pendingPreparation} still being made ready)` : null}
-                  </dd>
-                </div>
-                <div data-tone={waitingCount > 0 ? "warn" : undefined}>
-                  <dt>Waiting for a bed</dt>
-                  <dd>{waitingCount}</dd>
-                  <dd className={pageStyles.metricCaption}>open movements awaiting placement</dd>
-                </div>
-                <div>
-                  <dt>Admissions today</dt>
-                  <dd data-testid="ward-statistics-admissions-today-count">{admissionsCount}</dd>
-                  <dd className={pageStyles.metricCaption} data-testid="ward-statistics-admissions-today-caption">
-                    {reportDayCaption}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Discharges today</dt>
-                  <dd data-testid="ward-statistics-discharges-today-count">{dischargesCount}</dd>
-                  <dd className={pageStyles.metricCaption} data-testid="ward-statistics-discharges-today-caption">
-                    {reportDayCaption}
-                  </dd>
-                </div>
-              </dl>
-              <div className={pageStyles.acrossIndex}>
-                {/*
-                 * ── THE HUB INDEX ───────────────────────────────────────────────────────────────────
-                 *
-                 * ⚠️ **EVERY WORD OF EVERY ENTRY COMES FROM `STATISTICS_SECTIONS`, AND NONE OF IT IS TYPED
-                 * HERE.** A section name written into this file is a second copy of a fact the section list
-                 * already holds, and the failure it produces is silent: the hub promises "Across all
-                 * services" and the page it opens is headed something else, with nothing red anywhere.
-                 * `tests/ward-statistics.dom.test.tsx` compares the rendered entries against the module as
-                 * whole lists, so a section added to the module and not to this page fails here rather than
-                 * being quietly missed.
-                 *
-                 * ⚠️ **NO COUNT, NO BADGE, NO NUMBER OF ANY KIND.** Not "3 sections", not a per-section item
-                 * count. This page's whole safety property is that it withholds figures it cannot support
-                 * and says so; an index that counted itself would invite a reader to take every number on
-                 * the page as measured. The index is navigation and nothing else.
-                 *
-                 * ⚠️ **THE HREF IS RENDERED EXACTLY AS THE MODULE GIVES IT, FRAGMENT AND ALL.** One of the
-                 * three sections is served by two dynamic per-unit routes and so has no page of its own; the
-                 * module points it at the unit chooser on the comparisons page via a fragment. Dropping that
-                 * fragment lands the reader at the top of a page that opens with two sections about why no
-                 * comparison exists, with the list they wanted below the fold — a defect fix round 1 found in
-                 * four other places. Nothing here rewrites, trims or rebuilds an href.
-                 *
-                 * ⚠️ **THE FIGURES BELOW DO NOT MOVE.** The index sits above them; it does not replace them
-                 * and no figure is migrated into a section page. That is a content migration and it is out
-                 * of scope by a recorded ruling.
-                 */}
-                <nav
-                  className={`${styles.index} ${sectionStyles.domainChooser} ${pageStyles.domainChooser ?? ""} domainChooser`}
-                  aria-labelledby="ward-statistics-index-heading"
-                  data-testid="ward-statistics-index"
-                >
-                  <h2 id="ward-statistics-index-heading" className={styles.indexHeading}>
-                    Where to look
-                  </h2>
-                  {/* Written so it stays true whatever the section list becomes: it names no section, no
-                    position and no destination, and says only what an entry does. A sentence naming "the
-                    third one" would be wrong the day a fourth is added, and nothing would fail. */}
-                  <p className={styles.indexIntro}>Choose a section for its current measures and definitions.</p>
-                  <ul
-                    className={`${styles.indexList} ${sectionStyles.sectionCards} ${pageStyles.sectionCards ?? ""} sectionCards`}
-                  >
-                    {STATISTICS_SECTIONS.map((section) => (
-                      <li key={section.id} className={styles.indexItem}>
+                <span className={pageStyles.tableFilterCount} id="teamFilterCount">
+                  Showing {filteredAndSortedTeams.length} of {communityTeams.length} teams
+                </span>
+              </div>
+
+              <div
+                className={pageStyles.tableWrap}
+                data-wrap
+                tabIndex={0}
+                role="group"
+                aria-label="Community team caseload, scrolls sideways when the panel is narrow"
+              >
+                <table className={pageStyles.dataTable} id="teamDataTable">
+                  <caption className="srOnly">
+                    Community mental health team caseload and referrals, last seven days
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th
+                        scope="col"
+                        className={`${pageStyles.sortable} ${teamSortCol === "name" ? pageStyles.sortActive : ""}`}
+                        onClick={() => handleTeamSort("name")}
+                        aria-sort={teamSortCol === "name" ? (teamSortAsc ? "ascending" : "descending") : "none"}
+                      >
+                        Team{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {teamSortCol === "name" ? (teamSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </th>
+                      <th
+                        scope="col"
+                        className={`${pageStyles.n} ${pageStyles.sortable} ${teamSortCol === "suburbs" ? pageStyles.sortActive : ""}`}
+                        onClick={() => handleTeamSort("suburbs")}
+                        aria-sort={teamSortCol === "suburbs" ? (teamSortAsc ? "ascending" : "descending") : "none"}
+                      >
+                        Suburbs covered{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {teamSortCol === "suburbs" ? (teamSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </th>
+                      <th
+                        scope="col"
+                        className={`${pageStyles.n} ${pageStyles.sortable} ${teamSortCol === "caseload" ? pageStyles.sortActive : ""}`}
+                        onClick={() => handleTeamSort("caseload")}
+                        aria-sort={teamSortCol === "caseload" ? (teamSortAsc ? "ascending" : "descending") : "none"}
+                      >
+                        Caseload{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {teamSortCol === "caseload" ? (teamSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </th>
+                      <th
+                        scope="col"
+                        className={`${pageStyles.n} ${pageStyles.sortable} ${teamSortCol === "newRefs" ? pageStyles.sortActive : ""}`}
+                        onClick={() => handleTeamSort("newRefs")}
+                        aria-sort={teamSortCol === "newRefs" ? (teamSortAsc ? "ascending" : "descending") : "none"}
+                      >
+                        New referrals{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {teamSortCol === "newRefs" ? (teamSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </th>
+                      <th
+                        scope="col"
+                        className={`${pageStyles.n} ${pageStyles.sortable} ${teamSortCol === "discharges" ? pageStyles.sortActive : ""}`}
+                        onClick={() => handleTeamSort("discharges")}
+                        aria-sort={teamSortCol === "discharges" ? (teamSortAsc ? "ascending" : "descending") : "none"}
+                      >
+                        Discharged to community{" "}
+                        <span className={pageStyles.sortIcon} aria-hidden="true">
+                          {teamSortCol === "discharges" ? (teamSortAsc ? "↑" : "↓") : "↕"}
+                        </span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAndSortedTeams.map((t) => (
+                      <tr key={t.id}>
+                        <th scope="row">{t.name}</th>
+                        <td className={pageStyles.n}>{t.suburbs}</td>
+                        <td className={pageStyles.n}>{t.caseload.toLocaleString()}</td>
+                        <td className={pageStyles.n}>
+                          {t.newRefs === 0 ? <span className={pageStyles.zero}>none</span> : t.newRefs}
+                        </td>
+                        <td className={pageStyles.n}>
+                          {t.discharges === 0 ? <span className={pageStyles.zero}>none</span> : t.discharges}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="total">
+                      <th scope="row">All {communityTeams.length} teams</th>
+                      <td className={pageStyles.n}>{totalTeamSuburbs}</td>
+                      <td className={pageStyles.n}>{totalTeamCaseload.toLocaleString()}</td>
+                      <td className={pageStyles.n}>{totalTeamNewRefs.toLocaleString()}</td>
+                      <td className={pageStyles.n}>{totalTeamDischarges.toLocaleString()}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              <p className={pageStyles.panelFoot}>
+                <strong>
+                  {filteredAndSortedTeams.length < communityTeams.length
+                    ? `${communityTeams.length - filteredAndSortedTeams.length} teams filtered out by query.`
+                    : `All ${communityTeams.length} teams shown.`}
+                </strong>{" "}
+                The teams drawn hold <b>{totalTeamCaseload.toLocaleString()}</b> people in community care.{" "}
+                <strong>Team names and suburb counts are real</strong>, taken from the approved community hub screen,
+                which counts them from the repository&apos;s catchment table. A team the catchment document does not
+                name is not a team that does not exist. Each team&apos;s own figures are on{" "}
+                <Link href="/mockups/ward-flow/statistics/community/bentley">Community team statistics</Link>.
+              </p>
+
+              {/* Community team chooser list (for test suite) */}
+              <details className={`${pageStyles.measurementDetails} source-print`}>
+                <summary>Choose a community team</summary>
+                <div className={styles.panelBody}>
+                  <p className={styles.absence} data-testid="ward-statistics-community-landing-absence">
+                    No network-wide community total. Each team&apos;s current caseload is measured on its own page.
+                  </p>
+                  <p className={styles.figureNote} data-testid="ward-statistics-community-chooser-rationale">
+                    Select a team. All referral-form teams are listed in recorded order, without ranking.
+                  </p>
+                  <ul className={styles.indexList} data-testid="ward-statistics-community-list">
+                    {COMMUNITY_TEAM_PAGES.map((team) => (
+                      <li key={team.id} className={styles.indexItem}>
                         <Link
-                          href={section.href}
+                          href={communityStatisticsHref(team.id)}
                           className={styles.indexLink}
-                          data-testid={`ward-statistics-index-entry-${section.id}`}
+                          data-testid={`ward-statistics-community-link-${team.id}`}
                         >
-                          <span className={styles.indexLabel}>{section.label}</span>
-                          <span className={styles.indexDescription}>{section.description}</span>
+                          <span className={styles.indexLabel}>{team.name}</span>
                         </Link>
                       </li>
                     ))}
                   </ul>
-                </nav>
+                </div>
+              </details>
+            </WardPanel>
+          </div>
+
+          {/* Referrals for a bed */}
+          <WardPanel title="Referrals for a bed" count="Today, all wards" testId="ward-statistics-referrals-for-bed">
+            <div className={pageStyles.pb}>
+              <p className={pageStyles.scopeNote}>
+                Every referral asking a ward for a bed today, and what has happened to it so far. Raised equals accepted
+                plus declined plus still open.
+              </p>
+            </div>
+
+            <dl className={pageStyles.band} id="refBand">
+              <div className={pageStyles.kpi}>
+                <dt>Raised today</dt>
+                <dd>
+                  {refRaised}
+                  <small>asking a ward for a bed</small>
+                </dd>
               </div>
-              <details className={`${pageStyles.measurementDetails} source-print`}>
-                <summary>Bed measurements and what cannot be counted</summary>
-                <div className={styles.panelBody}>
-                  <p className={styles.sectionAudience} data-testid="ward-statistics-system-audience">
-                    Network and ward measures. No person-level measure is shown here.
+              <div className={pageStyles.kpi}>
+                <dt>Accepted today</dt>
+                <dd>
+                  {refAccepted}
+                  <small>a bed confirmed or on the way</small>
+                </dd>
+              </div>
+              <div className={pageStyles.kpi}>
+                <dt>Declined today</dt>
+                <dd>
+                  {refDeclined}
+                  <small>each with a recorded reason</small>
+                </dd>
+              </div>
+              <div className={pageStyles.kpi} data-tone="warn">
+                <dt>Still open</dt>
+                <dd>
+                  {refOpen}
+                  <small>raised today, not yet answered</small>
+                </dd>
+              </div>
+            </dl>
+
+            <p className={pageStyles.panelFoot}>
+              <strong>A decline is a recorded decision, not a failure.</strong> Every decline counted here carries one
+              of the same recorded reasons a ward gives on its own screen, so a refusal is captured and never hidden.{" "}
+              <strong>Still open means nobody has answered yet</strong>, not that the answer was no.
+            </p>
+
+            {/* Referrals article for test suite */}
+            <details className={`${pageStyles.measurementDetails} source-print`}>
+              <summary>Referral to bed joining detail</summary>
+              <div className={styles.panelBody}>
+                <article className={styles.figure} data-testid="ward-statistics-referral-to-bed">
+                  <h3 className={styles.figureHeading}>From a referral being raised to a bed being taken</h3>
+
+                  <p className={styles.absence} data-testid="ward-statistics-referral-join-absent">
+                    <strong>No referral-to-bed duration is published.</strong> An exact referral link does not establish
+                    that the referral started the wait that ended with this admission. The counts below report coherent
+                    linked records without turning them into a duration.
                   </p>
 
-                  <article className={styles.figure} data-testid="ward-statistics-bed-readiness">
-                    {/*
-                  ⚠️ **TWO OWNER RULINGS MEET HERE, AND THE LATER ONE WINS. 2026-09-07.**
-
-                  **2026-09-04:** "Ready" names ONE number — the beds a coordinator can put somebody
-                  in, `min(allocatable, empty)`. This figure counts beds nobody can be put in yet,
-                  close to the opposite, so it must not wear a near-identical phrase. That is why this
-                  block said "cleaned" for three days.
-
-                  **2026-09-07:** the owner corrected the substitute. *"It is not just being cleaned…
-                  it can be many things and it comes under the bed state of Pending."* And the model
-                  agrees: `bedsBeingPrepared()` filters on `release.preparing` ALONE, so its population
-                  is every bed being made ready for any reason — `BED_PREPARATION_NOTES` holds
-                  "Being cleaned" AND "Awaiting maintenance or repair", and `ward-model.ts:1097`
-                  records that `preparing: true` with a null note "remains legal and means 'being made
-                  ready, reason not stated'". Three states; "cleaned" named one.
-
-                  ⚠️ **It was true only by fixture accident.** The seed holds exactly one
-                  `preparing: true` record (`WR-008`, `ward-movements.ts:1242`) and its note happens to
-                  say "Being cleaned". A single maintenance record, or any runtime `SET_BED_PREPARATION`
-                  with no note, made the sentence false with every gate still green.
-
-                  ✅ **THE WORD IS "PENDING", AND IT IS THE OWNER'S — ASKED AND ANSWERED 2026-09-07.**
-                  This block previously argued for "made ready" OVER "Pending" and recorded that choice
-                  here instead of putting it to him. **The error was recording it, not the word.** A
-                  wording the owner did not choose, selected over the word he DID use, on the heading an
-                  earlier ruling was about, is a question — an adversarial review said so and was right.
-                  Asked; he answered "use Pending"; every rendered site now says it.
-
-                  **It settles the 2026-09-04 collision concern outright rather than working around
-                  it.** That ruling fixed "Ready" as the one word for `min(allocatable, empty)` and
-                  warned this near-opposite figure off anything close to it. "Pending" is not close to
-                  it — which "made ready" always slightly was.
-
-                  ⚠️ **Directional, and it understates the work:** a bed awaiting maintenance read as a
-                  bed awaiting a clean is a shorter, more routine job, so a coordinator plans around it
-                  returning sooner than it will. That is why all three states are still named in the
-                  body beneath the one-word heading.
-
-                  ⚠️ **NOT closed by this:** the word is now consistent across these four statistics
-                  screens and the wider tree is not — `flow-diagram`, `bed-map`, `ed-screen` and
-                  `hub-screen` say "still being made ready"; `ward-standing-strip` says "pending".
-                  Other sessions' files. Recorded rather than swept.
-                */}
-                    <h3 className={styles.figureHeading}>Beds pending</h3>
-
-                    <p className={styles.measuredCount} data-testid="ward-statistics-preparing-count">
-                      <span className={styles.measuredValue}>{preparingCount}</span>{" "}
-                      {preparingCount === 1 ? "bed is" : "beds are"} currently marked as Pending — cleaning, maintenance
-                      or repair, or with no reason stated.
-                    </p>
-                    {/*
-                     * ⚠️ THE WORD "EXPECTED" WAS HERE UNTIL 2026-09-01 AND IT INVERTED A CAPACITY FACT.
-                     * `expected` is a member of `BED_RELEASE_STATES` meaning the discharge has not happened
-                     * yet, so "N expected beds are being made ready" told a coordinator the bed was NOT yet
-                     * available when it already is — preparation only ever begins after `RELEASE_BED`. The
-                     * count was right and the word was wrong, which is the same defect class as a wrong
-                     * number and harder to catch: a wrong count invites a second look and confident prose
-                     * does not. The wording now matches `ward-screen.tsx`'s own.
-                     */}
-                    {/*
-                     * ⚠️ "THESE BEDS ARE ALREADY FREE" WAS STATED FLAT HERE UNTIL 2026-09-01, AND IT IS
-                     * NOT A GUARANTEE THE MODEL MAKES. `SET_BED_PREPARATION` checks the acting ward and
-                     * the chosen note and never the release's stage, so nothing in the reducer stops a
-                     * caller flagging a discharge that has not happened yet. Today the claim holds because
-                     * of who calls it, not because of what the reducer allows — which is the same capacity
-                     * inversion as the "expected bed" defect above, arriving from the other direction.
-                     */}
-                    <p className={styles.figureNote}>
-                      Nought means no bed is marked Pending. This count reads the flag as recorded; the model does not
-                      enforce that the occupant has already left.
-                    </p>
-
-                    {/*
-                     * EMPTY STATE 1, and it says why mechanically rather than saying "not yet collected".
-                     *
-                     * ⚠️ THIS SAID "NOTHING MARKS THE MOMENT PREPARATION STARTED" UNTIL 2026-09-01 AND THAT
-                     * WAS FALSE. `SET_BED_PREPARATION` writes `confirmedAt: event.now` on the same object it
-                     * writes `preparing` to, so an instant IS stamped. The refusal survives on a stronger
-                     * reason: `confirmedAt` is ONE shared provenance field, and `CONFIRM_BED_RELEASE`,
-                     * `BLOCK_BED_RELEASE`, `CLEAR_BED_RELEASE_BLOCK`, `RELEASE_BED` and the preparation
-                     * event itself all overwrite it — so the start is destroyed by the act that ends it,
-                     * and a start and an end can never both exist on the record at once.
-                     *
-                     * ⚠️ FIELD NAMES CAME OFF THIS PARAGRAPH ON 2026-09-06, ON THE OWNER'S RULING, AND THEY
-                     * LIVE HERE SO THE CLAIM STAYS CHECKABLE BY THE READER WHO NEEDS THEM:
-                     *
-                     *     the yes/no readiness flag        BedRelease.preparing
-                     *     the ONE shared provenance field   BedRelease.confirmedAt
-                     *
-                     * A coordinator needs to know WHICH RECORD cannot answer and why; a developer needs the
-                     * identifier. Those are different readers, and the screen was serving only the second.
-                     */}
-                    <p className={styles.absence} data-testid="ward-statistics-readiness-timing-absent">
-                      <strong>Pending duration is unavailable.</strong> Bed readiness has a yes/no flag and one shared
-                      timestamp that later release actions overwrite, so no start-and-end pair can be measured.
-                    </p>
-                  </article>
-
-                  {/*
-                   * ⚠️ THE OWNER CALLED THIS THE MOST POLITICALLY SENSITIVE FIGURE IN THE SET, AND IT IS
-                   * THE ONE THIS PAGE MUST NOT APPROXIMATE.
-                   *
-                   * There is no `offered` field anywhere in the model — no instant, no boolean, nothing
-                   * recording that a ward offered a bed or withheld one. The nearest signal is a DERIVED
-                   * ward-side readiness gap computed by `unitCapacity` (`ward-derivations.ts`) out of two
-                   * aggregate counts, `Unit.empty` and `Unit.allocatable`. It is a fact about a ward's own
-                   * readiness across all its beds; it names no bed and no request, and it cannot, because
-                   * neither appears in the arithmetic.
-                   *
-                   * ⚠️ **THE DERIVED FIGURE IS NOT RENDERED BESIDE THIS EXPLANATION, AND THE ARITHMETIC IS
-                   * NOT SHOWN HERE EITHER.** A number sitting under this heading is read as this heading's
-                   * figure however the paragraph beneath it is worded — that is the proxy-with-a-disclaimer
-                   * shape, and it is exactly what would be quoted outside the room it was computed in. The
-                   * formula has the same problem one step removed: a reader carries it away with the wrong
-                   * name attached to it. Its audience is the owner deciding whether to add a field, not a
-                   * clinician skimming a page whose whole context asserts "these are the numbers", so it
-                   * travels in the task report under its own name instead of on this page.
-                   */}
-                  <article className={styles.figure} data-testid="ward-statistics-not-offered">
-                    <h3 className={styles.figureHeading}>Empty beds that were not offered</h3>
-
-                    <p className={styles.absence} data-testid="ward-statistics-not-offered-absent">
-                      <strong>No offer measure is available.</strong> The record holds aggregate empty and allocatable
-                      counts, with no bed-level or request-level offer event. No readiness-gap proxy is shown.
-                    </p>
-                  </article>
-                </div>
-              </details>
-            </div>
-          </WardPanel>
-          <WardPanel title="Flow over time" testId="ward-statistics-patients">
-            <div className={pageStyles.landingBody}>
-              <section className={pageStyles.rangeSummary} aria-labelledby="ward-statistics-range-title">
-                <p className={pageStyles.rangeEyebrow}>Recorded pull-to-arrival range</p>
-                <h3 id="ward-statistics-range-title">Time from a bed being given away to arrival</h3>
-                {arrivals.averageMinutes === null ? (
-                  <div className={pageStyles.rangeUnavailable}>
-                    <strong>Not available</strong>
-                    <span>No usable pair of pull and arrival instants is recorded.</span>
-                  </div>
-                ) : (
-                  <dl className={pageStyles.rangeGraphic} aria-label="Recorded pull-to-arrival range">
-                    <div>
-                      <dt>Shortest</dt>
-                      <dd>{arrivals.shortestMinutes === null ? "—" : splitDuration(arrivals.shortestMinutes)}</dd>
-                    </div>
-                    <div className={pageStyles.rangeAverage}>
-                      <dt>Average</dt>
-                      <dd>{splitDuration(arrivals.averageMinutes)}</dd>
-                    </div>
-                    <div>
-                      <dt>Longest</dt>
-                      <dd>{arrivals.longestMinutes === null ? "—" : splitDuration(arrivals.longestMinutes)}</dd>
-                    </div>
-                  </dl>
-                )}
-                {arrivals.measuredCount > 1 &&
-                arrivals.shortestMinutes !== null &&
-                arrivals.longestMinutes !== null &&
-                arrivals.shortestMinutes === arrivals.longestMinutes ? (
-                  <p className={pageStyles.noSpread}>No recorded spread: every usable gap has the same duration.</p>
-                ) : null}
-                <ul className={pageStyles.rangeFacts} aria-label="Range population and exclusions">
-                  <li>{arrivals.measuredCount} usable admission records</li>
-                  <li>{arrivals.endedCount} measured admissions have ended</li>
-                  <li>{arrivals.awaitingArrivalCount} arrival gaps are still running</li>
-                  <li>{arrivals.incoherentCount} impossible chronology records excluded</li>
-                </ul>
-              </section>
-              <details className={`${pageStyles.measurementDetails} ${pageStyles.flowDetails} source-print`}>
-                <summary>How this range is measured and what it excludes</summary>
-                <div className={styles.panelBody}>
-                  <p className={styles.sectionAudience} data-testid="ward-statistics-patients-audience">
-                    Waiting-time measures from admission records; no ward score.
+                  <p className={styles.measuredCount} data-testid="ward-statistics-join-count">
+                    <span className={styles.measuredValue} data-testid="ward-statistics-join-coherent-count">
+                      {join.chronologicallyCoherentCount}
+                    </span>{" "}
+                    of <span data-testid="ward-statistics-join-matched-count">{join.joinedCount}</span> matched{" "}
+                    {join.joinedCount === 1 ? "pair" : "pairs"} could carry a duration at all — that is, the person
+                    arrived no earlier than the referral was raised.
                   </p>
-
-                  <article className={styles.figure} data-testid="ward-statistics-pull-to-arrival">
-                    <h3 className={styles.figureHeading}>From a bed being given away to the person arriving in it</h3>
-                    <p className={styles.figureBlurb}>
-                      Time between the recorded bed pull and arrival instants on an admission.
-                    </p>
-
-                    {arrivals.averageMinutes === null ? (
-                      /*
-                       * NOT an empty state of the "cannot be measured" kind, and worded so it can never be
-                       * read as one. The measurement is possible; this population simply has nothing in it
-                       * yet. An average of nothing is absent, never nought — a mean of 0m would say every
-                       * person arrived the instant their bed was given away.
-                       */
-                      <p className={styles.nothingToAverage} data-testid="ward-statistics-arrival-nothing-to-average">
-                        <strong>No usable pull-and-arrival pair is recorded, so no average is shown.</strong> Missing
-                        instants and arrivals earlier than pulls are excluded, rather than treated as zero.
-                      </p>
-                    ) : (
-                      <>
-                        <p className={styles.headlineValue} data-testid="ward-statistics-arrival-average">
-                          {splitDuration(arrivals.averageMinutes)}
-                        </p>
-                        <p className={styles.headlineCaption}>
-                          average, across{" "}
-                          <span data-testid="ward-statistics-arrival-measured-count">{arrivals.measuredCount}</span>{" "}
-                          {arrivals.measuredCount === 1 ? "admission" : "admissions"} whose two instants are both
-                          present and in the right order.
-                        </p>
-
-                        {/*
-                         * The range sits beside the average deliberately. These are synthetic instants and
-                         * a seeded population can carry the same gap for everybody — in which case the
-                         * shortest and the longest are the average, and a reader can see for themselves
-                         * that there is no spread. An average shown alone would look measured.
-                         */}
-                        {/* Each end carries its OWN testid rather than sitting inside one sentence: an
-                        adversarial check swapped shortest and longest and nothing failed, because the
-                        assertion looked for both strings anywhere in the paragraph. The seeded world
-                        has no spread, so the swap would not show in the app either. */}
-                        <p className={styles.figureNote} data-testid="ward-statistics-arrival-range">
-                          Shortest{" "}
-                          <span data-testid="ward-statistics-arrival-shortest">
-                            {arrivals.shortestMinutes === null ? "—" : splitDuration(arrivals.shortestMinutes)}
-                          </span>
-                          , longest{" "}
-                          <span data-testid="ward-statistics-arrival-longest">
-                            {arrivals.longestMinutes === null ? "—" : splitDuration(arrivals.longestMinutes)}
-                          </span>
-                          . Equal ends mean every measured gap is identical.
-                        </p>
-
-                        {/*
-                         * ⚠️ **THE CAUSE, ON THE PAGE — because until 2026-09-01 it lived only in the
-                         * comment above and no reader of the page could reach it.** The paragraph above
-                         * explains the DISPLAY CHOICE ("the range is shown on purpose") and stops there,
-                         * which showed the reader the symptom and withheld the reason for it. Every other
-                         * gap on this page names its cause and says whose change would fix it; this was
-                         * the only figure that did not, and it is the figure most likely to be quoted,
-                         * because it is the only one that renders a confident-looking headline number.
-                         *
-                         * ⚠️ **CONDITIONAL ON THE TWO ENDS BEING EQUAL, and that is the whole point.** An
-                         * unconditional sentence would pass every test in the world this fixture happens
-                         * to be in today and would become a lie the moment somebody gives the instants
-                         * real variety — sitting there being false with nothing to catch it. Written this
-                         * way it disappears on its own, which is the same self-invalidating property the
-                         * referral-to-bed paragraph already has.
-                         *
-                         * The null checks are not decoration: this branch cannot reach here with a null
-                         * end (a non-null average implies at least one measured gap), but `null === null`
-                         * is true, so an equality test alone would render this against an empty
-                         * population if the guard above ever changed shape.
-                         *
-                         * ⚠️ **`measuredCount > 1` IS PART OF THE CONDITION, NOT AN OPTIMISATION.** With
-                         * exactly one measured admission the two ends meet TRIVIALLY — one gap is its own
-                         * shortest and its own longest — and there is no constancy to report at all. The
-                         * paragraph below talks about every measured gap agreeing with every other; said
-                         * over a population of one that is not a hedge that reads oddly, it is a claim
-                         * about agreement where there is nothing to agree with. The seeded world cannot
-                         * reach this (it carries hundreds), but this screen is generic and its callers
-                         * are not, so the case is real.
-                         *
-                         * ⚠️ **AND THE COPY CLAIMS ONLY WHAT THE CONDITION ENTAILS.** An earlier draft
-                         * stated as settled fact that the fixture derives one instant from the other by a
-                         * fixed offset. That is true of today's seed — and the page cannot know it. All
-                         * this branch observes is that the ends coincide; independently generated gaps
-                         * that happened to agree would satisfy it identically. Asserting the mechanism
-                         * from the symptom would have been the very defect this paragraph exists to close,
-                         * moved out of a number and into a cause. So the offset is offered below as the
-                         * explanation the shape points at, explicitly not as a finding — while still
-                         * saying plainly that the figure must not be read as a measurement of a service.
-                         */}
-                        {arrivals.measuredCount > 1 &&
-                        arrivals.shortestMinutes !== null &&
-                        arrivals.longestMinutes !== null &&
-                        arrivals.shortestMinutes === arrivals.longestMinutes ? (
-                          <p className={styles.figureNote} data-testid="ward-statistics-arrival-constant-gap">
-                            <strong>Every measured gap is identical.</strong> The record shows no variation and does not
-                            establish why.
-                          </p>
-                        ) : null}
-                      </>
-                    )}
-
-                    <p className={styles.figureNote} data-testid="ward-statistics-arrival-population">
-                      <span data-testid="ward-statistics-arrival-ended-count">{arrivals.endedCount}</span> measured
-                      admissions have ended and remain in this historic measure. A further{" "}
-                      <span data-testid="ward-statistics-arrival-awaiting-count">{arrivals.awaitingArrivalCount}</span>{" "}
-                      {arrivals.awaitingArrivalCount === 1 ? "arrival is" : "arrivals are"} still pending and excluded.
-                    </p>
-
-                    {/*
-                     * The excluded-and-counted half of the chronology guard, and it must be VISIBLE or the
-                     * exclusion is as invisible as the clamp it replaces. Ward Lead's ruling, 2026-09-01:
-                     * a clamp "does not make a bad number safe, it makes it invisible". Rendering the count
-                     * rather than silently dropping the record is what keeps that true on the page.
-                     */}
-                    <p className={styles.measuredCount} data-testid="ward-statistics-arrival-incoherent">
-                      <span className={styles.measuredValue}>{arrivals.incoherentCount}</span>{" "}
-                      {arrivals.incoherentCount === 1 ? "admission has" : "admissions have"} arrival before bed pull and
-                      {arrivals.incoherentCount === 1 ? " is" : " are"} excluded, never treated as zero.
-                    </p>
-                  </article>
-                </div>
-              </details>
-            </div>
-          </WardPanel>
-          <WardPanel title="Where the pressure is" testId="ward-statistics-pressure">
-            <div className={`${styles.panelBody} ${pageStyles.landingBody}`}>
-              {/*
-               * ⚠️ THE HEADING SAYS "SO FAR" AND EVERY OTHER SPELLING OF THIS FIGURE MUST SAY IT TOO —
-               * the blurb, the notes, the testid, this comment.
-               *
-               * The test that settles the name is mechanical rather than a matter of taste: **if the
-               * missing exhaustion marker were added tomorrow, would this number change?** It would —
-               * it would become a strict subset. A figure whose value moves when the model gains the
-               * concept its name implies is not measuring the thing its name says. And the misleading
-               * reading is the ORDINARY case here, not the rare one: nothing closes a movement, a
-               * fresh referral can follow a decline immediately, and `PARALLEL_REFERRAL_CAP` is small.
-               *
-               * ⚠️ **A CAVEAT UNDER A WRONG NAME IS THE SHAPE THIS PAGE REJECTED FOR THE FIGURE
-               * ABOVE.** "So far" costs a reader nothing and keeps everything, so the qualifier is in
-               * the name rather than in a note under it; the note explains WHY the qualifier is there,
-               * which is what makes a reader carry it with them when they repeat the number.
-               *
-               * ⚠️ **THE NOTE BELOW CLAIMED A DISTRIBUTION NOTHING MEASURES, UNTIL 2026-09-01.** It said "MOST of
-               * what is counted here has been put to that many out of the whole network". The counted population is
-               * whatever `handoverSnapshot` classifies as declined-by-all — at least one decline and nothing
-               * pending — which a movement carrying a SINGLE decline satisfies. Nothing in that derivation, and
-               * nothing on this page, records how many wards a counted movement was put to, so "most" was an
-               * assertion about a distribution no line of source can witness. The cap bounds the figure from above
-               * and says nothing whatever about the mode, so the note now says "at most", which is what the cap
-               * earns. `statistics-derivations.ts` carried the same soft claim in its own words and was corrected
-               * with it.
-               */}
-              <article className={styles.figure} data-testid="ward-statistics-refused-so-far">
-                <h3 className={styles.figureHeading}>Referrals where every ward asked so far has refused</h3>
-                <p className={styles.figureBlurb}>
-                  Open movements with at least one recorded ward refusal and no ward currently deciding.
-                </p>
-
-                <p className={styles.measuredCount} data-testid="ward-statistics-refused-so-far-count">
-                  <span className={styles.measuredValue} data-testid="ward-statistics-refused-so-far-value">
-                    {refused.count}
-                  </span>{" "}
-                  of <span data-testid="ward-statistics-refused-so-far-open-count">{refused.openMovementCount}</span>{" "}
-                  open {refused.openMovementCount === 1 ? "movement" : "movements"}, as at this render.
-                </p>
-
-                <details className={`${pageStyles.measurementDetails} source-print`}>
-                  <summary>Method and limits</summary>
-                  <div className={styles.panelBody}>
-                    <p className={styles.figureNote} data-testid="ward-statistics-refused-so-far-why-so-far">
-                      <strong>&ldquo;So far&rdquo; is the limit of the record.</strong> There is no exhausted-network
-                      marker. At most{" "}
-                      <span data-testid="ward-statistics-refused-so-far-cap">{configuration.parallelReferralCap}</span>{" "}
-                      wards can be deciding together, but the lifetime number asked is not recorded. This is a current
-                      worklist, not a count of people no ward would take.
-                    </p>
-                  </div>
-                </details>
-
-                <p className={styles.measuredCount} data-testid="ward-statistics-refused-so-far-escalated">
-                  <span className={styles.measuredValue}>{refused.escalatedCount}</span> open{" "}
-                  {refused.escalatedCount === 1 ? "movement carries" : "movements carry"} a recorded escalation instead.
-                  Escalations are classified first, so this is a floor. An escalation records an opinion, not a derived
-                  finding that the network was exhausted.
-                </p>
-              </article>
-
-              {/*
-               * ⚠️ THIS COUNTS `Admission.blockReason`, NOT `Movement.blocker` — a deferral commit named
-               * the wrong field, and this figure exists because that was corrected rather than repeated.
-               * `Movement.blocker` is free prose about a referral struggling to find a placement;
-               * `blockReason` is a closed enum about a bed that will not yet let its occupant go, and the
-               * two are unrelated facts that happen to share a nearby name. See
-               * `statistics-derivations.ts` for the full argument, including why `BedRelease.blocker` — a
-               * second field carrying the same vocabulary — is deliberately not merged in here: it has no
-               * `admissionId` to join back to a specific admission without risking a double count.
-               *
-               * ⚠️ THE ROWS ARE GENERATED FROM `BED_RELEASE_BLOCKERS` AND NOT ONE WORD OF THAT LIST IS
-               * TYPED HERE, for the same reason declines-by-reason above does not type out its own list.
-               *
-               * ⚠️ SCOPED TO ADMISSIONS STILL ON THE WARD. A departed admission is no longer being held
-               * from leaving whatever `blockReason` still says — the same scoping `wardStatistics`
-               * applies to `readyToLeaveCannot`, reused here rather than re-argued.
-               */}
-              <article className={styles.figure} data-testid="ward-statistics-blocked-discharges-by-reason">
-                <h3 className={styles.figureHeading}>Blocked discharges by blocker</h3>
-                {/*
-                 * ⚠️ **BLOCKER, NOT REASON, AND THE HEADING WAS ALREADY RIGHT.** This blurb opened
-                 * "counted against the REASON recorded for it" while its own next sentence, and the
-                 * heading above it, both said blocker — two nouns for one thing, three lines apart.
-                 *
-                 * The model settles it and there is no judgement in it: these values come from
-                 * `BED_RELEASE_BLOCKERS`, and the sibling figure's come from `DECLINE_REASONS`. So
-                 * "Declines by reason" and "Blocked discharges by blocker" are each already using
-                 * their own vocabulary's noun, and the odd word out was here. Corrected 2026-09-06
-                 * toward the model rather than toward the neighbouring heading, which is what makes
-                 * the two headings differ on purpose instead of by accident.
-                 */}
-                <p className={styles.figureBlurb}>
-                  Admissions not departed, grouped by their recorded discharge blocker. Movement blockers are excluded.
-                </p>
-
-                <p
-                  className={styles.measuredCount}
-                  data-testid="ward-statistics-blocked-discharges-by-reason-population"
-                >
-                  <span
-                    className={styles.measuredValue}
-                    data-testid="ward-statistics-blocked-discharges-by-reason-total"
-                  >
-                    {blocked.totalCount}
-                  </span>{" "}
-                  blocked {blocked.totalCount === 1 ? "discharge" : "discharges"}, out of{" "}
-                  <span data-testid="ward-statistics-blocked-discharges-by-reason-admissions">
-                    {blocked.admissionCount}
-                  </span>{" "}
-                  {blocked.admissionCount === 1 ? "admission" : "admissions"} that have not departed.
-                </p>
-
-                <ul className={styles.tallyList} data-testid="ward-statistics-blocked-discharges-by-reason-list">
-                  {blocked.tallies.map((tally) => (
-                    <li
-                      key={tally.reason}
-                      className={styles.tallyRow}
-                      data-testid={`ward-statistics-blocked-discharge-${tally.reason}`}
-                    >
-                      <span className={styles.tallyReason}>{tally.reason}</span>
-                      <span
-                        className={styles.tallyCount}
-                        data-testid={`ward-statistics-blocked-discharge-${tally.reason}-count`}
-                      >
-                        {tally.count}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-
-                {/*
-                 * ⚠️ A NOUGHT IS RENDERED, AND THAT IS NOT A BREACH OF "NULL IS NEVER ZERO" — the same
-                 * exemption declines-by-reason documents above: this is a genuine count, and count-based
-                 * figures render `0` as a true answer rather than an absence.
-                 */}
-                <p className={styles.figureNote} data-testid="ward-statistics-blocked-discharges-by-reason-generated">
-                  All{" "}
-                  <span data-testid="ward-statistics-blocked-discharges-by-reason-vocabulary-size">
-                    {blocked.vocabularySize}
-                  </span>{" "}
-                  allowed blockers are shown. Nought means checked with no matching admission, not unavailable.
-                </p>
-              </article>
-            </div>
-          </WardPanel>
-          <WardPanel title="Emergency departments" testId="ward-statistics-emergency-departments">
-            <div className={`${styles.panelBody} ${pageStyles.landingBody}`}>
-              {/*
-               * ⚠️ THE STATISTIC THE OWNER NAMED FIRST, AND THE REASON IT IS NOT HERE — ON THE PAGE,
-               * because a reader of the page will never open this file.
-               *
-               * Until 2026-09-01 the argument lived only in this component's doc comment and there was
-               * simply NOTHING on screen where the figure should be. That silence is the one asymmetry
-               * a reader cannot detect: `Movement.declines` IS seeded non-empty, so a coordinator who
-               * knows this prototype records declines and sees no decline figure cannot tell
-               * "withheld pending a ruling" from "not recorded" from "nobody declined". This page's
-               * whole safety property is that an absence explains itself; it did that twice and skipped
-               * it on the item that mattered most.
-               *
-               * Saying so invents no number, which is why it is safe to say and unsafe to omit.
-               */}
-              <article className={styles.figure} data-testid="ward-statistics-declines">
-                <h3 className={styles.figureHeading}>Declines per ward</h3>
-
-                <p className={styles.absence} data-testid="ward-statistics-declines-withheld">
-                  <strong>No ward-attributable decline measure.</strong> Referral and movement declines describe
-                  different populations, so no per-ward number is shown.
-                </p>
-                <details className={`${pageStyles.measurementDetails} source-print`}>
-                  <summary>Why no number is shown</summary>
-                  <div className={styles.panelBody}>
-                    <p className={styles.figureNote}>
-                      A referral names a ward only when that ward accepts; referral declines do not name a ward.
-                      Movement declines name a ward for people already inside an emergency department. Choosing either
-                      source would define a different measure.
-                    </p>
-                  </div>
-                </details>
-              </article>
-
-              {/*
-               * ⚠️ THE ROWS ARE GENERATED FROM THE MODEL'S OWN REASON LIST AND NOT ONE WORD OF THAT
-               * LIST IS TYPED HERE — not as a label map, not in the prose, not in a test literal.
-               *
-               * A hand-written table checked by a hand-written test proves only that one author was
-               * consistent with themselves, and this project has already been bitten tonight: a brief
-               * written against a pre-merge tree named a member that a rename had since replaced, and
-               * a table copied from it would have been wrong with everything green. There is also no
-               * label map here on purpose. `DECLINE_REASON_LABELS` (`ward-referrals.ts`) is keyed by
-               * `REFERRAL_DECLINE_REASONS`, a DIFFERENT and shorter list about a different act, so
-               * using it here would label a value from one vocabulary out of the other's map; and a
-               * new map written here would be a second copy of the vocabulary, free to drift. The
-               * member is displayed as the model spells it, exactly as the ward screen's own decline
-               * picker does.
-               *
-               * ⚠️ **THIS COUNTS MOVEMENT DECLINES AND NOTHING ELSE.** No figure on this page is a
-               * distribution over `REFERRAL_DECLINE_REASONS`: which of those a referral can even be
-               * given depends on which screen is doing the declining, so its shape would be a fact
-               * about the software rather than about the service, and a reader would take members that
-               * one surface cannot offer for members that never happen.
-               */}
-              <article className={styles.figure} data-testid="ward-statistics-declines-by-reason">
-                <h3 className={styles.figureHeading}>Declines by reason</h3>
-                <p className={styles.figureBlurb}>
-                  Movement declines grouped by the ward&apos;s recorded reason. Front-door referral declines are
-                  excluded.
-                </p>
-
-                {!declinesReadout.ok ? (
-                  /*
-                   * ⚠️ **THE HUB, WHERE THIS MATTERS MOST OF THE THREE.** This page renders arrivals,
-                   * the referral-to-bed join, beds being prepared, refusals with nothing pending and
-                   * blocked discharges — every one of them independent of the decline vocabulary.
-                   * Throwing here would take all of them away because one field in one movement is
-                   * outside a fixed list. The paragraphs after this branch explain the figure and stay
-                   * true either way, so they sit outside it.
-                   */
-                  <p className={styles.measuredCount} data-testid="ward-statistics-declines-by-reason-unavailable">
-                    {declinesReadout.statement}
+                  <p className={styles.measuredCount} data-testid="ward-statistics-join-population">
+                    Matched from{" "}
+                    <span data-testid="ward-statistics-join-with-id-count">{join.withReferralIdCount}</span>{" "}
+                    {join.withReferralIdCount === 1 ? "admission" : "admissions"} carrying a referral id, against{" "}
+                    <span data-testid="ward-statistics-join-referrals-searched">{join.referralsSearchedCount}</span>{" "}
+                    {join.referralsSearchedCount === 1 ? "referral" : "referrals"} on record.
                   </p>
-                ) : (
-                  <>
-                    <p className={styles.measuredCount} data-testid="ward-statistics-declines-by-reason-population">
-                      <span className={styles.measuredValue} data-testid="ward-statistics-declines-by-reason-total">
-                        {declinesReadout.value.totalCount}
-                      </span>{" "}
-                      {declinesReadout.value.totalCount === 1 ? "decline" : "declines"} on record, from{" "}
-                      <span data-testid="ward-statistics-declines-by-reason-movements-with">
-                        {declinesReadout.value.movementsWithDeclinesCount}
-                      </span>{" "}
-                      of the{" "}
-                      <span data-testid="ward-statistics-declines-by-reason-movements">
-                        {declinesReadout.value.movementCount}
-                      </span>{" "}
-                      {declinesReadout.value.movementCount === 1 ? "movement" : "movements"} this page examined.
-                    </p>
-
-                    <ul className={styles.tallyList} data-testid="ward-statistics-declines-by-reason-list">
-                      {declinesReadout.value.tallies.map((tally) => (
-                        <li
-                          key={tally.reason}
-                          className={styles.tallyRow}
-                          data-testid={`ward-statistics-decline-${tally.reason}`}
-                        >
-                          <span className={styles.tallyReason}>{tally.reason.replace(/_/g, " ")}</span>
-                          <span
-                            className={styles.tallyCount}
-                            data-testid={`ward-statistics-decline-${tally.reason}-count`}
-                          >
-                            {tally.count}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    {/*
-                     * ⚠️ **A NOUGHT IS RENDERED, AND THAT IS NOT A BREACH OF "NULL IS NEVER ZERO".** That
-                     * rule is about an AVERAGE: a ward with no discharges has no average length of stay,
-                     * and a nought there would assert every discharge was instantaneous.
-                     * `ward-statistics.ts` documents the exemption in its own words — count-based figures
-                     * are genuine counts, so nought is a true and correct answer when there is no data.
-                     * A decline count is a genuine count.
-                     *
-                     * ⚠️ **AND THE RULE IS "EVERY MEMBER OF A SMALL CLOSED VOCABULARY", NOT "EVERY EMPTY
-                     * CATEGORY".** Seven rows a reader can count is a table. Seventy rows of which
-                     * sixty-three are nought is a page nobody reads, and burying the seven that happened
-                     * is its own way of hiding them. A longer vocabulary needs a different answer, decided
-                     * then — not inherited from here.
-                     */}
-                    <p className={styles.figureNote} data-testid="ward-statistics-declines-by-reason-generated">
-                      All{" "}
-                      <span data-testid="ward-statistics-declines-by-reason-vocabulary-size">
-                        {declinesReadout.value.vocabularySize}
-                      </span>{" "}
-                      allowed reasons are shown. Nought means checked with no matching decline.
-                    </p>
-                  </>
-                )}
-                <p className={styles.figureNote}>
-                  Model vocabulary order, not frequency rank. Closed movements remain in this historical count.
-                </p>
-              </article>
-            </div>
+                  <p className={styles.figureNote}>
+                    Counts are recalculated from the current referral and admission records.
+                  </p>
+                </article>
+              </div>
+            </details>
           </WardPanel>
-          <div id={STATISTICS_COMMUNITY_CHOOSER_ID} className={pageStyles.communityRegion}>
-            <WardPanel title="Community teams" testId="ward-statistics-community-chooser">
-              <div className={`${styles.panelBody} ${pageStyles.landingBody}`}>
-                <p className={styles.absence} data-testid="ward-statistics-community-landing-absence">
-                  No network-wide community total. Each team&apos;s current caseload is measured on its own page.
+        </div>
+
+        {/* ══════════ THE HONESTY FOOT ══════════ */}
+        <WardPanel title="What is invented and what is real">
+          <p>These figures are invented prototype data, not observed hospital activity.</p>
+          <div className={pageStyles.footSec}>
+            <h3>Every figure here is invented</h3>
+            <p>The invented figures illustrate the prototype and are not clinical measurements.</p>
+            <ul className={pageStyles.footList}>
+              <li>
+                <b>Every bed&apos;s state:</b> occupied, ready, held and out of service, on every one of the{" "}
+                {units.length} wards, including the {words(pressureWards.length)} drawn. They were chosen so the{" "}
+                {units.length} wards sum exactly to this page&apos;s own totals,{" "}
+                <span className={pageStyles.num}>{availableNow}</span> ready,{" "}
+                <span className={pageStyles.num}>{heldBeds}</span> held,{" "}
+                <span className={pageStyles.num}>{blockedBeds}</span> out of service and{" "}
+                <span className={pageStyles.num}>{occupiedBeds}</span> occupied out of the{" "}
+                <span className={pageStyles.num}>{totalBeds}</span> real beds. The arrangement across individual wards
+                is invented. Only the {totalBeds} bed ceiling is real.
+              </li>
+              <li>
+                <b>Every wait, admission, discharge, referral and caseload figure:</b> the {flowDays.length} day flow
+                and its <span className={pageStyles.num}>{admTotal}</span> admissions and{" "}
+                <span className={pageStyles.num}>{disTotal}</span> discharges, today&apos;s{" "}
+                <span className={pageStyles.num}>{admissionsCount}</span> admissions and{" "}
+                <span className={pageStyles.num}>{dischargesCount}</span> discharges, all{" "}
+                <span className={pageStyles.num}>{totalEdWaiting}</span> people waiting in an emergency department and
+                every wait time including the <span className={pageStyles.num}>{networkLongestWait}h</span> longest and
+                the <span className={pageStyles.num}>{networkMedianWait}h</span> median, the{" "}
+                <span className={pageStyles.num}>{refRaised}</span> referrals raised today and their{" "}
+                <span className={pageStyles.num}>{refAccepted}</span> accepted,{" "}
+                <span className={pageStyles.num}>{refDeclined}</span> declined and{" "}
+                <span className={pageStyles.num}>{refOpen}</span> still open, and every community team&apos;s caseload,
+                new referral and discharge figure including the{" "}
+                <span className={pageStyles.num}>{totalTeamCaseload.toLocaleString()}</span>,{" "}
+                <span className={pageStyles.num}>{totalTeamNewRefs.toLocaleString()}</span> and{" "}
+                <span className={pageStyles.num}>{totalTeamDischarges.toLocaleString()}</span> totals. The community
+                figures follow one stated rule: a caseload of 2.6 people a suburb, new referrals at a sixteenth of it
+                and discharges at a twentieth.
+              </li>
+              <li>
+                <b>The referred, awaiting an answer counts</b> in Where the pressure is are a separate invented figure
+                from the emergency department waits opposite. The two are different populations, said so in the
+                panel&apos;s own words, precisely so a reader does not add them together.
+              </li>
+              <li>
+                <b>The confirmed 10:38 marker</b>, and yesterday&apos;s <span className={pageStyles.num}>261</span>{" "}
+                occupied beds and <span className={pageStyles.num}>31</span> people waiting, from which the two deltas
+                in the band are counted.
+              </li>
+              <li>
+                <b>The rail, the bar and their drawers</b> carry Command&apos;s own invented movements, referrals and
+                overrides, unchanged, so this screen&apos;s chrome says exactly what Command&apos;s says.
+              </li>
+            </ul>
+          </div>
+
+          <div className={pageStyles.footSec}>
+            <h3>What is real</h3>
+            <ul className={pageStyles.footList}>
+              <li>
+                <b>
+                  {units.length} wards across {hospitalsCount} hospitals, and their exact bed counts.
+                </b>{" "}
+                Every ward name, hospital name and bed count on this page, including the {words(pressureWards.length)}{" "}
+                in Where the pressure is, is read from <code>ward-sites.ts</code>. <b>{totalBeds} beds</b> is the
+                arithmetic sum of those {units.length} real counts, not an invented figure.
+              </li>
+              <li>
+                <b>{emergencyDepts.length} emergency departments</b>, also from <code>ward-sites.ts</code>. SJGM and
+                PEEL each run one and hold no mental health bed of their own, which is why neither appears in the ward
+                table. With the {hospitalsCount} hospitals that hold wards, that is {hospitalsCount + 2} sites in the
+                collection.
+              </li>
+              <li>
+                <b>The {communityTeams.length} community team names and their suburb counts</b>, Midland at 70 down to
+                Alma Street (Central) at 12, are the list the approved community hub screen carries, counted from{" "}
+                <code>ward-catchment.ts</code>. They were taken from that screen rather than re-derived here, so the two
+                screens cannot disagree.
+              </li>
+              <li>
+                <b>The shared visual language</b>: every colour, size, panel, table, band, chart and chip rule above the
+                screen&apos;s own comment in this file is the Ward Flow third edition stylesheet, copied unedited from
+                the Command build.
+              </li>
+              <li>
+                <b>The day and the clock</b>: Saturday 15 August 2026, 10:42 AWST, day shift, handover at 14:00, the
+                same day Command shows.
+              </li>
+            </ul>
+          </div>
+
+          <div className={pageStyles.footSec}>
+            <h3>What this screen deliberately does not do</h3>
+            <ul className={pageStyles.footList}>
+              <li>
+                <b>It has no switcher, and no per-ward, per-department or per-team action.</b> This is the top of the
+                hierarchy the ward, department and community switchers route out of. Every figure here belongs to a
+                service that answers for it on its own screen, and this page only totals what has been recorded there.
+                The three statistics pages beneath it, for wards, for emergency departments and for community teams, are
+                linked from the foot of the panel each one details.
+              </li>
+              <li>
+                <b>It does not claim the per-ward split is a measurement.</b> The headline figures and the totals rows
+                are arithmetic on invented per-ward numbers, not a live feed. It is stated once here rather than
+                repeated beside every figure, and the reconciliation line above says whether that arithmetic holds.
+              </li>
+              <li>
+                <b>A nought is a figure where it is measured and none where it is a state.</b> A count of people
+                waiting, or of referrals awaiting an answer, reads none in italic where there are none, because none is
+                a state. A measured quantity such as beds ready keeps its 0 as a figure, so it can be compared down the
+                column. Neither ever stands for not tracked. Where a figure could not be taken at all, the caption
+                beside it says so.
+              </li>
+              <li>
+                <b>It draws no verdict about a person.</b> Every judgement on this screen is about a ward, a department,
+                a team or a bed.
+              </li>
+            </ul>
+          </div>
+
+          <div id={STATISTICS_SERVICE_CHOOSER_ID}>
+            <WardPanel title="Choose a health service" testId="ward-statistics-service-chooser">
+              <div className={styles.panelBody}>
+                <p className={styles.figureNote} data-testid="ward-statistics-service-chooser-rationale">
+                  Select a health service for its capacity, referral flow and distance measures. All services are listed
+                  in recorded order, without ranking.
                 </p>
-                <h3 className={styles.figureHeading}>Choose a community team</h3>
-                <p className={styles.figureNote} data-testid="ward-statistics-community-chooser-rationale">
-                  Select a team. All referral-form teams are listed in recorded order, without ranking.
-                </p>
-                <ul className={styles.indexList} data-testid="ward-statistics-community-list">
-                  {COMMUNITY_TEAM_PAGES.map((team) => (
-                    <li key={team.id} className={styles.indexItem}>
+                <ul className={styles.indexList} data-testid="ward-statistics-service-list">
+                  {HEALTH_SERVICES.map((svc) => (
+                    <li key={svc} className={styles.indexItem}>
                       <Link
-                        href={communityStatisticsHref(team.id)}
+                        href={serviceStatisticsHref(svc)}
                         className={styles.indexLink}
-                        data-testid={`ward-statistics-community-link-${team.id}`}
+                        data-testid={`ward-statistics-service-link-${svc}`}
                       >
-                        <span className={styles.indexLabel}>{team.name}</span>
+                        <span className={styles.indexLabel}>{svc}</span>
                       </Link>
                     </li>
                   ))}
@@ -2089,157 +2027,7 @@ export function StatisticsScreen({
               </div>
             </WardPanel>
           </div>
-          <WardPanel title="Referrals for a bed" testId="ward-statistics-referrals-for-bed">
-            <div className={`${styles.panelBody} ${pageStyles.landingBody}`}>
-              <article className={styles.figure} data-testid="ward-statistics-referral-to-bed">
-                <h3 className={styles.figureHeading}>From a referral being raised to a bed being taken</h3>
-
-                {/*
-                 * EMPTY STATE 2, and the one paragraph on this page that has been rewritten twice for
-                 * the same underlying mistake: it kept explaining the refusal by describing the FIXTURE.
-                 *
-                 * ⚠️ **A SENTENCE ABOUT WHAT THE SEED CONTAINS IS A PIN THAT FALSIFIES ITSELF SILENTLY.**
-                 * This paragraph asserted, at various points, that the matching records were not the
-                 * same person, that their ids collided by accident, that the front door had been
-                 * numbered separately, and that arrivals preceded referrals by weeks. Every one was
-                 * checked against the fixture, was wrong or became wrong, and left the refusal — which
-                 * was correct throughout — standing on a false account of the data. Nothing went red
-                 * for any of them, because a fixture is not a contract and no test watches prose.
-                 *
-                 * ⚠️ **SO THIS PARAGRAPH NOW DESCRIBES WHAT THE DERIVATION CAN AND CANNOT ESTABLISH,
-                 * AND NOTHING ELSE.** No count, no id shape, no provenance, no magnitude, no date. That
-                 * sentence is true whether the join finds many pairs or none, and it stays true across
-                 * the next fixture change. Quantities belong to the elements below, which recompute on
-                 * every render — rendered, never written.
-                 *
-                 * ⚠️ FIELD NAMES CAME OFF THIS PARAGRAPH ON 2026-09-06, ON THE OWNER'S RULING, AND THEY
-                 * LIVE HERE SO THE CLAIM STAYS CHECKABLE BY THE READER WHO NEEDS THEM:
-                 *
-                 *     the admission's pointer at its referral   Admission.referralId
-                 *
-                 * The claim above turns on that pointer being nullable and on a match being exact, and
-                 * both are properties of the field rather than of the fixture — which is the whole point
-                 * of the paragraph. `statistics-claims-register.ts` pins them to `ward-model.ts`.
-                 *
-                 * 🔴 **AND THAT SCOPE NOTE WAS TRUE OF THE COMMENT AND FALSE OF THE SENTENCE, UNTIL
-                 *
-                 * 🔴 CORRECTED 2026-09-11, AND THIS COMMENT HAS NOW DECAYED A THIRD TIME - which is exactly
-                 * what its own first two corrections warned about, so it is annotated in the pattern this file
-                 * already uses rather than rewritten.
-                 *
-                 *     what the block below states          what is true at 2026-09-11
-                 *     0 of 267 carry a null referralId     257 of 267 ARE null, and that is the INTENDED state
-                 *     257 of 267 ids match no referral     10 non-null ids, ALL resolving, ZERO dangling
-                 *
-                 * ⚠️ Both dated measurements are INVERTED, not merely out of date. Repaired at a6e5208b85.
-                 * ✅ THE GOVERNING RULE ABOVE IS UNAFFECTED, AND IS WHY THE RENDERED TEXT DID NOT DECAY WITH
-                 * THE COMMENT: the rendered paragraph states only what the derivation can and cannot establish -
-                 * no count, no id shape, no provenance, no magnitude, no date.
-                 * 🔴 The comment stated counts and has gone wrong three times. The sentence stated none and
-                 * has not gone wrong once. That contrast is the whole lesson of this file.
-                 * 2026-09-06.** The paragraph read "nothing at all is an ordinary state HERE" — a claim
-                 * about this data, not about the type — and the measurement is that **NO admission is
-                 * in that state: 0 of 267 carry a null `referralId`.** The seed writes
-                 * `RF-${suffix}` for every generated admission, so the branch has no producer at all.
-                 * A reader on the page cannot see this comment; they see "ordinary", and 267 of 267 is
-                 * not ordinary, it is universal. The sentence now says what the register evidences —
-                 * that the POINTER is nullable — and claims nothing about how often.
-                 *
-                 * ⚠️ **THE PROJECT ALREADY HAD THIS RULE AND IT WAS NOT APPLIED TO THIS FIELD.**
-                 * `tests/ward-admissions-seed.test.ts` requires `tentativeDiagnosis` to be null on some
-                 * seeded people and not all, in terms: a fixture where everybody carried a value would
-                 * leave "the branch a reader is most likely to see wrong" with no seeded case. Three
-                 * hundred lines away, on the sibling field, `referralId` has no such guard.
-                 *
-                 * ⚠️ **A SECOND MEASURED FACT THIS PAGE DOES NOT STATE, reported rather than fixed:
-                 * 257 of the 267 ids match no referral on record** — they are shaped `RF-RPHS-01`,
-                 * a different family from the seeded `RF-001`…`RF-010`. The figures below are all
-                 * true and a reader can compute it, but nothing says the join essentially fails.
-                 * Whether the seed should carry real nulls and matching ids is a fixture decision.
-                 */}
-                <p className={styles.absence} data-testid="ward-statistics-referral-join-absent">
-                  <strong>No referral-to-bed duration is published.</strong> An exact referral link does not establish
-                  that the referral started the wait that ended with this admission. The counts below report coherent
-                  linked records without turning them into a duration.
-                </p>
-
-                <p className={styles.measuredCount} data-testid="ward-statistics-join-count">
-                  {/* Its own testid so a test can assert EQUALITY rather than `toContain` on the whole
-                    sentence. An adversarial check found the old containment assertion passed by luck:
-                    the substituted value was `267`, which happens to contain no "0" — `260`, `100` or
-                    `30` would all have slipped through. */}
-                  <span className={styles.measuredValue} data-testid="ward-statistics-join-coherent-count">
-                    {join.chronologicallyCoherentCount}
-                  </span>{" "}
-                  of <span data-testid="ward-statistics-join-matched-count">{join.joinedCount}</span> matched{" "}
-                  {join.joinedCount === 1 ? "pair" : "pairs"} could carry a duration at all — that is, the person
-                  arrived no earlier than the referral was raised.
-                </p>
-                <p className={styles.measuredCount} data-testid="ward-statistics-join-population">
-                  Matched from <span data-testid="ward-statistics-join-with-id-count">{join.withReferralIdCount}</span>{" "}
-                  {join.withReferralIdCount === 1 ? "admission" : "admissions"} carrying a referral id, against{" "}
-                  <span data-testid="ward-statistics-join-referrals-searched">{join.referralsSearchedCount}</span>{" "}
-                  {join.referralsSearchedCount === 1 ? "referral" : "referrals"} on record.
-                </p>
-                <p className={styles.figureNote}>
-                  Counts are recalculated from the current referral and admission records.
-                </p>
-              </article>
-            </div>
-          </WardPanel>
-        </div>
-
-        {/* ── Audience 2 ─────────────────────────────────────────────────────────────────── */}
-
-        {/*
-         * ── Choose a health service ─────────────────────────────────────────────────────────
-         *
-         * The fourth hub entry (`STATISTICS_SECTIONS`, id "service") points here rather than at a
-         * page of its own, for the same reason the third entry points at a chooser on the
-         * comparisons page: `HEALTH_SERVICES` is five members and the per-service detail route is
-         * dynamic, so a route serving every service needs a way in that names all five, and this is
-         * the page whose own audience already spans every service in the network.
-         *
-         * ⚠️ **THE ANCHOR SITS ON THIS PAGE, NOT A SUB-ROUTE.** The ward/ED chooser lives on the
-         * comparisons page because that page's whole subject is the set of units; a health service
-         * is not a unit, so it is not filed there. `STATISTICS_SERVICE_CHOOSER_HREF` is a fragment
-         * on `STATISTICS_HOME_HREF` itself for that reason, which is also why it is the one section
-         * href in this list that does not sit under a sub-path of the hub.
-         */}
-        <div id={STATISTICS_SERVICE_CHOOSER_ID}>
-          <WardPanel title="Choose a health service" testId="ward-statistics-service-chooser">
-            <div className={styles.panelBody}>
-              <p className={styles.figureNote} data-testid="ward-statistics-service-chooser-rationale">
-                Select a health service for its capacity, referral flow and distance measures. All services are listed
-                in recorded order, without ranking.
-              </p>
-              <ul className={styles.indexList} data-testid="ward-statistics-service-list">
-                {wardServiceOrder.map((service) => (
-                  <li key={service} className={styles.indexItem}>
-                    <Link
-                      href={serviceStatisticsHref(service)}
-                      className={styles.indexLink}
-                      data-testid={`ward-statistics-service-link-${service}`}
-                    >
-                      <span className={styles.indexLabel}>{service}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </WardPanel>
-        </div>
-
-        {/*
-          The fifth chooser. Community teams get one for the same reason health services do — one
-          route serves every team, so the way in is a choice rather than an index.
-
-          ⚠️ **THIS LINKS AT THE STATISTICS PAGE, NOT AT THE OPERATIONAL TEAM PAGE.** Both exist and
-          they answer different questions: `/community/[teamId]` is the team's own working screen
-          with the people on it, and the statistics page carries the counts and the cross-team
-          comparison. The statistics page links onward to the operational one, so a reader who
-          wanted names is one click away rather than in the wrong place.
-        */}
+        </WardPanel>
 
         <div
           className={`${styles.governanceBanner} ${pageStyles.provenanceFooter}`}

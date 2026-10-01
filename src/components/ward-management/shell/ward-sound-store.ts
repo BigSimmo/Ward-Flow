@@ -5,7 +5,11 @@
  * requiring external MP3/WAV assets. Gracefully handles SSR and environments without Web Audio.
  */
 
+import { useCallback } from "react";
+import { createBrowserStore } from "@/lib/client-store-factory";
+
 export const AUDIO_BUZZ_STORAGE_KEY = "ward-flow-audio-buzz-pref";
+export const AUDIO_BUZZ_CHANGE_EVENT = "ward-flow-audio-buzz-change";
 export const VISUAL_PULSE_STORAGE_KEY = "ward-flow-visual-pulse-pref";
 
 let audioBuzzInMemoryFallback: boolean | undefined;
@@ -15,8 +19,7 @@ let sharedAudioContext: AudioContext | null = null;
 function getAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
   const AudioCtx =
-    window.AudioContext ||
-    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AudioCtx) return null;
   if (!sharedAudioContext) {
     try {
@@ -96,10 +99,30 @@ export function setAudioBuzzPreference(enabled: boolean): void {
   try {
     if (typeof window !== "undefined" && window.localStorage) {
       window.localStorage.setItem(AUDIO_BUZZ_STORAGE_KEY, String(enabled));
+      window.dispatchEvent(new Event(AUDIO_BUZZ_CHANGE_EVENT));
     }
   } catch {
     // Graceful fallback for restricted environments
   }
+}
+
+function subscribeAudioBuzz(onChange: () => void) {
+  window.addEventListener("storage", onChange);
+  window.addEventListener(AUDIO_BUZZ_CHANGE_EVENT, onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener(AUDIO_BUZZ_CHANGE_EVENT, onChange);
+  };
+}
+
+const useAudioBuzzStore = createBrowserStore(subscribeAudioBuzz, getAudioBuzzPreference, true);
+
+export function useAudioBuzzPreference(): [boolean, (enabled: boolean) => void] {
+  const enabled = useAudioBuzzStore();
+  const setEnabled = useCallback((next: boolean) => {
+    setAudioBuzzPreference(next);
+  }, []);
+  return [enabled, setEnabled];
 }
 
 export function getVisualPulsePreference(): boolean {

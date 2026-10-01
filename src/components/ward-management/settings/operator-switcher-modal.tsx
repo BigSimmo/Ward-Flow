@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, X } from "lucide-react";
 
 import { edHref, teamHref, unitHref } from "@/components/ward-management/shell/ward-facade";
+import { useWardModalFocus } from "../ward-modal-focus";
 
 import styles from "./settings.module.css";
 
@@ -42,17 +43,9 @@ function useSafeRouter(): { push: (path: string) => void } | null {
 
 export function OperatorSwitcherModal({ isOpen, onClose, onNavigate }: OperatorSwitcherModalProps) {
   const router = useSafeRouter();
+  const dialogRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  useWardModalFocus(isOpen, dialogRef, onClose);
 
   if (!isOpen) return null;
 
@@ -79,15 +72,18 @@ export function OperatorSwitcherModal({ isOpen, onClose, onNavigate }: OperatorS
   return (
     <div
       className={styles.modalOverlay}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="operator-switcher-title"
       data-testid="ward-operator-switcher-modal"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className={styles.operatorModalDialog}>
+      <div
+        ref={dialogRef}
+        className={styles.operatorModalDialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="operator-switcher-title"
+      >
         <header className={styles.modalHeader}>
           <div className={styles.operatorHeaderMeta}>
             <h3 id="operator-switcher-title" className={styles.modalTitle}>
@@ -97,12 +93,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onNavigate }: OperatorS
               Select a clinical workstation to simulate immediate role and perspective handoff.
             </p>
           </div>
-          <button
-            type="button"
-            className={styles.btnSecondary}
-            onClick={onClose}
-            aria-label="Close operator switcher"
-          >
+          <button type="button" className={styles.btnSecondary} onClick={onClose} aria-label="Close operator switcher">
             <X size={16} aria-hidden="true" />
           </button>
         </header>

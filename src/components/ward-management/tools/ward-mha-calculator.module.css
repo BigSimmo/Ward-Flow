@@ -89,7 +89,7 @@
 }
 
 .tabDuration {
-  font-size: 0.6875rem;
+  font-size: var(--t-0, 0.75rem);
   opacity: 0.85;
 }
 
@@ -293,7 +293,7 @@
 }
 
 .metricLabel {
-  font-size: 0.6875rem;
+  font-size: var(--t-0, 0.75rem);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--ward-muted, var(--text-muted));
@@ -306,7 +306,7 @@
 }
 
 .metricSub {
-  font-size: 0.6875rem;
+  font-size: var(--t-0, 0.75rem);
   color: var(--ward-muted, var(--text-muted));
 }
 

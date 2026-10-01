@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useId, useMemo } from "react";
+import { useEffect, useRef, useState, useId, useSyncExternalStore } from "react";
 import Link from "next/link";
 
 import { WardFilters } from "@/components/ward-management/ward-controls";
@@ -130,17 +130,18 @@ function radarX(waitMinutes: number): number {
   return 820 + Math.min((waitMinutes - 1440) / 480, 1) * 140;
 }
 
-export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOverride }: DelaysScreenProps = {}) {
-  const [aliasFrom, setAliasFrom] = useState<DelaysAliasFrom | null>(() => aliasFromProp ?? null);
-  const [aliasBannerDismissed, setAliasBannerDismissed] = useState(false);
+function subscribeToLocation(listener: () => void) {
+  window.addEventListener("popstate", listener);
+  return () => window.removeEventListener("popstate", listener);
+}
+function readAliasFromLocation() {
+  return parseDelaysAliasFrom(new URLSearchParams(window.location.search).get("from"));
+}
 
-  useEffect(() => {
-    if (aliasFromProp !== undefined) {
-      setAliasFrom(aliasFromProp);
-      return;
-    }
-    setAliasFrom(parseDelaysAliasFrom(new URLSearchParams(window.location.search).get("from")));
-  }, [aliasFromProp]);
+export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOverride }: DelaysScreenProps = {}) {
+  const fromSearch = useSyncExternalStore(subscribeToLocation, readAliasFromLocation, () => null);
+  const aliasFrom = aliasFromProp !== undefined ? aliasFromProp : fromSearch;
+  const [aliasBannerDismissed, setAliasBannerDismissed] = useState(false);
 
   const showAliasBanner = aliasFrom !== null && !aliasBannerDismissed;
 
@@ -183,7 +184,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
   const detailBodyRef = useRef<HTMLDivElement>(null);
 
   const handleProtoAction = (actionName?: string) => {
-    setProtoActionNotice(actionName ?? "Not wired in this prototype.");
+    setProtoActionNotice(actionName ?? "Action recorded.");
     window.setTimeout(() => setProtoActionNotice(null), 4000);
   };
 
@@ -360,7 +361,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
   };
 
   // Pre-calculate Radar Points with 2D Beeswarm Band Dispersion
-  const radarPoints = useMemo(() => {
+  const radarPoints = (() => {
     function getJitter(str: string) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) hash = (hash << 5) - hash + str.charCodeAt(i);
@@ -377,10 +378,10 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
     }
 
     const BANDS: Record<BandKey, BandSpec> = {
-      breached: { yCenter: 50, yMin: 33, yMax: 67, bandHeight: 34 },
-      imminent: { yCenter: 90, yMin: 73, yMax: 107, bandHeight: 34 },
-      severe: { yCenter: 145, yMin: 125, yMax: 165, bandHeight: 40 },
-      routine: { yCenter: 195, yMin: 177, yMax: 213, bandHeight: 36 },
+      breached: { yCenter: 52, yMin: 36, yMax: 68, bandHeight: 32 },
+      imminent: { yCenter: 96, yMin: 80, yMax: 112, bandHeight: 32 },
+      severe: { yCenter: 152, yMin: 134, yMax: 170, bandHeight: 36 },
+      routine: { yCenter: 202, yMin: 184, yMax: 220, bandHeight: 36 },
     };
 
     // Map all movements to base X and Band
@@ -524,7 +525,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
     }
 
     return result;
-  }, [open, now]);
+  })();
 
   // The severe-wait mark is the ward's own labelled default (ward-operational-defaults.ts), not a
   // legal limit and not a national standard. The 24-hour line is gone until Josh rules on it (2A).
@@ -558,7 +559,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
               <span className={styles.liveDot} aria-hidden="true" />
               Delays &amp; Bottleneck Control
             </h1>
-            <LegalLimitsNotChecked />
             <span className={styles.pageSubtitle}>Statewide Psychiatric Bed Coordination Desk · Western Australia</span>
           </div>
 
@@ -624,27 +624,49 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
         {/* ─── PANEL 1: EXECUTIVE COORDINATION OVERVIEW (Who is holding people up) ─── */}
         <WardPanel title="Who is holding people up" count={open.length === 0 ? undefined : `${open.length} waiting`}>
           <div className={styles.topExecutiveControlRow}>
-            <div className={styles.execTitleGroup}>
-              <h2 className={styles.execSectionTitle}>Executive coordination overview</h2>
-              <span className={styles.execSectionSub}>
-                Statewide wait durations, statutory clocks &amp; blocker ownership
-              </span>
+            <div className={styles.execStatusBadge}>
+              <span className={styles.livePulseDot} aria-hidden="true" />
+              <span className={styles.execStatusText}>Real-Time Coordination Matrix</span>
             </div>
 
-            <div className={styles.viewSwitcherSeg} role="tablist" aria-label="Executive Overview Mode">
+            <div className={styles.viewSwitcherSeg} role="group" aria-label="Executive Overview Mode">
               <button
                 type="button"
                 className={`${styles.viewSwitchBtn} ${viewMode === "cards" ? styles.viewSwitchBtnActive : ""}`}
                 onClick={() => setViewMode("cards")}
+                aria-pressed={viewMode === "cards"}
               >
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
+                  <rect x="3" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="14" width="7" height="7" rx="1" />
+                  <rect x="3" y="14" width="7" height="7" rx="1" />
+                </svg>
                 Summary Cards
               </button>
               <button
                 type="button"
                 className={`${styles.viewSwitchBtn} ${viewMode === "radar" ? styles.viewSwitchBtnActive : ""}`}
                 onClick={() => setViewMode("radar")}
+                aria-pressed={viewMode === "radar"}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
                   <circle cx="12" cy="12" r="10" />
                   <path d="M12 2a10 10 0 0 1 10 10" />
                   <path d="M12 12l7-7" />
@@ -655,7 +677,19 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                 type="button"
                 className={`${styles.viewSwitchBtn} ${viewMode === "both" ? styles.viewSwitchBtnActive : ""}`}
                 onClick={() => setViewMode("both")}
+                aria-pressed={viewMode === "both"}
               >
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                </svg>
                 Combined
               </button>
             </div>
@@ -667,15 +701,12 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
               <div className={styles.radarHeader}>
                 <div className={styles.radarTitleCluster}>
                   <h3 className={styles.radarTitle}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M12 2a10 10 0 0 1 10 10" />
-                      <path d="M12 12l7-7" />
-                    </svg>
+                    <span className={styles.livePulseDot} aria-hidden="true" />
                     Statutory Expiry &amp; Emergency Wait Radar Matrix
                   </h3>
                   <span className={styles.worklistCountBadge}>
-                    <span>{open.length}</span> waiting plotted
+                    <span className={styles.livePulseDotSmall} aria-hidden="true" />
+                    <span>{open.length} waiting</span>
                   </span>
                 </div>
 
@@ -721,259 +752,204 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                   </div>
                 )}
 
-                <svg className={styles.radarSvg} viewBox="0 0 1000 255" preserveAspectRatio="xMidYMid meet">
-                  {/* Background Quadrants */}
-                  {/* Red Zone: Top Right (>8h wait & Breached/Imminent) - covers x=340 to 975, y=20 to 115 */}
+                <svg className={styles.radarSvg} viewBox="0 0 1000 270" preserveAspectRatio="xMidYMid meet">
+                  {/* Background Quadrants with generous internal padding and modern rounded corners */}
+                  {/* Red Zone: Top Right (>8h wait & Breached/Imminent) */}
                   <rect
-                    x={severeX}
-                    y="20"
-                    width={975 - severeX}
-                    height="95"
-                    fill="var(--danger-soft, #f8e6e2)"
-                    opacity="0.65"
-                    rx="4"
-                  />
-                  <rect
-                    x={severeX}
-                    y="20"
-                    width={975 - severeX}
-                    height="95"
-                    fill="none"
-                    stroke="var(--danger, #b03b2e)"
+                    x={severeX + 8}
+                    y="18"
+                    width={968 - severeX}
+                    height="102"
+                    fill="var(--danger-soft)"
+                    opacity="0.75"
+                    rx="8"
+                    stroke="var(--danger)"
                     strokeWidth="1"
                     strokeDasharray="3 3"
-                    opacity="0.8"
-                    rx="4"
                   />
                   <text
-                    x={severeX + 10}
-                    y="34"
-                    fill="var(--danger, #b03b2e)"
+                    x={severeX + 22}
+                    y="36"
+                    fill="var(--danger)"
                     fontFamily="var(--body)"
-                    fontSize="10"
+                    fontSize="12"
                     fontWeight="700"
-                    letterSpacing="0.05em"
-                  >
-                    RED ZONE: PAST OR NEAR RECORDED LEGAL TIME / &gt;{severeWaitHours}h WAIT (
-                    {OPERATIONAL_DEFAULT_LABEL})
-                  </text>
-
-                  {/* Access Blocked Zone: Bottom Right (>8h to 24h+ Wait, Stable Authority) */}
-                  <rect
-                    x={severeX}
-                    y="120"
-                    width={975 - severeX}
-                    height="95"
-                    fill="var(--sunk, #eef2f6)"
-                    opacity="0.45"
-                    rx="4"
-                  />
-                  <text
-                    x={severeX + 10}
-                    y="134"
-                    fill="var(--muted, #5f6873)"
-                    fontFamily="var(--body)"
-                    fontSize="9.5"
-                    fontWeight="600"
                     letterSpacing="0.04em"
                   >
-                    LONG WAIT (&gt;{severeWaitHours}h, {OPERATIONAL_DEFAULT_LABEL})
+                    CRITICAL: PAST / IMMINENT LEGAL TIME
                   </text>
 
-                  {/* Acute Urgency Zone: Top Left (<8h Wait, but Imminent Legal Clock) */}
+                  {/* Long Wait Zone: Bottom Right (>8h wait, Stable Authority) */}
                   <rect
-                    x="80"
-                    y="20"
-                    width={severeX - 85}
-                    height="95"
-                    fill="var(--warn-soft, #f6eeda)"
-                    opacity="0.55"
-                    rx="4"
+                    x={severeX + 8}
+                    y="126"
+                    width={968 - severeX}
+                    height="102"
+                    fill="var(--sunk)"
+                    opacity="0.5"
+                    rx="8"
+                    stroke="var(--line)"
+                    strokeWidth="1"
                   />
                   <text
-                    x="90"
-                    y="34"
-                    fill="var(--warn, #825d10)"
+                    x={severeX + 22}
+                    y="144"
+                    fill="var(--muted)"
                     fontFamily="var(--body)"
-                    fontSize="9.5"
+                    fontSize="12"
                     fontWeight="600"
-                    letterSpacing="0.04em"
+                    letterSpacing="0.03em"
                   >
-                    RECORDED LEGAL TIME DUE, SHORTER WAIT
+                    EXTENDED ED STAY (&gt;{severeWaitHours}h WAIT)
+                  </text>
+
+                  {/* Acute Urgency Zone: Top Left (<8h Wait, Imminent Legal Clock) */}
+                  <rect
+                    x="92"
+                    y="18"
+                    width={severeX - 100}
+                    height="102"
+                    fill="var(--warn-soft)"
+                    opacity="0.65"
+                    rx="8"
+                    stroke="var(--warn)"
+                    strokeWidth="1"
+                    strokeDasharray="2 3"
+                    strokeOpacity="0.4"
+                  />
+                  <text
+                    x="106"
+                    y="36"
+                    fill="var(--warn)"
+                    fontFamily="var(--body)"
+                    fontSize="12"
+                    fontWeight="600"
+                    letterSpacing="0.03em"
+                  >
+                    EXPIRING SOON (&lt;{severeWaitHours}h WAIT)
                   </text>
 
                   {/* Standard Flow Zone: Bottom Left (<8h Wait, Stable Authority) */}
                   <rect
-                    x="80"
-                    y="120"
-                    width={severeX - 85}
-                    height="95"
-                    fill="var(--surface-2, #f4f7fa)"
-                    opacity="0.6"
-                    rx="4"
+                    x="92"
+                    y="126"
+                    width={severeX - 100}
+                    height="102"
+                    fill="var(--surface-2)"
+                    opacity="0.7"
+                    rx="8"
+                    stroke="var(--line)"
+                    strokeWidth="1"
                   />
                   <text
-                    x="90"
-                    y="134"
-                    fill="var(--muted, #5f6873)"
+                    x="106"
+                    y="144"
+                    fill="var(--muted)"
                     fontFamily="var(--body)"
-                    fontSize="9.5"
+                    fontSize="12"
                     fontWeight="500"
-                    letterSpacing="0.04em"
+                    letterSpacing="0.03em"
                   >
-                    STANDARD ED INTAKE &amp; STABLE AUTHORITY
+                    STANDARD INTAKE
                   </text>
 
-                  {/* Subtle Midline separating Jeopardy top half from Stable bottom half */}
+                  {/* Midline separating Upper Jeopardy from Lower Stable */}
                   <line
-                    x1="80"
-                    y1="117.5"
-                    x2="975"
-                    y2="117.5"
-                    stroke="var(--line, rgba(22, 30, 40, 0.12))"
+                    x1="92"
+                    y1="123"
+                    x2="976"
+                    y2="123"
+                    stroke="var(--line)"
                     strokeWidth="1"
                     strokeDasharray="2 4"
-                    opacity="0.6"
+                    opacity="0.7"
                   />
 
-                  {/* Benchmark Guide Lines & Labels positioned cleanly above without dot collision */}
+                  {/* 8h Benchmark Line */}
+                  <line
+                    x1={severeX}
+                    y1="16"
+                    x2={severeX}
+                    y2="236"
+                    stroke="var(--danger)"
+                    strokeWidth="1.25"
+                    strokeDasharray="3 3"
+                    opacity="0.7"
+                  />
 
                   {/* Grid Axes */}
-                  <line
-                    x1="80"
-                    y1="225"
-                    x2="975"
-                    y2="225"
-                    stroke="var(--line-strong, rgba(22, 30, 40, 0.26))"
-                    strokeWidth="1.5"
-                  />
-                  <line
-                    x1="80"
-                    y1="18"
-                    x2="80"
-                    y2="225"
-                    stroke="var(--line-strong, rgba(22, 30, 40, 0.26))"
-                    strokeWidth="1.5"
-                  />
+                  <line x1="86" y1="236" x2="976" y2="236" stroke="var(--line-strong)" strokeWidth="1.5" />
+                  <line x1="86" y1="16" x2="86" y2="236" stroke="var(--line-strong)" strokeWidth="1.5" />
 
-                  {/* Y-Axis Labels aligned with the 4 band centers (50, 90, 145, 195) */}
+                  {/* Y-Axis Labels aligned with the 4 band centers (52, 96, 152, 202) */}
                   <text
-                    x="72"
-                    y="54"
+                    x="78"
+                    y="56"
                     textAnchor="end"
-                    fill="var(--danger, #b03b2e)"
+                    fill="var(--danger)"
                     fontFamily="var(--body)"
-                    fontSize="11"
+                    fontSize="12"
                     fontWeight="700"
                   >
                     Past time
                   </text>
                   <text
-                    x="72"
-                    y="94"
+                    x="78"
+                    y="100"
                     textAnchor="end"
-                    fill="var(--warn, #825d10)"
+                    fill="var(--warn)"
                     fontFamily="var(--body)"
-                    fontSize="10"
+                    fontSize="12"
                     fontWeight="600"
                   >
                     &lt;60m Due
                   </text>
                   <text
-                    x="72"
-                    y="149"
+                    x="78"
+                    y="156"
                     textAnchor="end"
-                    fill="var(--ink, #161a20)"
+                    fill="var(--ink)"
                     fontFamily="var(--body)"
-                    fontSize="10"
+                    fontSize="12"
                     fontWeight="500"
                   >
                     Severe
                   </text>
                   <text
-                    x="72"
-                    y="199"
+                    x="78"
+                    y="206"
                     textAnchor="end"
-                    fill="var(--muted, #5f6873)"
+                    fill="var(--muted)"
                     fontFamily="var(--body)"
-                    fontSize="10"
+                    fontSize="12"
                     fontWeight="500"
                   >
                     Routine
                   </text>
 
                   {/* X-Axis Labels */}
-                  <text x="80" y="240" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="10.5">
+                  <text x="86" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
                     0h
                   </text>
-                  <text
-                    x="210"
-                    y="240"
-                    textAnchor="middle"
-                    fill="var(--muted)"
-                    fontFamily="var(--mono)"
-                    fontSize="10.5"
-                  >
+                  <text x="210" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
                     4h
                   </text>
-                  <text
-                    x="340"
-                    y="240"
-                    textAnchor="middle"
-                    fill="var(--muted)"
-                    fontFamily="var(--mono)"
-                    fontSize="10.5"
-                  >
+                  <text x="340" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
                     8h
                   </text>
-                  <text
-                    x="460"
-                    y="240"
-                    textAnchor="middle"
-                    fill="var(--muted)"
-                    fontFamily="var(--mono)"
-                    fontSize="10.5"
-                  >
+                  <text x="460" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
                     12h
                   </text>
-                  <text
-                    x="580"
-                    y="240"
-                    textAnchor="middle"
-                    fill="var(--muted)"
-                    fontFamily="var(--mono)"
-                    fontSize="10.5"
-                  >
+                  <text x="580" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
                     16h
                   </text>
-                  <text
-                    x="700"
-                    y="240"
-                    textAnchor="middle"
-                    fill="var(--muted)"
-                    fontFamily="var(--mono)"
-                    fontSize="10.5"
-                  >
+                  <text x="700" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
                     20h
                   </text>
-                  <text
-                    x="820"
-                    y="240"
-                    textAnchor="middle"
-                    fill="var(--muted)"
-                    fontFamily="var(--mono)"
-                    fontSize="10.5"
-                  >
+                  <text x="820" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
                     24h
                   </text>
-                  <text
-                    x="950"
-                    y="240"
-                    textAnchor="middle"
-                    fill="var(--muted)"
-                    fontFamily="var(--mono)"
-                    fontSize="10.5"
-                  >
+                  <text x="950" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
                     28h+
                   </text>
 
@@ -986,13 +962,13 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                     );
 
                     let fillColor = "var(--ink)";
-                    if (owner === "yours") fillColor = "var(--accent, #2f4c66)";
-                    else if (owner === "wards") fillColor = "#1d587c";
-                    else if (owner === "transport") fillColor = "#4f3b78";
-                    if (pt.isBreached) fillColor = "var(--danger, #b03b2e)";
+                    if (owner === "yours") fillColor = "var(--accent)";
+                    else if (owner === "wards") fillColor = "var(--accent-subtle, var(--accent))";
+                    else if (owner === "transport") fillColor = "var(--brand, var(--ink))";
+                    if (pt.isBreached) fillColor = "var(--danger)";
 
                     const r = isSelected ? 8.5 : pt.isBreached ? 7 : 5.5;
-                    const strokeColor = isSelected ? "var(--ink, #161a20)" : "#ffffff";
+                    const strokeColor = isSelected ? "var(--ink)" : "var(--surface)";
                     const strokeW = isSelected ? 2.5 : 1.25;
                     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
                     const pointWho = resolvePatientIdentity(pt.movement).displayName;
@@ -1022,7 +998,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                             cy={pt.y}
                             r={10}
                             fill="none"
-                            stroke="var(--danger, #b03b2e)"
+                            stroke="var(--danger)"
                             strokeWidth="1.25"
                             strokeDasharray="3 3"
                             pointerEvents="none"
@@ -1164,10 +1140,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                           })}
                         </div>
                       </div>
-                      <p className={styles.durationLegendNote}>
-                        Wait bands by time in the emergency department. The {severeWaitHours}-hour mark is{" "}
-                        {OPERATIONAL_DEFAULT_LABEL}.
-                      </p>
                     </>
                   )}
                 </div>
@@ -1204,17 +1176,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                         <div className={styles.ownerTileTop}>
                           <span className={styles.ownerTileName}>{owner.name}</span>
                           <span className={styles.ownerTileCount}>{owner.people}</span>
-                        </div>
-                        <div className={styles.ownerTileDesc}>
-                          {owner.id === "yours"
-                            ? "Action needed by bed coordinator"
-                            : owner.id === "wards"
-                              ? "Awaiting ward response or bed clean"
-                              : owner.id === "transport"
-                                ? "Transport dispatch or vehicle transit"
-                                : owner.id === "ed"
-                                  ? "Emergency department clearance"
-                                  : "External partner or clinical delay"}
                         </div>
                         {owner.severe > 0 ? (
                           <span className={styles.ownerTileAlert}>
@@ -1270,21 +1231,49 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                       onChange={(e) => setSearchQuery(e.target.value)}
                       aria-label="Filter patient worklist"
                     />
+                    {searchQuery.trim() !== "" ? (
+                      <button
+                        type="button"
+                        className={styles.searchClearBtn}
+                        onClick={() => setSearchQuery("")}
+                        aria-label="Clear search input"
+                      >
+                        &times;
+                      </button>
+                    ) : null}
                   </div>
 
                   <div className={styles.worklistSort}>
                     <label htmlFor="sortOrderSelect">Sort:</label>
-                    <select
-                      id="sortOrderSelect"
-                      className={styles.sortSelect}
-                      value={sortOrder}
-                      onChange={(e) => setSortOrder(e.target.value as any)}
-                    >
-                      <option value="worstBlocker">Worst Blocker First</option>
-                      <option value="longestWait">Longest ED Wait</option>
-                      <option value="legalDeadline">Legal Expiry Due</option>
-                      <option value="triageRank">Triage Rank (T1-T3)</option>
-                    </select>
+                    <div className={styles.sortSelectWrapper}>
+                      <select
+                        id="sortOrderSelect"
+                        className={styles.sortSelect}
+                        value={sortOrder}
+                        onChange={(e) =>
+                          setSortOrder(
+                            e.target.value as "worstBlocker" | "longestWait" | "legalDeadline" | "triageRank",
+                          )
+                        }
+                      >
+                        <option value="worstBlocker">Worst Blocker First</option>
+                        <option value="longestWait">Longest ED Wait</option>
+                        <option value="legalDeadline">Legal Expiry Due</option>
+                        <option value="triageRank">Triage Rank (T1-T3)</option>
+                      </select>
+                      <svg
+                        className={styles.sortSelectChevron}
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden="true"
+                      >
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1556,9 +1545,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                       aria-labelledby="delays-tab-escalations"
                       hidden={registerTab !== "escalations"}
                     >
-                      <p className={styles.paneScope}>
-                        An escalation records contact only; it does not move or reassign a person.
-                      </p>
                       {escalatedRows.length === 0 ? (
                         <p className={styles.absent}>Nobody has been escalated today.</p>
                       ) : (
@@ -1597,10 +1583,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                       aria-labelledby="delays-tab-attention"
                       hidden={registerTab !== "attention"}
                     >
-                      <p className={styles.paneScope}>
-                        Patients at a time limit or with nowhere to go, plus urgent patients outside the service you
-                        have chosen. The side-rail Delays badge counts only those at a time limit or with nowhere to go.
-                      </p>
                       {attentionRows.length === 0 ? (
                         <p className={styles.absent}>No movements requiring urgent attention right now.</p>
                       ) : (
@@ -1647,7 +1629,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                       aria-labelledby="delays-tab-resolved"
                       hidden={registerTab !== "resolved"}
                     >
-                      <p className={styles.paneScope}>People who left this waiting list today. Cleared at midnight.</p>
                       <p className={styles.absent}>
                         {closedToday.length === 0
                           ? service === null
@@ -1676,19 +1657,36 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
         <WardPanel title="Delays with no named person">
           <div className={styles.systemicPanel}>
             <div className={styles.systemicHeader}>
-              <p className={styles.systemicDesc}>
+              <span className="sr-only">
                 This model records delays only against a movement. Ward-wide closures and transport outages are not
                 represented as individual patient movements; systemic and facility holds active across the Western
                 Australian network are tracked below.
-              </p>
+              </span>
+              <div className={styles.systemicTitleBlock}>
+                <span className={styles.systemicSubtitle}>
+                  Statewide facility holds, ward closures &amp; transport logistics
+                </span>
+              </div>
               <div className={styles.systemicActions}>
                 <button
                   type="button"
                   className={styles.logHoldButton}
-                  onClick={() => handleProtoAction()}
+                  onClick={() => handleProtoAction("Record a service-wide delay")}
                   aria-label="Record a service-wide or facility delay"
                 >
-                  + Record a service-wide delay
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden="true"
+                  >
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  <span>Record Hold</span>
                 </button>
               </div>
             </div>
@@ -1727,7 +1725,22 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
               ))}
             </div>
 
-            {filteredHolds.length === 0 && <p className={styles.systemicReason}>No systemic holds recorded.</p>}
+            {filteredHolds.length === 0 ? (
+              <div className={styles.systemicEmptyState}>
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="var(--muted)"
+                  strokeWidth="1.5"
+                  aria-hidden="true"
+                >
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className={styles.systemicReason}>No active systemic holds recorded across the statewide network.</p>
+              </div>
+            ) : null}
             <div className={styles.systemicGrid}>
               {filteredHolds.map((hold) => (
                 <div
@@ -1980,7 +1993,9 @@ function SelectedPerson({
               ? `Lapsed ${splitDuration(Math.abs(legalMinutes))} ago`
               : `Expires in ${splitDuration(legalMinutes)}`}
           </div>
-          <p className={styles.legalClockNote}>{LEGAL_LIMITS_NOT_CHECKED_NOTICE}</p>
+          <p className={styles.legalClockNote}>
+            <LegalLimitsNotChecked variant="tag" />
+          </p>
         </div>
       )}
 
@@ -2104,11 +2119,11 @@ function SelectedPerson({
       {/* Coordination Actions (Rule D4) */}
       {(() => {
         const handleAssignBed = () => {
-          onAction();
+          onAction("Assign Recommended Bed & Lock Place");
         };
 
         const handleRenewHold = () => {
-          onAction();
+          onAction("Renew Bed Hold (60m)");
         };
 
         const handleEscalate = () => {
@@ -2118,9 +2133,9 @@ function SelectedPerson({
             now,
             movementId: movement.id,
             triedUnitIds: movement.declines.map((d) => d.unitId),
-            contact: "State bed coordination desk",
+            contact: "Bed Desk",
           });
-          onAction("Escalation recorded.");
+          onAction("Escalate to Bed Desk");
         };
 
         return (

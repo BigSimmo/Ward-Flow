@@ -6,7 +6,7 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04);
+  box-shadow: var(--lift-sm);
 }
 
 .scrollTrack {
@@ -44,7 +44,7 @@
 
 .navItem:hover {
   color: var(--ink);
-  background: var(--surface-hover, var(--ward-subtle));
+  background: var(--surface-2);
 }
 
 .navItem:focus-visible {
@@ -54,9 +54,9 @@
 
 .navItemActive {
   color: var(--accent);
-  background: var(--ward-blue-soft, var(--accent-soft));
+  background: var(--accent-soft);
   font-weight: 600;
-  border-color: var(--ward-blue-border, var(--line-strong));
+  border-color: var(--line-strong);
 }
 
 .navIcon {

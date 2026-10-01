@@ -169,6 +169,12 @@ type DecidedDetail = {
   alsoCancelled: string[];
 };
 
+function formatUmrn(umrn: string): string {
+  if (!umrn || umrn === "UMRN not recorded") return "UMRN not recorded";
+  if (umrn.toUpperCase().startsWith("UMRN")) return umrn;
+  return `UMRN: ${umrn}`;
+}
+
 function outcomeDetail(referral: Referral, units: Unit[]): DecidedDetail {
   const refusals = refusalLines(referral);
   const cancelled = cancelledLines(referral);
@@ -355,6 +361,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   const resetFilters = useCallback(() => {
     setSearchQuery("");
     setChipFilter("all");
+    setStatusFilter("all");
   }, []);
 
   useEffect(() => {
@@ -650,79 +657,94 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
           </div>
 
           <div className={styles.toolbarSubRow}>
-            <div className={styles.searchWrap}>
-              <svg
-                viewBox="0 0 16 16"
-                width="14"
-                height="14"
-                fill="currentColor"
-                aria-hidden="true"
-                className={styles.searchIcon}
-              >
-                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
-              </svg>
-              <input
-                type="search"
-                className={styles.searchInput}
-                placeholder="Search by ID, hospital, cohort, suburb..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                aria-label="Search referrals"
-              />
-              {searchQuery ? (
+            <div className={styles.toolbarSubLeft}>
+              <div className={styles.searchWrap}>
+                <svg
+                  viewBox="0 0 16 16"
+                  width="14"
+                  height="14"
+                  fill="currentColor"
+                  aria-hidden="true"
+                  className={styles.searchIcon}
+                >
+                  <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                </svg>
+                <input
+                  type="search"
+                  className={styles.searchInput}
+                  placeholder="Search by ID, hospital, cohort, suburb..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  aria-label="Search referrals"
+                />
+                {searchQuery ? (
+                  <button
+                    type="button"
+                    className={styles.searchClearBtn}
+                    onClick={() => setSearchQuery("")}
+                    aria-label="Clear search input"
+                  >
+                    ×
+                  </button>
+                ) : null}
+              </div>
+
+              <div className={styles.chipGroup} role="group" aria-label="Quick filter cohorts">
+                <span className={styles.chipLabel}>Cohort:</span>
                 <button
                   type="button"
-                  className={styles.searchClearBtn}
-                  onClick={() => setSearchQuery("")}
-                  aria-label="Clear search input"
+                  className={chipFilter === "all" ? styles.filterChipActive : styles.filterChip}
+                  onClick={() => setChipFilter("all")}
+                  aria-pressed={chipFilter === "all"}
                 >
-                  ×
+                  All
                 </button>
-              ) : null}
+                <button
+                  type="button"
+                  className={chipFilter === "tier1" ? styles.filterChipActive : styles.filterChip}
+                  onClick={() => setChipFilter(chipFilter === "tier1" ? "all" : "tier1")}
+                  aria-pressed={chipFilter === "tier1"}
+                >
+                  Tier 1 Critical
+                </button>
+                <button
+                  type="button"
+                  className={chipFilter === "beds" ? styles.filterChipActive : styles.filterChip}
+                  onClick={() => setChipFilter(chipFilter === "beds" ? "all" : "beds")}
+                  aria-pressed={chipFilter === "beds"}
+                >
+                  Bed Requests
+                </button>
+                <button
+                  type="button"
+                  className={chipFilter === "older" ? styles.filterChipActive : styles.filterChip}
+                  onClick={() => setChipFilter(chipFilter === "older" ? "all" : "older")}
+                  aria-pressed={chipFilter === "older"}
+                >
+                  Older Adult
+                </button>
+                <button
+                  type="button"
+                  className={chipFilter === "community_ed" ? styles.filterChipActive : styles.filterChip}
+                  onClick={() => setChipFilter(chipFilter === "community_ed" ? "all" : "community_ed")}
+                  aria-pressed={chipFilter === "community_ed"}
+                >
+                  Community / ED
+                </button>
+              </div>
             </div>
 
-            <div className={styles.chipGroup} role="group" aria-label="Quick filter cohorts">
-              <span className={styles.chipLabel}>Cohort:</span>
-              <button
-                type="button"
-                className={chipFilter === "all" ? styles.filterChipActive : styles.filterChip}
-                onClick={() => setChipFilter("all")}
-                aria-pressed={chipFilter === "all"}
-              >
-                All
-              </button>
-              <button
-                type="button"
-                className={chipFilter === "tier1" ? styles.filterChipActive : styles.filterChip}
-                onClick={() => setChipFilter(chipFilter === "tier1" ? "all" : "tier1")}
-                aria-pressed={chipFilter === "tier1"}
-              >
-                Tier 1 Critical
-              </button>
-              <button
-                type="button"
-                className={chipFilter === "beds" ? styles.filterChipActive : styles.filterChip}
-                onClick={() => setChipFilter(chipFilter === "beds" ? "all" : "beds")}
-                aria-pressed={chipFilter === "beds"}
-              >
-                Bed Requests
-              </button>
-              <button
-                type="button"
-                className={chipFilter === "older" ? styles.filterChipActive : styles.filterChip}
-                onClick={() => setChipFilter(chipFilter === "older" ? "all" : "older")}
-                aria-pressed={chipFilter === "older"}
-              >
-                Older Adult
-              </button>
-              <button
-                type="button"
-                className={chipFilter === "community_ed" ? styles.filterChipActive : styles.filterChip}
-                onClick={() => setChipFilter(chipFilter === "community_ed" ? "all" : "community_ed")}
-                aria-pressed={chipFilter === "community_ed"}
-              >
-                Community / ED
-              </button>
+            <div className={styles.toolbarSubRight}>
+              <span className={styles.toolbarCohortStatus}>
+                {displayQueued.length === queued.length
+                  ? `${queued.length} queued total`
+                  : `Showing ${displayQueued.length} of ${queued.length} queued`}
+              </span>
+              {searchQuery || chipFilter !== "all" || statusFilter !== "all" ? (
+                <button type="button" className={styles.toolbarResetBtn} onClick={resetFilters}>
+                  Reset filters
+                </button>
+              ) : null}
             </div>
           </div>
         </div>
@@ -778,28 +800,28 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
               <>
                 <div className={styles.inspectorHeader}>
                   <div className={styles.inspectorHeaderLeft}>
-                    <span className={styles.inspectorId}>{selectedReferral.id}</span>
-                    <span
-                      style={{ fontWeight: 700, fontSize: "1rem", color: "var(--ink, #0f172a)", marginLeft: "0.25rem" }}
-                    >
-                      {selectedPatientInfo.displayName}
-                    </span>
-                    <span style={{ fontSize: "0.84rem", color: "var(--muted, #64748b)", marginRight: "0.25rem" }}>
-                      (UMRN: <strong>{selectedPatientInfo.umrn}</strong>)
-                    </span>
-                    <span
-                      className={styles.priorityBadge}
-                      data-priority={getReferralPriority(selectedReferral, now)}
-                      data-testid={`ward-referral-inspector-priority-${selectedReferral.id}`}
-                    >
-                      <PriorityGlyph priority={getReferralPriority(selectedReferral, now)} />
-                      <span className={styles.priorityText}>
-                        {referralPriorityLabel(getReferralPriority(selectedReferral, now))}
+                    <div className={styles.inspectorIdentityRow}>
+                      <span className={styles.inspectorId}>
+                        <span className="sr-only">{selectedReferral.id} </span>
+                        {formatUmrn(selectedPatientInfo.umrn)}
                       </span>
-                    </span>
-                    <span className={styles.inspectorTier} data-tier={selectedReferral.urgency}>
-                      {urgencyTierLabel(selectedReferral.urgency)}
-                    </span>
+                      <span className={styles.inspectorPatientName}>{selectedPatientInfo.displayName}</span>
+                    </div>
+                    <div className={styles.inspectorUrgencyGroup}>
+                      <span
+                        className={styles.priorityBadge}
+                        data-priority={getReferralPriority(selectedReferral, now)}
+                        data-testid={`ward-referral-inspector-priority-${selectedReferral.id}`}
+                      >
+                        <PriorityGlyph priority={getReferralPriority(selectedReferral, now)} />
+                        <span className={styles.priorityText}>
+                          {referralPriorityLabel(getReferralPriority(selectedReferral, now))}
+                        </span>
+                      </span>
+                      <span className={styles.inspectorTier} data-tier={selectedReferral.urgency}>
+                        {urgencyTierLabel(selectedReferral.urgency)}
+                      </span>
+                    </div>
                   </div>
                   <div className={styles.inspectorHeaderActions}>
                     {(() => {
@@ -871,41 +893,47 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                   const isLegalOrder = wardDest?.involuntaryBedNeeded;
                   const isSecureBed = wardDest?.secureBedNeeded;
 
+                  const sex = referralSexCell(selectedReferral);
+                  const gender = wardDest?.gender;
+                  const showGender =
+                    gender && gender.toLowerCase() !== sex.toLowerCase() && gender.toLowerCase() !== "not recorded";
+                  const demographicLabel = showGender
+                    ? `${selectedReferral.ageBand} · Sex: ${sex} · Gender: ${gender}`
+                    : `${selectedReferral.ageBand} · ${sex}`;
+
+                  const originHospital =
+                    siteByCode(selectedReferral.originSiteCode)?.name ?? selectedReferral.originSiteCode;
+                  const isStatutoryUnrecorded = !clinicalInfo.legalDoc || /not recorded/i.test(clinicalInfo.legalDoc);
+
                   return (
                     <div className={styles.clinicalCard}>
                       <div className={styles.clinicalCardHeader}>
                         <h3 className={styles.clinicalTitle}>Clinical Presentation & Referral Summary</h3>
-                        <span className={styles.clinicalOriginBadge}>
-                          {siteByCode(selectedReferral.originSiteCode)?.name ?? selectedReferral.originSiteCode}
-                        </span>
+                        <span className={styles.clinicalOriginBadge}>{originHospital}</span>
                       </div>
 
-                      <p className={styles.synopsisText}>{clinicalInfo.synopsis}</p>
+                      <div className={styles.synopsisBox}>
+                        <p className={styles.synopsisText}>{clinicalInfo.synopsis}</p>
+                      </div>
 
                       <div className={styles.clinicalMetaGrid}>
-                        <div className={styles.clinicalMetaItem}>
-                          <span className={styles.metaLabel}>Patient</span>
-                          <span className={styles.metaValue}>
-                            <strong>{selectedPatientInfo.formalName}</strong> · UMRN:{" "}
-                            <strong>{selectedPatientInfo.umrn}</strong>
-                          </span>
-                        </div>
                         <div className={styles.clinicalMetaItem}>
                           <span className={styles.metaLabel}>Referring Clinician</span>
                           <span className={styles.metaValue}>{clinicalInfo.clinician}</span>
                         </div>
                         <div className={styles.clinicalMetaItem}>
                           <span className={styles.metaLabel}>Demographics</span>
-                          <span className={styles.metaValue}>
-                            {selectedReferral.ageBand} · {referralSexCell(selectedReferral)}
-                            {wardDest ? ` · Gender: ${wardDest.gender ?? "Not recorded"}` : ""}
-                          </span>
+                          <span className={styles.metaValue}>{demographicLabel}</span>
                         </div>
                         <div className={styles.clinicalMetaItem}>
                           <span className={styles.metaLabel}>Home Region & Suburb</span>
                           <span className={styles.metaValue}>
                             {referralSuburbLabel(selectedReferral.suburb)}, {selectedReferral.homeRegion}
                           </span>
+                        </div>
+                        <div className={styles.clinicalMetaItem}>
+                          <span className={styles.metaLabel}>Origin Facility</span>
+                          <span className={styles.metaValue}>{originHospital}</span>
                         </div>
                       </div>
 
@@ -920,28 +948,38 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         ) : null}
                       </div>
 
-                      <div className={styles.statutoryCard}>
-                        <div className={styles.statutoryHeader}>
-                          <svg
-                            viewBox="0 0 16 16"
-                            width="14"
-                            height="14"
-                            fill="currentColor"
-                            aria-hidden="true"
-                            className={styles.statutoryIcon}
-                          >
-                            <path d="M4 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm1 2v10h6V3H5zm1 2h4v1H6V5zm0 2h4v1H6V7zm0 2h3v1H6V9z" />
-                          </svg>
-                          <span>Statutory Clinical Documentation</span>
+                      {isStatutoryUnrecorded ? (
+                        <div className={styles.statutoryCompact}>
+                          <span className={styles.statutoryCompactLabel}>Statutory Documentation:</span>
+                          <span className={styles.statutoryCompactValue}>{clinicalInfo.legalDoc}</span>
                         </div>
-                        <p className={styles.statutoryText}>{clinicalInfo.legalDoc}</p>
-                      </div>
+                      ) : (
+                        <div className={styles.statutoryCard}>
+                          <div className={styles.statutoryHeader}>
+                            <svg
+                              viewBox="0 0 16 16"
+                              width="14"
+                              height="14"
+                              fill="currentColor"
+                              aria-hidden="true"
+                              className={styles.statutoryIcon}
+                            >
+                              <path d="M4 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm1 2v10h6V3H5zm1 2h4v1H6V5zm0 2h4v1H6V7zm0 2h3v1H6V9z" />
+                            </svg>
+                            <span>Statutory Clinical Documentation</span>
+                          </div>
+                          <p className={styles.statutoryText}>{clinicalInfo.legalDoc}</p>
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
 
                 <div className={styles.timelineCard}>
-                  <h3 className={styles.timelineHeading}>Referral Timeline & Milestones</h3>
+                  <div className={styles.timelineHeaderRow}>
+                    <h3 className={styles.timelineHeading}>Referral Timeline & Milestones</h3>
+                    <span className={styles.timelineSummaryClock}>{referralWaitLine(selectedReferral, now)}</span>
+                  </div>
                   <ol className={styles.timelineList}>
                     <li className={styles.timelineItem}>
                       <span className={`${styles.timelineDot} ${styles.timelineDotComplete}`} aria-hidden="true">
@@ -1000,6 +1038,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                   now={now}
                   dispatch={dispatch}
                   rejections={rejections}
+                  patientInfo={selectedPatientInfo}
                 />
               </>
             ) : (
@@ -1159,10 +1198,6 @@ function QueuedSection({
                       </button>
                       <span className={styles.patientTableMeta}>
                         <strong>{patientInfo.displayName}</strong>
-                        <span className={styles.patientTableUmrn}>
-                          {" "}
-                          · UMRN: <strong>{patientInfo.umrn}</strong>
-                        </span>
                       </span>
                       {refusals.length > 0 ? (
                         <span
@@ -1239,13 +1274,13 @@ function QueuedSection({
                     aria-pressed={referral.id === selectedId}
                     onClick={() => onSelect(referral.id)}
                   >
-                    <span className={styles.cardTop}>
-                      <span className={styles.cardUnit}>
-                        {referral.id}
-                        <span className={styles.patientCardName}>{patientInfo.displayName}</span>
-                        <span className={styles.patientCardUmrn}>
-                          UMRN: <strong>{patientInfo.umrn}</strong>
+                    <span className={styles.cardHeaderRow}>
+                      <span className={styles.cardIdGroup}>
+                        <span className={styles.cardIdBadge}>
+                          <span className="sr-only">{referral.id} </span>
+                          {formatUmrn(patientInfo.umrn)}
                         </span>
+                        <span className={styles.patientCardName}>{patientInfo.displayName}</span>
                       </span>
                       <span className={styles.cardTierGroup}>
                         <span
@@ -1265,22 +1300,32 @@ function QueuedSection({
                         >
                           {urgencyTierLabel(referral.urgency)}
                         </span>
+                        <span className={styles.waitBadge} data-testid={`ward-referral-board-card-wait-${referral.id}`}>
+                          {referralWaitLine(referral, now)}
+                        </span>
                       </span>
                     </span>
-                    <span className={styles.waitBadge} data-testid={`ward-referral-board-card-wait-${referral.id}`}>
-                      {referralWaitLine(referral, now)}
+
+                    <span className={styles.cardContextRow}>
+                      <span
+                        className={styles.cardService}
+                        data-testid={`ward-referral-board-card-service-${referral.id}`}
+                      >
+                        {referralPersonFactsStatingSex(referral).join(" · ")}
+                      </span>
+                      <span className={assignedUnit ? styles.bedAssignedBadge : styles.bedUnassignedBadge}>
+                        {assignedBedLabel}
+                      </span>
                     </span>
-                    <span
-                      className={styles.cardService}
-                      data-testid={`ward-referral-board-card-service-${referral.id}`}
-                    >
-                      {referralPersonFactsStatingSex(referral).join(" · ")}
-                    </span>
-                    <span className={styles.cardService}>
-                      From {sendingHospital} · Bed: {assignedBedLabel}
-                    </span>
-                    <span className={styles.cardService}>
-                      Asked of {referralDestinationLabels(referral).join(" · ")}
+
+                    <span className={styles.cardRouteRow}>
+                      <span className={styles.cardRouteOrigin}>{sendingHospital}</span>
+                      <span className={styles.cardRouteArrow} aria-hidden="true">
+                        →
+                      </span>
+                      <span className={styles.cardRouteDestination}>
+                        {referralDestinationLabels(referral).join(" · ")}
+                      </span>
                     </span>
                   </button>
                   {refusals.length > 0 ? (
@@ -1333,7 +1378,7 @@ function DecidedSection({
   onResetFilters?: () => void;
 }) {
   return (
-    <section className={styles.section} data-testid="ward-referral-board-decided">
+    <section className={`${styles.section} ${styles.sectionLive}`} data-testid="ward-referral-board-decided">
       <h2 className={styles.sectionHeading}>
         {decided.length < decidedTotal
           ? `Recently decided — ${decided.length} most recent of ${decidedTotal}`
@@ -1395,10 +1440,6 @@ function DecidedSection({
                       <div>{outcomeLabel(referral)}</div>
                       <span style={{ display: "block", fontSize: "0.82rem", marginTop: "0.2rem" }}>
                         <strong>{patientInfo.displayName}</strong>
-                        <span style={{ color: "var(--muted, #64748b)" }}>
-                          {" "}
-                          · UMRN: <strong>{patientInfo.umrn}</strong>
-                        </span>
                       </span>
                     </td>
                     <td data-testid={`ward-referral-board-decided-detail-${referral.id}`}>
@@ -1424,6 +1465,7 @@ function DecidedSection({
           <ul className={styles.cardList} data-testid="ward-referral-board-decided-cards">
             {displayDecided.map((referral) => {
               const patientInfo = resolveSubjectPatient(referral, { patients, referrals: decided, movements });
+              const sendingHospital = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode;
               return (
                 <li
                   key={referral.id}
@@ -1437,48 +1479,61 @@ function DecidedSection({
                     aria-pressed={referral.id === selectedId}
                     onClick={() => onSelect(referral.id)}
                   >
-                    <span className={styles.cardTop}>
-                      <span className={styles.cardUnit}>
-                        {referral.id}
-                        <span
-                          style={{
-                            display: "block",
-                            fontWeight: 600,
-                            fontSize: "0.92rem",
-                            color: "var(--foreground, #0f172a)",
-                          }}
-                        >
-                          {patientInfo.displayName}
+                    <span className={styles.cardHeaderRow}>
+                      <span className={styles.cardIdGroup}>
+                        <span className={styles.cardIdBadge}>
+                          <span className="sr-only">{referral.id} </span>
+                          {formatUmrn(patientInfo.umrn)}
                         </span>
-                        <span
-                          style={{
-                            display: "block",
-                            fontSize: "0.78rem",
-                            fontWeight: "normal",
-                            color: "var(--muted, #64748b)",
-                          }}
-                        >
-                          UMRN: <strong>{patientInfo.umrn}</strong>
-                        </span>
+                        <span className={styles.patientCardName}>{patientInfo.displayName}</span>
                       </span>
-                      <span>{outcomeLabel(referral)}</span>
+                      <span className={styles.cardTierGroup}>
+                        <span className={styles.priorityBadge} data-priority={getReferralPriority(referral, now)}>
+                          <PriorityGlyph priority={getReferralPriority(referral, now)} />
+                          <span className={styles.priorityText}>
+                            {referralPriorityLabel(getReferralPriority(referral, now))}
+                          </span>
+                        </span>
+                        <span className={styles.cardTier} data-tier={referral.urgency}>
+                          {urgencyTierLabel(referral.urgency)}
+                        </span>
+                        <span className={styles.waitBadge}>{decidedWaitLabel(referral)}</span>
+                      </span>
                     </span>
-                    <span
-                      className={styles.cardDetail}
-                      data-testid={`ward-referral-board-decided-detail-card-${referral.id}`}
-                    >
-                      <OutcomeDetail
-                        referral={referral}
-                        units={units}
-                        refusalsTestId={`ward-referral-board-decided-refusals-card-${referral.id}`}
-                        cancelledTestId={`ward-referral-board-decided-cancelled-card-${referral.id}`}
-                      />
+
+                    <span className={styles.cardContextRow}>
+                      <span className={styles.cardService}>{referralPersonFactsStatingSex(referral).join(" · ")}</span>
+                      <span
+                        className={
+                          referralState(referral) === "accepted" ? styles.bedAssignedBadge : styles.bedDeclinedBadge
+                        }
+                      >
+                        {outcomeLabel(referral)}
+                      </span>
                     </span>
-                    <span className={styles.cardService}>
-                      {decidedWaitLabel(referral)} ·{" "}
-                      {referralDecidedAt(referral) !== undefined
-                        ? formatInstantWithDay(referralDecidedAt(referral)!, now)
-                        : "Not recorded"}
+
+                    <span className={styles.cardRouteRow}>
+                      <span className={styles.cardRouteOrigin}>{sendingHospital}</span>
+                      <span className={styles.cardRouteArrow} aria-hidden="true">
+                        →
+                      </span>
+                      <span
+                        className={styles.cardRouteDestination}
+                        data-testid={`ward-referral-board-decided-detail-card-${referral.id}`}
+                      >
+                        <OutcomeDetail
+                          referral={referral}
+                          units={units}
+                          refusalsTestId={`ward-referral-board-decided-refusals-card-${referral.id}`}
+                          cancelledTestId={`ward-referral-board-decided-cancelled-card-${referral.id}`}
+                        />
+                      </span>
+                      <span className={styles.cardDecidedTime}>
+                        ·{" "}
+                        {referralDecidedAt(referral) !== undefined
+                          ? `Decided ${formatInstantWithDay(referralDecidedAt(referral)!, now)}`
+                          : "Not recorded"}
+                      </span>
                     </span>
                   </button>
                 </li>

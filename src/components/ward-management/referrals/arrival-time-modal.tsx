@@ -57,7 +57,11 @@ export interface ArrivalTimeModalProps {
   role?: "coordinator" | "ed" | "ward" | "community";
 }
 
-export function ArrivalTimeModal({ isOpen, onClose, movement, role = "coordinator" }: ArrivalTimeModalProps) {
+export function ArrivalTimeModal(props: ArrivalTimeModalProps) {
+  return props.isOpen ? <ArrivalTimeModalContent key={props.movement.id} {...props} /> : null;
+}
+
+function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinator" }: ArrivalTimeModalProps) {
   const { dispatch, configuration } = useWardFlow();
   const now = useWardFlowClock();
   const pullHoldMinutes = configuration.pullHoldMinutes;
@@ -71,20 +75,6 @@ export function ArrivalTimeModal({ isOpen, onClose, movement, role = "coordinato
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const late = isArrivalLate(movement, now);
-
-  // Reset the form when the dialog opens or switches movement, during render rather than in an
-  // effect (react.dev "adjusting state when a prop changes"). `now` is read only at that moment:
-  // a ticking clock must not wipe an ETA the referrer is still choosing.
-  const openKey = isOpen ? movement.id : null;
-  const [lastOpenKey, setLastOpenKey] = useState(openKey);
-  if (openKey !== lastOpenKey) {
-    setLastOpenKey(openKey);
-    if (openKey !== null) {
-      setArrivalMode(movement.arrivalDetails?.mode ?? "mental_health_transport");
-      setTrackingNumber(movement.arrivalDetails?.trackingNumber ?? "");
-      setEtaMinutes(movement.arrivalDetails?.estimatedArrivalAt ?? now + 120);
-    }
-  }
 
   useWardModalFocus(isOpen, dialogRef, onClose);
 

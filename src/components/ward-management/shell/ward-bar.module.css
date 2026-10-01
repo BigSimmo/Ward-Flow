@@ -91,15 +91,16 @@
 .bar {
   composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap !important;
   flex-shrink: 0;
   position: sticky;
   top: 0;
   z-index: 30;
   align-items: center;
   gap: 0.5rem;
+  height: 3.5rem;
   min-height: 3.5rem;
-  padding: 0.25rem 1.25rem 0.25rem 1.5rem;
+  padding: 0.25rem 1rem 0.25rem 1.25rem;
   background: var(--surface);
   border-bottom: 0.0625rem solid var(--line);
   box-shadow:
@@ -146,7 +147,7 @@
   }
 
   .place {
-    font-size: var(--t-5);
+    font-size: var(--t-3);
   }
   .triggerLabel {
     position: absolute;
@@ -306,6 +307,7 @@
   align-items: center;
   justify-content: center;
   min-height: var(--spacing-tap, 3rem);
+  min-width: var(--spacing-tap, 3rem);
   padding: 0;
   margin: 0;
   border: 0;
@@ -313,6 +315,10 @@
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
+}
+
+.scopeBadgeLabel {
+  white-space: nowrap;
 }
 
 .scopeBadgeInner {
@@ -509,16 +515,16 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  flex: 0 1 30rem;
-  max-width: 32rem;
-  min-width: 14rem;
+  flex: 1 1 auto;
+  max-width: 24rem;
+  min-width: 4rem;
   justify-content: center;
 }
 
 .searchWrap {
-  flex: 1 1 18rem;
-  max-width: 22rem;
-  min-width: 10rem;
+  flex: 1 1 auto;
+  max-width: 24rem;
+  min-width: 3.5rem;
 }
 
 /* Keep the existing search component and keyboard guidance, with the bar's
@@ -587,6 +593,7 @@
   font-size: var(--t-1);
   color: var(--ink);
   min-height: var(--spacing-tap, 3rem);
+  min-width: var(--spacing-tap, 3rem);
   box-sizing: border-box;
   background: transparent;
   border: none;
@@ -640,9 +647,11 @@
   isolation: isolate;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.375rem;
   min-height: var(--spacing-tap, 3rem);
-  padding: 0 0.75rem;
+  min-width: var(--spacing-tap, 3rem);
+  padding: 0 0.625rem;
   border: 0;
   background: transparent;
   color: var(--ink-soft);
@@ -915,14 +924,24 @@
  * `border-color` and `color`; `--hl-on-accent` is a real token but this control never reads it,
  * and adding an inset top highlight here is a new mark the drawing does not draw, in the family
  * the owner's no-top-highlight ruling already covers. */
+.primaryPrefix {
+  display: none;
+}
+
+.primaryMain {
+  text-transform: capitalize;
+}
+
 .primary {
   position: relative;
   isolation: isolate;
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
+  justify-content: center;
+  gap: 0.3125rem;
   min-height: var(--spacing-tap, 3rem);
-  padding: 0 1rem;
+  min-width: var(--spacing-tap, 3rem);
+  padding: 0 0.875rem;
   border: 0;
   background: transparent;
   color: var(--on-accent);
@@ -930,6 +949,7 @@
   font-weight: 500;
   font-size: var(--t-1);
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .primary::before {
@@ -1703,41 +1723,106 @@
   }
 }
 
-@media (max-width: 1000px) {
-  .title {
-    flex: 1 1 auto;
-    max-width: 100%;
+@media (max-width: 1360px) {
+  .triggerLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
   }
 
-  .centerGroup {
-    flex: 1 0 100%;
-    min-width: 100%;
-    max-width: none;
-    order: 2;
-    margin-left: 0;
-    gap: 0.375rem;
-  }
-
-  .searchWrap {
-    flex: 1 1 auto;
-    min-width: 6rem;
-    max-width: none;
-    margin-left: 0;
-  }
-
-  .servicePopover {
-    margin-left: 0;
-    flex-shrink: 0;
+  .demoTime {
+    display: none;
   }
 
   .drawerTriggers {
-    margin-left: auto;
+    gap: 0.25rem;
   }
 
-  .drawerTriggers,
-  .primaryWrap,
+  .drawerTrigger {
+    padding: 0 0.5rem;
+    gap: 0.25rem;
+  }
+}
+
+@media (max-width: 1180px) {
+  .clockTz {
+    display: none;
+  }
+
+  .markLong {
+    display: none;
+  }
+
+  .centerGroup {
+    max-width: 18rem;
+  }
+
   .primary {
-    order: 3;
+    padding: 0 0.625rem;
+    gap: 0.25rem;
+  }
+}
+
+@media (max-width: 1050px) {
+  .barClockPill {
+    display: none;
+  }
+
+  .mark {
+    display: none;
+  }
+
+  .triggerIcon {
+    width: 0.8125rem;
+    height: 0.8125rem;
+  }
+
+  .drawerTrigger {
+    padding: 0 0.375rem;
+  }
+
+  .primary {
+    padding: 0 0.5rem;
+    font-size: var(--t-0);
+  }
+
+  .cockpitCapsule {
+    padding: 0 0.375rem 0 0.625rem;
+    gap: 0.375rem;
+  }
+
+  .place {
+    font-size: var(--t-3);
+    max-width: 9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .bar {
+    padding: 0.25rem 0.5rem;
+    gap: 0.25rem;
+  }
+
+  .cockpitCapsule {
+    padding: 0 0.25rem 0 0.5rem;
+    gap: 0.25rem;
+  }
+
+  .place {
+    max-width: 6.5rem;
+  }
+
+  .drawerTriggers {
+    gap: 0.1875rem;
+  }
+
+  .searchWrap :global([data-ward-search-shortcut]) {
+    display: none;
   }
 }
 
@@ -1748,26 +1833,143 @@
 }
 
 @media (max-width: 40rem) {
+  .bar {
+    padding: 0.25rem 0.125rem;
+    gap: 0.0625rem;
+    box-sizing: border-box;
+  }
+
+  .title {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: calc(100% - 15.5rem);
+  }
+
   .cockpitCapsule {
     min-width: 0;
     max-width: 100%;
-    height: auto;
+    height: 2.25rem;
     min-height: 2.25rem;
-    flex-wrap: wrap;
-    flex-shrink: 1;
-    border-radius: var(--r2);
-    padding: 0.375rem 0.75rem;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+    border-radius: var(--pill, 9999px);
+    padding: 0 0.125rem 0 0.25rem;
+    gap: 0.125rem;
+    box-sizing: border-box;
   }
 
   .titleGroup {
     max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .place,
   .cockpitTitle {
-    white-space: normal;
-    overflow-wrap: anywhere;
-    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 1.5rem;
+  }
+
+  .scopeBadgeBtn {
+    min-width: var(--spacing-tap, 3rem);
+    width: var(--spacing-tap, 3rem);
+    flex-shrink: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  .scopeBadgeInner {
+    padding: 0;
+    gap: 0.125rem;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .scopeBadgeLabel {
+    display: none;
+  }
+
+  .centerGroup {
+    flex: 0 0 auto;
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    margin-left: 0;
+  }
+
+  .searchWrap {
+    flex: 0 0 auto;
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    width: var(--spacing-tap, 3rem);
+    box-sizing: border-box;
+  }
+
+  .searchWrap :global([data-testid="ward-global-search"]) {
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    width: var(--spacing-tap, 3rem);
+    display: flex;
+    box-sizing: border-box;
+  }
+
+  .searchWrap :global([data-testid="ward-global-search"] > div) {
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    width: var(--spacing-tap, 3rem);
+    padding: 0 !important;
+    gap: 0 !important;
+    box-sizing: border-box;
+  }
+
+  .searchWrap :global([data-testid="ward-global-search"] svg) {
+    display: none;
+  }
+
+  .searchWrap :global([data-testid="ward-global-search-input"]) {
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    width: var(--spacing-tap, 3rem);
+    padding: 0 0.25rem;
+    box-sizing: border-box;
+  }
+
+  .drawerTriggers {
+    margin-left: auto;
+    flex-shrink: 0;
+    gap: 0.0625rem;
+  }
+
+  .drawerTrigger {
+    padding: 0 0.125rem;
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    box-sizing: border-box;
+  }
+
+  .primaryWrap {
+    flex-shrink: 0;
+  }
+
+  .primaryMain {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .primary {
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    width: var(--spacing-tap, 3rem);
+    padding: 0 0.125rem;
+    gap: 0;
+    box-sizing: border-box;
   }
 
   .demoTime {
@@ -1775,8 +1977,7 @@
   }
 
   .barClockPill {
-    padding: 0.125rem 0.375rem;
-    gap: 0.25rem;
+    display: none;
   }
 }
 
@@ -2172,6 +2373,50 @@
   font-size: var(--t-0);
   font-weight: 500;
   opacity: 0.85;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * FIGURES & CLINICAL TELEMETRY TRIGGER & DRAWER
+ * ────────────────────────────────────────────────────────────────────────── */
+.alarmBadge {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--danger-ink);
+  background: var(--danger-soft);
+  border-radius: var(--radius-pill);
+  padding: 0.0625rem 0.4375rem;
+  box-shadow: inset 0 0 0 1px var(--danger);
+  animation: pulseAlarmBadge 2s infinite ease-in-out;
+}
+
+@keyframes pulseAlarmBadge {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alarmBadge {
+    animation: none;
+  }
+}
+
+.drawerSheetFigures {
+  max-width: 32rem;
+  width: 100%;
+}
+
+.figuresCarrierBody {
+  padding: 0;
+  overflow-y: auto;
 }
 
 @media (forced-colors: active) {

@@ -169,4 +169,121 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     expect(notice.textContent).toContain("Return transfer movement queued for bed placement at home health service.");
     expect(notice.textContent).toContain("Royal Perth Hospital");
   });
+
+  it("filters placements when home catchment dropdown is selected", () => {
+    renderBoard();
+    const select = screen.getByTestId("ward-out-of-area-catchment-filter");
+    expect(select).toBeInTheDocument();
+
+    fireEvent.change(select, { target: { value: "South West" } });
+    const swEntries = entries.filter((e) => e.admission.homeRegion === "South West");
+    expect(swEntries.length).toBeGreaterThan(0);
+
+    for (const entry of swEntries) {
+      expect(screen.getByTestId(`ward-out-of-area-row-${entry.admission.id}`)).toBeInTheDocument();
+    }
+
+    const nonSw = entries.find((e) => e.admission.homeRegion !== "South West");
+    if (nonSw) {
+      expect(screen.queryByTestId(`ward-out-of-area-row-${nonSw.admission.id}`)).not.toBeInTheDocument();
+    }
+  });
+
+  it("filters placements when an interactive catchment pill is clicked in the default view", () => {
+    renderBoard();
+    const pill = screen.getByRole("button", { name: /Filter by South West/i });
+    expect(pill).toBeInTheDocument();
+    expect(pill).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(pill);
+    expect(pill).toHaveAttribute("aria-pressed", "true");
+
+    const nonSw = entries.find((e) => e.admission.homeRegion !== "South West");
+    if (nonSw) {
+      expect(screen.queryByTestId(`ward-out-of-area-row-${nonSw.admission.id}`)).not.toBeInTheDocument();
+    }
+
+    // Clicking again toggles off
+    fireEvent.click(pill);
+    expect(pill).toHaveAttribute("aria-pressed", "false");
+    if (nonSw) {
+      expect(screen.getByTestId(`ward-out-of-area-row-${nonSw.admission.id}`)).toBeInTheDocument();
+    }
+  });
+
+  it("clears selection back to cohort overview when Escape key is pressed", () => {
+    renderBoard();
+    const first = entries[0];
+    fireEvent.click(screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`));
+    expect(screen.getByTestId("ward-out-of-area-subject-facts")).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByTestId("ward-out-of-area-subject-facts")).not.toBeInTheDocument();
+    expect(screen.getByTestId("ward-out-of-area-subject-empty")).toBeInTheDocument();
+  });
+
+  it("inspects the longest case directly from the priority case button", () => {
+    renderBoard();
+    const inspectBtn = screen.getByRole("button", { name: /Inspect Longest Case/i });
+    expect(inspectBtn).toBeInTheDocument();
+
+    fireEvent.click(inspectBtn);
+    const facts = screen.getByTestId("ward-out-of-area-subject-facts");
+    expect(facts).toBeInTheDocument();
+    expect(facts).toHaveTextContent("AD-ALBA-01");
+  });
+
+  it("renders patient name and interactive UMRN links in table rows and headers", () => {
+    renderBoard();
+    const table = screen.getByTestId("ward-out-of-area-table");
+    expect(within(table).getByText("Patient")).toBeInTheDocument();
+
+    const first = entries[0];
+    const row = screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`);
+    expect(row).toBeInTheDocument();
+
+    const link = within(row).getByRole("link");
+    expect(link).toHaveAttribute("href", expect.stringMatching(/^\/mockups\/ward-flow\/(people|search)/));
+    expect(link.textContent).toMatch(/UM\d+|UMRN/);
+  });
+
+  it("renders patient name and UMRN link in mobile cards", () => {
+    renderBoard();
+    const cards = screen.getByTestId("ward-out-of-area-cards");
+    const first = entries[0];
+    const card = within(cards).getByTestId(`ward-out-of-area-card-${first.admission.id}`);
+    expect(card).toBeInTheDocument();
+
+    const link = within(card).getByRole("link");
+    expect(link).toHaveAttribute("href", expect.stringMatching(/^\/mockups\/ward-flow\/(people|search)/));
+  });
+
+  it("renders patient name and interactive UMRN link in the case inspector when a case is selected", () => {
+    renderBoard();
+    const first = entries[0];
+    fireEvent.click(screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`));
+
+    const facts = screen.getByTestId("ward-out-of-area-subject-facts");
+    const link = within(facts).getByRole("link");
+    expect(link).toHaveAttribute("href", expect.stringMatching(/^\/mockups\/ward-flow\/(people|search)/));
+    expect(link.textContent).toMatch(/UM\d+|UMRN/);
+  });
+
+  it("filters placements when searching by patient name or UMRN", () => {
+    renderBoard();
+    const searchInput = screen.getByLabelText(/Filter out-of-area placements/i);
+    const first = entries[0];
+    const row = screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`);
+    const link = within(row).getByRole("link");
+    const umrn = link.textContent?.trim() ?? "";
+
+    if (umrn && umrn.startsWith("UM")) {
+      fireEvent.change(searchInput, { target: { value: umrn } });
+      expect(screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`)).toBeInTheDocument();
+      const other = entries.find((e) => e.admission.id !== first.admission.id);
+      if (other) {
+        expect(screen.queryByTestId(`ward-out-of-area-row-${other.admission.id}`)).not.toBeInTheDocument();
+      }
+    }
+  });
 });

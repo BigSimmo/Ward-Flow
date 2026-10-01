@@ -87,9 +87,8 @@ describe("BedMap — the network's whole bed supply, one square per bed", () => 
    */
   it("states a service with no reporting unit in words, and never heads an empty group", () => {
     const withoutWachs = units.filter((unit) => {
-      // WACHS units in today's fixture: Albany, Bunbury, Broome, Geraldton (Kununurra has no ward
-      // since 26 Sept 2026, owner-approved ward facts).
-      return !["alb-adult-open", "bun-adult-open", "brm-adult-secure", "ger-adult-open"].includes(
+      // WACHS units in today's fixture: Albany, Bunbury, Broome, Geraldton, Kununurra.
+      return !["alb-adult-open", "bun-adult-open", "brm-adult-secure", "ger-adult-open", "kun-adult-open"].includes(
         unit.id,
       );
     });
@@ -184,5 +183,31 @@ describe("BedMap — the network's whole bed supply, one square per bed", () => 
     const block = screen.getByTestId(`ward-bed-map-ward-${firstWard.id}`);
     fireEvent.click(block);
     expect(onSelectWard).toHaveBeenCalledWith(firstWard.id);
+  });
+
+  it("calls onSelectWard when pressing Enter or Space on a bed square", () => {
+    const onSelectWard = vi.fn();
+    render(<BedMap units={units} bedReleases={bedReleases} onSelectWard={onSelectWard} />);
+    const firstWard = units[0];
+    const block = screen.getByTestId(`ward-bed-map-ward-${firstWard.id}`);
+    const firstSquare = block.querySelector(`[data-testid="ward-bed-map-square-${firstWard.id}"]`);
+    expect(firstSquare).not.toBeNull();
+    fireEvent.keyDown(firstSquare!, { key: "Enter" });
+    expect(onSelectWard).toHaveBeenCalledWith(firstWard.id);
+    onSelectWard.mockClear();
+    fireEvent.keyDown(firstSquare!, { key: " " });
+    expect(onSelectWard).toHaveBeenCalledWith(firstWard.id);
+  });
+
+  it("advances carousel on Next button click without triggering onSelectWard", () => {
+    const onSelectWard = vi.fn();
+    render(<BedMap units={units} bedReleases={bedReleases} onSelectWard={onSelectWard} />);
+    // Service with multiple wards (e.g. North Metro has 4 wards)
+    const serviceGroup = screen.getByTestId("ward-bed-map-service-North Metro");
+    const nextBtns = within(serviceGroup).getAllByRole("button", { name: /next ward/iu });
+    expect(nextBtns.length).toBeGreaterThan(0);
+    fireEvent.click(nextBtns[0]);
+    // Clicking next button must NOT select the ward
+    expect(onSelectWard).not.toHaveBeenCalled();
   });
 });

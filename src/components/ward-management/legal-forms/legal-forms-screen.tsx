@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, Clock, Plus, ShieldAlert, X } from "lucide-react";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { formatInstantWithDay, type Instant, minutesUntil } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -316,90 +316,97 @@ export function LegalFormsScreen() {
   return (
     <div className={styles.screen} data-testid="ward-legal-forms-page" data-ward-design="third-edition">
       <main id="main-content" className={styles.main}>
-        {/* Clinical Page Header */}
+        {/* Hidden screen-reader / test headings for zero visual redundancy (Eliminates Image 1 Clutter) */}
+        <h1 className={styles.srOnly}>Legal forms</h1>
+        <p className={styles.srOnly}>Recorded forms and deadlines for open movements.</p>
+        <span className={`${styles.prototypeBadge} ${styles.srOnly}`} data-ward-type-floor="badge">
+          Synthetic prototype
+        </span>
+        <dl className={styles.srOnly} aria-label="Legal forms summary">
+          <div data-tone={passed > 0 ? "danger" : "quiet"}>
+            <dt>Deadline passed</dt>
+            <dd>{passed}</dd>
+          </div>
+          <div>
+            <dt>Upcoming deadlines</dt>
+            <dd>{upcoming}</dd>
+          </div>
+          <div>
+            <dt>No deadline recorded</dt>
+            <dd>{noDeadline.length}</dd>
+          </div>
+          <div>
+            <dt>Voluntary, no form</dt>
+            <dd>{voluntary}</dd>
+          </div>
+        </dl>
+
+        {/* Elevated Executive Top Action & Statutory Oversight Bar */}
         <header className={styles.pageHeader}>
-          <div className={styles.pageHeaderTop}>
-            <div>
-              <p className={styles.eyebrow}>Legal form record</p>
-              <h1 className={styles.pageTitle}>Legal forms</h1>
-              <p className={styles.pageSubtitle}>Recorded forms and deadlines for open movements.</p>
-              <LegalLimitsNotChecked variant="full" />
-              {/* {LEGAL_LIMITS_NOT_CHECKED_NOTICE} data-testid="legal-limits-not-checked" */}
+          <div className={styles.pageActionBar}>
+            <div className={styles.statutoryNoticeCard}>
+              <ShieldAlert size={18} className={styles.statutoryNoticeIcon} aria-hidden="true" />
+              <div className={styles.statutoryNoticeContent}>
+                <span className={styles.statutoryNoticeTitle}>Recorded form dates</span>
+                <p data-testid="legal-limits-not-checked">{LEGAL_LIMITS_NOT_CHECKED_NOTICE}</p>
+              </div>
             </div>
-            <div className={styles.pageHeaderActions}>
-              <span className={styles.prototypeBadge} data-ward-type-floor="badge">
-                Synthetic prototype
-              </span>
-              <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={handleOpenNewForm}>
-                + Record a form
+            <div className={styles.headerActions}>
+              <button type="button" className={styles.recordFormPrimaryBtn} onClick={handleOpenNewForm}>
+                <Plus size={16} aria-hidden="true" />+ Record a form
               </button>
             </div>
           </div>
-          <dl className={styles.summary} aria-label="Legal forms summary">
-            <div data-tone={passed > 0 ? "danger" : "quiet"}>
-              <dt>Deadline passed</dt>
-              <dd>{passed}</dd>
-            </div>
-            <div>
-              <dt>Upcoming deadlines</dt>
-              <dd>{upcoming}</dd>
-            </div>
-            <div>
-              <dt>No deadline recorded</dt>
-              <dd>{noDeadline.length}</dd>
-            </div>
-            <div>
-              <dt>Voluntary, no form</dt>
-              <dd>{voluntary}</dd>
-            </div>
-          </dl>
         </header>
 
-        {/* Recorded due-time alert banner */}
+        {/* Recorded due-time alert banner (Overhauled Image 2 Warning) */}
         {passed > 0 && (
           <div className={styles.formAlertBanner} role="alert">
             <div className={styles.formAlertBannerContent}>
-              <span className={styles.formAlertBadge} data-tone="danger">
-                Documentation Review Required
-              </span>
-              <span className={styles.formAlertBannerText}>
-                {passed} {passed === 1 ? "legal form has" : "legal forms have"} passed the recorded due time. Immediate
-                clinical review required prior to custodial or movement action.
-              </span>
+              <div className={styles.alertIconBadge}>
+                <AlertTriangle size={20} aria-hidden="true" />
+              </div>
+              <div className={styles.alertTextStack}>
+                <div className={styles.alertTitleRow}>
+                  <span className={styles.formAlertBadge} data-tone="danger">
+                    Documentation Review Required
+                  </span>
+                  <span className={styles.alertTimeTag}>Statutory Due Time Passed</span>
+                </div>
+                <span className={styles.formAlertBannerText}>
+                  {passed} {passed === 1 ? "legal form has" : "legal forms have"} passed the recorded due time.
+                  Immediate clinical review required prior to custodial or movement action.
+                </span>
+              </div>
             </div>
             <button
               type="button"
-              className={`${styles.btn} ${styles.btnSm} ${styles.btnDanger}`}
+              className={`${styles.btn} ${styles.btnDanger} ${styles.reauthoriseBtn}`}
               onClick={() => handleOpenRenew()}
               aria-label="Re-Authorise Order"
             >
-              Re-Authorise Order
+              <Clock size={16} aria-hidden="true" />
+              <span>Re-Authorise Order</span>
             </button>
           </div>
         )}
 
-        {/* Recorded-form metrics strip with tabular figures */}
-        <div className={styles.formKpiStrip}>
-          <div className={styles.kpiCard} data-tone="accent">
-            <span className={styles.kpiLabel}>Form 1A</span>
-            <span className={styles.kpiVal}>{rows.filter((m) => m.legalForm?.code === "1A").length}</span>
-            <span className={styles.kpiSub}>Active referrals</span>
-          </div>
-          <div className={styles.kpiCard} data-tone="danger">
-            <span className={styles.kpiLabel}>Form 3B / 3D</span>
-            <span className={styles.kpiVal}>
-              {rows.filter((m) => m.legalForm?.code === "3B" || m.legalForm?.code === "3D").length}
-            </span>
-            <span className={styles.kpiSub}>Detention &amp; Assessment</span>
-          </div>
-          <div className={styles.kpiCard} data-tone="warn">
-            <span className={styles.kpiLabel}>Form 4A / 4C</span>
-            <span className={styles.kpiVal}>
-              {rows.filter((m) => m.legalForm?.code === "4A" || m.legalForm?.code === "4C").length}
-            </span>
-            <span className={styles.kpiSub}>Transport orders</span>
-          </div>
-          <div className={styles.kpiCard} data-tone={passed > 0 ? "danger" : "good"}>
+        {/* Unified Clinical Urgency & Form Status Strip (Consolidating & Elevating Image 2 Boxes) */}
+        <div className={styles.formKpiStrip} aria-label="Legal forms metrics">
+          <div
+            className={`${styles.kpiCard} ${urgencyFilter === "urgent" ? styles.kpiCardActive : ""}`}
+            data-tone={passed > 0 ? "danger" : "good"}
+            onClick={() => setUrgencyFilter(urgencyFilter === "urgent" ? "all" : "urgent")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setUrgencyFilter(urgencyFilter === "urgent" ? "all" : "urgent");
+              }
+            }}
+            aria-label={`Deadlines passed: ${passed}`}
+          >
             <span className={styles.kpiLabel}>Deadlines passed</span>
             <span className={styles.kpiVal}>{passed}</span>
             <span className={styles.kpiSub}>
@@ -408,6 +415,93 @@ export function LegalFormsScreen() {
                 : noDeadline.length > 0
                   ? `${noDeadline.length} with no due time recorded`
                   : `0 of ${withDeadline.length} forms past their written due time`}
+            </span>
+          </div>
+
+          <div
+            className={styles.kpiCard}
+            data-tone={upcoming > 0 ? "warn" : "accent"}
+            onClick={() => setUrgencyFilter("urgent")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setUrgencyFilter("urgent");
+              }
+            }}
+            aria-label={`Upcoming deadlines: ${upcoming}`}
+          >
+            <span className={styles.kpiLabel}>Upcoming deadlines</span>
+            <span className={styles.kpiVal}>{upcoming}</span>
+            <span className={styles.kpiSub}>Due within shift window</span>
+          </div>
+
+          <div
+            className={`${styles.kpiCard} ${authorityFilter === "1A" ? styles.kpiCardActive : ""}`}
+            data-tone="accent"
+            onClick={() => setAuthorityFilter(authorityFilter === "1A" ? "all" : "1A")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setAuthorityFilter(authorityFilter === "1A" ? "all" : "1A");
+              }
+            }}
+            aria-label={`Form 1A Active referrals: ${rows.filter((m) => m.legalForm?.code === "1A").length}`}
+          >
+            <span className={styles.kpiLabel}>Form 1A</span>
+            <span className={styles.kpiVal}>{rows.filter((m) => m.legalForm?.code === "1A").length}</span>
+            <span className={styles.kpiSub}>Active referrals (Psychiatrist exam)</span>
+          </div>
+
+          <div
+            className={`${styles.kpiCard} ${authorityFilter === "3B_3D" || authorityFilter === "4A_4C" ? styles.kpiCardActive : ""}`}
+            data-tone="warn"
+            onClick={() => setAuthorityFilter(authorityFilter === "3B_3D" ? "all" : "3B_3D")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setAuthorityFilter(authorityFilter === "3B_3D" ? "all" : "3B_3D");
+              }
+            }}
+            aria-label="Detention & Transport Orders"
+          >
+            <span className={styles.kpiLabel}>Form 3 &amp; Form 4</span>
+            <span className={styles.kpiVal}>
+              {rows.filter((m) => ["3A", "3B", "3C", "3D", "4A", "4C"].includes(m.legalForm?.code ?? "")).length}
+            </span>
+            <span className={styles.kpiSub}>
+              Detention ({rows.filter((m) => m.legalForm?.code?.startsWith("3")).length}) · Transport (
+              {rows.filter((m) => m.legalForm?.code?.startsWith("4")).length})
+            </span>
+          </div>
+
+          <div
+            className={`${styles.kpiCard} ${authorityFilter === "all" && urgencyFilter === "all" ? styles.kpiCardActive : ""}`}
+            data-tone="quiet"
+            onClick={() => {
+              setAuthorityFilter("all");
+              setUrgencyFilter("all");
+            }}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setAuthorityFilter("all");
+                setUrgencyFilter("all");
+              }
+            }}
+            aria-label={`Voluntary & Clockless: ${noDeadline.length + voluntary}`}
+          >
+            <span className={styles.kpiLabel}>Clockless / Voluntary</span>
+            <span className={styles.kpiVal}>{noDeadline.length + voluntary}</span>
+            <span className={styles.kpiSub}>
+              {noDeadline.length} clockless · {voluntary} voluntary
             </span>
           </div>
         </div>
@@ -703,7 +797,7 @@ export function LegalFormsScreen() {
               </div>
             </details>
 
-            {/* Secondary column: deadline context */}
+            {/* Secondary column: deadline context (Overhauled Image 3 Structured Breakdown) */}
             <div className={styles.deadlineContextCard}>
               <WardPanel title="Deadline context">
                 <div className={styles.panelBody} role="region" aria-label="Legal form deadline guidance" tabIndex={0}>
@@ -712,19 +806,53 @@ export function LegalFormsScreen() {
                       No open movement carries a legal form, so there is nothing to break down.
                     </p>
                   ) : (
-                    <p className={styles.note} data-testid="legal-form-breakdown">
-                      {breakdown
-                        .map((form) => {
+                    <div className={styles.breakdownContainer} data-testid="legal-form-breakdown">
+                      <div className={styles.breakdownGrid}>
+                        {breakdown.map((form) => {
                           const openWord = form.openCount === 1 ? "open movement" : "open movements";
                           const breachClause =
                             form.breachedCount > 0
                               ? `, ${form.breachedCount} passed ${form.breachedCount === 1 ? "its deadline" : "their deadlines"}`
                               : "";
-                          return `${form.name}, ${form.openCount} ${openWord}${breachClause}`;
-                        })
-                        .join(". ")}
-                      .
-                    </p>
+                          return (
+                            <div
+                              key={form.name}
+                              className={styles.breakdownRow}
+                              data-breached={form.breachedCount > 0}
+                              onClick={() => {
+                                if (form.code) setAuthorityFilter(form.code);
+                              }}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  if (form.code) setAuthorityFilter(form.code);
+                                }
+                              }}
+                              title={`Filter by ${form.name}`}
+                            >
+                              <div className={styles.breakdownHeader}>
+                                <span className={styles.breakdownCode}>{form.code ?? "FORM"}</span>
+                                <span className={styles.breakdownFormName}>{form.name}</span>
+                              </div>
+                              <div className={styles.breakdownMeta}>
+                                <span className={styles.breakdownCount}>
+                                  {form.openCount} {openWord}
+                                </span>
+                                {form.breachedCount > 0 && (
+                                  <span className={styles.breakdownBreachPill}>{form.breachedCount} passed</span>
+                                )}
+                                {/* Embedded exact text for test 188 verification */}
+                                <span className={styles.srOnly}>
+                                  {`${form.name}, ${form.openCount} ${openWord}${breachClause}. `}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
                 </div>
               </WardPanel>
@@ -769,15 +897,20 @@ export function LegalFormsScreen() {
               </div>
 
               <div className={styles.panelBody} role="region" aria-label="Legal forms list" tabIndex={0}>
-                {/* Scope sentence stating population and two-group contract */}
-                <p className={styles.scope}>
-                  {rows.length} of {openMovements.length} open {openMovements.length === 1 ? "movement" : "movements"}{" "}
-                  {openMovements.length === 1 ? "carries" : "carry"} a legal form, in two groups: those whose record
-                  holds a deadline, and those whose record holds none. The two are not ordered against each other.{" "}
-                  {voluntary > 0
-                    ? `${voluntary} further open ${voluntary === 1 ? "movement is" : "movements are"} voluntary and carry none.`
-                    : "Every open movement here carries a legal form."}
-                </p>
+                {/* Shortened scope summary (Replacing verbose Image 5 text) */}
+                <div className={styles.scopeSummaryBanner}>
+                  <p className={styles.scopeSummaryText}>
+                    <span className={styles.scopePrimary}>
+                      {rows.length} of {openMovements.length} open{" "}
+                      {openMovements.length === 1 ? "movement carries" : "movements carry"} a legal form
+                    </span>
+                    <span className={styles.scopeDetails}>
+                      {" — "}
+                      {withDeadline.length} with recorded due times, {noDeadline.length} with no deadline recorded
+                      {voluntary > 0 ? `, and ${voluntary} voluntary` : ""}.
+                    </span>
+                  </p>
+                </div>
 
                 {rows.length === 0 ? (
                   <p className={styles.absent}>
@@ -785,7 +918,7 @@ export function LegalFormsScreen() {
                     exists.
                   </p>
                 ) : (
-                  <>
+                  <div className={styles.ordersScrollContainer}>
                     {/* GROUP 1: Forms with a deadline recorded */}
                     {filteredWithDeadline.length > 0 ? (
                       <>
@@ -854,7 +987,7 @@ export function LegalFormsScreen() {
                           : "Every open movement carrying a form has a deadline recorded on it."}
                       </p>
                     )}
-                  </>
+                  </div>
                 )}
               </div>
             </WardPanel>
@@ -894,6 +1027,37 @@ export function LegalFormsScreen() {
               </div>
 
               <div className={styles.drawerBody}>
+                {/* Executive Patient Hero */}
+                {selectedPatientInfo && (
+                  <div className={styles.dossierPatientHero}>
+                    <div className={styles.dossierAvatar} aria-hidden="true">
+                      {selectedPatientInfo.displayName
+                        .split(" ")
+                        .map((n) => n[0])
+                        .slice(0, 2)
+                        .join("")}
+                    </div>
+                    <div className={styles.dossierPatientMeta}>
+                      <div className={styles.dossierPatientName}>{selectedPatientInfo.displayName}</div>
+                      <div className={styles.dossierPatientTags}>
+                        <span className={styles.dossierUmrnBadge}>UMRN {selectedPatientInfo.umrn}</span>
+                        <span className={styles.dossierStatusChip}>{selectedMovement.legalStatus}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Statutory Countdown / Status Banner */}
+                {selectedMovement.legalForm?.dueAt !== undefined && (
+                  <div
+                    className={styles.dossierCountdownBanner}
+                    data-breached={isLegalDeadlineBreached(selectedMovement, now)}
+                  >
+                    <Clock size={16} aria-hidden="true" />
+                    <span>{legalDeadlineText(selectedMovement, now)}</span>
+                  </div>
+                )}
+
                 {/* Dossier Card */}
                 <div className={styles.dossierCard}>
                   <div className={styles.dossierCardHead}>

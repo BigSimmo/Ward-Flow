@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
@@ -39,6 +39,15 @@ export function WardTasksPanel() {
   const { movements, units, dispatch, inboxAcknowledgements, inboxCompletions } = useWardFlow();
   const now = useWardFlowClock();
   const [open, setOpen] = useState(false);
+  const openerRef = useRef<HTMLButtonElement>(null);
+  const wasOpenRef = useRef(false);
+
+  useEffect(() => {
+    if (wasOpenRef.current && !open) {
+      openerRef.current?.focus();
+    }
+    wasOpenRef.current = open;
+  }, [open]);
 
   const items = useMemo(() => buildActionInbox(movements.filter(isOpen), now, units), [movements, now, units]);
 
@@ -49,9 +58,16 @@ export function WardTasksPanel() {
     [router],
   );
 
-  if (!open) {
-    return (
-      <button type="button" className={styles.opener} onClick={() => setOpen(true)} data-testid="ward-tasks-opener">
+  return (
+    <>
+      <button
+        ref={openerRef}
+        type="button"
+        className={styles.opener}
+        style={open ? { display: "none" } : undefined}
+        onClick={() => setOpen(true)}
+        data-testid="ward-tasks-opener"
+      >
         Tasks
         {/*
          * ⚠️ **THE COUNT IS STATED IN WORDS AS WELL AS SHOWN**, because a bare number beside a label
@@ -63,20 +79,19 @@ export function WardTasksPanel() {
           {items.length === 1 ? "item needs attention" : "items need attention"}
         </span>
       </button>
-    );
-  }
-
-  return (
-    <WardTasksDrawer
-      items={items}
-      acknowledgements={inboxAcknowledgements}
-      completions={inboxCompletions}
-      role="coordinator"
-      now={now}
-      dispatch={dispatch}
-      onClose={() => setOpen(false)}
-      onSelectMovement={openMovement}
-      withBackdrop
-    />
+      {open ? (
+        <WardTasksDrawer
+          items={items}
+          acknowledgements={inboxAcknowledgements}
+          completions={inboxCompletions}
+          role="coordinator"
+          now={now}
+          dispatch={dispatch}
+          onClose={() => setOpen(false)}
+          onSelectMovement={openMovement}
+          withBackdrop
+        />
+      ) : null}
+    </>
   );
 }

@@ -23,7 +23,9 @@
   composes: wardShellTokens from "../../ward-flow-shell-tokens.module.css";
   display: flex;
   align-items: stretch;
-  min-height: 100dvh;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   background: var(--surface);
 }
 
@@ -43,6 +45,10 @@
   flex-direction: column;
   flex: 1 1 auto;
   min-width: 0;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /*
@@ -57,5 +63,17 @@
 @media (max-width: 1000px) {
   .shellRow {
     flex-direction: column;
+  }
+}
+
+@media (max-width: 1000px) {
+  .shellRow {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+  .shellContent {
+    height: auto;
+    overflow-y: visible;
   }
 }

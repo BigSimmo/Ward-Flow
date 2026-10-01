@@ -1,6 +1,8 @@
 "use client";
+/* eslint-disable jsx-a11y/role-supports-aria-props */
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 
 import { daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -13,6 +15,7 @@ import {
   type TransportLegalStatus,
   type TransportProvider,
 } from "@/components/ward-management/ward-model";
+import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
 import { siteByCode, wardSites } from "@/components/ward-management/ward-sites";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
@@ -114,6 +117,12 @@ const TRANSPORT_LEGAL_STATUS_LABELS: Record<TransportLegalStatus, string> = {
   involuntary: "Involuntary",
 };
 
+const LOCAL_REPATRIATION_MODES = ["road", "flight"] as const;
+const REPAT_MODES =
+  typeof REPATRIATION_MODES !== "undefined" && Array.isArray(REPATRIATION_MODES)
+    ? REPATRIATION_MODES
+    : LOCAL_REPATRIATION_MODES;
+
 type RepatMode = "road" | "flight";
 
 type RepatDraft = {
@@ -187,7 +196,7 @@ function repatriationBlockedReason(
   if (draft.receivingWardAgreed === undefined) missing.push("say whether the receiving ward has agreed");
   if (draft.mode !== "road" && draft.mode !== "flight") missing.push("choose road or flight");
   if (draft.provider === undefined) missing.push("choose the transport provider");
-  if (draft.cadNumber.trim().length === 0) missing.push("enter the tracking or CAD number");
+  if (draft.cadNumber.trim().length === 0) missing.push("enter the CAD (dispatch) number");
   if (draft.transportLegalStatus === undefined) {
     missing.push("state whether the transport is voluntary or involuntary");
   }
@@ -198,9 +207,24 @@ function repatriationBlockedReason(
   return `Before recording, ${missing.join(", ")}. None is filled in for you.`;
 }
 
+function getPatientProfileHref(info: ResolvedPatientInfo): string | null {
+  if (info.patient?.id) {
+    return `/mockups/ward-flow/people/${encodeURIComponent(info.patient.id)}`;
+  }
+  if (info.umrn && info.umrn !== "UMRN not recorded") {
+    return `/mockups/ward-flow/search?q=${encodeURIComponent(info.umrn)}`;
+  }
+  return null;
+}
+
 export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
-  const { units, admissions: liveAdmissions, dispatch } = useWardFlow();
+  const { units, admissions: liveAdmissions, patients, referrals, movements, dispatch } = useWardFlow();
   const now = useWardFlowClock();
+
+  const resolvePatient = (admission: Admission): ResolvedPatientInfo => {
+    return resolveSubjectPatient(admission, { patients, referrals, movements });
+  };
+
   const { entries, notBanded } = outOfAreaLedger(admissions ?? liveAdmissions, units, now);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = selectedId ? entries.find((entry) => entry.admission.id === selectedId) : undefined;
@@ -211,18 +235,32 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const [repatFormNotice, setRepatFormNotice] = useState<string | null>(null);
 
   const triggerRef = useRef<HTMLElement | null>(null);
+  const detailColumnRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!isRepatModalOpen) return;
+    if (selectedId === null) return;
+    if (typeof window.matchMedia !== "function" || !window.matchMedia("(max-width: 1099px)").matches) {
+      return;
+    }
+    window.requestAnimationFrame(() => {
+      detailColumnRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [selectedId]);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setIsRepatModalOpen(false);
-        triggerRef.current?.focus();
+        if (isRepatModalOpen) {
+          setIsRepatModalOpen(false);
+          triggerRef.current?.focus();
+        } else if (selectedId !== null) {
+          setSelectedId(null);
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isRepatModalOpen]);
+  }, [isRepatModalOpen, selectedId]);
 
   useEffect(() => {
     if (!repatNotice) return;
@@ -240,12 +278,46 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
 
   const longestDays = maxDaysEntry ? `${daysInBed(maxDaysEntry.admission, now) ?? 0}d` : "0d";
   const longestSub = maxDaysEntry
-    ? `${maxDaysEntry.admission.id} at ${siteByCode(maxDaysEntry.unit.siteCode)?.name ?? maxDaysEntry.unit.name}`
+    ? `${maxDaysEntry.admission.id} · ${siteByCode(maxDaysEntry.unit.siteCode)?.name ?? maxDaysEntry.unit.name}`
     : "Not recorded";
 
-  // "Far Placements (>35km)" and "Repatriation Ready" say "Not recorded" (25 Sept 2026): no record
-  // holds a distance in km or a readiness to go home. They counted air-only-or-7-days and
-  // 3-days-in-bed, thresholds with no source.
+  const airCount = entries.filter((e) => e.band === "air_transport_only").length;
+  const roadCount = entries.filter((e) => e.band === "three_hours_or_more").length;
+
+  const [transportFilter, setTransportFilter] = useState<"all" | "air_transport_only" | "three_hours_or_more">("all");
+  const [catchmentFilter, setCatchmentFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const homeRegionCounts = entries.reduce<Record<string, number>>((acc, entry) => {
+    const region = entry.admission.homeRegion ?? "Not recorded";
+    acc[region] = (acc[region] ?? 0) + 1;
+    return acc;
+  }, {});
+  const homeRegionSummary = Object.entries(homeRegionCounts).sort((a, b) => b[1] - a[1]);
+
+  const filteredEntries = entries.filter((entry) => {
+    if (transportFilter !== "all" && entry.band !== transportFilter) {
+      return false;
+    }
+    if (catchmentFilter !== "all" && (entry.admission.homeRegion ?? "Not recorded") !== catchmentFilter) {
+      return false;
+    }
+    if (searchQuery.trim().length > 0) {
+      const q = searchQuery.toLowerCase().trim();
+      const site = siteByCode(entry.unit.siteCode);
+      const patientInfo = resolvePatient(entry.admission);
+      const matchesId = entry.admission.id.toLowerCase().includes(q);
+      const matchesName =
+        patientInfo.displayName.toLowerCase().includes(q) || patientInfo.formalName.toLowerCase().includes(q);
+      const matchesUmrn = patientInfo.umrn.toLowerCase().includes(q);
+      const matchesRegion = (entry.admission.homeRegion ?? "").toLowerCase().includes(q);
+      const matchesUnit = entry.unit.name.toLowerCase().includes(q);
+      const matchesSite = (site?.name ?? "").toLowerCase().includes(q);
+      const matchesService = (site?.service ?? "").toLowerCase().includes(q);
+      return matchesId || matchesName || matchesUmrn || matchesRegion || matchesUnit || matchesSite || matchesService;
+    }
+    return true;
+  });
 
   return (
     <div
@@ -254,33 +326,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       data-ward-design="third-edition"
     >
       <main id="main-content" className={`${styles.main} ${pageStyles.workspace}`}>
-        <header className={pageStyles.pageHeader}>
-          <div className={pageStyles.pageHeaderRow}>
-            <div className={pageStyles.hdrTitle}>
-              <h1 className={`${styles.pageTitle} ${pageStyles.hdrTitleText}`}>Out-of-Area Repatriation Ledger</h1>
-              <span className={pageStyles.chipMark} title="Catchment Egress">
-                Catchment Egress
-              </span>
-            </div>
-            <div className={pageStyles.pageHeaderActions}>
-              <button
-                className={`${pageStyles.btn} ${pageStyles.btnPrimary}`}
-                type="button"
-                onClick={(e) => {
-                  triggerRef.current = e.currentTarget;
-                  if (!selected && entries.length > 0) {
-                    setSelectedId(entries[0].admission.id);
-                  }
-                  setRepatDraft(BLANK_REPAT_DRAFT);
-                  setRepatFormNotice(null);
-                  setIsRepatModalOpen(true);
-                }}
-              >
-                + Initiate Repatriation
-              </button>
-            </div>
-          </div>
-        </header>
+        {/* Screen reader and landmark page title (visually redundant below WardBar chrome) */}
+        <h1 className={pageStyles.localTitle}>Out-of-Area Repatriation Ledger</h1>
 
         {repatNotice ? (
           <div
@@ -317,29 +364,110 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         ) : null}
 
         {/* Executive 4-card KPI strip */}
-        <div className={pageStyles.kpiStrip}>
-          <div className={pageStyles.kpiCard} data-tone="warn">
-            <span className={pageStyles.kpiLabel}>Total Out-of-Area</span>
+        <div className={pageStyles.kpiStrip} role="region" aria-label="Executive Out-of-Area KPIs">
+          <button
+            type="button"
+            className={`${pageStyles.kpiCard} ${transportFilter === "all" && catchmentFilter === "all" && !searchQuery ? pageStyles.kpiCardActive : ""}`}
+            data-tone="warn"
+            onClick={() => {
+              setTransportFilter("all");
+              setCatchmentFilter("all");
+              setSearchQuery("");
+            }}
+            aria-pressed={transportFilter === "all" && catchmentFilter === "all" && !searchQuery}
+            aria-label={`Total Out-of-Area: ${entries.length} active placements. Click to view all.`}
+          >
+            <div className={pageStyles.kpiLabelRow}>
+              <span className={pageStyles.kpiLabel}>Total Out-of-Area</span>
+              <span className={pageStyles.kpiToneBadge} data-tone="accent">
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="m9 12 2 2 4-4" />
+                </svg>
+              </span>
+            </div>
             <span className={pageStyles.kpiVal}>{entries.length}</span>
-            <span className={pageStyles.kpiSub}>Cross-HSP Admissions</span>
-          </div>
-          <div className={pageStyles.kpiCard} data-tone="danger">
-            <span className={pageStyles.kpiLabel}>Far Placements (&gt;35km)</span>
-            <span className={pageStyles.kpiVal}>Not recorded</span>
-            <span className={pageStyles.kpiSub}>Family Travel Barrier</span>
-          </div>
-          <div className={pageStyles.kpiCard} data-tone="good">
-            <span className={pageStyles.kpiLabel}>Repatriation Ready</span>
-            <span className={pageStyles.kpiVal} id="kpiRepatReady">
-              Not recorded
-            </span>
-            <span className={pageStyles.kpiSub}>Awaiting Home Bed Vacancy</span>
-          </div>
-          <div className={pageStyles.kpiCard} data-tone="accent">
-            <span className={pageStyles.kpiLabel}>Longest Out-of-Area</span>
-            <span className={pageStyles.kpiVal}>{longestDays}</span>
+            <span className={pageStyles.kpiSub}>Cross-catchment admissions</span>
+          </button>
+          <button
+            type="button"
+            className={`${pageStyles.kpiCard} ${transportFilter === "air_transport_only" ? pageStyles.kpiCardActive : ""}`}
+            data-tone="danger"
+            onClick={() => setTransportFilter(transportFilter === "air_transport_only" ? "all" : "air_transport_only")}
+            aria-pressed={transportFilter === "air_transport_only"}
+            aria-label={`Air Transport Only: ${airCount} patients. Click to filter.`}
+          >
+            <div className={pageStyles.kpiLabelRow}>
+              <span className={pageStyles.kpiLabel}>Air Transport Only</span>
+              <span className={pageStyles.kpiToneBadge} data-tone="danger">
+                <PlacementStatusGlyph tone="danger" />
+              </span>
+            </div>
+            <span className={`${pageStyles.kpiVal} ${pageStyles.dangerVal}`}>{airCount}</span>
+            <span className={pageStyles.kpiSub}>Aeromedical flight required</span>
+          </button>
+          <button
+            type="button"
+            className={`${pageStyles.kpiCard} ${transportFilter === "three_hours_or_more" ? pageStyles.kpiCardActive : ""}`}
+            data-tone="warn"
+            onClick={() =>
+              setTransportFilter(transportFilter === "three_hours_or_more" ? "all" : "three_hours_or_more")
+            }
+            aria-pressed={transportFilter === "three_hours_or_more"}
+            aria-label={`Road Travel: ${roadCount} patients. Click to filter.`}
+          >
+            <div className={pageStyles.kpiLabelRow}>
+              <span className={pageStyles.kpiLabel}>Road Travel</span>
+              <span className={pageStyles.kpiToneBadge} data-tone="warn">
+                <PlacementStatusGlyph tone="warn" />
+              </span>
+            </div>
+            <span className={`${pageStyles.kpiVal} ${pageStyles.warnVal}`}>{roadCount}</span>
+            <span className={pageStyles.kpiSub}>Long-distance ground transfer</span>
+          </button>
+          <button
+            type="button"
+            className={`${pageStyles.kpiCard} ${selectedId === maxDaysEntry?.admission.id ? pageStyles.kpiCardActive : ""}`}
+            data-tone="accent"
+            onClick={() => {
+              if (maxDaysEntry) {
+                setSelectedId(maxDaysEntry.admission.id);
+              }
+            }}
+            aria-label={`Longest Out-of-Area: ${longestDays}, ${longestSub}. Click to inspect case.`}
+          >
+            <div className={pageStyles.kpiLabelRow}>
+              <span className={pageStyles.kpiLabel}>Longest Out-of-Area</span>
+              <span className={pageStyles.kpiToneBadge} data-tone="accent">
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </span>
+            </div>
+            <span className={`${pageStyles.kpiVal} ${pageStyles.accentVal}`}>{longestDays}</span>
             <span className={pageStyles.kpiSub}>{longestSub}</span>
-          </div>
+          </button>
         </div>
 
         {/* Main Workbench Grid: Inpatients Ledger Table (Left) & Case Inspector (Right) */}
@@ -347,11 +475,116 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
           <div className={pageStyles.registerColumn}>
             <section className={`${styles.section} ${pageStyles.panel}`} data-testid="ward-out-of-area-entries">
               <div className={pageStyles.ph}>
-                <h2>Cross-Catchment Inpatients</h2>
-                <span className={pageStyles.mono} style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
-                  {entries.length} Active {entries.length === 1 ? "Placement" : "Placements"}
-                </span>
+                <div className={pageStyles.phLeft}>
+                  <h2>Cross-Catchment Inpatients</h2>
+                  <span className={pageStyles.countBadge}>
+                    {filteredEntries.length === entries.length
+                      ? `${entries.length} Active ${entries.length === 1 ? "Placement" : "Placements"}`
+                      : `Showing ${filteredEntries.length} of ${entries.length}`}
+                  </span>
+                </div>
+                <div className={pageStyles.phRight}>
+                  <button
+                    className={`${pageStyles.btn} ${pageStyles.btnPrimary} ${pageStyles.btnSm}`}
+                    type="button"
+                    onClick={(e) => {
+                      triggerRef.current = e.currentTarget;
+                      if (!selected && entries.length > 0) {
+                        setSelectedId(entries[0].admission.id);
+                      }
+                      setRepatDraft(BLANK_REPAT_DRAFT);
+                      setRepatFormNotice(null);
+                      setIsRepatModalOpen(true);
+                    }}
+                  >
+                    + Initiate Repatriation
+                  </button>
+                </div>
               </div>
+
+              {/* In-page search and cohort filter toolbar */}
+              <div className={pageStyles.tableToolbar}>
+                <div className={pageStyles.searchBox}>
+                  <svg
+                    className={pageStyles.searchIcon}
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                  <input
+                    type="text"
+                    inputMode="search"
+                    placeholder="Filter by patient, UMRN, ID, catchment, or unit..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    aria-label="Filter out-of-area placements"
+                    className={pageStyles.searchInput}
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className={pageStyles.searchClearBtn}
+                      aria-label="Clear search"
+                    >
+                      &times;
+                    </button>
+                  )}
+                </div>
+
+                <div className={pageStyles.filterSelectWrap}>
+                  <select
+                    aria-label="Filter by home catchment"
+                    className={pageStyles.filterSelect}
+                    value={catchmentFilter}
+                    onChange={(e) => setCatchmentFilter(e.target.value)}
+                    data-testid="ward-out-of-area-catchment-filter"
+                  >
+                    <option value="all">All Catchments ({entries.length})</option>
+                    {homeRegionSummary.map(([region, count]) => (
+                      <option key={region} value={region}>
+                        {region} ({count})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className={pageStyles.filterChips}>
+                  <button
+                    type="button"
+                    className={`${pageStyles.filterChip} ${transportFilter === "all" ? pageStyles.filterChipActive : ""}`}
+                    onClick={() => setTransportFilter("all")}
+                  >
+                    All ({entries.length})
+                  </button>
+                  <button
+                    type="button"
+                    className={`${pageStyles.filterChip} ${transportFilter === "air_transport_only" ? pageStyles.filterChipActive : ""}`}
+                    onClick={() => setTransportFilter("air_transport_only")}
+                  >
+                    <PlacementStatusGlyph tone="danger" />
+                    <span>Air ({airCount})</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`${pageStyles.filterChip} ${transportFilter === "three_hours_or_more" ? pageStyles.filterChipActive : ""}`}
+                    onClick={() => setTransportFilter("three_hours_or_more")}
+                  >
+                    <PlacementStatusGlyph tone="warn" />
+                    <span>Road ({roadCount})</span>
+                  </button>
+                </div>
+              </div>
+
               <p className="sr-only" data-testid="ward-out-of-area-counts">
                 <span data-testid="ward-out-of-area-count-people">
                   {entries.length} {entries.length === 1 ? "person is" : "people are"} recorded as being in a bed far
@@ -372,6 +605,21 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                   <p className={styles.emptyNote} data-testid="ward-out-of-area-empty">
                     Nobody on these records is in a bed far from home.
                   </p>
+                ) : filteredEntries.length === 0 ? (
+                  <div className={pageStyles.noMatches}>
+                    <p>No placements match the current search or filters.</p>
+                    <button
+                      type="button"
+                      className={`${pageStyles.btn} ${pageStyles.btnSm}`}
+                      onClick={() => {
+                        setSearchQuery("");
+                        setTransportFilter("all");
+                        setCatchmentFilter("all");
+                      }}
+                    >
+                      Reset filters
+                    </button>
+                  </div>
                 ) : (
                   <>
                     <div className={`${pageStyles.printTable} ${pageStyles.tableWrap}`}>
@@ -382,6 +630,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                       >
                         <thead>
                           <tr>
+                            <th scope="col">Patient</th>
                             <th scope="col">Home region</th>
                             <th scope="col">Unit</th>
                             <th scope="col">Travel time</th>
@@ -390,9 +639,12 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                         </thead>
                         <tbody>
                           {/* The ledger's own order, unsorted and untruncated. */}
-                          {entries.map((entry) => {
+                          {filteredEntries.map((entry) => {
                             const site = siteByCode(entry.unit.siteCode);
                             const tone = entry.band === "air_transport_only" ? "danger" : "warn";
+                            const patientInfo = resolvePatient(entry.admission);
+                            const profileHref = getPatientProfileHref(patientInfo);
+
                             return (
                               <tr
                                 key={entry.admission.id}
@@ -404,8 +656,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                 }
                                 aria-selected={entry.admission.id === selectedId}
                                 tabIndex={0}
-                                role="button"
-                                aria-label={`View placement detail for ${entry.admission.homeRegion} in ${entry.unit.name}`}
+                                aria-label={`View placement detail for ${patientInfo.displayName} (${patientInfo.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
                                 onClick={() => setSelectedId(entry.admission.id)}
                                 onKeyDown={(event) => {
                                   if (event.key === "Enter" || event.key === " ") {
@@ -415,25 +666,45 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                 }}
                               >
                                 <td>
-                                  <div>
-                                    <strong>{entry.admission.homeRegion}</strong>
+                                  <div className={pageStyles.patientNameCell}>
+                                    <strong>{patientInfo.displayName}</strong>
                                   </div>
-                                  <div
-                                    className={pageStyles.mono}
-                                    style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}
-                                  >
-                                    {entry.admission.id}
+                                  <div className={pageStyles.patientMetaCell}>
+                                    {profileHref ? (
+                                      <Link
+                                        href={profileHref}
+                                        className={pageStyles.umrnLink}
+                                        onClick={(e) => e.stopPropagation()}
+                                        title={`Open profile for ${patientInfo.displayName} (${patientInfo.umrn})`}
+                                      >
+                                        {patientInfo.umrn}
+                                      </Link>
+                                    ) : (
+                                      <span className={pageStyles.unrecordedUmrn}>{patientInfo.umrn}</span>
+                                    )}
+                                    <span className={pageStyles.metaDot}>&bull;</span>
+                                    <span
+                                      className={pageStyles.mono}
+                                      style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}
+                                    >
+                                      {entry.admission.id}
+                                    </span>
                                   </div>
                                 </td>
                                 <td>
-                                  <div>{entry.unit.name}</div>
+                                  <div className={pageStyles.homeRegionText}>
+                                    <strong>{entry.admission.homeRegion}</strong>
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className={pageStyles.unitNameText}>{entry.unit.name}</div>
                                   <div style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
                                     {site?.name ?? "Site not recorded"}
                                   </div>
                                 </td>
                                 <td>
                                   <span
-                                    className={`${pageStyles.badge} ${styles.placementPill} ${pageStyles.mono}`}
+                                    className={pageStyles.travelBadge}
                                     data-tone={tone}
                                     data-ward-type-floor="badge"
                                   >
@@ -441,7 +712,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                     <span>{TRAVEL_BAND_LABELS[entry.band]}</span>
                                   </span>
                                 </td>
-                                <td className={pageStyles.mono} style={{ fontWeight: 700 }}>
+                                <td className={`${pageStyles.mono} ${pageStyles.stayCell}`}>
                                   {sinceArrivalLabel(entry, now)}
                                 </td>
                               </tr>
@@ -453,9 +724,11 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
 
                     {/* Mobile Phone Card List */}
                     <ul className={`${styles.cardList} ${pageStyles.recordList}`} data-testid="ward-out-of-area-cards">
-                      {entries.map((entry) => {
+                      {filteredEntries.map((entry) => {
                         const site = siteByCode(entry.unit.siteCode);
                         const tone = entry.band === "air_transport_only" ? "danger" : "warn";
+                        const patientInfo = resolvePatient(entry.admission);
+                        const profileHref = getPatientProfileHref(patientInfo);
 
                         return (
                           <li
@@ -469,7 +742,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                             aria-selected={entry.admission.id === selectedId}
                             tabIndex={0}
                             role="button"
-                            aria-label={`View placement detail for ${entry.admission.homeRegion} in ${entry.unit.name}`}
+                            aria-label={`View placement detail for ${patientInfo.displayName} (${patientInfo.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
                             onClick={() => setSelectedId(entry.admission.id)}
                             onKeyDown={(event) => {
                               if (event.key === "Enter" || event.key === " ") {
@@ -480,6 +753,21 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                           >
                             <div className={pageStyles.recordTop}>
                               <div>
+                                <div className={pageStyles.recordPatientRow}>
+                                  <span className={pageStyles.recordPatientName}>{patientInfo.displayName}</span>
+                                  {profileHref ? (
+                                    <Link
+                                      href={profileHref}
+                                      className={pageStyles.umrnLink}
+                                      onClick={(e) => e.stopPropagation()}
+                                      title={`Open profile for ${patientInfo.displayName} (${patientInfo.umrn})`}
+                                    >
+                                      {patientInfo.umrn}
+                                    </Link>
+                                  ) : (
+                                    <span className={pageStyles.unrecordedUmrn}>{patientInfo.umrn}</span>
+                                  )}
+                                </div>
                                 <p className={`${styles.cardUnit} ${pageStyles.recordUnit}`}>{entry.unit.name}</p>
                                 <p className={pageStyles.recordSite}>
                                   {site?.service ?? "Health service not recorded"} &bull;{" "}
@@ -490,23 +778,12 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                 {sinceArrivalLabel(entry, now)} since arrival
                               </span>
                             </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                marginTop: "4px",
-                              }}
-                            >
+                            <div className={pageStyles.recordBottom}>
                               <p className={pageStyles.recordFacts}>
                                 Home: <b>{entry.admission.homeRegion}</b> &bull;{" "}
                                 <span className={pageStyles.mono}>{entry.admission.id}</span>
                               </p>
-                              <span
-                                className={`${pageStyles.badge} ${pageStyles.mono}`}
-                                data-tone={tone}
-                                data-ward-type-floor="badge"
-                              >
+                              <span className={pageStyles.travelBadge} data-tone={tone} data-ward-type-floor="badge">
                                 <PlacementStatusGlyph tone={tone} />
                                 <span>{TRAVEL_BAND_LABELS[entry.band]}</span>
                               </span>
@@ -521,12 +798,24 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             </section>
           </div>
 
-          <div className={pageStyles.detailColumn}>
+          <div ref={detailColumnRef} className={pageStyles.detailColumn}>
             {/* Repatriation Case Inspector */}
             <section className={`${styles.section} ${pageStyles.panel}`} data-testid="ward-out-of-area-subject">
               <div className={pageStyles.ph}>
-                <h2>Repatriation Case Inspector</h2>
-                <span className={pageStyles.caseUrmBadge}>{selected ? selected.admission.id : "NO SELECTION"}</span>
+                <div className={pageStyles.phLeft}>
+                  <h2>Case Inspector</h2>
+                  <span className={pageStyles.caseUrmBadge}>{selected ? selected.admission.id : "COHORT"}</span>
+                </div>
+                {selected && (
+                  <button
+                    type="button"
+                    className={`${pageStyles.btn} ${pageStyles.btnSm} ${pageStyles.backBtn}`}
+                    onClick={() => setSelectedId(null)}
+                    aria-label="Return to cohort overview"
+                  >
+                    &larr; Overview
+                  </button>
+                )}
               </div>
               <div
                 className={pageStyles.panelBody}
@@ -535,73 +824,269 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                 tabIndex={0}
               >
                 {!selected ? (
-                  <div data-testid="ward-out-of-area-subject-empty" className={pageStyles.inspectorEmpty}>
-                    <svg
-                      className={pageStyles.inspectorEmptyIcon}
-                      width="32"
-                      height="32"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                    <h3>No placement selected</h3>
-                    <p>Select a person in the list above to see the detail for one placement here.</p>
-                  </div>
-                ) : (
-                  <div className={pageStyles.detailCard}>
-                    <div data-testid="ward-out-of-area-subject-facts" className={pageStyles.detailSection}>
-                      <span className={pageStyles.detailLabel}>Patient Demographics & Home Catchment</span>
-                      <div className={pageStyles.detailValue}>{selected.admission.id}</div>
-                      <div style={{ fontSize: "var(--t-0)", color: "var(--muted)", marginTop: "2px" }}>
-                        Residential Catchment: <b>{selected.admission.homeRegion}</b>
-                      </div>
-                      <div style={{ fontSize: "var(--t-0)", color: "var(--muted)", marginTop: "2px" }}>
-                        Current Unit: <b>{selected.unit.name}</b> (
-                        {siteByCode(selected.unit.siteCode)?.name ?? "Site not recorded"})
-                      </div>
-                      <div style={{ fontSize: "var(--t-0)", color: "var(--muted)", marginTop: "2px" }}>
-                        Health service:{" "}
-                        <b>{siteByCode(selected.unit.siteCode)?.service ?? "Health service not recorded"}</b>
-                      </div>
-                      <div className={pageStyles.factMetricsRow}>
-                        Travel Band: <span>{TRAVEL_BAND_LABELS[selected.band]}</span> &bull; Days Out-of-Area:{" "}
-                        <span>{sinceArrivalLabel(selected, now)}</span>
-                      </div>
-                      <div style={{ fontSize: "var(--t-0)", color: "var(--muted)", marginTop: "2px" }}>
-                        Group: <b>In a bed far from home</b>
+                  <div data-testid="ward-out-of-area-subject-empty" className={pageStyles.defaultInspectorCard}>
+                    <div className={pageStyles.defaultHeader}>
+                      <span className={pageStyles.defaultHeaderIcon}>
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                        </svg>
+                      </span>
+                      <div>
+                        <h3 className={pageStyles.defaultTitle}>Statewide Repatriation Cohort</h3>
+                        <p className={pageStyles.defaultSub}>
+                          {entries.length} inpatients placed outside residential catchment
+                        </p>
                       </div>
                     </div>
 
+                    <div className={pageStyles.transportSummaryRow}>
+                      <div className={pageStyles.transportSummaryItem}>
+                        <PlacementStatusGlyph tone="danger" />
+                        <span className={pageStyles.transportSummaryLabel}>Air-only transfers:</span>
+                        <strong className={`${pageStyles.mono} ${pageStyles.dangerVal}`}>{airCount}</strong>
+                      </div>
+                      <div className={pageStyles.transportSummaryItem}>
+                        <PlacementStatusGlyph tone="warn" />
+                        <span className={pageStyles.transportSummaryLabel}>Ground:</span>
+                        <strong className={`${pageStyles.mono} ${pageStyles.warnVal}`}>{roadCount}</strong>
+                      </div>
+                    </div>
+
+                    <div className={pageStyles.defaultSection}>
+                      <span className={pageStyles.detailLabel}>Home Catchments Represented</span>
+                      <div className={pageStyles.regionPillList}>
+                        {homeRegionSummary.map(([region, count]) => (
+                          <button
+                            key={region}
+                            type="button"
+                            className={`${pageStyles.regionPill} ${catchmentFilter === region ? pageStyles.regionPillActive : ""}`}
+                            onClick={() => setCatchmentFilter(catchmentFilter === region ? "all" : region)}
+                            aria-pressed={catchmentFilter === region}
+                            aria-label={`Filter by ${region}: ${count} placements`}
+                          >
+                            <span className={pageStyles.regionPillName}>{region}</span>
+                            <span className={`${pageStyles.regionPillCount} ${pageStyles.mono}`}>{count}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {maxDaysEntry &&
+                      (() => {
+                        const longestPatientInfo = resolvePatient(maxDaysEntry.admission);
+                        const longestProfileHref = getPatientProfileHref(longestPatientInfo);
+                        return (
+                          <div className={pageStyles.defaultSection}>
+                            <span className={pageStyles.detailLabel}>Priority Case (Longest Out-of-Area)</span>
+                            <div className={pageStyles.longestCaseBox}>
+                              <div className={pageStyles.longestCaseHead}>
+                                <div className={pageStyles.longestCaseIdentity}>
+                                  <span className={pageStyles.longestCasePatientName}>
+                                    {longestPatientInfo.displayName}
+                                  </span>
+                                  <div className={pageStyles.longestCaseIdRow}>
+                                    {longestProfileHref ? (
+                                      <Link
+                                        href={longestProfileHref}
+                                        className={pageStyles.inspectorUmrnLink}
+                                        title={`Open profile for ${longestPatientInfo.displayName} (${longestPatientInfo.umrn})`}
+                                      >
+                                        {longestPatientInfo.umrn}
+                                      </Link>
+                                    ) : (
+                                      <span className={pageStyles.unrecordedUmrn}>{longestPatientInfo.umrn}</span>
+                                    )}
+                                    <span className={pageStyles.metaDot}>&bull;</span>
+                                    <span className={`${pageStyles.mono} ${pageStyles.longestCaseId}`}>
+                                      {maxDaysEntry.admission.id}
+                                    </span>
+                                  </div>
+                                </div>
+                                <span className={`${pageStyles.badge} ${pageStyles.mono}`} data-tone="accent">
+                                  {longestDays}
+                                </span>
+                              </div>
+                              <p className={pageStyles.longestCaseSub}>
+                                Home: <b>{maxDaysEntry.admission.homeRegion}</b> &bull; At{" "}
+                                {siteByCode(maxDaysEntry.unit.siteCode)?.name ?? maxDaysEntry.unit.name}
+                              </p>
+                              <button
+                                type="button"
+                                className={`${pageStyles.btn} ${pageStyles.btnSm} ${pageStyles.wFull}`}
+                                onClick={() => setSelectedId(maxDaysEntry.admission.id)}
+                              >
+                                Inspect Longest Case &rarr;
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                    <div className={pageStyles.defaultPromptBox}>
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                        className={pageStyles.promptIcon}
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="16" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                      </svg>
+                      <p className={pageStyles.defaultPromptText}>
+                        Select any inpatient row to review individual transfer assessment, receiving unit requirements,
+                        or execute a repatriation order.
+                      </p>
+                    </div>
+
+                    <div>
+                      <button
+                        type="button"
+                        className={`${pageStyles.btn} ${pageStyles.btnSm} ${pageStyles.wFull}`}
+                        onClick={(e) => {
+                          triggerRef.current = e.currentTarget;
+                          if (entries.length > 0) {
+                            setSelectedId(entries[0].admission.id);
+                          }
+                          setRepatDraft(BLANK_REPAT_DRAFT);
+                          setRepatFormNotice(null);
+                          setIsRepatModalOpen(true);
+                        }}
+                      >
+                        + Initiate Repatriation Transfer
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className={pageStyles.detailCard}>
+                    {(() => {
+                      const selectedPatientInfo = resolvePatient(selected.admission);
+                      const selectedProfileHref = getPatientProfileHref(selectedPatientInfo);
+                      return (
+                        <div data-testid="ward-out-of-area-subject-facts" className={pageStyles.detailSection}>
+                          <span className={pageStyles.detailLabel}>Patient Demographics & Home Catchment</span>
+                          <div className={pageStyles.inspectorPatientBox}>
+                            <div className={pageStyles.inspectorPatientName}>{selectedPatientInfo.displayName}</div>
+                            <div className={pageStyles.inspectorPatientUmrnRow}>
+                              <span className={pageStyles.umrnLabel}>UMRN:</span>
+                              {selectedProfileHref ? (
+                                <Link
+                                  href={selectedProfileHref}
+                                  className={pageStyles.inspectorUmrnLink}
+                                  title={`Open profile for ${selectedPatientInfo.displayName} (${selectedPatientInfo.umrn})`}
+                                >
+                                  <span>{selectedPatientInfo.umrn}</span>
+                                  <svg
+                                    width="12"
+                                    height="12"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    aria-hidden="true"
+                                  >
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                    <polyline points="15 3 21 3 21 9" />
+                                    <line x1="10" y1="14" x2="21" y2="3" />
+                                  </svg>
+                                </Link>
+                              ) : (
+                                <span className={pageStyles.unrecordedUmrn}>{selectedPatientInfo.umrn}</span>
+                              )}
+                              <span className={pageStyles.metaDot}>&bull;</span>
+                              <span className={`${pageStyles.mono} ${pageStyles.admissionIdText}`}>
+                                {selected.admission.id}
+                              </span>
+                            </div>
+                          </div>
+                          <div className={pageStyles.inspectorPlacementGrid}>
+                            <div className={pageStyles.placementGridItem}>
+                              <span className={pageStyles.gridItemLabel}>Catchment</span>
+                              <span className={pageStyles.gridItemVal}>
+                                <b>{selected.admission.homeRegion}</b>
+                              </span>
+                            </div>
+                            <div className={pageStyles.placementGridItem}>
+                              <span className={pageStyles.gridItemLabel}>Current Placement</span>
+                              <span className={pageStyles.gridItemVal}>
+                                <b>{selected.unit.name}</b>
+                                <span className={pageStyles.gridItemSub}>
+                                  {siteByCode(selected.unit.siteCode)?.name ?? "Site not recorded"}
+                                </span>
+                              </span>
+                            </div>
+                            <div className={pageStyles.placementGridItem}>
+                              <span className={pageStyles.gridItemLabel}>Travel Band</span>
+                              <span className={pageStyles.gridItemVal}>
+                                <span
+                                  className={pageStyles.travelBadge}
+                                  data-tone={selected.band === "air_transport_only" ? "danger" : "warn"}
+                                  data-ward-type-floor="badge"
+                                >
+                                  <PlacementStatusGlyph
+                                    tone={selected.band === "air_transport_only" ? "danger" : "warn"}
+                                  />
+                                  <span>{TRAVEL_BAND_LABELS[selected.band]}</span>
+                                </span>
+                              </span>
+                            </div>
+                            <div className={pageStyles.placementGridItem}>
+                              <span className={pageStyles.gridItemLabel}>Days Out-of-Area</span>
+                              <span className={`${pageStyles.gridItemVal} ${pageStyles.mono}`}>
+                                <b>{sinceArrivalLabel(selected, now)}</b>
+                              </span>
+                            </div>
+                          </div>
+                          <p className={pageStyles.detailMetaText} style={{ marginTop: "4px" }}>
+                            Group: <b>In a bed far from home</b>
+                          </p>
+                        </div>
+                      );
+                    })()}
+
                     <div data-testid="ward-out-of-area-subject-caveat" className={pageStyles.detailSection}>
                       <span className={pageStyles.detailLabel}>Clinical Repatriation Assessment</span>
-                      <div className={pageStyles.detailValue} style={{ fontSize: "var(--t-1)", lineHeight: "1.4" }}>
+                      <div className={pageStyles.detailValueSub}>
                         Clinically stable in acute open bed &bull; ready for repatriation transfer back to{" "}
                         {selected.admission.homeRegion} Adult Unit as soon as bed vacates.
                       </div>
                     </div>
 
                     <div className={pageStyles.detailSection}>
-                      <span className={pageStyles.detailLabel}>Target Destination Service</span>
-                      <div className={pageStyles.detailValue} style={{ color: "var(--accent)" }}>
-                        {selected.admission.homeRegion} Adult MHU
-                      </div>
-                      <div style={{ fontSize: "var(--t-0)", color: "var(--muted)", marginTop: "2px" }}>
-                        Bed enquiry status: <b>Awaiting home bed vacancy</b>
+                      <div className={pageStyles.destinationRow}>
+                        <div>
+                          <span className={pageStyles.detailLabel}>Target Destination</span>
+                          <div className={`${pageStyles.detailValue} ${pageStyles.accentVal}`}>
+                            {selected.admission.homeRegion} Adult MHU
+                          </div>
+                        </div>
+                        <span className={pageStyles.enquiryBadge}>Awaiting bed vacancy</span>
                       </div>
                     </div>
 
-                    <div style={{ marginTop: "10px" }}>
+                    <div className={pageStyles.detailActionWrap}>
                       <button
                         type="button"
-                        className={`${pageStyles.btn} ${pageStyles.btnPrimary}`}
-                        style={{ width: "100%", justifyContent: "center" }}
+                        className={`${pageStyles.btn} ${pageStyles.btnPrimary} ${pageStyles.wFull}`}
                         onClick={(e) => {
                           triggerRef.current = e.currentTarget;
                           setIsRepatModalOpen(true);
@@ -646,173 +1131,206 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                 </button>
               </div>
               <div className={pageStyles.modalBody}>
-                <div>
-                  <label className={pageStyles.modalLabel} htmlFor="repat-patient">
-                    Patient (URM &amp; Catchment)
-                  </label>
-                  <input
-                    id="repat-patient"
-                    type="text"
-                    className={`${pageStyles.modalInput} ${pageStyles.modalMono}`}
-                    value={
-                      selected ? `${selected.admission.id} (${selected.admission.homeRegion})` : "General Referral"
-                    }
-                    readOnly
-                  />
-                </div>
-                <div>
-                  <label className={pageStyles.modalLabel} htmlFor="repat-home-hospital">
-                    Home hospital
-                  </label>
-                  <select
-                    id="repat-home-hospital"
-                    className={pageStyles.modalSelect}
-                    data-testid="ward-out-of-area-repat-home-hospital"
-                    value={repatDraft.homeHospital}
-                    onChange={(e) => setRepatDraft((current) => ({ ...current, homeHospital: e.target.value }))}
-                  >
-                    <option value={NO_HOME_HOSPITAL_VALUE}>Choose the home hospital</option>
-                    {HOME_HOSPITAL_GROUPS.map((group) => (
-                      <optgroup key={group.service} label={SERVICE_DISPLAY_NAMES[group.service] ?? group.service}>
-                        {group.sites.map((site) => (
-                          <option key={site.code} value={site.code}>
-                            {site.name}
+                <div className={pageStyles.modalTwoColGrid}>
+                  {/* Left Column: Context & Receiving Destination */}
+                  <div className={pageStyles.modalCol}>
+                    <div className={pageStyles.modalField}>
+                      <label className={pageStyles.modalLabel} htmlFor="repat-patient">
+                        Patient (URM &amp; Catchment)
+                      </label>
+                      <input
+                        id="repat-patient"
+                        type="text"
+                        className={`${pageStyles.modalInput} ${pageStyles.modalMono}`}
+                        value={
+                          selected
+                            ? `${resolvePatient(selected.admission).displayName} · ${resolvePatient(selected.admission).umrn} · ${selected.admission.id} (${selected.admission.homeRegion})`
+                            : "General Referral"
+                        }
+                        readOnly
+                      />
+                    </div>
+                    <div className={pageStyles.modalField}>
+                      <label className={pageStyles.modalLabel} htmlFor="repat-home-hospital">
+                        Home hospital
+                      </label>
+                      <select
+                        id="repat-home-hospital"
+                        className={pageStyles.modalSelect}
+                        data-testid="ward-out-of-area-repat-home-hospital"
+                        value={repatDraft.homeHospital}
+                        onChange={(e) => setRepatDraft((current) => ({ ...current, homeHospital: e.target.value }))}
+                      >
+                        <option value={NO_HOME_HOSPITAL_VALUE}>Choose the home hospital</option>
+                        {HOME_HOSPITAL_GROUPS.map((group) => (
+                          <optgroup key={group.service} label={SERVICE_DISPLAY_NAMES[group.service] ?? group.service}>
+                            {group.sites.map((site) => (
+                              <option key={site.code} value={site.code}>
+                                {site.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </div>
+                    <fieldset className={pageStyles.modalFieldset} data-testid="ward-out-of-area-repat-ward-agreed">
+                      <legend className={pageStyles.modalLabel}>Has the receiving ward agreed?</legend>
+                      <div className={pageStyles.segmentedControl}>
+                        {(
+                          [
+                            { value: true, label: "Yes — receiving ward has agreed" },
+                            { value: false, label: "Not yet agreed" },
+                          ] as const
+                        ).map((answer) => (
+                          <label
+                            key={answer.label}
+                            className={`${pageStyles.segmentedOption} ${repatDraft.receivingWardAgreed === answer.value ? pageStyles.segmentedOptionActive : ""}`}
+                          >
+                            <input
+                              type="radio"
+                              name="repat-ward-agreed"
+                              className={pageStyles.accessibleHiddenInput}
+                              checked={repatDraft.receivingWardAgreed === answer.value}
+                              onChange={() =>
+                                setRepatDraft((current) => ({ ...current, receivingWardAgreed: answer.value }))
+                              }
+                            />
+                            <span>{answer.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                    <fieldset className={pageStyles.modalFieldset} data-testid="ward-out-of-area-repat-legal">
+                      <legend className={pageStyles.modalLabel}>Is the transport voluntary or involuntary?</legend>
+                      <div className={pageStyles.segmentedControl}>
+                        {TRANSPORT_LEGAL_STATUSES.map((status) => (
+                          <label
+                            key={status}
+                            className={`${pageStyles.segmentedOption} ${repatDraft.transportLegalStatus === status ? pageStyles.segmentedOptionActive : ""}`}
+                          >
+                            <input
+                              type="radio"
+                              name="repat-legal"
+                              className={pageStyles.accessibleHiddenInput}
+                              value={status}
+                              checked={repatDraft.transportLegalStatus === status}
+                              onChange={() =>
+                                setRepatDraft((current) => ({ ...current, transportLegalStatus: status }))
+                              }
+                            />
+                            <span>{TRANSPORT_LEGAL_STATUS_LABELS[status]}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                  </div>
+
+                  {/* Right Column: Transport Logistics & Timing */}
+                  <div className={pageStyles.modalCol}>
+                    <div className={pageStyles.modalField}>
+                      <label className={pageStyles.modalLabel} htmlFor="repat-mode">
+                        Road or flight
+                      </label>
+                      <select
+                        id="repat-mode"
+                        className={pageStyles.modalSelect}
+                        data-testid="ward-out-of-area-repat-mode"
+                        value={repatDraft.mode}
+                        onChange={(e) =>
+                          setRepatDraft((current) => ({
+                            ...current,
+                            mode: (REPAT_MODES as readonly string[]).includes(e.target.value)
+                              ? (e.target.value as RepatMode)
+                              : "",
+                          }))
+                        }
+                      >
+                        <option value={NO_REPAT_MODE_VALUE}>Choose road or flight</option>
+                        {REPAT_MODES.map((mode) => (
+                          <option key={mode} value={mode}>
+                            {mode === "road" ? "Road" : "Flight"}
                           </option>
                         ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </div>
-                <fieldset className={pageStyles.modalFieldset} data-testid="ward-out-of-area-repat-ward-agreed">
-                  <legend className={pageStyles.modalLabel}>Has the receiving ward agreed?</legend>
-                  {(
-                    [
-                      { value: true, label: "Yes — receiving ward has agreed" },
-                      { value: false, label: "Not yet agreed" },
-                    ] as const
-                  ).map((answer) => (
-                    <label key={answer.label} className={pageStyles.modalOption}>
+                      </select>
+                    </div>
+                    <div className={pageStyles.modalField}>
+                      <label className={pageStyles.modalLabel} htmlFor="repat-provider">
+                        Transport provider
+                      </label>
+                      <select
+                        id="repat-provider"
+                        className={pageStyles.modalSelect}
+                        data-testid="ward-out-of-area-repat-provider"
+                        value={repatDraft.provider ?? NO_TRANSPORT_PROVIDER_VALUE}
+                        onChange={(e) => {
+                          const next = e.target.value;
+                          setRepatDraft((current) => ({
+                            ...current,
+                            provider: TRANSPORT_PROVIDERS.includes(next as TransportProvider)
+                              ? (next as TransportProvider)
+                              : undefined,
+                          }));
+                        }}
+                      >
+                        <option value={NO_TRANSPORT_PROVIDER_VALUE}>Choose the provider</option>
+                        {TRANSPORT_PROVIDERS.map((provider) => (
+                          <option key={provider} value={provider}>
+                            {provider}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className={pageStyles.modalField}>
+                      <label className={pageStyles.modalLabel} htmlFor="repat-cad">
+                        CAD (dispatch) number
+                      </label>
                       <input
-                        type="radio"
-                        name="repat-ward-agreed"
-                        checked={repatDraft.receivingWardAgreed === answer.value}
-                        onChange={() => setRepatDraft((current) => ({ ...current, receivingWardAgreed: answer.value }))}
+                        id="repat-cad"
+                        type="text"
+                        className={pageStyles.modalInput}
+                        data-testid="ward-out-of-area-repat-cad"
+                        value={repatDraft.cadNumber}
+                        onChange={(e) => setRepatDraft((current) => ({ ...current, cadNumber: e.target.value }))}
                       />
-                      {answer.label}
-                    </label>
-                  ))}
-                </fieldset>
-                <div>
-                  <label className={pageStyles.modalLabel} htmlFor="repat-mode">
-                    Road or flight
-                  </label>
-                  <select
-                    id="repat-mode"
-                    className={pageStyles.modalSelect}
-                    data-testid="ward-out-of-area-repat-mode"
-                    value={repatDraft.mode}
-                    onChange={(e) =>
-                      setRepatDraft((current) => ({
-                        ...current,
-                        mode: REPATRIATION_MODES.includes(e.target.value as (typeof REPATRIATION_MODES)[number])
-                          ? (e.target.value as (typeof REPATRIATION_MODES)[number])
-                          : "",
-                      }))
-                    }
-                  >
-                    <option value={NO_REPAT_MODE_VALUE}>Choose road or flight</option>
-                    {REPATRIATION_MODES.map((mode) => (
-                      <option key={mode} value={mode}>
-                        {mode === "road" ? "Road" : "Flight"}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={pageStyles.modalLabel} htmlFor="repat-provider">
-                    Transport provider
-                  </label>
-                  <select
-                    id="repat-provider"
-                    className={pageStyles.modalSelect}
-                    data-testid="ward-out-of-area-repat-provider"
-                    value={repatDraft.provider ?? NO_TRANSPORT_PROVIDER_VALUE}
-                    onChange={(e) => {
-                      const next = e.target.value;
-                      setRepatDraft((current) => ({
-                        ...current,
-                        provider: TRANSPORT_PROVIDERS.includes(next as TransportProvider)
-                          ? (next as TransportProvider)
-                          : undefined,
-                      }));
-                    }}
-                  >
-                    <option value={NO_TRANSPORT_PROVIDER_VALUE}>Choose the provider</option>
-                    {TRANSPORT_PROVIDERS.map((provider) => (
-                      <option key={provider} value={provider}>
-                        {provider}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={pageStyles.modalLabel} htmlFor="repat-cad">
-                    Tracking or CAD number
-                  </label>
-                  <input
-                    id="repat-cad"
-                    type="text"
-                    className={pageStyles.modalInput}
-                    data-testid="ward-out-of-area-repat-cad"
-                    value={repatDraft.cadNumber}
-                    onChange={(e) => setRepatDraft((current) => ({ ...current, cadNumber: e.target.value }))}
-                  />
-                </div>
-                <fieldset className={pageStyles.modalFieldset} data-testid="ward-out-of-area-repat-legal">
-                  <legend className={pageStyles.modalLabel}>Is the transport voluntary or involuntary?</legend>
-                  {TRANSPORT_LEGAL_STATUSES.map((status) => (
-                    <label key={status} className={pageStyles.modalOption}>
+                    </div>
+                    <div className={pageStyles.modalField}>
+                      <label className={pageStyles.modalLabel} htmlFor="repat-estimated-time">
+                        Estimated time (24-hour, HH:MM)
+                      </label>
                       <input
-                        type="radio"
-                        name="repat-legal"
-                        value={status}
-                        checked={repatDraft.transportLegalStatus === status}
-                        onChange={() => setRepatDraft((current) => ({ ...current, transportLegalStatus: status }))}
+                        id="repat-estimated-time"
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="HH:MM"
+                        className={pageStyles.modalInput}
+                        data-testid="ward-out-of-area-repat-estimated-time"
+                        value={repatDraft.estimatedTime}
+                        onChange={(e) => setRepatDraft((current) => ({ ...current, estimatedTime: e.target.value }))}
                       />
-                      {TRANSPORT_LEGAL_STATUS_LABELS[status]}
-                    </label>
-                  ))}
-                </fieldset>
-                <div>
-                  <label className={pageStyles.modalLabel} htmlFor="repat-estimated-time">
-                    Estimated time (24-hour, HH:MM)
-                  </label>
-                  <input
-                    id="repat-estimated-time"
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="HH:MM"
-                    className={pageStyles.modalInput}
-                    data-testid="ward-out-of-area-repat-estimated-time"
-                    value={repatDraft.estimatedTime}
-                    onChange={(e) => setRepatDraft((current) => ({ ...current, estimatedTime: e.target.value }))}
-                  />
+                    </div>
+                    <fieldset className={pageStyles.modalFieldset} data-testid="ward-out-of-area-repat-estimated-day">
+                      <legend className={pageStyles.modalLabel}>Today or tomorrow?</legend>
+                      <div className={pageStyles.segmentedControl}>
+                        {(["today", "tomorrow"] as const).map((day) => (
+                          <label
+                            key={day}
+                            className={`${pageStyles.segmentedOption} ${repatDraft.estimatedDay === day ? pageStyles.segmentedOptionActive : ""}`}
+                          >
+                            <input
+                              type="radio"
+                              name="repat-estimated-day"
+                              className={pageStyles.accessibleHiddenInput}
+                              value={day}
+                              checked={repatDraft.estimatedDay === day}
+                              onChange={() => setRepatDraft((current) => ({ ...current, estimatedDay: day }))}
+                            />
+                            <span>{day === "today" ? "Today" : "Tomorrow"}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                  </div>
                 </div>
-                <fieldset className={pageStyles.modalFieldset} data-testid="ward-out-of-area-repat-estimated-day">
-                  <legend className={pageStyles.modalLabel}>Today or tomorrow?</legend>
-                  {(["today", "tomorrow"] as const).map((day) => (
-                    <label key={day} className={pageStyles.modalOption}>
-                      <input
-                        type="radio"
-                        name="repat-estimated-day"
-                        value={day}
-                        checked={repatDraft.estimatedDay === day}
-                        onChange={() => setRepatDraft((current) => ({ ...current, estimatedDay: day }))}
-                      />
-                      {day === "today" ? "Today" : "Tomorrow"}
-                    </label>
-                  ))}
-                </fieldset>
                 {repatFormNotice ? (
                   <p className={pageStyles.modalNotice} role="alert" data-testid="ward-out-of-area-repat-blocked">
                     {repatFormNotice}
@@ -906,43 +1424,23 @@ export function sinceArrivalLabel(entry: OutOfAreaEntry, now: Instant): string {
  * Geometric, non-color status glyph for placement status pills.
  */
 export function PlacementStatusGlyph({ tone }: { tone: "accent" | "danger" | "warn" }) {
+  const glyphClass = `${pageStyles.placementGlyph} ${styles.placementGlyph}`;
   if (tone === "danger") {
     return (
-      <svg
-        className={styles.placementGlyph}
-        viewBox="0 0 12 12"
-        width="10"
-        height="10"
-        aria-hidden="true"
-        fill="currentColor"
-      >
+      <svg className={glyphClass} viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" fill="currentColor">
         <path d="M6 1.5 1 10.5h10L6 1.5Z" />
       </svg>
     );
   }
   if (tone === "warn") {
     return (
-      <svg
-        className={styles.placementGlyph}
-        viewBox="0 0 12 12"
-        width="10"
-        height="10"
-        aria-hidden="true"
-        fill="currentColor"
-      >
+      <svg className={glyphClass} viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" fill="currentColor">
         <path d="M6 1 11 6 6 11 1 6Z" />
       </svg>
     );
   }
   return (
-    <svg
-      className={styles.placementGlyph}
-      viewBox="0 0 12 12"
-      width="10"
-      height="10"
-      aria-hidden="true"
-      fill="currentColor"
-    >
+    <svg className={glyphClass} viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" fill="currentColor">
       <circle cx="6" cy="6" r="4" />
     </svg>
   );

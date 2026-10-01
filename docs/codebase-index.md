@@ -89,6 +89,7 @@ Both paths are owner-scoped: `owner-scope.ts`, `query-privacy.ts`, `authorizatio
 | `tests/`    | Vitest unit (`*.test.ts`) + Playwright E2E (`ui-*.spec.ts`)                                                                                            |
 | `docs/`     | Runbooks, governance, search/RAG plans, generated sitemap; design-system system of record is [`docs/design-system/README.md`](design-system/README.md) |
 | `public/`   | Static assets (`public/llms.txt`)                                                                                                                      |
+| `backend/`  | Standalone Ward Flow backend services and Azure Functions                                                                                              |
 | `.github/`  | CI workflows, PR template (clinical governance preflight)                                                                                              |
 
 Smaller top-level directories that are easy to miss:

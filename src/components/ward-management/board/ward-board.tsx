@@ -806,11 +806,11 @@ function PersonEntry({
           </div>
           <div className={styles.catchmentItem}>
             <span className={styles.catchmentLabel}>Suburb</span>
-            <span className={styles.catchmentValue}>{patient?.suburb ?? "Bassendean"}</span>
+            <span className={styles.catchmentValue}>{patient?.suburb ?? "Not recorded"}</span>
           </div>
           <div className={styles.catchmentItem}>
             <span className={styles.catchmentLabel}>Community Team</span>
-            <span className={styles.catchmentValue}>{patient?.catchmentCommunityTeam ?? "Midland Community Team"}</span>
+            <span className={styles.catchmentValue}>{patient?.catchmentCommunityTeam ?? "Not recorded"}</span>
           </div>
           <div className={styles.catchmentItem}>
             <span className={styles.catchmentLabel}>Legal Status</span>
@@ -1290,15 +1290,14 @@ export function WardBoard({
      see the stamp's own comment in the heading below. */
   const stamp = asAtStamp(now);
 
+  const occupantByKey = new Map(occupants.map((occupant) => [occupant.key, occupant]));
+
   const selectedTile = selectedKey === null ? null : (tiles.find((tile) => tile.key === selectedKey) ?? null);
   const selectedOccupant =
     selectedTile === null || (selectedTile.kind !== "occupied" && selectedTile.kind !== "waiting")
       ? null
-      : (occupants.find((occupant) => occupant.key === selectedTile.key) ?? null);
-  const blockedTileCount = tiles.filter((tile) => tile.kind === "blocked").length;
-  const emptyTileCount = tiles.filter((tile) => tile.kind === "empty").length;
+      : (occupantByKey.get(selectedTile.key) ?? null);
 
-  const occupantByKey = new Map(occupants.map((occupant) => [occupant.key, occupant]));
   const tileMatchesFilter = (tile: Tile, filter: BoardFilter): boolean => {
     const occupant = occupantByKey.get(tile.key);
     switch (filter) {
@@ -1315,29 +1314,62 @@ export function WardBoard({
       case "quiet":
         return tile.kind === "occupied" && occupant !== undefined && occupant.expectedDays === null;
       case "all":
+      default:
         return true;
     }
   };
-  const filteredTiles = tiles.filter((tile) => tileMatchesFilter(tile, bedFilter));
+
+  let lookCount = 0;
+  let readyCount = 0;
+  let quietCount = 0;
+  let blockedTileCount = 0;
+  let emptyTileCount = 0;
+  const filteredTiles: Tile[] = [];
+
+  for (const tile of tiles) {
+    if (tile.kind === "blocked") blockedTileCount++;
+    if (tile.kind === "empty") emptyTileCount++;
+
+    const isLook = tileMatchesFilter(tile, "look");
+    const isReady = tileMatchesFilter(tile, "ready");
+    const isQuiet = tileMatchesFilter(tile, "quiet");
+
+    if (isLook) lookCount++;
+    if (isReady) readyCount++;
+    if (isQuiet) quietCount++;
+
+    if (tileMatchesFilter(tile, bedFilter)) {
+      filteredTiles.push(tile);
+    }
+  }
+
+  const filterCounts: Record<BoardFilter, number> = {
+    all: tiles.length,
+    look: lookCount,
+    ready: readyCount,
+    quiet: quietCount,
+  };
+
+  const tileIndexMap = new Map<Tile, number>();
+  for (let i = 0; i < tiles.length; i++) {
+    tileIndexMap.set(tiles[i], i);
+  }
+
   const orderedTiles = [...tiles].sort((a, b) => {
-    if (bedOrder === "recorded") return tiles.indexOf(a) - tiles.indexOf(b);
+    const aIdx = tileIndexMap.get(a) ?? 0;
+    const bIdx = tileIndexMap.get(b) ?? 0;
+    if (bedOrder === "recorded") return aIdx - bIdx;
     const aOccupant = occupantByKey.get(a.key);
     const bOccupant = occupantByKey.get(b.key);
     if (bedOrder === "stay") {
       const aDays = aOccupant?.days ?? -1;
       const bDays = bOccupant?.days ?? -1;
-      return bDays - aDays || tiles.indexOf(a) - tiles.indexOf(b);
+      return bDays - aDays || aIdx - bIdx;
     }
     const aExpected = aOccupant?.expectedDays ?? Number.POSITIVE_INFINITY;
     const bExpected = bOccupant?.expectedDays ?? Number.POSITIVE_INFINITY;
-    return aExpected - bExpected || tiles.indexOf(a) - tiles.indexOf(b);
+    return aExpected - bExpected || aIdx - bIdx;
   });
-  const filterCounts: Record<BoardFilter, number> = {
-    all: tiles.length,
-    look: tiles.filter((tile) => tileMatchesFilter(tile, "look")).length,
-    ready: tiles.filter((tile) => tileMatchesFilter(tile, "ready")).length,
-    quiet: tiles.filter((tile) => tileMatchesFilter(tile, "quiet")).length,
-  };
 
   const onFlowTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     const currentIndex = FLOW_TABS.indexOf(flowTab);
@@ -1608,8 +1640,6 @@ export function WardBoard({
         return;
       }
 
-      dialogTriggerRef.current =
-        typeof document !== "undefined" ? (document.activeElement as HTMLElement | null) : null;
       setPendingConfirm({
         kind: "leaving",
         who: item.who || nameFor(item.selectableKey),
@@ -2779,7 +2809,7 @@ export function WardBoard({
                 destinations and people lists ARE ordered and say so in visible prose. */}
             <ul className={styles.beds} data-testid="ward-board-beds" aria-label="Beds on this ward" tabIndex={0}>
               {orderedTiles.map((tile) => {
-                const index = tiles.indexOf(tile);
+                const index = tileIndexMap.get(tile) ?? tiles.indexOf(tile);
                 const selected = tile.key === selectedKey;
                 const tileOccupant = occupantByKey.get(tile.key);
                 return (
@@ -2999,21 +3029,56 @@ export function WardBoard({
             </div>
 
             {selectedTile === null ? (
-              /*
-               * THE EMPTY-SELECTION STATE, MOVED HERE from a separate hint under the grid.
-               *
-               * The original decision stands and is why this is not a blank box: auto-selecting an
-               * occupant would read as the system having picked a person out of the ward, and an
-               * empty column reads as a panel that failed to load. Both are still refused — the
-               * absence is STATED, in the same words, including "nobody is chosen for you".
-               *
-               * What changed is where it is said. The hint and this panel were about to carry the
-               * same sentence a column apart, which is the duplication the owner objected to
-               * elsewhere on this page. It belongs in the region it describes.
-               */
-              <p className={styles.detailEmpty} data-testid="ward-board-select-hint">
-                Choose a bed to view its record.
-              </p>
+              <div className={styles.detailEmptyWrapper}>
+                <div className={styles.detailEmptyCard}>
+                  <div className={styles.detailEmptyIcon} aria-hidden="true">
+                    <svg
+                      width="28"
+                      height="28"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M2 4v16" />
+                      <path d="M2 8h18a2 2 0 0 1 2 2v10" />
+                      <path d="M2 17h20" />
+                      <path d="M6 8v9" />
+                    </svg>
+                  </div>
+                  <div className={styles.detailEmptyTitle}>Bed Inspector & Trajectory</div>
+                  <p className={styles.detailEmpty} data-testid="ward-board-select-hint">
+                    Choose a bed to view its record.
+                  </p>
+                  <div className={styles.detailEmptyGuide}>
+                    <div className={styles.detailEmptyGuideItem}>
+                      <span className={styles.detailEmptyBullet} aria-hidden="true">
+                        ●
+                      </span>
+                      <span>Occupant identity, stay length & trajectory</span>
+                    </div>
+                    <div className={styles.detailEmptyGuideItem}>
+                      <span className={styles.detailEmptyBullet} aria-hidden="true">
+                        ●
+                      </span>
+                      <span>Discharge barriers & expected departure plan</span>
+                    </div>
+                    <div className={styles.detailEmptyGuideItem}>
+                      <span className={styles.detailEmptyBullet} aria-hidden="true">
+                        ●
+                      </span>
+                      <span>Catchment corridor & destination clinic link</span>
+                    </div>
+                  </div>
+                  <div className={styles.detailEmptyStats}>
+                    <span className={styles.detailEmptyBadge}>
+                      {unit.beds} beds · {available} ready now
+                    </span>
+                  </div>
+                </div>
+              </div>
             ) : (
               <>
                 {selectedTile.kind === "occupied" || selectedTile.kind === "waiting" ? (
@@ -3534,7 +3599,7 @@ export function WardBoard({
                   style={{
                     background: "transparent",
                     border: "none",
-                    color: "var(--text-muted)",
+                    color: "var(--ink-soft)",
                     cursor: "pointer",
                     fontSize: "1.25rem",
                     padding: "0.25rem 0.5rem",
@@ -3547,7 +3612,7 @@ export function WardBoard({
 
               <p
                 id="confirm-dialog-description"
-                style={{ margin: 0, fontSize: "0.95rem", color: "var(--text-muted)", lineHeight: 1.5 }}
+                style={{ margin: 0, fontSize: "0.95rem", color: "var(--ink-soft)", lineHeight: 1.5 }}
               >
                 {pendingConfirm.kind === "leaving" ? (
                   <>

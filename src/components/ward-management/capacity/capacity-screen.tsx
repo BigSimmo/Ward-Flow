@@ -144,8 +144,8 @@ export function CapacityScreen() {
   // nothing and stops the next figure added here inheriting a silent `[]`.
   const networkRows = networkWardRows(units, now, bedReleases, admissions, leaveBeds);
   const netTotals = networkTotals(networkRows);
+  const totalOccupied = networkRows.reduce((sum, row) => sum + row.occupied, 0);
   const selectedRow = networkRows.find((row) => row.unit.id === selectedUnitId);
-  const latestConfirmation = networkRows.length ? Math.max(...networkRows.map((row) => row.confirmedAt)) : null;
   const totalLockedReady = networkRows.reduce((sum, row) => sum + row.lockedReady, 0);
   const totalOpenReady = netTotals.ready - totalLockedReady;
 
@@ -269,7 +269,79 @@ export function CapacityScreen() {
           what a reader opens, and a component nothing routes to cannot disclose to anybody.
         */}
         <header className={styles.pageHeader}>
-          <h1 className={styles.pageTitle}>Capacity</h1>
+          <div className={styles.pageTitleBlock}>
+            <h1 className={styles.pageTitle}>Capacity</h1>
+            <span className={styles.pageSubtitle}>Statewide Inpatient Directory · Real-time census</span>
+          </div>
+
+          <div className={styles.telemetryCapsule} aria-label="Statewide Bed Telemetry">
+            <div
+              className={`${styles.telemetryItem} ${styles.interactiveItem}`}
+              onClick={() => setNetworkFilterId("all")}
+              role="button"
+              tabIndex={0}
+              title="Click to view all operational wards"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") setNetworkFilterId("all");
+              }}
+            >
+              <span className={styles.telemetryLabel}>Wards</span>
+              <span className={styles.telemetryVal}>{networkRows.length}</span>
+              <span className={styles.telemetrySub}>{networkServiceGroups.length} clusters</span>
+            </div>
+
+            <div
+              className={styles.telemetryItem}
+              title={`${netTotals.beds} total staffed beds, ${totalOccupied} occupied (${((totalOccupied / netTotals.beds) * 100).toFixed(1)}% occupancy)`}
+            >
+              <span className={styles.telemetryLabel}>Beds</span>
+              <span className={styles.telemetryVal}>{netTotals.beds}</span>
+              <div
+                className={styles.microMeter}
+                aria-hidden="true"
+                title={`${((totalOccupied / netTotals.beds) * 100).toFixed(1)}% Occupancy`}
+              >
+                <div
+                  className={styles.microMeterBar}
+                  style={{
+                    width: `${netTotals.beds > 0 ? ((totalOccupied / netTotals.beds) * 100).toFixed(1) : 0}%`,
+                  }}
+                />
+              </div>
+              <span className={styles.telemetrySub}>
+                {netTotals.beds > 0 ? ((totalOccupied / netTotals.beds) * 100).toFixed(1) : 0}% occ
+              </span>
+            </div>
+
+            <div
+              className={`${styles.telemetryItem} ${styles.interactiveItem}`}
+              onClick={() => setNetworkFilterId("has-bed-ready")}
+              role="button"
+              tabIndex={0}
+              title="Click to filter wards with available beds"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") setNetworkFilterId("has-bed-ready");
+              }}
+            >
+              <span className={styles.telemetryLabel}>Available</span>
+              <span className={styles.telemetryPillGood}>{netTotals.ready} Ready</span>
+            </div>
+
+            <div
+              className={`${styles.telemetryItem} ${styles.interactiveItem}`}
+              onClick={() => setNetworkFilterId("has-locked-bed-ready")}
+              role="button"
+              tabIndex={0}
+              title="Click to filter locked / HDU units"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") setNetworkFilterId("has-locked-bed-ready");
+              }}
+            >
+              <span className={styles.telemetryLabel}>Locked/HDU</span>
+              <span className={styles.telemetryPillDanger}>{totalLockedReady}</span>
+              <span className={styles.telemetrySub}>0 1:1</span>
+            </div>
+          </div>
         </header>
 
         {/*
@@ -357,12 +429,37 @@ export function CapacityScreen() {
                 ))}
               </tbody>
               <tfoot>
-                <tr className={styles.totalRow} data-testid="ward-capacity-gap-total">
-                  <th scope="row">All four together</th>
+                <tr
+                  className={`${styles.totalRow} ${gapTotals.gap < 0 ? styles.gapCardDeficit : styles.gapCardBalanced}`}
+                  data-testid="ward-capacity-gap-total"
+                >
+                  <th scope="row">
+                    <div className={styles.gapHeader}>
+                      <span className={styles.cohortIconWrap} aria-hidden="true">
+                        <CohortIcon need="All four together" />
+                      </span>
+                      <strong className={styles.gapNeedText}>All four together</strong>
+                    </div>
+                  </th>
                   <td data-testid="ward-capacity-waiting">{gapTotals.waiting}</td>
                   <td data-testid="ward-capacity-beds-that-fit">{gapTotals.bedsThatFit}</td>
                   <td data-testid="ward-capacity-gap-value">
-                    <GapWord gap={gapTotals.gap} /> <span className={styles.gapNumber}>{formatGap(gapTotals.gap)}</span>
+                    <div className={styles.gapValueContainer}>
+                      <GapWord gap={gapTotals.gap} />{" "}
+                      <span className={styles.gapNumber}>{formatGap(gapTotals.gap)}</span>
+                    </div>
+                    <div
+                      className={styles.gapMicroGauge}
+                      aria-hidden="true"
+                      title={`${gapTotals.bedsThatFit} fit vs ${gapTotals.waiting} waiting`}
+                    >
+                      <div
+                        className={`${styles.gapGaugeFill} ${gapTotals.gap < 0 ? styles.gaugeDeficit : styles.gaugeGood}`}
+                        style={{
+                          width: `${gapTotals.waiting > 0 ? Math.min(100, Math.round((gapTotals.bedsThatFit / gapTotals.waiting) * 100)) : 100}%`,
+                        }}
+                      />
+                    </div>
                   </td>
                   <td>{totalsSentence(gapTotals)}</td>
                 </tr>
@@ -551,17 +648,22 @@ export function CapacityScreen() {
                 />
                 <label className={styles.sortControl}>
                   <span className={styles.sortLabel}>Order</span>
-                  <select
-                    id="capacity-ward-sort"
-                    name="wardSort"
-                    aria-label="Sort wards"
-                    value={wardSort}
-                    onChange={(event) => setWardSort(event.target.value)}
-                  >
-                    <option value="name">Ward A–Z</option>
-                    <option value="ready">Most ready</option>
-                    <option value="confirmation">Oldest confirmation</option>
-                  </select>
+                  <div className={styles.sortSelectWrap}>
+                    <select
+                      id="capacity-ward-sort"
+                      name="wardSort"
+                      aria-label="Sort wards"
+                      value={wardSort}
+                      onChange={(event) => setWardSort(event.target.value)}
+                    >
+                      <option value="name">Ward A–Z</option>
+                      <option value="ready">Most ready</option>
+                      <option value="confirmation">Oldest confirmation</option>
+                    </select>
+                    <span className={styles.sortChevron} aria-hidden="true">
+                      ▾
+                    </span>
+                  </div>
                 </label>
               </div>
               <div className={styles.networkBody} role="region" aria-label="Ward capacity table" tabIndex={0}>
@@ -785,17 +887,118 @@ function gapWord(gap: number): { level: WardChipLevel; text: string } {
   return { level: "accepted", text: "Spare capacity" };
 }
 
-function GapRow({ row }: { row: BedKindGap }) {
+function CohortIcon({ need }: { need: string }) {
+  const n = need.toLowerCase();
+  if (n.includes("locked")) {
+    return (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      </svg>
+    );
+  }
+  if (n.includes("open")) {
+    return (
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        aria-hidden="true"
+      >
+        <path d="M4 18v3M20 18v3M2 12h20M4 12V8a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v4" />
+      </svg>
+    );
+  }
+  if (n.includes("older")) {
+    return (
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="7" r="4" />
+        <path d="M5.5 21a8.5 8.5 0 0 1 13 0" />
+      </svg>
+    );
+  }
+  if (n.includes("youth")) {
+    return (
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="8" r="5" />
+        <path d="M12 13v8M9 17l3-4 3 4" />
+      </svg>
+    );
+  }
   return (
-    <tr data-testid={`ward-capacity-gap-row-${row.id}`}>
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <line x1="2" y1="12" x2="22" y2="12" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
+  );
+}
+
+function GapRow({ row }: { row: BedKindGap }) {
+  const isDeficit = row.gap < 0;
+  const isBalanced = row.gap === 0;
+  const fillPct = row.waiting > 0 ? Math.min(100, Math.round((row.bedsThatFit / row.waiting) * 100)) : 100;
+  return (
+    <tr
+      data-testid={`ward-capacity-gap-row-${row.id}`}
+      className={isDeficit ? styles.gapCardDeficit : isBalanced ? styles.gapCardBalanced : styles.gapCardSurplus}
+    >
       <td>
-        <strong>{row.need}</strong>
+        <div className={styles.gapHeader}>
+          <span className={styles.cohortIconWrap} aria-hidden="true">
+            <CohortIcon need={row.need} />
+          </span>
+          <strong className={styles.gapNeedText}>{row.need}</strong>
+        </div>
         <div className={styles.who}>{row.who}</div>
       </td>
       <td data-testid="ward-capacity-waiting">{row.waiting}</td>
       <td data-testid="ward-capacity-beds-that-fit">{row.bedsThatFit}</td>
       <td data-testid="ward-capacity-gap-value">
-        <GapWord gap={row.gap} /> <span className={styles.gapNumber}>{formatGap(row.gap)}</span>
+        <div className={styles.gapValueContainer}>
+          <GapWord gap={row.gap} /> <span className={styles.gapNumber}>{formatGap(row.gap)}</span>
+        </div>
+        <div
+          className={styles.gapMicroGauge}
+          aria-hidden="true"
+          title={`${row.bedsThatFit} fit vs ${row.waiting} waiting (${fillPct}% covered)`}
+        >
+          <div
+            className={`${styles.gapGaugeFill} ${isDeficit ? styles.gaugeDeficit : styles.gaugeGood}`}
+            style={{ width: `${fillPct}%` }}
+          />
+        </div>
       </td>
       <td>{rowSentence(row)}</td>
     </tr>

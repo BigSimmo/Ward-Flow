@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ward Flow - Elevated Capacity Table Mockup</title>
+    <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+    <style>
+      :root {
+        --bg: #f8fafc;
+        --card: #ffffff;
+        --card-subtle: #f1f5f9;
+        --border: #e2e8f0;
+        --border-strong: #cbd5e1;
+        --text: #0f172a;
+        --text-muted: #64748b;
+        --primary: #0284c7;
+        --primary-hover: #0369a1;
+        --success: #15803d;
+        --success-bg: #dcfce7;
+        --success-border: #86efac;
+        --warning: #b45309;
+        --warning-bg: #fef3c7;
+        --warning-border: #fde68a;
+        --danger: #b91c1c;
+        --danger-bg: #fee2e2;
+        --danger-border: #fca5a5;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #090d16;
+          --card: #131b2e;
+          --card-subtle: #1e293b;
+          --border: #22324f;
+          --border-strong: #334155;
+          --text: #f1f5f9;
+          --text-muted: #94a3b8;
+          --primary: #38bdf8;
+          --primary-hover: #0284c7;
+          --success: #4ade80;
+          --success-bg: rgba(34, 197, 94, 0.15);
+          --success-border: rgba(34, 197, 94, 0.3);
+          --warning: #fbbf24;
+          --warning-bg: rgba(245, 158, 11, 0.15);
+          --warning-border: rgba(245, 158, 11, 0.3);
+          --danger: #f87171;
+          --danger-bg: rgba(239, 68, 68, 0.15);
+          --danger-border: rgba(239, 68, 68, 0.3);
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-[var(--bg)] text-[var(--text)] antialiased p-4 md:p-6 font-sans min-h-screen">
+    <div class="max-w-7xl mx-auto space-y-4">
+      <!-- Header & Top Navigation Bar -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm space-y-4">
+        <!-- Top Title & Network Census Line -->
+        <div
+          class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[var(--border)]"
+        >
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <h1 class="text-xl font-bold tracking-tight">Statewide Ward Capacity</h1>
+              <span
+                class="px-2 py-0.5 text-xs font-semibold rounded-md bg-[var(--card-subtle)] text-[var(--text-muted)] border border-[var(--border)]"
+              >
+                Live Network
+              </span>
+            </div>
+            <p class="text-xs text-[var(--text-muted)] mt-0.5">
+              Real-time mental health bed-state, acute intake capability & flow forecast
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2 self-start md:self-auto text-xs">
+            <span
+              class="px-3 py-1.5 rounded-lg bg-[var(--card-subtle)] border border-[var(--border)] font-medium text-[var(--text)]"
+            >
+              <strong id="match-count" class="text-sky-600 dark:text-sky-400 font-bold">22</strong> of 22 wards matching
+            </span>
+            <span
+              class="px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-semibold"
+            >
+              19 Ready Beds Total
+            </span>
+          </div>
+        </div>
+
+        <!-- Elevated Filter Tabs, Search & Sort Control Bar -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <!-- Segmented Tab Navigation -->
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none" role="tablist">
+            <button
+              type="button"
+              onclick="setFilter('all')"
+              id="tab-all"
+              class="filter-tab active flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm bg-sky-600 text-white border border-sky-600"
+            >
+              All Wards
+              <span class="px-1.5 py-0.2 rounded-full text-[11px] bg-white/20 text-white">22</span>
+            </button>
+
+            <button
+              type="button"
+              onclick="setFilter('ready')"
+              id="tab-ready"
+              class="filter-tab flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all bg-[var(--card-subtle)] text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--border)] border border-[var(--border)]"
+            >
+              Has Bed Ready
+              <span
+                class="px-1.5 py-0.2 rounded-full text-[11px] bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 font-semibold"
+                >19</span
+              >
+            </button>
+
+            <button
+              type="button"
+              onclick="setFilter('locked')"
+              id="tab-locked"
+              class="filter-tab flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all bg-[var(--card-subtle)] text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--border)] border border-[var(--border)]"
+            >
+              Locked Bed Ready
+              <span
+                class="px-1.5 py-0.2 rounded-full text-[11px] bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 font-semibold"
+                >6</span
+              >
+            </button>
+
+            <button
+              type="button"
+              onclick="setFilter('confirming')"
+              id="tab-confirming"
+              class="filter-tab flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all bg-[var(--card-subtle)] text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--border)] border border-[var(--border)]"
+            >
+              Needs Confirming
+              <span
+                class="px-1.5 py-0.2 rounded-full text-[11px] bg-rose-100 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 font-semibold"
+                >1</span
+              >
+            </button>
+          </div>
+
+          <!-- Integrated Search and Sort -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <div class="relative flex-1 sm:w-60">
+              <svg
+                class="absolute left-3 top-2.5 w-3.5 h-3.5 text-[var(--text-muted)]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              <input
+                type="text"
+                id="search-input"
+                oninput="handleSearch(this.value)"
+                placeholder="Search ward or hospital..."
+                class="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-[var(--card-subtle)] border border-[var(--border)] text-[var(--text)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all"
+              />
+            </div>
+
+            <div
+              class="flex items-center gap-1.5 bg-[var(--card-subtle)] border border-[var(--border)] rounded-xl px-2.5 py-1"
+            >
+              <span class="text-xs text-[var(--text-muted)] font-medium">Sort:</span>
+              <select
+                id="sort-select"
+                onchange="handleSort(this.value)"
+                class="bg-transparent text-xs font-semibold text-[var(--text)] focus:outline-none cursor-pointer"
+              >
+                <option value="name">Ward A–Z</option>
+                <option value="ready">Most Ready Beds</option>
+                <option value="discharges">Highest Discharges Due</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main High-Yield Table Container -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <!-- Column Headers -->
+            <thead>
+              <tr
+                class="bg-[var(--card-subtle)] border-b border-[var(--border)] text-[var(--text-muted)] uppercase tracking-wider text-[11px] font-semibold select-none"
+              >
+                <th scope="col" class="py-3 px-4 w-72">Ward & Site</th>
+                <th scope="col" class="py-3 px-3 w-32">Bed Designation</th>
+                <th scope="col" class="py-3 px-3 text-center w-28 bg-emerald-50/50 dark:bg-emerald-950/20">
+                  <span class="text-emerald-700 dark:text-emerald-300">Ready Now</span>
+                </th>
+                <th scope="col" class="py-3 px-3 text-center w-20">Locked</th>
+                <th scope="col" class="py-3 px-3 text-center w-24">Occupancy</th>
+                <th scope="col" class="py-3 px-3 text-center w-28">Discharges Due</th>
+                <th scope="col" class="py-3 px-3 text-center w-36">Held Up Releases</th>
+                <th scope="col" class="py-3 px-3 text-center w-28">MHA Auth</th>
+                <th scope="col" class="py-3 px-4 text-right w-44">Confirmation</th>
+              </tr>
+            </thead>
+
+            <!-- Table Bodies Grouped by Health Service -->
+            <tbody id="table-content" class="divide-y divide-[var(--border)]">
+              <!-- Dynamically Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table Footer / Helper Strip -->
+        <div
+          class="p-3 bg-[var(--card-subtle)] border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between text-xs text-[var(--text-muted)] gap-2"
+        >
+          <div class="flex items-center gap-3">
+            <span class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Available Bed
+            </span>
+            <span class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span> Locked Bed
+            </span>
+            <span class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-rose-500"></span> Discharge Held Up
+            </span>
+          </div>
+          <div class="text-[11px]">Click any row to inspect ward bed map & discharge records</div>
+        </div>
+      </div>
+
+      <!-- Interactive Selected Ward Inspector Modal / Drawer Simulation -->
+      <div
+        id="ward-drawer"
+        class="hidden bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-lg space-y-4"
+      >
+        <div class="flex items-start justify-between pb-3 border-b border-[var(--border)]">
+          <div>
+            <span
+              class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-sky-100 dark:bg-sky-900/50 text-sky-800 dark:text-sky-300"
+            >
+              Ward Detail Inspector
+            </span>
+            <h2 id="drawer-title" class="text-lg font-bold mt-1 text-[var(--text)]">Mental Health Unit</h2>
+            <p id="drawer-subtitle" class="text-xs text-[var(--text-muted)]">
+              Sir Charles Gairdner Hospital · North Metro
+            </p>
+          </div>
+          <button
+            onclick="closeDrawer()"
+            class="px-2.5 py-1 text-xs rounded-lg hover:bg-[var(--card-subtle)] border border-[var(--border)] font-medium"
+          >
+            ✕ Close
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+          <div
+            class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800"
+          >
+            <div class="text-xs text-emerald-800 dark:text-emerald-300 font-medium">Ready Beds</div>
+            <div id="drawer-ready" class="text-xl font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">2</div>
+          </div>
+          <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+            <div class="text-xs text-amber-800 dark:text-amber-300 font-medium">Locked Ready</div>
+            <div id="drawer-locked" class="text-xl font-bold text-amber-700 dark:text-amber-400 mt-0.5">0</div>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-[var(--border)]">
+            <div class="text-xs text-[var(--text-muted)] font-medium">Occupancy</div>
+            <div id="drawer-occupied" class="text-xl font-bold text-[var(--text)] mt-0.5">19 / 24</div>
+          </div>
+          <div class="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800">
+            <div class="text-xs text-rose-800 dark:text-rose-300 font-medium">Discharges Due</div>
+            <div id="drawer-discharges" class="text-xl font-bold text-rose-700 dark:text-rose-400 mt-0.5">4</div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border)]">
+          <button
+            type="button"
+            class="px-3 py-1.5 rounded-xl border border-[var(--border)] text-xs font-semibold hover:bg-[var(--card-subtle)]"
+          >
+            Request Ward Update
+          </button>
+          <button
+            type="button"
+            class="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-sm"
+          >
+            Open Ward In Bed Board →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Complete Seed Data Mirroring Live System
+      const WARD_DATA = [
+        {
+          service: "North Metro",
+          color: "sky",
+          wards: [
+            {
+              id: "graylands-adult-secure",
+              name: "Graylands Adult Secure",
+              hospital: "Graylands Hospital",
+              designation: "Locked Adult",
+              ready: 1,
+              locked: 1,
+              occupied: 18,
+              totalBeds: 20,
+              freeing: 0,
+              confirmed: 0,
+              expected: 2,
+              heldUp: 0,
+              heldUpDetail: "expected release in 2 days",
+              authorised: true,
+              confirmedAt: "10:42 AWST",
+              confirmedBy: "NUM Graylands",
+              stale: false,
+              pendingPrep: 0,
+            },
+            {
+              id: "graylands-older-adult",
+              name: "Graylands Older Adult",
+              hospital: "Graylands Hospital",
+              designation: "Older Adult",
+              ready: 0,
+              locked: 0,
+              occupied: 15,
+              totalBeds: 16,
+              freeing: 0,
+              confirmed: 0,
+              expected: 3,
+              heldUp: 0,
+              heldUpDetail: null,
+              authorised: true,
+              confirmedAt: "10:30 AWST",
+              confirmedBy: "NUM Graylands",
+              stale: false,
+              pendingPrep: 0,
+            },
+            {
+              id: "scgh-adult-open",
+              name: "Mental Health Unit",
+              hospital: "Sir Charles Gairdner Hospital",
+              designation: "Open Adult",
+              ready: 2,
+              locked: 0,
+              occupied: 19,
+              totalBeds: 24,
+              freeing: 0,
+              confirmed: 0,
+              expected: 4,
+              heldUp: 1,
+              heldUpDetail: "held up since 10:42 yesterday",
+              authorised: true,
+              confirmedAt: "10:45 AWST",
+              confirmedBy: "NUM SCGH",
+              stale: false,
+              pendingPrep: 1,
+            },
+            {
+              id: "scgh-older-adult",
+              name: "SCGH Older Adult",
+              hospital: "Sir Charles Gairdner Hospital",
+              designation: "Older Adult",
+              ready: 1,
+              locked: 0,
+              occupied: 14,
+              totalBeds: 16,
+              freeing: 0,
+              confirmed: 0,
+              expected: 4,
+              heldUp: 0,
+              heldUpDetail: null,
+              authorised: false,
+              confirmedAt: "10:15 AWST",
+              confirmedBy: "NUM SCGH",
+              stale: false,
+              pendingPrep: 0,
+            },
+          ],
+        },
+        {
+          service: "East Metro",
+          color: "indigo",
+          wards: [
+            {
+              id: "bty-adult-secure",
+              name: "BTY Adult Secure",
+              hospital: "Bentley Health Service",
+              designation: "Locked & Open",
+              ready: 2,
+              locked: 1,
+              occupied: 22,
+              totalBeds: 26,
+              freeing: 1,
+              confirmed: 1,
+              expected: 3,
+              heldUp: 1,
+              heldUpDetail: "expected release in 1 days",
+              authorised: true,
+              confirmedAt: "10:38 AWST",
+              confirmedBy: "NUM Bentley",
+              stale: false,
+              pendingPrep: 0,
+            },
+            {
+              id: "bty-older-adult",
+              name: "BTY Older Adult",
+              hospital: "Bentley Health Service",
+              designation: "Older Adult",
+              ready: 1,
+              locked: 0,
+              occupied: 17,
+              totalBeds: 18,
+              freeing: 0,
+              confirmed: 0,
+              expected: 1,
+              heldUp: 0,
+              heldUpDetail: null,
+              authorised: true,
+              confirmedAt: "10:22 AWST",
+              confirmedBy: "NUM Bentley",
+              stale: false,
+              pendingPrep: 0,
+            },
+            {
+              id: "emhs-armadale-adult",
+              name: "Moodjar Adult Inpatient",
+              hospital: "Armadale Hospital",
+              designation: "Open Adult",
+              ready: 3,
+              locked: 0,
+              occupied: 24,
+              totalBeds: 28,
+              freeing: 0,
+              confirmed: 0,
+              expected: 5,
+              heldUp: 1,
+              heldUpDetail: "held up since 08:30 today",
+              authorised: true,
+              confirmedAt: "08:15 AWST",
+              confirmedBy: "Feed derived",
+              stale: true, // Needs confirming!
+              pendingPrep: 0,
+            },
+            {
+              id: "emhs-rph-adult",
+              name: "RPH Mental Health Inpatient",
+              hospital: "Royal Perth Hospital",
+              designation: "All Open",
+              ready: 2,
+              locked: 1,
+              occupied: 16,
+              totalBeds: 20,
+              freeing: 0,
+              confirmed: 0,
+              expected: 3,
+              heldUp: 0,
+              heldUpDetail: null,
+              authorised: true,
+              confirmedAt: "10:50 AWST",
+              confirmedBy: "NUM RPH",
+              stale: false,
+              pendingPrep: 0,
+            },
+          ],
+        },
+        {
+          service: "South Metro",
+          color: "teal",
+          wards: [
+            {
+              id: "smhs-fsh-secure",
+              name: "FSH Adult Secure Ward 2K",
+              hospital: "Fiona Stanley Hospital",
+              designation: "12 locked, 6 open",
+              ready: 2,
+              locked: 1,
+              occupied: 15,
+              totalBeds: 18,
+              freeing: 0,
+              confirmed: 0,
+              expected: 2,
+              heldUp: 0,
+              heldUpDetail: null,
+              authorised: true,
+              confirmedAt: "10:52 AWST",
+              confirmedBy: "NUM Fiona Stanley",
+              stale: false,
+              pendingPrep: 0,
+            },
+            {
+              id: "smhs-fremantle-adult",
+              name: "Fremantle Adult Acute",
+              hospital: "Fremantle Hospital",
+              designation: "All Open",
+              ready: 1,
+              locked: 0,
+              occupied: 20,
+              totalBeds: 22,
+              freeing: 0,
+              confirmed: 0,
+              expected: 4,
+              heldUp: 0,
+              heldUpDetail: null,
+              authorised: true,
+              confirmedAt: "10:35 AWST",
+              confirmedBy: "NUM Fremantle",
+              stale: false,
+              pendingPrep: 0,
+            },
+          ],
+        },
+      ];
+
+      let currentFilter = "all";
+      let searchQuery = "";
+      let sortOrder = "name";
+      let collapsedServices = new Set();
+      let selectedWardId = null;
+
+      function renderTable() {
+        const tbody = document.getElementById("table-content");
+        tbody.innerHTML = "";
+
+        let totalMatching = 0;
+
+        WARD_DATA.forEach((group) => {
+          // Filter wards in this group
+          let filteredWards = group.wards.filter((w) => {
+            // Search query filter
+            if (searchQuery) {
+              const q = searchQuery.toLowerCase();
+              const matchName = w.name.toLowerCase().includes(q);
+              const matchHosp = w.hospital.toLowerCase().includes(q);
+              if (!matchName && !matchHosp) return false;
+            }
+            // Segmented tab filter
+            if (currentFilter === "ready") return w.ready > 0;
+            if (currentFilter === "locked") return w.locked > 0;
+            if (currentFilter === "confirming") return w.stale === true;
+            return true;
+          });
+
+          // Sort wards
+          if (sortOrder === "ready") {
+            filteredWards.sort((a, b) => b.ready - a.ready);
+          } else if (sortOrder === "discharges") {
+            filteredWards.sort((a, b) => b.expected - a.expected);
+          } else {
+            filteredWards.sort((a, b) => a.name.localeCompare(b.name));
+          }
+
+          totalMatching += filteredWards.length;
+          if (filteredWards.length === 0) return;
+
+          // Group Rollup Totals
+          const groupReady = filteredWards.reduce((acc, w) => acc + w.ready, 0);
+          const groupLocked = filteredWards.reduce((acc, w) => acc + w.locked, 0);
+          const groupOcc = filteredWards.reduce((acc, w) => acc + w.occupied, 0);
+          const groupTotalBeds = filteredWards.reduce((acc, w) => acc + w.totalBeds, 0);
+          const groupDischarges = filteredWards.reduce((acc, w) => acc + w.expected, 0);
+          const groupHeldUp = filteredWards.reduce((acc, w) => acc + (w.heldUp > 0 ? 1 : 0), 0);
+
+          const isCollapsed = collapsedServices.has(group.service);
+
+          // Service Accordion Header Row
+          const groupTr = document.createElement("tr");
+          groupTr.className = "bg-[var(--card-subtle)] border-y border-[var(--border)] font-semibold select-none";
+          groupTr.innerHTML = `
+          <td colspan="9" class="py-2.5 px-4">
+            <div class="flex items-center justify-between">
+              <button 
+                type="button" 
+                onclick="toggleService('${group.service}')" 
+                class="flex items-center gap-2 text-xs font-bold text-[var(--text)] hover:text-sky-600 transition-colors focus:outline-none"
+              >
+                <span class="inline-flex items-center justify-center w-5 h-5 rounded-md bg-[var(--card)] border border-[var(--border)] text-[10px] transition-transform ${isCollapsed ? "" : "rotate-90"}">
+                  ▶
+                </span>
+                <span>${group.service}</span>
+                <span class="px-2 py-0.5 text-[11px] rounded-full bg-[var(--card)] border border-[var(--border)] text-[var(--text-muted)] font-medium">
+                  ${filteredWards.length} ${filteredWards.length === 1 ? "ward" : "wards"}
+                </span>
+              </button>
+
+              <div class="flex items-center gap-3 text-xs font-medium">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800 font-bold">
+                  ${groupReady} Ready
+                </span>
+                <span class="text-[var(--text-muted)]">
+                  ${groupLocked > 0 ? `${groupLocked} locked · ` : ""}${groupDischarges} due today
+                </span>
+              </div>
+            </div>
+          </td>
+        `;
+          tbody.appendChild(groupTr);
+
+          // Render Ward Rows if not collapsed
+          if (!isCollapsed) {
+            filteredWards.forEach((ward) => {
+              const isSelected = selectedWardId === ward.id;
+              const rowTr = document.createElement("tr");
+              rowTr.className = `transition-colors cursor-pointer border-b border-[var(--border)] hover:bg-[var(--card-subtle)] ${isSelected ? "bg-sky-50 dark:bg-sky-950/40 ring-1 ring-sky-500" : ""}`;
+              rowTr.onclick = () => openDrawer(ward);
+
+              // Ready Bed Badge formatting
+              const readyCell =
+                ward.ready > 0
+                  ? `<div class="inline-flex flex-col items-center">
+                   <span class="px-2.5 py-0.5 rounded-lg bg-emerald-500 text-white font-bold text-xs shadow-sm">
+                     ${ward.ready}
+                   </span>
+                   ${ward.pendingPrep > 0 ? '<span class="text-[10px] text-amber-600 dark:text-amber-400 font-medium mt-0.5">⚡ 1 cleaning</span>' : ""}
+                 </div>`
+                  : `<span class="text-[var(--text-muted)] font-normal">—</span>`;
+
+              // Locked Bed formatting
+              const lockedCell =
+                ward.locked > 0
+                  ? `<span class="px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 font-semibold border border-amber-200 dark:border-amber-800">
+                   ${ward.locked}
+                 </span>`
+                  : `<span class="text-[var(--text-muted)] font-normal">—</span>`;
+
+              // Occupancy ratio
+              const occPct = Math.round((ward.occupied / ward.totalBeds) * 100);
+              const occCell = `
+              <div class="inline-flex flex-col items-center">
+                <span class="font-semibold">${ward.occupied}<span class="text-[var(--text-muted)] font-normal">/${ward.totalBeds}</span></span>
+                <div class="w-12 h-1 bg-[var(--border)] rounded-full mt-1 overflow-hidden">
+                  <div class="h-full bg-slate-500 rounded-full" style="width: ${occPct}%"></div>
+                </div>
+              </div>
+            `;
+
+              // Discharges Due
+              const dischargesCell =
+                ward.expected > 0
+                  ? `<span class="px-2 py-0.5 rounded-md bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 font-semibold border border-sky-200 dark:border-sky-800">
+                   ${ward.expected}
+                 </span>`
+                  : `<span class="text-[var(--text-muted)] font-normal">—</span>`;
+
+              // Held up releases with clean alert chip
+              let heldUpCell = `<span class="text-[var(--text-muted)] font-normal">—</span>`;
+              if (ward.heldUp > 0) {
+                heldUpCell = `
+                <div class="inline-flex flex-col items-center">
+                  <span class="px-2 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-bold border border-rose-200 dark:border-rose-800">
+                    ${ward.heldUp} held up
+                  </span>
+                  ${ward.heldUpDetail ? `<span class="text-[10px] text-rose-600 dark:text-rose-400 mt-0.5">${ward.heldUpDetail}</span>` : ""}
+                </div>
+              `;
+              } else if (ward.heldUpDetail) {
+                heldUpCell = `<span class="text-[10px] text-[var(--text-muted)]">${ward.heldUpDetail}</span>`;
+              }
+
+              // Involuntary Authorized
+              const authCell = ward.authorised
+                ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">Yes</span>`
+                : `<span class="px-2 py-0.5 rounded-md text-[11px] text-[var(--text-muted)] bg-[var(--card-subtle)] border border-[var(--border)]">No</span>`;
+
+              // Confirmation / Request Update
+              const confirmCell = `
+              <div class="flex items-center justify-end gap-2">
+                <div class="text-right">
+                  <div class="font-medium text-[11px] ${ward.stale ? "text-rose-600 dark:text-rose-400 font-bold" : ""}">
+                    ${ward.confirmedAt}
+                  </div>
+                  <div class="text-[10px] text-[var(--text-muted)]">${ward.confirmedBy}</div>
+                </div>
+                <button 
+                  type="button" 
+                  title="Request ward update"
+                  onclick="event.stopPropagation(); alert('Update requested for ' + '${ward.name}');"
+                  class="p-1 rounded-lg hover:bg-[var(--border)] text-[var(--text-muted)] hover:text-sky-600 transition-colors"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                </button>
+              </div>
+            `;
+
+              rowTr.innerHTML = `
+              <td class="py-3 px-4">
+                <div class="font-bold text-[var(--text)] text-xs">${ward.name}</div>
+                <div class="text-[11px] text-[var(--text-muted)] mt-0.5">${ward.hospital}</div>
+              </td>
+              <td class="py-3 px-3">
+                <span class="inline-block px-2 py-0.5 rounded text-[11px] bg-[var(--card-subtle)] border border-[var(--border)] text-[var(--text-muted)]">
+                  ${ward.designation}
+                </span>
+              </td>
+              <td class="py-3 px-3 text-center bg-emerald-50/20 dark:bg-emerald-950/10">${readyCell}</td>
+              <td class="py-3 px-3 text-center">${lockedCell}</td>
+              <td class="py-3 px-3 text-center">${occCell}</td>
+              <td class="py-3 px-3 text-center">${dischargesCell}</td>
+              <td class="py-3 px-3 text-center">${heldUpCell}</td>
+              <td class="py-3 px-3 text-center">${authCell}</td>
+              <td class="py-3 px-4 text-right">${confirmCell}</td>
+            `;
+
+              tbody.appendChild(rowTr);
+            });
+          }
+        });
+
+        document.getElementById("match-count").innerText = totalMatching;
+      }
+
+      function setFilter(filter) {
+        currentFilter = filter;
+        document.querySelectorAll(".filter-tab").forEach((tab) => {
+          tab.className =
+            "filter-tab flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all bg-[var(--card-subtle)] text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--border)] border border-[var(--border)]";
+        });
+        const activeBtn = document.getElementById(`tab-${filter}`);
+        if (activeBtn) {
+          activeBtn.className =
+            "filter-tab active flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm bg-sky-600 text-white border border-sky-600";
+        }
+        renderTable();
+      }
+
+      function handleSearch(val) {
+        searchQuery = val;
+        renderTable();
+      }
+
+      function handleSort(val) {
+        sortOrder = val;
+        renderTable();
+      }
+
+      function toggleService(serviceName) {
+        if (collapsedServices.has(serviceName)) {
+          collapsedServices.delete(serviceName);
+        } else {
+          collapsedServices.add(serviceName);
+        }
+        renderTable();
+      }
+
+      function openDrawer(ward) {
+        selectedWardId = ward.id;
+        renderTable();
+
+        const drawer = document.getElementById("ward-drawer");
+        document.getElementById("drawer-title").innerText = ward.name;
+        document.getElementById("drawer-subtitle").innerText = `${ward.hospital} · ${ward.service}`;
+        document.getElementById("drawer-ready").innerText = ward.ready;
+        document.getElementById("drawer-locked").innerText = ward.locked;
+        document.getElementById("drawer-occupied").innerText = `${ward.occupied} / ${ward.totalBeds}`;
+        document.getElementById("drawer-discharges").innerText = ward.expected;
+
+        drawer.classList.remove("hidden");
+        drawer.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+
+      function closeDrawer() {
+        selectedWardId = null;
+        document.getElementById("ward-drawer").classList.add("hidden");
+        renderTable();
+      }
+
+      // Initial Render
+      renderTable();
+    </script>
+  </body>
+</html>

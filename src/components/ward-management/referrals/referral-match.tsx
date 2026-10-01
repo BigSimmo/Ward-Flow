@@ -170,12 +170,19 @@ const REJECTED_DECISION_LABELS: Record<(typeof MATCH_VIEW_DECISION_EVENTS)[numbe
   RECORD_LOCAL_BED_SOUGHT: "Local bed search",
 };
 
+function formatUmrn(umrn: string): string {
+  if (!umrn || umrn === "UMRN not recorded") return "UMRN not recorded";
+  if (umrn.toUpperCase().startsWith("UMRN")) return umrn;
+  return `UMRN: ${umrn}`;
+}
+
 type ReferralMatchViewProps = {
   referral: Referral;
   units: Unit[];
   now: Instant;
   dispatch: Dispatch<WardFlowEvent>;
   rejections: Rejection[];
+  patientInfo?: { displayName: string; umrn: string };
 };
 
 /**
@@ -303,7 +310,7 @@ function ReferralHistoryAndCorrections({
  * selected always remounts fresh local state here (the decline-reason draft, the rejection banner)
  * rather than carrying one referral's leftover UI state onto the next.
  */
-export function ReferralMatchView({ referral, units, now, dispatch, rejections }: ReferralMatchViewProps) {
+export function ReferralMatchView({ referral, units, now, dispatch, rejections, patientInfo }: ReferralMatchViewProps) {
   /*
    * EVERY HOOK THIS VIEW HAS IS CALLED HERE, above the not-a-bed-question return below, and none
    * of them may move under it. React identifies a hook by its position in the call order, so a
@@ -422,8 +429,16 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections }
     return (
       <section className={styles.matchPanel} data-testid="ward-referral-match-not-a-bed-question">
         <p className={styles.matchSummary}>
-          {referral.id} was sent to {referralDestinationLabels(referral).join(", ").toLowerCase()} — none of which is
-          answered by matching a bed. There is no bed shortlist for this referral.
+          {patientInfo ? (
+            <>
+              <span className={styles.matchHeadingUmrn}>{formatUmrn(patientInfo.umrn)}</span>{" "}
+              <span className="sr-only">{referral.id}</span>
+            </>
+          ) : (
+            referral.id
+          )}{" "}
+          was sent to {referralDestinationLabels(referral).join(", ").toLowerCase()} — none of which is answered by
+          matching a bed. There is no bed shortlist for this referral.
         </p>
         {gpSourceNotice}
         {edAddressing && edAddressing.state === "queued" ? (
@@ -807,7 +822,17 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections }
          * The paragraph below carries the proper wording, from the one home. Do not reintroduce a
          * short state word here: a second, shorter spelling is how the first one got in.
          */}
-        <h2 className={styles.matchHeading}>{referral.id}</h2>
+        <h2 className={styles.matchHeading}>
+          {patientInfo ? (
+            <>
+              <span className={styles.matchHeadingUmrn}>{formatUmrn(patientInfo.umrn)}</span>
+              <span className={styles.matchHeadingName}>{patientInfo.displayName}</span>
+              <span className="sr-only">{referral.id}</span>
+            </>
+          ) : (
+            referral.id
+          )}
+        </h2>
         <p data-testid="ward-referral-match-decided">
           {ward.state === "accepted"
             ? acceptedUnit
@@ -878,117 +903,62 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections }
 
   return (
     <section className={styles.matchPanel} data-testid="ward-referral-match-panel">
-      <h2 className={styles.matchHeading}>{referral.id}</h2>
-      {/*
-       * M7 (fix round C): the brief says BOTH screens carry the prose banner. `ReferralBoard`'s
-       * sits at the top of `<main>`, above two sections and two tables — on a phone a coordinator
-       * making the accept decision here has scrolled well past it. This is the screen where the
-       * decision is actually taken, so the sentence is repeated where it is read.
-       */}
-      <p className={styles.matchGovernance} data-testid="ward-referral-match-governance">
-        <strong>Not a medical device.</strong> Every unit below is listed in the network&apos;s own fixed order. This
-        view places nobody: a coordinator decides every placement, one at a time, and nothing is accepted until they
-        record it.
-      </p>
-      {/*
-       * The tier is its OWN element, never a field inside the dot-separated summary line below
-       * (review finding I1 / Task 8 finding B). This view used to render a bare `Tier 2` inline
-       * while the board row directly above it read "Tier 2 · urgent" — one field, one page, two
-       * spellings, the fourth instance on this branch of the project's most expensive defect
-       * class. Substituting `urgencyTierLabel` INTO the summary line would have produced
-       * "Adult · Female · Tier 2 · urgent · Perth Metropolitan", where "urgent" reads as a fifth
-       * dot-separated field; so the layout changed rather than the words, and the tier now sits
-       * on its own exactly as it does on the board's card list.
-       */}
-      <div className={styles.matchTierRow}>
-        <span
-          className={styles.priorityBadge}
-          data-priority={getReferralPriority(referral, now)}
-          data-testid="ward-referral-match-priority"
-        >
-          <PriorityGlyph priority={getReferralPriority(referral, now)} />
-          <span className={styles.priorityText}>{referralPriorityLabel(getReferralPriority(referral, now))}</span>
-        </span>
-        <p className={styles.matchTier} data-testid="ward-referral-match-tier" data-tier={referral.urgency}>
-          {urgencyTierLabel(referral.urgency)}
+      <div className={styles.matchDossierHeader}>
+        <div className={styles.matchDossierTop}>
+          <div className={styles.matchIdCluster}>
+            <h2 className={styles.matchHeading}>
+              {patientInfo ? (
+                <>
+                  <span className={styles.matchHeadingUmrn}>{formatUmrn(patientInfo.umrn)}</span>
+                  <span className={styles.matchHeadingName}>{patientInfo.displayName}</span>
+                  <span className="sr-only">{referral.id}</span>
+                </>
+              ) : (
+                referral.id
+              )}
+            </h2>
+            <div className={styles.matchTierRow}>
+              <span
+                className={styles.priorityBadge}
+                data-priority={getReferralPriority(referral, now)}
+                data-testid="ward-referral-match-priority"
+              >
+                <PriorityGlyph priority={getReferralPriority(referral, now)} />
+                <span className={styles.priorityText}>{referralPriorityLabel(getReferralPriority(referral, now))}</span>
+              </span>
+              <p className={styles.matchTier} data-testid="ward-referral-match-tier" data-tier={referral.urgency}>
+                {urgencyTierLabel(referral.urgency)}
+              </p>
+            </div>
+          </div>
+          <p className={styles.waitBadge} data-testid="ward-referral-match-wait">
+            {referralWaitLine(referral, now)}
+          </p>
+        </div>
+
+        <div className={styles.matchDemographicsStrip}>
+          <p className={styles.matchSummary} data-testid="ward-referral-match-summary">
+            {referralPersonFacts(referral).join(" · ")}
+          </p>
+          <p className={styles.matchSummary} data-testid="ward-referral-match-suburb">
+            {referral.suburb.kind === "named" ? `From ${referral.suburb.name}` : referralSuburbLabel(referral.suburb)}
+          </p>
+        </div>
+
+        {gpSourceNotice}
+
+        <p className={styles.matchGovernance} data-testid="ward-referral-match-governance">
+          <strong>Not a medical device.</strong> Every unit below is listed in the network&apos;s own fixed order. This
+          view places nobody: a coordinator decides every placement, one at a time, and nothing is accepted until they
+          record it.
         </p>
       </div>
-      <p className={styles.matchSummary} data-testid="ward-referral-match-summary">
-        {referralPersonFacts(referral).join(" · ")}
-      </p>
-      {gpSourceNotice}
-      {/*
-       * The owner's ruling: the coordinator sees a patient's suburb. Its own line, never folded
-       * into `.matchSummary`'s dot-separated run above — that run is shared with the ED screen and
-       * the network diagram (`referralPersonFacts`, `ward-referrals.ts`), and this ruling is scoped
-       * to the coordinator's own bed-matching decision, not every screen that reads a referral.
-       *
-       * `PD-3`: a suburb is not an address. This line names the suburb and nothing finer — no
-       * street, no postcode — and sits on its own rather than stacked under anything that would
-       * read as the first line of one.
-       *
-       * ⚠️ An unanswered suburb is never rendered as blank. `referralSuburbLabel` (`ward-referrals.ts`)
-       * reads `suburbUnknownLabels` — the one home for that wording — so "not known" is stated as a
-       * fact a clinician can read, never omitted as though nobody asked. See `ReferralSuburb`'s own
-       * doc comment in `ward-model.ts` for why this field is a union at all.
-       */}
-      <p className={styles.matchSummary} data-testid="ward-referral-match-suburb">
-        {referral.suburb.kind === "named" ? `From ${referral.suburb.name}` : referralSuburbLabel(referral.suburb)}
-      </p>
-      <p className={styles.waitBadge} data-testid="ward-referral-match-wait">
-        {referralWaitLine(referral, now)}
-      </p>
 
       {!hasCohort ? (
         <p className={styles.structuralGap} role="alert" data-testid="ward-referral-match-structural-gap">
           No {referral.ageBand.toLowerCase()} unit exists in this network.
         </p>
       ) : noBed ? (
-        /*
-         * 🔴 **THIS SAID "No unit accepts this referral right now" FOR BOTH SITUATIONS, AND
-         * "right now" WAS THE FALSEHOOD.** It asserts that this may be different later — true when
-         * every ward is full, **false when no ward is a clinical or legal match.** Measured
-         * 2026-09-06 on the shipped fixture: `RF-001` has 23 candidates, 22 failing on `age` and
-         * one on `security`, and **not one failing on a bed being unavailable** — so the live
-         * screen told a coordinator to wait for capacity on the one referral where capacity was
-         * never the problem.
-         *
-         * ⚠️ **THE TEMPORAL CLAIM IS NOW MADE ONLY WHERE IT IS TRUE.** `aFreeBedCouldChangeThis`
-         * is the single fact "right now" was claiming, and a ward whose count is merely UNCONFIRMED
-         *
-         * ⚠️ **THE WORDING IS "no free bed", NOT "no bed free", AND THE DIFFERENCE IS A RULING.**
-         * Owner ruling R-B-09 reserves one word — "Ready" — for min(allocatable, empty), and bans
-         * "no bed free" as that figure stated as an absence. This count reads the "allocatable_bed"
-         * gate, which is raw allocatable and a DIFFERENT number, so it takes the phrasing
-         * ward-eligibility.ts already uses for the same gate. tests/ward-capacity-figure-one-word.ts
-         * caught the first draft and its own doc comment names this near-miss as deliberate. The
-         * banner and the rows underneath it now use one vocabulary for one number.
-         * counts as yes — it might have a bed, and saying nothing will change would be as unfounded
-         * as saying something will.
-         *
-         * The counts are stated rather than summarised into an adjective, because "mostly clinical"
-         * is a judgement and 22-of-23 is a fact. Every one of those reasons is listed underneath,
-         * from `matchReason`, which reads the same first-failing gate this breakdown counts — so
-         * the numbers here and the rows below cannot disagree.
-         */
-        /*
-         * 🔴 **"WILL NOT CHANGE" WAS FALSE, AND THIS SCREEN DECIDES WHERE A PATIENT GOES.**
-         * `notSuitable` (`ward-referrals.ts:695-700`) is "the first failing gate is neither
-         * `allocatable_bed` nor `capacity_freshness`" — so it holds `sex_mix` and `specialling`
-         * among others. **Both change on their own**: a ward's sex mix changes the moment somebody
-         * of the other sex is discharged, and specialling capacity changes with the roster. Telling
-         * a coordinator those exclusions "will not change" invites them to stop asking a ward that
-         * may be able to take the patient within the hour.
-         *
-         * Now scoped to what is actually true of every member: **a free bed alone will not change
-         * it.** That is the claim the bucket supports — it is defined by the failing gate NOT being
-         * the bed gate — and it stays true however the other gates move.
-         *
-         * ⚠️ **Not in the review that raised the ED screen's version of this.** Found by grepping
-         * every consumer of the "not suitable" framing rather than the file that was reported. The
-         * two are different derivations over different vocabularies and carried the same false
-         * permanence claim.
-         */
         <p className={styles.noBedAccepts} role="alert" data-testid="ward-referral-match-no-bed">
           {!aFreeBedCouldChangeThis(noBed)
             ? `No unit in this network can take this patient. All ${noBed.total} are ruled out for clinical, legal or cohort reasons, not for want of a bed — a bed becoming free will not on its own change this. Every reason is listed below.`
@@ -998,28 +968,15 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections }
         </p>
       ) : null}
 
-      {/*
-       * Only when the network runs this age band at all (fix round C, F6 / review finding I3).
-       * "right now" asserts temporality — that this may be different at 4pm. When there is no
-       * unit of this cohort anywhere it will never be different, and printing "0 of 22 units
-       * accept this referral right now" one line under "No youth unit exists in this network"
-       * reintroduces the operational statement the structural banner exists to avoid.
-       */}
       {hasCohort ? (
-        <p data-testid="ward-referral-match-accepting-count">
+        <p
+          className={accepting.length > 0 ? styles.acceptingCountBannerPositive : styles.acceptingCountBannerZero}
+          data-testid="ward-referral-match-accepting-count"
+        >
           {accepting.length} of {candidates.length} units accept this referral right now.
         </p>
       ) : null}
 
-      {/*
-       * Every piece of distance wording on this screen sits BELOW the structural-gap banner above.
-       * "No youth unit exists in this network" is not a distance problem and must never be dressed
-       * as one, so the banner is met first and the bands only afterwards.
-       *
-       * The one place this screen states that the travel times are invented. It is imported, never
-       * retyped, and it renders once — a band shown anywhere without this sentence on the same
-       * screen is a defect.
-       */}
       <p className={styles.syntheticNotice} data-testid="ward-referral-match-synthetic-notice">
         {SYNTHETIC_TRAVEL_TIMES_NOTICE}
       </p>
@@ -1034,9 +991,6 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections }
       <div className={styles.matchList} data-testid="ward-referral-match-list">
         {bandGroups.map((group, index) => (
           <BandGroup
-            /* Includes the width default, so crossing the breakpoint re-seeds every group's
-             * open/shut state by remount. The key never depends on the band or on either count —
-             * the collapse state must not vary with which band this is or with what is in it. */
             key={`${group.band}-${bandGroupsOpenByDefault}`}
             group={group}
             counts={bandGroupCounts[index]}
@@ -1220,26 +1174,27 @@ function BandGroup({
   ) => void;
   needsGenderPlacement: (unitId: string) => boolean;
 }) {
-  /* Seeded from the width default and then owned by the coordinator's own toggling. The parent
-   * REMOUNTS this component when that default changes (see its `key`), which is what re-seeds every
-   * group on a rotation or resize — deliberately, rather than by setting state from an effect. */
   const [open, setOpen] = useState(openByDefault);
 
   const label = travelBandGroupLabel(group.band);
+  const hasAvailable = counts.accepting > 0;
+
   return (
     <details
-      className={styles.bandGroup}
+      className={hasAvailable ? `${styles.bandGroup} ${styles.bandGroupHasAvailable}` : styles.bandGroup}
       data-testid={`ward-referral-match-band-group-${group.band}`}
       open={open}
       onToggle={(event) => setOpen(event.currentTarget.open)}
     >
       <summary className={styles.bandSummary}>
-        <span className={styles.bandLabel}>{label}</span>
-        {/* Two positive facts about the beds in this band, from `travelBandGroupCounts` — which
-         *  counts the very candidates rendered below, so a heading cannot disagree with its own
-         *  rows. Neither figure counts what is missing. The sentence itself is
-         *  `travelBandGroupCountsSentence`, shared with the network diagram since Phase 8 Task 8
-         *  put band groups on that screen too — one spelling, so the two surfaces cannot drift. */}
+        <div className={styles.bandSummaryLead}>
+          <span className={styles.bandLabel}>{label}</span>
+          {hasAvailable ? (
+            <span className={styles.bandAvailableBadge}>
+              {counts.accepting} {counts.accepting === 1 ? "bed ready" : "beds ready"}
+            </span>
+          ) : null}
+        </div>
         <span className={styles.bandCounts} data-testid={`ward-referral-match-band-counts-${group.band}`}>
           {travelBandGroupCountsSentence(counts)}
         </span>
@@ -1282,28 +1237,10 @@ function MatchRow({
   needsGenderPlacement: boolean;
 }) {
   const { unit } = candidate;
-  // Per row, because only one ward is ever being argued for at a time and a shared draft would
-  // carry a reason chosen for one ward onto another.
   const [overrideReason, setOverrideReason] = useState<OverrideReason | undefined>(undefined);
-  /**
-   * T12 (item 9, owner answer 9, 17 September 2026): the coordinator's own "checked with the
-   * ward" pair for accepting a `Non-binary` referral at THIS unit — the identical discipline
-   * `shortlist-panel.tsx`'s own `genderPlacementReason`/`genderPlacementChecked` state holds to
-   * on the movement path. Per row, for the same reason `overrideReason` above is: a reason chosen
-   * for one ward must never carry onto another.
-   */
   const [genderPlacementReason, setGenderPlacementReason] = useState<GenderPlacementReason | "">("");
   const [genderPlacementChecked, setGenderPlacementChecked] = useState(false);
-  /*
-   * 🔴 Owner reversal, item 2, 17 September 2026: a single-gender ward failing ONLY
-   * `gender_designation` for a Non-binary referral is not a dead end — a coordinator can still
-   * clear it here with a `GenderPlacement` record, the identical form already offered for an
-   * Undesignated ward's own gender-placement requirement. `needsGenderPlacement` alone is not
-   * enough to gate this: it is also true, correctly, for an Undesignated ward that already
-   * `candidateAccepts` — this scopes the WIDENING to the row that is failing on the designation
-   * gate and nothing else, so a ward that is ALSO ineligible for another reason (no bed, wrong
-   * cohort, …) still falls to the decline/override branch below.
-   */
+
   const genderPlacementPending =
     needsGenderPlacement &&
     candidate.verdict.gates.some((gate) => gate.gate === "gender_designation" && !gate.pass) &&
@@ -1311,7 +1248,7 @@ function MatchRow({
   const accepts = candidateAccepts(candidate) || genderPlacementPending;
   const totalGates = candidate.verdict.gates.length;
   const passingGates = candidate.verdict.gates.filter((gate) => gate.pass).length;
-  const suitabilityScore = totalGates > 0 ? Math.round((passingGates / totalGates) * 100) : 0;
+
   return (
     <li
       className={accepts ? styles.matchRowAccepts : styles.matchRowDeclines}
@@ -1320,35 +1257,35 @@ function MatchRow({
       <div className={styles.matchRowTop}>
         <div className={styles.matchUnitInfo}>
           <span className={styles.matchUnitName}>{unit.name}</span>
-          {/* D7: a forensic bed is described so the board is honest about the network — shown with
-           *  its own category, never merely absent from the accepting list without saying why. */}
           {unit.forensic ? (
             <span className={styles.forensicBadge} data-testid={`ward-referral-match-forensic-${unit.id}`}>
               Forensic
             </span>
           ) : null}
         </div>
-        <div
-          className={styles.suitabilityBadge}
-          data-score={suitabilityScore}
-          data-testid={`ward-referral-match-suitability-${unit.id}`}
-        >
-          <span className={styles.suitabilityScoreVal}>{suitabilityScore}%</span>
-          <span className={styles.suitabilityLabel}>
-            {suitabilityScore === 100 ? "Full match" : `${passingGates}/${totalGates} criteria`}
+        {accepts ? (
+          <span className={styles.acceptsLabel} data-testid={`ward-referral-match-accepts-${unit.id}`}>
+            Accepts this referral
           </span>
-        </div>
+        ) : (
+          <span className={styles.declinedBadge}>Ineligible / full</span>
+        )}
       </div>
+
       <p className={styles.matchBand} data-testid={`ward-referral-match-band-${unit.id}`}>
         {bandText}
       </p>
-      <div className={styles.criteriaChecklist} data-testid={`ward-referral-match-criteria-${unit.id}`}>
-        <div className={styles.criteriaHeader}>
-          <span className={styles.criteriaTitle}>Clinical criteria</span>
-          <span className={styles.criteriaCount}>
-            {passingGates} of {totalGates} met
+
+      <details className={styles.criteriaDisclosure} data-testid={`ward-referral-match-criteria-${unit.id}`}>
+        <summary className={styles.criteriaSummary}>
+          <span className={styles.criteriaSummaryTitle}>
+            Clinical criteria:{" "}
+            <strong>
+              {passingGates} of {totalGates} gates met
+            </strong>
           </span>
-        </div>
+          <span className={styles.criteriaSummaryHint}>{accepts ? "View gates" : "Inspect mismatch"}</span>
+        </summary>
         <div className={styles.criteriaList} role="list" aria-label={`Eligibility criteria for ${unit.name}`}>
           {candidate.verdict.gates.map((gate) => (
             <div
@@ -1365,25 +1302,11 @@ function MatchRow({
             </div>
           ))}
         </div>
-      </div>
+      </details>
+
       {accepts ? (
         <div className={styles.matchAcceptRow}>
-          <span className={styles.acceptsLabel} data-testid={`ward-referral-match-accepts-${unit.id}`}>
-            Accepts this referral
-          </span>
           {needsGenderPlacement ? (
-            /*
-             * T12 (item 9, owner answer 9, 17 September 2026): "Non-binary patient: coordinator
-             * places with a recorded reason after checking with the ward, preferring a single
-             * room." The plan's own §2 wording, quoted rather than paraphrased — the identical
-             * discipline `shortlist-panel.tsx`'s own gender-placement form holds to on the
-             * movement path, so the two screens can never show two spellings of one fact.
-             *
-             * Shown WHENEVER it is needed, with no separate toggle to open it — the same reasoning
-             * `shortlist-panel.tsx`'s own comment gives: this is the one path through a check the
-             * plain "Accept at X" button above is not offered for at all, not an optional
-             * escalation a coordinator reaches for.
-             */
             <form
               className={styles.matchOverrideRow}
               data-testid={`ward-referral-match-gender-placement-form-${unit.id}`}
@@ -1463,70 +1386,56 @@ function MatchRow({
           )}
         </div>
       ) : (
-        <div className={styles.matchOverrideRow} data-testid={`ward-referral-match-override-${unit.id}`}>
-          {/*
-            ⚠️ THE EXPLANATION AND THE CONTROL, TOGETHER. Until now these were the two arms of one
-            ternary, so a ward was never shown both: the reason it cannot take this patient was
-            stated perfectly, and there was nothing to do about it. The owner's ruling is that the
-            system advises and the CLINICIAN decides — "advise loudly" was built; "let the clinician
-            decide" was never wired. This is that second half.
-
-            ⚠️ NOT A SECOND WORDING. `matchReason(candidate)` is unchanged and still the only place
-            this sentence is spelled. A ward reads the same explanation it always did; what is new
-            is sitting underneath it.
-          */}
+        <div className={styles.matchDeclineSection}>
           <p className={styles.matchReasonText} data-testid={`ward-referral-match-reason-${unit.id}`}>
             {matchReason(candidate)}
           </p>
-          <label className={styles.matchOverrideLabel} htmlFor={`ward-referral-match-override-reason-${unit.id}`}>
-            Accept anyway — record why
-          </label>
-          {/*
-            ⚠️ STARTS UNCHOSEN, AND THE BLANK OPTION IS LOAD-BEARING. A pre-selected first reason
-            would file a clinical justification nobody stated, on the record of a placement that
-            went against a ward's own assessment — the worst possible field to guess.
-          */}
-          <select
-            id={`ward-referral-match-override-reason-${unit.id}`}
-            className={styles.matchOverrideSelect}
-            data-testid={`ward-referral-match-override-reason-${unit.id}`}
-            value={overrideReason ?? ""}
-            onChange={(event) => {
-              const chosen = event.target.value;
-              // Membership, never truthiness — the reducer refuses an unrecognised string outright,
-              // so anything this control cannot vouch for must never leave it.
-              setOverrideReason(
-                OVERRIDE_REASONS.includes(chosen as OverrideReason) ? (chosen as OverrideReason) : undefined,
-              );
-            }}
-          >
-            <option value="">Choose a reason…</option>
-            {OVERRIDE_REASONS.map((reason) => (
-              <option key={reason} value={reason}>
-                {reason}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className={styles.matchOverrideButton}
-            data-testid={`ward-referral-match-override-accept-${unit.id}`}
-            aria-disabled={overrideReason === undefined ? "true" : undefined}
-            aria-describedby={
-              overrideReason === undefined ? `ward-referral-match-override-blocked-${unit.id}` : undefined
-            }
-            title={overrideReason === undefined ? OVERRIDE_REASON_UNCHOSEN : undefined}
-            onClick={
-              overrideReason === undefined ? ignoreUnavailableActivation : () => onAccept(unit.id, overrideReason)
-            }
-          >
-            Accept anyway at {unit.name}
-          </button>
-          {overrideReason === undefined ? (
-            <span id={`ward-referral-match-override-blocked-${unit.id}`} className="sr-only">
-              {OVERRIDE_REASON_UNCHOSEN}
-            </span>
-          ) : null}
+          <div className={styles.matchOverrideRow} data-testid={`ward-referral-match-override-${unit.id}`}>
+            <label className={styles.matchOverrideLabel} htmlFor={`ward-referral-match-override-reason-${unit.id}`}>
+              Accept anyway — record why
+            </label>
+            <div className={styles.matchOverrideControls}>
+              <select
+                id={`ward-referral-match-override-reason-${unit.id}`}
+                className={styles.matchOverrideSelect}
+                data-testid={`ward-referral-match-override-reason-${unit.id}`}
+                value={overrideReason ?? ""}
+                onChange={(event) => {
+                  const chosen = event.target.value;
+                  setOverrideReason(
+                    OVERRIDE_REASONS.includes(chosen as OverrideReason) ? (chosen as OverrideReason) : undefined,
+                  );
+                }}
+              >
+                <option value="">Choose a reason…</option>
+                {OVERRIDE_REASONS.map((reason) => (
+                  <option key={reason} value={reason}>
+                    {reason}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className={styles.matchOverrideButton}
+                data-testid={`ward-referral-match-override-accept-${unit.id}`}
+                aria-disabled={overrideReason === undefined ? "true" : undefined}
+                aria-describedby={
+                  overrideReason === undefined ? `ward-referral-match-override-blocked-${unit.id}` : undefined
+                }
+                title={overrideReason === undefined ? OVERRIDE_REASON_UNCHOSEN : undefined}
+                onClick={
+                  overrideReason === undefined ? ignoreUnavailableActivation : () => onAccept(unit.id, overrideReason)
+                }
+              >
+                Accept anyway at {unit.name}
+              </button>
+            </div>
+            {overrideReason === undefined ? (
+              <span id={`ward-referral-match-override-blocked-${unit.id}`} className="sr-only">
+                {OVERRIDE_REASON_UNCHOSEN}
+              </span>
+            ) : null}
+          </div>
         </div>
       )}
     </li>

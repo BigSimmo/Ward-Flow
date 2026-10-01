@@ -6,7 +6,12 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import { patientDisplayName } from "@/components/ward-management/ward-patients";
 import { edById } from "@/components/ward-management/ward-sites";
 import { stageCopy, transportLeg } from "@/components/ward-management/ward-derivations";
-import { type PatientNowRecord, type DocumentRecord, clock, dur } from "@/components/ward-management/patients/patient-now-records";
+import {
+  type PatientNowRecord,
+  type DocumentRecord,
+  clock,
+  dur,
+} from "@/components/ward-management/patients/patient-now-records";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 
@@ -19,6 +24,66 @@ export interface ResolvedPatientNow {
   displayName: string;
   preferredName?: string;
   currentStageIndex: number;
+}
+
+export function movementNextSteps(movement: Movement, acceptedUnit?: Unit): PatientNowRecord["next"] {
+  if (movement.closure) {
+    return [
+      {
+        w: "Movement Closed",
+        d: movement.closure.reason || "Movement completed.",
+        tone: "good" as const,
+      },
+    ];
+  }
+
+  if (movement.stage === "arrived") {
+    return [
+      {
+        w: "Journey Complete",
+        d: `Arrival confirmed at ${acceptedUnit?.name ?? "destination ward"}.`,
+        tone: "good" as const,
+      },
+    ];
+  }
+
+  if (movement.stage === "moving") {
+    return [
+      {
+        w: "Transit Active",
+        d: `Monitor transport arrival at ${acceptedUnit?.name ?? "receiving unit"}.`,
+        tone: "good" as const,
+      },
+    ];
+  }
+
+  if (movement.stage === "handover_ready") {
+    return [
+      {
+        w: "Transport Dispatch",
+        d: "Coordinate dispatch and departure from Emergency Department.",
+        tone: "good" as const,
+      },
+    ];
+  }
+
+  if (movement.stage === "pulled" || acceptedUnit) {
+    return [
+      {
+        w: "Bed Pull Confirmation",
+        d: `Confirm bed availability and terminal clean status with ${acceptedUnit?.name ?? "allocated unit"}.`,
+        tone: "good" as const,
+      },
+    ];
+  }
+
+  return [
+    {
+      w: "Destination Review",
+      d: "Review next cohort-matching bed releases across network.",
+      tone: "warn" as const,
+    },
+  ];
 }
 
 export function resolvePatientNowRecord(
@@ -156,26 +221,14 @@ export function resolvePatientNowRecord(
           : []),
       ],
       ladder: "Review the current movement for escalation and next actions",
-      next: acceptedUnit
-        ? [
-            {
-              w: "Bed Pull Confirmation",
-              d: `Confirm bed availability and terminal clean status with ${acceptedUnit.name}.`,
-              tone: "good" as const,
-            },
-          ]
-        : [
-            {
-              w: "Destination Review",
-              d: "Review next cohort-matching bed releases across network.",
-              tone: "warn" as const,
-            },
-          ],
+      next: movementNextSteps(movement, acceptedUnit),
       transport: movement.transport
         ? [
             ["Status", transportLeg(movement.transport) ?? "Booked"],
             ["Provider", movement.transport.provider ?? "Patient Transport"],
-            ...(movement.transport.cadNumber ? [["CAD Number", movement.transport.cadNumber] as [string, string]] : []),
+            ...(movement.transport.cadNumber
+              ? [["CAD (dispatch) number", movement.transport.cadNumber] as [string, string]]
+              : []),
             ...(movement.transport.estimatedAt
               ? [["Quoted ETA", `${clock(movement.transport.estimatedAt)} AWST`] as [string, string]]
               : []),
@@ -274,9 +327,7 @@ export function resolvePatientNowRecord(
         (m.referralId && referrals.some((r) => r.id === m.referralId && r.patientId === patient.id)),
     );
     const linkedReferral = referrals.find(
-      (r) =>
-        r.patientId === patient.id ||
-        (linkedMovement && r.id === linkedMovement.referralId),
+      (r) => r.patientId === patient.id || (linkedMovement && r.id === linkedMovement.referralId),
     );
     const linkedAdmission = admissions.find(
       (a) =>
@@ -299,7 +350,8 @@ export function resolvePatientNowRecord(
         from: "The presentation open now",
         by: "Author not recorded here",
         when: "Active presentation",
-        status: activeMovement.legalForm.dueAt !== undefined ? `Runs to ${clock(activeMovement.legalForm.dueAt)}` : "Active",
+        status:
+          activeMovement.legalForm.dueAt !== undefined ? `Runs to ${clock(activeMovement.legalForm.dueAt)}` : "Active",
       });
     }
 
@@ -311,7 +363,9 @@ export function resolvePatientNowRecord(
       const originEdName = originEd?.name ?? "Emergency Department";
       const acceptedUnit = activeMovement.acceptedUnitId
         ? liveUnit(activeMovement.acceptedUnitId)
-        : (activeAdmission ? liveUnit(activeAdmission.unitId) : undefined);
+        : activeAdmission
+          ? liveUnit(activeAdmission.unitId)
+          : undefined;
 
       let verdictTone: "danger" | "good" | "warn" = "warn";
       let verdictShort = "Seeking Bed";
@@ -374,26 +428,14 @@ export function resolvePatientNowRecord(
             : []),
         ],
         ladder: "Review the current movement for escalation and next actions",
-        next: acceptedUnit
-          ? [
-              {
-                w: "Bed Pull Confirmation",
-                d: `Confirm bed availability and terminal clean status with ${acceptedUnit.name}.`,
-                tone: "good" as const,
-              },
-            ]
-          : [
-              {
-                w: "Destination Review",
-                d: "Review next cohort-matching bed releases across network.",
-                tone: "warn" as const,
-              },
-            ],
+        next: movementNextSteps(activeMovement, acceptedUnit),
         transport: activeMovement.transport
           ? [
               ["Status", transportLeg(activeMovement.transport) ?? "Booked"],
               ["Provider", activeMovement.transport.provider ?? "Patient Transport"],
-              ...(activeMovement.transport.cadNumber ? [["CAD Number", activeMovement.transport.cadNumber] as [string, string]] : []),
+              ...(activeMovement.transport.cadNumber
+                ? [["CAD (dispatch) number", activeMovement.transport.cadNumber] as [string, string]]
+                : []),
               ...(activeMovement.transport.estimatedAt
                 ? [["Quoted ETA", `${clock(activeMovement.transport.estimatedAt)} AWST`] as [string, string]]
                 : []),
@@ -420,7 +462,9 @@ export function resolvePatientNowRecord(
             source: "Emergency Department",
             route: "Patient transport",
             tier: activeMovement.urgency,
-            legal: activeMovement.legalForm ? legalFormName(activeMovement.legalForm) : (activeMovement.legalStatus ?? patient.legalStatus ?? "Not recorded"),
+            legal: activeMovement.legalForm
+              ? legalFormName(activeMovement.legalForm)
+              : (activeMovement.legalStatus ?? patient.legalStatus ?? "Not recorded"),
             forms: specialDocuments,
             asked: activeMovement.referredUnitIds.map((uid) => ({
               ward: liveUnit(uid)?.name ?? uid,

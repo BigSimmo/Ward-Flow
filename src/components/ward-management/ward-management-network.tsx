@@ -497,7 +497,8 @@ function referralClockLines(referral: Referral, now: Instant): { department: str
         : `${formatElapsed(inDepartment)} ${REFERRAL_CLOCK_TERMS.inDepartment}`,
     referral: `${formatElapsed(sinceReferral)} ${
       sinceReferralRunning ? REFERRAL_CLOCK_TERMS.sinceReferral : REFERRAL_CLOCK_TERMS.sinceReferralStopped
-    }` };
+    }`,
+  };
 }
 
 function ReferralPlacementSummary({ referral, now }: { referral: Referral; now: Instant }) {
@@ -533,8 +534,7 @@ type NetworkView = "overview" | "placement";
  * coordinator's local selection when they briefly return to the overview.
  */
 export function WardNetworkWorkspace() {
-  const { movements, units, bedReleases, leaveBeds, configuration,
-  } = useWardFlow();
+  const { movements, units, bedReleases, leaveBeds, configuration } = useWardFlow();
   const now = useWardFlowClock();
   const [view, setView] = useState<NetworkView>("overview");
   const [selectedEdId, setSelectedEdId] = useState<string | undefined>();
@@ -622,10 +622,7 @@ export function WardNetworkWorkspace() {
                 </li>
               ))}
             </ul>
-            <p>
-              Longest waits are shown as elapsed time. No common deadline scale is drawn because these records do not
-              hold one denominator that applies to every department.
-            </p>
+            <p>No common deadline scale, because these departments don&apos;t share one.</p>
           </div>
         </div>
         <section className={thirdEdition.flowPanel} aria-labelledby="ward-network-flow-heading">
@@ -1402,8 +1399,7 @@ function WardNetworkPlacementWorkspace() {
                 >
                   {patient.urgency}
                 </span>
-                <b>Urgency tier leads.</b> Eligibility only orders candidates inside a tier. It is not clinical
-                severity.
+                <b>Urgency tier leads.</b> Eligibility orders candidates within tier; not clinical severity.
               </p>
 
               <button

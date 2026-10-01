@@ -1,0 +1,292 @@
+/* Ward Home Tab Styles */
+.homeWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.alertStrip {
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-soft);
+  border-left: 4px solid var(--danger);
+  border-radius: var(--r2);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .alertStrip {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.alertMain {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alertTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.alertClock {
+  font-family: var(--mono);
+  font-size: 12px; /* 12px floor */
+  font-weight: 700;
+  background: var(--danger);
+  color: var(--surface);
+  padding: 2px 7px;
+  border-radius: var(--pill, 999px);
+  text-transform: uppercase;
+}
+
+.alertText {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.alertActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btnAlertAct {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--r1);
+  background: var(--surface);
+  border: 1px solid var(--line-strong, var(--line));
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btnAlertAct:hover {
+  background: var(--surface-2);
+  border-color: var(--ink-soft);
+}
+
+/* Home 2-column Grid */
+.homeGrid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 14px;
+}
+
+@media (max-width: 1024px) {
+  .homeGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  box-shadow: var(--lift-sm);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.cardHead {
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardTitle {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cardBody {
+  padding: 14px;
+}
+
+/* 4-Metric Census Quad */
+.censusQuadGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 600px) {
+  .censusQuadGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.censusBox {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.censusBoxLabel {
+  font-size: 12px; /* 12px floor */
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.censusBoxVal {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: var(--mono);
+  margin: 4px 0;
+}
+
+.censusBoxFoot {
+  font-size: 12px; /* 12px floor */
+  color: var(--muted);
+}
+
+.operationalRule {
+  font-size: 12px; /* 12px floor */
+  color: var(--ink-soft);
+  line-height: 1.5;
+  padding: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+}
+
+/* Shift Handshake Checklist */
+.checkBadge {
+  font-size: 12px; /* 12px floor */
+  font-family: var(--mono);
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--pill, 999px);
+  background: var(--good-soft);
+  color: var(--good-ink, var(--good));
+  border: 1px solid var(--good-soft);
+}
+
+.checkItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--r1);
+  background: var(--surface-2);
+  margin-bottom: 8px;
+  font-size: 12px;
+  border: 1px solid var(--line);
+}
+
+.checkLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Timeline Feed */
+.timelineStream {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.timelineEntry {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12.5px;
+}
+
+.timelineEntry:last-child {
+  border-bottom: none;
+}
+
+.timelineTime {
+  font-size: 12px; /* 12px floor */
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--muted);
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.timelineBody {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--ink);
+}
+
+.timelineRole {
+  font-size: 12px; /* 12px floor */
+  font-family: var(--mono);
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  width: fit-content;
+}
+
+.pillBadge {
+  font-size: 12px; /* 12px floor */
+  font-family: var(--mono);
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--pill, 999px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+}
+
+.pillBadge[data-tone="good"] {
+  background: var(--good-soft);
+  color: var(--good-ink, var(--good));
+  border-color: var(--good-soft);
+}
+
+.pillBadge[data-tone="warn"] {
+  background: var(--warn-soft);
+  color: var(--warn-ink, var(--warn));
+  border-color: var(--warn-soft);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

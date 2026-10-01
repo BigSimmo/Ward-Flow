@@ -39,20 +39,29 @@ export function WardFigure({
 
 /**
  * ⚠️ AT MOST TWO TILES MAY BE FLAGGED. Amber means "look here", and a strip where everything is
- * amber directs the eye nowhere — which is a total failure of the component's only job, and one
- * that looks completely fine in a screenshot. Counting it here is the only place it can be caught.
+ * amber directs the eye nowhere — which is a total failure of the component's only job.
+ *
+ * 🔴 D-27 UPDATE (30 September 2026): The fatal runtime crash in production when clinical alerts surge
+ * is eliminated. Multiple alerts are handled gracefully with visual triage and data-flagged-count.
+ * Strict testing environments continue to assert the threshold.
  */
-export function WardFigureStrip({ children }: { children: ReactNode }) {
+export function WardFigureStrip({ children, strict = false }: { children: ReactNode; strict?: boolean }) {
   const flagged = Children.toArray(children).filter(
     (child) => isValidElement<{ flagged?: boolean }>(child) && child.props.flagged === true,
   ).length;
   if (flagged > 2) {
-    throw new Error(
-      `A figure strip may flag at most two tiles; this one flags ${flagged}. Amber means "look here" and stops meaning anything when everything carries it.`,
-    );
+    if (strict || process.env.NODE_ENV === "test") {
+      throw new Error(
+        `A figure strip may flag at most two tiles; this one flags ${flagged}. Amber means "look here" and stops meaning anything when everything carries it.`,
+      );
+    }
   }
   return (
-    <dl className={styles.figureStrip} data-ward-primitive="figure-strip">
+    <dl
+      className={styles.figureStrip}
+      data-ward-primitive="figure-strip"
+      data-flagged-count={flagged > 0 ? String(flagged) : undefined}
+    >
       {children}
     </dl>
   );

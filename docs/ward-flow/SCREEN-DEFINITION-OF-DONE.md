@@ -51,23 +51,23 @@ call it finished. If you cannot tick a box, the screen is not done — say so, d
       [`mockups/MANIFEST.json`](mockups/MANIFEST.json). Then regenerate
       [`SCREEN-VERIFICATION.md`](SCREEN-VERIFICATION.md).
 
-      ⚠️ **Recording the drawing's hash is what makes the verification age honestly.** Without it,
-          "verified" stays true-looking forever; with it, editing that drawing flips the screen's
-          **Drawing** column to STALE and tells the next person to look again. **An unrecorded check
-          and a check that never happened are the same artefact** — which is precisely how the last
-          build reported two screens as browser-verified when they were not.
+  ⚠️ **Recording the drawing's hash is what makes the verification age honestly.** Without it,
+  "verified" stays true-looking forever; with it, editing that drawing flips the screen's
+  **Drawing** column to STALE and tells the next person to look again. **An unrecorded check
+  and a check that never happened are the same artefact** — which is precisely how the last
+  build reported two screens as browser-verified when they were not.
 
-          🔴 **Two separate states age two separate facts, and neither one stands in for the other.**
-          The **Drawing** column (`mockupSha256`, above) says only whether the DRAWING has moved since
-          you looked — it has never compared a single source file. Whether the BUILT screen has moved
-          is a second, optional fact: run `node scripts/ward-flow/screen-verification.mjs --hash
-          <mockup>` and record the result as `implementationSha256` if you want that tracked too;
-          leaving it out just means the generated page's **Implementation hash at look** column keeps
-          reading "not recorded". **The word "CURRENT" is retired everywhere in this record** — a
-          matching hash, drawing or implementation, proves only that nothing moved since the look, not
-          that the screen is right. This is WF-35: several screens once read "deviates" next to
-          "CURRENT" at the same time, because a drawing-hash match was being read as a claim about the
-          built screen it never actually compared.
+  🔴 **Two separate states age two separate facts, and neither one stands in for the other.**
+  The **Drawing** column (`mockupSha256`, above) says only whether the DRAWING has moved since
+  you looked — it has never compared a single source file. Whether the BUILT screen has moved
+  is a second, optional fact: run `node scripts/ward-flow/screen-verification.mjs --hash
+<mockup>` and record the result as `implementationSha256` if you want that tracked too;
+  leaving it out just means the generated page's **Implementation hash at look** column keeps
+  reading "not recorded". **The word "CURRENT" is retired everywhere in this record** — a
+  matching hash, drawing or implementation, proves only that nothing moved since the look, not
+  that the screen is right. This is WF-35: several screens once read "deviates" next to
+  "CURRENT" at the same time, because a drawing-hash match was being read as a claim about the
+  built screen it never actually compared.
 
 ## ③ Reachability
 
@@ -79,13 +79,13 @@ call it finished. If you cannot tick a box, the screen is not done — say so, d
 ## ④ Behaviour
 
 - [ ] Existing behaviour is unchanged unless the screen genuinely required a change to work.
-- [ ] Every deviation from the mockup is **written down, with its reason**, next to the
-      screen (in the PR, the commit, or a note in this folder) — not left for someone to
-      rediscover later.
-- [ ] 🔴 **The mockup is authoritative on design. The working engine is authoritative on
-      behaviour, where the two conflict.** Do not silently follow the mockup's behaviour if
-      the real engine already does something different and correct — write down which one
-      won and why.
+- [ ] Every deviation from the design baseline is **written down, with its reason**, next to the
+      screen (in the commit or a note in this folder) — not left for someone to rediscover later.
+- [ ] 🔴 **Owner ruling, 25 September 2026: The app as rendered from the latest accepted Ward Flow
+      build is authoritative on design; the working engine is authoritative on behaviour.** The
+      drawings in `docs/ward-flow/mockups/` are background reference only; disregard older mockup
+      discrepancies where the live code has advanced. Write down any intentional behavioral or layout
+      changes and why they were made.
 
 ## ⑤ The usual gates
 

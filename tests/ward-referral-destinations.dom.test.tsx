@@ -570,7 +570,11 @@ describe("Referral destinations — on the screen", () => {
      * which would retire the guard while leaving it green and let any future picker quietly become
      * a typing box.
      */
-    const ALLOWED_TEXT_INPUTS = ["ward-referral-intake-sending-team", "ward-referral-patient-search"];
+    const ALLOWED_TEXT_INPUTS = [
+      "ward-referral-intake-sending-team",
+      "ward-referral-patient-search",
+      "ward-referral-intake-suburb-filter",
+    ];
 
     const inputs = [...container.querySelectorAll("input")];
     expect(inputs.length, "the form rendered no inputs at all").toBeGreaterThan(0);

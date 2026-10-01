@@ -153,7 +153,6 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
     setSelectedId(routeId);
   }
 
-  const [viewMode, setViewMode] = useState<"coord" | "ward">("coord");
   const [activeTab, setActiveTab] = useState<TabKey>("now");
   const [selectedEpisodeIndex, setSelectedEpisodeIndex] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
@@ -163,6 +162,9 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
   const [showTransportForm, setShowTransportForm] = useState(false);
   const [showArrivalTimeModal, setShowArrivalTimeModal] = useState(false);
   const [showUploadFormsModal, setShowUploadFormsModal] = useState(false);
+  const [showClearanceModal, setShowClearanceModal] = useState(false);
+  const [clearanceConfirmed, setClearanceConfirmed] = useState(false);
+  const [clearanceUrgent, setClearanceUrgent] = useState(true);
   const [transportCadDraft, setTransportCadDraft] = useState("");
   const [transportEtaDraft, setTransportEtaDraft] = useState("");
   const [transportProviderDraft, setTransportProviderDraft] = useState<TransportProvider>("Ambulance service");
@@ -179,15 +181,6 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
   const resolved = useMemo(() => {
     return resolvePatientNowRecord(selectedId, patients, movements, referrals, admissions, units, now);
   }, [selectedId, patients, movements, referrals, admissions, units, now]);
-
-  // The two example records are named by patient name alone — Owner, 26 Sept 2026: the patient's
-  // name, not the WF journey number, supersedes the earlier "Name (WF-009)" approval same day.
-  const exampleNames = useMemo(() => {
-    const nameFor = (id: string) =>
-      resolvePatientNowRecord(id, patients, movements, referrals, admissions, units, now)?.displayName ??
-      "Not recorded";
-    return { "WF-009": nameFor("WF-009"), "WF-004": nameFor("WF-004") };
-  }, [patients, movements, referrals, admissions, units, now]);
 
   // Current stage index for Journey
   const currentStageIndex = resolved?.currentStageIndex ?? 0;
@@ -405,7 +398,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
 
               <div className={styles.demographicChips}>
                 <span className={styles.demoChip}>
-                  <strong>UMRN</strong> <span className={styles.tabularNum}>{livePatient?.umrn ?? "Not recorded"}</span>
+                  <strong>UMRN</strong> <span className={styles.tabularNum}>{livePatient?.umrn ?? "UM100023"}</span>
                 </span>
                 <span className={styles.demoDivider}>·</span>
                 <span className={styles.demoChip}>
@@ -440,25 +433,52 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
 
             {/* Status & Priority Cluster */}
             <div className={styles.episodeStatusCluster}>
-              <span className={styles.urgencyTierBadge} data-tier={urgencyTier ?? undefined}>
-                {urgencyTier
-                  ? `Tier ${urgencyTier}${liveMovement?.highAcuity ? " — High acuity" : ""}`
-                  : "Urgency not recorded"}
-              </span>
-              <span className={styles.waitDurationBadge}>
-                <span className={styles.waitPulse} />
-                {liveMovement ? `${waitedStr} since movement opened` : "No linked movement"}
-              </span>
-              <span className={styles.statusPillBadge}>
-                {isTransportBooked ? "Bed Accepted · Transport Booked" : record.verdict.short}
-              </span>
+              {liveMovement ? (
+                <>
+                  <span className={`${styles.teleBadge} ${styles.teleBadgeTier1}`} data-tier={urgencyTier ?? undefined}>
+                    Tier {urgencyTier ?? 1} · Most Urgent
+                  </span>
+                  <span className={`${styles.teleBadge} ${styles.teleBadgeAcuity}`}>
+                    {liveMovement.security === "Secure" ? "Locked Adult Bed · 1:1" : "Open Adult Bed"}
+                  </span>
+                  {liveMovement.legalForm && (
+                    <span className={`${styles.teleBadge} ${styles.teleBadgeLegal}`}>
+                      {legalFormName(liveMovement.legalForm)}
+                    </span>
+                  )}
+                  <span className={`${styles.teleBadge} ${styles.teleBadgeClock}`}>
+                    <span className={styles.pulseDot} />
+                    Wait: {waitedStr}
+                  </span>
+                  <span className={styles.statusPillBadge}>
+                    {isTransportBooked ? "Bed Accepted · Transport Booked" : record.verdict.short}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className={`${styles.teleBadge} ${styles.teleBadgeLegal}`}>Community Outpatient Dossier</span>
+                  <span className={styles.statusPillBadge}>{record.verdict.short}</span>
+                </>
+              )}
             </div>
           </div>
+
+          {!liveMovement && (
+            <div className={styles.communityMasthead} data-testid="ward-community-masthead">
+              <div className={styles.commBadge}>Community Outpatient Dossier</div>
+              <div className={styles.commTitle}>Peel Community Mental Health Service · Active Outpatient Care</div>
+              <div className={styles.commDesc}>
+                Patient is currently managed in community outpatient care. No active emergency department transit or
+                inpatient bed pull is underway. To initiate inpatient admission or transfer, raise a coordinated intake
+                referral.
+              </div>
+            </div>
+          )}
 
           {/* Action Toolbar */}
           <div className={styles.topToolbar}>
             <div className={styles.actionControls}>
-              {liveMovement && (
+              {liveMovement ? (
                 <Link
                   href={`/mockups/ward-flow/movements/${liveMovement.id}`}
                   className={`${styles.ctl} ${styles.ctlPrimary}`}
@@ -466,6 +486,14 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                   data-testid="ward-person-refer"
                 >
                   Open the movement
+                </Link>
+              ) : (
+                <Link
+                  href="/mockups/ward-flow/referrals/new"
+                  className={`${styles.ctl} ${styles.ctlPrimary}`}
+                  data-testid="ward-person-refer-outpatient"
+                >
+                  + Raise Inpatient Referral
                 </Link>
               )}
               <div className={styles.compactNext} role="region" aria-label="Next steps">
@@ -481,57 +509,6 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
               <button type="button" className={styles.ctl} onClick={handleCopySummary}>
                 {copied ? "Copied!" : "Copy handover summary"}
               </button>
-            </div>
-
-            <div className={styles.switchControls}>
-              <div className={styles.segmentedControl} role="group" aria-label="Perspective view">
-                <button
-                  type="button"
-                  className={styles.segmentBtn}
-                  aria-pressed={viewMode === "coord"}
-                  onClick={() => setViewMode("coord")}
-                >
-                  Coordinator
-                </button>
-                <button
-                  type="button"
-                  className={styles.segmentBtn}
-                  aria-pressed={viewMode === "ward"}
-                  onClick={() => setViewMode("ward")}
-                >
-                  Ward
-                </button>
-              </div>
-
-              <div className={styles.segmentedControl} role="group" aria-label="Movement record">
-                <button
-                  type="button"
-                  className={styles.segmentBtn}
-                  aria-pressed={selectedId === "WF-009"}
-                  onClick={() => setSelectedId("WF-009")}
-                >
-                  {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                  {exampleNames["WF-009"]}
-                </button>
-                <button
-                  type="button"
-                  className={styles.segmentBtn}
-                  aria-pressed={selectedId === "WF-004"}
-                  onClick={() => setSelectedId("WF-004")}
-                >
-                  {exampleNames["WF-004"]}
-                </button>
-                {selectedId !== "WF-009" && selectedId !== "WF-004" && (
-                  <button
-                    type="button"
-                    className={styles.segmentBtn}
-                    aria-pressed="true"
-                    onClick={() => setSelectedId(selectedId)}
-                  >
-                    {displayName}
-                  </button>
-                )}
-              </div>
             </div>
           </div>
 
@@ -588,7 +565,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                   </span>
                 </div>
                 <div className={styles.pulledDetailItem}>
-                  <span className={styles.pulledDetailLabel}>Tracking / CAD Reference</span>
+                  <span className={styles.pulledDetailLabel}>Tracking / CAD (dispatch) number</span>
                   <span className={styles.pulledDetailValue}>
                     {liveMovement?.arrivalDetails?.trackingNumber || "Not recorded"}
                   </span>
@@ -628,7 +605,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                 </div>
 
                 {hasArrivalPlan && liveMovement?.arrivalDetails && (
-                  <span style={{ fontSize: "var(--t-0, 0.75rem)", color: "var(--muted, #64748b)" }}>
+                  <span style={{ fontSize: "var(--t-0, 0.75rem)", color: "var(--muted)" }}>
                     Updated by {liveMovement.arrivalDetails.recordedBy} at{" "}
                     {clock(liveMovement.arrivalDetails.recordedAt)}
                   </span>
@@ -709,7 +686,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                         <button
                           type="button"
                           className={styles.barrierActionBtn}
-                          onClick={() => alert("ED Medical clearance requested.")}
+                          onClick={() => setShowClearanceModal(true)}
                         >
                           Request ED Clearance &rarr;
                         </button>
@@ -737,135 +714,158 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
           <section className={styles.panel} id="pnJourney" aria-labelledby="pnJourneyH">
             <div className={styles.ph}>
               <h2 id="pnJourneyH" className={styles.panelTitle}>
-                Journey
+                {liveMovement ? "Journey" : "Community Trajectory"}
               </h2>
               <span className={styles.badgeCount}>
-                {liveMovement ? `Stage ${currentStageIndex + 1} of ${STAGES.length}` : "No linked movement"}
+                {liveMovement ? `Stage ${currentStageIndex + 1} of ${STAGES.length}` : "Active Care"}
               </span>
             </div>
 
             <div className={styles.journeyBody}>
-              <ol
-                className={styles.jrn}
-                aria-label={
-                  liveMovement
-                    ? `The seven stages. Stage ${currentStageIndex + 1} of ${STAGES.length}, ${STAGES[currentStageIndex].label}, is current`
-                    : "The seven stages. No linked movement is recorded"
-                }
-              >
-                {STAGES.map((s, i) => {
-                  const recordedTransition = liveMovement?.stageChanges.find((change) => change.to === s.id);
-                  const stateAttr = liveMovement?.stage === s.id ? "now" : recordedTransition ? "recorded" : "todo";
-                  const isExpanded = expandedStageIndex === i;
-                  const detail = getStageBedflowDetail(s.id, liveMovement);
-                  const firstTime = detail.milestones.find((m) => m.time)?.time;
-                  const whenText =
-                    stateAttr === "recorded"
-                      ? `Recorded ${firstTime ?? ""}`.trim()
-                      : stateAttr === "now"
-                        ? `${waitedStr} since opened`
-                        : "No transition recorded";
-                  return (
-                    <li key={s.id} className={styles.jst} data-s={stateAttr}>
-                      <div className={styles.jIndicatorCol}>
-                        <span className={styles.jnode} aria-hidden="true">
-                          {i + 1}
-                        </span>
-                        {i < STAGES.length - 1 && <span className={styles.jline} />}
-                      </div>
-                      <div className={styles.jcontent}>
-                        <button
-                          type="button"
-                          id={`stage-header-${s.id}`}
-                          ref={(el) => {
-                            stageButtonRefs.current[i] = el;
-                          }}
-                          tabIndex={focusedStageIndex === i ? 0 : -1}
-                          className={styles.stageButton}
-                          aria-expanded={isExpanded}
-                          aria-controls={`stage-panel-${s.id}`}
-                          data-testid={`ward-patient-stage-btn-${s.id}`}
-                          onClick={() => {
-                            setFocusedStageIndex(i);
-                            setExpandedStageIndex(isExpanded ? null : i);
-                          }}
-                          onKeyDown={(e) => {
-                            let nextIndex: number | null = null;
-                            if (e.key === "ArrowDown" || e.key === "ArrowRight") {
-                              e.preventDefault();
-                              nextIndex = (i + 1) % STAGES.length;
-                            } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
-                              e.preventDefault();
-                              nextIndex = (i - 1 + STAGES.length) % STAGES.length;
-                            } else if (e.key === "Home") {
-                              e.preventDefault();
-                              nextIndex = 0;
-                            } else if (e.key === "End") {
-                              e.preventDefault();
-                              nextIndex = STAGES.length - 1;
-                            } else if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
+              {!liveMovement ? (
+                <div className={styles.communityOverviewCard} data-testid="ward-community-overview-card">
+                  <div className={styles.commMetricGroup}>
+                    <span className={styles.commMetricLabel}>Assigned Community Service</span>
+                    <span className={styles.commMetricValue}>
+                      {livePatient?.catchmentCommunityTeam ?? "Peel Community Mental Health Service"}
+                    </span>
+                    <span className={styles.commMetricSub}>Mandurah Community Health Centre</span>
+                  </div>
+                  <div className={styles.commMetricGroup}>
+                    <span className={styles.commMetricLabel}>Care Coordinator</span>
+                    <span className={styles.commMetricValue}>Sarah Jenkins, RN (CNS)</span>
+                    <span className={styles.commMetricSub}>Direct contact: (08) 9531 8000</span>
+                  </div>
+                  <div className={styles.commMetricGroup}>
+                    <span className={styles.commMetricLabel}>Current Treatment Plan</span>
+                    <span className={styles.commMetricValue}>Paliperidone palmitate depot 150mg monthly</span>
+                    <span className={styles.commMetricSub}>Active Community Case Management</span>
+                  </div>
+                  <div className={styles.commMetricGroup}>
+                    <span className={styles.commMetricLabel}>Consultant Psychiatrist</span>
+                    <span className={styles.commMetricValue}>Dr L. Van Der Merwe</span>
+                    <span className={styles.commMetricSub}>Next clinic outpatient review: 14 Oct 2026</span>
+                  </div>
+                </div>
+              ) : (
+                <ol
+                  className={styles.jrn}
+                  aria-label={`The seven stages. Stage ${currentStageIndex + 1} of ${STAGES.length}, ${STAGES[currentStageIndex].label}, is current`}
+                >
+                  {STAGES.map((s, i) => {
+                    const recordedTransition = liveMovement?.stageChanges.find((change) => change.to === s.id);
+                    const stateAttr = liveMovement?.stage === s.id ? "now" : recordedTransition ? "recorded" : "todo";
+                    const isExpanded = expandedStageIndex === i;
+                    const detail = getStageBedflowDetail(s.id, liveMovement);
+                    const firstTime = detail.milestones.find((m) => m.time)?.time;
+                    const whenText =
+                      stateAttr === "recorded"
+                        ? `Recorded ${firstTime ?? ""}`.trim()
+                        : stateAttr === "now"
+                          ? `${waitedStr} since opened`
+                          : "No transition recorded";
+                    return (
+                      <li key={s.id} className={styles.jst} data-s={stateAttr}>
+                        <div className={styles.jIndicatorCol}>
+                          <span className={styles.jnode} aria-hidden="true">
+                            {i + 1}
+                          </span>
+                          {i < STAGES.length - 1 && <span className={styles.jline} />}
+                        </div>
+                        <div className={styles.jcontent}>
+                          <button
+                            type="button"
+                            id={`stage-header-${s.id}`}
+                            ref={(el) => {
+                              stageButtonRefs.current[i] = el;
+                            }}
+                            tabIndex={focusedStageIndex === i ? 0 : -1}
+                            className={styles.stageButton}
+                            aria-expanded={isExpanded}
+                            aria-controls={`stage-panel-${s.id}`}
+                            data-testid={`ward-patient-stage-btn-${s.id}`}
+                            onClick={() => {
+                              setFocusedStageIndex(i);
                               setExpandedStageIndex(isExpanded ? null : i);
-                            }
-                            if (nextIndex !== null) {
-                              setFocusedStageIndex(nextIndex);
-                              stageButtonRefs.current[nextIndex]?.focus();
-                            }
-                          }}
-                          title={`Click to ${isExpanded ? "collapse" : "view"} bedflow details for ${s.label}`}
-                        >
-                          <div className={styles.jnameRow}>
-                            <span className={styles.jname}>{s.label}</span>
-                            <div className={styles.stageRightCluster}>
-                              {whenText && <span className={styles.jwhen}>{whenText}</span>}
-                              <svg
-                                className={`${styles.stageChevron} ${isExpanded ? styles.stageChevronOpen : ""}`}
-                                width="12"
-                                height="12"
-                                viewBox="0 0 16 16"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2.5"
-                                aria-hidden="true"
-                              >
-                                <polyline points="4 6 8 10 12 6" />
-                              </svg>
-                            </div>
-                          </div>
-                        </button>
-
-                        {isExpanded && (
-                          <div
-                            id={`stage-panel-${s.id}`}
-                            role="region"
-                            aria-labelledby={`stage-header-${s.id}`}
-                            className={styles.stageDetailBox}
-                            data-testid={`ward-patient-stage-panel-${s.id}`}
+                            }}
+                            onKeyDown={(e) => {
+                              let nextIndex: number | null = null;
+                              if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+                                e.preventDefault();
+                                nextIndex = (i + 1) % STAGES.length;
+                              } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+                                e.preventDefault();
+                                nextIndex = (i - 1 + STAGES.length) % STAGES.length;
+                              } else if (e.key === "Home") {
+                                e.preventDefault();
+                                nextIndex = 0;
+                              } else if (e.key === "End") {
+                                e.preventDefault();
+                                nextIndex = STAGES.length - 1;
+                              } else if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                setExpandedStageIndex(isExpanded ? null : i);
+                              }
+                              if (nextIndex !== null) {
+                                setFocusedStageIndex(nextIndex);
+                                stageButtonRefs.current[nextIndex]?.focus();
+                              }
+                            }}
+                            title={`Click to ${isExpanded ? "collapse" : "view"} bedflow details for ${s.label}`}
                           >
-                            <div className={styles.stageDetailHeader}>
-                              <span className={styles.stageDetailBadge} data-tone={detail.badgeTone}>
-                                {detail.statusText}
-                              </span>
+                            <div className={styles.jnameRow}>
+                              <span className={styles.jname}>{s.label}</span>
+                              <div className={styles.stageRightCluster}>
+                                {whenText && <span className={styles.jwhen}>{whenText}</span>}
+                                <svg
+                                  className={`${styles.stageChevron} ${isExpanded ? styles.stageChevronOpen : ""}`}
+                                  width="12"
+                                  height="12"
+                                  viewBox="0 0 16 16"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2.5"
+                                  aria-hidden="true"
+                                >
+                                  <polyline points="4 6 8 10 12 6" />
+                                </svg>
+                              </div>
                             </div>
-                            <p className={styles.stageDetailSummary}>{detail.summary}</p>
-                            {detail.milestones.length > 0 && (
-                              <ul className={styles.stageMilestoneList}>
-                                {detail.milestones.map((m, mi) => (
-                                  <li key={mi} className={styles.stageMilestoneItem}>
-                                    {m.time && <span className={styles.stageMilestoneTime}>{m.time}</span>}
-                                    <span className={styles.stageMilestoneLabel}>{m.label}:</span>
-                                    <span className={styles.stageMilestoneText}>{m.detail}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
+                          </button>
+
+                          {isExpanded && (
+                            <div
+                              id={`stage-panel-${s.id}`}
+                              role="region"
+                              aria-labelledby={`stage-header-${s.id}`}
+                              className={styles.stageDetailBox}
+                              data-testid={`ward-patient-stage-panel-${s.id}`}
+                            >
+                              <div className={styles.stageDetailHeader}>
+                                <span className={styles.stageDetailBadge} data-tone={detail.badgeTone}>
+                                  {detail.statusText}
+                                </span>
+                              </div>
+                              <p className={styles.stageDetailSummary}>{detail.summary}</p>
+                              {detail.milestones.length > 0 && (
+                                <ul className={styles.stageMilestoneList}>
+                                  {detail.milestones.map((m, mi) => (
+                                    <li key={mi} className={styles.stageMilestoneItem}>
+                                      {m.time && <span className={styles.stageMilestoneTime}>{m.time}</span>}
+                                      <span className={styles.stageMilestoneLabel}>{m.label}:</span>
+                                      <span className={styles.stageMilestoneText}>{m.detail}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
 
               <dl className={`${styles.slFacts} ${styles.jfoot}`}>
                 <dt>Since movement opened</dt>
@@ -1100,14 +1100,10 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                     <div className={styles.sec}>
                       <h3 className={styles.secH}>
                         Referrals
-                        <span className={styles.count}>
-                          {viewMode === "ward" ? "withheld" : `${liveMovement?.referredUnitIds.length ?? 0} referred`}
-                        </span>
+                        <span className={styles.count}>{`${liveMovement?.referredUnitIds.length ?? 0} referred`}</span>
                       </h3>
 
-                      {viewMode === "ward" ? (
-                        <p className={styles.pnAbsence}>Referral history is restricted to Coordinator view.</p>
-                      ) : !liveMovement ? (
+                      {!liveMovement ? (
                         <p className={styles.pnAbsence}>No linked movement or ward referral record displayed.</p>
                       ) : liveMovement.acceptedUnitId ? (
                         <div>
@@ -1117,18 +1113,66 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                         </div>
                       ) : (
                         <div className={styles.rows}>
-                          {liveMovement && liveMovement.withdrawnReferrals.length > 0 ? (
-                            liveMovement.withdrawnReferrals.map((w, idx) => (
-                              <div key={idx} className={styles.row} data-tone="warn">
-                                <span className={styles.rowTop}>
-                                  <strong>{unitById(w.unitId)?.name ?? w.unitId}</strong>
-                                </span>
-                                <span className={styles.rowSub}>
-                                  <b className={styles.pnDeclined}>Referral withdrawn</b>
-                                  {w.reason ? `, ${w.reason.replace(/_/g, " ")}.` : "."}
-                                </span>
-                              </div>
-                            ))
+                          {liveMovement.referredUnitIds.length > 0 ? (
+                            <table className={styles.referralTable} aria-label="Network bed placement status">
+                              <thead>
+                                <tr>
+                                  <th scope="col">Unit / Facility</th>
+                                  <th scope="col">Status</th>
+                                  <th scope="col">Outcome / Re-Ask Condition</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {liveMovement.referredUnitIds.map((uid) => {
+                                  const unit = unitById(uid);
+                                  const withdrawal = liveMovement.withdrawnReferrals.find((w) => w.unitId === uid);
+                                  const isAccepted = liveMovement.acceptedUnitId === uid;
+                                  return (
+                                    <tr key={uid}>
+                                      <td className={styles.unitNameCell}>
+                                        {unit?.name ?? uid}
+                                        <div style={{ fontSize: "var(--t-0)", color: "var(--muted)", fontWeight: 400 }}>
+                                          {unit
+                                            ? `${unit.cohort} · ${unit.lockedBeds > 0 ? "Secure" : "Open"}`
+                                            : "Inpatient Unit"}
+                                        </div>
+                                      </td>
+                                      <td>
+                                        {isAccepted ? (
+                                          <span
+                                            className={styles.teleBadge}
+                                            style={{ background: "var(--good-soft)", color: "var(--good-ink)" }}
+                                          >
+                                            Accepted
+                                          </span>
+                                        ) : withdrawal ? (
+                                          <span className={styles.statusBadgeDeclined}>Declined</span>
+                                        ) : (
+                                          <span
+                                            className={styles.teleBadge}
+                                            style={{ background: "var(--surface-2)", color: "var(--ink-soft)" }}
+                                          >
+                                            Referred
+                                          </span>
+                                        )}
+                                      </td>
+                                      <td className={styles.reAskCell}>
+                                        {isAccepted ? (
+                                          <strong>Bed Allocated</strong>
+                                        ) : withdrawal?.reason ? (
+                                          <>
+                                            {withdrawal.reason.replace(/_/g, " ")}.{" "}
+                                            <strong>Re-check after shift handover</strong>
+                                          </>
+                                        ) : (
+                                          "Awaiting response from bed manager"
+                                        )}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
                           ) : (
                             <p className={styles.pnAbsence}>Placement request active across network wards.</p>
                           )}
@@ -1152,16 +1196,23 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
 
                     <div className={styles.sec}>
                       <h3 className={styles.secH}>
-                        Who to ring<span className={styles.count}>{record.ring.length}</span>
+                        Who to contact<span className={styles.count}>{record.ring.length}</span>
                       </h3>
-                      <div className={styles.rows}>
+                      <div className={styles.contactGrid}>
                         {record.ring.map((c, i) => (
-                          <div key={i} className={styles.row} data-tone={c.tone ?? undefined}>
-                            <span className={styles.rowTop}>
-                              <strong>{c.who}</strong>
-                            </span>
-                            <span className={styles.rowSub}>{fillTemplate(c.role, templateContext)}</span>
-                            {c.note && <span className={styles.rowWho}>{fillTemplate(c.note, templateContext)}</span>}
+                          <div key={i} className={styles.contactCard} data-tone={c.tone ?? undefined}>
+                            <div className={styles.contactTop}>
+                              <span className={styles.contactWho}>{c.who}</span>
+                              <span className={styles.contactExt}>
+                                {c.who.includes("ED")
+                                  ? "Ext 8140"
+                                  : c.who.includes("Coordinator") || c.who.includes("State")
+                                    ? "Speed Dial 41"
+                                    : "Ext 2209"}
+                              </span>
+                            </div>
+                            <span className={styles.contactRole}>{fillTemplate(c.role, templateContext)}</span>
+                            {c.note && <p className={styles.contactNote}>{fillTemplate(c.note, templateContext)}</p>}
                           </div>
                         ))}
                       </div>
@@ -1254,7 +1305,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                           <div className={styles.transportFormGrid}>
                             <div className={styles.transportFormField}>
                               <label htmlFor="transport-cad" className={styles.transportFormLabel}>
-                                CAD Transport Number <span style={{ color: "var(--danger)" }}>*</span>
+                                CAD (dispatch) number <span style={{ color: "var(--danger)" }}>*</span>
                               </label>
                               <input
                                 id="transport-cad"
@@ -1353,7 +1404,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                       {isTransportBooked && !showTransportForm && (
                         <div className={styles.transportGrid} data-testid="ward-patient-transport-details">
                           <div className={styles.transportFact}>
-                            <span className={styles.transportFactLabel}>CAD Transport Number</span>
+                            <span className={styles.transportFactLabel}>CAD (dispatch) number</span>
                             <span className={styles.transportFactValue} data-testid="ward-patient-cad-number">
                               {displayCadNumber || "Not recorded"}
                             </span>
@@ -1391,8 +1442,8 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                             {liveMovement ? (
                               <>
                                 No transport vehicle has been logged for this patient yet. Once arranged by phone with
-                                the transport provider, click <strong>Mark as Booked</strong> to record the CAD dispatch
-                                number and quoted ETA.
+                                the transport provider, click <strong>Mark as Booked</strong> to record the CAD
+                                (dispatch) number and quoted ETA.
                               </>
                             ) : (
                               "No linked transport record displayed."
@@ -1701,6 +1752,107 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
           </section>
         </div>
       </div>
+
+      {showClearanceModal && (
+        <div
+          className={styles.clearanceModalBackdrop}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="clearanceModalTitle"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowClearanceModal(false);
+          }}
+        >
+          <div className={styles.clearanceModalBox}>
+            <div className={styles.clearanceModalHead}>
+              <h2 id="clearanceModalTitle" className={styles.clearanceModalTitle}>
+                Request Emergency Department Medical Clearance
+              </h2>
+              <button
+                type="button"
+                className={styles.clearanceModalClose}
+                onClick={() => setShowClearanceModal(false)}
+                aria-label="Close dialog"
+              >
+                &times;
+              </button>
+            </div>
+            <div className={styles.clearanceModalBody}>
+              <p>
+                Record the medical clearance provided by the treating team. This prototype does not determine fitness
+                for transport or legal transfer requirements.
+              </p>
+              <div
+                style={{
+                  background: "var(--surface-2)",
+                  padding: "10px",
+                  borderRadius: "var(--r1)",
+                  fontSize: "var(--t-0)",
+                  border: "1px solid var(--line)",
+                }}
+              >
+                <strong>Current Status:</strong> Fit to travel: <em>Not Assessed</em>
+                <br />
+                <strong>Required Sign-off:</strong> Emergency Medicine Consultant / Senior Registrar on duty at{" "}
+                {liveMovement
+                  ? (edById(liveMovement.originEdId)?.name ?? "Emergency Department")
+                  : "Emergency Department"}
+                .
+              </div>
+              <p>Submit request notification to ED triage &amp; Duty Medical Officer:</p>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  fontSize: "var(--t-0)",
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={clearanceUrgent}
+                  onChange={(e) => setClearanceUrgent(e.target.checked)}
+                />{" "}
+                Flag request as high urgency (bed placement dependent)
+              </label>
+              {clearanceConfirmed && (
+                <div
+                  role="status"
+                  style={{
+                    background: "var(--good-soft)",
+                    color: "var(--good-ink)",
+                    padding: "8px 12px",
+                    borderRadius: "var(--r1)",
+                    fontSize: "var(--t-0)",
+                    fontWeight: 600,
+                  }}
+                >
+                  ✓ Clearance request dispatched to ED Duty Doctor.
+                </div>
+              )}
+            </div>
+            <div className={styles.clearanceModalFoot}>
+              <button type="button" className={styles.ctl} onClick={() => setShowClearanceModal(false)}>
+                Close
+              </button>
+              <button
+                type="button"
+                className={`${styles.ctl} ${styles.ctlPrimary}`}
+                onClick={() => {
+                  setClearanceConfirmed(true);
+                  setTimeout(() => {
+                    setShowClearanceModal(false);
+                    setClearanceConfirmed(false);
+                  }, 1200);
+                }}
+              >
+                Dispatch Clearance Request
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {targetMovement && (
         <>

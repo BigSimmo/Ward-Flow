@@ -20,10 +20,7 @@ import { Sheet } from "@/components/ui/sheet";
 import { Tooltip } from "@/components/ui/tooltip";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
-import {
-  OPERATIONAL_DEFAULT_LABEL,
-  SHIFT_PATTERN,
-} from "@/components/ward-management/ward-operational-defaults";
+import { OPERATIONAL_DEFAULT_LABEL, SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
@@ -314,7 +311,7 @@ const CLINICAL_PERSONAS = [
     id: "chen",
     name: "Dr S. Chen",
     initials: "SC",
-    role: "State Access Coordinator",
+    role: "Bed coordinator",
   },
   {
     id: "gallagher",
@@ -799,8 +796,8 @@ export function WardRail({ asAt }: WardRailProps) {
           </div>
           <div className={styles.shiftMeta}>
             <span className={styles.shiftTitle}>{shiftProgress.shiftTitle}</span>
-            <span className={styles.shiftSub} title="Dr S. Chen · State Access Desk">
-              Dr S. Chen · State Access Desk
+            <span className={styles.shiftSub} title="Dr S. Chen · Bed coordinator">
+              Dr S. Chen · Bed coordinator
             </span>
           </div>
         </div>
@@ -977,7 +974,7 @@ export function WardRail({ asAt }: WardRailProps) {
             }}
           >
             <Plus aria-hidden="true" className={styles.btnRailReferralIcon} />
-            <span>Raise Referral</span>
+            <span>New referral</span>
           </button>
         </div>
 

@@ -3,12 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ward Flow — Custodial Transport Execution Console</title>
+    <title>Ward Flow — Transport Officer Dispatch Console</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap"
     />
     <style>
       :root {
@@ -44,17 +44,23 @@
         --ink: #14161a;
         --ink-soft: #384250;
         --muted: #5b6470;
-        --accent: #2f4c66;
+        --accent: #2563eb;
         --accent-ink: #1e354a;
-        --accent-soft: #dfe7f0;
+        --accent-soft: #eff6ff;
+        --accent-wash: #eff6ff;
         --on-accent: #ffffff;
-        --stripe: #2f4c66;
+        --stripe: #2563eb;
         --gilt: #7d612a;
         --gilt-soft: #f1ebdf;
-        --good: #227550;
-        --good-soft: #e2f0e8;
-        --warn: #825d10;
-        --warn-soft: #f6eeda;
+        --good: #059669;
+        --good-soft: #ecfdf5;
+        --good-wash: #ecfdf5;
+        --warn: #d97706;
+        --warn-soft: #fffbeb;
+        --warn-wash: #fffbeb;
+        --purple-accent: #7c3aed;
+        --purple-soft: #fbf5ff;
+        --purple-wash: #fbf5ff;
         --danger: #b03b2e;
         --danger-soft: #f8e6e2;
         --danger-ink: #973121;
@@ -74,17 +80,23 @@
         --ink: #e8ebef;
         --ink-soft: #b0b8c4;
         --muted: #7e8998;
-        --accent: #a7bcd2;
+        --accent: #3b82f6;
         --accent-ink: #c8d8e8;
-        --accent-soft: #232c37;
-        --on-accent: #0f1216;
-        --stripe: #a7bcd2;
+        --accent-soft: #1e293b;
+        --accent-wash: #1e293b;
+        --on-accent: #ffffff;
+        --stripe: #3b82f6;
         --gilt: #d3b77e;
         --gilt-soft: #2a2418;
-        --good: #6fd39b;
-        --good-soft: #172820;
-        --warn: #d4a34b;
-        --warn-soft: #2b2314;
+        --good: #10b981;
+        --good-soft: #132e24;
+        --good-wash: #132e24;
+        --warn: #f59e0b;
+        --warn-soft: #2e2612;
+        --warn-wash: #2e2612;
+        --purple-accent: #a78bfa;
+        --purple-soft: #261c3b;
+        --purple-wash: #261c3b;
         --danger: #ff8b76;
         --danger-soft: #321915;
         --danger-ink: #ffb4a6;
@@ -200,7 +212,7 @@
         background: var(--surface-2);
         color: var(--ink);
         font-weight: 600;
-        box-shadow: inset 3px 0 0 var(--gilt);
+        box-shadow: inset 3px 0 0 var(--accent);
       }
       .railFoot {
         padding: 12px;
@@ -219,38 +231,76 @@
         flex-direction: column;
         min-width: 0;
       }
-      .hdr1 {
-        height: 44px;
-        background: var(--surface);
-        border-bottom: 1px solid var(--line);
+
+      /* Flight Deck Header */
+      .flightDeckHeader {
         display: flex;
         align-items: center;
-        padding: 0 20px;
-        gap: 16px;
+        justify-content: space-between;
+        padding: 10px 24px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
         position: sticky;
         top: 0;
         z-index: 30;
       }
-      .hdrTitle {
+      .flightDeckTitleGroup {
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-size: var(--t-3);
-        font-weight: 600;
+        gap: 12px;
+        flex-wrap: wrap;
       }
-      .chip.mark {
-        font-size: var(--t-0);
-        padding: 2px 7px;
+      .flightDeckBadge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 10px;
+        background: var(--accent-wash);
+        border: 1px solid var(--accent);
         border-radius: var(--pill);
-        background: var(--sunk);
-        color: var(--muted);
-        border: 1px solid var(--line);
-        font-weight: 600;
+      }
+      .livePulse {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--good);
+        box-shadow: 0 0 0 2px var(--good-soft);
+        display: inline-block;
+        animation: pulseAnimation 2s infinite ease-in-out;
+      }
+      @keyframes pulseAnimation {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.25);
+          opacity: 0.6;
+        }
+      }
+      .flightDeckBadgeText {
+        font-size: var(--t-0);
+        font-weight: 700;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
-        letter-spacing: 0.06em;
+        color: var(--accent);
+        font-family: var(--mono);
+      }
+      .flightDeckSep {
+        color: var(--muted);
+        font-size: var(--t-3);
+      }
+      .flightDeckCount {
+        font-size: var(--t-1);
+        color: var(--muted);
+      }
+      .flightDeckCount strong {
+        color: var(--ink);
+        font-weight: 700;
+        font-family: var(--mono);
       }
       .hdrEnd {
-        margin-left: auto;
         display: flex;
         align-items: center;
         gap: 10px;
@@ -271,15 +321,19 @@
         align-items: center;
         gap: 6px;
         font-family: var(--body);
-        transition: background 0.12s;
+        transition: all 0.12s ease;
       }
       .btn:hover {
         background: var(--sunk);
       }
       .btn.primary {
-        background: var(--accent);
-        color: var(--on-accent);
-        border-color: var(--accent);
+        background: #0f172a;
+        color: #ffffff;
+        border-color: #0f172a;
+      }
+      .btn.primary:hover {
+        background: #1e293b;
+        border-color: #1e293b;
       }
       .btn.good {
         background: var(--good);
@@ -287,8 +341,8 @@
         border-color: var(--good);
       }
       .btn.sm {
-        height: 26px;
-        padding: 0 8px;
+        height: 28px;
+        padding: 0 10px;
         font-size: var(--t-0);
       }
 
@@ -299,7 +353,25 @@
         gap: 18px;
       }
 
-      /* KPI Cards */
+      /* Honesty Governance Card */
+      .govCard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--muted);
+        border-radius: var(--r2);
+        padding: 10px 14px;
+        font-size: var(--t-1);
+        color: var(--ink-soft);
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+      .govCard b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      /* 4-Card Executive Telemetry Strip */
       .kpiStrip {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -308,15 +380,50 @@
       .kpiCard {
         background: var(--surface);
         border: 1px solid var(--line);
-        border-bottom-color: var(--line-strong);
-        border-radius: var(--r2);
-        box-shadow: none;
-        padding: 12px 14px;
-        display: grid;
-        gap: 3px;
+        border-radius: 8px;
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        position: relative;
+        overflow: hidden;
+      }
+      .kpiCard[data-tone="accent"] {
+        border-left: 4px solid var(--accent);
+        background: var(--accent-wash);
+      }
+      .kpiCard[data-tone="good"] {
+        border-left: 4px solid var(--good);
+        background: var(--good-wash);
+      }
+      .kpiCard[data-tone="warn"] {
+        border-left: 4px solid var(--warn);
+        background: var(--warn-wash);
+      }
+      .kpiCard[data-tone="purple"] {
+        border-left: 4px solid var(--purple-accent);
+        background: var(--purple-wash);
+      }
+
+      .kpiLabel {
+        font-size: var(--t-0);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+      .kpiVal {
+        font-family: var(--mono);
+        font-size: 2.25rem;
+        line-height: 1.1;
+        font-weight: 750;
+        font-feature-settings: "tnum" 1;
+        color: var(--ink);
+        margin: 2px 0;
       }
       .kpiCard[data-tone="accent"] .kpiVal {
-        color: var(--accent-ink);
+        color: var(--accent);
       }
       .kpiCard[data-tone="good"] .kpiVal {
         color: var(--good);
@@ -324,30 +431,106 @@
       .kpiCard[data-tone="warn"] .kpiVal {
         color: var(--warn);
       }
-      .kpiLabel {
-        font-size: var(--t-0);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--muted);
-      }
-      .kpiVal {
-        font-family: var(--mono);
-        font-size: var(--t-5);
-        font-weight: 700;
-        color: var(--ink);
+      .kpiCard[data-tone="purple"] .kpiVal {
+        color: var(--purple-accent);
       }
       .kpiSub {
         font-size: var(--t-0);
         color: var(--muted);
         font-family: var(--mono);
+        font-weight: 500;
+      }
+
+      /* Provider Strip */
+      .providerStrip {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px 16px;
+        display: grid;
+        gap: 10px;
+      }
+      .providerStripHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .providerStripTitle {
+        font-size: var(--t-1);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--ink);
+      }
+      .providerStripHint {
+        font-size: var(--t-0);
+        color: var(--muted);
+      }
+      .providerGrid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+      .providerCard {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 10px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        cursor: pointer;
+        transition: all 0.12s ease;
+      }
+      .providerCard:hover {
+        background: var(--sunk);
+        border-color: var(--line-strong);
+      }
+      .providerCardTop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .providerName {
+        font-size: var(--t-1);
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .providerBadge {
+        font-size: var(--t-0);
+        font-weight: 700;
+        font-family: var(--mono);
+        padding: 2px 7px;
+        border-radius: var(--pill);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .providerBadge[data-tone="good"] {
+        background: var(--good-soft);
+        color: var(--good);
+        border: 1px solid var(--good);
+      }
+      .providerBadge[data-tone="neutral"] {
+        background: var(--sunk);
+        color: var(--muted);
+        border: 1px solid var(--line);
+      }
+      .providerStats {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--t-0);
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+      .providerStats strong {
+        color: var(--ink);
       }
 
       /* Panel */
       .panel {
         background: var(--surface);
         border: 1px solid var(--line);
-        border-bottom-color: var(--line-strong);
         border-radius: var(--r1);
         box-shadow: var(--lift);
         overflow: hidden;
@@ -375,116 +558,301 @@
         color: var(--ink-soft);
       }
 
-      /* Transport Run Cards */
+      /* Condensed Transport Job Cards */
       .runCardList {
         display: grid;
-        gap: 14px;
-        padding: 18px;
-        background: var(--surface);
-      }
-      .runCard {
-        border: 1px solid var(--line);
-        border-bottom-color: var(--line-strong);
-        border-radius: var(--r2);
-        background: var(--surface-2);
-        padding: 18px;
-        display: grid;
-        gap: 14px;
-      }
-      .runCard.activeRun {
-        background: var(--surface);
-        border-color: var(--accent);
-        box-shadow: inset 0 0 0 1px var(--accent);
-      }
-      .runHeader {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        flex-wrap: wrap;
-        gap: 10px;
-      }
-      .runRoute {
-        font-size: var(--t-3);
-        font-weight: 700;
-        color: var(--ink);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .runMeta {
-        font-size: var(--t-1);
-        color: var(--muted);
-        font-family: var(--mono);
-        display: flex;
         gap: 12px;
-        flex-wrap: wrap;
+        padding: 16px;
+        background: var(--surface);
       }
-
-      /* Stepper */
-      .stepper {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 8px;
-        background: var(--sunk);
-        padding: 10px;
-        border-radius: var(--r2);
-      }
-      .stepItem {
+      .jobCard {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        padding: 12px 14px;
         display: flex;
         flex-direction: column;
-        gap: 2px;
-        font-size: var(--t-0);
-        color: var(--muted);
+        gap: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        transition: all 0.12s ease;
       }
-      .stepItem.completed {
-        color: var(--good);
-      }
-      .stepItem.current {
-        color: var(--accent);
-        font-weight: 700;
-      }
-      .stepBar {
-        height: 5px;
-        border-radius: var(--pill);
-        background: var(--line);
-      }
-      .stepItem.completed .stepBar {
-        background: var(--good);
-      }
-      .stepItem.current .stepBar {
-        background: var(--accent);
+      .jobCard.active {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px var(--accent);
       }
 
-      .badge {
+      /* Single-line Header Ribbon */
+      .jobHeaderRibbon {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .jobIdBadgeGroup {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .jobIdTag {
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 700;
+        background: var(--sunk);
+        color: var(--muted);
+        padding: 2px 7px;
+        border-radius: 4px;
+        border: 1px solid var(--line);
+      }
+      .jobPatientName {
+        font-size: 0.9375rem;
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .stageBadge {
         display: inline-flex;
         align-items: center;
-        padding: 2px 7px;
+        padding: 2px 8px;
         border-radius: var(--pill);
         font-size: var(--t-0);
-        font-weight: 600;
+        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
+        font-family: var(--mono);
       }
-      .badge[data-tone="good"] {
+      .stageBadge[data-tone="good"] {
         background: var(--good-soft);
         color: var(--good);
         border: 1px solid var(--good);
       }
-      .badge[data-tone="warn"] {
+      .stageBadge[data-tone="warn"] {
         background: var(--warn-soft);
         color: var(--warn);
         border: 1px solid var(--warn);
       }
-      .badge[data-tone="danger"] {
-        background: var(--danger-soft);
-        color: var(--danger-ink);
-        border: 1px solid var(--danger);
-      }
-      .badge[data-tone="accent"] {
-        background: var(--accent-soft);
-        color: var(--accent-ink);
+      .stageBadge[data-tone="accent"] {
+        background: var(--accent-wash);
+        color: var(--accent);
         border: 1px solid var(--accent);
       }
+      .stageBadge[data-tone="default"] {
+        background: var(--sunk);
+        color: var(--muted);
+        border: 1px solid var(--line);
+      }
+
+      .escortBadge {
+        font-size: var(--t-0);
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: var(--pill);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid var(--warn);
+        font-family: var(--mono);
+      }
+
+      .jobHeaderActions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .jobWaitMeta {
+        font-size: var(--t-0);
+        color: var(--muted);
+        font-family: var(--mono);
+        font-weight: 600;
+      }
+      .btnInspect {
+        height: 26px;
+        padding: 0 10px;
+        font-size: var(--t-0);
+        font-weight: 600;
+        border-radius: 4px;
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--ink-soft);
+        cursor: pointer;
+        transition: background 0.12s;
+      }
+      .btnInspect:hover {
+        background: var(--sunk);
+        color: var(--ink);
+      }
+
+      /* Single-line Corridor */
+      .routeCorridor {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 6px 12px;
+      }
+      .routeCorridorOrigin,
+      .routeCorridorDest {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        min-width: 0;
+      }
+      .routeCorridorLabel {
+        font-size: 10px;
+        font-weight: 750;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        font-family: var(--mono);
+        text-transform: uppercase;
+        flex-shrink: 0;
+      }
+      .routeCorridorPlace {
+        font-size: var(--t-1);
+        color: var(--ink);
+        font-weight: 650;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .routeCorridorArrow {
+        color: var(--accent);
+        font-size: var(--t-3);
+        font-weight: 700;
+        user-select: none;
+        flex-shrink: 0;
+      }
+
+      /* Stepper */
+      .stepperWrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .stepper {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        padding: 2px 0;
+      }
+      .stageBar {
+        height: 4px;
+        border-radius: var(--pill);
+        background: var(--line-strong);
+        transition: all 0.15s ease;
+      }
+      .stageBar[data-s="done"] {
+        background: var(--good);
+      }
+      .stageBar[data-s="now"] {
+        background: var(--accent);
+        box-shadow: 0 0 0 2px var(--accent-wash);
+      }
+      .stageBar[data-s="todo"] {
+        background: var(--line);
+      }
+      .stageLine {
+        margin: 0;
+        font-size: 11.5px;
+        font-family: var(--mono);
+        color: var(--muted);
+      }
+      .stageLine strong {
+        color: var(--accent);
+        font-weight: 700;
+      }
+
+      /* 6-Column Metadata Matrix */
+      .jobDetails {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 6px 12px;
+        margin: 0;
+        padding: 6px 10px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+      }
+      .jobDetailRow {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+      .jobDetailRow dt {
+        font-size: 9px;
+        font-weight: 750;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .jobDetailRow dd {
+        margin: 0;
+        font-family: var(--mono);
+        font-size: var(--t-0);
+        font-weight: 600;
+        color: var(--ink);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* Segmented Action Buttons */
+      .actionRow {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        border-top: 1px solid var(--line);
+        padding-top: 8px;
+      }
+      .actionButton {
+        height: 34px;
+        box-sizing: border-box;
+        padding: 0 10px;
+        font-size: var(--t-1);
+        font-weight: 600;
+        text-align: center;
+        background: var(--surface);
+        color: var(--ink);
+        border: 1px solid var(--line-strong);
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.12s ease;
+      }
+      .actionButton:hover:not([disabled]) {
+        background: var(--sunk);
+        border-color: var(--ink);
+      }
+      .actionButton.primary {
+        background: #0f172a;
+        color: #ffffff;
+        border-color: #0f172a;
+        font-weight: 700;
+      }
+      .actionButton.primary:hover:not([disabled]) {
+        background: #1e293b;
+        border-color: #1e293b;
+      }
+      .actionButton.activeStep {
+        background: var(--accent-wash);
+        color: var(--accent);
+        border-color: var(--accent);
+        font-weight: 700;
+      }
+      .actionButton[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
       .mono {
         font-family: var(--mono);
         font-variant-numeric: tabular-nums;
@@ -505,7 +873,7 @@
         display: flex;
       }
       .modalDialog {
-        width: min(92vw, 500px);
+        width: min(92vw, 520px);
         background: var(--surface);
         border: 1px solid var(--line-strong);
         border-radius: var(--r1);
@@ -518,16 +886,20 @@
         padding: 12px 16px;
         background: var(--surface-2);
         border-bottom: 1px solid var(--line);
-        border-top-left-radius: var(--r1i);
-        border-top-right-radius: var(--r1i);
         display: flex;
         justify-content: space-between;
         align-items: center;
       }
+      .modalHead h3 {
+        margin: 0;
+        font-size: var(--t-3);
+        font-weight: 700;
+        color: var(--ink);
+      }
       .modalBody {
         padding: 16px;
         display: grid;
-        gap: 12px;
+        gap: 14px;
       }
       .modalFoot {
         padding: 12px 16px;
@@ -549,169 +921,72 @@
         padding: 10px 18px;
         border-radius: var(--r2);
         font-size: var(--t-1);
-        font-weight: 500;
-        box-shadow: var(--lift);
         display: flex;
         align-items: center;
-        gap: 8px;
-        z-index: 1000;
-        transition:
-          transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-          opacity 0.25s ease;
-        opacity: 0;
+        gap: 10px;
+        box-shadow: var(--lift);
+        z-index: 200;
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         pointer-events: none;
       }
       .toast.show {
         transform: translateX(-50%) translateY(0);
-        opacity: 1;
       }
 
-      @media (max-width: 1000px) {
+      @media (max-width: 900px) {
         .app {
           grid-template-columns: 1fr;
         }
         .rail {
-          position: sticky;
-          top: 0;
-          z-index: 40;
-          height: auto;
-          flex-direction: row;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 14px;
-          border-right: 0;
-          border-bottom: 1px solid var(--line);
-          background: var(--surface);
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
-        }
-        .brand {
-          padding: 0 10px 0 0;
-          margin-right: 4px;
-          flex: 0 0 auto;
-        }
-        .railScroll {
-          flex-direction: row;
-          gap: 6px;
-          padding: 0;
-          overflow-x: auto;
-        }
-        .railGroup {
-          display: flex;
-          flex-direction: row;
-          gap: 4px;
-          padding: 0;
-        }
-        .railEyebrow,
-        .railFoot {
           display: none;
-        }
-        .railLink {
-          width: auto;
-          flex: 0 0 auto;
-          padding: 6px 10px;
-          font-size: var(--t-1);
-          white-space: nowrap;
-          box-shadow: none;
-        }
-        .railLink[aria-current="page"] {
-          box-shadow: inset 0 -2px 0 var(--gilt);
-          background: var(--surface-2);
-          color: var(--ink);
         }
         .kpiStrip {
           grid-template-columns: repeat(2, 1fr);
         }
-        .stepper {
-          grid-template-columns: 1fr 1fr;
-        }
-        .workspace {
-          padding: 16px;
-        }
-      }
-
-      @media (max-width: 640px) {
-        .kpiStrip {
+        .providerGrid {
           grid-template-columns: 1fr;
         }
-        .stepper {
-          grid-template-columns: 1fr;
-          gap: 8px;
+        .jobDetails {
+          grid-template-columns: repeat(3, 1fr);
         }
-        .runHeader {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 10px;
-        }
-        .workspace {
-          padding: 12px;
-          gap: 14px;
-        }
-        .hdr1 {
-          padding: 0 12px;
-        }
-        .hdrTitle {
-          font-size: var(--t-2);
-        }
-        .btn {
-          height: 36px;
+        .actionRow {
+          grid-template-columns: repeat(2, 1fr);
         }
       }
     </style>
   </head>
   <body>
     <div class="app">
-      <!-- Rail -->
-      <nav class="rail" aria-label="Sections">
-        <div class="brand"><b>Ward Flow</b><span>WA</span></div>
+      <!-- Rail Navigation -->
+      <nav class="rail" aria-label="Primary Navigation">
+        <div class="brand">
+          <b>Ward Flow</b>
+          <span>SOVEREIGN</span>
+        </div>
         <div class="railScroll">
           <div class="railGroup">
-            <p class="railEyebrow">Clinical Operations</p>
-            <button class="railLink" type="button" onclick="location.href = 'command-third-edition.html'">
-              Command Center
+            <div class="railEyebrow">Transit Hub</div>
+            <button class="railLink" type="button" aria-current="page">Transit Command</button>
+            <button class="railLink" type="button" onclick="location.href = 'ward-board-third-edition.html'">
+              Ward Bed Board
             </button>
-            <button class="railLink" type="button" onclick="location.href = 'movement-third-edition.html'">
-              Movement Board
+            <button class="railLink" type="button" onclick="location.href = 'ed-network-third-edition.html'">
+              Emergency Departments
             </button>
-            <button class="railLink" type="button" onclick="location.href = 'patient-now-third-edition.html'">
-              Patient Trajectory
-            </button>
-            <button class="railLink" type="button" onclick="location.href = 'capacity-third-edition.html'">
-              Capacity
-            </button>
-            <button class="railLink" type="button" onclick="location.href = 'wards-third-edition.html'">
-              Wards Directory
-            </button>
-          </div>
-          <div class="railGroup">
-            <p class="railEyebrow">Coordination & Logistics</p>
-            <button class="railLink" type="button" onclick="location.href = 'add-a-patient-third-edition.html'">
-              Add a Patient
-            </button>
-            <button class="railLink" type="button" onclick="location.href = 'ward-answer-third-edition.html'">
-              Ward Bed Answer
+            <button class="railLink" type="button" onclick="location.href = 'referral-intake-third-edition.html'">
+              Referral Ingestion
             </button>
             <button class="railLink" type="button" onclick="location.href = 'discharges-third-edition.html'">
-              Discharges & Egress
+              Discharge Planning
             </button>
             <button class="railLink" type="button" onclick="location.href = 'out-of-area-third-edition.html'">
-              Out-of-Area Ledger
-            </button>
-            <button class="railLink" type="button" aria-current="page">Transport Officer</button>
-            <button class="railLink" type="button" onclick="location.href = 'on-call-third-edition.html'">
-              On-Call & Contacts
+              Out of Area Ledger
             </button>
           </div>
           <div class="railGroup">
-            <p class="railEyebrow">Legal & Governance</p>
-            <button class="railLink" type="button" onclick="location.href = 'legal-forms-third-edition.html'">
-              Legal Forms (MHA)
-            </button>
+            <div class="railEyebrow">System</div>
             <button class="railLink" type="button" onclick="location.href = 'governance-third-edition.html'">
-              Governance Overrides
-            </button>
-            <button class="railLink" type="button" onclick="location.href = 'alerts-third-edition.html'">
-              Alerts Center
+              Clinical Governance
             </button>
             <button class="railLink" type="button" onclick="location.href = 'settings-third-edition.html'">
               Settings
@@ -719,165 +994,372 @@
           </div>
         </div>
         <div class="railFoot">
-          <div>Custody Fleet: <b>St John Secure</b></div>
-          <div>Active Transits: <b>3 En Route</b></div>
+          <div>Transit Fleet: <b>St John &amp; Dedicated PTS</b></div>
+          <div>Active Transfers: <b>13 Dispatched</b></div>
         </div>
       </nav>
 
       <!-- Main Frame -->
       <div class="frame">
-        <header class="hdr1">
-          <div class="hdrTitle">
-            <span>Custodial Transport Execution Console</span>
-            <span class="chip mark">Mobile Custody MDT</span>
+        <!-- Executive Flight Deck Header -->
+        <header class="flightDeckHeader">
+          <div class="flightDeckTitleGroup">
+            <div class="flightDeckBadge">
+              <span class="livePulse" aria-hidden="true"></span>
+              <span class="flightDeckBadgeText">TRANSIT DISPATCH COMMAND</span>
+            </div>
+            <span class="flightDeckSep" aria-hidden="true">&middot;</span>
+            <span class="flightDeckCount"> <strong>13</strong> active patient transfers across statewide network </span>
           </div>
           <div class="hdrEnd">
-            <button class="btn" id="themeToggle" type="button">Dark Theme</button>
+            <button class="btn sm" id="themeToggle" type="button">Dark Theme</button>
             <button
-              class="btn primary"
+              class="btn primary sm"
               type="button"
-              onclick="openHandoverModal('WF-028', 'Joondalup ED', 'Graylands Dorrington')"
+              onclick="
+                openHandoverModal('WF-028', 'Joondalup Health Campus ED', 'Graylands Hospital — Dorrington Ward')
+              "
             >
-              + Custody Handover
+              + Transport Handover
             </button>
           </div>
         </header>
 
         <main class="workspace">
-          <!-- Honesty Governance Banner -->
-          <div
-            style="
-              background: var(--surface-2);
-              border: 1px solid var(--line);
-              border-radius: var(--r2);
-              padding: 10px 14px;
-              font-size: var(--t-1);
-              color: var(--ink-soft);
-            "
-            data-testid="ward-officer-governance"
-          >
-            <b>Custodial Logistics Contract:</b> The system records transport provider organisations (Ambulance service,
-            Patient transport service, Ward escort), never individual driver names. Displays every active transit run
-            across Western Australia.
+          <!-- Honesty Governance Card -->
+          <div class="govCard" data-testid="ward-officer-governance">
+            <b>Transport Logistics Contract:</b>
+            <span
+              >The system records transport provider organisations (Ambulance service, Patient transport service, Ward
+              escort), never individual driver names. Displays every active transit run across Western Australia.</span
+            >
           </div>
 
-          <!-- KPI Strip -->
-          <div class="kpiStrip">
+          <!-- 4-Card Executive Telemetry Strip -->
+          <div class="kpiStrip" aria-label="Transport Overview Telemetry">
             <div class="kpiCard" data-tone="accent">
               <span class="kpiLabel">Active Transit Runs</span>
-              <span class="kpiVal">3</span>
+              <span class="kpiVal">13</span>
               <span class="kpiSub">Dispatched or In Transit</span>
             </div>
             <div class="kpiCard" data-tone="good">
-              <span class="kpiLabel">Under Active Custody</span>
-              <span class="kpiVal">1</span>
+              <span class="kpiLabel">Patient On Board</span>
+              <span class="kpiVal">4</span>
               <span class="kpiSub">Patient On-Board Vehicle</span>
             </div>
             <div class="kpiCard" data-tone="warn">
               <span class="kpiLabel">Awaiting Departure</span>
-              <span class="kpiVal">2</span>
+              <span class="kpiVal">6</span>
               <span class="kpiSub">ED Handover Pending</span>
             </div>
-            <div class="kpiCard" data-tone="accent">
-              <span class="kpiLabel">Average Transit Leg</span>
-              <span class="kpiVal">48m</span>
-              <span class="kpiSub">Metropolitan Network Average</span>
+            <div class="kpiCard" data-tone="purple">
+              <span class="kpiLabel">Escort Required</span>
+              <span class="kpiVal">3</span>
+              <span class="kpiSub">Mental Health Escort</span>
             </div>
           </div>
+
+          <!-- Fleet By Provider Strip -->
+          <section class="providerStrip" aria-label="Fleet By Provider">
+            <div class="providerStripHeader">
+              <span class="providerStripTitle">Fleet By Provider</span>
+              <span class="providerStripHint">Filter transfers by transport provider fleet</span>
+            </div>
+            <div class="providerGrid">
+              <div class="providerCard" onclick="showToast('Filtered by Ambulance Service')">
+                <div class="providerCardTop">
+                  <span class="providerName">Ambulance Service</span>
+                  <span class="providerBadge" data-tone="good">2 Active</span>
+                </div>
+                <div class="providerStats">
+                  <span><strong>2</strong> on road</span>
+                  <span>&middot;</span>
+                  <span><strong>2</strong> booked</span>
+                </div>
+              </div>
+              <div class="providerCard" onclick="showToast('Filtered by Patient Transport Service')">
+                <div class="providerCardTop">
+                  <span class="providerName">Patient Transport Service</span>
+                  <span class="providerBadge" data-tone="good">6 Active</span>
+                </div>
+                <div class="providerStats">
+                  <span><strong>6</strong> on road</span>
+                  <span>&middot;</span>
+                  <span><strong>3</strong> booked</span>
+                </div>
+              </div>
+              <div class="providerCard" onclick="showToast('Filtered by Ward Escort')">
+                <div class="providerCardTop">
+                  <span class="providerName">Ward Escort</span>
+                  <span class="providerBadge" data-tone="neutral">Standby</span>
+                </div>
+                <div class="providerStats">
+                  <span><strong>1</strong> on road</span>
+                  <span>&middot;</span>
+                  <span><strong>1</strong> booked</span>
+                </div>
+              </div>
+            </div>
+          </section>
 
           <!-- Active Transport Runs -->
           <section class="panel">
             <div class="ph">
               <h2>Active Mobile Transport Runs</h2>
-              <span class="mono" style="font-size: var(--t-0); color: var(--muted)">3 Priority Transfers</span>
+              <span class="mono" style="font-size: var(--t-0); color: var(--muted)">3 Priority Transfers Shown</span>
             </div>
             <div class="runCardList">
-              <!-- Run 1: Elena Rostova -->
-              <div class="runCard activeRun" id="run-wf-028">
-                <div class="runHeader">
-                  <div>
-                    <div class="runRoute">
-                      <span>Joondalup Health Campus ED &rarr; Graylands Hospital (Dorrington)</span>
-                      <span class="badge" data-tone="warn">In Transit</span>
-                    </div>
-                    <div class="runMeta" style="margin-top: 4px">
-                      <span>URM: <b>WF-028 (Elena Rostova)</b></span>
-                      <span>Provider: <b>Patient Transport Service (Secure)</b></span>
-                      <span>Escort: <b>Mental Health Nurse Escort Required</b></span>
-                      <span>Legal Order: <b>Form 4A Verified</b></span>
-                    </div>
+              <!-- Run 1: Elena Rostova (WF-028) -->
+              <div class="jobCard active" id="run-wf-028">
+                <!-- Header Ribbon -->
+                <div class="jobHeaderRibbon">
+                  <div class="jobIdBadgeGroup">
+                    <span class="jobIdTag">#WF-028</span>
+                    <strong class="jobPatientName">Elena Rostova</strong>
+                    <span class="stageBadge" data-tone="good">Collected</span>
+                    <span class="escortBadge">Clinical Escort</span>
                   </div>
-                  <div style="display: flex; gap: 8px">
-                    <button type="button" class="btn sm" onclick="openFormVerificationModal('WF-028', 'Elena Rostova')">
+                  <div class="jobHeaderActions">
+                    <span class="jobWaitMeta">48m elapsed</span>
+                    <button
+                      type="button"
+                      class="btnInspect"
+                      onclick="openFormVerificationModal('WF-028', 'Elena Rostova')"
+                    >
                       Inspect Form 4A
-                    </button>
-                    <button type="button" class="btn sm good" onclick="confirmArrival('WF-028')">
-                      Confirm Arrival at Ward
                     </button>
                   </div>
                 </div>
 
-                <!-- 4-Stage Stepper -->
-                <div class="stepper" role="img" aria-label="Transport progression: 3 of 4 stages complete">
-                  <div class="stepItem completed">
-                    <div class="stepBar"></div>
-                    <span><b>1. Accepted</b><br /><span class="mono">14:15 AWST</span></span>
+                <!-- Route Corridor -->
+                <div class="routeCorridor">
+                  <div class="routeCorridorOrigin">
+                    <span class="routeCorridorLabel">ORIGIN</span>
+                    <strong class="routeCorridorPlace">Joondalup Health Campus ED</strong>
                   </div>
-                  <div class="stepItem completed">
-                    <div class="stepBar"></div>
-                    <span><b>2. En Route</b><br /><span class="mono">14:40 AWST</span></span>
+                  <span class="routeCorridorArrow" aria-hidden="true">&rarr;</span>
+                  <div class="routeCorridorDest">
+                    <span class="routeCorridorLabel">DESTINATION</span>
+                    <strong class="routeCorridorPlace">Graylands Hospital (Dorrington Ward)</strong>
                   </div>
-                  <div class="stepItem current">
-                    <div class="stepBar"></div>
-                    <span><b>3. Collected</b><br /><span class="mono">15:10 AWST</span></span>
+                </div>
+
+                <!-- Stepper -->
+                <div class="stepperWrapper">
+                  <div class="stepper" role="img" aria-label="Transport progression: 3 of 4 stages complete">
+                    <span class="stageBar" data-s="done"></span>
+                    <span class="stageBar" data-s="done"></span>
+                    <span class="stageBar" data-s="now"></span>
+                    <span class="stageBar" data-s="todo"></span>
                   </div>
-                  <div class="stepItem">
-                    <div class="stepBar"></div>
-                    <span><b>4. Delivered</b><br /><span class="mono">ETA 15:55</span></span>
+                  <p class="stageLine"><strong>Collected</strong><span>, next delivered</span></p>
+                </div>
+
+                <!-- Metadata Matrix -->
+                <dl class="jobDetails">
+                  <div class="jobDetailRow">
+                    <dt>Provider</dt>
+                    <dd>Patient transport service</dd>
                   </div>
+                  <div class="jobDetailRow">
+                    <dt>Escort required</dt>
+                    <dd>Yes (Mental Health)</dd>
+                  </div>
+                  <div class="jobDetailRow">
+                    <dt>Form on file</dt>
+                    <dd>Form 4A Verified</dd>
+                  </div>
+                  <div class="jobDetailRow">
+                    <dt>CAD number</dt>
+                    <dd>CAD-88219</dd>
+                  </div>
+                  <div class="jobDetailRow">
+                    <dt>Priority</dt>
+                    <dd>Urgent (P1)</dd>
+                  </div>
+                  <div class="jobDetailRow">
+                    <dt>Clinician</dt>
+                    <dd>Dr. P. Hughes</dd>
+                  </div>
+                </dl>
+
+                <!-- Segmented Action Buttons -->
+                <div class="actionRow">
+                  <button type="button" class="actionButton" disabled>Accepted</button>
+                  <button type="button" class="actionButton" disabled>En route</button>
+                  <button type="button" class="actionButton activeStep">Collected</button>
+                  <button type="button" class="actionButton primary" onclick="confirmArrival('WF-028')">
+                    Delivered
+                  </button>
                 </div>
               </div>
 
-              <!-- Run 2: Tobias Wren -->
-              <div class="runCard" id="run-wf-009">
-                <div class="runHeader">
-                  <div>
-                    <div class="runRoute">
-                      <span>Sir Charles Gairdner ED &rarr; Midland Hospital (Ward 1)</span>
-                      <span class="badge" data-tone="accent">Dispatched</span>
-                    </div>
-                    <div class="runMeta" style="margin-top: 4px">
-                      <span>URM: <b>WF-009 (Tobias Wren)</b></span>
-                      <span>Provider: <b>Ambulance Service</b></span>
-                      <span>Escort: <b>Clinical Escort On-Board</b></span>
-                      <span>Legal Order: <b>Form 1A Linked</b></span>
-                    </div>
+              <!-- Run 2: Tobias Wren (WF-009) -->
+              <div class="jobCard" id="run-wf-009">
+                <!-- Header Ribbon -->
+                <div class="jobHeaderRibbon">
+                  <div class="jobIdBadgeGroup">
+                    <span class="jobIdTag">#WF-009</span>
+                    <strong class="jobPatientName">Tobias Wren</strong>
+                    <span class="stageBadge" data-tone="warn">En route</span>
                   </div>
-                  <div style="display: flex; gap: 8px">
-                    <button type="button" class="btn sm primary" onclick="recordStage('WF-009', 'Collected')">
-                      Record Patient Collected
+                  <div class="jobHeaderActions">
+                    <span class="jobWaitMeta">22m elapsed</span>
+                    <button
+                      type="button"
+                      class="btnInspect"
+                      onclick="openFormVerificationModal('WF-009', 'Tobias Wren')"
+                    >
+                      Inspect Form 1A
                     </button>
                   </div>
                 </div>
 
-                <!-- 4-Stage Stepper -->
-                <div class="stepper" role="img" aria-label="Transport progression: 2 of 4 stages complete">
-                  <div class="stepItem completed">
-                    <div class="stepBar"></div>
-                    <span><b>1. Accepted</b><br /><span class="mono">15:00 AWST</span></span>
+                <!-- Route Corridor -->
+                <div class="routeCorridor">
+                  <div class="routeCorridorOrigin">
+                    <span class="routeCorridorLabel">ORIGIN</span>
+                    <strong class="routeCorridorPlace">Sir Charles Gairdner ED</strong>
                   </div>
-                  <div class="stepItem current">
-                    <div class="stepBar"></div>
-                    <span><b>2. En Route</b><br /><span class="mono">15:25 AWST</span></span>
+                  <span class="routeCorridorArrow" aria-hidden="true">&rarr;</span>
+                  <div class="routeCorridorDest">
+                    <span class="routeCorridorLabel">DESTINATION</span>
+                    <strong class="routeCorridorPlace">Midland Hospital (Ward 1)</strong>
                   </div>
-                  <div class="stepItem">
-                    <div class="stepBar"></div>
-                    <span><b>3. Collected</b><br /><span class="mono">Awaiting ED</span></span>
+                </div>
+
+                <!-- Stepper -->
+                <div class="stepperWrapper">
+                  <div class="stepper" role="img" aria-label="Transport progression: 2 of 4 stages complete">
+                    <span class="stageBar" data-s="done"></span>
+                    <span class="stageBar" data-s="now"></span>
+                    <span class="stageBar" data-s="todo"></span>
+                    <span class="stageBar" data-s="todo"></span>
                   </div>
-                  <div class="stepItem">
-                    <div class="stepBar"></div>
-                    <span><b>4. Delivered</b><br /><span class="mono">ETA 16:30</span></span>
+                  <p class="stageLine"><strong>En route</strong><span>, next collected</span></p>
+                </div>
+
+                <!-- Metadata Matrix -->
+                <dl class="jobDetails">
+                  <div class="jobDetailRow">
+                    <dt>Provider</dt>
+                    <dd>Ambulance service</dd>
                   </div>
+                  <div class="jobDetailRow">
+                    <dt>Escort required</dt>
+                    <dd>No</dd>
+                  </div>
+                  <div class="jobDetailRow">
+                    <dt>Form on file</dt>
+                    <dd>Form 1A Linked</dd>
+                  </div>
+                  <div class="jobDetailRow">
+                    <dt>CAD number</dt>
+                    <dd>CAD-90142</dd>
+                  </div>
+                  <div class="jobDetailRow">
+                    <dt>Priority</dt>
+                    <dd>Priority Ambulance (P2)</dd>
+                  </div>
+                  <div class="jobDetailRow">
+                    <dt>Clinician</dt>
+                    <dd>Dr. K. Vance</dd>
+                  </div>
+                </dl>
+
+                <!-- Segmented Action Buttons -->
+                <div class="actionRow">
+                  <button type="button" class="actionButton" disabled>Accepted</button>
+                  <button type="button" class="actionButton activeStep">En route</button>
+                  <button type="button" class="actionButton primary" onclick="recordStage('WF-009', 'Collected')">
+                    Collected
+                  </button>
+                  <button type="button" class="actionButton" disabled>Delivered</button>
+                </div>
+              </div>
+
+              <!-- Run 3: Marcus Chen (WF-041) -->
+              <div class="jobCard" id="run-wf-041">
+                <!-- Header Ribbon -->
+                <div class="jobHeaderRibbon">
+                  <div class="jobIdBadgeGroup">
+                    <span class="jobIdTag">#WF-041</span>
+                    <strong class="jobPatientName">Marcus Chen</strong>
+                    <span class="stageBadge" data-tone="accent">Accepted</span>
+                    <span class="escortBadge">Clinical Escort</span>
+                  </div>
+                  <div class="jobHeaderActions">
+                    <span class="jobWaitMeta">8m elapsed</span>
+                    <button
+                      type="button"
+                      class="btnInspect"
+                      onclick="openFormVerificationModal('WF-041', 'Marcus Chen')"
+                    >
+                      Inspect Dossier
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Route Corridor -->
+                <div class="routeCorridor">
+                  <div class="routeCorridorOrigin">
+                    <span class="routeCorridorLabel">ORIGIN</span>
+                    <strong class="routeCorridorPlace">Fiona Stanley ED</strong>
+                  </div>
+                  <span class="routeCorridorArrow" aria-hidden="true">&rarr;</span>
+                  <div class="routeCorridorDest">
+                    <span class="routeCorridorLabel">DESTINATION</span>
+                    <strong class="routeCorridorPlace">Fremantle Hospital (B2 Ward)</strong>
+                  </div>
+                </div>
+
+                <!-- Stepper -->
+                <div class="stepperWrapper">
+                  <div class="stepper" role="img" aria-label="Transport progression: 1 of 4 stages complete">
+                    <span class="stageBar" data-s="now"></span>
+                    <span class="stageBar" data-s="todo"></span>
+                    <span class="stageBar" data-s="todo"></span>
+                    <span class="stageBar" data-s="todo"></span>
+                  </div>
+                  <p class="stageLine"><strong>Accepted</strong><span>, next en route</span></p>
+                </div>
+
+                <!-- Metadata Matrix -->
+                <dl class="jobDetails">
+                  <div class="jobDetailRow">
+                    <dt>Provider</dt>
+                    <dd>Ward escort</dd>
+                  </div>
+                  <div class="jobDetailRow">
+                    <dt>Escort required</dt>
+                    <dd>Yes (Clinical Escort)</dd>
+                  </div>
+                  <div class="jobDetailRow">
+                    <dt>Form on file</dt>
+                    <dd>Voluntary Transfer</dd>
+                  </div>
+                  <div class="jobDetailRow">
+                    <dt>CAD number</dt>
+                    <dd>CAD-91834</dd>
+                  </div>
+                  <div class="jobDetailRow">
+                    <dt>Priority</dt>
+                    <dd>Escort Car (P3)</dd>
+                  </div>
+                  <div class="jobDetailRow">
+                    <dt>Clinician</dt>
+                    <dd>Dr. L. Gomez</dd>
+                  </div>
+                </dl>
+
+                <!-- Segmented Action Buttons -->
+                <div class="actionRow">
+                  <button type="button" class="actionButton activeStep">Accepted</button>
+                  <button type="button" class="actionButton primary" onclick="recordStage('WF-041', 'En route')">
+                    En route
+                  </button>
+                  <button type="button" class="actionButton" disabled>Collected</button>
+                  <button type="button" class="actionButton" disabled>Delivered</button>
                 </div>
               </div>
             </div>
@@ -890,7 +1372,7 @@
     <div class="modal" id="formVerifyModal">
       <div class="modalDialog">
         <div class="modalHead">
-          <h3>Form 4A &mdash; Custodial Transport Verification</h3>
+          <h3>Form 4A &mdash; Clinical Transport Verification</h3>
           <button type="button" class="btn sm" onclick="closeFormVerifyModal()">Close</button>
         </div>
         <div class="modalBody">
@@ -937,7 +1419,7 @@
     <div class="modal" id="handoverModal">
       <div class="modalDialog">
         <div class="modalHead">
-          <h3>Record Custodial Handover</h3>
+          <h3>Record Transport Handover</h3>
           <button type="button" class="btn sm" onclick="closeHandoverModal()">Cancel</button>
         </div>
         <div class="modalBody">
@@ -982,7 +1464,7 @@
         <div class="modalFoot">
           <button type="button" class="btn" onclick="closeHandoverModal()">Cancel</button>
           <button type="button" class="btn good" onclick="executeHandover()">
-            Sign &amp; Complete Custody Handover
+            Sign &amp; Complete Transport Handover
           </button>
         </div>
       </div>
@@ -1037,19 +1519,17 @@
         closeHandoverModal();
         const card = document.getElementById("run-wf-028");
         if (card) {
-          const badge = card.querySelector(".runRoute .badge");
+          const badge = card.querySelector(".stageBadge");
           if (badge) {
             badge.setAttribute("data-tone", "good");
-            badge.textContent = "Handover Completed";
+            badge.textContent = "Delivered";
           }
-          const actionBtn = card.querySelector(".btn.good");
-          if (actionBtn) {
-            actionBtn.outerHTML =
-              '<span style="font-size:var(--t-0); color:var(--muted); font-weight:600;">Admitted to Ward</span>';
+          const primaryBtn = card.querySelector(".actionButton.primary");
+          if (primaryBtn) {
+            primaryBtn.outerHTML = '<button type="button" class="actionButton activeStep">Delivered</button>';
           }
-          card.style.background = "var(--surface-2)";
         }
-        showToast("Custody handover executed. Form 4A signed and filed. Patient admitted to Dorrington Ward.");
+        showToast("Transport handover executed. Form 4A signed and filed. Patient admitted to Dorrington Ward.");
       }
 
       function confirmArrival(urm) {
@@ -1057,30 +1537,28 @@
       }
 
       function recordStage(urm, stage) {
-        if (urm === "WF-009") {
-          const card = document.getElementById("run-wf-009");
-          if (card) {
-            const stepper = card.querySelector(".stepper");
-            if (stepper) {
-              const steps = stepper.querySelectorAll(".stepItem");
-              if (steps.length >= 3) {
-                steps[1].className = "stepItem completed";
-                steps[2].className = "stepItem current";
-                const textSpan = steps[2].querySelector("span");
-                if (textSpan) textSpan.innerHTML = '<b>3. Collected</b><br/><span class="mono">15:45 AWST</span>';
-              }
+        const card = document.getElementById(`run-${urm.toLowerCase()}`);
+        if (card) {
+          const stepper = card.querySelector(".stepper");
+          if (stepper) {
+            const bars = stepper.querySelectorAll(".stageBar");
+            if (stage === "Collected" && bars.length >= 3) {
+              bars[0].setAttribute("data-s", "done");
+              bars[1].setAttribute("data-s", "done");
+              bars[2].setAttribute("data-s", "now");
+            } else if (stage === "En route" && bars.length >= 2) {
+              bars[0].setAttribute("data-s", "done");
+              bars[1].setAttribute("data-s", "now");
             }
-            const badge = card.querySelector(".runRoute .badge");
-            if (badge) {
-              badge.setAttribute("data-tone", "warn");
-              badge.textContent = "In Transit";
-            }
-            const btn = card.querySelector(".btn.primary");
-            if (btn) {
-              btn.className = "btn sm good";
-              btn.textContent = "Confirm Arrival at Midland";
-              btn.setAttribute("onclick", "showToast('Midland Ward 1 bed verified vacant. Arrival logged.')");
-            }
+          }
+          const stageLine = card.querySelector(".stageLine");
+          if (stageLine) {
+            stageLine.innerHTML = `<strong>${stage}</strong><span>, next transition pending</span>`;
+          }
+          const badge = card.querySelector(".stageBadge");
+          if (badge) {
+            badge.setAttribute("data-tone", stage === "Collected" ? "good" : "warn");
+            badge.textContent = stage;
           }
         }
         showToast(`Stage transition recorded for ${urm}: ${stage}. Timestamp logged with dispatch.`);

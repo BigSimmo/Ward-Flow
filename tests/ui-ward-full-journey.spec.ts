@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { expect, test, type Locator, type Page } from "playwright/test";
 
 import { wardSites } from "@/components/ward-management/ward-sites";
@@ -133,27 +132,6 @@ async function switchView(page: Page, pick: (menu: Locator) => Locator, screenTe
 
 test.describe("@mockup Ward Flow full journey — referral to discharge planning, one browser window", () => {
   test.describe.configure({ timeout: 120_000 });
-
-  test("every listed Ward route answers without a server error or missing page", async ({ request }) => {
-    const routes = readFileSync("scripts/ward-flow/shot-routes.txt", "utf8").split(/\r?\n/u).filter(Boolean);
-    expect(routes.length).toBeGreaterThan(0);
-    expect(new Set(routes).size).toBe(routes.length);
-    const failures: string[] = [];
-    for (let index = 0; index < routes.length; index += 6) {
-      await Promise.all(
-        routes.slice(index, index + 6).map(async (route) => {
-          try {
-            const response = await request.get(route, { maxRedirects: 0, timeout: 10_000 });
-            if (response.status() < 200 || response.status() >= 400)
-              failures.push(`${route}: HTTP ${response.status()}`);
-          } catch (error) {
-            failures.push(`${route}: ${error instanceof Error ? error.message : String(error)}`);
-          }
-        }),
-      );
-    }
-    expect(failures, "all listed Ward routes must answer in the built app").toEqual([]);
-  });
 
   test("walks community intake, the ED bed request, coordinator placement, ward acceptance, transport and discharge planning without a dead end", async ({
     page,

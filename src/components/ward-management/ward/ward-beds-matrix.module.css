@@ -1,0 +1,297 @@
+/* Ward Beds Matrix Styles */
+.matrixWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.matrixHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.headingGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.matrixControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.podFilters {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.podFilterBtn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--pill, 999px);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.podFilterBtn:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.podFilterBtn[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--surface);
+  border-color: var(--accent);
+}
+
+.positionCaption {
+  font-size: var(--t-0, 12px);
+  color: var(--muted);
+  margin: 2px 0 10px;
+}
+
+/* Bay Groupings (De-boxed boundaryless architecture) */
+.bayContainer {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 0 16px;
+  margin-bottom: 14px;
+}
+
+.bayHeader {
+  font-size: var(--t-0, 12px);
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bayBedsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 1024px) {
+  .bayBedsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .bayBedsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Bed Card (Elevated, tactile, boundaryless) */
+.bedCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--muted);
+  border-radius: var(--r2, 8px);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 100px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  position: relative;
+  box-shadow: var(--lift-sm);
+}
+
+.bedCard:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong, var(--line));
+  transform: translateY(-1px);
+  box-shadow: var(--lift);
+}
+
+.bedCard[data-state="ready"] {
+  border-left-color: var(--good);
+}
+
+.bedCard[data-state="leave"] {
+  border-left-color: var(--warn);
+}
+
+.bedCard[data-state="inbound"] {
+  border-left-color: var(--accent);
+}
+
+.bedCard[data-state="blocked"] {
+  border-left-color: var(--danger);
+}
+
+.bedCard[data-state="occupied"] {
+  border-left-color: var(--muted);
+}
+
+.bedCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.bedCardNumber {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: var(--t-1, 13px);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.bedCardChip {
+  font-size: var(--t-0, 12px);
+  font-family: var(--mono);
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--pill, 999px);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.bedPatientName {
+  font-size: var(--t-0, 12.5px);
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bedPatientSub {
+  font-size: var(--t-0, 12px);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.bedCardFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--t-0, 12px);
+  color: var(--ink-soft);
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--line);
+}
+
+/* Inspection Drawer */
+.drawerOverlay {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim, var(--surface));
+  backdrop-filter: blur(2px);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 1000;
+}
+
+.drawerContent {
+  width: 420px;
+  max-width: 90vw;
+  background: var(--surface);
+  height: 100%;
+  box-shadow: var(--float);
+  display: flex;
+  flex-direction: column;
+  animation: slideLeft 0.2s ease;
+}
+
+@keyframes slideLeft {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.drawerHead {
+  padding: 16px 20px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.drawerTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.drawerBody {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.drawerFoot {
+  padding: 14px 20px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btnClose {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--r1);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  min-height: 36px;
+}
+
+@media (max-width: 600px) {
+  .bedCard {
+    min-height: 110px;
+  }
+  .btnClose {
+    min-height: 44px;
+  }
+}

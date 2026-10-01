@@ -834,10 +834,3 @@ export function useWardFlowClock(fallback?: Instant): Instant {
   if (fallback !== undefined) return fallback;
   throw new Error("useWardFlowClock must be used within WardFlowProvider.");
 }
-
-/** Optional clock for standalone tools that can also render outside the provider. */
-export function useOptionalWardFlowClock(): Instant | null {
-  const clock = useContext(WardFlowClockContext);
-  const wardFlow = useContext(WardFlowContext);
-  return clock ?? wardFlow?.now ?? null;
-}

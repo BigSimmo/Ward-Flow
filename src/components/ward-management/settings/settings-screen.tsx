@@ -49,9 +49,9 @@ import {
   PARALLEL_REFERRAL_CAP_RANGE,
   PULL_HOLD_RANGE_MINUTES,
 } from "@/components/ward-management/ward-model";
-import { getAudioBuzzPreference, setAudioBuzzPreference } from "@/components/ward-management/shell/ward-sound-store";
+import { useAudioBuzzPreference, setAudioBuzzPreference } from "@/components/ward-management/shell/ward-sound-store";
 import {
-  getWallboardRefreshPreference,
+  useWallboardRefreshPreference,
   setWallboardRefreshPreference,
   type WallboardRefreshInterval,
 } from "@/components/ward-management/shell/ward-wallboard-store";
@@ -246,12 +246,10 @@ export function SettingsScreen() {
   const [genderMixProtection, setGenderMixProtection] = useState(true);
   const [audioBreachChimes, setAudioBreachChimes] = useState(false);
 
-  // Audio & Visual Urgent Buzz Alerts state
-  const [audioBuzzAlerts, setAudioBuzzAlerts] = useState<boolean>(() => getAudioBuzzPreference());
-  // Wallboard Auto-Refresh Timer state
-  const [wallboardRefresh, setWallboardRefresh] = useState<WallboardRefreshInterval>(() =>
-    getWallboardRefreshPreference(),
-  );
+  // Audio & Visual Urgent Buzz Alerts state (browser-store backed, SSR-safe)
+  const [audioBuzzAlerts, setAudioBuzzAlerts] = useAudioBuzzPreference();
+  // Wallboard Auto-Refresh Timer state (browser-store backed, SSR-safe)
+  const [wallboardRefresh, setWallboardRefresh] = useWallboardRefreshPreference();
   // Operator Switcher Modal state
   const [isOperatorModalOpen, setIsOperatorModalOpen] = useState(false);
 
@@ -990,10 +988,7 @@ export function SettingsScreen() {
 
                         {/* Second Warning Before A Legal Due Time Stepper & Slider */}
                         {isRowVisible("setting-due-soon") && (
-                          <div
-                            className={`${styles.settingRow} ${styles.vertical}`}
-                            data-testid="setting-due-soon-row"
-                          >
+                          <div className={`${styles.settingRow} ${styles.vertical}`} data-testid="setting-due-soon-row">
                             <div className={styles.rowMeta}>
                               <span className={styles.rowTitle}>
                                 Second warning before a legal due time

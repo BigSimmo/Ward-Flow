@@ -111,6 +111,15 @@
   font-size: var(--t-3);
   font-weight: 600;
   color: var(--ink);
+  margin: 0;
+}
+
+.headerTitle h1 {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  color: inherit;
 }
 
 .chipMark {

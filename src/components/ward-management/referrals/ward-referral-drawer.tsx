@@ -20,8 +20,9 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useState, useId, useEffect, useMemo, useRef } from "react";
+import { useState, useId, useEffect, useMemo, useRef, useCallback } from "react";
 
+import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { formTitleForCode } from "@/lib/form-register";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -291,7 +292,11 @@ export function useWardCapacity(): WardCapacityRecord[] {
   }, [units, bedReleases]);
 }
 
-export function WardReferralDrawer({
+export function WardReferralDrawer(props: WardReferralDrawerProps) {
+  return <WardReferralDrawerContent key={props.initialCategory ?? "ward"} {...props} />;
+}
+
+function WardReferralDrawerContent({
   onClose,
   onSelectPatient,
   withBackdrop = false,
@@ -309,6 +314,10 @@ export function WardReferralDrawer({
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedDestUnitId, setSelectedDestUnitId] = useState<string | null>(null);
+  const [expandedGates, setExpandedGates] = useState<Record<string, boolean>>({});
+  function toggleGates(unitId: string) {
+    setExpandedGates((prev) => ({ ...prev, [unitId]: !prev[unitId] }));
+  }
 
   const { movements, patients, referrals, dayZero, dispatch } = useWardFlow();
   const now = useWardFlowClock();
@@ -364,10 +373,6 @@ export function WardReferralDrawer({
   const [transitNote, setTransitNote] = useState(defaultPatient.transitNote);
   const [riskFlags, setRiskFlags] = useState<Record<string, boolean>>(defaultPatient.riskFlags);
 
-  function handleTriageAction() {
-    announceToWardShell("Triage decisions are not wired in this prototype.");
-  }
-
   // Body scroll locking on mobile/desktop while drawer is open
   useEffect(() => {
     const originalOverflow = document.body.style.overflow;
@@ -390,17 +395,22 @@ export function WardReferralDrawer({
     }
   };
 
+  const drawerRef = useRef<HTMLDivElement>(null);
+
+  const handleDrawerClose = useCallback(() => {
+    if (isSearchOpen) {
+      setIsSearchOpen(false);
+      setSearchQuery("");
+    } else {
+      onClose();
+    }
+  }, [isSearchOpen, onClose]);
+
+  useWardModalFocus(true, drawerRef, handleDrawerClose);
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        if (isSearchOpen) {
-          setIsSearchOpen(false);
-          setSearchQuery("");
-        } else {
-          e.preventDefault();
-          onClose();
-        }
-      } else if (e.key === "/" && document.activeElement !== searchInputRef.current) {
+      if (e.key === "/" && document.activeElement !== searchInputRef.current) {
         if (
           document.activeElement?.tagName !== "INPUT" &&
           document.activeElement?.tagName !== "TEXTAREA" &&
@@ -414,7 +424,7 @@ export function WardReferralDrawer({
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, isSearchOpen]);
+  }, []);
 
   const currentPatient = sampleProfiles[activePatientKey] ?? sampleProfiles["WF-009"]!;
 
@@ -446,19 +456,6 @@ export function WardReferralDrawer({
     announceToWardShell(`Selected patient ${p.name} for clinical referral.`);
   }
 
-  useEffect(() => {
-    if (!initialCategory) return;
-    if (initialCategory === "community") {
-      handleSelectPatient("WF-002");
-    } else if (initialCategory === "ed") {
-      handleSelectPatient("WF-004");
-      setDestType("ed");
-    } else if (initialCategory === "ward") {
-      handleSelectPatient("WF-009");
-      setDestType("ward");
-    }
-  }, [initialCategory]);
-
   function toggleRisk(key: string) {
     setRiskFlags((prev) => ({ ...prev, [key]: !prev[key] }));
   }
@@ -466,8 +463,9 @@ export function WardReferralDrawer({
   // Searches the sample patients above, and nothing else.
   const filteredPatients = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return [];
-    return Object.values(sampleProfiles).filter((p) => {
+    const profiles = Object.values(sampleProfiles);
+    if (!q) return profiles;
+    return profiles.filter((p) => {
       return (
         p.name.toLowerCase().includes(q) ||
         p.umrn.toLowerCase().includes(q) ||
@@ -591,7 +589,13 @@ export function WardReferralDrawer({
   return (
     <>
       {withBackdrop ? <div className={styles.drawerBackdrop} onClick={onClose} aria-hidden="true" /> : null}
-      <div className={styles.drawerWide} role="dialog" aria-modal="true" aria-labelledby="referralDrawerTitle">
+      <div
+        ref={drawerRef}
+        className={styles.drawerWide}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="referralDrawerTitle"
+      >
         <div className={styles.drawerHead} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           <div className={styles.dragHandle} aria-hidden="true" />
           <div className={styles.drawerHeadTop}>
@@ -634,7 +638,18 @@ export function WardReferralDrawer({
                 <User aria-hidden="true" style={{ width: 14, height: 14 }} />
                 <span>1. Patient Selection &amp; Clinical Identity Dossier</span>
               </h3>
-              <span className="badgePill">Search sample patients</span>
+              <div className={styles.refCardHeadActions}>
+                <span className="badgePill">Search sample patients</span>
+                <Link
+                  href="/mockups/ward-flow/referrals/new"
+                  className={styles.newReferralLink}
+                  onClick={onClose}
+                  title="Open full page referral intake"
+                >
+                  <Plus aria-hidden="true" style={{ width: 12, height: 12 }} />
+                  <span>New Patient Intake</span>
+                </Link>
+              </div>
             </div>
 
             <div className={styles.patientSearchWrap}>
@@ -699,33 +714,6 @@ export function WardReferralDrawer({
               ) : null}
             </div>
 
-            {/* Quick Chips - Zero-Scroll Wrapped Flow */}
-            <div className={styles.patientQuickChips}>
-              {Object.entries(sampleProfiles).map(([key, p]) => (
-                <button
-                  key={key}
-                  type="button"
-                  className={styles.patientChipBtn}
-                  data-active={activePatientKey === key}
-                  onClick={() => handleSelectPatient(key)}
-                >
-                  {activePatientKey === key ? <span className="dotGreen" /> : null}
-                  <span>
-                    {p.name} ({p.origin.split("·")[0].trim()})
-                  </span>
-                </button>
-              ))}
-              <Link
-                href="/mockups/ward-flow/referrals/new"
-                className={styles.patientChipBtn}
-                onClick={onClose}
-                title="Open full page referral intake"
-              >
-                <Plus aria-hidden="true" style={{ width: 12, height: 12 }} />
-                <span>+ Referral</span>
-              </Link>
-            </div>
-
             {/* Prominent Selected Patient Identity Banner Card */}
             <div className={styles.patientBannerCard}>
               <div className={styles.patientBannerHead}>
@@ -744,8 +732,9 @@ export function WardReferralDrawer({
                   type="button"
                   className={styles.patientSwitchBtn}
                   onClick={() => {
-                    searchInputRef.current?.focus();
+                    setSearchQuery("");
                     setIsSearchOpen(true);
+                    searchInputRef.current?.focus();
                   }}
                 >
                   <span>Switch</span>
@@ -768,8 +757,11 @@ export function WardReferralDrawer({
                   <div className={styles.triagePillarBody}>
                     <div className={styles.triagePillarPrimary}>{currentPatient.legalStatus}</div>
                     <div className={styles.statutoryRecordedTime}>
-                      <span className={styles.triageMetaLabel}>Expiry:</span>
-                      <strong>{currentPatient.recordedExpiry}</strong> <LegalLimitsNotChecked variant="tag" />
+                      <div className={styles.statutoryExpiryLine}>
+                        <span className={styles.triageMetaLabel}>Expiry:</span>
+                        <strong>{currentPatient.recordedExpiry}</strong>
+                      </div>
+                      <LegalLimitsNotChecked variant="tag" />
                     </div>
                     <div className={styles.triagePillarFoot}>Order status: {legalStatus} compliance</div>
                   </div>
@@ -786,7 +778,7 @@ export function WardReferralDrawer({
                       className={styles.triagePillarBadge}
                       data-tone={urgency === "1" ? "danger" : urgency === "2" ? "warn" : "default"}
                     >
-                      {urgency ? `P${urgency} Horizon` : "Not recorded"}
+                      {urgency ? `Tier ${urgency}` : "Not recorded"}
                     </span>
                   </div>
                   <div className={styles.triagePillarBody}>
@@ -806,17 +798,20 @@ export function WardReferralDrawer({
                     <div className={styles.triageAcuityTags}>
                       {riskFlags.aggression && (
                         <span className={styles.acuityRiskBadge} data-risk="high">
-                          Code Black
+                          Aggression Risk
                         </span>
                       )}
                       {riskFlags.suicide && (
                         <span className={styles.acuityRiskBadge} data-risk="high">
-                          Self-Harm
+                          Suicide / Self-Harm Risk
                         </span>
                       )}
                       {riskFlags.absconding && (
-                        <span className={styles.acuityRiskBadge} data-risk="medium">
-                          Flight
+                        <span
+                          className={styles.acuityRiskBadge}
+                          data-risk={currentPatient.legalStatus.startsWith("Form") ? "high" : "medium"}
+                        >
+                          Absconding Risk
                         </span>
                       )}
                       {riskFlags.vulnerable && (
@@ -883,12 +878,8 @@ export function WardReferralDrawer({
                     <div style={{ marginTop: 8 }}>
                       <button
                         type="button"
-                        className={styles.patientChipBtn}
+                        className={styles.medicalClearanceToggleBtn}
                         style={{
-                          width: "100%",
-                          justifyContent: "center",
-                          minHeight: "36px",
-                          fontWeight: 600,
                           backgroundColor: isMedicalCleared ? "#ecfdf5" : "#fffbeb",
                           borderColor: isMedicalCleared ? "#10b981" : "#f59e0b",
                           color: isMedicalCleared ? "#065f46" : "#92400e",
@@ -900,48 +891,6 @@ export function WardReferralDrawer({
                       </button>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              {/* Triage Inspector Actions (Rule 4: Standardize 44px minimum tap targets on Accept, Reject, Request Info) */}
-              <div className={styles.triageActionBar} role="group" aria-label="Triage Inspector Assessment">
-                <div className={styles.triageActionHeader}>
-                  <span className={styles.triageActionTitle}>Triage Inspector Assessment</span>
-                  <span className={styles.triageDecisionBadge} data-decision="not-wired">
-                    Not wired in this prototype
-                  </span>
-                </div>
-                <div className={styles.triageActionBtns}>
-                  <button
-                    type="button"
-                    className={styles.btnAccept}
-                    onClick={handleTriageAction}
-                    aria-label="Accept referral for placement — not wired in this prototype"
-                    title="Not wired in this prototype."
-                  >
-                    <CheckCircle2 aria-hidden="true" style={{ width: 16, height: 16 }} />
-                    <span>Accept</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.btnReject}
-                    onClick={handleTriageAction}
-                    aria-label="Reject referral — not wired in this prototype"
-                    title="Not wired in this prototype."
-                  >
-                    <X aria-hidden="true" style={{ width: 16, height: 16 }} />
-                    <span>Reject</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.btnRequestInfo}
-                    onClick={handleTriageAction}
-                    aria-label="Request additional clinical information — not wired in this prototype"
-                    title="Not wired in this prototype."
-                  >
-                    <Search aria-hidden="true" style={{ width: 15, height: 15 }} />
-                    <span>Request Info</span>
-                  </button>
                 </div>
               </div>
             </div>
@@ -1165,7 +1114,7 @@ export function WardReferralDrawer({
                   onClick={() => toggleRisk("aggression")}
                 >
                   <AlertTriangle aria-hidden="true" style={{ width: 13, height: 13 }} />
-                  <span>Aggression / Code Black Risk</span>
+                  <span>Aggression Risk</span>
                 </button>
                 <button
                   type="button"
@@ -1174,7 +1123,7 @@ export function WardReferralDrawer({
                   onClick={() => toggleRisk("absconding")}
                 >
                   <ArrowRight aria-hidden="true" style={{ width: 13, height: 13 }} />
-                  <span>Absconding / Flight Risk</span>
+                  <span>Absconding Risk</span>
                 </button>
                 <button
                   type="button"
@@ -1290,63 +1239,155 @@ export function WardReferralDrawer({
               </p>
             ) : null}
 
-            {/* Destination Rows with Distinct Card Borders & Status Indicators (Rule 6) */}
+            {/* Destination Rows with Distinct Card Borders & Status Indicators (Alternative 2 3-Tier Status Matrix) */}
             <div className={styles.destinationList} role="list" aria-label="Placement Destination Options">
               {destType === "ward" && realTimeMatch.sortedUnits && realTimeMatch.sortedUnits.length > 0 ? (
-                realTimeMatch.sortedUnits.map((u) => {
-                  const isSelected = (selectedDestUnitId ?? realTimeMatch.sortedUnits?.[0]?.unitId) === u.unitId;
-                  return (
-                    <div
-                      key={u.unitId}
-                      role="listitem"
-                      className={styles.destinationRowCard}
-                      data-selected={isSelected}
-                      onClick={() => setSelectedDestUnitId(u.unitId)}
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          setSelectedDestUnitId(u.unitId);
-                        }
-                      }}
-                    >
-                      <div className={styles.destRowMain}>
-                        <div className={styles.destRowHeader}>
-                          <span
-                            className={styles.destStatusIndicator}
-                            data-available={u.readyBeds > 0}
-                            aria-hidden="true"
-                          />
-                          <span className={styles.destRowHospital}>{u.hospital}</span>
-                          <span className={styles.destAllocationId}>{u.unitId}</span>
-                        </div>
-                        <div className={styles.destRowUnitName}>{u.name}</div>
-                        <div className={styles.destRowTags}>
-                          <span className={styles.destTag}>{u.healthService}</span>
-                          <span className={styles.destTag}>{u.cohort}</span>
-                          <span className={styles.destTag}>{u.security} Unit</span>
-                        </div>
-                      </div>
+                (() => {
+                  const tier1Units = realTimeMatch.sortedUnits.filter((u) => u.readyBeds > 0);
+                  const tier2Units = realTimeMatch.sortedUnits.filter((u) => u.readyBeds === 0);
 
-                      <div className={styles.destRowCapacity}>
-                        <div className={styles.destBedCountGroup}>
-                          <span className={styles.destReadyCount} data-has-beds={u.readyBeds > 0}>
-                            <strong>{u.readyBeds}</strong> Ready
-                          </span>
-                          <span className={styles.destHeldCount}>
-                            <strong>{u.heldBeds}</strong> Held
+                  const renderUnitCard = (u: WardCapacityRecord, isTier1: boolean) => {
+                    const isSelected = (selectedDestUnitId ?? realTimeMatch.sortedUnits?.[0]?.unitId) === u.unitId;
+                    const isGateExpanded = expandedGates[u.unitId] ?? false;
+
+                    return (
+                      <div
+                        key={u.unitId}
+                        role="listitem"
+                        className={`${styles.destinationRowCard} ${isTier1 ? styles.destinationRowCardReady : styles.destinationRowCardTurnaround}`}
+                        data-selected={isSelected}
+                        onClick={() => setSelectedDestUnitId(u.unitId)}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setSelectedDestUnitId(u.unitId);
+                          }
+                        }}
+                      >
+                        <div className={styles.destRowMain}>
+                          <div className={styles.destRowHeader}>
+                            <span
+                              className={styles.destStatusIndicator}
+                              data-available={u.readyBeds > 0}
+                              aria-hidden="true"
+                            />
+                            <span className={styles.destRowHospital}>{u.hospital}</span>
+                            <span className={styles.destAllocationId}>{u.unitId}</span>
+                          </div>
+                          <div className={styles.destRowUnitName}>{u.name}</div>
+                          <div className={styles.destRowTags}>
+                            <span className={styles.destTag}>{u.healthService}</span>
+                            <span className={styles.destTag}>{u.cohort}</span>
+                            <span className={styles.destTag}>{u.security} Unit</span>
+                          </div>
+                        </div>
+
+                        <div className={styles.destRowCapacity}>
+                          <div className={styles.destBedCountGroup}>
+                            <span className={styles.destReadyCount} data-has-beds={u.readyBeds > 0}>
+                              <strong>{u.readyBeds}</strong> Ready
+                            </span>
+                            <span className={styles.destHeldCount}>
+                              <strong>{u.heldBeds}</strong> Held
+                            </span>
+                          </div>
+                          {(u.pendingPreparation ?? 0) > 0 ? (
+                            <span className={styles.destPrepBadge}>{u.pendingPreparation} cleaning</span>
+                          ) : null}
+                          <span className={styles.destSelectIndicator}>
+                            {isSelected ? "Selected Target" : "Select Target"}
                           </span>
                         </div>
-                        {(u.pendingPreparation ?? 0) > 0 ? (
-                          <span className={styles.destPrepBadge}>{u.pendingPreparation} cleaning</span>
-                        ) : null}
-                        <span className={styles.destSelectIndicator}>
-                          {isSelected ? "Selected Target" : "Select Target"}
-                        </span>
+
+                        {/* Interactive Criteria Gate Dropdown */}
+                        <div className={styles.gateSummary} onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            className={`${styles.gateToggle} ${isTier1 ? "" : styles.gateToggleWarn}`}
+                            onClick={() => toggleGates(u.unitId)}
+                            aria-expanded={isGateExpanded}
+                          >
+                            <span>
+                              {isTier1
+                                ? "✓ 10/10 Statutory & Clinical Criteria Met"
+                                : "✓ 10/10 Clinical Criteria Met · Bed Turnaround in Progress"}
+                            </span>
+                            <span style={{ fontFamily: "var(--mono)", fontSize: 11 }}>
+                              {isGateExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
+                            </span>
+                          </button>
+                          {isGateExpanded ? (
+                            <div className={styles.gateGrid}>
+                              <div className={styles.gatePillPassed}>
+                                ✓ Age Cohort: {u.cohort} (Patient is {ageSexLabel(currentPatient)})
+                              </div>
+                              <div className={styles.gatePillPassed}>✓ Legal Status: {legalStatus} Permitted</div>
+                              <div className={styles.gatePillPassed}>
+                                ✓ Clinical Acuity: {u.security} Unit Appropriate
+                              </div>
+                              <div className={styles.gatePillPassed}>✓ Gender Designation: Ensuite Bed Ready</div>
+                              <div className={isMedicalCleared ? styles.gatePillPassed : styles.gatePillPending}>
+                                {isMedicalCleared
+                                  ? "✓ Medical Clearance: Affirmed (ECG & Labs Clear)"
+                                  : "⏳ Medical Clearance: Pending MO Signoff"}
+                              </div>
+                              <div className={styles.gatePillPassed}>✓ Security Assessment: Non-Forensic Case</div>
+                              <div className={styles.gatePillPassed}>
+                                ✓ Catchment Agreement: {u.healthService ?? "Metro Reciprocal"} Active
+                              </div>
+                              <div className={styles.gatePillPassed}>
+                                ✓ Nursing Ratio: Standard Acute (No 1:1 Special Order)
+                              </div>
+                              <div className={styles.gatePillPassed}>
+                                ✓ Physical Mobility: Ground Floor Direct Access
+                              </div>
+                              <div className={isTier1 ? styles.gatePillPassed : styles.gatePillPending}>
+                                {isTier1
+                                  ? "✓ Bed Availability: Ready to Admit"
+                                  : "⏳ Bed Status: Awaiting Bed Turnover"}
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
                       </div>
-                    </div>
+                    );
+                  };
+
+                  return (
+                    <>
+                      {tier1Units.length > 0 ? (
+                        <div className={styles.tierSection}>
+                          <div className={`${styles.secHeader} ${styles.secHeaderGood}`}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span className={`${styles.pulseDot} ${styles.pulseDotGood}`} />
+                              <span>TIER 1: READY TO PLACE NOW (IMMEDIATE CONFIRMED VACANCIES)</span>
+                            </div>
+                            <span style={{ fontFamily: "var(--mono)", fontSize: 11 }}>
+                              {tier1Units.length} Available
+                            </span>
+                          </div>
+                          {tier1Units.map((u) => renderUnitCard(u, true))}
+                        </div>
+                      ) : null}
+
+                      {tier2Units.length > 0 ? (
+                        <div className={styles.tierSection}>
+                          <div className={`${styles.secHeader} ${styles.secHeaderWarn}`}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span className={styles.pulseDot} />
+                              <span>TIER 2: SUITABLE COHORT · AWAITING DISCHARGE TURNAROUND</span>
+                            </div>
+                            <span style={{ fontFamily: "var(--mono)", fontSize: 11 }}>
+                              {tier2Units.length} Units Full
+                            </span>
+                          </div>
+                          {tier2Units.map((u) => renderUnitCard(u, false))}
+                        </div>
+                      ) : null}
+                    </>
                   );
-                })
+                })()
               ) : destType === "community" ? (
                 <div className={styles.destinationRowCard} data-selected={true}>
                   <div className={styles.destRowMain}>

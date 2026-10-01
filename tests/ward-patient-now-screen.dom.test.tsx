@@ -92,8 +92,8 @@ function explicitIdentity(id: string) {
 
 describe("the patient-now screen", () => {
   it("keeps the summary guidance and movement destination together when switching records", () => {
-    renderScreen();
-    const summary = within(screen.getByRole("region", { name: "Patient summary" }));
+    const { unmount } = renderScreen({ movementId: "WF-009" });
+    let summary = within(screen.getByRole("region", { name: "Patient summary" }));
     expect(summary.getByRole("region", { name: /Next steps/ })).toHaveTextContent(
       "Review next cohort-matching bed releases across network.",
     );
@@ -101,8 +101,10 @@ describe("the patient-now screen", () => {
       "href",
       "/mockups/ward-flow/movements/WF-009",
     );
-    // Owner, 26 Sept 2026: the patient's name, never the WF number — the button carries no id suffix.
-    fireEvent.click(summary.getByRole("button", { name: explicitIdentity("WF-004") }));
+    unmount();
+
+    renderScreen({ movementId: "WF-004" });
+    summary = within(screen.getByRole("region", { name: "Patient summary" }));
     expect(summary.getByRole("region", { name: /Next steps/ })).toHaveTextContent("Bed Pull Confirmation");
     expect(summary.getByRole("link", { name: "Open the movement" })).toHaveAttribute(
       "href",
@@ -110,16 +112,14 @@ describe("the patient-now screen", () => {
     );
   });
 
-  // Owner, 26 Sept 2026: the patient's name, never the WF journey number — retitled from "name
-  // then id, never a bare id", which stated the rule this ruling replaced.
-  it("names the two example records by the patient's name alone, with no WF id anywhere in the label", () => {
+  // Owner ruling & user request: remove obsolete movement record / perspective switchers and purge WF ids
+  it("removes the obsolete movement record switcher and purges synthetic WF ids from user labels", () => {
     renderScreen();
-    const root = screen.getByRole("group", { name: "Movement record" });
+    expect(screen.queryByRole("group", { name: "Movement record" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Perspective view" })).not.toBeInTheDocument();
     for (const id of ["WF-009", "WF-004"]) {
-      expect(within(root).getByRole("button", { name: explicitIdentity(id) })).toBeInTheDocument();
-      expect(within(root).queryByRole("button", { name: `${explicitIdentity(id)} (${id})` })).not.toBeInTheDocument();
-      expect(within(root).queryByRole("button", { name: id })).not.toBeInTheDocument();
-      expect(within(root).queryByText(new RegExp(`\\(${id}\\)`, "u"))).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: id })).not.toBeInTheDocument();
+      expect(screen.queryByText(new RegExp(`\\(${id}\\)`, "u"))).not.toBeInTheDocument();
     }
   });
 
@@ -129,6 +129,19 @@ describe("the patient-now screen", () => {
     const summary = within(screen.getByRole("region", { name: "Patient summary" }));
     expect(summary.getByText("No next steps recorded.")).toBeInTheDocument();
     expect(summary.queryByRole("link", { name: "Open the movement" })).not.toBeInTheDocument();
+  });
+
+  it("renders a dedicated Community Trajectory card and + Raise Inpatient Referral link for a community outpatient", () => {
+    renderScreen({ patientId: "PT-005" });
+    const root = screen.getByTestId("ward-person-screen");
+    expect(within(root).getByRole("link", { name: "+ Raise Inpatient Referral" })).toHaveAttribute(
+      "href",
+      "/mockups/ward-flow/referrals/new",
+    );
+    expect(screen.getByTestId("ward-community-masthead")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-community-overview-card")).toBeInTheDocument();
+    expect(within(root).getByText("Community Trajectory")).toBeInTheDocument();
+    expect(within(root).getByText("Sarah Jenkins, RN (CNS)")).toBeInTheDocument();
   });
 
   it("has the page shell for the default movement record (WF-009)", () => {
@@ -167,10 +180,8 @@ describe("the patient-now screen", () => {
   });
 
   it("switches to WF-004 and displays its explicitly linked identity", () => {
-    renderScreen();
+    renderScreen({ movementId: "WF-004" });
     const root = screen.getByTestId("ward-person-screen");
-    // Owner, 26 Sept 2026: the patient's name, never the WF number — the button carries no id suffix.
-    fireEvent.click(within(root).getByRole("button", { name: explicitIdentity("WF-004") }));
     expect(within(root).queryByText("Nothing is holding this movement up.")).not.toBeInTheDocument();
     expect(within(root).getByText("Transfer readiness not assessed here")).toBeInTheDocument();
     expect(within(root).queryByText("Cannot be moved. Two things are missing.")).not.toBeInTheDocument();
@@ -187,14 +198,19 @@ describe("the patient-now screen", () => {
     const movement = movementById("WF-004")!;
     expect(movement.patientId).toBeDefined();
     expect(movement.patientId).not.toBe(original.id);
-    renderScreen({ patientId: original.id });
+    const { rerender } = renderScreen({ patientId: original.id });
     const root = screen.getByTestId("ward-person-screen");
     expect(within(root).getAllByText(original.umrn).length).toBeGreaterThan(0);
-    // Owner, 26 Sept 2026: the patient's name, never the WF number — the button carries no id suffix.
-    fireEvent.click(within(root).getByRole("button", { name: explicitIdentity("WF-004") }));
+    rerender(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <PatientNowScreen movementId="WF-004" />
+      </WardFlowProvider>,
+    );
     expect(within(root).queryByText(original.umrn)).not.toBeInTheDocument();
     expect(within(root).queryByText(original.dateOfBirth)).not.toBeInTheDocument();
-    expect(within(screen.getByTestId("ward-person-identity")).getByText(explicitIdentity("WF-004"))).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("ward-person-identity")).getByText(explicitIdentity("WF-004")),
+    ).toBeInTheDocument();
   });
 
   it("shows the person's recorded catchment without inventing a movement age band or owner", () => {
@@ -240,10 +256,8 @@ describe("the patient-now screen", () => {
   });
 
   it("uses resolved WF-004 details without the old unrelated fallback identity", () => {
-    renderScreen();
+    renderScreen({ movementId: "WF-004" });
     const root = screen.getByTestId("ward-person-screen");
-    // Owner, 26 Sept 2026: the patient's name, never the WF number — the button carries no id suffix.
-    fireEvent.click(within(root).getByRole("button", { name: explicitIdentity("WF-004") }));
     fireEvent.click(within(root).getByRole("tab", { name: /Details/u }));
     const detailsPane = document.getElementById("pnpane-details") as HTMLElement;
     // Every one of these was a hand-invented fallback shown as if it were this person's own
@@ -263,10 +277,8 @@ describe("the patient-now screen", () => {
   });
 
   it("WF-004 shows the live movement's own legal form and its typed deadline, never a computed one", () => {
-    renderScreen();
+    renderScreen({ movementId: "WF-004" });
     const root = screen.getByTestId("ward-person-screen");
-    // Owner, 26 Sept 2026: the patient's name, never the WF number — the button carries no id suffix.
-    fireEvent.click(within(root).getByRole("button", { name: explicitIdentity("WF-004") }));
 
     const movement = movementById("WF-004")!;
     expect(movement.legalForm).toBeDefined();
@@ -324,7 +336,9 @@ describe("the ward person route", () => {
     expect(screen.queryByTestId("ward-person-missing")).not.toBeInTheDocument();
     expect(screen.getByTestId("ward-person-identity")).toBeInTheDocument();
     // WF-005 names its patient since the seed-link work, so the identity is that person, not the id.
-    expect(within(screen.getByTestId("ward-person-identity")).getByText(explicitIdentity("WF-005"))).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("ward-person-identity")).getByText(explicitIdentity("WF-005")),
+    ).toBeInTheDocument();
   });
 
   it("renders the governed PersonScreen for an unknown WF- id that does not exist in movements", async () => {

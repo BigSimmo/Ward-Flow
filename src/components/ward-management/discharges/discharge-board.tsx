@@ -6,7 +6,6 @@ import { ArrowUpRight, Filter, ShieldAlert, Truck, X } from "lucide-react";
 import { MissingValue } from "@/components/ui/missing-value";
 import { RELEASE_BANDS, releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import {
-  formatInstant,
   formatInstantWithDay,
   formatSheetMoment,
   splitDuration,
@@ -338,6 +337,9 @@ function DischargeWorkspace() {
     population === "releases" && releaseId && visibleReleaseIds.includes(releaseId)
       ? scopedReleases.find((release) => release.id === releaseId)
       : undefined;
+  const linkedReleaseRecord = detailRelease
+    ? (records.find((record) => record.admissionId === detailRelease.admissionId) ?? null)
+    : null;
   const selectedUnitId = detailRecord?.unitId ?? detailRelease?.unitId;
   const selectedUnit = units.find((unit) => unit.id === selectedUnitId);
   const shown = population === "records" ? visibleRecords.length : visibleReleaseIds.length;
@@ -359,14 +361,14 @@ function DischargeWorkspace() {
   };
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && (selected !== null || releaseId !== null)) {
+      if (event.key === "Escape" && (selected !== null || releaseId !== null || openError)) {
         clearSelection();
         listRef.current?.focus();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selected, releaseId]);
+  }, [selected, releaseId, openError]);
   const focusDetail = () => detailRef.current?.focus();
   const openRecord = (record: DischargeRecord) => {
     setReleaseId(null);
@@ -470,84 +472,162 @@ function DischargeWorkspace() {
              * feature exists) and states plainly that it is not wired, the same convention
              * `ward-flow-sign-in-screen.tsx` and `ward-bar.tsx` already use elsewhere in this app.
              */}
-            <button
-              type="button"
-              data-testid="ward-discharge-plan-departure"
-              className={pageStyles.planActionBtn}
-              aria-disabled="true"
-              aria-describedby="ward-discharge-plan-departure-note"
-              title="Not wired in this prototype."
-              onClick={ignoreUnavailableActivation}
-            >
-              + Plan departure
-            </button>
-            <span id="ward-discharge-plan-departure-note" className={pageStyles.planActionNote}>
-              Not wired in this prototype.
-            </span>
+            <div className={pageStyles.planActionWrapper}>
+              <button
+                type="button"
+                data-testid="ward-discharge-plan-departure"
+                className={pageStyles.planActionBtn}
+                aria-disabled="true"
+                aria-describedby="ward-discharge-plan-departure-note"
+                title="Not wired in this prototype."
+                onClick={ignoreUnavailableActivation}
+              >
+                + Plan departure
+              </button>
+              <span id="ward-discharge-plan-departure-note" className={pageStyles.planActionNote}>
+                Not wired in this prototype.
+              </span>
+            </div>
           </div>
         </header>
         <div className={`${pageStyles.kpiStrip} ${styles.kpiStrip}`} data-testid="ward-discharge-kpi-strip">
           <div
-            className={`${pageStyles.kpiCard} ${styles.kpiCard}`}
+            className={`${pageStyles.kpiCard} ${styles.kpiCard}${status === "blocked" ? ` ${pageStyles.kpiCardActive}` : ""}`}
             data-tone="danger"
             data-testid="ward-discharge-kpi-blocked"
+            role="button"
+            tabIndex={0}
+            aria-pressed={status === "blocked"}
+            onClick={() => {
+              setStatus(status === "blocked" ? "all" : "blocked");
+              clearSelection();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setStatus(status === "blocked" ? "all" : "blocked");
+                clearSelection();
+              }
+            }}
           >
-            <span className={pageStyles.kpiLabel}>
-              <span className={styles.statusIndicator} aria-hidden="true">
-                ▲
+            <div className={pageStyles.kpiTopRow}>
+              <span className={pageStyles.kpiLabel}>
+                <span className={styles.statusIndicator} aria-hidden="true">
+                  ▲
+                </span>
+                <span className="sr-only">Urgent: </span>
+                <span>{kpiCardLabel("blocked", population)}</span>
               </span>
-              <span className="sr-only">Urgent: </span>
-              <span>{kpiCardLabel("blocked", population)}</span>
-            </span>
+              <span className={pageStyles.kpiActionHint} aria-hidden="true">
+                {status === "blocked" ? "Active" : "Filter"}
+              </span>
+            </div>
             <span className={`${pageStyles.kpiVal} ${styles.kpiVal}`} id="kpiBlocked">
               {counts.blocked}
             </span>
             <span className={pageStyles.kpiSub}>Immediate egress attention</span>
           </div>
           <div
-            className={`${pageStyles.kpiCard} ${styles.kpiCard}`}
+            className={`${pageStyles.kpiCard} ${styles.kpiCard}${status === "confirmed" ? ` ${pageStyles.kpiCardActive}` : ""}`}
             data-tone="good"
             data-testid="ward-discharge-kpi-confirmed"
+            role="button"
+            tabIndex={0}
+            aria-pressed={status === "confirmed"}
+            onClick={() => {
+              setStatus(status === "confirmed" ? "all" : "confirmed");
+              clearSelection();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setStatus(status === "confirmed" ? "all" : "confirmed");
+                clearSelection();
+              }
+            }}
           >
-            <span className={pageStyles.kpiLabel}>
-              <span className={styles.statusIndicator} aria-hidden="true">
-                ■
+            <div className={pageStyles.kpiTopRow}>
+              <span className={pageStyles.kpiLabel}>
+                <span className={styles.statusIndicator} aria-hidden="true">
+                  ■
+                </span>
+                <span className="sr-only">Confirmed: </span>
+                <span>{kpiCardLabel("confirmed", population)}</span>
               </span>
-              <span className="sr-only">Confirmed: </span>
-              <span>{kpiCardLabel("confirmed", population)}</span>
-            </span>
+              <span className={pageStyles.kpiActionHint} aria-hidden="true">
+                {status === "confirmed" ? "Active" : "Filter"}
+              </span>
+            </div>
             <span className={`${pageStyles.kpiVal} ${styles.kpiVal}`} id="kpiConfirmed">
               {counts.confirmed}
             </span>
             <span className={pageStyles.kpiSub}>Awaiting scheduled clock</span>
           </div>
           <div
-            className={`${pageStyles.kpiCard} ${styles.kpiCard}`}
+            className={`${pageStyles.kpiCard} ${styles.kpiCard}${status === "expected" ? ` ${pageStyles.kpiCardActive}` : ""}`}
             data-tone="warn"
             data-testid="ward-discharge-kpi-expected"
+            role="button"
+            tabIndex={0}
+            aria-pressed={status === "expected"}
+            onClick={() => {
+              setStatus(status === "expected" ? "all" : "expected");
+              clearSelection();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setStatus(status === "expected" ? "all" : "expected");
+                clearSelection();
+              }
+            }}
           >
-            <span className={pageStyles.kpiLabel}>
-              <span className={styles.statusIndicator} aria-hidden="true">
-                ○
+            <div className={pageStyles.kpiTopRow}>
+              <span className={pageStyles.kpiLabel}>
+                <span className={styles.statusIndicator} aria-hidden="true">
+                  ○
+                </span>
+                <span className="sr-only">Expected: </span>
+                <span>{kpiCardLabel("expected", population)}</span>
               </span>
-              <span className="sr-only">Expected: </span>
-              <span>{kpiCardLabel("expected", population)}</span>
-            </span>
+              <span className={pageStyles.kpiActionHint} aria-hidden="true">
+                {status === "expected" ? "Active" : "Filter"}
+              </span>
+            </div>
             <span className={`${pageStyles.kpiVal} ${styles.kpiVal}`}>{counts.expected}</span>
             <span className={pageStyles.kpiSub}>Clinical review pending</span>
           </div>
           <div
-            className={`${pageStyles.kpiCard} ${styles.kpiCard}`}
+            className={`${pageStyles.kpiCard} ${styles.kpiCard}${status === "departed" ? ` ${pageStyles.kpiCardActive}` : ""}`}
             data-tone="accent"
             data-testid="ward-discharge-kpi-departed"
+            role="button"
+            tabIndex={0}
+            aria-pressed={status === "departed"}
+            onClick={() => {
+              setStatus(status === "departed" ? "all" : "departed");
+              clearSelection();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setStatus(status === "departed" ? "all" : "departed");
+                clearSelection();
+              }
+            }}
           >
-            <span className={pageStyles.kpiLabel}>
-              <span className={styles.statusIndicator} aria-hidden="true">
-                ✓
+            <div className={pageStyles.kpiTopRow}>
+              <span className={pageStyles.kpiLabel}>
+                <span className={styles.statusIndicator} aria-hidden="true">
+                  ✓
+                </span>
+                <span className="sr-only">Departed: </span>
+                <span>{kpiCardLabel("departed", population)}</span>
               </span>
-              <span className="sr-only">Departed: </span>
-              <span>{kpiCardLabel("departed", population)}</span>
-            </span>
+              <span className={pageStyles.kpiActionHint} aria-hidden="true">
+                {status === "departed" ? "Active" : "Filter"}
+              </span>
+            </div>
             <span className={`${pageStyles.kpiVal} ${styles.kpiVal}`}>{counts.departed}</span>
             {/* The hours come from the same window that sorts a release into "discharged today"
                 (releaseBand: now - confirmedAt < MINUTES_PER_DAY), so the label cannot drift from
@@ -555,215 +635,219 @@ function DischargeWorkspace() {
             <span className={pageStyles.kpiSub}>Departures finalised · {MINUTES_PER_DAY / 60}h</span>
           </div>
         </div>
-        <div className={pageStyles.filters}>
-          <label htmlFor="discharges-filter-service">
-            Service
-            <select
-              id="discharges-filter-service"
-              name="dischargesFilterService"
-              value={service}
-              onChange={(event) => {
-                setService(event.target.value);
-                setWard("all");
-                clearSelection();
-              }}
-            >
-              <option value="all">All services</option>
-              {services.map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </select>
-          </label>
-          <label htmlFor="discharges-filter-ward">
-            Ward
-            <select
-              id="discharges-filter-ward"
-              name="dischargesFilterWard"
-              value={ward}
-              onChange={(event) => {
-                setWard(event.target.value);
-                clearSelection();
-              }}
-            >
-              <option value="all">All wards</option>
-              {scopedUnits.map((unit) => (
-                <option key={unit.id} value={unit.id}>
-                  {unit.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label htmlFor="discharges-filter-blocker">
-            Blocker focus
-            <select
-              id="discharges-filter-blocker"
-              name="dischargesFilterBlocker"
-              value={blockerCategory}
-              onChange={(event) => {
-                setBlockerCategory(event.target.value);
-                clearSelection();
-              }}
-            >
-              <option value="all">All blocker categories</option>
-              {BLOCKER_CATEGORIES.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.label}
-                </option>
-              ))}
-            </select>
-          </label>
+        <div className={pageStyles.filterControlBar}>
+          <div className={pageStyles.filters}>
+            <label htmlFor="discharges-filter-service" className={pageStyles.filterField}>
+              <span className={pageStyles.filterLabelText}>Service</span>
+              <select
+                id="discharges-filter-service"
+                name="dischargesFilterService"
+                value={service}
+                onChange={(event) => {
+                  setService(event.target.value);
+                  setWard("all");
+                  clearSelection();
+                }}
+              >
+                <option value="all">All services</option>
+                {services.map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+            <label htmlFor="discharges-filter-ward" className={pageStyles.filterField}>
+              <span className={pageStyles.filterLabelText}>Ward</span>
+              <select
+                id="discharges-filter-ward"
+                name="dischargesFilterWard"
+                value={ward}
+                onChange={(event) => {
+                  setWard(event.target.value);
+                  clearSelection();
+                }}
+              >
+                <option value="all">All wards</option>
+                {scopedUnits.map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label htmlFor="discharges-filter-blocker" className={pageStyles.filterField}>
+              <span className={pageStyles.filterLabelText}>Blocker focus</span>
+              <select
+                id="discharges-filter-blocker"
+                name="dischargesFilterBlocker"
+                value={blockerCategory}
+                onChange={(event) => {
+                  setBlockerCategory(event.target.value);
+                  clearSelection();
+                }}
+              >
+                <option value="all">All blocker categories</option>
+                {BLOCKER_CATEGORIES.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {population === "records" && (
+              <>
+                <label htmlFor="discharges-filter-identity" className={pageStyles.filterField}>
+                  <span className={pageStyles.filterLabelText}>Patient link</span>
+                  <select
+                    id="discharges-filter-identity"
+                    name="dischargesFilterIdentity"
+                    value={identity}
+                    onChange={(event) => {
+                      setIdentity(event.target.value);
+                      clearSelection();
+                    }}
+                  >
+                    <option value="all">All records</option>
+                    <option value="linked">Linked patient</option>
+                    <option value="missing">Missing or unavailable</option>
+                  </select>
+                </label>
+                <label htmlFor="discharges-filter-destination" className={pageStyles.filterField}>
+                  <span className={pageStyles.filterLabelText}>Destination</span>
+                  <select
+                    id="discharges-filter-destination"
+                    name="dischargesFilterDestination"
+                    value={destination}
+                    onChange={(event) => {
+                      setDestination(event.target.value);
+                      clearSelection();
+                    }}
+                  >
+                    <option value="all">All destinations</option>
+                    {LEAVING_DESTINATIONS.map((dest) => (
+                      <option key={dest.id} value={dest.id}>
+                        {dest.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </>
+            )}
+            {(service !== "all" ||
+              ward !== "all" ||
+              status !== "all" ||
+              identity !== "all" ||
+              destination !== "all" ||
+              blockerCategory !== "all") && (
+              <button type="button" className={pageStyles.quietButton} onClick={clearAllFilters}>
+                Clear filters
+              </button>
+            )}
+          </div>
           {population === "records" && (
-            <>
-              <label htmlFor="discharges-filter-identity">
-                Patient link
-                <select
-                  id="discharges-filter-identity"
-                  name="dischargesFilterIdentity"
-                  value={identity}
-                  onChange={(event) => {
-                    setIdentity(event.target.value);
-                    clearSelection();
-                  }}
-                >
-                  <option value="all">All records</option>
-                  <option value="linked">Linked patient</option>
-                  <option value="missing">Missing or unavailable</option>
-                </select>
-              </label>
-              <label htmlFor="discharges-filter-destination">
-                Destination
-                <select
-                  id="discharges-filter-destination"
-                  name="dischargesFilterDestination"
-                  value={destination}
-                  onChange={(event) => {
-                    setDestination(event.target.value);
-                    clearSelection();
-                  }}
-                >
-                  <option value="all">All destinations</option>
-                  {LEAVING_DESTINATIONS.map((dest) => (
-                    <option key={dest.id} value={dest.id}>
-                      {dest.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </>
-          )}
-          {(service !== "all" ||
-            ward !== "all" ||
-            status !== "all" ||
-            identity !== "all" ||
-            destination !== "all" ||
-            blockerCategory !== "all") && (
-            <button type="button" className={pageStyles.quietButton} onClick={clearAllFilters}>
-              Clear filters
-            </button>
-          )}
-        </div>
-        {population === "records" && (
-          <div className={pageStyles.quickFilterBar} role="toolbar" aria-label="Quick destination filters">
-            <span className={pageStyles.quickFilterTitle}>
-              <Filter size={13} className={pageStyles.inlineIcon} aria-hidden="true" />
-              Destinations:
-            </span>
-            <button
-              type="button"
-              className={`${pageStyles.quickFilterPill} ${destination === "all" ? pageStyles.quickFilterPillActive : ""}`}
-              onClick={() => {
-                setDestination("all");
-                clearSelection();
-              }}
-            >
-              All destinations
-            </button>
-            {LEAVING_DESTINATIONS.slice(0, 4).map((item) => (
+            <div className={pageStyles.quickFilterBar} role="toolbar" aria-label="Quick destination filters">
+              <span className={pageStyles.quickFilterTitle}>
+                <Filter size={13} className={pageStyles.inlineIcon} aria-hidden="true" />
+                Destinations:
+              </span>
               <button
-                key={item.id}
                 type="button"
-                className={`${pageStyles.quickFilterPill} ${destination === item.id ? pageStyles.quickFilterPillActive : ""}`}
+                className={`${pageStyles.quickFilterPill} ${destination === "all" ? pageStyles.quickFilterPillActive : ""}`}
                 onClick={() => {
-                  setDestination(destination === item.id ? "all" : item.id);
+                  setDestination("all");
                   clearSelection();
                 }}
               >
-                {item.label}
+                All destinations
               </button>
-            ))}
-          </div>
-        )}
-        {population === "releases" && (
-          <div className={pageStyles.quickFilterBar} role="toolbar" aria-label="Quick blocker filters">
-            <span className={pageStyles.quickFilterTitle}>
-              <ShieldAlert size={13} className={pageStyles.inlineIcon} aria-hidden="true" />
-              Blocker focus:
-            </span>
-            <button
-              type="button"
-              className={`${pageStyles.quickFilterPill} ${blockerCategory === "all" ? pageStyles.quickFilterPillActive : ""}`}
-              onClick={() => {
-                setBlockerCategory("all");
-                clearSelection();
-              }}
-            >
-              All blockers
-            </button>
-            {BLOCKER_CATEGORIES.slice(0, 4).map((cat) => (
+              {LEAVING_DESTINATIONS.slice(0, 4).map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`${pageStyles.quickFilterPill} ${destination === item.id ? pageStyles.quickFilterPillActive : ""}`}
+                  onClick={() => {
+                    setDestination(destination === item.id ? "all" : item.id);
+                    clearSelection();
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {population === "releases" && (
+            <div className={pageStyles.quickFilterBar} role="toolbar" aria-label="Quick blocker filters">
+              <span className={pageStyles.quickFilterTitle}>
+                <ShieldAlert size={13} className={pageStyles.inlineIcon} aria-hidden="true" />
+                Blocker focus:
+              </span>
               <button
-                key={cat.id}
                 type="button"
-                className={`${pageStyles.quickFilterPill} ${blockerCategory === cat.id ? pageStyles.quickFilterPillActive : ""}`}
+                className={`${pageStyles.quickFilterPill} ${blockerCategory === "all" ? pageStyles.quickFilterPillActive : ""}`}
                 onClick={() => {
-                  setBlockerCategory(blockerCategory === cat.id ? "all" : cat.id);
+                  setBlockerCategory("all");
                   clearSelection();
                 }}
               >
-                {cat.label}
+                All blockers
               </button>
-            ))}
-          </div>
-        )}
-        <div
-          className={pageStyles.statusFilters}
-          aria-label="Filter by discharge status"
-          hidden={population === "records" && guarded.status === "denied"}
-        >
-          <button
-            type="button"
-            aria-pressed={status === "all"}
-            onClick={() => {
-              setStatus("all");
-              clearSelection();
-            }}
-          >
-            All <strong className={styles.countBadge}>{total}</strong>
-          </button>
-          {WORK_ORDER.map((key) => (
-            <button
-              key={key}
-              type="button"
-              data-status={key}
-              aria-pressed={status === key}
-              onClick={() => {
-                setStatus(key);
-                clearSelection();
-              }}
-            >
-              {population === "releases" && key === "departed" ? "Discharged · 24h" : WORK_STATUS_LABELS[key]}{" "}
-              <strong className={styles.countBadge}>{counts[key]}</strong>
-            </button>
-          ))}
+              {BLOCKER_CATEGORIES.slice(0, 4).map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  className={`${pageStyles.quickFilterPill} ${blockerCategory === cat.id ? pageStyles.quickFilterPillActive : ""}`}
+                  onClick={() => {
+                    setBlockerCategory(blockerCategory === cat.id ? "all" : cat.id);
+                    clearSelection();
+                  }}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div className={pageStyles.workspace}>
           <section className={pageStyles.register} aria-labelledby="discharge-register-heading">
             <header className={pageStyles.panelHeader}>
-              <h2 id="discharge-register-heading">
-                {population === "releases" ? "Bed release worklist" : "Admission discharge records"}
-              </h2>
-              <span aria-live="polite" className={styles.countBadge}>
-                {population === "records" && guarded.status === "denied" ? "Unavailable" : `${shown} shown`}
-              </span>
+              <div className={pageStyles.panelTitleGroup}>
+                <h2 id="discharge-register-heading">
+                  {population === "releases" ? "Bed release worklist" : "Admission discharge records"}
+                </h2>
+                <span aria-live="polite" className={styles.countBadge}>
+                  {population === "records" && guarded.status === "denied" ? "Unavailable" : `${shown} shown`}
+                </span>
+              </div>
+              <div
+                className={pageStyles.statusFilters}
+                aria-label="Filter by discharge status"
+                hidden={population === "records" && guarded.status === "denied"}
+              >
+                <button
+                  type="button"
+                  aria-pressed={status === "all"}
+                  onClick={() => {
+                    setStatus("all");
+                    clearSelection();
+                  }}
+                >
+                  All <strong className={styles.countBadge}>{total}</strong>
+                </button>
+                {WORK_ORDER.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    data-status={key}
+                    aria-pressed={status === key}
+                    onClick={() => {
+                      setStatus(key);
+                      clearSelection();
+                    }}
+                  >
+                    {population === "releases" && key === "departed" ? "Discharged · 24h" : WORK_STATUS_LABELS[key]}{" "}
+                    <strong className={styles.countBadge}>{counts[key]}</strong>
+                  </button>
+                ))}
+              </div>
             </header>
             <div
               ref={listRef}
@@ -797,13 +881,28 @@ function DischargeWorkspace() {
                       {visibleRecords.map((record) => {
                         const unit = units.find((candidate) => candidate.id === record.unitId);
                         return (
-                          <tr key={record.id} data-selected={selected?.admissionId === record.admissionId}>
+                          <tr
+                            key={record.id}
+                            data-selected={selected?.admissionId === record.admissionId}
+                            onClick={() => openRecord(record)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                openRecord(record);
+                              }
+                            }}
+                            className={pageStyles.interactiveRow}
+                            tabIndex={0}
+                          >
                             <td data-label="Patient / ward">
                               <button
                                 type="button"
                                 className={pageStyles.recordButton}
                                 aria-pressed={selected?.admissionId === record.admissionId}
-                                onClick={() => openRecord(record)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openRecord(record);
+                                }}
                               >
                                 {recordName(record)}
                               </button>
@@ -865,14 +964,34 @@ function DischargeWorkspace() {
                         ) : (
                           releaseGroups[key].map((release) => {
                             const unit = units.find((candidate) => candidate.id === release.unitId);
+                            const linked = records.find((candidate) => candidate.admissionId === release.admissionId);
                             return (
-                              <tr key={release.id} data-selected={releaseId === release.id}>
+                              <tr
+                                key={release.id}
+                                data-selected={releaseId === release.id}
+                                onClick={() => {
+                                  setSelected(null);
+                                  setReleaseId(release.id);
+                                  focusDetail();
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    setSelected(null);
+                                    setReleaseId(release.id);
+                                    focusDetail();
+                                  }
+                                }}
+                                className={pageStyles.interactiveRow}
+                                tabIndex={0}
+                              >
                                 <td data-label="Ward / service">
                                   <button
                                     type="button"
                                     className={pageStyles.recordButton}
                                     aria-pressed={releaseId === release.id}
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                      e.stopPropagation();
                                       setSelected(null);
                                       setReleaseId(release.id);
                                       focusDetail();
@@ -881,6 +1000,7 @@ function DischargeWorkspace() {
                                     {unitLabel(unit, release.unitId)}
                                   </button>
                                   <span className={pageStyles.secondary}>{healthServiceLabel(unit)}</span>
+                                  {linked && <span className={pageStyles.patientHint}>{recordName(linked)}</span>}
                                 </td>
                                 <td data-label="Timing" className={styles.timingCell}>
                                   {release.state !== "discharged" && release.expectedAt < now ? (
@@ -950,7 +1070,7 @@ function DischargeWorkspace() {
               )}
             </footer>
           </section>
-          {Boolean(selected || releaseId) && (
+          {Boolean(selected || releaseId || openError) && (
             <div
               className={`${styles.scrim} ${pageStyles.scrim}`}
               onClick={() => {
@@ -963,7 +1083,7 @@ function DischargeWorkspace() {
           )}
           <aside
             ref={detailRef}
-            className={`${pageStyles.detail} ${styles.detailPanel}${selected || releaseId ? ` ${styles.open} ${pageStyles.open}` : ""}`}
+            className={`${pageStyles.detail} ${styles.detailPanel}${selected || releaseId || openError ? ` ${styles.open} ${pageStyles.open}` : ""}`}
             tabIndex={-1}
             aria-labelledby="discharge-detail-heading"
             onKeyDown={(event) => {
@@ -977,7 +1097,7 @@ function DischargeWorkspace() {
               <h2 id="discharge-detail-heading">
                 {detailRecord ? "Admission record" : detailRelease ? "Anonymous release" : "Record detail"}
               </h2>
-              {(selected || releaseId) && (
+              {(selected || releaseId || openError) && (
                 <button
                   type="button"
                   className={pageStyles.quietButton}
@@ -1043,7 +1163,9 @@ function DischargeWorkspace() {
                               parsed =
                                 today === undefined || recorded === null
                                   ? today
-                                  : today + (Math.floor(recorded / MINUTES_PER_DAY) - Math.floor(now / MINUTES_PER_DAY)) * MINUTES_PER_DAY;
+                                  : today +
+                                    (Math.floor(recorded / MINUTES_PER_DAY) - Math.floor(now / MINUTES_PER_DAY)) *
+                                      MINUTES_PER_DAY;
                             }
                             if (parsed !== undefined) {
                               dispatch({
@@ -1065,6 +1187,8 @@ function DischargeWorkspace() {
                           }}
                         >
                           <input
+                            id="ward-discharge-new-time-input"
+                            name="newExpectedDischargeTime"
                             type="time"
                             aria-label="New expected discharge time"
                             data-testid="ward-discharge-new-time-input"
@@ -1182,7 +1306,29 @@ function DischargeWorkspace() {
                   <span className={pageStyles.eyebrow}>{detailRelease.id}</span>
                   <h3>{unitLabel(selectedUnit, detailRelease.unitId)}</h3>
                   <p>{healthServiceLabel(selectedUnit)}</p>
-                  <p className={pageStyles.secondary}>No patient link</p>
+                  {linkedReleaseRecord ? (
+                    <div className={pageStyles.linkedPatientBridge}>
+                      <div className={pageStyles.linkedPatientHeader}>
+                        <span className={pageStyles.linkedPatientLabel}>Linked Patient</span>
+                        <strong className={pageStyles.linkedPatientName}>{recordName(linkedReleaseRecord)}</strong>
+                        {linkedReleaseRecord.identity.kind === "linked" && (
+                          <span className={pageStyles.mono}>UMRN {linkedReleaseRecord.identity.patient.umrn}</span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        className={pageStyles.viewPatientRecordBtn}
+                        onClick={() => {
+                          setPopulation("records");
+                          openRecord(linkedReleaseRecord);
+                        }}
+                      >
+                        View patient discharge record →
+                      </button>
+                    </div>
+                  ) : (
+                    <p className={pageStyles.secondary}>No patient link</p>
+                  )}
                   <div className={pageStyles.detailStatus}>
                     {badge(detailRelease.state === "discharged" ? "departed" : detailRelease.state)}
                     {detailRelease.blocker && badge("blocked")}

@@ -55,7 +55,10 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 0;
-  border-block: 0.0625rem solid var(--line);
+  background: var(--surface-2);
+  border: none;
+  border-radius: var(--r2);
+  overflow: hidden;
 }
 
 .placementBand {
@@ -125,6 +128,7 @@
   grid-template-columns: minmax(min(10rem, 100%), 1fr) minmax(min(5rem, 100%), 0.65fr) auto;
   align-items: center;
   gap: 0.75rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .bandTrack {
@@ -261,7 +265,9 @@
 
 .distBandSeg {
   cursor: pointer;
-  transition: opacity 0.15s ease, transform 0.1s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.1s ease;
 }
 
 .distBandSeg:hover,
@@ -271,7 +277,10 @@
 }
 
 .distBandRect {
-  transition: filter 0.15s ease, stroke 0.15s ease, stroke-width 0.15s ease;
+  transition:
+    filter 0.15s ease,
+    stroke 0.15s ease,
+    stroke-width 0.15s ease;
 }
 
 .distBandTooltip {
@@ -280,7 +289,7 @@
   background: var(--surface);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-card, 0.375rem);
-  box-shadow: 0 6px 22px rgb(var(--ward-shadow-rgb) / 0.22);
+  box-shadow: var(--lift);
   padding: 0.625rem 0.875rem;
   font-size: var(--t-0, 0.75rem);
   font-family: var(--body);
@@ -319,7 +328,8 @@
   position: relative;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius-card, 0.375rem);
+  border-radius: var(--r2, 0.375rem);
+  box-shadow: var(--lift-sm);
   overflow: hidden;
   margin-bottom: 0.75rem;
 }
@@ -345,7 +355,7 @@
   background: var(--surface);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-card, 0.375rem);
-  box-shadow: 0 6px 22px rgb(var(--ward-shadow-rgb) / 0.22);
+  box-shadow: var(--lift);
   padding: 0.625rem 0.875rem;
   font-size: var(--t-0, 0.75rem);
   font-family: var(--body);
@@ -444,7 +454,9 @@
   font-size: var(--t-0, 0.75rem);
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
   white-space: nowrap;
 }
 
@@ -460,7 +472,7 @@
 
 .ctlPrimary {
   background: var(--accent);
-  color: var(--on-accent, var(--ward-canvas));
+  color: var(--on-accent, var(--surface));
   border-color: var(--accent);
 }
 
@@ -472,15 +484,15 @@
   position: fixed;
   bottom: 1.5rem;
   right: 1.5rem;
-  background: var(--ground-hi, var(--surface-2));
-  color: var(--text-inverse);
+  background: var(--ink);
+  color: var(--surface);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-card, 0.375rem);
   padding: 0.625rem 1rem;
   font-size: var(--t-0, 0.75rem);
   font-family: var(--body);
   font-weight: 500;
-  box-shadow: 0 6px 20px rgb(var(--ward-shadow-rgb) / 0.28);
+  box-shadow: var(--float);
   display: flex;
   align-items: center;
   gap: 0.5rem;

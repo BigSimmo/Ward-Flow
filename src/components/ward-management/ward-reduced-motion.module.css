@@ -19,14 +19,17 @@
 @media (prefers-reduced-motion: reduce) {
   .namedKill {
     transition: none;
+    animation: none;
   }
 
   .descendantKill * {
     transition: none !important;
+    animation: none !important;
   }
 
   .descendantKillWithScroll * {
     scroll-behavior: auto !important;
     transition: none !important;
+    animation: none !important;
   }
 }

@@ -1,86 +1,62 @@
 {
  "input": {
-  "reportSha256": "09ba51c0e9d3d12d6995c9781f5376ae0cbcdb5d573d6cb02fa34fb919000926",
-  "reportBytes": 4678999,
-  "reportModifiedAt": "2026-09-25T02:24:10.085Z",
-  "reducerSha256": "f6505095d40bd2668ae0e76a81a057103ef3fd222f942fecb7e82dbceb7eef4e",
-  "coversWholeReducer": true,
+  "reportSha256": "22362940ea54d06ca476efa2b2ae56767f58cdd1c0f4102ebf7d4cfd9391d855",
+  "reportBytes": 4663187,
+  "reportModifiedAt": "2026-09-22T12:34:10.711Z",
+  "reducerSha256": "6e91e34a409f930bcebadd1eb4880bf746296434c4fedf8f435b33824340ce5e",
+  "coversWholeReducer": false,
   "regenerateWith": "npm run test:coverage -- --coverage.reportOnFailure=true  (writes coverage/lcov.info even when tests fail), then npm run ward:journey"
  },
  "measuredFrom": "coverage/lcov.info",
  "vouchedBy": "this worktree's own report",
- "measuredAt": "2026-09-25T02:24:58.836Z",
- "refusals": 392,
- "spokenFor": 392,
+ "measuredAt": "2026-09-30T02:26:07.157Z",
+ "refusals": 421,
+ "spokenFor": 113,
  "neverReached": [
-  3532,
-  3549,
-  3562,
-  4002,
-  4375,
-  5878,
-  5881,
-  6360,
-  6363,
-  6372,
-  6722,
-  6950,
-  6953,
-  7216,
-  7226,
-  7358,
-  7368,
-  7371,
-  7380,
-  7785,
-  7886,
-  7908,
-  8085,
-  8163,
-  8166,
-  8224,
-  8257,
-  8260,
-  8364,
-  8367,
-  8370,
-  8373,
-  8376,
-  8379,
-  8386,
-  8476,
-  8511,
-  8531
+  7177,
+  7829,
+  8006,
+  8044
  ],
  "byEvent": {
   "STAND_DOWN_BROADCAST_ALERT": {
-   "refusals": 2,
-   "unknown": 0,
-   "neverReached": 1
+   "refusals": 3,
+   "unknown": 3,
+   "neverReached": 0
+  },
+  "UPDATE_EXPECTED_DISCHARGE": {
+   "refusals": 4,
+   "unknown": 4,
+   "neverReached": 0
   },
   "ADD_PATIENT": {
-   "refusals": 1,
-   "unknown": 0,
+   "refusals": 2,
+   "unknown": 1,
    "neverReached": 0
   },
   "SET_SCENARIO": {
    "refusals": 1,
-   "unknown": 0,
+   "unknown": 1,
+   "neverReached": 0
+  },
+  "ADVANCE_CLOCK": {
+   "refusals": 1,
+   "unknown": 1,
    "neverReached": 0
   },
   "SET_CONFIGURATION": {
    "refusals": 1,
-   "unknown": 0,
+   "unknown": 1,
    "neverReached": 0
   },
   "RAISE_REFERRAL": {
    "refusals": 9,
-   "unknown": 0,
+   "unknown": 5,
    "neverReached": 0
   },
   "RECORD_MEDICAL_CLEARANCE": {
    "refusals": 1,
-   "unknown": 0,
+   "unknown": 1,
    "neverReached": 0
   },
   "RECORD_ARRIVED_IN_DEPARTMENT": {
@@ -89,148 +65,148 @@
    "neverReached": 0
   },
   "RECORD_TRANSPORT_NEED": {
-   "refusals": 2,
-   "unknown": 0,
+   "refusals": 3,
+   "unknown": 2,
    "neverReached": 0
   },
   "RECORD_NO_REFERRAL": {
    "refusals": 3,
-   "unknown": 0,
+   "unknown": 1,
    "neverReached": 0
   },
   "RECORD_ED_OUTCOME": {
    "refusals": 4,
-   "unknown": 0,
+   "unknown": 3,
    "neverReached": 0
   },
   "RECORD_LEGAL_FORM_RECEIVED": {
    "refusals": 4,
-   "unknown": 0,
+   "unknown": 4,
    "neverReached": 0
   },
   "CORRECT_LEGAL_FORM_RECEIPT": {
    "refusals": 4,
-   "unknown": 0,
+   "unknown": 4,
    "neverReached": 0
   },
   "RECORD_LEGAL_FORM_EXPIRY": {
    "refusals": 5,
-   "unknown": 0,
+   "unknown": 3,
    "neverReached": 0
   },
   "RECORD_MOVEMENT_GENDER": {
    "refusals": 4,
-   "unknown": 0,
+   "unknown": 3,
    "neverReached": 0
   },
   "REFER_TO_COMMUNITY_TEAM": {
    "refusals": 5,
-   "unknown": 0,
+   "unknown": 5,
    "neverReached": 0
   },
   "RECORD_LEFT_DEPARTMENT": {
    "refusals": 3,
-   "unknown": 0,
+   "unknown": 3,
    "neverReached": 0
   },
   "RECORD_EXAMINATION": {
    "refusals": 3,
-   "unknown": 0,
+   "unknown": 1,
    "neverReached": 0
   },
   "REFER_TO_UNITS": {
    "refusals": 8,
-   "unknown": 0,
+   "unknown": 7,
    "neverReached": 0
   },
   "ACCEPT_IN_PRINCIPLE": {
    "refusals": 8,
-   "unknown": 0,
+   "unknown": 4,
    "neverReached": 0
   },
   "WITHDRAW_REFERRAL": {
    "refusals": 5,
-   "unknown": 0,
+   "unknown": 3,
    "neverReached": 0
   },
   "WITHDRAW_WARD_REQUEST": {
    "refusals": 4,
-   "unknown": 0,
+   "unknown": 2,
    "neverReached": 0
   },
   "PULL_PATIENT": {
    "refusals": 16,
-   "unknown": 0,
-   "neverReached": 3
+   "unknown": 15,
+   "neverReached": 0
   },
   "DECLINE": {
    "refusals": 7,
-   "unknown": 0,
-   "neverReached": 1
+   "unknown": 5,
+   "neverReached": 0
   },
   "HANDOVER_READY": {
    "refusals": 5,
-   "unknown": 0,
+   "unknown": 4,
    "neverReached": 0
   },
   "TRANSPORT_ACCEPTED": {
    "refusals": 6,
-   "unknown": 0,
+   "unknown": 4,
    "neverReached": 0
   },
   "TRANSPORT_EN_ROUTE": {
    "refusals": 5,
-   "unknown": 0,
+   "unknown": 4,
    "neverReached": 0
   },
   "PATIENT_COLLECTED": {
    "refusals": 5,
-   "unknown": 0,
+   "unknown": 5,
    "neverReached": 0
   },
   "PATIENT_ARRIVED": {
-   "refusals": 9,
-   "unknown": 0,
-   "neverReached": 1
+   "refusals": 10,
+   "unknown": 7,
+   "neverReached": 0
   },
   "RECORD_LEAVING": {
-   "refusals": 5,
-   "unknown": 0,
+   "refusals": 7,
+   "unknown": 6,
    "neverReached": 0
   },
   "FLAG_MOVEMENT_URGENT": {
    "refusals": 4,
-   "unknown": 0,
+   "unknown": 4,
    "neverReached": 0
   },
   "CLEAR_MOVEMENT_URGENT_FLAG": {
    "refusals": 2,
-   "unknown": 0,
+   "unknown": 1,
    "neverReached": 0
   },
   "RECORD_MOVEMENT_BLOCKER": {
    "refusals": 4,
-   "unknown": 0,
+   "unknown": 2,
    "neverReached": 0
   },
   "CLEAR_MOVEMENT_BLOCKER": {
    "refusals": 3,
-   "unknown": 0,
+   "unknown": 2,
    "neverReached": 0
   },
   "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT": {
    "refusals": 4,
-   "unknown": 0,
+   "unknown": 3,
    "neverReached": 0
   },
   "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT": {
    "refusals": 3,
-   "unknown": 0,
+   "unknown": 1,
    "neverReached": 0
   },
   "CONFIRM_CAPACITY": {
    "refusals": 5,
-   "unknown": 0,
+   "unknown": 3,
    "neverReached": 0
   },
   "RECORD_WARD_INTAKE_CONSTRAINTS": {
@@ -239,264 +215,259 @@
    "neverReached": 0
   },
   "FLAG_BED_RELEASE": {
-   "refusals": 3,
-   "unknown": 0,
+   "refusals": 8,
+   "unknown": 5,
    "neverReached": 0
   },
   "CONFIRM_BED_RELEASE": {
    "refusals": 3,
-   "unknown": 0,
+   "unknown": 1,
    "neverReached": 0
   },
   "REVERT_BED_RELEASE": {
    "refusals": 4,
-   "unknown": 0,
+   "unknown": 4,
    "neverReached": 0
   },
   "BLOCK_BED_RELEASE": {
    "refusals": 5,
-   "unknown": 0,
+   "unknown": 4,
    "neverReached": 0
   },
   "CLEAR_BED_RELEASE_BLOCK": {
    "refusals": 3,
-   "unknown": 0,
+   "unknown": 3,
    "neverReached": 0
   },
   "SET_BED_PREPARATION": {
    "refusals": 3,
-   "unknown": 0,
+   "unknown": 2,
    "neverReached": 0
   },
   "RELEASE_BED": {
-   "refusals": 4,
-   "unknown": 0,
+   "refusals": 6,
+   "unknown": 5,
    "neverReached": 0
   },
   "RECORD_LEAVE_BED": {
-   "refusals": 2,
-   "unknown": 0,
+   "refusals": 6,
+   "unknown": 2,
    "neverReached": 0
   },
   "END_LEAVE_BED": {
    "refusals": 2,
-   "unknown": 0,
+   "unknown": 2,
    "neverReached": 0
   },
   "REQUEST_CAPACITY_REFRESH": {
    "refusals": 1,
-   "unknown": 0,
+   "unknown": 1,
    "neverReached": 0
   },
   "RECEIVE_REFERRAL": {
    "refusals": 24,
-   "unknown": 0,
+   "unknown": 19,
    "neverReached": 0
   },
   "ACCEPT_REFERRAL": {
    "refusals": 14,
-   "unknown": 0,
-   "neverReached": 2
+   "unknown": 12,
+   "neverReached": 0
   },
   "DECLINE_REFERRAL": {
    "refusals": 7,
-   "unknown": 0,
+   "unknown": 4,
    "neverReached": 0
   },
   "RECORD_REFERRER_WITHDRAWAL": {
    "refusals": 9,
-   "unknown": 0,
-   "neverReached": 3
+   "unknown": 4,
+   "neverReached": 0
   },
   "ADD_REFERRAL_CORRECTION": {
    "refusals": 3,
-   "unknown": 0,
+   "unknown": 3,
    "neverReached": 0
   },
   "RECORD_LOCAL_BED_SOUGHT": {
    "refusals": 3,
-   "unknown": 0,
+   "unknown": 2,
    "neverReached": 0
   },
   "RECORD_ESCALATION": {
    "refusals": 2,
-   "unknown": 0,
+   "unknown": 2,
    "neverReached": 0
   },
   "CHANGE_URGENCY": {
    "refusals": 3,
-   "unknown": 0,
+   "unknown": 3,
    "neverReached": 0
   },
   "CHANGE_LEGAL_STATUS": {
    "refusals": 3,
-   "unknown": 0,
+   "unknown": 3,
    "neverReached": 0
   },
   "RELEASE_PULL": {
    "refusals": 9,
-   "unknown": 0,
-   "neverReached": 1
-  },
-  "BOOK_TRANSPORT": {
-   "refusals": 13,
-   "unknown": 0,
+   "unknown": 5,
    "neverReached": 0
   },
+  "BOOK_TRANSPORT": {
+   "refusals": 15,
+   "unknown": 5,
+   "neverReached": 1
+  },
   "CANCEL_TRANSPORT": {
-   "refusals": 9,
-   "unknown": 0,
-   "neverReached": 2
+   "refusals": 10,
+   "unknown": 5,
+   "neverReached": 0
   },
   "STOP_TRANSPORT": {
    "refusals": 9,
-   "unknown": 0,
-   "neverReached": 2
+   "unknown": 7,
+   "neverReached": 0
   },
   "RELEASE_HELD_BED": {
    "refusals": 4,
-   "unknown": 0,
+   "unknown": 3,
    "neverReached": 0
   },
   "RECORD_DIVERSION": {
    "refusals": 9,
-   "unknown": 0,
-   "neverReached": 4
+   "unknown": 6,
+   "neverReached": 0
   },
   "RELEASE_DIVERTED_BED": {
    "refusals": 4,
-   "unknown": 0,
+   "unknown": 3,
    "neverReached": 0
   },
   "STEP_BACK_STAGE": {
    "refusals": 5,
-   "unknown": 0,
-   "neverReached": 0
+   "unknown": 2,
+   "neverReached": 1
   },
   "WITHDRAW_ACCEPTANCE": {
    "refusals": 5,
-   "unknown": 0,
+   "unknown": 1,
    "neverReached": 0
   },
   "MARK_NOTICE_READ": {
    "refusals": 3,
-   "unknown": 0,
-   "neverReached": 0
+   "unknown": 1,
+   "neverReached": 1
   },
   "ACKNOWLEDGE_INBOX_ITEM": {
    "refusals": 2,
    "unknown": 0,
-   "neverReached": 0
+   "neverReached": 1
   },
   "COMPLETE_INBOX_ITEM": {
    "refusals": 3,
-   "unknown": 0,
-   "neverReached": 1
+   "unknown": 2,
+   "neverReached": 0
   },
   "REOPEN_INBOX_ITEM": {
    "refusals": 2,
-   "unknown": 0,
+   "unknown": 2,
    "neverReached": 0
   },
   "SET_ARRIVAL_DETAILS": {
    "refusals": 1,
-   "unknown": 0,
+   "unknown": 1,
    "neverReached": 0
   },
   "SET_STEP_DOWN_CANDIDATE": {
    "refusals": 2,
-   "unknown": 0,
-   "neverReached": 1
+   "unknown": 2,
+   "neverReached": 0
   },
   "SET_DISCHARGE_BARRIER": {
    "refusals": 3,
-   "unknown": 0,
-   "neverReached": 1
+   "unknown": 3,
+   "neverReached": 0
   },
   "RECORD_MOVEMENT_MEDICAL_CLEARANCE": {
    "refusals": 1,
-   "unknown": 0,
+   "unknown": 1,
    "neverReached": 0
   },
   "UPLOAD_PATIENT_FORM": {
    "refusals": 3,
-   "unknown": 0,
+   "unknown": 3,
    "neverReached": 0
   },
   "RECORD_LEGAL_FORM_WRITTEN": {
    "refusals": 5,
-   "unknown": 0,
+   "unknown": 5,
    "neverReached": 0
   },
   "RECORD_COUNTRY_EXTENSION": {
    "refusals": 2,
-   "unknown": 0,
+   "unknown": 2,
    "neverReached": 0
   },
   "RECORD_LEGAL_FORM_CONTINUATION": {
    "refusals": 3,
-   "unknown": 0,
-   "neverReached": 1
+   "unknown": 3,
+   "neverReached": 0
   },
   "EVALUATE_ARRIVAL_LATENESS": {
    "refusals": 1,
-   "unknown": 0,
+   "unknown": 1,
    "neverReached": 0
   },
   "RELEASE_AND_REOPEN_SEARCH": {
    "refusals": 6,
-   "unknown": 0,
-   "neverReached": 2
+   "unknown": 6,
+   "neverReached": 0
   },
   "CLEAR_EXPECT_FLAG": {
    "refusals": 2,
-   "unknown": 0,
+   "unknown": 2,
    "neverReached": 0
   },
   "RAISE_EXPECT_FLAG": {
    "refusals": 3,
-   "unknown": 0,
-   "neverReached": 1
+   "unknown": 3,
+   "neverReached": 0
   },
   "FLAG_LEGAL_MISMATCH": {
    "refusals": 2,
-   "unknown": 0,
+   "unknown": 2,
    "neverReached": 0
-  },
-  "OVERRIDE_LEGAL_MISMATCH": {
-   "refusals": 3,
-   "unknown": 0,
-   "neverReached": 2
   },
   "CONFIRM_MORNING_ROLLUP": {
    "refusals": 3,
-   "unknown": 0,
+   "unknown": 3,
    "neverReached": 0
   },
   "SEND_WARD_BUZZ": {
    "refusals": 1,
-   "unknown": 0,
+   "unknown": 1,
    "neverReached": 0
   },
   "RECORD_REPATRIATION": {
    "refusals": 9,
-   "unknown": 0,
-   "neverReached": 7
+   "unknown": 9,
+   "neverReached": 0
   },
   "RECORD_CLINICAL_CONTACT": {
    "refusals": 1,
-   "unknown": 0,
+   "unknown": 1,
    "neverReached": 0
   },
   "DISPATCH_BROADCAST_ALERT": {
-   "refusals": 1,
-   "unknown": 0,
-   "neverReached": 1
+   "refusals": 5,
+   "unknown": 5,
+   "neverReached": 0
   },
   "ACKNOWLEDGE_BROADCAST_ALERT": {
-   "refusals": 1,
-   "unknown": 0,
-   "neverReached": 1
+   "refusals": 4,
+   "unknown": 4,
+   "neverReached": 0
   }
  }
 }

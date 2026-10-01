@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 
 import { WardFigure, WardFigureStrip } from "@/components/ward-management/ward-figure";
 import { clockState, type Instant } from "@/components/ward-management/ward-clock";
@@ -180,16 +181,19 @@ export function standingFigures(input: FigureInput): StandingFigure[] {
         key: "waiting-here",
         label: "Waiting here",
         value: String(mine?.waiting ?? open.length),
-        sub: mine === undefined ? "all departments" : mine.ed.name },
+        sub: mine === undefined ? "all departments" : mine.ed.name,
+      },
       {
         key: "longest-here",
         label: "Longest here",
-        value: mine === undefined ? longestOpen(open, now).value : `${Math.floor(mine.longestWaitMinutes / 60)}h` },
+        value: mine === undefined ? longestOpen(open, now).value : `${Math.floor(mine.longestWaitMinutes / 60)}h`,
+      },
       {
         key: "ready-statewide",
         label: "Ready statewide",
         value: String(rollup.service.availableNow),
-        sub: withSub("not all eligible", preparationNote(pendingEverywhere)) },
+        sub: withSub("not all eligible", preparationNote(pendingEverywhere)),
+      },
       ...legalFigures,
     ];
   }
@@ -211,7 +215,8 @@ export function standingFigures(input: FigureInput): StandingFigure[] {
           key: "ready-here",
           label: "Ready here",
           value: String(breakdown.availableNow),
-          sub: withSub(unit.name, preparationNote(pendingAt(unit.id), openBedsNow(unit, [...bedReleases]))) },
+          sub: withSub(unit.name, preparationNote(pendingAt(unit.id), openBedsNow(unit, [...bedReleases]))),
+        },
         { key: "out-today", label: "Out today", value: String(breakdown.expectedToday) },
         /*
          * ⚠️ **"FREE OF STAFFED", never "staffed" alone.** A bare "2" beside a bed figure reads as
@@ -223,7 +228,8 @@ export function standingFigures(input: FigureInput): StandingFigure[] {
           key: "one-to-one",
           label: "One-to-one free",
           value: `${oneToOne} of ${unit.speciallingCapacity}`,
-          sub: "staffed establishment" },
+          sub: "staffed establishment",
+        },
         ...legalFigures,
       ];
     }
@@ -260,7 +266,8 @@ export function standingFigures(input: FigureInput): StandingFigure[] {
       key: "ready",
       label: "Ready now",
       value: String(rollup.service.availableNow),
-      sub: withSub(undefined, preparationNote(pendingEverywhere, openEverywhere)) },
+      sub: withSub(undefined, preparationNote(pendingEverywhere, openEverywhere)),
+    },
     { key: "out-today", label: "Out today", value: String(rollup.service.expectedToday) },
     { key: "waiting", label: "Waiting", value: String(open.length) },
     /*
@@ -292,7 +299,8 @@ function placeIdFrom(pathname: string): string | undefined {
 export function WardStatsToggle({
   figures,
   open,
-  onToggle }: {
+  onToggle,
+}: {
   figures: StandingFigure[];
   open: boolean;
   onToggle: () => void;
@@ -307,19 +315,151 @@ export function WardStatsToggle({
       aria-expanded={open}
       onClick={onToggle}
       data-testid="ward-stats-toggle"
+      data-ward-dynamic-island="true"
+      title={flagged.length > 0 ? `Clinical telemetry: ${alarm}` : "Clinical telemetry: Nominal"}
+      aria-label={flagged.length > 0 ? `Clinical telemetry: ${alarm}` : "Clinical telemetry: Nominal"}
     >
+      <span className={flagged.length > 0 ? styles.hudPipAlarm : styles.hudPipNominal} aria-hidden="true" />
       <span className={styles.toggleLabel}>{open ? "Hide figures" : "Figures"}</span>
-      {/*
-       * 🔴 **THE ALARM IS ON THE BUTTON, NOT ONLY INSIDE THE PANEL.** A collapsed panel must never
-       * be able to mean "nothing is wrong" — so whatever is flagged is stated here in WORDS, not
-       * as a bare badge count, and not by colour alone. With nothing flagged the button says so
-       * rather than going silent, because an empty control and an unread one look identical.
-       */}
-      <span className={styles.toggleState}>{flagged.length > 0 ? alarm : "nothing flagged"}</span>
+      <span className={styles.hudBadge} data-flagged={flagged.length > 0}>
+        <span className={styles.toggleState}>{flagged.length > 0 ? alarm : "nothing flagged"}</span>
+      </span>
       <span aria-hidden="true" className={styles.chev}>
         {open ? "▲" : "▼"}
       </span>
     </button>
+  );
+}
+
+/**
+ * Modernized rich clinical telemetry drawer content (D-27 Swiss Anti-Box architecture).
+ * Grouped into Risk, Supply, and Demand clusters with high-contrast metric tiles,
+ * live alert notices, and NSQHS/governance disclaimers.
+ */
+export function WardStatsDrawerContent({
+  figures,
+  chromeRole,
+  placeName,
+  now,
+  onClose,
+}: {
+  figures: StandingFigure[];
+  chromeRole: string;
+  placeName?: string;
+  now?: Instant;
+  onClose?: () => void;
+}) {
+  const flagged = figures.filter((f) => f.flagged);
+  const supplyFigures = figures.filter(
+    (f) =>
+      f.key === "ready" ||
+      f.key === "ready-here" ||
+      f.key === "ready-statewide" ||
+      f.key === "out-today" ||
+      f.key === "one-to-one",
+  );
+  const demandFigures = figures.filter(
+    (f) =>
+      f.key === "waiting" ||
+      f.key === "waiting-here" ||
+      f.key === "from-ed" ||
+      f.key === "longest" ||
+      f.key === "longest-here",
+  );
+  const riskFigures = figures.filter((f) => f.key === "passed" || f.key === "within-hour");
+
+  return (
+    <div className={styles.drawerContainer} data-testid="ward-stats-drawer-content">
+      {flagged.length > 0 ? (
+        <div className={styles.drawerAlertBanner} data-testid="ward-telemetry-alert-banner">
+          <div className={styles.drawerAlertIconWrap}>
+            <AlertTriangle className={styles.drawerAlertIcon} aria-hidden="true" />
+          </div>
+          <div className={styles.drawerAlertText}>
+            <h4 className={styles.drawerAlertTitle}>Clinical Timelines Require Attention</h4>
+            <p className={styles.drawerAlertSub}>
+              {flagged.map((f) => `${f.value} ${f.label.toLowerCase()}`).join(", ")}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className={styles.drawerNominalBanner} data-testid="ward-telemetry-nominal-banner">
+          <div className={styles.drawerNominalIconWrap}>
+            <CheckCircle2 className={styles.drawerNominalIcon} aria-hidden="true" />
+          </div>
+          <div className={styles.drawerNominalText}>
+            <h4 className={styles.drawerNominalTitle}>All Timelines Nominal</h4>
+            <p className={styles.drawerNominalSub}>Zero passed legal deadlines or urgent transfers</p>
+          </div>
+        </div>
+      )}
+
+      <div className={styles.drawerSection}>
+        <div className={styles.drawerSectionHeader}>
+          <h3 className={styles.drawerSectionTitle}>Risk & Statutory Clocks</h3>
+          <span className={styles.drawerSectionTag}>Legal Timelines</span>
+        </div>
+        <div className={styles.drawerCardsGrid}>
+          {riskFigures.map((fig) => (
+            <div
+              key={fig.key}
+              className={fig.flagged ? `${styles.telemetryCard} ${styles.telemetryCardFlagged}` : styles.telemetryCard}
+              data-flagged={fig.flagged}
+            >
+              <div className={styles.telemetryCardHeader}>
+                <span className={styles.telemetryCardLabel}>{fig.label}</span>
+                {fig.flagged && <span className={styles.telemetryFlagPip} aria-hidden="true" />}
+              </div>
+              <div className={styles.telemetryCardValue}>{fig.value}</div>
+              {fig.sub && <div className={styles.telemetryCardSub}>{fig.sub}</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className={styles.drawerSection}>
+        <div className={styles.drawerSectionHeader}>
+          <h3 className={styles.drawerSectionTitle}>Supply & Capacity</h3>
+          <span className={styles.drawerSectionTag}>Bed Availability</span>
+        </div>
+        <div className={styles.drawerCardsGrid}>
+          {supplyFigures.map((fig) => (
+            <div key={fig.key} className={styles.telemetryCard} data-flagged={fig.flagged}>
+              <div className={styles.telemetryCardHeader}>
+                <span className={styles.telemetryCardLabel}>{fig.label}</span>
+              </div>
+              <div className={styles.telemetryCardValue}>{fig.value}</div>
+              {fig.sub && <div className={styles.telemetryCardSub}>{fig.sub}</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className={styles.drawerSection}>
+        <div className={styles.drawerSectionHeader}>
+          <h3 className={styles.drawerSectionTitle}>Demand & Flow</h3>
+          <span className={styles.drawerSectionTag}>Referrals & Transfers</span>
+        </div>
+        <div className={styles.drawerCardsGrid}>
+          {demandFigures.map((fig) => (
+            <div key={fig.key} className={styles.telemetryCard} data-flagged={fig.flagged}>
+              <div className={styles.telemetryCardHeader}>
+                <span className={styles.telemetryCardLabel}>{fig.label}</span>
+              </div>
+              <div className={styles.telemetryCardValue}>{fig.value}</div>
+              {fig.sub && <div className={styles.telemetryCardSub}>{fig.sub}</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className={styles.drawerFooterNotice}>
+        <LegalLimitsNotChecked variant="tag" />
+        <p className={styles.drawerFooterText}>
+          Figures derived continuously from live clinical arrivals, releases, and recorded due times.
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -380,7 +520,7 @@ export function WardStandingStrip() {
     placeId: placeIdFrom(pathname),
   });
   return (
-    <div data-chrome-role={chromeRole}>
+    <div data-chrome-role={chromeRole} className={styles.hudAnchor}>
       <WardStatsToggle figures={figures} open={open} onToggle={() => setOpen(!open)} />
       <WardStatsPanel figures={figures} open={open} />
     </div>

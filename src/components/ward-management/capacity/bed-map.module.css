@@ -1,32 +1,19 @@
 /* src/components/ward-management/capacity/bed-map.module.css
  *
- * The network's whole bed supply, one square per bed — see bed-map.tsx for what each square is.
- * Every colour and space resolves through a --ward-* token; the two local tokens below (--bm-square,
- * --bm-hatch-*) have no ward-scale equivalent and are declared here for the same reason
- * board.module.css declares its own --wb-* handful: nothing on the shared scale names them.
- *
- * The four bed states mirror board.module.css's own per-bed tile treatment exactly — dashed for
- * "free and offered" (there, .bedEmpty; here, .ready), dotted-plus-dots for "free but not offered"
- * (.bedHeld / .held), diagonal hatch for "out of service" (.bedBlocked / .blocked), and a plain
- * solid fill for "has a patient" (.bedOccupied / .occupied). A coordinator moving between a ward's
- * own board and this network-wide map meets the same four marks for the same four facts.
+ * The network's whole bed supply, drawn as elevated clinical bay pods and micro-beds.
+ * Wards sit in a single-line horizontal track per health service, with sleek carousel
+ * navigation controls. Inside each ward card, all beds and bays are shown simultaneously
+ * in condensed micro-bed pods.
  *
  * ⚠️ BORDER STYLE CARRIES THE STATE, NOT ONLY COLOUR — dashed / dotted / solid survive greyscale,
- * a stripped-background print and forced-colors exactly as board.module.css's own borders do,
- * because border-style is not a colour and neither this file's forced-colors block nor the app's
- * wider one touches it.
+ * a stripped-background print and forced-colors exactly as board.module.css's own borders do.
  */
 .map {
   composes: wardTokens from "../ward-tokens.module.css";
   composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
 
-  /* One square, roughly the size of this file's legend swatch. Small enough that a network of
-     several hundred beds still reads as a picture rather than a wall of boxes; large enough to
-     keep its border-style (dashed/dotted/solid/hatch) legible at arm's length. */
-  --bm-square: 0.625rem;
-
-  /* The out-of-service hatch and the "still being made ready" hatch share this pair. A PATTERN,
-     not a colour — see .blocked and .preparing below. */
+  --bm-square-w: 0.75rem;
+  --bm-square-h: 0.875rem;
   --bm-hatch-line: var(--line-strong);
   --bm-hatch-gap: var(--surface-inset);
 
@@ -36,61 +23,167 @@
 
 .legend {
   margin: 0;
-  padding: var(--ward-space-10) var(--ward-space-16);
+  padding: 0.625rem 0.875rem;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--ward-space-6) var(--ward-space-16);
+  align-items: center;
+  gap: 0.5rem 1rem;
   list-style: none;
-  border-bottom: 1px solid var(--ward-divider);
+  border-bottom: 1px solid var(--line);
   font-size: var(--t-0);
   line-height: var(--ward-leading-ui);
   color: var(--muted);
+  background: var(--surface-2);
 }
 
 .legendItem {
   display: inline-flex;
   align-items: center;
-  gap: var(--ward-space-6);
+  gap: 0.375rem;
+  color: var(--ink-soft);
+  font-weight: 500;
 }
 
 .legendSwatch {
   display: inline-block;
-  width: var(--bm-square);
-  height: var(--bm-square);
+  width: 0.75rem;
+  height: 0.75rem;
   flex: none;
-  border-radius: var(--ward-radius-pixel);
+  border-radius: var(--ward-radius-pixel, 0.1875rem);
 }
 
 .services {
   display: grid;
-  gap: var(--ward-space-16);
-  padding: var(--ward-space-16);
+  gap: 1.25rem;
+  padding: 0.875rem;
 }
 
 .serviceGroup {
-  display: grid;
-  gap: var(--ward-space-8);
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding-bottom: 1.125rem;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+
+.serviceGroup:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.serviceHeaderBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-2);
+  border-radius: var(--r2);
+  border: 1px solid var(--line);
+}
+
+.serviceTitleGroup {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.625rem;
 }
 
 .serviceHeading {
   margin: 0;
   display: flex;
-  align-items: baseline;
-  gap: var(--ward-space-8);
-  font-size: 0.75rem;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--display);
+  font-size: var(--t-1);
   font-weight: 700;
   color: var(--ink);
 }
 
+.serviceAccentIndicator {
+  width: 4px;
+  height: 1.125rem;
+  border-radius: 2px;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.serviceNameText {
+  letter-spacing: -0.01em;
+}
+
 .serviceCount {
   font-size: var(--t-0);
-  font-weight: 400;
+  font-weight: 500;
   color: var(--muted);
 }
 
-/* A service reporting no inpatient unit to this board — never a heading over nothing. Same weight
- * and colour as `capacity.module.css`'s own `.absent`, for the same reason that file's own comment
- * gives: an absence is a fact, not a lesser one, and dimming it would read as "ignore this". */
+.serviceCapacityBadge {
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: var(--surface);
+  padding: 0.1875rem 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid var(--line);
+  letter-spacing: 0.01em;
+}
+
+.serviceCarouselControls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: var(--surface);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--r1);
+  border: 1px solid var(--line);
+}
+
+.serviceArrowBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.875rem;
+  height: 1.875rem;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.serviceArrowBtn::before {
+  content: "";
+  position: absolute;
+  inset: -0.375rem;
+}
+
+.serviceArrowBtn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  transform: translateY(-1px);
+}
+
+.serviceArrowBtn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  border-color: transparent;
+}
+
+.serviceCarouselIndicator {
+  font-size: var(--t-0);
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0 0.25rem;
+}
+
 .serviceAbsent {
   margin: 0;
   font-size: 0.75rem;
@@ -98,99 +191,446 @@
   color: var(--muted);
 }
 
-.wardBlocks {
-  display: grid;
-  gap: var(--ward-space-10);
-  grid-template-columns: minmax(0, 1fr);
+/* Horizontal Ward Track Container */
+.trackContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  gap: 0.375rem;
 }
 
-@media (min-width: 48rem) {
-  .wardBlocks {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+.serviceWardTrack {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 0.625rem;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 0.25rem 0.125rem 0.625rem 0.125rem;
+  width: 100%;
+  flex: 1;
+  min-width: 0;
 }
 
-/* No card border or background: the drawing reads these as unboxed ward clusters, while the
- * stateful squares and their legend retain the accessible distinction between states. */
+.serviceWardTrack::-webkit-scrollbar {
+  display: none;
+}
+
+/* Flanking Arrow Buttons - positioned outside the scroll track so they never cover bed tiles */
+.flankingArrow {
+  position: static;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: var(--lift);
+  transition: all 0.15s ease;
+}
+
+.flankingArrowPrev {
+  margin-right: 0.125rem;
+}
+
+.flankingArrowNext {
+  margin-left: 0.125rem;
+}
+
+.flankingArrow:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  background: var(--surface-2);
+  transform: scale(1.08);
+  box-shadow: var(--lift);
+}
+
+.flankingArrow:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.flankingArrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Condensed Ward Card */
 .wardBlock {
-  display: grid;
-  gap: var(--ward-space-6);
+  position: relative;
+  flex: 0 0 252px;
+  width: 252px;
+  max-width: 252px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface);
+  box-shadow: var(--lift);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.wardBlock[data-selected="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.wardBlock[data-interactive="true"] {
+  cursor: pointer;
+}
+
+.wardBlock[data-interactive="true"]:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--lift);
 }
 
 .wardBlockHeader {
-  display: grid;
-  gap: var(--ward-space-2);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem;
 }
 
-/* ⚠️ NOT `.wardName`, AND THE RENAME IS THE FIX RATHER THAN A REGISTRATION. `ward-shared.module.css`
- * already owns a `.wardName` and `wards/ward-index.module.css` invented a second one; this was
- * about to be the third, which is exactly what `ward-primitives-shared.test.ts` exists to stop.
- *
- * 🔴 IT IS NOT THE SAME CLASS UNDER A SHARED NAME, WHICH IS WHY COMPOSING THE SHARED ONE WOULD BE
- * WRONG: shared is `--ward-text` at the inherited size with `overflow-wrap: break-word`; this is
- * `--ward-heading` at 0.75rem, because inside the map a ward's name is a small heading over its
- * own row of squares rather than a body-text label in a table. Composing would have been green and
- * would have changed the colour of every ward name on this panel with nobody deciding to.
- *
- * So the collision is removed by taking a name that does not collide. A THIRD DEFINITION OF ONE
- * NAME IS THE DEBT; A DIFFERENT THING WITH A DIFFERENT NAME IS NOT. */
-.mapWardName {
-  font-size: 0.75rem;
-  font-weight: 600;
+.wardTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.wardSelect {
+  min-height: var(--ward-tap, var(--spacing-tap, 2.5rem));
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0;
+  border: 0;
+  background: transparent;
   color: var(--ink);
+  text-align: left;
+  cursor: pointer;
 }
 
-/* Not a code face: this line names bed STATES in prose ("ready", "held"), not bare figures in a
- * column — the same reasoning `capacity.module.css`'s own `.attentionWho` rule records for why a
- * hospital's name and a bed kind's need never take the mono face. */
-.wardCounts {
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-relaxed);
+.wardSelect:focus-visible {
+  outline: none;
+}
+
+.wardBlock:has(.wardSelect:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.wardNameText,
+.mapWardName {
+  font-family: var(--display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.bedTotalBadge {
+  font-family: var(--mono);
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 600;
   color: var(--muted);
-  font-variant-numeric: tabular-nums;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  padding: 0.0625rem 0.375rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
 }
 
-.squares {
+/* Status Chips Row */
+.statusChipsRow {
   display: flex;
   flex-wrap: wrap;
-  max-width: 8rem;
-  gap: var(--ward-space-2);
+  align-items: center;
+  gap: 0.25rem;
 }
 
+.chipReady {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 600;
+  padding: 0.0625rem 0.375rem;
+  border-radius: var(--r2);
+  background: var(--good-soft);
+  color: var(--good);
+  border: 1px solid var(--line);
+}
+
+.statusDotReady {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: var(--good);
+  flex-shrink: 0;
+}
+
+.chipZero {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 500;
+  color: var(--muted);
+  padding: 0.0625rem 0.25rem;
+}
+
+.chipTurnover {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 600;
+  padding: 0.0625rem 0.375rem;
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  color: var(--good);
+  border: 1px dashed var(--good);
+}
+
+.chipHeld {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 600;
+  padding: 0.0625rem 0.375rem;
+  border-radius: var(--r2);
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+}
+
+.chipBlocked {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 600;
+  padding: 0.0625rem 0.375rem;
+  border-radius: var(--r2);
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.chipOccupied {
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 500;
+  color: var(--muted);
+  padding: 0.0625rem 0.25rem;
+}
+
+/* Proportional Capacity Ribbon */
+.capacityRibbon {
+  display: flex;
+  width: 100%;
+  height: 0.3125rem;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+.ribbonSegment {
+  height: 100%;
+  transition: width 0.25s ease;
+}
+
+.ribbonReady {
+  background-color: var(--good);
+}
+
+.ribbonTurnover {
+  background-color: var(--good);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 0.125rem,
+    var(--surface) 0.125rem,
+    var(--surface) 0.25rem
+  );
+}
+
+.ribbonHeld {
+  background-color: var(--warn);
+}
+
+.ribbonBlocked {
+  background-color: var(--danger);
+}
+
+.ribbonOccupied {
+  background-color: var(--line-strong);
+}
+
+/* All Bays Section: Displays ALL beds simultaneously */
+.baysSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem;
+  padding-top: 0.375rem;
+  border-top: 1px solid var(--line);
+}
+
+.baysHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.baysTitle {
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.baysCount {
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: none;
+}
+
+.allBaysGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.25rem 0.3125rem;
+}
+
+/* 4-Bed Bay Pod: boundaryless tactile pod */
+.bayPod {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.25rem 0.3125rem;
+  border: 0;
+  border-radius: var(--r1);
+  background: var(--surface-2);
+  transition: background 0.15s ease;
+}
+
+.bayHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bayLabel {
+  font-size: 0.75rem; /* 12px floor */
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.baySquares {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+}
+
+/* Tactile Micro-Bed Square */
 .square {
-  display: inline-block;
-  width: var(--bm-square);
-  height: var(--bm-square);
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: var(--bm-square-w);
+  height: var(--bm-square-h);
   flex: none;
-  border-radius: var(--ward-radius-pixel);
+  border-radius: var(--ward-radius-pixel, 0.1875rem);
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.square:hover {
+  transform: translateY(-1px) scale(1.08);
+  z-index: 30;
+  box-shadow: var(--lift);
+}
+
+.square:focus-visible {
+  transform: translateY(-1px) scale(1.08);
+  z-index: 30;
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.pillow {
+  width: 0.4375rem;
+  height: 0.125rem;
+  border-radius: 0.0625rem;
+  background: var(--line-strong);
+  margin-bottom: 0.0625rem;
+  flex-shrink: 0;
+}
+
+.bedIcon {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex-shrink: 0;
+}
+
+.bedGlyph {
+  font-size: var(--t-0, 0.75rem);
+  font-weight: 900;
+  line-height: 1;
+  display: inline-block;
+  transform: scale(0.75);
+}
+
+.occupiedDot {
+  width: 0.1875rem;
+  height: 0.1875rem;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
 }
 
 /*
- * READY — dashed edge, a real fill. Board's own `.bedEmpty` is the same fact (a bed a coordinator
- * can fill right now) drawn hollow, because a large interactive tile can afford to read as
- * "absent". A tiny square in a network of several hundred cannot: a transparent square is
- * indistinguishable from the page around it, and the whole point of this map is that a ready bed
- * is the one thing a coordinator's eye should catch. So it keeps board's dashed border — the
- * pattern channel — and adds the colour channel board's tile did not need.
+ * READY — dashed edge, a real fill.
  */
 .ready {
-  border: 1px dashed var(--ward-success);
+  border: 1px dashed var(--ward-success, var(--good));
   background-color: var(--good);
 }
 
 /*
- * STILL BEING MADE READY — layered on `.ready`, never in place of it. This class sets ONLY
- * `background-image`; it declares no `background-color` and never will, so a prepared bed's fill
- * is `.ready`'s fill by construction and this rule can only ever add a texture on top of it. Owner
- * ruling 2026-09-05 (see bed-map.tsx's own `pendingPreparation` doc comment): the ready figure is
- * never reduced for a bed still being cleaned, and a hatch — not a different colour — is what lets
- * this map keep that promise with no caption needed.
- *
- * ⚠️ Distinguished from `.blocked`'s hatch below by BORDER STYLE (dashed here, solid there), not
- * only by the green fill underneath it — under forced-colors and on a stripped-background print
- * the fill is gone or re-pointed to one colour, and border-style is the channel that survives both.
- * `tests/ward-capacity-bed-map.dom.test.tsx` and the static CSS check in that file's sibling test
- * both hold this rule in place.
+ * STILL BEING MADE READY — layered on .ready, never in place of it.
+ * This class sets ONLY background-image; it declares NO background-color and NO background shorthand,
+ * strictly verified by tests/ward-capacity-bed-map.dom.test.tsx.
  */
 .preparing {
   background-image: repeating-linear-gradient(
@@ -203,9 +643,7 @@
 }
 
 /*
- * HELD — physically empty, not offered. Dotted edge and a light dot pattern, exactly board's own
- * `.bedHeld` treatment at this square's smaller scale: a THIRD kind of thing, neither ready's dash
- * nor blocked's hatch nor occupied's plain solid border.
+ * HELD — physically empty, not offered. Dotted edge and a light dot pattern.
  */
 .held {
   border: 1px dotted var(--warn);
@@ -215,10 +653,7 @@
 }
 
 /*
- * BLOCKED — out of service. The diagonal hatch, exactly board's own `.bedBlocked` at this square's
- * scale: the gap and line stops both come from theme tokens, so the hatch re-grounds itself in dark
- * mode like everything else here, and neither stop is the `background` shorthand — see the print
- * block below for why that distinction is load-bearing on paper.
+ * BLOCKED — out of service. Diagonal hatch.
  */
 .blocked {
   border: 1px solid var(--danger);
@@ -232,143 +667,99 @@
   );
 }
 
-/* OCCUPIED — has a patient. The plain, quiet state: solid border, solid neutral fill, same as
- * board's own `.bedOccupied`. Deliberately the least visually loud of the four, because it is
- * ordinarily the most common bed state on the network and the map exists to make the OTHER three
- * easy to spot against it. */
+/*
+ * OCCUPIED — has a patient. Quiet matte state.
+ */
 .occupied {
-  border: 1px solid var(--muted);
-  background-color: var(--muted);
+  border: 1px solid var(--line-strong);
+  background-color: var(--surface-2);
+  color: var(--muted);
+}
+
+/* Card-level floating tooltip — unclipped by horizontal scroll viewport */
+.tooltipFloating {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 0.5rem));
+  z-index: 100;
+  pointer-events: none;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0.4375rem 0.625rem;
+  border-radius: var(--r1);
+  font-size: 0.75rem; /* 12px floor */
+  line-height: 1.35;
+  white-space: nowrap;
+  box-shadow: var(--lift);
+  border: 1px solid var(--line-strong);
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  animation: tooltipIn 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tooltipIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 0.25rem));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 0.5rem));
+  }
+}
+
+.tooltipBedTitle {
+  font-weight: 700;
+  color: var(--ink);
+  font-family: var(--display);
+}
+
+.tooltipState {
+  font-weight: 600;
+  color: var(--good);
+}
+
+.tooltipMeta {
+  font-size: 0.75rem; /* 12px floor */
+  color: var(--muted);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+@media (max-width: 51.25rem), (pointer: coarse) {
+  .wardBlock:has(.wardSelect) {
+    min-height: var(--ward-tap, var(--spacing-tap, 2.5rem));
+  }
 }
 
 @media (forced-colors: active) {
-  /*
-   * Only the two local hatch/dot tokens need re-pointing here. `--ward-success`, `--ward-success-soft`,
-   * `--ward-border-strong` and `--ward-subtle` are either re-pointed by the shared `wardTokens` block
-   * this file composes or by the wider app-level forced-colors reset (`ckb-v2-tokens.css`) — see that
-   * file's own comment on which eight roles it, rather than the shared layer, is responsible for.
-   * `--bm-hatch-line`/`--bm-hatch-gap` are LOCAL to this file, exactly as `--wb-hatch-line`/
-   * `--wb-hatch-gap` are local to board.module.css, so nothing upstream re-points them without this.
-   */
   .map {
     --bm-hatch-line: CanvasText;
     --bm-hatch-gap: Canvas;
+  }
+  .serviceGroup,
+  .serviceHeaderBar,
+  .wardBlock[data-selected="true"] {
+    border-color: CanvasText;
   }
 }
 
 @media print {
-  /* Ward names are operational content inside controls; retain them on paper. */
   .wardSelect {
     display: flex !important;
   }
-  /*
-   * The same fix board.module.css's own print block makes for its hatch/dot tokens, for the same
-   * reason: `--surface-inset` (this file's default hatch gap) is a dark fill in the dark theme, and
-   * a hatch whose "gap" colour is still dark on white paper prints as a grey box rather than clean
-   * stripes on the page. Re-grounding both tokens in the page's own ink and paper, in BOTH themes,
-   * is what keeps the pattern (not only the words beside it) legible on a printed sheet.
-   */
   .map {
     --bm-hatch-line: CanvasText;
     --bm-hatch-gap: Canvas;
-  }
-}
-
-/* Q004: service bands frame the bed clusters without changing state marks. */
-.services {
-  gap: 1rem;
-  padding: 0.875rem;
-}
-.serviceGroup {
-  gap: 0.625rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--line);
-}
-.serviceGroup:last-child {
-  padding-bottom: 0;
-  border-bottom: 0;
-}
-.serviceHeading {
-  flex-wrap: wrap;
-  padding: 0.5rem 0.625rem;
-  border-left: 3px solid var(--accent);
-  border-radius: var(--r2);
-  background: var(--surface-2);
-  font-family: var(--display);
-  font-size: var(--t-1);
-}
-.wardBlocks {
-  gap: 0.625rem;
-}
-.wardBlock {
-  position: relative;
-  align-content: start;
-  padding: 0.4375rem;
-  border: 1px solid transparent;
-  border-radius: var(--r2);
-}
-.wardBlock[data-selected="true"] {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-.wardBlock[data-interactive="true"] {
-  cursor: pointer;
-}
-.wardBlock[data-interactive="true"]:hover {
-  background: var(--surface-2);
-}
-.wardBlock[data-interactive="true"] .squares,
-.wardBlock[data-interactive="true"] .square {
-  cursor: pointer;
-}
-.wardBlock:has(.wardSelect:hover) {
-  background: var(--surface-2);
-}
-.wardSelect {
-  /* D1 #2917 regression-lock: ward picker stays ≥ tap floor at tablet 820 */
-  min-height: var(--ward-tap, var(--spacing-tap, 3rem));
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.125rem;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  text-align: left;
-  font-family: var(--body);
-  font-size: var(--t-0);
-  font-weight: 600;
-  cursor: pointer;
-}
-.wardSelect:focus-visible {
-  outline: none;
-}
-.wardBlock:has(.wardSelect:focus-visible) {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
-}
-.bedTotal {
-  color: var(--muted);
-  font-family: var(--mono);
-  font-weight: 400;
-}
-.wardCounts {
-  font-size: var(--t-0);
-}
-@media (max-width: 51.25rem), (pointer: coarse) {
-  .map {
-    /* The state patterns need enough area to remain distinguishable on a handheld screen. */
-    --bm-square: 0.75rem;
-  }
-
-  .wardBlock:has(.wardSelect) {
-    min-height: var(--ward-tap, var(--spacing-tap, 3rem));
-  }
-}
-@media (forced-colors: active) {
-  .serviceGroup,
-  .serviceHeading,
-  .wardBlock[data-selected="true"] {
-    border-color: CanvasText;
   }
 }

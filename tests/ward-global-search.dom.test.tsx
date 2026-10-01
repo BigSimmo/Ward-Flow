@@ -1,6 +1,22 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+// A held deferred value reproduces the urgent render before React finishes the new search.
+const deferred = vi.hoisted(() => ({ held: undefined as string | undefined }));
+vi.mock("react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react")>();
+  return {
+    ...actual,
+    useDeferredValue: <T,>(value: T) => {
+      const result = actual.useDeferredValue(value);
+      return deferred.held === undefined ? result : deferred.held;
+    },
+  };
+});
+afterEach(() => {
+  deferred.held = undefined;
+});
 
 const router = { push: vi.fn() };
 vi.mock("next/navigation", () => ({
@@ -178,6 +194,33 @@ describe("WardGlobalSearch", () => {
     fireEvent.click(row, { button: 0 });
 
     expect(onNavigate).toHaveBeenCalledWith(`/mockups/ward-flow/people/${targetPatient.id}`);
+  });
+
+  it("requires a fresh selection when a new query still has results", () => {
+    const { onNavigate } = renderSearch();
+    const input = screen.getByTestId("ward-global-search-input");
+    fireEvent.change(input, { target: { value: personQuery } });
+    fireEvent.keyDown(input, { key: "ArrowDown" });
+    expect(input).toHaveAttribute("aria-activedescendant");
+    fireEvent.change(input, { target: { value: `${personQuery} ` } });
+    expect(screen.getByTestId(`ward-global-search-result-person-${targetPatient.id}`)).toBeInTheDocument();
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onNavigate).not.toHaveBeenCalled();
+    expect(input).not.toHaveAttribute("aria-activedescendant");
+  });
+
+  it("hides stale deferred results and ignores Enter until the current query has rendered", () => {
+    const { onNavigate } = renderSearch();
+    const input = screen.getByTestId("ward-global-search-input");
+    fireEvent.change(input, { target: { value: personQuery } });
+    expect(screen.getByTestId(`ward-global-search-result-person-${targetPatient.id}`)).toBeInTheDocument();
+    fireEvent.keyDown(input, { key: "ArrowDown" });
+    deferred.held = personQuery;
+    fireEvent.change(input, { target: { value: "zzq-no-such-record-in-this-fixture-zzq" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onNavigate).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("ward-global-search-popup")).not.toBeInTheDocument();
+    expect(input).not.toHaveAttribute("aria-activedescendant");
   });
 
   it("does not select an old result after the search text changes", () => {

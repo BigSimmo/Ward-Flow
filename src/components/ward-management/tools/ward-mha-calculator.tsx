@@ -3,7 +3,7 @@
 import React, { useCallback, useId, useMemo, useState } from "react";
 import { AlertTriangle, Clock } from "lucide-react";
 
-import { useOptionalWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "@/components/ward-management/ward-legal-clock";
 import { formTitleForCode } from "@/lib/form-register";
 import styles from "./ward-mha-calculator.module.css";
@@ -215,11 +215,11 @@ export const calculateForm4B = getForm4BRecord;
  * or falls back to standard wall clock when mounted in tests or standalone.
  */
 function useResolvedClock(override?: Date): Date {
-  const demoInstant = useOptionalWardFlowClock();
+  const demoInstant = useWardFlowClock(-1);
 
   return useMemo(() => {
     if (override) return override;
-    if (demoInstant !== null) {
+    if (demoInstant !== -1) {
       const today = new Date();
       const dayZero = parseDateTimeInput(toDateInputValue(today), "00:00") ?? today;
       return new Date(dayZero.getTime() + demoInstant * 60_000);

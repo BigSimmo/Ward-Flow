@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   calculateForm1A,
@@ -214,6 +214,43 @@ describe("Mental Health Act Form Record (Calculator)", () => {
       const roundTrip = parseDateTimeInput(dateStr, timeStr);
       expect(roundTrip).not.toBeNull();
       expect(roundTrip!.getTime()).toBe(date.getTime());
+    });
+
+    it.each([
+      ["UTC", 0],
+      ["America/New_York", 240],
+      ["Australia/Perth", -480],
+    ])("keeps input and safeguard semantics on a %s host", (timezone, offset) => {
+      vi.stubEnv("TZ", timezone);
+      try {
+        const instant = new Date("2026-09-25T16:30:00.000Z");
+        expect(instant.getTimezoneOffset()).toBe(offset);
+        expect(toDateInputValue(instant)).toBe("2026-09-26");
+        expect(toTimeInputValue(instant)).toBe("00:30");
+        expect(isWeekend(instant)).toBe(true);
+        expect(isAfterHours(instant)).toBe(true);
+        expect(parseDateTimeInput("2026-09-25", "17:00")?.toISOString()).toBe("2026-09-25T09:00:00.000Z");
+      } finally {
+        vi.unstubAllEnvs();
+      }
+    });
+
+    it("keeps the Perth calendar day and weekend across UTC midnight", () => {
+      const saturday = new Date("2026-09-25T16:30:00.000Z");
+      expect(toDateInputValue(saturday)).toBe("2026-09-26");
+      expect(toTimeInputValue(saturday)).toBe("00:30");
+      expect(isWeekend(saturday)).toBe(true);
+      expect(isAfterHours(saturday)).toBe(true);
+    });
+
+    it.each([
+      ["2026-02-30", "09:00"],
+      ["2026-09-25", "24:00"],
+      ["2026-09-25", "12:60"],
+      ["2026-09-25", "oops"],
+      ["2026-9-25", "09:00"],
+    ])("rejects invalid date/time input %s %s instead of rolling it forward", (date, time) => {
+      expect(parseDateTimeInput(date, time)).toBeNull();
     });
 
     it("returns null for empty date input", () => {

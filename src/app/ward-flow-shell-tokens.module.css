@@ -88,6 +88,8 @@
   --ward-warning-soft: var(--warn-soft);
   --ward-success: var(--good);
   --ward-success-soft: var(--good-soft);
+  --border: var(--line);
+  --e1: var(--lift);
 }
 
 .wardShellTokens {

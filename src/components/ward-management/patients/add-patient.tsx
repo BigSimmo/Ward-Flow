@@ -299,12 +299,16 @@ export function AddPatientForm() {
   }
 
   function ignoreUnavailableActivation(event: MouseEvent<HTMLButtonElement>) {
+    if (isSubmitting) {
+      event.preventDefault();
+      return;
+    }
     if (answered) return;
     event.preventDefault();
     setAttemptedSubmit(true);
   }
 
-  function handleUnconnected(featureName?: string) {
+  function handleUnconnected() {
     setD4Notice("Not wired in this prototype.");
   }
 
@@ -342,7 +346,7 @@ export function AddPatientForm() {
               <button
                 type="button"
                 className={styles.headerBtn}
-                onClick={() => handleUnconnected("Save draft")}
+                onClick={() => handleUnconnected()}
                 aria-label="Save draft"
               >
                 Save draft
@@ -350,7 +354,7 @@ export function AddPatientForm() {
               <button
                 type="button"
                 className={styles.headerBtn}
-                onClick={() => handleUnconnected("Print intake")}
+                onClick={() => handleUnconnected()}
                 aria-label="Print intake"
               >
                 Print
@@ -818,7 +822,6 @@ export function AddPatientForm() {
                   type="submit"
                   className={styles.submit}
                   data-testid="ward-add-patient-submit"
-                  disabled={isSubmitting}
                   aria-disabled={answered && !isSubmitting ? undefined : "true"}
                   aria-describedby={answered ? undefined : UNAVAILABLE_REASON_ID}
                   onClick={ignoreUnavailableActivation}
@@ -1093,7 +1096,7 @@ export function AddPatientForm() {
               </h3>
               <p
                 id="reset-dialog-desc"
-                style={{ margin: 0, fontSize: "0.95rem", color: "var(--text-muted)", lineHeight: 1.5 }}
+                style={{ margin: 0, fontSize: "0.95rem", color: "var(--ink-soft)", lineHeight: 1.5 }}
               >
                 You have entered patient details or clinical notes. Resetting the form will clear all unsaved fields in
                 this session.

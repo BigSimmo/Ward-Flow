@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { PhoneCall, Plus, Search, X } from "lucide-react";
 
 import {
   EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE,
@@ -14,7 +15,12 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { TRANSPORT_PROVIDERS, type Movement, type TransportJob, type Unit } from "@/components/ward-management/ward-model";
+import {
+  TRANSPORT_PROVIDERS,
+  type Movement,
+  type TransportJob,
+  type Unit,
+} from "@/components/ward-management/ward-model";
 import { departmentLabel, wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { edById } from "@/components/ward-management/ward-sites";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -217,7 +223,7 @@ function formRequiredLabel(transport: TransportJob): string {
  * booking.
  */
 function cadNumberLabel(transport: TransportJob): string {
-  return transport.cadNumber ?? "No CAD number recorded";
+  return transport.cadNumber ?? "No CAD (dispatch) number recorded";
 }
 
 function transportLegalStatusLabel(transport: TransportJob): string {
@@ -261,10 +267,13 @@ export function isOfficerJob(movement: Movement): boolean {
 
 export function OfficerScreen() {
   const { movements, units, dispatch, rejections, patients, referrals } = useWardFlow();
-  const officerPatientName = (movement: Movement) => {
-    const info = resolveSubjectPatient(movement, { patients, referrals, movements });
-    return info.patient ? info.displayName : "Not recorded";
-  };
+  const officerPatientName = useCallback(
+    (movement: Movement) => {
+      const info = resolveSubjectPatient(movement, { patients, referrals, movements });
+      return info.patient ? info.displayName : "Not recorded";
+    },
+    [patients, referrals, movements],
+  );
   // Owner, 26 Sept 2026: undefined (not "Not recorded") lets the blocked-reason helpers below
   // fall back to their own "This patient" wording instead of printing a placeholder mid-sentence.
   const resolvedPatientName = (movement: Movement): string | undefined => {
@@ -279,8 +288,92 @@ export function OfficerScreen() {
 
   const jobs = movements.filter(isOfficerJob);
 
+  // Filter States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [providerFilter, setProviderFilter] = useState<string>("all");
+  const [escortFilter, setEscortFilter] = useState<boolean>(false);
+
+  // Status and escort counts across all active officer jobs
+  const statusCounts = useMemo(() => {
+    const counts = { all: jobs.length, requested: 0, accepted: 0, en_route: 0, collected: 0 };
+    for (const job of jobs) {
+      if (!job.transport) continue;
+      const leg = officerLeg(job.transport);
+      if (leg === "Requested") counts.requested++;
+      else if (leg === "Accepted") counts.accepted++;
+      else if (leg === "En route") counts.en_route++;
+      else if (leg === "Collected") counts.collected++;
+    }
+    return counts;
+  }, [jobs]);
+
+  const escortCount = useMemo(() => {
+    return jobs.filter((j) => j.transport?.escortRequired).length;
+  }, [jobs]);
+
+  const isFiltered = searchQuery.trim() !== "" || statusFilter !== "all" || providerFilter !== "all" || escortFilter;
+  const resetFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setProviderFilter("all");
+    setEscortFilter(false);
+  };
+
+  // Filtered jobs derivation
+  const filteredJobs = useMemo(() => {
+    return jobs.filter((movement) => {
+      const transport = movement.transport;
+      if (!transport) return false;
+      const leg = officerLeg(transport);
+
+      // Status / Leg filter
+      if (statusFilter !== "all") {
+        if (statusFilter === "requested" && leg !== "Requested") return false;
+        if (statusFilter === "accepted" && leg !== "Accepted") return false;
+        if (statusFilter === "en_route" && leg !== "En route") return false;
+        if (statusFilter === "collected" && leg !== "Collected") return false;
+      }
+
+      // Provider filter
+      if (providerFilter !== "all" && transport.provider !== providerFilter) {
+        return false;
+      }
+
+      // Escort filter
+      if (escortFilter && !transport.escortRequired) {
+        return false;
+      }
+
+      // Search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const pName = officerPatientName(movement).toLowerCase();
+        const mId = movement.id.toLowerCase();
+        const originEd = edById(movement.originEdId);
+        const originName = originEd ? `${originEd.name} ${originEd.siteCode}`.toLowerCase() : "";
+        const destinationUnit = movement.acceptedUnitId
+          ? units.find((unit) => unit.id === movement.acceptedUnitId)
+          : undefined;
+        const destName = destinationUnit ? destinationUnit.name.toLowerCase() : "";
+
+        const matches =
+          pName.includes(q) ||
+          mId.includes(q) ||
+          originName.includes(q) ||
+          destName.includes(q) ||
+          transport.provider.toLowerCase().includes(q) ||
+          (transport.cadNumber && transport.cadNumber.toLowerCase().includes(q));
+
+        if (!matches) return false;
+      }
+
+      return true;
+    });
+  }, [jobs, statusFilter, providerFilter, escortFilter, searchQuery, units, officerPatientName]);
+
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
-  const selectedJob = jobs.find((job) => job.id === selectedId) ?? jobs[0];
+  const selectedJob = jobs.find((job) => job.id === selectedId) ?? filteredJobs[0] ?? jobs[0];
 
   // Modals & Toast State
   const [formModalJob, setFormModalJob] = useState<Movement | null>(null);
@@ -301,6 +394,7 @@ export function OfficerScreen() {
   const lastTriggerRef = useRef<HTMLElement | null>(null);
   const formModalRef = useRef<HTMLDivElement>(null);
   const handoverModalRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!formModalJob) return;
@@ -348,19 +442,18 @@ export function OfficerScreen() {
 
   const cancelledTransports = movements.flatMap((m) =>
     (m.unwinds ?? [])
-      .filter((u: any) => u.action === "transport_cancelled" || u.kind === "transport_cancelled")
-      .map((u: any) => ({
+      .filter((u) => u.kind === "transport_cancelled")
+      .map((u) => ({
         movementId: m.id,
         // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
         patientName: officerPatientName(m),
-        cadNumber: u.cadNumber ?? "CAD not recorded",
+        cadNumber: u.cadNumber ?? "CAD (dispatch) number not recorded",
         at: u.at,
         // A recorded reason is a code (e.g. `provider_unavailable`); show its plain label, never the code.
         note:
-          u.note ??
           (u.reason ? (changeReasonLabels[u.reason as keyof typeof changeReasonLabels] ?? u.reason) : undefined) ??
           "Cancelled transport / stand-down",
-      }))
+      })),
   );
 
   // KPI Calculations
@@ -373,7 +466,7 @@ export function OfficerScreen() {
   const awaitingDeparture = jobs.filter((job) => job.transport?.acceptedAt === undefined).length;
   const escortRequired = jobs.filter((job) => job.transport?.escortRequired).length;
 
-  // Escape key handler for dialogs
+  // Escape and global / shortcut handler
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -384,6 +477,16 @@ export function OfficerScreen() {
           setHandoverModalMovementId(null);
           lastTriggerRef.current?.focus();
         }
+      } else if (
+        e.key === "/" &&
+        !formModalJob &&
+        !handoverModalMovementId &&
+        document.activeElement?.tagName !== "INPUT" &&
+        document.activeElement?.tagName !== "TEXTAREA" &&
+        document.activeElement?.tagName !== "SELECT"
+      ) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
       }
     }
     window.addEventListener("keydown", handleKeyDown);
@@ -413,7 +516,9 @@ export function OfficerScreen() {
   const [pendingOutcome, setPendingOutcome] = useState<{ success: string; refused: string } | null>(null);
   useEffect(() => {
     if (!pendingOutcome) return;
-    setToastMessage(rejections.length > priorRejectionCountRef.current ? pendingOutcome.refused : pendingOutcome.success);
+    setToastMessage(
+      rejections.length > priorRejectionCountRef.current ? pendingOutcome.refused : pendingOutcome.success,
+    );
     priorRejectionCountRef.current = rejections.length;
     setPendingOutcome(null);
   }, [pendingOutcome, rejections]);
@@ -482,100 +587,133 @@ export function OfficerScreen() {
   return (
     <div className={styles.screen} data-testid="ward-officer-screen" data-ward-design="third-edition">
       <main id="main-content" className={styles.main}>
-        <header className={styles.pageHeader}>
-          <div className={styles.pageHeaderRow}>
-            <div>
-              <p className={styles.eyebrow}>Transport Operations &amp; Execution</p>
-              <h1 className={styles.pageTitle}>Transport Officer Console</h1>
-            </div>
-            <div className={styles.hdrEnd}>
-              <button
-                className={styles.btnSecondary}
-                type="button"
-                onClick={() => showToast("Not wired in this prototype.")}
-              >
-                Dispatch Comms
-              </button>
-              <button
-                className={styles.btnPrimary}
-                type="button"
-                onClick={(e) => openHandoverModal(selectedJob?.id, e)}
-              >
-                + Transport Handover
-              </button>
-            </div>
-          </div>
-        </header>
+        <h1 className={styles.srOnly}>Transport Officer Console</h1>
 
-        {/* 4-card KPI Strip matching third-edition */}
-        <div className={styles.kpiStrip} aria-label="Transport overview metrics">
-          <div className={styles.kpiCard} data-tone="accent">
-            <span className={styles.kpiLabel}>Active Transit Runs</span>
-            <span className={styles.kpiVal}>{activeRuns}</span>
-            <span className={styles.kpiSub}>Dispatched or In Transit</span>
+        {/* Executive Flight Deck Header */}
+        <div className={styles.flightDeckHeader}>
+          <div className={styles.flightDeckTitleGroup}>
+            <div className={styles.flightDeckBadge}>
+              <span className={styles.livePulse} aria-hidden="true" />
+              <span className={styles.flightDeckBadgeText}>TRANSIT DISPATCH COMMAND</span>
+            </div>
+            <span className={styles.flightDeckSep} aria-hidden="true">
+              &middot;
+            </span>
+            <span className={styles.flightDeckCount}>
+              <strong>{jobs.length}</strong> active patient transfers across statewide network
+            </span>
           </div>
-          <div className={styles.kpiCard} data-tone="good">
-            <span className={styles.kpiLabel}>Patient On Board</span>
-            <span className={styles.kpiVal}>{inCustody}</span>
-            <span className={styles.kpiSub}>Patient On-Board Vehicle</span>
-          </div>
-          <div className={styles.kpiCard} data-tone="warn">
-            <span className={styles.kpiLabel}>Awaiting Departure</span>
-            <span className={styles.kpiVal}>{awaitingDeparture}</span>
-            <span className={styles.kpiSub}>ED Handover Pending</span>
-          </div>
-          <div className={styles.kpiCard} data-tone="accent">
-            <span className={styles.kpiLabel}>Escort Required</span>
-            <span className={styles.kpiVal}>{escortRequired}</span>
-            <span className={styles.kpiSub}>Mental Health Escort</span>
+          <div className={styles.hdrEnd}>
+            <button
+              className={styles.btnActionGhost}
+              type="button"
+              onClick={() => showToast("Not wired in this prototype.")}
+            >
+              <PhoneCall size={13} aria-hidden="true" />
+              <span>Dispatch Comms</span>
+            </button>
+            <button
+              className={styles.btnActionPrimary}
+              type="button"
+              onClick={(e) => openHandoverModal(selectedJob?.id, e)}
+            >
+              <Plus size={14} aria-hidden="true" />
+              <span>Transport Handover</span>
+            </button>
           </div>
         </div>
 
-        {/* Transport by provider: counted from the transport jobs on open movements, never typed in. */}
+        {/* Unified Operational Telemetry & Provider Strip */}
         <section className={styles.fleetPanel} aria-label="Transport jobs by provider">
-          <header className={styles.fleetHeader}>
-            <div>
-              <h2 className={styles.fleetTitle}>Transport by provider</h2>
-              <p className={styles.fleetSubtitle}>
-                Jobs on open movements. Vehicles, crews and depots are not recorded in this prototype.
-              </p>
+          <div className={styles.telemetrySection} aria-label="Transport overview metrics and provider telemetry">
+            {/* 4-card KPI Strip matching third-edition sovereign standard */}
+            <div className={styles.kpiStrip} aria-label="Transport overview metrics">
+              <div className={styles.kpiCard} data-tone="accent">
+                <span className={styles.kpiLabel}>Active Transit Runs</span>
+                <span className={styles.kpiVal}>{activeRuns}</span>
+                <span className={styles.kpiSub}>Dispatched or In Transit</span>
+              </div>
+              <div className={styles.kpiCard} data-tone="good">
+                <span className={styles.kpiLabel}>Patient On Board</span>
+                <span className={styles.kpiVal}>{inCustody}</span>
+                <span className={styles.kpiSub}>Patient On-Board Vehicle</span>
+              </div>
+              <div className={styles.kpiCard} data-tone="warn">
+                <span className={styles.kpiLabel}>Awaiting Departure</span>
+                <span className={styles.kpiVal}>{awaitingDeparture}</span>
+                <span className={styles.kpiSub}>ED Handover Pending</span>
+              </div>
+              <div className={styles.kpiCard} data-tone="escort">
+                <span className={styles.kpiLabel}>Escort Required</span>
+                <span className={styles.kpiVal}>{escortRequired}</span>
+                <span className={styles.kpiSub}>Mental Health Escort</span>
+              </div>
             </div>
-          </header>
-          <div className={styles.fleetGrid}>
-            {TRANSPORT_PROVIDERS.map((provider) => {
-              const providerJobs = movements.filter(
-                (movement) => !movement.closure && movement.transport?.provider === provider,
-              );
-              const moving = providerJobs.filter((movement) => {
-                const leg = transportLeg(movement.transport);
-                return leg === "En route" || leg === "Collected";
-              }).length;
-              const waiting = providerJobs.filter((movement) => {
-                const leg = transportLeg(movement.transport);
-                return leg === "Requested" || leg === "Accepted";
-              }).length;
-              return (
-                <div key={provider} className={styles.fleetCard}>
-                  <div className={styles.fleetCardHeader}>
-                    <span className={styles.fleetVehicleType}>{provider}</span>
-                  </div>
-                  <div className={styles.fleetCardBody}>
-                    <div className={styles.fleetMetric}>
-                      <span className={styles.fleetVal}>{moving}</span>
-                      <span className={styles.fleetSub}>On the road</span>
-                    </div>
-                    <div className={styles.fleetMeta}>
-                      <div>
-                        Booked, not yet collected: <strong>{waiting}</strong>
-                      </div>
-                      <div>
-                        Vehicles available: <strong>Not recorded</strong>
-                      </div>
-                    </div>
-                  </div>
+
+            {/* Streamlined Provider Telemetry Row */}
+            <div className={styles.providerStrip}>
+              <div className={styles.providerStripHeader}>
+                <div className={styles.providerStripTitleGroup}>
+                  <span className={styles.providerStripTitle}>Fleet By Provider</span>
+                  <span className={styles.providerStripHint}>Filter transfers by provider fleet</span>
                 </div>
-              );
-            })}
+                {providerFilter !== "all" ? (
+                  <button
+                    type="button"
+                    className={styles.providerClearFilterBtn}
+                    onClick={() => setProviderFilter("all")}
+                    aria-label={`Clear provider filter, currently showing ${providerFilter}`}
+                  >
+                    Clear provider ({providerFilter})
+                  </button>
+                ) : null}
+              </div>
+              <div className={styles.providerGrid}>
+                {TRANSPORT_PROVIDERS.map((provider) => {
+                  const providerJobs = movements.filter(
+                    (movement) => !movement.closure && movement.transport?.provider === provider,
+                  );
+                  const moving = providerJobs.filter((movement) => {
+                    const leg = transportLeg(movement.transport);
+                    return leg === "En route" || leg === "Collected";
+                  }).length;
+                  const waiting = providerJobs.filter((movement) => {
+                    const leg = transportLeg(movement.transport);
+                    return leg === "Requested" || leg === "Accepted";
+                  }).length;
+                  const isSelected = providerFilter === provider;
+
+                  return (
+                    <button
+                      key={provider}
+                      type="button"
+                      className={isSelected ? styles.providerCardActive : styles.providerCard}
+                      onClick={() => setProviderFilter((prev) => (prev === provider ? "all" : provider))}
+                      title={`Filter by ${provider}`}
+                      aria-pressed={isSelected}
+                    >
+                      <div className={styles.providerCardHeader}>
+                        <span className={styles.providerVehicleType}>{provider}</span>
+                        <span className={styles.providerBadge} data-tone={moving > 0 ? "good" : "neutral"}>
+                          {moving > 0 ? `${moving} Active` : "Standby"}
+                        </span>
+                      </div>
+                      <div className={styles.providerCardStats}>
+                        <span className={styles.providerStatPill}>
+                          <strong>{moving}</strong> on road
+                        </span>
+                        <span className={styles.providerStatSep} aria-hidden="true">
+                          &middot;
+                        </span>
+                        <span className={styles.providerStatPill}>
+                          <strong>{waiting}</strong> booked
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </section>
 
@@ -623,7 +761,7 @@ export function OfficerScreen() {
                   <li key={`${item.movementId}-${idx}`} className={styles.cancelledItem}>
                     <span className={styles.cancelledBadge}>STAND-DOWN</span>
                     {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                    <strong>{item.patientName}</strong> &mdash; CAD: <code>{item.cadNumber}</code>
+                    <strong>{item.patientName}</strong> &mdash; CAD (dispatch) number: <code>{item.cadNumber}</code>
                     <span className={styles.cancelledNote}>({item.note})</span>
                   </li>
                 ))}
@@ -632,13 +770,117 @@ export function OfficerScreen() {
           </section>
         ) : null}
 
+        {/* Interactive Multi-Dimensional Filter Toolbar */}
+        <div className={styles.filterToolbar} role="search" aria-label="Filter transport jobs">
+          <div className={styles.searchBox}>
+            <Search className={styles.searchIcon} size={15} aria-hidden="true" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              id="officer-transfer-search"
+              name="transferSearch"
+              className={styles.searchInput}
+              placeholder="Search patient, destination, ED, or CAD #..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Search transport jobs"
+            />
+            {!searchQuery ? (
+              <kbd className={styles.searchKbd} aria-hidden="true" title="Press / to focus search">
+                /
+              </kbd>
+            ) : (
+              <button
+                type="button"
+                className={styles.searchClearBtn}
+                onClick={() => setSearchQuery("")}
+                aria-label="Clear search input"
+              >
+                <X size={13} aria-hidden="true" />
+              </button>
+            )}
+          </div>
+
+          <div className={styles.filterPills} role="group" aria-label="Filter by transport stage">
+            {(
+              [
+                { id: "all", label: "All Stages", count: statusCounts.all },
+                { id: "requested", label: "Requested", count: statusCounts.requested },
+                { id: "accepted", label: "Accepted", count: statusCounts.accepted },
+                { id: "en_route", label: "En route", count: statusCounts.en_route },
+                { id: "collected", label: "Collected", count: statusCounts.collected },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={statusFilter === tab.id ? styles.filterPillActive : styles.filterPill}
+                onClick={() => setStatusFilter(tab.id)}
+                aria-pressed={statusFilter === tab.id}
+              >
+                <span>{tab.label}</span>
+                <span className={styles.filterPillBadge}>{tab.count}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className={styles.filterAuxControls}>
+            <div className={styles.selectFilterGroup}>
+              <select
+                id="officer-provider-filter"
+                name="providerFilter"
+                className={styles.filterSelect}
+                value={providerFilter}
+                onChange={(e) => setProviderFilter(e.target.value)}
+                aria-label="Filter by transport provider"
+              >
+                <option value="all">All Providers ({jobs.length})</option>
+                {TRANSPORT_PROVIDERS.map((p) => {
+                  const pCount = jobs.filter((j) => j.transport?.provider === p).length;
+                  return (
+                    <option key={p} value={p}>
+                      {p} ({pCount})
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            <button
+              type="button"
+              className={escortFilter ? styles.filterPillActive : styles.filterPill}
+              onClick={() => setEscortFilter((prev) => !prev)}
+              aria-pressed={escortFilter}
+              title="Show only journeys requiring a mental health or clinical escort"
+            >
+              <span>Escort Only</span>
+              <span className={styles.filterPillBadge}>{escortCount}</span>
+            </button>
+
+            {isFiltered ? (
+              <button
+                type="button"
+                className={styles.resetFilterBtn}
+                onClick={resetFilters}
+                aria-label="Reset all filters"
+              >
+                Reset filters
+              </button>
+            ) : null}
+          </div>
+
+          <div className={styles.filterCountIndicator}>
+            Showing <strong>{filteredJobs.length}</strong> of {jobs.length} transfers
+          </div>
+        </div>
+
         {/* Transport Jobs Section */}
         <section className={styles.jobsPanel} aria-labelledby="ward-officer-jobs-heading">
           <header className={styles.panelHeader}>
             <div>
               <h2 id="ward-officer-jobs-heading">Transport jobs</h2>
             </div>
-            <span className={styles.jobsCountBadge}>{jobs.length} Priority Transfers</span>
+            <span className={styles.jobsCountBadge}>{filteredJobs.length} Priority Transfers</span>
           </header>
 
           <div className={styles.panelBody}>
@@ -647,9 +889,16 @@ export function OfficerScreen() {
                 No transport job is currently outstanding &mdash; every job has either arrived or its movement has
                 closed.
               </p>
+            ) : filteredJobs.length === 0 ? (
+              <div className={styles.filterEmptyState}>
+                <p>No transport jobs match the selected filter criteria.</p>
+                <button type="button" className={styles.resetFilterBtn} onClick={resetFilters}>
+                  Clear all filters
+                </button>
+              </div>
             ) : (
               <ul className={styles.jobList} data-testid="ward-officer-joblist">
-                {jobs.map((movement) => {
+                {filteredJobs.map((movement) => {
                   const transport = movement.transport;
                   if (!transport) return null;
 
@@ -703,10 +952,18 @@ export function OfficerScreen() {
                       className={active ? styles.jobCardActive : styles.jobCard}
                     >
                       <div className={styles.jobTopHeader}>
-                        <div className={styles.jobIdAndRoute}>
+                        <div className={styles.jobHeaderRibbon}>
                           <div className={styles.jobIdBadgeGroup}>
-                            {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                            <strong className={styles.jobIdText}>{officerPatientName(movement)}</strong>
+                            <span className={styles.jobIdTag}>#{movement.id}</span>
+                            {/* Josh, 25 Sept 2026: the transport officer sees the patient's name. Same
+                                resolver as the Referral board; "Not recorded" when no single patient
+                                is linked, never a guess. */}
+                            <strong
+                              className={styles.jobPatientName}
+                              data-testid={`ward-officer-patient-${movement.id}`}
+                            >
+                              {officerPatientName(movement)}
+                            </strong>
                             <span className={styles.legBadge} data-tone={tone}>
                               {transportLeg(transport)}
                             </span>
@@ -716,38 +973,39 @@ export function OfficerScreen() {
                               </span>
                             ) : null}
                           </div>
-                          {/* Josh, 25 Sept 2026: the transport officer sees the patient's name. Same
-                              resolver as the Referral board; "Not recorded" when no single patient
-                              is linked, never a guess. */}
-                          <p className={styles.routeLine} data-testid={`ward-officer-patient-${movement.id}`}>
-                            Patient <strong>{officerPatientName(movement)}</strong>
-                          </p>
-                          <p className={styles.routeLine}>
-                            From{" "}
-                            <strong>
+
+                          <div className={styles.jobHeaderActions}>
+                            <span className={styles.jobMeta}>{elapsedLabel(movement, now)}</span>
+                            <button
+                              type="button"
+                              className={styles.linkInspect}
+                              data-testid={`ward-officer-inspect-form-${movement.id}`}
+                              onClick={(e) => {
+                                openFormModal(movement, e);
+                              }}
+                            >
+                              Inspect Form
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className={styles.routeCorridor}>
+                          <div className={styles.routeCorridorOrigin}>
+                            <span className={styles.routeCorridorLabel}>ORIGIN</span>
+                            <strong className={styles.routeCorridorPlace}>
                               {departmentLabel(
                                 movement.originEdId,
                                 originEd && `${originEd.name} (${originEd.siteCode})`,
                               )}
-                            </strong>{" "}
-                            <span className={styles.routeArrow} aria-hidden="true">
-                              &rarr;
-                            </span>{" "}
-                            <strong>{destinationLabel}</strong>
-                          </p>
-                        </div>
-                        <div className={styles.jobHeaderActions}>
-                          <span className={styles.jobMeta}>{elapsedLabel(movement, now)}</span>
-                          <button
-                            type="button"
-                            className={styles.linkInspect}
-                            data-testid={`ward-officer-inspect-form-${movement.id}`}
-                            onClick={(e) => {
-                              openFormModal(movement, e);
-                            }}
-                          >
-                            Inspect Form
-                          </button>
+                            </strong>
+                          </div>
+                          <span className={styles.routeCorridorArrow} aria-hidden="true">
+                            &rarr;
+                          </span>
+                          <div className={styles.routeCorridorDest}>
+                            <span className={styles.routeCorridorLabel}>DESTINATION</span>
+                            <strong className={styles.routeCorridorPlace}>{destinationLabel}</strong>
+                          </div>
                         </div>
                       </div>
 
@@ -788,7 +1046,7 @@ export function OfficerScreen() {
                           <dd>{formRequiredLabel(transport)}</dd>
                         </div>
                         <div className={styles.jobDetailRow} data-testid={`ward-officer-cad-number-${movement.id}`}>
-                          <dt>CAD number</dt>
+                          <dt>CAD (dispatch) number</dt>
                           <dd>{cadNumberLabel(transport)}</dd>
                         </div>
                         <div
@@ -842,8 +1100,8 @@ export function OfficerScreen() {
                           >
                             ⚠️ <strong>Arrival Overdue:</strong> Patient is &gt;{LATE_ARRIVAL_GRACE_MINUTES}m past
                             estimated arrival time (
-                            {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST).
-                            Notification is not recorded here.
+                            {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST). Notification
+                            is not recorded here.
                           </div>
                         )}
 
@@ -858,7 +1116,11 @@ export function OfficerScreen() {
                                 acceptedBlocked ? `ward-officer-accept-unavailable-${movement.id}` : undefined
                               }
                               title={acceptedBlocked ?? undefined}
-                              className={styles.actionButton}
+                              className={
+                                !acceptedBlocked && leg === "Requested"
+                                  ? `${styles.actionButton} ${styles.actionButtonPrimary}`
+                                  : styles.actionButton
+                              }
                               onClick={
                                 acceptedBlocked
                                   ? ignoreUnavailableActivation
@@ -888,7 +1150,11 @@ export function OfficerScreen() {
                                 enRouteBlocked ? `ward-officer-enroute-unavailable-${movement.id}` : undefined
                               }
                               title={enRouteBlocked ?? undefined}
-                              className={styles.actionButton}
+                              className={
+                                !enRouteBlocked && leg === "Accepted"
+                                  ? `${styles.actionButton} ${styles.actionButtonPrimary}`
+                                  : styles.actionButton
+                              }
                               onClick={
                                 enRouteBlocked
                                   ? ignoreUnavailableActivation
@@ -918,7 +1184,11 @@ export function OfficerScreen() {
                                 collectedBlocked ? `ward-officer-collect-unavailable-${movement.id}` : undefined
                               }
                               title={collectedBlocked ?? undefined}
-                              className={styles.actionButton}
+                              className={
+                                !collectedBlocked && leg === "En route"
+                                  ? `${styles.actionButton} ${styles.actionButtonPrimary}`
+                                  : styles.actionButton
+                              }
                               onClick={
                                 collectedBlocked
                                   ? ignoreUnavailableActivation
@@ -948,7 +1218,11 @@ export function OfficerScreen() {
                                 arrivedBlocked ? `ward-officer-arrive-unavailable-${movement.id}` : undefined
                               }
                               title={arrivedBlocked ?? undefined}
-                              className={styles.actionButton}
+                              className={
+                                !arrivedBlocked && leg === "Collected"
+                                  ? `${styles.actionButton} ${styles.actionButtonPrimary}`
+                                  : styles.actionButton
+                              }
                               onClick={
                                 arrivedBlocked
                                   ? ignoreUnavailableActivation
@@ -1153,8 +1427,8 @@ export function OfficerScreen() {
                 <strong>Transfer checks</strong>
                 <p>
                   {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                  Confirm paperwork with the clinical team for {officerPatientName(formModalJob)}. These local checks
-                  do not establish legal authorisation and are not saved to the movement record.
+                  Confirm paperwork with the clinical team for {officerPatientName(formModalJob)}. These local checks do
+                  not establish legal authorisation and are not saved to the movement record.
                 </p>
               </div>
 

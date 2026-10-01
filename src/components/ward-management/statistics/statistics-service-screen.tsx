@@ -111,14 +111,16 @@ function DistanceBandsBar({
   const barH = 32;
   const barY = 16;
 
-  let curX = padL;
   const segmentData = DISTANCE_THRESHOLDS.map((thresh, i) => {
     const n = bandCounts.get(thresh.band) ?? 0;
     const segW = total > 0 ? (n / total) * barW : 0;
     const pct = total > 0 ? ((n / total) * 100).toFixed(1) : "0.0";
-    const segMid = curX + segW / 2;
-    const segStartX = curX;
-    curX += segW;
+    const previousCount = DISTANCE_THRESHOLDS.slice(0, i).reduce(
+      (sum, item) => sum + (bandCounts.get(item.band) ?? 0),
+      0,
+    );
+    const segStartX = padL + (total > 0 ? (previousCount / total) * barW : 0);
+    const segMid = segStartX + segW / 2;
     return {
       idx: i,
       x: segStartX,
@@ -218,7 +220,7 @@ function DistanceBandsBar({
                       style={{ fontVariantNumeric: "tabular-nums" }}
                       fontSize="12"
                       fontWeight="600"
-                      fill="#ffffff"
+                      fill="var(--surface)"
                       textAnchor="middle"
                     >
                       {seg.pct}%

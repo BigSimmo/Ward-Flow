@@ -4,10 +4,8 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-areas:
     "identity discharges"
-    "figures followup"
-    "referrals firstContact"
-    "sources contacts"
-    "hospital hospital"
+    "figures hospital"
+    "unsupported unsupported"
     "comparison comparison"
     "provenance provenance"
     "limits limits";
@@ -73,7 +71,10 @@
 .kpiBand {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  border: none;
+  border-radius: var(--r2);
+  overflow: hidden;
 }
 
 .kpi {
@@ -155,23 +156,8 @@
 .pageGrid > :global([data-testid="ward-statistics-community-figures"]) {
   grid-area: figures;
 }
-.pageGrid > :global([data-testid="ward-statistics-community-followup"]) {
-  grid-area: followup;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-referrals"]) {
-  grid-area: referrals;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-referral-sources"]) {
-  grid-area: sources;
-}
 .pageGrid > :global([data-testid="ward-statistics-community-hospital-discharges"]) {
   grid-area: discharges;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-firstContact"]) {
-  grid-area: firstContact;
-}
-.pageGrid > :global([data-testid="ward-statistics-community-contacts"]) {
-  grid-area: contacts;
 }
 .pageGrid > :global([data-testid="ward-statistics-community-in-hospital"]) {
   grid-area: hospital;
@@ -185,10 +171,43 @@
 .pageGrid > :global([data-testid="ward-statistics-community-limits"]) {
   grid-area: limits;
 }
+
+.unsupportedGroup {
+  grid-area: unsupported;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+}
+
+.unsupportedGroup > summary {
+  min-height: var(--ward-tap);
+  align-content: center;
+  padding: 0.75rem 1rem;
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.unsupportedGroup > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.unsupportedGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0 0.75rem 0.75rem;
+}
 @media (max-width: 62.5rem) {
   .pageGrid {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "identity" "discharges" "followup" "figures" "referrals" "sources" "firstContact" "contacts" "hospital" "comparison" "provenance" "limits";
+    grid-template-areas: "identity" "figures" "discharges" "hospital" "unsupported" "comparison" "provenance" "limits";
+  }
+
+  .unsupportedGrid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -248,7 +267,7 @@
   padding: 8px 12px;
   font-size: 12px;
   font-family: var(--body);
-  box-shadow: 0 4px 18px rgb(var(--ward-shadow-rgb) / 0.16);
+  box-shadow: var(--lift);
   z-index: 100;
   max-width: 260px;
   line-height: 1.4;
@@ -256,7 +275,7 @@
 :global([data-theme="dark"]) .chartTooltipCard {
   background: var(--surface-2);
   border-color: var(--line-strong);
-  box-shadow: 0 6px 22px rgb(var(--ward-shadow-rgb) / 0.55);
+  box-shadow: var(--lift);
 }
 .gaugeWrap {
   text-align: center;
@@ -285,7 +304,7 @@
   border-radius: var(--r2);
   font-size: var(--t-1);
   font-family: var(--body);
-  box-shadow: 0 6px 24px rgb(var(--ward-shadow-rgb) / 0.3);
+  box-shadow: var(--float);
   z-index: 99999;
   border-left: 4px solid var(--gilt);
 }
@@ -300,7 +319,9 @@
   border-radius: var(--r1);
   color: var(--ink);
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 .actionBtn:hover {
   background: var(--sunk);
@@ -310,5 +331,3 @@
   outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
-
-

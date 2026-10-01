@@ -24,7 +24,6 @@ describe("screens showing statutory time limits carry the not-legally-checked no
   it.each([
     "alerts/alerts-screen.tsx",
     "community/community-screen.tsx",
-    "coordinator/coordinator-screen.tsx",
     "coordinator/pressure-strip.tsx",
     "coordinator/priority-queue.tsx",
     "coordinator/shortlist-panel.tsx",

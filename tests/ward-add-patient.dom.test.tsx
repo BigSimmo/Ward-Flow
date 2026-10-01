@@ -1,6 +1,6 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { expectSays } from "./helpers/ward-caption";
 
 // Same reason as `ward-patient-page.dom.test.tsx`: `AddPatientForm` navigates via `useRouter()`
@@ -118,6 +118,11 @@ describe("AddPatientForm", () => {
     const submit = screen.getByTestId("ward-add-patient-submit");
     expect(submit).not.toHaveAttribute("aria-disabled");
     fireEvent.click(submit);
+    // Keep the pending control keyboard-reachable while blocking duplicate submissions.
+    expect(submit).toHaveAttribute("aria-disabled", "true");
+    expect(submit).not.toBeDisabled();
+    fireEvent.click(submit);
+    fireEvent.submit(screen.getByTestId("ward-add-patient-form"));
 
     // The dispatch reaches state: the live patient count grows by exactly one.
     await waitFor(() => {
@@ -637,4 +642,86 @@ describe("AddPatientForm — ADD_PATIENT never creates a referral", () => {
     });
     expect(Number(screen.getByTestId("referral-count").textContent)).toBe(referralsBefore);
   });
+});
+
+describe("AddPatientForm safety regressions", () => {
+  beforeEach(() => router.push.mockClear());
+  it("recovers from a rejected duplicate and can submit a corrected identity", async () => {
+    renderForm();
+    const before = Number(screen.getByTestId("patient-count").textContent);
+    fillDraft();
+    fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: "UM100002" } });
+    fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
+
+    expect(await screen.findByTestId("ward-add-patient-rejection")).toHaveTextContent("Patient could not be added");
+    expect(screen.getByTestId("ward-add-patient-submit")).toHaveTextContent("Add patient");
+    expect(Number(screen.getByTestId("patient-count").textContent)).toBe(before);
+    expect(router.push).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: "UM999999" } });
+    fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
+    await waitFor(() => expect(Number(screen.getByTestId("patient-count").textContent)).toBe(before + 1));
+    expect(router.push).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears every intake field and notice after confirming reset", () => {
+    renderForm();
+    fillDraft();
+    fireEvent.change(screen.getByLabelText("Gender"), { target: { value: "Female" } });
+    fireEvent.change(screen.getByLabelText("Indigenous status"), { target: { value: "aboriginal" } });
+    fireEvent.change(screen.getByLabelText(/^Address/), { target: { value: "1 Invented Street" } });
+    fireEvent.change(screen.getByTestId("ward-add-patient-suburb"), { target: { value: "Armadale" } });
+    fireEvent.change(screen.getByLabelText("Health service catchment"), { target: { value: "East Metro" } });
+    fireEvent.change(screen.getByLabelText("Presenting facility"), { target: { value: "rph-ed" } });
+    fireEvent.click(screen.getByRole("button", { name: /^ATS 1/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Form 1A/ }));
+    fireEvent.change(screen.getByLabelText("Presenting complaint / reason for admission"), {
+      target: { value: "other" },
+    });
+    fireEvent.change(screen.getByLabelText("Clinical intake notes"), { target: { value: "Invented intake note" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    fireEvent.click(screen.getByTestId("ward-add-patient-reset"));
+    expect(screen.getByRole("dialog", { name: "Reset patient form?" })).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("ward-add-patient-reset-confirm"));
+
+    for (const label of [
+      /Record number|UMRN/i,
+      "Given name",
+      "Family name",
+      "Date of birth",
+      /^Address/,
+      "Clinical intake notes",
+    ]) {
+      expect(screen.getByLabelText(label)).toHaveValue("");
+    }
+    expect(screen.getByLabelText("Gender")).toHaveValue("not-recorded");
+    expect(screen.getByLabelText("Indigenous status")).toHaveValue("not-stated");
+    expect(screen.getByTestId("ward-add-patient-suburb")).toHaveValue("");
+    expect(screen.getByLabelText("Health service catchment")).toHaveValue("");
+    expect(screen.getByLabelText("Presenting facility")).toHaveValue("");
+    expect(screen.getByRole("button", { name: /^ATS 4/ })).toHaveAttribute("aria-pressed", "true");
+    expect(
+      within(screen.getByRole("group", { name: "Legal status" })).getByRole("button", { name: /^Voluntary/ }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByLabelText("Presenting complaint / reason for admission")).toHaveValue("assessment");
+    expect(screen.queryByTestId("ward-add-patient-d4-notice")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it.each(["Indigenous status", "Triage urgency", "Legal status", "Presenting complaint"])(
+    "asks before discarding a change only to %s",
+    (field) => {
+      renderForm();
+      if (field === "Indigenous status")
+        fireEvent.change(screen.getByLabelText(field), { target: { value: "aboriginal" } });
+      if (field === "Triage urgency") fireEvent.click(screen.getByRole("button", { name: /^ATS 1/ }));
+      if (field === "Legal status") fireEvent.click(screen.getByRole("button", { name: /^Form 1A/ }));
+      if (field === "Presenting complaint")
+        fireEvent.change(screen.getByLabelText("Presenting complaint / reason for admission"), {
+          target: { value: "other" },
+        });
+      fireEvent.click(screen.getByTestId("ward-add-patient-reset"));
+      expect(screen.getByRole("dialog", { name: "Reset patient form?" })).toBeInTheDocument();
+    },
+  );
 });

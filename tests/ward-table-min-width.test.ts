@@ -111,6 +111,8 @@ const PINNED: Record<string, string | readonly string[] | null> = {
   // (52rem) and an ED directory table (48rem). The latest folded app is the design reference.
   "on-call/on-call.module.css": ["52rem", "48rem"],
   "out-of-area/out-of-area.module.css": "30rem",
+  // PR12 five-column ledger: preserve the explicit identity, status and timing column floors.
+  "out-of-area/out-of-area-third-edition.module.css": ["9.5rem", "6.5rem", "8.5rem"],
   /* 40rem until 2026-09-05, when it was measured at the narrowest width this table is used at
      (641px viewport, 499px scroller) and found to put `Sex` and `Home region` outside the queued
      table and `Waited` and `Decided` outside the decided one. 30rem fit that box exactly and

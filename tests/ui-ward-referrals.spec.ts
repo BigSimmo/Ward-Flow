@@ -736,11 +736,13 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     // width, and this journey is phone width throughout. Nothing is hidden by that — every heading
     // and both of its counts are on the screen while shut, asserted here before anything is opened,
     // so "there is nothing available within an hour" is answerable without expanding a thing.
-    const bandGroups = page.getByTestId("ward-referral-match-list").locator("details");
+    const bandGroups = page
+      .getByTestId("ward-referral-match-list")
+      .locator('details[data-testid^="ward-referral-match-band-group-"]');
     await expect(bandGroups).toHaveCount(BAND_GROUP_COUNT);
     let unitsAcrossBands = 0;
     for (let index = 0; index < BAND_GROUP_COUNT; index += 1) {
-      const summary = bandGroups.nth(index).locator("summary");
+      const summary = bandGroups.nth(index).locator(":scope > summary");
       await expect(summary).toBeVisible();
       // Scoped to the SUMMARY and reading its TEXT, both deliberately. A closed `<details>` paints
       // only its summary, so counts rendered one line below it would still be in the DOM, still
@@ -765,7 +767,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     // A coordinator on a phone opens the groups to reach the rows. Every group is expanded here so
     // the assertions below see the whole network exactly as they did before the grouping existed.
     for (let index = 0; index < BAND_GROUP_COUNT; index += 1) {
-      await bandGroups.nth(index).locator("summary").click();
+      await bandGroups.nth(index).locator(":scope > summary").click();
     }
 
     // The bed accepted below, and one unit per reason it is not offered — each named, so a rule
@@ -916,7 +918,9 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
 
     // The five groups, and the sentence saying the times are invented, on the screen where the
     // acceptance is actually taken.
-    await expect(page.getByTestId("ward-referral-match-list").locator("details")).toHaveCount(BAND_GROUP_COUNT);
+    await expect(
+      page.getByTestId("ward-referral-match-list").locator('details[data-testid^="ward-referral-match-band-group-"]'),
+    ).toHaveCount(BAND_GROUP_COUNT);
     await expect(page.getByTestId("ward-referral-match-synthetic-notice")).toBeVisible();
 
     // Open the far group by CLICK, the way a coordinator does. At 375px the groups mount shut, so
@@ -941,9 +945,9 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
      * coordinator was never shown. Stated precisely: this does not re-prove that the band is out of
      * area (the search settled that); it proves the screen agrees about which band this group is.
      */
-    await expect(farGroup.locator("summary")).toContainText(TRAVEL_BAND_LABELS[band]);
+    await expect(farGroup.locator(":scope > summary")).toContainText(TRAVEL_BAND_LABELS[band]);
     await expect(page.getByTestId(`ward-referral-match-band-counts-${band}`)).toBeVisible();
-    await farGroup.locator("summary").click();
+    await farGroup.locator(":scope > summary").click();
     await expect(farGroup).toHaveJSProperty("open", true);
 
     // The accept control is taken from INSIDE the far group, so "far" is a property of where the
@@ -1045,8 +1049,12 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
      * tautology removed above.
      */
     const outOfAreaLabels = OUT_OF_AREA_BANDS.map((b) => TRAVEL_BAND_LABELS[b]);
-    const renderedBands = await ledgerRows.evaluateAll((rows) =>
-      rows.map((row) => (row.children[2]?.textContent ?? "").trim()),
+    const ledgerHeaderTexts = await page.getByTestId("ward-out-of-area-table").locator("thead th").allTextContents();
+    const travelTimeColumn = ledgerHeaderTexts.findIndex((heading) => heading.trim() === "Travel time");
+    expect(travelTimeColumn, "the ledger must label its travel-time column").toBeGreaterThanOrEqual(0);
+    const renderedBands = await ledgerRows.evaluateAll(
+      (rows, column) => rows.map((row) => (row.children[column]?.textContent ?? "").trim()),
+      travelTimeColumn,
     );
     expect(
       [...new Set(renderedBands)].filter((b) => !outOfAreaLabels.includes(b)),
@@ -1133,11 +1141,11 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
      * Nothing below is relaxed to make room for these — together they close deletion, reordering,
      * renaming and hiding, and neither adds a matcher that could later be loosened.
      */
-    const LEDGER_COLUMNS = ["Home region", "Unit", "Travel time", "Since arrival"];
+    const LEDGER_COLUMNS = ["Patient", "Home region", "Unit", "Travel time", "Since arrival"];
     const ledgerHeaders = tableScroll.locator("thead th");
     await expect(
       ledgerHeaders,
-      "the out-of-area ledger's table no longer carries exactly these four columns, in this order",
+      "the out-of-area ledger's table no longer carries exactly these five columns, in this order",
     ).toHaveText(LEDGER_COLUMNS);
     for (const [index, column] of LEDGER_COLUMNS.entries()) {
       await expect(

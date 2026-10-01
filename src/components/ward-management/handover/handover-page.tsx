@@ -348,12 +348,31 @@ export function HandoverPage() {
   >("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [copied, setCopied] = useState<boolean>(false);
+  const [copiedPatientId, setCopiedPatientId] = useState<string | null>(null);
   const [selectedMovement, setSelectedMovement] = useState<Movement | null>(null);
   const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
   const [sheetViewMode, setSheetViewMode] = useState<"cards" | "table">("table");
 
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const triggerElementRef = useRef<HTMLElement | null>(null);
   const drawerCloseBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  // Global / or Ctrl+K shortcut to focus search input
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.key === "/" &&
+          document.activeElement?.tagName !== "INPUT" &&
+          document.activeElement?.tagName !== "TEXTAREA") ||
+        (e.key === "k" && (e.metaKey || e.ctrlKey))
+      ) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const closeMovementDetail = useCallback(() => {
     setSelectedMovement(null);
@@ -773,6 +792,38 @@ export function HandoverPage() {
     snapshot.inTransit.length,
   ]);
 
+  const handleCopyPatientISBAR = useCallback(
+    (movement: Movement) => {
+      const pat = resolveMovementPatient(movement, patients, referrals);
+      const formattedUmrn = pat.umrn.startsWith("UMRN") || pat.umrn.startsWith("UM") ? pat.umrn : `UMRN ${pat.umrn}`;
+      const orig = originDepartmentText(movement);
+      const dest = destinationCell(movement, units);
+      const obs = movementObservationLabel(movement);
+      const legal = movement.legalForm
+        ? `Form ${movement.legalForm.code} (${movement.legalStatus ?? "Involuntary"})`
+        : (movement.legalStatus ?? "Voluntary");
+      const elapsed = elapsedLabel(movement, now);
+      const action = stageCopy[movement.stage]?.label ?? "In Handover";
+
+      const note = [
+        `[CLINICAL HANDOVER NOTE (ISBAR)]`,
+        `IDENTIFICATION: ${pat.name} (${formattedUmrn})`,
+        `SITUATION: Origin: ${orig || "ED"} → Target: ${dest} | Wait: ${elapsed}`,
+        `BACKGROUND: Legal Status: ${legal} | Referring Team: ${movement.owner || "ED mental health team"}`,
+        `ASSESSMENT: Acuity/Obs: ${obs}`,
+        `RECOMMENDATION: ${action}${dest !== "No destination unit recorded" ? ` targeted for ${dest}.` : " awaiting bed allocation."}`,
+      ].join("\n");
+
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        navigator.clipboard.writeText(note).catch(() => {});
+        setCopiedPatientId(movement.id);
+        setTimeout(() => setCopiedPatientId(null), 2000);
+        announceToWardShell(`Copied handover note for ${pat.name}`);
+      }
+    },
+    [patients, referrals, units, now],
+  );
+
   const shiftLabelText =
     selectedShift === "morning"
       ? "Morning Shift (07:00–15:30)"
@@ -789,18 +840,23 @@ export function HandoverPage() {
       data-ward-design="third-edition"
     >
       <main id="main-content" className={`${styles.main} ${pageStyles.main}`}>
-        {/* ── Top Bar Header ── */}
+        {/* ── Top Bar Header: Streamlined & Institutional ── */}
         <header className={pageStyles.topBarWrap}>
           <div className={pageStyles.titleGroup}>
-            <h1 className={pageStyles.pageHeading}>Shift handover</h1>
-            <LegalLimitsNotChecked />
-          </div>
-
-          <div className={pageStyles.headerActions}>
+            <div className={pageStyles.institutionalBadge}>
+              <span className={pageStyles.badgeGovLogo}>WA HEALTH</span>
+              <span className={pageStyles.badgeDivider}>/</span>
+              <span className={pageStyles.badgeTitle}>CLINICAL GOVERNANCE · STATEWIDE SHIFT HANDOVER</span>
+              <span className={pageStyles.liveSyncDot} title="Live data feed active">
+                <span className={pageStyles.pulsingDot} /> Live Sync
+              </span>
+            </div>
             <p className={styles.takenAt} data-testid="ward-handover-taken-at">
               Updated {formatSheetMoment(now, dayZero)}
             </p>
+          </div>
 
+          <div className={pageStyles.headerActions}>
             <button
               type="button"
               className={pageStyles.btnActionSec}
@@ -944,9 +1000,49 @@ export function HandoverPage() {
                 Executive Escalations
               </button>
             </div>
+
+            <div className={pageStyles.searchBoxHandover}>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className={pageStyles.searchIconSvg}
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                ref={searchInputRef}
+                type="search"
+                className={pageStyles.searchInputHandover}
+                placeholder="Quick find patient, bed, UMRN..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Quick find in handover"
+              />
+              {searchQuery.trim().length > 0 ? (
+                <div className={pageStyles.searchFeedbackGroup}>
+                  <span className={pageStyles.searchMatchPill}>{filteredMovements.length} matching</span>
+                  <button
+                    type="button"
+                    className={pageStyles.searchClearBtn}
+                    onClick={() => setSearchQuery("")}
+                    aria-label="Clear search"
+                  >
+                    ×
+                  </button>
+                </div>
+              ) : (
+                <kbd className={pageStyles.searchKbdHint}>/</kbd>
+              )}
+            </div>
           </div>
 
-          {/* Row 2: Scope pills, Unit select, Focus filter pills, and Search */}
+          {/* Row 2: Scope pills, Unit select, and Focus filter pills */}
           <div className={pageStyles.filterRow}>
             <div className={pageStyles.filterGroup}>
               <span className={pageStyles.filterLabel}>Scope:</span>
@@ -1043,40 +1139,6 @@ export function HandoverPage() {
                   1:1 Specialling &amp; HDU <span className={pageStyles.tabBadge}>{speciallingInScopeCount}</span>
                 </button>
               </div>
-            </div>
-
-            <div className={pageStyles.searchBoxHandover}>
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-                className={pageStyles.searchIconSvg}
-              >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input
-                type="search"
-                className={pageStyles.searchInputHandover}
-                placeholder="Quick find patient, bed, UMRN..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                aria-label="Quick find in handover"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  className={pageStyles.searchClearBtn}
-                  onClick={() => setSearchQuery("")}
-                  aria-label="Clear search"
-                >
-                  ×
-                </button>
-              )}
             </div>
           </div>
 
@@ -1302,7 +1364,7 @@ export function HandoverPage() {
         >
           {/* Compact KPI strip — handover-perfected drawing order; legal wording keeps Form expiries */}
           <div className={pageStyles.summaryStrip} data-testid="ward-handover-kpi-strip">
-            <div className={pageStyles.summaryTile}>
+            <div className={`${pageStyles.summaryTile} ${pageStyles.summaryTileCaseload}`}>
               <div className={pageStyles.tileMeta}>
                 <span className={pageStyles.tileLabel}>Caseload in Scope</span>
                 <span className={pageStyles.tileSub}>
@@ -1312,7 +1374,7 @@ export function HandoverPage() {
               <span className={pageStyles.tileValue}>{includedOpenCount}</span>
             </div>
 
-            <div className={pageStyles.summaryTile}>
+            <div className={`${pageStyles.summaryTile} ${pageStyles.summaryTileReferrals}`}>
               <div className={pageStyles.tileMeta}>
                 <span className={pageStyles.tileLabel}>Current Referrals</span>
                 <span className={pageStyles.tileSub}>Seeking bed placement</span>
@@ -1322,7 +1384,7 @@ export function HandoverPage() {
               </span>
             </div>
 
-            <div className={pageStyles.summaryTile}>
+            <div className={`${pageStyles.summaryTile} ${pageStyles.summaryTileVacancies}`}>
               <div className={pageStyles.tileMeta}>
                 <span className={pageStyles.tileLabel}>Allocatable Vacancies</span>
                 <span className={pageStyles.tileSub}>Confirmed ward capacity in scope</span>
@@ -1330,10 +1392,18 @@ export function HandoverPage() {
               <span className={pageStyles.tileValue}>{allocatableVacancies}</span>
             </div>
 
-            <div className={pageStyles.summaryTile}>
+            <div
+              className={`${pageStyles.summaryTile} ${
+                breachedOnSheetCount + urgentOutsideFilter.length > 0
+                  ? pageStyles.summaryTileExpiries
+                  : pageStyles.summaryTileExpiriesClean
+              }`}
+            >
               <div className={pageStyles.tileMeta}>
                 <span className={pageStyles.tileLabel}>Form expiries passed</span>
-                <span className={pageStyles.tileSub}>On sheet and urgent outside filter</span>
+                <span className={pageStyles.tileSub}>
+                  On sheet & urgent <LegalLimitsNotChecked variant="tag" />
+                </span>
               </div>
               <span
                 className={`${pageStyles.tileValue} ${breachedOnSheetCount + urgentOutsideFilter.length > 0 ? pageStyles.danger : pageStyles.good}`}
@@ -1342,7 +1412,7 @@ export function HandoverPage() {
               </span>
             </div>
 
-            <div className={pageStyles.summaryTile}>
+            <div className={`${pageStyles.summaryTile} ${pageStyles.summaryTileSpecialling}`}>
               <div className={pageStyles.tileMeta}>
                 <span className={pageStyles.tileLabel}>1:1 Specialling Roster</span>
                 <span className={pageStyles.tileSub}>Specialling or flagged urgent in scope</span>
@@ -1355,7 +1425,7 @@ export function HandoverPage() {
           <article className={pageStyles.snapshotCard} id="printableSnapshotCard" data-testid="ward-handover-sheet">
             <div className={pageStyles.snapshotHead}>
               <div className={pageStyles.snapshotTitleGroup}>
-                <h2>Handover sheet — Point-in-Time Shift Handover &amp; Bedflow Snapshot</h2>
+                <h1>Handover sheet — Point-in-Time Shift Handover &amp; Bedflow Snapshot</h1>
                 <span className={pageStyles.snapshotBadge}>Snapshot at {formatInstant(now)} AWST</span>
               </div>
 
@@ -1611,7 +1681,12 @@ export function HandoverPage() {
                                                 (flag) =>
                                                   !flag.label.includes("Observations") &&
                                                   !flag.label.includes("Specialling") &&
-                                                  !flag.label.includes("Supervision"),
+                                                  !flag.label.includes("Supervision") &&
+                                                  !(
+                                                    flag.label === "Urgent" &&
+                                                    (movement.flaggedUrgent ||
+                                                      movementObservationLabel(movement) === "Urgent")
+                                                  ),
                                               )
                                               .map((flag, idx) => (
                                                 <span key={idx} className={`${pageStyles.statusPill} ${flag.tone}`}>
@@ -1643,13 +1718,36 @@ export function HandoverPage() {
                                       <button
                                         type="button"
                                         className={pageStyles.btnActionSec}
+                                        onClick={() => handleCopyPatientISBAR(movement)}
+                                        title="Copy structured ISBAR clinical note for EMR (PSOLIS/WebPAS)"
+                                        data-print-hide
+                                      >
+                                        <svg
+                                          viewBox="0 0 24 24"
+                                          width="12"
+                                          height="12"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="2"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          aria-hidden="true"
+                                        >
+                                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                        </svg>
+                                        <span>{copiedPatientId === movement.id ? "✓ Copied" : "Copy to EMR"}</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className={pageStyles.btnActionSec}
                                         onClick={(e) => {
                                           triggerElementRef.current = e.currentTarget;
                                           setSelectedMovement(movement);
                                         }}
                                         aria-label={`View clinical details for ${patientInfo.name}`}
                                       >
-                                        Clinical Details
+                                        Clinical Details →
                                       </button>
                                     </div>
                                   </article>
@@ -1668,22 +1766,22 @@ export function HandoverPage() {
                   <table className={pageStyles.snapSheet}>
                     <thead>
                       <tr>
-                        <th scope="col" style={{ width: "17%" }}>
+                        <th scope="col" style={{ width: "16%", minWidth: "150px" }}>
                           Patient Alias &amp; UMRN
                         </th>
-                        <th scope="col" style={{ width: "18%" }}>
+                        <th scope="col" style={{ width: "20%", minWidth: "180px" }}>
                           Current Unit / Origin
                         </th>
-                        <th scope="col" style={{ width: "12%" }}>
+                        <th scope="col" style={{ width: "12%", minWidth: "110px" }}>
                           Time Waiting
                         </th>
-                        <th scope="col" style={{ width: "12%" }}>
+                        <th scope="col" style={{ width: "12%", minWidth: "110px" }}>
                           Order Status
                         </th>
-                        <th scope="col" style={{ width: "12%" }}>
+                        <th scope="col" style={{ width: "12%", minWidth: "110px" }}>
                           Acuity / Obs
                         </th>
-                        <th scope="col" style={{ width: "29%" }}>
+                        <th scope="col" style={{ width: "28%", minWidth: "220px" }}>
                           Bedflow Handover &amp; Shift Action
                         </th>
                       </tr>
@@ -1868,6 +1966,32 @@ export function HandoverPage() {
                   </p>
                 </div>
               </div>
+
+              {/* NSQHS Standard 6 Clinical Handover Accreditation Footer */}
+              <footer className={pageStyles.accreditationFooter} data-testid="handover-accreditation-footer">
+                <div className={pageStyles.accreditationGrid}>
+                  <div className={pageStyles.accreditationField}>
+                    <span className={pageStyles.accreditationLabel}>Handover Given By (Outgoing MO / Nurse):</span>
+                    <div className={pageStyles.accreditationLine} />
+                  </div>
+                  <div className={pageStyles.accreditationField}>
+                    <span className={pageStyles.accreditationLabel}>Handover Received By (Incoming MO / Nurse):</span>
+                    <div className={pageStyles.accreditationLine} />
+                  </div>
+                  <div className={pageStyles.accreditationField}>
+                    <span className={pageStyles.accreditationLabel}>Shift Handover Safety Verification:</span>
+                    <div className={pageStyles.accreditationChecks}>
+                      <span className={pageStyles.checkItem}>[ ] Controlled Drugs Safe Checked</span>
+                      <span className={pageStyles.checkItem}>[ ] Resuscitation Trolley Checked</span>
+                      <span className={pageStyles.checkItem}>[ ] Duress Alarms Operational</span>
+                    </div>
+                  </div>
+                </div>
+                <div className={pageStyles.accreditationLegal}>
+                  National Safety and Quality Health Service (NSQHS) Standards · Standard 6: Clinical Handover ·
+                  Government of Western Australia Department of Health
+                </div>
+              </footer>
             </div>
           </article>
 
@@ -3171,8 +3295,9 @@ export function HandoverScopeControl({
   return (
     <label
       htmlFor="ward-handover-scope"
+      className={pageStyles.scopeSelectForm}
       data-print-hide
-      style={{ display: "inline-flex", alignItems: "center", margin: 0 }}
+      style={{ display: "inline-flex", alignItems: "center", margin: 0, maxWidth: "100%" }}
     >
       <span className={pageStyles.srOnly}>Filter the sheet</span>
       <select

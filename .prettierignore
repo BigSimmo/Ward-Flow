@@ -57,3 +57,6 @@ docs/ward-flow/journey/MAP-INVENTORY.md
 docs/ward-flow/journey/map-snapshot.json
 docs/ward-flow/journey/WHAT-CHANGED.md
 docs/ward-flow/journey/refusal-coverage.json
+
+# Generated screen verification table (prevent flip-flop with scripts/ward-flow/screen-verification.mjs)
+docs/ward-flow/SCREEN-VERIFICATION.md
