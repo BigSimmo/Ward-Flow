@@ -41,6 +41,7 @@ import { usePrintableDisclosures } from "@/components/ward-management/use-printa
 
 import styles from "./statistics.module.css";
 import pageStyles from "./statistics-landing-third-edition.module.css";
+import { StatisticsSubNav } from "./statistics-sub-nav";
 
 /**
  * THE COORDINATOR STATISTICS SCREEN — Third Edition Platinum Raised Cool Hub.
@@ -517,6 +518,17 @@ export function StatisticsScreen({
               </Link>
             </p>
           )}
+
+          <StatisticsSubNav
+            activeTab="overview"
+            isRouteNav={true}
+            counts={{
+              wards: units.length,
+              emergency: emergencyDepts.length,
+              community: communityTeams.length,
+              referrals: refOpen,
+            }}
+          />
 
           <div className={pageStyles.pb}>
             <p className={pageStyles.lede}>

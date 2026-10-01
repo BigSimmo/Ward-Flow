@@ -1,3 +1,11 @@
+/* src/components/ward-management/statistics/statistics-ward-third-edition.module.css
+ *
+ * Ward Flow Third Edition Ward Statistics Stylesheet.
+ * Converted from docs/ward-flow/mockups/statistics-ward-third-edition.html (lines 4402-5414).
+ * Enforces zero hardcoded colors: all values resolve through canonical design tokens.
+ */
+
+/* ══════════ LAYOUT & PAGE GRIDS ══════════ */
 .pageGrid {
   display: grid;
   min-width: 0;
@@ -8,466 +16,313 @@
 
 .pageGrid > :global([data-testid="ward-statistics-ward-identity"]),
 .pageGrid > :global([data-testid="ward-statistics-ward-unresolved"]),
-.pageGrid > :global([data-testid="ward-statistics-ward-governance"]) {
+.pageGrid > :global([data-testid="ward-statistics-ward-governance"]),
+.pageGrid > .wardHeaderBlock,
+.pageGrid > .sovereignTabs,
+.pageGrid > :global([data-testid="ward-statistics-ward-occupancy-trajectory"]),
+.pageGrid > :global([data-testid="ward-statistics-ward-bed-matrix"]),
+.pageGrid > :global([data-testid="ward-statistics-ward-long-stay-overview"]),
+.pageGrid > :global([data-testid="ward-statistics-ward-long-stay-roster"]) {
   grid-column: 1 / -1;
 }
 
 .pageGrid > :global([data-testid="ward-statistics-ward-identity"]) {
-  grid-row: 1;
+  grid-row: auto;
 }
 
 .pageGrid > :global([data-testid="ward-statistics-ward-beds-now"]) {
   grid-column: 1;
-  grid-row: 2;
 }
 
 .pageGrid > :global([data-testid="ward-statistics-ward-occupancy"]) {
   grid-column: 1;
-  grid-row: 3;
 }
 
-.measureColumns {
-  display: contents;
-}
-
+.measureColumns,
 .measureColumn {
   display: contents;
 }
 
 .pageGrid :global([data-testid="ward-statistics-ward-admissions-discharges"]) {
   grid-column: 1;
-  grid-row: 4;
 }
 
 .pageGrid :global([data-testid="ward-statistics-ward-discharge-planning"]) {
   grid-column: 2;
-  grid-row: 2;
 }
 
 .pageGrid :global([data-testid="ward-statistics-ward-ready"]) {
   grid-column: 2;
-  grid-row: 3;
 }
 
 .pageGrid :global([data-testid="ward-statistics-ward-referrals-panel"]) {
   grid-column: 2;
-  grid-row: 4;
 }
 
 .pageGrid :global([data-testid="ward-statistics-ward-length-of-stay"]) {
   grid-column: 2;
-  grid-row: 5;
 }
 
 .pageGrid :global([data-testid="ward-statistics-ward-long-stays"]) {
   grid-column: 2;
-  grid-row: 6;
 }
 
-.capacityBand {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+/* ══════════ TOP CONTROLS & WARD SELECTOR (UNIT SWITCHER) ══════════ */
+.wardHeaderBlock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--r1);
+  margin-bottom: 0.5rem;
+  max-width: 100%;
+}
+
+.wardTitleArea h1 {
+  font-size: var(--t-3);
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+  color: var(--ink);
+}
+
+.wardTitleArea p {
+  font-size: var(--t-0);
+  color: var(--muted);
   margin: 0;
+}
+
+.wardControlsArea {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 100%;
+}
+
+.unitSwitcher {
+  display: inline-flex;
+  background: var(--sunk);
+  padding: 0.1875rem;
+  border-radius: 999px;
+  border: 0.0625rem solid var(--line);
+  gap: 0.125rem;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.unitPill {
+  border: none;
+  background: transparent;
+  padding: 0.375rem 0.875rem;
+  font-size: var(--t-0);
+  font-weight: 500;
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    background 0.12s,
+    color 0.12s;
+  white-space: nowrap !important;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.unitPill:hover {
+  color: var(--ink);
+}
+
+.unitPill.active,
+.unitPill[aria-current="page"] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--lift);
+  font-weight: 600;
+}
+
+/* ══════════ SOVEREIGN TABSTRIP ══════════ */
+.sovereignTabs {
+  display: flex;
+  gap: 0.375rem;
   border-bottom: 0.0625rem solid var(--line);
+  margin-bottom: 0.875rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+.sovereignTab {
+  padding: 0.625rem 1.125rem;
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: transparent;
+  border: none;
+  border-bottom: 0.125rem solid transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap !important;
+  transition:
+    color 0.12s,
+    border-color 0.12s;
+  font-family: inherit;
+}
+
+.sovereignTab:hover {
+  color: var(--ink);
+}
+
+.sovereignTab.active,
+.sovereignTab.activeTab,
+.sovereignTab[aria-pressed="true"] {
+  color: var(--ink);
+  border-bottom-color: var(--gilt);
+}
+
+.sovereignTab .badge,
+.sovereignTab .tabBadge {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  padding: 0.125rem 0.4375rem;
+  border-radius: 999px;
+  background: var(--sunk);
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap !important;
+}
+
+.sovereignTab.active .badge,
+.sovereignTab.active .tabBadge,
+.sovereignTab.activeTab .badge,
+.sovereignTab.activeTab .tabBadge,
+.sovereignTab[aria-pressed="true"] .tabBadge {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+/* Tab filter state mappings for data-active-tab */
+.pageGrid[data-active-tab="occ"]
+  > :not([data-tab-section="occ"]):not(.wardHeaderBlock):not(.sovereignTabs):not(
+    :global([data-testid="ward-statistics-ward-identity"])
+  ):not(:global([data-testid="ward-statistics-ward-occupancy-trajectory"])):not(
+    :global([data-testid="ward-statistics-ward-bed-matrix"])
+  ) {
+  display: none !important;
+}
+
+.pageGrid[data-active-tab="los"]
+  > :not([data-tab-section="los"]):not(.wardHeaderBlock):not(.sovereignTabs):not(
+    :global([data-testid="ward-statistics-ward-identity"])
+  ):not(:global([data-testid="ward-statistics-ward-length-of-stay"])) {
+  display: none !important;
+}
+
+.pageGrid[data-active-tab="flow"]
+  > :not([data-tab-section="flow"]):not(.wardHeaderBlock):not(.sovereignTabs):not(
+    :global([data-testid="ward-statistics-ward-identity"])
+  ):not(:global([data-testid="ward-statistics-ward-admissions-discharges"])) {
+  display: none !important;
+}
+
+.pageGrid[data-active-tab="ready"]
+  > :not([data-tab-section="ready"]):not(.wardHeaderBlock):not(.sovereignTabs):not(
+    :global([data-testid="ward-statistics-ward-identity"])
+  ):not(:global([data-testid="ward-statistics-ward-ready"])):not(
+    :global([data-testid="ward-statistics-ward-discharge-planning"])
+  ) {
+  display: none !important;
+}
+
+.pageGrid[data-active-tab="longStay"]
+  > :not([data-tab-section="longStay"]):not(.wardHeaderBlock):not(.sovereignTabs):not(
+    :global([data-testid="ward-statistics-ward-identity"])
+  ):not(:global([data-testid="ward-statistics-ward-long-stay-overview"])):not(
+    :global([data-testid="ward-statistics-ward-long-stay-roster"])
+  ):not(:global([data-testid="ward-statistics-ward-long-stays"])) {
+  display: none !important;
+}
+
+/* ══════════ CAPACITY KPI BAND & METRIC FACTS ══════════ */
+.capacityBand,
+.kpiBand {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  overflow: hidden;
+}
+
+.capacityBand > div,
+.kpiBand > div {
+  min-width: 0;
+  padding: 0.875rem 1rem;
+  border-right: 0.0625rem solid var(--line);
+  display: grid;
+  gap: 3px;
+  align-content: start;
+}
+
+.capacityBand > div:last-child,
+.kpiBand > div:last-child {
+  border-right: 0;
+}
+
+.capacityBand dt,
+.kpiBand dt,
+.kpiLabel {
+  font-size: var(--t-0);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+  line-height: 1.25;
+}
+
+.capacityBand dd,
+.kpiBand dd,
+.kpiValue {
+  font-family: var(--mono);
+  font-size: var(--t-5);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--ink);
+  display: flex;
+  align-items: baseline;
+  gap: 0.3125rem;
+  margin: 0.25rem 0 0;
+}
+
+.kpiCaption {
+  margin: 0;
+  font-family: var(--body);
+  font-size: var(--t-1);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--muted);
+  text-wrap: pretty;
 }
 
 .bedBody {
   padding: 0;
 }
 
-.capacityBand > div {
-  min-width: 0;
-  padding: 0.75rem;
-  border-right: 0.0625rem solid var(--line);
-}
-
-.capacityBand > div:last-child {
-  border-right: 0;
-}
-
-.capacityBand dt {
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.capacityBand dd {
-  margin: 0.25rem 0 0;
-  color: var(--ink);
-  font-family: var(--mono);
-  font-size: var(--t-6);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
-.bedTableWrap {
-  border-bottom: 0.0625rem solid var(--line);
-}
-
-.bedTable {
-  width: 100%;
-}
-
-.bedTable th:nth-child(2),
-.bedTable td:nth-child(2) {
-  width: 5rem;
-  text-align: right;
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.measureDetails {
-  border-top: 0.0625rem solid var(--line);
-}
-
-.measureDetails summary {
-  display: flex;
-  min-height: var(--spacing-tap, 3rem);
-  align-items: center;
-  padding: 0.5rem 0.75rem;
-  color: var(--accent-ink);
-  font-size: var(--t-1);
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.measureDetails summary:focus-visible {
-  outline: 0.125rem solid var(--accent);
-  outline-offset: -0.1875rem;
-}
-
-.measureDetailsBody {
-  display: grid;
-  gap: 0.625rem;
-  border-top: 0.0625rem solid var(--line);
-  padding: 0.75rem;
-}
-
-/* Drawing-shaped fact and outcome treatments; values remain the existing derivations. */
-.metricFacts {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  margin: 0;
-  border-top: 0.0625rem solid var(--line);
-}
-
-.metricFacts > div {
-  display: grid;
-  grid-column: 1 / -1;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.75rem;
-  align-items: baseline;
-  border-bottom: 0.0625rem solid var(--line);
-  padding: 0.625rem 0.75rem;
-}
-
-.metricFacts dt,
-.metricFacts dd {
-  margin: 0;
-}
-
-.metricFacts dd {
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
-.metricFacts > .shareFact {
-  grid-template-columns: minmax(min(12rem, 100%), 0.65fr) minmax(min(14rem, 100%), 1fr);
-  align-items: start;
-}
-
-.readyKpiBand {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-bottom: 0.0625rem solid var(--line);
-}
-
-.readyHeadline,
-.readyShare {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0.75rem;
-}
-
-.readyHeadline {
-  border-right: 0.0625rem solid var(--line);
-}
-
-.kpiLabel {
-  display: block;
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.kpiValue {
-  display: block;
-  margin-top: 0.375rem;
-  color: var(--ink);
-  font-family: var(--mono);
-  font-size: var(--t-6);
-  font-variant-numeric: tabular-nums;
-  font-weight: 500;
-  line-height: 1;
-}
-
-.kpiValue + span {
-  display: block;
-  margin-top: 0.25rem;
-}
-
-.readyPopulation {
-  margin: 0.75rem 0;
-  font-weight: 600;
-}
-
-.reasonTable {
-  display: grid;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 0.0625rem solid var(--line);
-}
-
-.reasonTable li {
-  display: flex;
-  min-height: 2.75rem;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  border-bottom: 0.0625rem solid var(--line);
-  padding: 0.5rem 0.75rem;
-  font-size: var(--t-1);
-}
-
-.reasonTable li span {
-  flex: 0 0 auto;
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.trendStack {
-  gap: 0.625rem;
-}
-
-.trendStack :global([data-ward-primitive="demonstration-chart"]) {
-  margin-top: 0;
-}
-
-.trendStack :global([data-ward-primitive="demonstration-chart"] svg) {
-  height: 6.5rem;
-}
-
-.srOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-@media (max-width: 62.5rem) {
-  .pageGrid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .pageGrid > *,
-  .pageGrid :global([data-testid^="ward-statistics-ward-"]) {
-    grid-column: 1;
-    grid-row: auto;
-  }
-
-  .capacityBand {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .capacityBand > div:nth-child(2) {
-    border-right: 0;
-  }
-
-  .capacityBand > div:nth-child(-n + 2) {
-    border-bottom: 0.0625rem solid var(--line);
-  }
-
-  .readyKpiBand {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .readyHeadline {
-    border-right: 0;
-    border-bottom: 0.0625rem solid var(--line);
-  }
-}
-
-@media (min-width: 62.5625rem) {
-  .pageGrid {
-    align-items: start;
-  }
-
-  .pageGrid :global([data-ward-primitive="panel"]) {
-    display: flex;
-    height: auto;
-    max-height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
-    min-height: 0;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .pageGrid :global([data-testid="ward-statistics-ward-identity"]),
-  .pageGrid :global([data-testid="ward-statistics-ward-governance"]) {
-    display: block;
-    height: auto;
-    max-height: none;
-  }
-}
-
-@media (max-width: 40rem) {
-  .metricFacts > .shareFact {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .shareFact dd {
-    text-align: left;
-  }
-}
-
-@media print {
-  .pageGrid,
-  .measureColumns,
-  .measureColumn {
-    display: block;
-  }
-
-  .pageGrid :global([data-ward-primitive="panel"]) {
-    height: auto;
-    max-height: none;
-    overflow: visible;
-  }
-
-  .measureDetails[open] .measureDetailsBody {
-    display: grid;
-  }
-
-  .pageGrid > *,
-  .measureColumn > * {
-    margin-bottom: 0.75rem;
-  }
-}
-
-/* ══════════ THIRD EDITION SOVEREIGN TABS ══════════ */
-.sovereignTabs {
-  display: flex;
-  gap: 0.5rem;
-  max-width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 0.25rem 0 0.75rem;
-  margin-bottom: 0.875rem;
-  border-bottom: 0.0625rem solid var(--line);
-}
-
-.sovereignTab {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.875rem;
-  border-radius: var(--r2);
-  background: var(--surface);
-  border: 0.0625rem solid var(--line);
-  color: var(--ink-soft);
-  font-family: var(--body);
-  font-size: var(--t-1);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.15s ease;
-}
-
-.sovereignTab:hover {
-  background: var(--surface-2);
-  color: var(--ink);
-  border-color: var(--line-strong);
-}
-
-.sovereignTab.activeTab {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: var(--accent);
-}
-
-.sovereignTab .tabBadge {
-  display: inline-block;
-  padding: 0.125rem 0.5rem;
-  border-radius: 999px;
-  background: var(--sunk);
-  color: var(--ink-soft);
-  font-family: var(--mono);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.sovereignTab.activeTab .tabBadge {
-  background: var(--accent-press);
-  color: var(--on-accent);
-}
-
-/* Tab filtering rules */
-.pageGrid[data-active-tab="occ"] [data-tab-section]:not([data-tab-section="occ"]):not([data-tab-section="common"]),
-.pageGrid[data-active-tab="occ"] > :not([data-tab-section="occ"]):not([data-tab-section="common"]):not(.measureColumns) {
-  display: none !important;
-}
-.pageGrid[data-active-tab="los"] [data-tab-section]:not([data-tab-section="los"]):not([data-tab-section="common"]),
-.pageGrid[data-active-tab="los"] > :not([data-tab-section="los"]):not([data-tab-section="common"]):not(.measureColumns) {
-  display: none !important;
-}
-.pageGrid[data-active-tab="flow"] [data-tab-section]:not([data-tab-section="flow"]):not([data-tab-section="common"]),
-.pageGrid[data-active-tab="flow"] > :not([data-tab-section="flow"]):not([data-tab-section="common"]):not(.measureColumns) {
-  display: none !important;
-}
-.pageGrid[data-active-tab="ready"] [data-tab-section]:not([data-tab-section="ready"]):not([data-tab-section="common"]),
-.pageGrid[data-active-tab="ready"] > :not([data-tab-section="ready"]):not([data-tab-section="common"]):not(.measureColumns) {
-  display: none !important;
-}
-.pageGrid[data-active-tab="longStay"] [data-tab-section]:not([data-tab-section="longStay"]):not([data-tab-section="common"]),
-.pageGrid[data-active-tab="longStay"] > :not([data-tab-section="longStay"]):not([data-tab-section="common"]):not(.measureColumns) {
-  display: none !important;
-}
-
-/* ══════════ D4 PROTO ACTION NOTICE BANNER ══════════ */
-.d4NoticeBanner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.625rem 1rem;
-  margin-bottom: 0.875rem;
-  border-radius: var(--r2);
-  background: var(--warn-soft);
-  border: 0.0625rem solid var(--warn);
-  color: var(--warn);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.d4NoticeDismiss {
-  background: none;
-  border: none;
-  color: var(--warn);
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  padding: 0.25rem 0.5rem;
-}
-
-/* ══════════ 1. OCCUPANCY TRAJECTORY AREA CHART ══════════ */
+/* ══════════ TRAJECTORY CHART CONTAINER & SVG STYLES ══════════ */
 .areaChartSvgWrap {
   width: 100%;
   max-width: 100%;
@@ -486,185 +341,7 @@
   white-space: nowrap !important;
 }
 
-/* ══════════ 2. LENGTH OF STAY HISTOGRAM ══════════ */
-.histogramSvgWrap {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  background: var(--surface);
-  border: 0.0625rem solid var(--line);
-  border-radius: var(--r1);
-  padding: 1rem;
-  margin-top: 0.75rem;
-  margin-bottom: 0.75rem;
-  box-sizing: border-box;
-}
-
-.medianPillTag {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  background: var(--gilt-soft);
-  color: var(--gilt);
-  border: 0.0625rem solid var(--gilt);
-  padding: 0.1875rem 0.625rem;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap !important;
-  margin-bottom: 0.5rem;
-}
-
-/* ══════════ 3. ADMISSIONS VS DISCHARGES FLOW CHART ══════════ */
-.flowChartSvgWrap {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  background: var(--surface);
-  border: 0.0625rem solid var(--line);
-  border-radius: var(--r1);
-  padding: 1rem;
-  margin-top: 0.75rem;
-  margin-bottom: 0.75rem;
-  box-sizing: border-box;
-}
-
-/* ══════════ 4. DELAY BARRIER PARETO DISTRIBUTION ══════════ */
-.barrierBarStack {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 0.75rem 0;
-  border-top: 0.0625rem solid var(--line);
-  margin-top: 0.75rem;
-}
-
-.barrierFilterHeader {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.25rem;
-  font-size: 12px;
-}
-
-.barrierItem {
-  background: var(--surface);
-  border: 0.0625rem solid var(--line);
-  border-radius: var(--r2);
-  padding: 0.75rem 1rem;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
-  position: relative;
-  text-align: left;
-}
-
-.barrierItem:hover {
-  border-color: var(--accent);
-  background: var(--surface-2);
-}
-
-.barrierItem.activeFilter {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  box-shadow: 0 0 0 1px var(--accent);
-}
-
-.barrierMeta {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-  font-size: 12px;
-}
-
-.barrierMetaTitle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--ink);
-  font-weight: 600;
-  font-size: 12px;
-}
-
-.barrierMetaStats {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.625rem;
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 12px;
-}
-
-.paretoBadge {
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 0.125rem 0.5rem;
-  border-radius: 999px;
-  background: var(--sunk);
-  color: var(--ink-soft);
-  border: 0.0625rem solid var(--line);
-  white-space: nowrap !important;
-}
-
-.barrierItem.activeFilter .paretoBadge {
-  background: var(--surface);
-  color: var(--accent-ink);
-  border-color: var(--accent);
-}
-
-.barrierTrack {
-  height: 0.75rem;
-  background: var(--sunk);
-  border-radius: 999px;
-  overflow: hidden;
-  border: 0.0625rem solid var(--line);
-  position: relative;
-}
-
-.barrierFill {
-  height: 100%;
-  background: var(--warn);
-  border-radius: 999px;
-  transition: width 0.3s ease;
-}
-
-.barrierItem.activeFilter .barrierFill {
-  background: var(--accent);
-}
-
-.barrierParetoMarker {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--ink-soft);
-  opacity: 0.6;
-}
-
-.clearFilterBtn {
-  padding: 0.1875rem 0.5rem;
-  font-size: 12px;
-  font-weight: 600;
-  background: var(--surface);
-  border: 0.0625rem solid var(--line);
-  border-radius: var(--r2);
-  color: var(--ink);
-  cursor: pointer;
-}
-
-.clearFilterBtn:hover {
-  background: var(--surface-2);
-  border-color: var(--line-strong);
-}
-
-/* ══════════ TABLES & INTERACTIVE TOOLS ══════════ */
+/* ══════════ BED MATRIX TABLE & INTERACTIVE DATA TABLES ══════════ */
 .tableTools {
   display: flex;
   flex-wrap: wrap;
@@ -673,11 +350,12 @@
   gap: 0.75rem;
   margin-top: 0.75rem;
   margin-bottom: 0.75rem;
+  padding: 0 0.5rem;
 }
 
 .tableSearch {
   padding: 0.4375rem 0.875rem;
-  font-size: 12px;
+  font-size: var(--t-0);
   border: 0.0625rem solid var(--line);
   border-radius: var(--r2);
   background: var(--surface);
@@ -697,6 +375,7 @@
   max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  position: relative;
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
 }
@@ -704,29 +383,54 @@
 .dataTable {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--t-1);
-}
-
-.dataTable th,
-.dataTable td {
-  padding: 0.5rem 0.75rem;
-  text-align: left;
-  border-bottom: 0.0625rem solid var(--line);
+  font-size: var(--t-2);
 }
 
 .dataTable th {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  text-align: left;
+  font-size: var(--t-0);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 0.5rem 0.875rem;
+  border-bottom: 0.0625rem solid var(--line-strong);
+  background: var(--surface-2);
+  white-space: nowrap;
 }
 
-.dataTable td.n,
-.dataTable th.n {
+.dataTable td {
+  padding: 0.5rem 0.875rem;
+  border-bottom: 0.0625rem solid var(--line);
+  color: var(--ink-soft);
+  vertical-align: top;
+  line-height: 1.45;
+}
+
+.dataTable td:first-child {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.dataTable .n {
   text-align: right;
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dataTable tbody tr:hover td {
+  background: var(--sunk);
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable:hover {
+  color: var(--ink);
+  background: var(--surface-2);
 }
 
 .d4Btn {
@@ -738,7 +442,7 @@
   background: var(--surface-2);
   border: 0.0625rem solid var(--line);
   color: var(--ink);
-  font-size: 12px;
+  font-size: var(--t-0);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -751,31 +455,128 @@
   border-color: var(--accent);
 }
 
-.chip {
-  display: inline-block;
-  padding: 0.125rem 0.5rem;
+/* ══════════ STATUS BADGES, TAGS, CHIPS & DOTS ══════════ */
+.badge {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 500;
+  color: var(--ink-soft);
+  background: var(--sunk);
   border-radius: 999px;
-  font-size: 12px;
+  padding: 0.0625rem 0.4375rem;
+  box-shadow: inset 0 0 0 1px var(--line);
+  letter-spacing: 0;
+  white-space: nowrap !important;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border: 0.0625rem solid var(--line-strong);
+  border-radius: 999px;
+  padding: 0.1875rem 0.625rem;
+  font-size: var(--t-0);
+  color: var(--ink-soft);
+  background: var(--surface);
+  white-space: nowrap !important;
+}
+
+.chipMark {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+  color: var(--warn);
   font-weight: 600;
-  white-space: nowrap;
 }
 
 .chipOccupied {
   background: var(--accent-soft);
   color: var(--accent-ink);
+  border-color: var(--accent);
 }
 
 .chipReady {
   background: var(--good-soft);
   color: var(--good);
+  border-color: var(--good);
 }
 
 .chipAlert {
   background: var(--danger-soft);
   color: var(--danger);
+  border-color: var(--danger);
 }
 
-.chipMark {
-  background: var(--warn-soft);
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ══════════ TAB 5: LONG STAY COHORT & ROSTER ══════════ */
+.longStayKpiBand {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  border-bottom: 0.0625rem solid var(--line);
+}
+
+.longStayKpiBand > div {
+  min-width: 0;
+  padding: 0.75rem;
+  border-right: 0.0625rem solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.longStayKpiBand > div:last-child {
+  border-right: 0;
+}
+
+.kpiUnit {
+  font-family: var(--body);
+  font-size: var(--t-1);
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 0.375rem;
+}
+
+.kpiNote {
+  margin: 0.25rem 0 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+.tileWarn .kpiValue {
   color: var(--warn);
+}
+
+/* ══════════ RESPONSIVE & PRINT MEDIA QUERIES ══════════ */
+@media (max-width: 62.5rem) {
+  .pageGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .capacityBand,
+  .kpiBand,
+  .longStayKpiBand {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .capacityBand > div:nth-child(2),
+  .longStayKpiBand > div:nth-child(2) {
+    border-right: 0;
+  }
+}
+@media (max-width: 40rem) {
+  .capacityBand,
+  .kpiBand,
+  .longStayKpiBand {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
