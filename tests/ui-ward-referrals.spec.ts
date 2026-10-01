@@ -742,7 +742,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     await expect(bandGroups).toHaveCount(BAND_GROUP_COUNT);
     let unitsAcrossBands = 0;
     for (let index = 0; index < BAND_GROUP_COUNT; index += 1) {
-      const summary = bandGroups.nth(index).locator("summary");
+      const summary = bandGroups.nth(index).locator(":scope > summary");
       await expect(summary).toBeVisible();
       // Scoped to the SUMMARY and reading its TEXT, both deliberately. A closed `<details>` paints
       // only its summary, so counts rendered one line below it would still be in the DOM, still
@@ -767,7 +767,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     // A coordinator on a phone opens the groups to reach the rows. Every group is expanded here so
     // the assertions below see the whole network exactly as they did before the grouping existed.
     for (let index = 0; index < BAND_GROUP_COUNT; index += 1) {
-      await bandGroups.nth(index).locator("summary").click();
+      await bandGroups.nth(index).locator(":scope > summary").click();
     }
 
     // The bed accepted below, and one unit per reason it is not offered — each named, so a rule
@@ -945,9 +945,9 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
      * coordinator was never shown. Stated precisely: this does not re-prove that the band is out of
      * area (the search settled that); it proves the screen agrees about which band this group is.
      */
-    await expect(farGroup.locator("summary")).toContainText(TRAVEL_BAND_LABELS[band]);
+    await expect(farGroup.locator(":scope > summary")).toContainText(TRAVEL_BAND_LABELS[band]);
     await expect(page.getByTestId(`ward-referral-match-band-counts-${band}`)).toBeVisible();
-    await farGroup.locator("summary").click();
+    await farGroup.locator(":scope > summary").click();
     await expect(farGroup).toHaveJSProperty("open", true);
 
     // The accept control is taken from INSIDE the far group, so "far" is a property of where the

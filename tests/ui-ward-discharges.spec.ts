@@ -269,6 +269,10 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     await page.getByRole("link", { name: "Bed board" }).click();
     await page.locator(`#ward-board-tile-${release.admissionId}`).click();
     await page.getByTestId("ward-board-record-leaving-submit").click();
+    const departureDialog = page.getByRole("dialog", { name: "Confirm patient departure" });
+    await expect(departureDialog).toBeVisible();
+    await departureDialog.getByRole("button", { name: "Record departure", exact: true }).click();
+    await expect(departureDialog).toHaveCount(0);
 
     await goBackToWard(page);
     // A completed release is terminal and drops off the ward's pending list (spec D10).
