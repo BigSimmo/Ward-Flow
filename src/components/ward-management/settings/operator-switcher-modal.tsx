@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowRight, X } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { ArrowRight, Check, X } from "lucide-react";
 
 import { edHref, teamHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { useWardModalFocus } from "../ward-modal-focus";
@@ -13,17 +13,76 @@ export interface OperatorStation {
   readonly group: string;
   readonly label: string;
   readonly path: string;
+  readonly avatarText?: string;
+  readonly avatarTone?: "coordinator" | "ward" | "ed" | "community" | "transport";
+  readonly description?: string;
 }
 
 export const OPERATOR_STATIONS: readonly OperatorStation[] = [
-  { group: "Central Coordinator", label: "State Bed Flow Coordinator", path: "/mockups/ward-flow" },
-  { group: "Ward NUMs", label: "Moodjar (Armadale Adult Open)", path: unitHref("arm-adult-open") },
-  { group: "Ward NUMs", label: "Murchison (FSH Adult Secure)", path: unitHref("fsh-adult-secure") },
-  { group: "Ward NUMs", label: "All Wards Matrix", path: "/mockups/ward-flow/wards" },
-  { group: "ED Liaisons", label: "Royal Perth Hospital ED", path: edHref("rph-ed") },
-  { group: "ED Liaisons", label: "Fiona Stanley Hospital ED", path: edHref("fsh-ed") },
-  { group: "Community", label: "Midland Community Mental Health", path: teamHref("midland") },
-  { group: "Transport", label: "Patient Transport Officer", path: "/mockups/ward-flow/transport/officer" },
+  {
+    group: "Central Coordinator",
+    label: "State Bed Flow Coordinator",
+    path: "/mockups/ward-flow",
+    avatarText: "BC",
+    avatarTone: "coordinator",
+    description: "Perth Central Bed Flow Desk — statewide allocation authority and escalation triage.",
+  },
+  {
+    group: "Ward NUMs",
+    label: "Moodjar (Armadale Adult Open)",
+    path: unitHref("arm-adult-open"),
+    avatarText: "MJ",
+    avatarTone: "ward",
+    description: "Inpatient open unit — clinical nursing manager, bed status, and discharge intake.",
+  },
+  {
+    group: "Ward NUMs",
+    label: "Murchison (FSH Adult Secure)",
+    path: unitHref("fsh-adult-secure"),
+    avatarText: "MC",
+    avatarTone: "ward",
+    description: "Inpatient secure unit — high-acuity nursing oversight and legal form tracking.",
+  },
+  {
+    group: "Ward NUMs",
+    label: "All Wards Matrix",
+    path: "/mockups/ward-flow/wards",
+    avatarText: "WM",
+    avatarTone: "ward",
+    description: "Statewide inpatient bed matrix — real-time ward capacity and occupancy grid.",
+  },
+  {
+    group: "ED Liaisons",
+    label: "Royal Perth Hospital ED",
+    path: edHref("rph-ed"),
+    avatarText: "RP",
+    avatarTone: "ed",
+    description: "Inner-city emergency department liaison — mental health triage and rapid pull.",
+  },
+  {
+    group: "ED Liaisons",
+    label: "Fiona Stanley Hospital ED",
+    path: edHref("fsh-ed"),
+    avatarText: "FS",
+    avatarTone: "ed",
+    description: "Tertiary emergency department liaison — acute referral intake and breach monitoring.",
+  },
+  {
+    group: "Community",
+    label: "Midland Community Mental Health",
+    path: teamHref("midland"),
+    avatarText: "MD",
+    avatarTone: "community",
+    description: "Community clinical treatment team — step-down placement and outpatient transition.",
+  },
+  {
+    group: "Transport",
+    label: "Patient Transport Officer",
+    path: "/mockups/ward-flow/transport/officer",
+    avatarText: "PT",
+    avatarTone: "transport",
+    description: "Statewide patient transport logistics — vehicle dispatch and transfer transit status.",
+  },
 ];
 
 export interface OperatorSwitcherModalProps {
@@ -41,8 +100,18 @@ function useSafeRouter(): { push: (path: string) => void } | null {
   }
 }
 
+function useSafePathname(): string {
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    return usePathname() || "";
+  } catch {
+    return "";
+  }
+}
+
 export function OperatorSwitcherModal({ isOpen, onClose, onNavigate }: OperatorSwitcherModalProps) {
   const router = useSafeRouter();
+  const currentPath = useSafePathname();
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useWardModalFocus(isOpen, dialogRef, onClose);
@@ -93,7 +162,12 @@ export function OperatorSwitcherModal({ isOpen, onClose, onNavigate }: OperatorS
               Select a clinical workstation to simulate immediate role and perspective handoff.
             </p>
           </div>
-          <button type="button" className={styles.btnSecondary} onClick={onClose} aria-label="Close operator switcher">
+          <button
+            type="button"
+            className={styles.btnSecondary}
+            onClick={onClose}
+            aria-label="Close operator switcher"
+          >
             <X size={16} aria-hidden="true" />
           </button>
         </header>
@@ -104,21 +178,41 @@ export function OperatorSwitcherModal({ isOpen, onClose, onNavigate }: OperatorS
               <section key={groupName} className={styles.stationGroupSection} aria-label={groupName}>
                 <h4 className={styles.stationGroupTitle}>{groupName}</h4>
                 <div className={styles.stationGrid}>
-                  {stations.map((station) => (
-                    <button
-                      key={station.path}
-                      type="button"
-                      className={styles.stationBtn}
-                      onClick={() => handleStationClick(station.path)}
-                      data-testid={`station-${station.path.replace(/\//g, "-").replace(/^-/, "")}`}
-                    >
-                      <div className={styles.stationBtnContent}>
-                        <span className={styles.stationLabel}>{station.label}</span>
-                        <code className={styles.stationPath}>{station.path}</code>
-                      </div>
-                      <ArrowRight size={16} className={styles.stationArrow} aria-hidden="true" />
-                    </button>
-                  ))}
+                  {stations.map((station) => {
+                    const isCurrent = currentPath === station.path;
+                    return (
+                      <button
+                        key={station.path}
+                        type="button"
+                        className={`${styles.stationBtn} ${isCurrent ? styles.stationBtnActive : ""}`}
+                        onClick={() => handleStationClick(station.path)}
+                        data-testid={`station-${station.path.replace(/\//g, "-").replace(/^-/, "")}`}
+                        aria-current={isCurrent ? "page" : undefined}
+                      >
+                        {station.avatarText && (
+                          <div className={styles.stationAvatar} data-tone={station.avatarTone || "coordinator"}>
+                            <span>{station.avatarText}</span>
+                          </div>
+                        )}
+                        <div className={styles.stationBtnContent}>
+                          <div className={styles.stationHeaderLine}>
+                            <span className={styles.stationLabel}>{station.label}</span>
+                            {isCurrent && (
+                              <span className={styles.currentStationBadge}>
+                                <Check size={11} aria-hidden="true" />
+                                <span>Current</span>
+                              </span>
+                            )}
+                          </div>
+                          {station.description && (
+                            <p className={styles.stationDesc}>{station.description}</p>
+                          )}
+                          <code className={styles.stationPath}>{station.path}</code>
+                        </div>
+                        <ArrowRight size={16} className={styles.stationArrow} aria-hidden="true" />
+                      </button>
+                    );
+                  })}
                 </div>
               </section>
             ))}
