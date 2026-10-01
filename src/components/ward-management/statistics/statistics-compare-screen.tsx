@@ -81,7 +81,7 @@ export function StatisticsCompareScreen({
    */
   admissions?: Admission[];
 } = {}) {
-  const { units: liveUnits, admissions: liveAdmissions, movements} = useWardFlow();
+  const { units: liveUnits, admissions: liveAdmissions, movements } = useWardFlow();
   const now = useWardFlowClock();
   const admissions = admissionsOverride ?? liveAdmissions;
   const units = unitsOverride ?? liveUnits;
@@ -94,7 +94,7 @@ export function StatisticsCompareScreen({
     <StatisticsSectionFrame
       section={section}
       title="Ward and ED comparisons"
-      subtitle="Comparable measures for wards and emergency departments, kept in separate tables."
+      subtitle=""
       testId="ward-statistics-compare-screen"
       design="third-edition"
     >
@@ -207,10 +207,6 @@ export function StatisticsCompareScreen({
           testId="ward-statistics-compare-chooser"
         >
           <div className={styles.panelBody}>
-            <p className={styles.note} data-testid="ward-statistics-compare-chooser-rationale">
-              Ward and department detail use one route per unit, so this comparison is their shared index.
-            </p>
-
             <h3 className={styles.subHeading}>Wards</h3>
             {units.length === 0 ? (
               <p className={styles.emptyNote} data-testid="ward-statistics-compare-no-wards">
@@ -551,16 +547,16 @@ function CompareTable<Row>({
               <tr key={id}>
                 <th scope="row">{name}</th>
                 {columns.map((column) => {
-                const cell = column.cell(row);
-                return (
-                  <td key={column.header} className={styles.num}>
-                    {cell.unmeasured ? <span className={styles.unmeasured}>{cell.text}</span> : cell.text}
-                  </td>
-                );
-              })}
-            </tr>
-          );
-        })}
+                  const cell = column.cell(row);
+                  return (
+                    <td key={column.header} className={styles.num}>
+                      {cell.unmeasured ? <span className={styles.unmeasured}>{cell.text}</span> : cell.text}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
         </tbody>
       </WardTable>
       {uniform.length > 0 && (
@@ -586,15 +582,7 @@ interface HoveredWardState {
   unit: Unit;
 }
 
-function WardAlosBarChart({
-  units,
-  admissions,
-  now,
-}: {
-  units: Unit[];
-  admissions: Admission[];
-  now: number;
-}) {
+function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admissions: Admission[]; now: number }) {
   const [hoveredWard, setHoveredWard] = useState<HoveredWardState | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -632,14 +620,7 @@ function WardAlosBarChart({
           const y = py(v);
           return (
             <g key={v}>
-              <line
-                x1={padLeft}
-                y1={y}
-                x2={W - padRight}
-                y2={y}
-                stroke="var(--line)"
-                strokeWidth="1"
-              />
+              <line x1={padLeft} y1={y} x2={W - padRight} y2={y} stroke="var(--line)" strokeWidth="1" />
               <text
                 x={padLeft - 10}
                 y={y + 4}
@@ -898,14 +879,7 @@ function EdWaitingBarChart({
           const y = py(v);
           return (
             <g key={v}>
-              <line
-                x1={padLeft}
-                y1={y}
-                x2={W - padRight}
-                y2={y}
-                stroke="var(--line)"
-                strokeWidth="1"
-              />
+              <line x1={padLeft} y1={y} x2={W - padRight} y2={y} stroke="var(--line)" strokeWidth="1" />
               <text
                 x={padLeft - 10}
                 y={y + 4}
@@ -939,7 +913,10 @@ function EdWaitingBarChart({
 
           const site = siteByCode(department.siteCode);
           const shortName = site
-            ? site.name.replace(/ Emergency Department$| Hospital$| Health Service$| Health Campus$| Public Hospital$/, "")
+            ? site.name.replace(
+                / Emergency Department$| Hospital$| Health Service$| Health Campus$| Public Hospital$/,
+                "",
+              )
             : department.name;
 
           const urgentH = (urgent / maxVal) * plotH;

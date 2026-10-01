@@ -253,13 +253,13 @@ describe("across all services — the overview section", () => {
    * file instead.
    */
 
-  it("takes its section name and description from the shared section list", () => {
+  it("takes its section name from the shared list and states its current scope", () => {
     renderInProvider(<StatisticsOverviewScreen />);
 
     const section = statisticsSectionById("overview");
     expect(section).toBeDefined();
     expect(screen.getByTestId("ward-statistics-section-eyebrow").textContent).toBe(section?.label);
-    expect(mainOf("ward-statistics-overview-screen").textContent).toContain(section?.description);
+    expect(mainOf("ward-statistics-overview-screen").textContent).toContain("Network-wide current state");
   });
 
   /*
@@ -545,13 +545,12 @@ describe("every link that offers the chooser lands on the chooser", () => {
     expect(href).toBe(`/mockups/ward-flow/statistics/compare#${STATISTICS_UNIT_CHOOSER_ID}`);
   });
 
-  it("puts the anchor those links point at on the comparisons page, and says why it is there", () => {
+  it("puts the anchor those links point at on the comparisons page with reachable unit links", () => {
     renderInProvider(<StatisticsCompareScreen />);
 
     expect(document.getElementById(STATISTICS_UNIT_CHOOSER_ID)).not.toBeNull();
-    const rationale = normalise(screen.getByTestId("ward-statistics-compare-chooser-rationale").textContent);
-    expect(rationale).toContain("one route per unit");
-    expect(rationale).toContain("shared index");
+    const chooser = document.getElementById(STATISTICS_UNIT_CHOOSER_ID)!;
+    expect(within(chooser).getAllByRole("link").length).toBeGreaterThan(0);
   });
 });
 

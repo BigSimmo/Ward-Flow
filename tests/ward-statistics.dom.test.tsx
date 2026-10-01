@@ -133,6 +133,8 @@ describe("the statistics screen — six drawing panels, kept apart", () => {
   it("offers only the current state, and says the 7-day and 30-day history is not recorded", () => {
     renderScreen({ admissions: [], referrals: [], bedReleases: [] });
     const period = screen.getByTestId("ward-statistics-reporting-period");
+    expect(period).toBeVisible();
+    expect(period).not.toHaveAttribute("aria-hidden", "true");
     expect(period.textContent).toContain("Current state");
     expect(period.textContent).toContain("7-day and 30-day history is not recorded.");
     expect(screen.queryByText("Last 7 Days")).toBeNull();
@@ -143,9 +145,12 @@ describe("the statistics screen — six drawing panels, kept apart", () => {
   it("shows no invented history: the flow chart says Not recorded and the gauge names no target", () => {
     const { container } = renderScreen({ admissions: [], referrals: [], bedReleases: [] });
     const history = screen.getByTestId("ward-statistics-flow-history");
+    expect(history).toBeVisible();
+    expect(history.closest("details")).toBeNull();
     expect(history.textContent).toContain("Not recorded");
     expect(history.textContent).toContain("before today are not recorded in Ward Flow");
     expect(history.querySelector("svg"), "no chart is drawn").toBeNull();
+    expect(container.textContent).not.toContain("on yesterday");
     // The 85% target came off until it has a source (Josh, 26 Sept 2026, question 14); the badge says so.
     expect(screen.getByText("No target recorded")).toBeTruthy();
     for (const invented of ["Surge Pressure", "Nominal Target", ">95% Surge", "reconciled live", "85% target"]) {
@@ -305,14 +310,14 @@ describe("the hub index, driven by the section list", () => {
     );
   });
 
-  it("takes every label and description from the module rather than restating them", () => {
+  it("takes every compact navigation label from the module", () => {
     // Each entry's own elements, compared as a pair: an entry that rendered the label twice, or
     // dropped the description, differs here where a check on the entry's whole text might not.
     const rendered = renderedEntries().map((entry) =>
       Array.from(entry.querySelectorAll("span")).map((part) => normalise(part.textContent)),
     );
 
-    expect(rendered).toEqual(STATISTICS_SECTIONS.map((section) => [section.label, section.description]));
+    expect(rendered).toEqual(STATISTICS_SECTIONS.map((section) => [section.label]));
   });
 
   /**
@@ -341,7 +346,7 @@ describe("the hub index, driven by the section list", () => {
 
     const index = screen.getByTestId("ward-statistics-index");
     // Not vacuous: an index that rendered nothing would also contain no numeral.
-    expect(index.textContent?.length ?? 0).toBeGreaterThan(200);
+    expect(within(index).getAllByRole("link")).toHaveLength(STATISTICS_SECTIONS.length);
     expect(index.textContent).not.toMatch(/[0-9]/);
   });
 

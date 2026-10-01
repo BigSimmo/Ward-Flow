@@ -281,7 +281,7 @@ export function StatisticsOverviewScreen() {
   return (
     <StatisticsSectionFrame
       section={section}
-      subtitle="Network-wide measures, their populations and the limits of the current record."
+      subtitle=""
       testId="ward-statistics-overview-screen"
       design="third-edition"
     >
@@ -388,7 +388,7 @@ export function StatisticsOverviewScreen() {
               aria-label="What this section will hold content"
               tabIndex={0}
             >
-              <p className={styles.body}>{section.description}</p>
+              <span>Network-wide current state</span>
             </div>
           </WardPanel>
 
