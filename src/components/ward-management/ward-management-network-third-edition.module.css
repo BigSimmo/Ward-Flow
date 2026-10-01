@@ -111,35 +111,9 @@
 }
 
 .pressureContext {
-  display: grid;
-  gap: 0.5rem;
   border-top: 0.0625rem solid var(--line);
   background: var(--surface-2);
   padding: 0.5rem 0.875rem;
-}
-
-.pressureContext ul {
-  display: flex;
-  min-width: 0;
-  gap: 0.75rem;
-  margin: 0;
-  padding: 0;
-  overflow-x: auto;
-  list-style: none;
-}
-
-.pressureContext li {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: baseline;
-  gap: 0.375rem;
-  color: var(--muted);
-  font-size: var(--t-0);
-}
-
-.pressureContext strong {
-  color: var(--ink);
-  font-family: var(--mono);
 }
 
 .pressureContext p {

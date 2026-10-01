@@ -442,6 +442,11 @@ function AlertRows({
 }
 
 export function AlertsScreen() {
+  const { worldGeneration } = useWardFlow();
+  return <AlertsWorkspace key={worldGeneration} />;
+}
+
+function AlertsWorkspace() {
   usePrintableDisclosures();
 
   const state = useWardFlow();

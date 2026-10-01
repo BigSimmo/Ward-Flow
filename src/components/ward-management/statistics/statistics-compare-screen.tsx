@@ -81,7 +81,7 @@ export function StatisticsCompareScreen({
    */
   admissions?: Admission[];
 } = {}) {
-  const { units: liveUnits, admissions: liveAdmissions, movements} = useWardFlow();
+  const { units: liveUnits, admissions: liveAdmissions, movements } = useWardFlow();
   const now = useWardFlowClock();
   const admissions = admissionsOverride ?? liveAdmissions;
   const units = unitsOverride ?? liveUnits;
@@ -94,7 +94,7 @@ export function StatisticsCompareScreen({
     <StatisticsSectionFrame
       section={section}
       title="Ward and ED comparisons"
-      subtitle="Comparable measures for wards and emergency departments, kept in separate tables."
+      subtitle=""
       testId="ward-statistics-compare-screen"
       design="third-edition"
     >
@@ -136,7 +136,7 @@ export function StatisticsCompareScreen({
           <div className={styles.panelBody}>
             <div className={styles.chartCard}>
               <div className={styles.chartHeader}>
-                <h3 className={styles.chartTitle}>Average Length of Stay by Ward vs 6.5-Day Target</h3>
+                <h3 className={styles.chartTitle}>Average length of stay by ward</h3>
                 <span className={styles.chartCount}>{units.length} Wards</span>
               </div>
               {units.length === 0 ? (
@@ -207,10 +207,6 @@ export function StatisticsCompareScreen({
           testId="ward-statistics-compare-chooser"
         >
           <div className={styles.panelBody}>
-            <p className={styles.note} data-testid="ward-statistics-compare-chooser-rationale">
-              Ward and department detail use one route per unit, so this comparison is their shared index.
-            </p>
-
             <h3 className={styles.subHeading}>Wards</h3>
             {units.length === 0 ? (
               <p className={styles.emptyNote} data-testid="ward-statistics-compare-no-wards">
@@ -551,16 +547,16 @@ function CompareTable<Row>({
               <tr key={id}>
                 <th scope="row">{name}</th>
                 {columns.map((column) => {
-                const cell = column.cell(row);
-                return (
-                  <td key={column.header} className={styles.num}>
-                    {cell.unmeasured ? <span className={styles.unmeasured}>{cell.text}</span> : cell.text}
-                  </td>
-                );
-              })}
-            </tr>
-          );
-        })}
+                  const cell = column.cell(row);
+                  return (
+                    <td key={column.header} className={styles.num}>
+                      {cell.unmeasured ? <span className={styles.unmeasured}>{cell.text}</span> : cell.text}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
         </tbody>
       </WardTable>
       {uniform.length > 0 && (
@@ -582,37 +578,31 @@ interface HoveredWardState {
   idx: number;
   bx: number;
   by: number;
-  stay: number;
+  stay: number | null;
   unit: Unit;
+  tooltipLeft: number;
 }
 
-function WardAlosBarChart({
-  units,
-  admissions,
-  now,
-}: {
-  units: Unit[];
-  admissions: Admission[];
-  now: number;
-}) {
+function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admissions: Admission[]; now: number }) {
   const [hoveredWard, setHoveredWard] = useState<HoveredWardState | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   if (units.length === 0) return null;
 
   const stats = allWardStatistics(units, admissions, now);
-  const W = 920;
-  const H = 300;
-  const padLeft = 45;
-  const padRight = 90;
-  const padTop = 30;
-  const padBottom = 80;
+  const W = 1120;
+  const H = 360;
+  const padLeft = 100;
+  const padRight = 25;
+  const padTop = 32;
+  const padBottom = 108;
   const plotW = W - padLeft - padRight;
   const plotH = H - padTop - padBottom;
-  const maxStay = 11;
+  const maximum = Math.max(0, ...stats.map(({ statistics }) => statistics.averageLengthOfStayDays ?? 0));
+  const tickStep = Math.max(1, Math.ceil(maximum / 5));
+  const maxStay = tickStep * 5;
 
   const py = (v: number) => padTop + plotH * (1 - v / maxStay);
-  const yTarget = py(6.5);
 
   const n = Math.max(stats.length, 1);
   const colW = plotW / n;
@@ -620,26 +610,20 @@ function WardAlosBarChart({
 
   return (
     <div ref={containerRef} className={styles.barChartBox}>
+      <p className={styles.emptyNote}>Average among arrived admissions on each ward, in days. No target recorded.</p>
       <svg
         width="100%"
-        height="300"
+        height={H}
         viewBox={`0 0 ${W} ${H}`}
-        aria-label="Ward average length of stay bar chart with 6.5-day target line"
-        style={{ display: "block", width: "100%", height: "auto" }}
+        aria-label="Ward average length of stay bar chart"
+        style={{ display: "block", width: "100%", maxWidth: `${W}px`, height: "auto" }}
       >
-        {/* Y Grid lines at 2, 4, 6, 8, 10 days with strict 12px font floor */}
-        {[2, 4, 6, 8, 10].map((v) => {
+        {/* Scale from recorded stays, with a12px label floor. */}
+        {Array.from({ length: 6 }, (_, i) => i * tickStep).map((v) => {
           const y = py(v);
           return (
             <g key={v}>
-              <line
-                x1={padLeft}
-                y1={y}
-                x2={W - padRight}
-                y2={y}
-                stroke="var(--line)"
-                strokeWidth="1"
-              />
+              <line x1={padLeft} y1={y} x2={W - padRight} y2={y} stroke="var(--line)" strokeWidth="1" />
               <text
                 x={padLeft - 10}
                 y={y + 4}
@@ -654,38 +638,6 @@ function WardAlosBarChart({
           );
         })}
 
-        {/* 6.5d Target line (behind values!) */}
-        <line
-          x1={padLeft}
-          y1={yTarget}
-          x2={W - padRight}
-          y2={yTarget}
-          stroke="var(--gilt)"
-          strokeWidth="1.8"
-          strokeDasharray="4 4"
-        />
-        <rect
-          x={W - padRight + 6}
-          y={yTarget - 11}
-          width={78}
-          height={20}
-          rx={3}
-          fill="var(--gilt-soft)"
-          stroke="var(--gilt)"
-          strokeWidth="1"
-        />
-        <text
-          x={W - padRight + 45}
-          y={yTarget + 3}
-          textAnchor="middle"
-          fontSize="12"
-          fontWeight="600"
-          fontFamily="var(--mono)"
-          fill="var(--gilt)"
-        >
-          6.5d Target
-        </text>
-
         {/* Base axis line */}
         <line
           x1={padLeft}
@@ -699,17 +651,16 @@ function WardAlosBarChart({
         {/* Wards Bars */}
         {stats.map(({ unit, statistics }, i) => {
           const bx = padLeft + i * colW + (colW - barW) / 2;
-          const stay = statistics.averageLengthOfStayDays ?? 0;
-          const by = py(stay);
+          const stay = statistics.averageLengthOfStayDays;
+          const by = py(stay ?? 0);
           const bh = padTop + plotH - by;
-          const isOver = stay > 6.5;
-          const color = stay === 0 ? "var(--sunk)" : isOver ? "var(--warn)" : "var(--accent)";
+          const color = stay === null ? "transparent" : "var(--accent)";
 
-          const shortName = unit.name.replace(/ Adult Open| Adult Secure| Older Adult| Hospital| Unit/, "");
+          const shortName = unit.name.length > 14 ? `${unit.name.slice(0, 13)}…` : unit.name;
           const lx = (bx + barW / 2).toFixed(1);
           const ly = (padTop + plotH + 14).toFixed(1);
 
-          const numW = 28;
+          const numW = 42;
           const numH = 16;
           const numX = bx + barW / 2;
           const numY = by - 5;
@@ -722,20 +673,44 @@ function WardAlosBarChart({
                 x={bx}
                 y={by}
                 width={barW}
-                height={bh}
+                height={stay === null ? 1 : bh}
                 fill={color}
                 rx={3}
-                onMouseEnter={() => setHoveredWard({ idx: i, bx, by, stay, unit })}
+                onMouseEnter={() => {
+                  const width = Math.min(W, containerRef.current?.clientWidth ?? W);
+                  setHoveredWard({
+                    idx: i,
+                    bx,
+                    by,
+                    stay,
+                    unit,
+                    tooltipLeft: Math.max(10, Math.min((bx / W) * width, width - 170)),
+                  });
+                }}
                 onMouseLeave={() => setHoveredWard(null)}
                 tabIndex={0}
                 role="graphics-symbol"
-                aria-label={`${unit.name}: ${stay > 0 ? `${stay.toFixed(1)} days ALOS` : "none arrived"}`}
-                onFocus={() => setHoveredWard({ idx: i, bx, by, stay, unit })}
+                aria-label={`${unit.name}: ${stay === null ? "Not recorded" : `${stay.toFixed(1)} days average stay`}`}
+                onFocus={() => {
+                  const width = Math.min(W, containerRef.current?.clientWidth ?? W);
+                  setHoveredWard({
+                    idx: i,
+                    bx,
+                    by,
+                    stay,
+                    unit,
+                    tooltipLeft: Math.max(10, Math.min((bx / W) * width, width - 170)),
+                  });
+                }}
                 onBlur={() => setHoveredWard(null)}
-              />
+              >
+                <title>
+                  {unit.name}: {stay === null ? "Not recorded" : `${stay.toFixed(1)} days average stay`}
+                </title>
+              </rect>
 
-              {/* Background pill badge so number never collides with target line */}
-              {stay > 0 && (
+              {/* Printed values stay visible; missing averages are not zero. */}
+              {
                 <g>
                   <rect
                     x={numX - numW / 2}
@@ -754,12 +729,12 @@ function WardAlosBarChart({
                     fontSize="12"
                     fontFamily="var(--mono)"
                     fontWeight="600"
-                    fill={isOver ? "var(--warn)" : "var(--ink)"}
+                    fill="var(--ink)"
                   >
-                    {stay.toFixed(1)}
+                    {stay === null ? "—" : stay.toFixed(1)}
                   </text>
                 </g>
-              )}
+              }
 
               {/* Rotated X-axis label with 12px font floor */}
               <text
@@ -772,6 +747,7 @@ function WardAlosBarChart({
                 fill="var(--ink-soft)"
               >
                 {shortName}
+                <title>{unit.name}</title>
               </text>
             </g>
           );
@@ -783,10 +759,7 @@ function WardAlosBarChart({
         <div
           className={styles.compareTooltip}
           style={{
-            left: `${Math.min(
-              Math.max(10, (hoveredWard.bx / W) * (containerRef.current?.clientWidth ?? W)),
-              (containerRef.current?.clientWidth ?? W) - 170,
-            )}px`,
+            left: `${hoveredWard.tooltipLeft}px`,
             top: "20px",
             display: "block",
           }}
@@ -817,19 +790,7 @@ function WardAlosBarChart({
             }}
           >
             <span>ALOS:</span>
-            <b>{hoveredWard.stay.toFixed(1)} days</b>
-          </div>
-          <div
-            style={{
-              fontSize: "12px",
-              fontWeight: 600,
-              color: hoveredWard.stay > 6.5 ? "var(--warn)" : "var(--good)",
-              marginTop: "2px",
-            }}
-          >
-            {hoveredWard.stay > 6.5
-              ? `+${(hoveredWard.stay - 6.5).toFixed(1)}d over target`
-              : `${(hoveredWard.stay - 6.5).toFixed(1)}d under target`}
+            <b>{hoveredWard.stay === null ? "Not recorded" : `${hoveredWard.stay.toFixed(1)} days`}</b>
           </div>
         </div>
       )}
@@ -898,14 +859,7 @@ function EdWaitingBarChart({
           const y = py(v);
           return (
             <g key={v}>
-              <line
-                x1={padLeft}
-                y1={y}
-                x2={W - padRight}
-                y2={y}
-                stroke="var(--line)"
-                strokeWidth="1"
-              />
+              <line x1={padLeft} y1={y} x2={W - padRight} y2={y} stroke="var(--line)" strokeWidth="1" />
               <text
                 x={padLeft - 10}
                 y={y + 4}
@@ -939,7 +893,10 @@ function EdWaitingBarChart({
 
           const site = siteByCode(department.siteCode);
           const shortName = site
-            ? site.name.replace(/ Emergency Department$| Hospital$| Health Service$| Health Campus$| Public Hospital$/, "")
+            ? site.name.replace(
+                / Emergency Department$| Hospital$| Health Service$| Health Campus$| Public Hospital$/,
+                "",
+              )
             : department.name;
 
           const urgentH = (urgent / maxVal) * plotH;

@@ -69,9 +69,7 @@
   justify-content: space-between;
   padding: 0.5rem 1.25rem;
   gap: 1rem;
-  position: sticky;
-  top: 0;
-  z-index: 30;
+  position: static;
   flex-wrap: wrap;
 }
 
@@ -142,9 +140,9 @@
 
 /* Workspace container */
 .workspace {
-  padding: 1.125rem 1.5rem 2.25rem;
+  padding: 1rem clamp(0.75rem, 2vw, 1.5rem) 2rem;
   display: grid;
-  gap: 1.125rem;
+  gap: 1rem;
   min-width: 0;
 }
 
@@ -248,7 +246,7 @@
 .answerGrid {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-  gap: 1.125rem;
+  gap: 1rem;
   align-items: start;
   min-width: 0;
 }
@@ -264,7 +262,7 @@
 
 .rightColumn {
   display: grid;
-  gap: 1.125rem;
+  gap: 1rem;
   min-width: 0;
 }
 

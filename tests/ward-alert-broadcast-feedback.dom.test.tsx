@@ -19,17 +19,23 @@ vi.mock("@/components/ward-management/ward-flow-reducer", async (importOriginal)
 });
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 afterEach(() => {
   harness.refuse = false;
 });
 
+function ResetControl() {
+  const { resetDemoState } = useWardFlow();
+  return <button onClick={resetDemoState}>Reset synthetic scenario</button>;
+}
+
 function prepareBroadcast() {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <AlertsScreen />
+      <ResetControl />
     </WardFlowProvider>,
   );
   fireEvent.click(screen.getByText("+ Broadcast Network Alert"));
@@ -50,6 +56,18 @@ it("announces accepted dispatch for the selected scope and restores keyboard foc
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   fireEvent.click(screen.getByText("+ Broadcast Network Alert"));
   expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toBeDisabled();
+});
+
+it("does not reopen an accepted directive or retain its confirmation after a scenario reset", () => {
+  prepareBroadcast();
+  fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Reset synthetic scenario" }));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(screen.queryByRole("status", { name: "Broadcast feedback" })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByText("+ Broadcast Network Alert"));
+  expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toBeDisabled();
+  expect(screen.getByLabelText(/I confirm this directive is clinically authorised/i)).not.toBeChecked();
 });
 
 it("keeps the draft and modal open after the engine refuses a dispatch, then allows retry", () => {
