@@ -188,7 +188,7 @@ For the verification principle, the tier table, and the rest of the gate-selecti
 
 ## Do not pay twice for the verdict GitHub is about to reach
 
-For the rule against re-deriving a verdict GitHub is about to reach, the gate arbiter's inputs and non-negotiable boundaries, and the browser-gate planner that narrows `verify:ui` to the specs a diff can actually break (`npm run plan:browser`), see [`docs/agents/verification-gates.md`](docs/agents/verification-gates.md).
+For current Ward Flow gate selection, selector limits and evidence reuse, see [`docs/agents/task-efficiency.md`](docs/agents/task-efficiency.md). Unknown CI coverage requires running the selected gate or reporting it blocked; a declared workflow is not an observed verdict. The copied gate-claim examples in [`docs/agents/verification-gates.md`](docs/agents/verification-gates.md) require Ward-specific revalidation before use.
 <!-- END:process-hardening -->
 
 <!-- BEGIN:page-and-button-wiring -->
