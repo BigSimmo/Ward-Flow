@@ -8,6 +8,8 @@ The tier table remains useful for selecting local checks, but copied claims abou
 
 The inherited arbiter reads an absent `.github/workflows/ci.yml` and establishes no Ward CI coverage. Unknown coverage requires running the selected gate or reporting a precise blocker. Neither the declared Ward workflow nor a historical Production UI example authorises gate deferral. A preview, skipped check or deferred check is never passing evidence. Preserve all applicable security, privacy and clinical acceptance requirements.
 
+For task lifecycle, evidence-backed completion and local receipt handoff, read [task receipt guidance](../task-receipts.md).
+
 <!-- BEGIN:verification-gates -->
 
 ## Gate selection
