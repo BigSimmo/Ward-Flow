@@ -87,8 +87,11 @@ file wins. Start at [`README.md`](README.md).
 **While editing.**
 
 - Run the changed tests and useful direct importers while editing. Before READY, use the selected
-  `ready-check.mjs` result; it checks the merged tree without making static changes pay for a full
-  type check. Reuse still-valid results at the fold.
+  `node scripts/ward-flow/ready-check.mjs --onto origin/main` result; it checks the merged tree without making static changes pay for a full
+  type check. It requires verified Ward Flow fetch and push destinations and the worktree’s own
+  locked dependencies. Retired fold-lock and fold-preflight commands remain unavailable in linked
+  repositories. Remote-less scratch tests require `WARD_FOLD_TEST_FIXTURE=1`.
+  Reuse still-valid results at the fold.
 - No mutation proofs unless your brief names one. This overrides the per-task mutation lines in the
   16 and 17 September plans.
 - "focused-test capacity is full" is a shared lock held by someone else. Wait and retry. It is never a

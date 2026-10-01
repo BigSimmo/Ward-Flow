@@ -20,7 +20,7 @@ afterEach(() => {
 it.each([0, 1, null])("readiness preserves verdict and cleanup for typecheck exit %s", async (status) => {
   vi.resetModules();
   vi.mocked(execFileSync).mockImplementation((_command, args) => {
-    if (args?.[0] === "remote") return "";
+    if (args?.[0] === "remote") return args[1] === "get-url" ? "https://github.com/BigSimmo/Ward-Flow.git" : "origin";
     if (args?.[0] === "diff") return "M\tsrc/components/ward-management/alerts/alerts-screen.tsx\n";
     return "fixture-commit";
   });

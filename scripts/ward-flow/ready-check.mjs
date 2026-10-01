@@ -20,18 +20,40 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { selectFoldGate } from "./select-fold-gate.mjs";
 
+let linkedRepository = false;
 try {
-  const remote = execFileSync("git", ["remote"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
-  if (remote) {
-    console.error("The local Ward line ready check is retired in a linked repository.");
-    process.exit(2);
+  const remotes = execFileSync("git", ["remote"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] })
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!remotes.length && process.env.WARD_FOLD_TEST_FIXTURE !== "1") throw new Error("Missing repository destination");
+  for (const remote of remotes) {
+    for (const push of [false, true]) {
+      const args = ["remote", "get-url", "--all", ...(push ? ["--push"] : []), remote];
+      const urls = execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] })
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+      if (
+        !urls.length ||
+        urls.some(
+          (url) =>
+            !/^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)BigSimmo\/Ward-Flow(?:\.git)?\/?$/i.test(
+              url,
+            ),
+        )
+      )
+        throw new Error("Foreign or missing repository destination");
+    }
   }
+  linkedRepository = remotes.length > 0;
 } catch {
-  console.error("Cannot verify repository remotes. Refusing the retired local Ward workflow.");
+  console.error("Cannot verify Ward Flow fetch and push destinations. Refusing readiness check.");
   process.exit(2);
 }
 
-const LINE = "main";
+const LINE = linkedRepository ? "origin/main" : "main";
+
 const TSC_CACHE_DIR = process.env.WARD_TSC_CACHE_DIR ?? "D:/Repos/ward-flow-logs/tsc-cache";
 const args = process.argv.slice(2);
 const opt = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);

@@ -34,6 +34,7 @@ function fixture() {
         WARD_FLOW_LOGS: path.join(root, "notes"),
         WARD_FOLD_WORKTREE: root,
         WARD_FOLD_LINE: "HEAD",
+        WARD_FOLD_TEST_FIXTURE: "1",
       },
     });
   return { root, git, lock, run };
@@ -50,7 +51,9 @@ describe("Ward fold lock recovery", () => {
         timeout: 15000,
       });
       expect(result.status).toBe(2);
-      expect(result.stderr).toContain("retired in a linked repository");
+      expect(result.stderr).toContain(
+        target === readyScript ? "Cannot verify Ward Flow" : "retired in a linked repository",
+      );
       expect(existsSync(lock)).toBe(false);
     }
   });
@@ -64,7 +67,9 @@ describe("Ward fold lock recovery", () => {
         timeout: 15000,
       });
       expect(result.status).toBe(2);
-      expect(result.stderr).toContain("Cannot verify repository remotes");
+      expect(result.stderr).toContain(
+        target === readyScript ? "Cannot verify Ward Flow" : "Cannot verify repository remotes",
+      );
       expect(existsSync(path.join(root, ".git"))).toBe(false);
     }
   });
@@ -80,7 +85,7 @@ describe("Ward fold lock recovery", () => {
     const preflight = spawnSync(
       process.execPath,
       [preflightScript, "--branch", "HEAD", "--create-backup", "test", "--ward-lead", root],
-      { cwd: root, encoding: "utf8", timeout: 15000 },
+      { cwd: root, encoding: "utf8", timeout: 15000, env: { ...process.env, WARD_FOLD_TEST_FIXTURE: "1" } },
     );
     expect(preflight.status).toBe(2);
     expect(preflight.stderr).toContain("retired in a linked repository");
@@ -96,7 +101,7 @@ describe("Ward fold lock recovery", () => {
       cwd: root,
       encoding: "utf8",
       timeout: 15000,
-      env: { ...process.env, WARD_FOLD_WORKTREE: other, WARD_FOLD_LINE: "HEAD" },
+      env: { ...process.env, WARD_FOLD_WORKTREE: other, WARD_FOLD_LINE: "HEAD", WARD_FOLD_TEST_FIXTURE: "1" },
     });
     expect(acquire.status).toBe(2);
     expect(acquire.stderr).toContain("different Git repository");
@@ -106,11 +111,51 @@ describe("Ward fold lock recovery", () => {
     const preflight = spawnSync(
       process.execPath,
       [preflightScript, "--branch", "HEAD", "--create-backup", "test", "--ward-lead", other],
-      { cwd: root, encoding: "utf8", timeout: 15000 },
+      { cwd: root, encoding: "utf8", timeout: 15000, env: { ...process.env, WARD_FOLD_TEST_FIXTURE: "1" } },
     );
     expect(preflight.status).toBe(2);
     expect(preflight.stderr).toContain("different Git repository");
     expect(existsSync(otherLock)).toBe(false);
+  });
+
+  it("refuses remote-less repositories without explicit test-only permission", () => {
+    const { root, lock } = fixture();
+    for (const target of [script, preflightScript, readyScript]) {
+      const result = spawnSync(process.execPath, [target, "acquire", "owner"], {
+        cwd: root,
+        encoding: "utf8",
+        env: { ...process.env, WARD_FOLD_TEST_FIXTURE: "" },
+      });
+      expect(result.status).toBe(2);
+      expect(existsSync(lock)).toBe(false);
+    }
+  });
+
+  it("checks ignored collisions at the root when invoked from a subdirectory", () => {
+    const { root, git, run } = fixture();
+    git(["branch", "-M", "main"]);
+    git(["checkout", "-b", "candidate"]);
+    writeFileSync(path.join(root, "blocked.txt"), "candidate content");
+    git(["add", "blocked.txt"]);
+    git(["-c", "user.name=Ward Test", "-c", "user.email=ward@example.invalid", "commit", "-m", "candidate"]);
+    git(["checkout", "main"]);
+    writeFileSync(path.join(root, ".git", "info", "exclude"), "blocked.txt\n");
+    writeFileSync(path.join(root, "blocked.txt"), "local data");
+    mkdirSync(path.join(root, "subdir"));
+    expect(run("acquire", "owner").status).toBe(0);
+    const result = spawnSync(
+      process.execPath,
+      [preflightScript, "--branch", "candidate", "--create-backup", "test", "--who", "owner"],
+      {
+        cwd: path.join(root, "subdir"),
+        encoding: "utf8",
+        env: { ...process.env, WARD_FOLD_TEST_FIXTURE: "1" },
+      },
+    );
+    expect(result.status).toBe(1);
+    expect(result.stdout + result.stderr).toContain("blocked.txt");
+    expect(readFileSync(path.join(root, "blocked.txt"), "utf8")).toBe("local data");
+    expect(git(["branch", "--list", "backup/*"])).toBe("");
   });
 
   it("does not release a lock with missing ownership data", () => {
@@ -152,6 +197,7 @@ describe("Ward fold lock recovery", () => {
                 WARD_FLOW_LOGS: path.join(root, "notes"),
                 WARD_FOLD_WORKTREE: root,
                 WARD_FOLD_LINE: "HEAD",
+                WARD_FOLD_TEST_FIXTURE: "1",
               },
             });
             child.once("error", reject);

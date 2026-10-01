@@ -16,6 +16,12 @@ import { commitLogs } from "./logs-commit.mjs";
 
 try {
   const remote = execFileSync("git", ["remote"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  if (!remote && process.env.WARD_FOLD_TEST_FIXTURE !== "1") {
+    console.error(
+      "Missing repository destination. Retired fold commands require an explicit test-only fixture opt-in.",
+    );
+    process.exit(2);
+  }
   if (remote) {
     console.error("The local Ward line fold workflow is retired in a linked repository.");
     process.exit(2);
