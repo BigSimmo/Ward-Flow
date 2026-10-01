@@ -501,7 +501,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
     <StatisticsSectionFrame
       section={section}
       title={service}
-      subtitle="Current capacity, referral flow and distance-from-home measures for this health service."
+      subtitle=""
       testId="ward-statistics-service-screen"
       design="third-edition"
     >

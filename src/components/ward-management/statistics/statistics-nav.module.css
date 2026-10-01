@@ -1,7 +1,7 @@
 .navBar {
   display: block;
   width: 100%;
-  margin: 0 0 16px 0;
+  margin: 0 0 0.75rem;
   padding: 4px;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -26,9 +26,9 @@
 .navItem {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-height: 44px;
-  padding: 8px 14px;
+  padding: 8px 11px;
   color: var(--muted);
   text-decoration: none;
   font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
@@ -37,7 +37,10 @@
   border-radius: 7px;
   white-space: nowrap;
   position: relative;
-  transition: all 0.15s ease-in-out;
+  transition:
+    color 0.15s ease-in-out,
+    background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out;
   flex-shrink: 0;
   border: 1px solid transparent;
 }

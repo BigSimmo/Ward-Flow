@@ -337,7 +337,7 @@ export function StatisticsWardScreen({
     <StatisticsSectionFrame
       section={section}
       title={unit.name}
-      subtitle="Current capacity, flow and discharge measures for this ward, with record limits stated in place."
+      subtitle=""
       testId="ward-statistics-ward-screen"
       design="third-edition"
     >
@@ -1089,19 +1089,16 @@ export function StatisticsWardScreen({
             tabIndex={0}
           >
             <p className={styles.body}>
-              <strong>Another ward:</strong>{" "}
               <Link href={STATISTICS_UNIT_CHOOSER_HREF} data-testid="ward-statistics-ward-chooser-link">
                 Choose a different ward from the comparisons page
-              </Link>{" "}
-              to see the same measures for another.
+              </Link>
             </p>
 
             <p className={styles.note}>
               Every figure here is invented and computed from this prototype&apos;s own state as the page renders.
             </p>
             <p className={styles.note}>
-              <strong>Unsupported measures</strong>: a measure the record cannot support says so in words rather than
-              showing a nought, because a nought that was never measured reads exactly like a nought that was.
+              <strong>Not recorded is not zero.</strong> Unsupported measures are labelled beside each figure.
             </p>
           </div>
         </WardPanel>

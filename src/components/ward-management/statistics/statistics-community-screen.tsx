@@ -161,7 +161,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
     <StatisticsSectionFrame
       section={section}
       title={team.name}
-      subtitle="This team's numbers, and where they sit against every other team."
+      subtitle=""
       testId="ward-statistics-community-screen"
       design="third-edition"
     >
