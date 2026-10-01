@@ -1794,7 +1794,6 @@ export function EdScreen({ edId }: EdScreenProps) {
     // Walkthrough code-read, 25 Sept 2026: only once the bed is pulled (before that no bed is held and
     // the booking panel stays shut), and never when "no transport needed" is recorded.
     if (m.stage === "pulled" && !m.transport && (m.transportNeed?.needed ?? true) !== false) {
-      // eslint-disable-next-line react-hooks/refs -- onAction callback references transportTriggerRef for focus restoration on click
       priorityFlags.push({
         tone: "warn",
         kind: "Transport not booked",
@@ -3046,7 +3045,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                             <span style={{ fontSize: "0.85rem", color: "var(--ink)", fontWeight: 600 }}>
                               {referralPatient.displayName}
                             </span>
-                            <span style={{ fontSize: "0.82rem", color: "var(--muted, #64748b)" }}>
+                            <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
                               (UMRN: <strong>{referralPatient.umrn}</strong>)
                             </span>
                             <span className={styles.inboxPurpose} data-testid={`ward-ed-inbox-purpose-${referral.id}`}>
@@ -3239,7 +3238,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                           </span>
                           <span className={styles.meta}>
                             {/* Owner, 26 Sept 2026: the id button duplicated the name button above it. */}
-                            <span style={{ fontSize: "0.82rem", color: "var(--muted, #64748b)" }}>
+                            <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
                               UMRN: <strong>{patientInfo.umrn}</strong>
                             </span>
                             <span className={styles.bayNumber}>{patientBay(m.id)}</span>
@@ -3303,7 +3302,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                           </span>
                           <span className={styles.meta}>
                             {/* Owner, 26 Sept 2026: the id button duplicated the name button above it. */}
-                            <span style={{ fontSize: "0.82rem", color: "var(--muted, #64748b)" }}>
+                            <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
                               UMRN: <strong>{patientInfo.umrn}</strong>
                             </span>
                             <span className={styles.bayNumber}>{patientBay(m.id)}</span>
@@ -3457,7 +3456,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                           </span>
                           <span className={styles.meta}>
                             {/* Owner, 26 Sept 2026: the id button duplicated the name button above it. */}
-                            <span style={{ fontSize: "0.82rem", color: "var(--muted, #64748b)" }}>
+                            <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
                               UMRN: <strong>{patientInfo.umrn}</strong>
                             </span>
                             <span className={styles.bayNumber}>{patientBay(m.id)}</span>
@@ -6113,7 +6112,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                             {e.referralId ? <span className={styles.seenRefPill}>Ref #{e.referralId}</span> : null}
 
                             {e.waitMinutes && e.waitMinutes >= 1440 ? (
-                              <span className={styles.seenLongWaitPill} title="Department stay exceeds 24h">
+                              <span className={styles.seenLongWaitPill} title={`Department stay: ${LONG_WAIT_TEXT}`}>
                                 Waiting {LONG_WAIT_TEXT}
                               </span>
                             ) : null}

@@ -333,17 +333,14 @@ function DischargeWorkspace() {
       : null;
   // Never retain the selected DTO: each render obtains a newly guarded current read.
   const detailRecord = opened?.status === "allowed" ? opened.value : null;
-  const fallbackRecord = selected
-    ? (records.find((record) => record.admissionId === selected.admissionId) ?? null)
-    : null;
+  const fallbackRecord = selected ? records.find((record) => record.admissionId === selected.admissionId) ?? null : null;
   const activeRecord = detailRecord ?? (openError ? null : fallbackRecord);
   const detailRelease =
     population === "releases" && releaseId && visibleReleaseIds.includes(releaseId)
       ? scopedReleases.find((release) => release.id === releaseId)
       : undefined;
-  const linkedReleaseRecord = detailRelease
-    ? (records.find((record) => record.admissionId === detailRelease.admissionId) ?? null)
-    : null;
+  const linkedReleaseRecord =
+    detailRelease ? records.find((record) => record.admissionId === detailRelease.admissionId) ?? null : null;
   const selectedUnitId = activeRecord?.unitId ?? detailRelease?.unitId;
   const selectedUnit = units.find((unit) => unit.id === selectedUnitId);
   const shown = population === "records" ? visibleRecords.length : visibleReleaseIds.length;
@@ -1004,7 +1001,11 @@ function DischargeWorkspace() {
                                     {unitLabel(unit, release.unitId)}
                                   </button>
                                   <span className={pageStyles.secondary}>{healthServiceLabel(unit)}</span>
-                                  {linked && <span className={pageStyles.patientHint}>{recordName(linked)}</span>}
+                                  {linked && (
+                                    <span className={pageStyles.patientHint}>
+                                      {recordName(linked)}
+                                    </span>
+                                  )}
                                 </td>
                                 <td data-label="Timing" className={styles.timingCell}>
                                   {release.state !== "discharged" && release.expectedAt < now ? (
@@ -1167,9 +1168,7 @@ function DischargeWorkspace() {
                               parsed =
                                 today === undefined || recorded === null
                                   ? today
-                                  : today +
-                                    (Math.floor(recorded / MINUTES_PER_DAY) - Math.floor(now / MINUTES_PER_DAY)) *
-                                      MINUTES_PER_DAY;
+                                  : today + (Math.floor(recorded / MINUTES_PER_DAY) - Math.floor(now / MINUTES_PER_DAY)) * MINUTES_PER_DAY;
                             }
                             if (parsed !== undefined) {
                               dispatch({

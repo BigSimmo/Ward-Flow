@@ -106,7 +106,7 @@
   background: var(--accent-soft, var(--ward-blue-soft));
   padding: 0 8px;
   color: var(--accent, var(--ward-blue));
-  font-size: 11px;
+  font-size: var(--t-0, 12px);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
@@ -207,7 +207,7 @@
   align-items: center;
   justify-content: center;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--t-0, 12px);
   font-weight: 700;
   padding: 1px 7px;
   border-radius: var(--pill, 9999px);

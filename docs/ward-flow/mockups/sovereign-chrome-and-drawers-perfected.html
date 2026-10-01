@@ -3695,7 +3695,16 @@
               </svg>
               <span>1. Patient Selection &amp; Clinical Identity Dossier</span>
             </h3>
-            <span class="badgePill">Live Database Search</span>
+            <div class="refCardHeadActions" style="display: flex; align-items: center; gap: 8px;">
+              <span class="badgePill">Live Database Search</span>
+              <a
+                href="#new-referral"
+                class="patientTagPill"
+                style="color: var(--accent); font-weight: 600; text-decoration: none"
+                onclick="selectReferralPatient('custom')"
+                >+ New Patient Intake</a
+              >
+            </div>
           </div>
 
           <div class="patientSearchWrap">
@@ -3723,55 +3732,6 @@
               spellcheck="false"
             />
             <kbd class="patientSearchKbd">/</kbd>
-          </div>
-
-          <div class="patientQuickChips">
-            <button
-              type="button"
-              class="patientChipBtn"
-              id="chip-WF-009"
-              data-active="true"
-              onclick="selectReferralPatient('WF-009')"
-            >
-              <span class="dotGreen"></span>
-              <span>Tobias Wren (Peel ED)</span>
-            </button>
-            <button
-              type="button"
-              class="patientChipBtn"
-              id="chip-WF-004"
-              data-active="false"
-              onclick="selectReferralPatient('WF-004')"
-            >
-              <span>Callum Finchgrove (Armadale ED)</span>
-            </button>
-            <button
-              type="button"
-              class="patientChipBtn"
-              id="chip-WF-002"
-              data-active="false"
-              onclick="selectReferralPatient('WF-002')"
-            >
-              <span>Dermot Hawthornby (FSH ED)</span>
-            </button>
-            <button
-              type="button"
-              class="patientChipBtn"
-              id="chip-WF-006"
-              data-active="false"
-              onclick="selectReferralPatient('WF-006')"
-            >
-              <span>Margery Slateridge (SCGH Community)</span>
-            </button>
-            <button
-              type="button"
-              class="patientChipBtn"
-              id="chip-custom"
-              data-active="false"
-              onclick="selectReferralPatient('custom')"
-            >
-              <span>+ New / Unregistered</span>
-            </button>
           </div>
 
           <!-- Prominent Selected Patient Identity Banner Card -->

@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 import { StatisticsSectionFrame } from "@/components/ward-management/statistics/statistics-section-frame";
 import { generateDemonstrationSeries } from "@/components/ward-management/statistics/statistics-demonstration";
@@ -13,7 +12,6 @@ import { readyNotYetGone, type ReadyNotYetGone } from "@/components/ward-managem
 import { wardReferralTally } from "@/components/ward-management/statistics/statistics-ward-referrals";
 import {
   statisticsSectionById,
-  type StatisticsSection,
   STATISTICS_UNIT_CHOOSER_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
 
@@ -22,8 +20,7 @@ import { MINUTES_PER_DAY, splitDuration } from "@/components/ward-management/war
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import type { Unit, Movement, BedRelease } from "@/components/ward-management/ward-model";
-import type { WardScenario } from "@/components/ward-management/ward-scenarios";
+import type { Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { wardStatistics } from "@/components/ward-management/ward-statistics";
@@ -105,48 +102,6 @@ export function StatisticsWardScreen({
     );
   }
 
-  return (
-    <StatisticsWardScreenInner
-      section={section}
-      unit={unit}
-      units={units}
-      admissions={admissions}
-      movements={movements}
-      bedReleases={bedReleases}
-      scenario={scenario}
-      now={now}
-    />
-  );
-}
-
-function useSafeRouter(): { push: (path: string) => void } | null {
-  try {
-    return useRouter();
-  } catch {
-    return null;
-  }
-}
-
-function StatisticsWardScreenInner({
-  section,
-  unit,
-  units,
-  admissions,
-  movements,
-  bedReleases,
-  scenario,
-  now,
-}: {
-  section: StatisticsSection;
-  unit: Unit;
-  units: Unit[];
-  admissions: Admission[];
-  movements: Movement[];
-  bedReleases: BedRelease[];
-  scenario: WardScenario;
-  now: number;
-}) {
-  const router = useSafeRouter();
   const site = siteByCode(unit.siteCode);
   const statistics = wardStatistics(unit.id, admissions, now);
 
@@ -275,16 +230,10 @@ function StatisticsWardScreenInner({
     { baseline: capacity.available, volatility: 1, minValue: 0, maxValue: unit.beds },
   );
 
-  const [activeTab, setActiveTab] = useState<string>("occ");
-  const [timeWindow, setTimeWindow] = useState<"today" | "7d" | "30d">("today");
+  const [activeTab, setActiveTab] = useState<string>("all");
   const [d4Notice, setD4Notice] = useState<string | null>(null);
   const [politeNotice, setPoliteNotice] = useState<string | null>(null);
   const [bedSearchQuery, setBedSearchQuery] = useState<string>("");
-
-  const speciallingCount = admissions.filter(
-    (a) => a.unitId === unit.id && a.state !== "departed" && a.specialling,
-  ).length;
-  const occupancyPct = unit.beds > 0 ? ((capacity.occupied / unit.beds) * 100).toFixed(0) : "0";
 
   const triggerD4 = useCallback((actionName?: string) => {
     const msg = actionName ? `${actionName}: Not wired in this prototype.` : "Not wired in this prototype.";
@@ -292,7 +241,7 @@ function StatisticsWardScreenInner({
     setPoliteNotice(msg);
   }, []);
 
-  const bedMatrixList = (() => {
+  const bedMatrixList = useMemo(() => {
     const occupiedCount = capacity.occupied;
     const availableCount = capacity.available;
     const pendingCount = pendingPreparation;
@@ -354,19 +303,22 @@ function StatisticsWardScreenInner({
       }
     }
     return list;
-  })();
+  }, [unit.beds, capacity.occupied, capacity.available, pendingPreparation, admissions, unit.id, now]);
 
-  const filteredBedMatrix = !bedSearchQuery.trim()
-    ? bedMatrixList
-    : bedMatrixList.filter(
-        (b) =>
-          b.bed.toLowerCase().includes(bedSearchQuery.toLowerCase().trim()) ||
-          b.state.toLowerCase().includes(bedSearchQuery.toLowerCase().trim()) ||
-          b.pt.toLowerCase().includes(bedSearchQuery.toLowerCase().trim()) ||
-          b.target.toLowerCase().includes(bedSearchQuery.toLowerCase().trim()),
-      );
+  const filteredBedMatrix = useMemo(() => {
+    if (!bedSearchQuery.trim()) return bedMatrixList;
+    const q = bedSearchQuery.toLowerCase().trim();
+    return bedMatrixList.filter(
+      (b) =>
+        b.bed.toLowerCase().includes(q) ||
+        b.state.toLowerCase().includes(q) ||
+        b.pt.toLowerCase().includes(q) ||
+        b.target.toLowerCase().includes(q),
+    );
+  }, [bedMatrixList, bedSearchQuery]);
 
   const TABS = [
+    { id: "all", label: "All Sections", badge: "All" },
     { id: "occ", label: "Beds & Occupancy", badge: `${capacity.occupied}/${unit.beds}` },
     {
       id: "los",
@@ -379,7 +331,6 @@ function StatisticsWardScreenInner({
     { id: "flow", label: "Admissions & Discharges", badge: "7d Flow" },
     { id: "ready", label: "Discharge Readiness", badge: `${headlineTotal} delayed` },
     { id: "longStay", label: "Long Stays", badge: `${statistics.longStays}` },
-    { id: "all", label: "All Sections", badge: "All" },
   ] as const;
 
   return (
@@ -395,125 +346,6 @@ function StatisticsWardScreenInner({
           {politeNotice}
         </div>
       ) : null}
-
-      {/* Header controls: Ward Selector and Reporting Window */}
-      <div className={pageStyles.wardHeaderBar}>
-        <div className={pageStyles.wardSelectWrap}>
-          <label htmlFor="ward-select" style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted)" }}>
-            Inpatient Ward:
-          </label>
-          <select
-            id="ward-select"
-            className={pageStyles.wardSelect}
-            value={unit.id}
-            onChange={(e) => {
-              router?.push(`/mockups/ward-flow/statistics/ward/${encodeURIComponent(e.target.value)}`);
-            }}
-            aria-label="Switch inpatient ward"
-          >
-            {units.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name} ({u.beds} beds) - {u.siteCode}
-              </option>
-            ))}
-          </select>
-          <span className="chip" style={{ fontSize: "12px", fontWeight: 600 }}>
-            {unit.cohort} &middot; {unit.beds} beds
-          </span>
-        </div>
-        <div className={pageStyles.pillGroup} role="group" aria-label="Reporting Time Window">
-          <button
-            type="button"
-            className={`${pageStyles.pillBtn} ${timeWindow === "today" ? pageStyles.pillActive : ""}`}
-            onClick={() => setTimeWindow("today")}
-            aria-pressed={timeWindow === "today"}
-          >
-            Today (Live)
-          </button>
-          <button
-            type="button"
-            className={`${pageStyles.pillBtn} ${timeWindow === "7d" ? pageStyles.pillActive : ""}`}
-            onClick={() => {
-              setTimeWindow("7d");
-              triggerD4("7-day window");
-            }}
-            aria-pressed={timeWindow === "7d"}
-          >
-            7 Days
-          </button>
-          <button
-            type="button"
-            className={`${pageStyles.pillBtn} ${timeWindow === "30d" ? pageStyles.pillActive : ""}`}
-            onClick={() => {
-              setTimeWindow("30d");
-              triggerD4("30-day window");
-            }}
-            aria-pressed={timeWindow === "30d"}
-          >
-            30 Days
-          </button>
-        </div>
-      </div>
-
-      {/* Quick-switch ward pills */}
-      <div className={pageStyles.wardPillsBar} role="group" aria-label="Quick switch ward">
-        {units.slice(0, 10).map((u) => {
-          const isActive = u.id === unit.id;
-          return (
-            <button
-              key={u.id}
-              type="button"
-              className={`${pageStyles.wardPill} ${isActive ? pageStyles.wardPillActive : ""}`}
-              onClick={() => {
-                router?.push(`/mockups/ward-flow/statistics/ward/${encodeURIComponent(u.id)}`);
-              }}
-              aria-pressed={isActive}
-            >
-              {u.name} ({u.beds})
-            </button>
-          );
-        })}
-      </div>
-
-      {/* 6-Card KPI Headline Band */}
-      <dl className={pageStyles.kpiBand} aria-label="Ward KPI summary">
-        <div>
-          <dt>Total Capacity</dt>
-          <dd>{unit.beds}</dd>
-          <span className={pageStyles.kpiCaption}>Beds on unit</span>
-        </div>
-        <div>
-          <dt>Current Occupancy</dt>
-          <dd>
-            {capacity.occupied} ({occupancyPct}%)
-          </dd>
-          <span className={pageStyles.kpiCaption}>Target &le;85%</span>
-        </div>
-        <div>
-          <dt>Ready Beds</dt>
-          <dd>{capacity.available}</dd>
-          <span className={pageStyles.kpiCaption}>Min(empty, alloc)</span>
-        </div>
-        <div>
-          <dt>1:1 Specialling</dt>
-          <dd>{speciallingCount}</dd>
-          <span className={pageStyles.kpiCaption}>Active nursed</span>
-        </div>
-        <div>
-          <dt>Blocked Discharges</dt>
-          <dd>{headlineTotal}</dd>
-          <span className={pageStyles.kpiCaption}>Ready not yet gone</span>
-        </div>
-        <div>
-          <dt>Avg Length of Stay</dt>
-          <dd>
-            {statistics.averageLengthOfStayDays === null
-              ? "Not recorded"
-              : `${statistics.averageLengthOfStayDays.toFixed(1)}d`}
-          </dd>
-          <span className={pageStyles.kpiCaption}>Completed stays</span>
-        </div>
-      </dl>
 
       {d4Notice ? (
         <div className={pageStyles.d4NoticeBanner} role="status">
@@ -595,30 +427,6 @@ function StatisticsWardScreenInner({
                 <dd>{openBeds}</dd>
               </div>
             </dl>
-
-            {/* Visual Bed Grid Summary Cards */}
-            <div className={pageStyles.bedGridCards} aria-label="Bed visual overview">
-              {bedMatrixList.slice(0, 12).map((b) => (
-                <div key={b.bed} className={pageStyles.bedGridCard}>
-                  <div className={pageStyles.bedGridCardHeader}>
-                    <strong>{b.bed}</strong>
-                    <span
-                      className={`${pageStyles.chip} ${
-                        b.state === "Occupied"
-                          ? pageStyles.chipOccupied
-                          : b.state === "Available"
-                            ? pageStyles.chipReady
-                            : pageStyles.chipAlert
-                      }`}
-                    >
-                      {b.state}
-                    </span>
-                  </div>
-                  <span style={{ color: "var(--muted)", fontSize: "12px" }}>{b.pt}</span>
-                  <span style={{ fontSize: "12px" }}>{b.days > 0 ? `${b.days}d stay` : b.target}</span>
-                </div>
-              ))}
-            </div>
 
             <WardTable className={pageStyles.bedTable} wrapperClassName={pageStyles.bedTableWrap}>
               <caption className={pageStyles.srOnly}>
@@ -938,8 +746,8 @@ function StatisticsWardScreenInner({
                       the discharge plan, and at least one is about the person rather than about the bed. They are
                       deliberately not listed here because this page does not own that record shape. The nearest
                       equivalent elsewhere in this prototype measures from the moment a referral was raised, which this
-                      derivation cannot see, because it is given admissions only, by design. Supporting this figure
-                      would require a new recorded instant or a different derivation input.
+                      derivation cannot see, because it is given admissions only, by design. Supporting this figure would
+                      require a new recorded instant or a different derivation input.
                     </p>
                   </details>
                 </div>

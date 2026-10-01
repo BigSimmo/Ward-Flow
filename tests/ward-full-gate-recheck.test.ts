@@ -150,7 +150,7 @@ describe("crash-resumable FULL batches", () => {
         /different commit|checkpoint/i,
       );
     } finally {
-      rmSync(stateDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+      rmSync(stateDir, { recursive: true, force: true, maxRetries: 5 });
     }
   });
 });

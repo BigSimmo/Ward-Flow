@@ -21,6 +21,66 @@ export interface ResolvedPatientNow {
   currentStageIndex: number;
 }
 
+export function movementNextSteps(movement: Movement, acceptedUnit?: Unit): PatientNowRecord["next"] {
+  if (movement.closure) {
+    return [
+      {
+        w: "Movement Closed",
+        d: movement.closure.reason || "Movement completed.",
+        tone: "good" as const,
+      },
+    ];
+  }
+
+  if (movement.stage === "arrived") {
+    return [
+      {
+        w: "Journey Complete",
+        d: `Arrival confirmed at ${acceptedUnit?.name ?? "destination ward"}.`,
+        tone: "good" as const,
+      },
+    ];
+  }
+
+  if (movement.stage === "moving") {
+    return [
+      {
+        w: "Transit Active",
+        d: `Monitor transport arrival at ${acceptedUnit?.name ?? "receiving unit"}.`,
+        tone: "good" as const,
+      },
+    ];
+  }
+
+  if (movement.stage === "handover_ready") {
+    return [
+      {
+        w: "Transport Dispatch",
+        d: "Coordinate dispatch and departure from Emergency Department.",
+        tone: "good" as const,
+      },
+    ];
+  }
+
+  if (movement.stage === "pulled" || acceptedUnit) {
+    return [
+      {
+        w: "Bed Pull Confirmation",
+        d: `Confirm bed availability and terminal clean status with ${acceptedUnit?.name ?? "allocated unit"}.`,
+        tone: "good" as const,
+      },
+    ];
+  }
+
+  return [
+    {
+      w: "Destination Review",
+      d: "Review next cohort-matching bed releases across network.",
+      tone: "warn" as const,
+    },
+  ];
+}
+
 export function resolvePatientNowRecord(
   id: string,
   patients: readonly Patient[],
@@ -156,26 +216,12 @@ export function resolvePatientNowRecord(
           : []),
       ],
       ladder: "Review the current movement for escalation and next actions",
-      next: acceptedUnit
-        ? [
-            {
-              w: "Bed Pull Confirmation",
-              d: `Confirm bed availability and terminal clean status with ${acceptedUnit.name}.`,
-              tone: "good" as const,
-            },
-          ]
-        : [
-            {
-              w: "Destination Review",
-              d: "Review next cohort-matching bed releases across network.",
-              tone: "warn" as const,
-            },
-          ],
+      next: movementNextSteps(movement, acceptedUnit),
       transport: movement.transport
         ? [
             ["Status", transportLeg(movement.transport) ?? "Booked"],
             ["Provider", movement.transport.provider ?? "Patient Transport"],
-            ...(movement.transport.cadNumber ? [["CAD Number", movement.transport.cadNumber] as [string, string]] : []),
+            ...(movement.transport.cadNumber ? [["CAD (dispatch) number", movement.transport.cadNumber] as [string, string]] : []),
             ...(movement.transport.estimatedAt
               ? [["Quoted ETA", `${clock(movement.transport.estimatedAt)} AWST`] as [string, string]]
               : []),
@@ -374,26 +420,12 @@ export function resolvePatientNowRecord(
             : []),
         ],
         ladder: "Review the current movement for escalation and next actions",
-        next: acceptedUnit
-          ? [
-              {
-                w: "Bed Pull Confirmation",
-                d: `Confirm bed availability and terminal clean status with ${acceptedUnit.name}.`,
-                tone: "good" as const,
-              },
-            ]
-          : [
-              {
-                w: "Destination Review",
-                d: "Review next cohort-matching bed releases across network.",
-                tone: "warn" as const,
-              },
-            ],
+        next: movementNextSteps(activeMovement, acceptedUnit),
         transport: activeMovement.transport
           ? [
               ["Status", transportLeg(activeMovement.transport) ?? "Booked"],
               ["Provider", activeMovement.transport.provider ?? "Patient Transport"],
-              ...(activeMovement.transport.cadNumber ? [["CAD Number", activeMovement.transport.cadNumber] as [string, string]] : []),
+              ...(activeMovement.transport.cadNumber ? [["CAD (dispatch) number", activeMovement.transport.cadNumber] as [string, string]] : []),
               ...(activeMovement.transport.estimatedAt
                 ? [["Quoted ETA", `${clock(activeMovement.transport.estimatedAt)} AWST`] as [string, string]]
                 : []),

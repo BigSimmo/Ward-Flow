@@ -272,7 +272,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--ward-space-2) var(--ward-space-12) var(--ward-space-4);
-  font-size: 0.6875rem;
+  font-size: var(--t-0, 0.75rem);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -290,7 +290,7 @@
   background: var(--surface-subtle);
   border: 1px solid transparent;
   color: var(--ward-muted);
-  font-size: 0.625rem;
+  font-size: var(--t-0, 0.75rem);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -503,7 +503,7 @@
 .resultKind {
   display: inline-flex;
   align-items: center;
-  font-size: 0.625rem;
+  font-size: var(--t-0, 0.75rem);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -650,7 +650,7 @@
   min-width: 1.125rem;
   height: 1.125rem;
   padding: 0 0.25rem;
-  font-size: 0.625rem;
+  font-size: var(--t-0, 0.75rem);
   font-weight: 700;
   border: 1px solid var(--ward-border);
   border-radius: 0.25rem;
@@ -660,13 +660,13 @@
 }
 
 .hintLabel {
-  font-size: 0.6875rem;
+  font-size: var(--t-0, 0.75rem);
   color: var(--ward-muted);
 }
 
 .footerDisclaimer {
   margin: 0;
-  font-size: 0.6875rem;
+  font-size: var(--t-0, 0.75rem);
   line-height: var(--ward-leading-prose);
   color: var(--ward-muted);
 }

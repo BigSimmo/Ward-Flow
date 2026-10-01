@@ -623,8 +623,7 @@ export function WardNetworkWorkspace() {
               ))}
             </ul>
             <p>
-              Longest waits are shown as elapsed time. No common deadline scale is drawn because these records do not
-              hold one denominator that applies to every department.
+              No common deadline scale, because these departments don&apos;t share one.
             </p>
           </div>
         </div>
@@ -1402,8 +1401,7 @@ function WardNetworkPlacementWorkspace() {
                 >
                   {patient.urgency}
                 </span>
-                <b>Urgency tier leads.</b> Eligibility only orders candidates inside a tier. It is not clinical
-                severity.
+                <b>Urgency tier leads.</b> Eligibility orders candidates within tier; not clinical severity.
               </p>
 
               <button

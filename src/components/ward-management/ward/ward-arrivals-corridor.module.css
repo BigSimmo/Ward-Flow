@@ -47,7 +47,7 @@
   grid-template-columns: 280px 1fr 240px;
   gap: 20px;
   align-items: center;
-  box-shadow: var(--lift-sm, 0 1px 2px rgba(18, 30, 49, 0.04));
+  box-shadow: var(--lift-sm);
   transition: all 0.15s ease;
 }
 
@@ -88,7 +88,7 @@
 
 .patientUmrn {
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: 12px; /* 12px floor */
   font-weight: 700;
   color: var(--muted);
   background: var(--surface-2);
@@ -112,7 +112,7 @@
 }
 
 .statusTag {
-  font-size: 10.5px;
+  font-size: 12px; /* 12px floor */
   font-weight: 600;
   padding: 2px 7px;
   border-radius: var(--r1);
@@ -122,20 +122,20 @@
 }
 
 .statusTag[data-type="legal"] {
-  background: rgba(176, 59, 46, 0.08);
-  border-color: rgba(176, 59, 46, 0.25);
+  background: var(--danger-soft);
+  border-color: var(--danger-soft);
   color: var(--danger);
 }
 
 .statusTag[data-type="acuity"] {
-  background: rgba(130, 93, 16, 0.08);
-  border-color: rgba(130, 93, 16, 0.25);
+  background: var(--warn-soft);
+  border-color: var(--warn-soft);
   color: var(--warn);
 }
 
 .statusTag[data-type="mode"] {
-  background: rgba(47, 76, 102, 0.08);
-  border-color: rgba(47, 76, 102, 0.25);
+  background: var(--ward-blue-soft, var(--surface-2));
+  border-color: var(--line);
   color: var(--accent);
 }
 
@@ -172,11 +172,11 @@
 
 .trackStep[data-current="true"] {
   background: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-soft, rgba(47, 76, 102, 0.2));
+  box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
 .corridorSubtext {
-  font-size: 11.5px;
+  font-size: 12px; /* 12px floor */
   color: var(--muted);
   display: flex;
   align-items: center;
@@ -201,7 +201,7 @@
   font-weight: 600;
   border-radius: var(--r1);
   background: var(--accent);
-  color: #fff;
+  color: var(--surface);
   border: none;
   cursor: pointer;
   transition: all 0.15s ease;

@@ -62,9 +62,11 @@
 .kv {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin: 0 -1rem;
-  border-block: 1px solid var(--line);
-  background: var(--surface);
+  margin: 0;
+  border: none;
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  overflow: hidden;
 }
 
 .kvItem {
@@ -431,7 +433,7 @@
 
   .kv {
     grid-template-columns: minmax(0, 1fr);
-    margin-inline: -0.875rem;
+    margin-inline: 0;
   }
 
   .kvItem:not(:last-child) {
@@ -503,10 +505,10 @@
 .chartCard {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r1);
+  border-radius: var(--r2);
   padding: 1rem;
   margin-bottom: 0.875rem;
-  box-shadow: var(--lift);
+  box-shadow: var(--lift-sm);
 }
 
 .chartHeader {
@@ -549,7 +551,7 @@
   background: var(--surface);
   border: 1px solid var(--line-strong);
   border-radius: var(--r2);
-  box-shadow: 0 4px 16px rgb(var(--ward-shadow-rgb) / 0.16);
+  box-shadow: var(--lift);
   padding: 0.5rem 0.75rem;
   font-size: var(--t-0);
   z-index: 25;
@@ -558,9 +560,7 @@
 
 .chartBarInteractive {
   cursor: pointer;
-  transition:
-    filter 0.15s ease,
-    opacity 0.15s ease;
+  transition: filter 0.15s ease, opacity 0.15s ease;
 }
 
 .chartBarInteractive:hover {
@@ -587,12 +587,12 @@
 .gaugeCard {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r1);
+  border-radius: var(--r2);
   padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  box-shadow: var(--lift);
+  box-shadow: var(--lift-sm);
 }
 
 .gaugeCardHeader {
@@ -610,6 +610,8 @@
 
 .gaugeBadge {
   font-size: 12px;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 999px;
@@ -683,7 +685,7 @@
 }
 
 .pipelineStep {
-  background: var(--surface);
+  background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--r2);
   padding: 0.625rem;
@@ -691,22 +693,19 @@
   flex-direction: column;
   gap: 0.25rem;
   cursor: pointer;
-  transition:
-    border-color 0.15s,
-    background 0.15s,
-    box-shadow 0.15s;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
   user-select: none;
 }
 
 .pipelineStep:hover {
   border-color: var(--accent);
-  background: var(--surface-2);
+  background: var(--surface);
 }
 
 .pipelineStepSelected {
   border-color: var(--accent) !important;
   box-shadow: 0 0 0 2px var(--accent-soft);
-  background: var(--surface-2);
+  background: var(--surface);
 }
 
 .stepHeader {
@@ -721,6 +720,8 @@
 
 .stepBadge {
   font-size: 12px;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   padding: 1px 6px;
   border-radius: 4px;
   align-self: flex-start;
@@ -758,3 +759,4 @@
   color: var(--ink);
   line-height: 1.45;
 }
+

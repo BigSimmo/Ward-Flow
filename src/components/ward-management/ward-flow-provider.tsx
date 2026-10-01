@@ -306,7 +306,9 @@ function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: War
     return { ...container, world: nextWorld, typedTextSeen: false, eventLog: [logged] };
   }
   const eventLog = [...(container.eventLog ?? []), logged];
-  const typedTextSeen = container.typedTextSeen || !WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type);
+  const typedTextSeen =
+    container.typedTextSeen ||
+    !WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type);
   return { ...container, world: nextWorld, typedTextSeen, eventLog };
 }
 
@@ -833,11 +835,4 @@ export function useWardFlowClock(fallback?: Instant): Instant {
   if (wardFlow) return wardFlow.now;
   if (fallback !== undefined) return fallback;
   throw new Error("useWardFlowClock must be used within WardFlowProvider.");
-}
-
-/** Optional clock for standalone tools that can also render outside the provider. */
-export function useOptionalWardFlowClock(): Instant | null {
-  const clock = useContext(WardFlowClockContext);
-  const wardFlow = useContext(WardFlowContext);
-  return clock ?? wardFlow?.now ?? null;
 }

@@ -1,10 +1,5 @@
 # A role is a FOLDER, not a name
 
-> [!NOTE]
-> **SUPERSEDED — 2026-09-28.**
-> This document describes local worktree role binding on the former shared Database checkout.
-> For current workflow in the dedicated repository, see [`AGENTS.md`](../../AGENTS.md) and [`HOW-WE-WORK.md`](HOW-WE-WORK.md).
-
 Built and tested by Ward Builder on 2026-09-01, at the owner's instruction, after a day in which
 **four separate labels lied and every one of them cost real time.**
 

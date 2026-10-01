@@ -27,17 +27,19 @@ screen:
 
 ```
 src/app/mockups/ward-flow/layout.tsx  (WardFlowMockupLayout, a Server Component)
-  <WardFlowProvider>                   the engine — see Engine
-    <WardLiveRegion />                 the shell's one aria-live announcer
-    <div className={styles.shellRow}>
-      <WardRail />                     left rail
-      <div className={styles.shellContent}>
-        <WardBarMount />               resolves the route's primary action, then renders <WardBar>
-        <WardBroadcastBanner />
-        <WardGround>{children}</WardGround>   plain wrapper div; {children} is the routed page
+  <WardFlowAccessGate>                 developer-area gate; outside this part's scope, see Frame and PsychSift
+    <WardFlowProvider>                 the engine — see Engine
+      <WardLiveRegion />               the shell's one aria-live announcer
+      <div className={styles.shellRow}>
+        <WardRail />                   left rail
+        <div className={styles.shellContent}>
+          <WardBarMount />             resolves the route's primary action, then renders <WardBar>
+          <WardBroadcastBanner />
+          <WardGround>{children}</WardGround>   plain wrapper div; {children} is the routed page
+        </div>
       </div>
-    </div>
-  </WardFlowProvider>
+    </WardFlowProvider>
+  </WardFlowAccessGate>
 ```
 
 `/mockups/ward-flow-sign-in` and `/mockups/ward-flow-digest` are **siblings** of `/mockups/ward-flow`,
@@ -591,7 +593,9 @@ mount order:
 
 1. **`src/app/mockups/ward-flow/layout.tsx`** (§1.4) — the one Server Component ancestor of every
    route.
-2. **Access gate** — none. `WardFlowAccessGate` was removed 28 September 2026 at Josh's request; Ward Flow now opens with no developer key.
+2. **Access gate** — `WardFlowAccessGate` (`@/components/developer-area/ward-flow-access-gate`,
+   outside this part's scope): a signed developer cookie in production, open in local dev/offline
+   tests. Outermost, so an unauthorised visitor never reaches the provider or any content.
 3. **Provider** — `WardFlowProvider` (`ward-flow-provider.tsx`, [Engine](engine.md)): seeds the
    world, holds the reducer state, ticks the clock.
 4. **Rail / bar / banner / live region**, all siblings of the routed page inside the provider, in
@@ -690,8 +694,9 @@ the destination list itself.
   why it narrows to `.tsx` and to tested modules).
 - **`WardBarMount` exists only because `layout.tsx` cannot call `usePathname()`.** A future edit
   that tries to fold `WardBarMount`'s one line of logic back into `layout.tsx` "to simplify it" would
-  break: `layout.tsx` is a Server Component, and turning it into a Client Component would make
-  every route beneath it client-rendered from the root down.
+  break: `layout.tsx` renders `WardFlowAccessGate`, an async Server Component reading
+  `next/headers`, and a Client Component's module tree can never import a Server Component that uses
+  a server-only API.
 
 ## Not checked
 

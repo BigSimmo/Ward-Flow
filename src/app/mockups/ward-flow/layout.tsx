@@ -5,7 +5,6 @@ import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-bro
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { WardStandingStrip } from "@/components/ward-management/ward-standing-strip";
 import { WardGround } from "@/components/ward-management/ward-shell";
 
 import styles from "./ward-flow-layout.module.css";
@@ -110,7 +109,6 @@ export default function WardFlowMockupLayout({ children }: { children: ReactNode
           <WardBarMount />
           <WardBroadcastBanner />
           <WardGround>{children}</WardGround>
-          <WardStandingStrip />
         </div>
       </div>
     </WardFlowProvider>

@@ -1,32 +1,28 @@
 # Ward Flow — start here
 
 **This is the only entry point.** Any other file that says "start here" is historical and carries a
-banner pointing back to this one. Updated 28 September 2026 for the dedicated repository.
+banner pointing back to this one. Updated 21 September 2026.
 
 ## What Ward Flow is
 
 A prototype of a bed-coordination tool for Western Australian mental health services: wards, beds,
 referrals, patient movements, transport, delays and capacity. It runs on **synthetic data only**.
-Its current repository is **`BigSimmo/Ward-Flow`**. Before working, verify that the checkout's
-`origin` points there. The old `D:/Worktrees/Database/ward-lead` checkout and `BigSimmo/Database`
-repository belong to the earlier shared-history arrangement; do not use them as Ward Flow destinations.
+It lives on a local branch of this repository beside PsychSift, and **it is never pushed.**
 
 ## Where the current build is
 
-- **Base:** the `main` branch in `BigSimmo/Ward-Flow`. Work in an isolated branch and worktree made
-  from that repository. Verify `git remote get-url origin`, the branch and `git log -1` in your
-  checkout before making changes. A local branch is work in progress; the current published build is
-  the verified Ward Flow `main` tip.
+- **Branch:** `codex/task-ward-flow-live-state-20260831` (local only, never pushed). **Folder:**
+  `D:/Worktrees/Database/ward-lead`. Everything finished is folded here; `git log -1` there is the
+  current build.
 - **Read before any task:** [`code-map/README.md`](code-map/README.md), the file-by-file map of all
   Ward Flow code and the shared code it loads.
 - **Code:** the engine and screens are in `src/components/ward-management/`; routes are in
   `src/app/mockups/ward-flow/`; tests are `tests/ward-*` and `tests/ui-ward-*`.
 - **What has been done, and what is left:** [`STATUS.md`](STATUS.md) ("What is built", "Deferred",
   "Needs the owner") and the ledger. As of 22 September 2026, design elevation and Round 2 owner rulings
-  were built on the former core line (tip `8d1c7c1e00` as of 2026-09-22). That is historical
-  status; inspect this repository's current tip and [`STATUS.md`](STATUS.md) for the present state.
-- **Old Ward folders under `D:/Worktrees/Database/` are history.** Start new work in the dedicated
-  Ward Flow repository and follow [`HOW-WE-WORK.md`](HOW-WE-WORK.md).
+  are built and folded into the core line (tip `8d1c7c1e00` as of 2026-09-22 - confirm with `git log -1`), and zero owner questions remain open.
+- **Other ward folders under `D:/Worktrees/Database/` are history.** Do not build in them; start a new
+  branch from the ward line and follow [`HOW-WE-WORK.md`](HOW-WE-WORK.md).
 
 ## Mission and definition of done
 
@@ -34,10 +30,11 @@ repository belong to the earlier shared-history arrangement; do not use them as 
 whiteboard, a spreadsheet or a phone round. The screens keep the current folded design, and the behaviour
 is truthful: nothing is shown that the data does not hold.
 
-**A task is done** when its required checks pass and its change reaches the intended Ward Flow
-destination through the authorised integration process (see HOW-WE-WORK §4). A local commit alone
-does not prove publication or deployment. The full offline suite is selected for broad changes,
-rather than every task. A screen is done when it also meets
+**A task is done** when it is committed on its own branch and an acting steward folds it into the
+ward line after the selected checks, backup and diff review (see HOW-WE-WORK §4). A ready branch
+owner may steward its own batch. The full offline suite runs daily and for broad changes, rather
+than for every task.
+Work that is built but not folded is not done. A screen is done when it also meets
 [`SCREEN-DEFINITION-OF-DONE.md`](SCREEN-DEFINITION-OF-DONE.md).
 
 **Before any real patient:** the outside reviews the owner parked must happen first (Aboriginal
@@ -46,7 +43,7 @@ catchment data). They are listed in [`STATUS.md`](STATUS.md).
 
 ## Sources of truth
 
-- **Design: the app as rendered from the latest accepted Ward Flow build.** Owner ruling,
+- **Design: the app as rendered from the latest folded commit on the ward line.** Owner ruling,
   25 September 2026: keep the current design, style and layout, and disregard other designs,
   including the Command visual pilot and the design-system proposal. The drawings in
   [`mockups/`](mockups/) and [`mockups/WARD-FLOW-DESIGN-SYSTEM.md`](mockups/WARD-FLOW-DESIGN-SYSTEM.md)
@@ -75,7 +72,7 @@ node scripts/ward-flow/gate-tsc.mjs               # when changed source or types
 node scripts/ward-flow/select-fold-gate.mjs --head <batch>  # STATIC, FOCUSED or FULL
 ```
 
-Read the selector's result on the exact integration candidate before acceptance. Existing chats must
+Read the selector's result on the current local ward line before every fold. Existing chats must
 refresh it too; an older chat instruction does not force a full suite or reserve stewardship for
 one chat. When FULL is selected, use the saved findings, resume and bounded recheck procedure in
 [`full-gate-recheck.md`](full-gate-recheck.md).
@@ -160,6 +157,5 @@ Current plans are listed in [`plans/README.md`](plans/README.md).
    `git log -1` is the current commit; documents are not.
 4. **No test can see that a screen does not look like its drawing.** Looking in a real browser is the
    only check, and it is recorded in [`SCREEN-VERIFICATION.md`](SCREEN-VERIFICATION.md).
-5. **Verify the repository before any Git write, and get the owner's yes for protected deletions.**
-   Ward Flow belongs in `BigSimmo/Ward-Flow`; `BigSimmo/Database` is a separate project. A push,
-   pull request, merge, migration or deployment requires its own applicable authority and checks.
+5. **Ward Flow is never pushed, and nothing protected is deleted without the owner's yes.** "Fold into
+   main" means the local ward line, never `origin/main`, which deploys the live app and database.

@@ -596,9 +596,7 @@ export function OfficerScreen() {
               <span className={styles.livePulse} aria-hidden="true" />
               <span className={styles.flightDeckBadgeText}>TRANSIT DISPATCH COMMAND</span>
             </div>
-            <span className={styles.flightDeckSep} aria-hidden="true">
-              &middot;
-            </span>
+            <span className={styles.flightDeckSep} aria-hidden="true">&middot;</span>
             <span className={styles.flightDeckCount}>
               <strong>{jobs.length}</strong> active patient transfers across statewide network
             </span>

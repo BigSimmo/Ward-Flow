@@ -8,9 +8,9 @@ import { formatInstant, formatInstantWithDay, type Instant } from "@/components/
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import {
-  getAudioBuzzPreference,
   setAudioBuzzPreference,
   triggerUrgentBuzzAlert,
+  useAudioBuzzPreference,
 } from "@/components/ward-management/shell/ward-sound-store";
 
 import styles from "./ward-notification-center.module.css";
@@ -93,13 +93,7 @@ export function WardNotificationCenter({
   const rollupMin = morningRollupDeadlineMinutes % 60;
   const rollupTimeLabel = `${String(rollupHour).padStart(2, "0")}:${String(rollupMin).padStart(2, "0")}`;
   const [activeTab, setActiveTab] = useState<TabKey>("all");
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
-    try {
-      return getAudioBuzzPreference();
-    } catch {
-      return true;
-    }
-  });
+  const [soundEnabled, setSoundEnabled] = useAudioBuzzPreference();
   const baseId = useId();
 
   // 1. Coordinator Buzzes matching unitId
@@ -119,7 +113,6 @@ export function WardNotificationCenter({
   const toggleSound = () => {
     const next = !soundEnabled;
     setSoundEnabled(next);
-    setAudioBuzzPreference(next);
   };
 
   const handleAcknowledgeBuzz = (originalIndex: number, isUrgent?: boolean) => {

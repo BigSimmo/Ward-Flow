@@ -5,7 +5,6 @@ import { elapsedOpenMinutes, isDetainedUnderTheAct } from "@/components/ward-man
 import {
   HEALTH_SERVICES,
   type BedRelease,
-  type EmergencyDepartment,
   type HealthService,
   type Movement,
   type Site,

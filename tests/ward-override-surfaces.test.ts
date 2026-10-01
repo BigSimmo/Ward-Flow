@@ -662,23 +662,21 @@ describe("ward override-surface guard", () => {
       // shortlist-panel.tsx: an added site (the gender-placement submit), not a lost overrideReason
       // on the existing override site, which still carries one.
       "src/components/ward-management/coordinator/shortlist-panel.tsx::REFER_TO_UNITS": 3,
-      // RB5 (item 16, 2026-09-17): raised from 1 to 2 the same day -- handleAccept (psychiatric_ward, carries
+      // RB5 (item 16): raised from 1 to 2 the same day -- handleAccept (psychiatric_ward, carries
       // overrideReason) is joined by handleCommunityAccept (community_team, needs none, the
       // coordinator-facing equivalent of community-screen.tsx's own handleConfirmAccept above).
       // The file already builds an overrideReason on the first site, so it needs no allowlist entry.
       "src/components/ward-management/referrals/referral-match.tsx::ACCEPT_REFERRAL": 3,
       "src/components/ward-management/ward/ward-answer-view.tsx::ACCEPT_IN_PRINCIPLE": 2,
       "src/components/ward-management/ward/ward-answer-view.tsx::PULL_PATIENT": 1,
-      // Master Mandate 5-Lens elevations split the ward's accept/pull first-press dispatches out of
-      // ward-screen.tsx into the arrivals corridor and the home tab. Each new surface keeps the
-      // parent surface's "first press + override re-dispatch" pair, mirrored inside the new file
-      // (see submitOverride in each), so the override-bearing guard sees a real second site here.
-      // ward-screen.tsx still owns its own override re-dispatch for movements it surfaces
-      // directly; the new files do the same for the movements they surface.
-      "src/components/ward-management/ward/ward-arrivals-corridor.tsx::PULL_PATIENT": 2,
-      "src/components/ward-management/ward/ward-home-tab.tsx::ACCEPT_IN_PRINCIPLE": 2,
-      "src/components/ward-management/ward/ward-screen.tsx::ACCEPT_IN_PRINCIPLE": 1,
-      "src/components/ward-management/ward/ward-screen.tsx::PULL_PATIENT": 1,
+      // ⚠️ TWO EACH SINCE THE OVERRIDE CONTROL LANDED, and the divergence this pin exists to
+      // surface is now REAL on this surface — deliberately. The first dispatch is the ordinary
+      // press and carries no reason, because at that moment nobody has been refused anything. The
+      // second is the override re-dispatch and carries one. Exactly the shape shortlist-panel.tsx
+      // already had, which is why the (file, eventType) grouping is right: demanding a reason on
+      // the first press would be demanding a justification before there is anything to justify.
+      "src/components/ward-management/ward/ward-screen.tsx::ACCEPT_IN_PRINCIPLE": 2,
+      "src/components/ward-management/ward/ward-screen.tsx::PULL_PATIENT": 2,
     });
   });
 

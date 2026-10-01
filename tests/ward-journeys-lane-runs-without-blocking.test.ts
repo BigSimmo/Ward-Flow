@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -24,8 +24,7 @@ import { describe, expect, it } from "vitest";
  * it reports SKIPPED and the first execution it ever gets is in CI. A contract about a file somebody
  * edits on Windows needs a guard that runs on Windows.
  */
-const ciPath = resolve(process.cwd(), ".github/workflows/ci.yml");
-const workflow = existsSync(ciPath) ? readFileSync(ciPath, "utf8") : "";
+const workflow = readFileSync(resolve(process.cwd(), ".github/workflows/ci.yml"), "utf8");
 
 /** The `ui-ward-journeys:` job block, up to the next top-level job key. */
 function wardJourneysJob(): string {
@@ -38,7 +37,6 @@ function wardJourneysJob(): string {
 
 describe("the Ward Flow browser journeys lane", () => {
   it("runs on every UI pull request — the blocking flag is NOT on its if:", () => {
-    if (!workflow) return;
     const job = wardJourneysJob();
     /*
      * ⚠️ Sliced to `continue-on-error:`, NOT to `runs-on:`. The first version cut at `runs-on:`,
@@ -69,7 +67,6 @@ describe("the Ward Flow browser journeys lane", () => {
   });
 
   it("does not block a merge while the flag is off — and this is the half that inverts if dropped", () => {
-    if (!workflow) return;
     /*
      * ⚠️ The expression, not merely the key. `continue-on-error: true` would pin the lane
      * non-blocking forever and make `WARD_JOURNEYS_BLOCKING` dead — turning it on in repository
@@ -84,7 +81,6 @@ describe("the Ward Flow browser journeys lane", () => {
   });
 
   it("is still reachable by the aggregate, so a blocking run is actually demanded", () => {
-    if (!workflow) return;
     // The flag being asymmetric only works while the aggregate keeps its own copy of it.
     expect(workflow).toContain('if [ "$WARD_JOURNEYS_BLOCKING" = "true" ]');
     expect(workflow).toContain('require_success "ward-flow-journeys" "$WARD_JOURNEYS_RESULT"');
@@ -92,7 +88,6 @@ describe("the Ward Flow browser journeys lane", () => {
   });
 
   it("runs the ward specs by pattern, so a NEW ward journey is not silently left out", () => {
-    if (!workflow) return;
     /*
      * `ui-ward-` is a positional filter, not a hand-kept list. A file list would have to be edited
      * alongside every new spec, and the failure mode of forgetting is invisible: the lane goes green

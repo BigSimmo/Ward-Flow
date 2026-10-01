@@ -18,16 +18,12 @@ import { eligibility } from "@/components/ward-management/ward-eligibility";
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
-import { OVERRIDE_REASONS, type OverrideReason } from "@/components/ward-management/ward-change-reasons";
-import { OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
-import wardStyles from "./ward.module.css";
-
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
   PULL_PATIENT: "Pull a bed",
   PATIENT_ARRIVED: "Confirm Arrival",
 };
+import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 
 function referralAnswerBlocked(movement: Movement, unit: Unit, who?: string): string | undefined {
   if (movement.stage !== "destination_review") {
@@ -63,7 +59,8 @@ interface WardHomeTabProps {
   toggleDecline: (movementId: string) => void;
   declineReason: DeclineReason | "" | undefined;
   setDeclineReason:
-    React.Dispatch<React.SetStateAction<DeclineReason | undefined>> | ((reason: DeclineReason | undefined) => void);
+    | React.Dispatch<React.SetStateAction<DeclineReason | undefined>>
+    | ((reason: DeclineReason | undefined) => void);
   submitDecline: (event: React.FormEvent<HTMLFormElement>, movementId: string) => void;
   priorRejectionCountRef: React.MutableRefObject<number>;
   rejections: Rejection[];
@@ -77,6 +74,7 @@ interface WardHomeTabProps {
   resolvePatientIdentity: (movementOrAdmission: Parameters<typeof resolveSubjectPatient>[0]) => ResolvedPatientInfo;
   lastActionRejection: Rejection | null | undefined;
   overrideReasonForm: (movementId: string) => React.ReactNode;
+  onAcceptInPrinciple?: (movementId: string, unitId: string) => void;
   liveFormAlerts: Array<{
     key: string;
     title: string;
@@ -117,74 +115,10 @@ export function WardHomeTab({
   resolvePatientIdentity,
   lastActionRejection,
   overrideReasonForm,
+  onAcceptInPrinciple,
   liveFormAlerts,
   onOpenDecisions,
 }: WardHomeTabProps) {
-  /**
-   * Local override re-dispatch so this surface is a real override-bearing site, not just a
-   * first-press site. The parent (`ward-screen.tsx`) still owns the override form for movements
-   * dispatched from its own JSX, but movements this tab surfaces (the incoming referrals) are
-   * first-pressed HERE, so the override re-dispatch also lives HERE. Mirrors `ward-screen.tsx`'s
-   * own `submitOverride`, gate-on-fragment included.
-   */
-  const [overrideReason, setOverrideReason] = useState<OverrideReason | undefined>(undefined);
-
-  function submitOverride(event: React.FormEvent<HTMLFormElement>, movementId: string) {
-    event.preventDefault();
-    if (!overrideReason || !lastActionRejection) return;
-    const attempted = lastActionRejection.attempted;
-    if (attempted !== "ACCEPT_IN_PRINCIPLE") return;
-    priorRejectionCountRef.current = rejections.length;
-    dispatch({
-      type: "ACCEPT_IN_PRINCIPLE",
-      role: "ward",
-      now,
-      movementId,
-      unitId: unit.id,
-      overrideReason,
-    });
-    setCheckToken((token) => token + 1);
-    setOverrideReason(undefined);
-  }
-
-  function homeOverrideForm(movementId: string) {
-    if (!lastActionRejection) return null;
-    if (lastActionRejection.movementId !== movementId) return null;
-    if (!lastActionRejection.reason.includes(OVERRIDE_REASON_REQUIRED)) return null;
-    return (
-      <form
-        className={wardStyles.declineForm}
-        onSubmit={(event) => submitOverride(event, movementId)}
-        data-testid={`ward-override-form-${movementId}`}
-      >
-        <fieldset className={wardStyles.declineFieldset}>
-          <legend className={wardStyles.declineLegend}>Record why this is going ahead anyway</legend>
-          {OVERRIDE_REASONS.map((reason) => (
-            <label key={reason} className={wardStyles.declineOption}>
-              <input
-                type="radio"
-                name={`ward-override-${movementId}`}
-                value={reason}
-                checked={overrideReason === reason}
-                onChange={() => setOverrideReason(reason)}
-                data-testid={`ward-override-option-${movementId}`}
-              />
-              {reason}
-            </label>
-          ))}
-          <button
-            type="submit"
-            className={wardStyles.acceptButton}
-            disabled={!overrideReason}
-            data-testid={`ward-override-submit-${movementId}`}
-          >
-            Record reason and continue
-          </button>
-        </fieldset>
-      </form>
-    );
-  }
-
   const [form4ASighted, setForm4ASighted] = useState(false);
   const [affirmationChecked, setAffirmationChecked] = useState(false);
 
@@ -408,7 +342,7 @@ export function WardHomeTab({
                   <span className={styles.timelineTime}>08:15</span>
                   <div className={styles.timelineBody}>
                     <span>
-                      <strong>Section 17 Leave Sighted:</strong> Luke Daviecroft (Bed 02) departed on 4h unescorted
+                      <strong>Section 17 Leave Sighted:</strong> Luke Daviecroft (Bed 02) departed on unescorted
                       grounds leave.
                     </span>
                     <span className={styles.timelineRole}>RN Shift Lead</span>
@@ -516,15 +450,12 @@ export function WardHomeTab({
                           blocked
                             ? ignoreUnavailableActivation
                             : () => {
-                                priorRejectionCountRef.current = rejections.length;
-                                dispatch({
-                                  type: "ACCEPT_IN_PRINCIPLE",
-                                  role: "ward",
-                                  now,
-                                  movementId: movement.id,
-                                  unitId: unit.id,
-                                });
-                                setCheckToken((token) => token + 1);
+                                if (onAcceptInPrinciple) {
+                                  onAcceptInPrinciple(movement.id, unit.id);
+                                } else {
+                                  priorRejectionCountRef.current = rejections.length;
+                                  setCheckToken((token) => token + 1);
+                                }
                               }
                         }
                       >
@@ -567,7 +498,7 @@ export function WardHomeTab({
                       </p>
                     ) : null}
 
-                    {overrideReasonForm ? overrideReasonForm(movement.id) : homeOverrideForm(movement.id)}
+                    {overrideReasonForm(movement.id)}
 
                     {declineOpen && !blocked ? (
                       <form

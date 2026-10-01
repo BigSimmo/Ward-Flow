@@ -288,8 +288,6 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
 
   return (
     <div className={styles.answerScreen} data-testid="ward-unit-screen">
-      <h1 className={styles.screenName}>{unit.name} &mdash; Bed Intake Response Console</h1>
-
       {/* Top Console Header */}
       <header className={styles.answerHeader}>
         <div className={styles.headerLeft}>
@@ -311,7 +309,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
             <span>Back to Ward Overview</span>
           </Link>
           <div className={styles.headerTitle}>
-            <span>Ward Bed Intake Response Console</span>
+            <h1>Ward Bed Intake Response Console</h1>
             <span className={styles.chipMark}>
               {site?.name ?? unit.siteCode} &bull; {unit.name}
             </span>
@@ -329,7 +327,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
               }
             }}
           >
-            Accept &amp; Allocate Bed
+            Accept in Principle (Waitlist)
           </button>
         </div>
       </header>
@@ -419,7 +417,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                     0 Pending
                   </span>
                 )}
-                <h2 className={styles.panelTitle}>{activeMovement ? "Incoming Referral" : "Bed request"}</h2>
+                <h2 className={styles.panelTitle}>
+                  {activeMovement ? "Incoming Referral" : "Bed request"}
+                </h2>
               </div>
               {activeMovement && <span className={styles.panelSub}>Emergency Department Origin</span>}
             </div>
@@ -991,7 +991,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
           <div className={styles.modalDialog}>
             <div className={styles.modalHead}>
               <h3 id="accept-modal-title" className={styles.modalTitle}>
-                Accept Referral &amp; Allocate Bed
+                Accept Referral in Principle
               </h3>
               <button
                 type="button"
@@ -1073,7 +1073,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   handleAccept(activeMovement.id);
                 }}
               >
-                Confirm Admission &amp; Pull Bed
+                Confirm Acceptance in Principle
               </button>
             </div>
           </div>

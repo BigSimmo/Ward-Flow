@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   Activity,
+  BarChart3,
   BookOpen,
   Check,
   ChevronDown,
@@ -15,6 +16,8 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import { standingFigures, WardStatsDrawerContent } from "@/components/ward-management/ward-standing-strip";
 
 import { Sheet } from "@/components/ui/sheet";
 import { createBrowserStore } from "@/lib/client-store-factory";
@@ -192,7 +195,7 @@ import styles from "./ward-bar.module.css";
  * kind of decision "stop and hand it back" exists for.
  */
 
-type WardBarPopoverId = "service" | "primary" | "activity" | "tasks" | "tools" | "referral";
+type WardBarPopoverId = "service" | "primary" | "activity" | "tasks" | "tools" | "referral" | "figures";
 type ActivityPart = "activity" | "tally";
 type ActivityCategoryFilter = "all" | Exclude<WardActivityCategory, "other">;
 
@@ -208,8 +211,10 @@ function activityChangeCategory(change: { category?: WardActivityCategory }): Wa
   return change.category ?? "other";
 }
 
-const isDrawerPanel = (id: WardBarPopoverId | null): id is "activity" | "tasks" | "tools" | "referral" | "service" =>
-  id === "activity" || id === "tasks" || id === "tools" || id === "referral" || id === "service";
+const isDrawerPanel = (
+  id: WardBarPopoverId | null,
+): id is "activity" | "tasks" | "tools" | "referral" | "service" | "figures" =>
+  id === "activity" || id === "tasks" || id === "tools" || id === "referral" || id === "service" || id === "figures";
 
 export function WardBarClock({ shownActivity }: { shownActivity?: boolean | WardActivityContent }) {
   const now = useWardFlowClock();
@@ -360,6 +365,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
     movements,
     patients,
     units,
+    admissions,
     referrals,
     rejections,
     bedReleases,
@@ -402,11 +408,36 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
 
   const serviceTriggerRef = useRef<HTMLButtonElement>(null);
   const primaryTriggerRef = useRef<HTMLButtonElement>(null);
+  const figuresTriggerRef = useRef<HTMLButtonElement>(null);
+  const figuresInitialFocusRef = useRef<HTMLElement | null>(null);
   const activityTriggerRef = useRef<HTMLButtonElement>(null);
   const tasksTriggerRef = useRef<HTMLButtonElement>(null);
   const toolsTriggerRef = useRef<HTMLButtonElement>(null);
   const servicePanelRef = useRef<HTMLDivElement>(null);
   const primaryPanelRef = useRef<HTMLDivElement>(null);
+
+  const figures = useMemo(
+    () =>
+      standingFigures({
+        movements,
+        units,
+        admissions,
+        bedReleases,
+        leaveBeds,
+        now,
+        chromeRole: role,
+        placeId,
+      }),
+    [movements, units, admissions, bedReleases, leaveBeds, now, role, placeId],
+  );
+  const flaggedFigures = useMemo(() => figures.filter((f) => f.flagged), [figures]);
+  const telemetrySummary = useMemo(
+    () =>
+      flaggedFigures.length > 0
+        ? flaggedFigures.map((f) => `${f.value} ${f.label.toLowerCase()}`).join(", ")
+        : "Nominal",
+    [flaggedFigures],
+  );
 
   // `WardTasksDrawer` draws its own header and its own close button — the Tasks `<Sheet>` below
   // is `headerHidden` with no `title`, so Sheet's own header (and the `closeRef` button it would
@@ -904,7 +935,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
             >
               <span className={styles.scopeBadgeInner}>
                 <span className={styles.scopeDot} aria-hidden="true" />
-                <span>{activeServiceBadgeLabel}</span>
+                <span className={styles.scopeBadgeLabel}>{activeServiceBadgeLabel}</span>
                 {!isFixedJurisdiction && <ChevronDown className={styles.scopeCaret} aria-hidden="true" />}
               </span>
               <span className="sr-only">{activeService ?? "All services"}</span>
@@ -1002,6 +1033,33 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
       </div>
 
       <div className={styles.drawerTriggers}>
+        <button
+          type="button"
+          ref={figuresTriggerRef}
+          className={styles.drawerTrigger}
+          data-testid="ward-bar-figures-trigger"
+          aria-haspopup="dialog"
+          aria-expanded={openPanel === "figures"}
+          aria-controls="ward-bar-figures-drawer"
+          onClick={() => (openPanel === "figures" ? closePopover("figures", false) : openPopover("figures"))}
+          title={flaggedFigures.length > 0 ? `Clinical telemetry: ${telemetrySummary}` : "Clinical telemetry: Nominal"}
+          aria-label={
+            flaggedFigures.length > 0
+              ? `Figures telemetry: ${telemetrySummary}. Open figures drawer.`
+              : "Figures telemetry: Nominal. Open figures drawer."
+          }
+        >
+          <BarChart3 className={styles.triggerIcon} aria-hidden="true" />
+          <span className={styles.triggerLabel}>Figures</span>
+          {flaggedFigures.length > 0 ? (
+            <span className={styles.alarmBadge} data-tone="danger">
+              {flaggedFigures.length}
+            </span>
+          ) : (
+            <span className={styles.dot} data-tone="good" aria-hidden="true" />
+          )}
+        </button>
+
         <button
           type="button"
           ref={activityTriggerRef}
@@ -1584,6 +1642,33 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         bodyClassName={styles.referralCarrierBody}
       >
         <WardReferralDrawer initialCategory={referralCategory} onClose={() => closePopover("referral")} />
+      </Sheet>
+
+      <Sheet
+        id="ward-bar-figures-drawer"
+        open={openPanel === "figures"}
+        onClose={() => closePopover("figures")}
+        title="Figures & Telemetry"
+        titleAccessory={
+          <span className={styles.drawerScope}>
+            {role === "coordinator" ? "Whole network" : (place?.name ?? "Unit view")}
+          </span>
+        }
+        placement="right"
+        testId="ward-bar-figures-sheet"
+        initialFocusRef={figuresInitialFocusRef}
+        returnFocusRef={figuresTriggerRef}
+        desktopBackdropClassName={styles.drawerBackdrop}
+        contentClassName={`${styles.drawerSheet} ${styles.drawerSheetFigures}`}
+        bodyClassName={styles.figuresCarrierBody}
+      >
+        <WardStatsDrawerContent
+          figures={figures}
+          chromeRole={role}
+          placeName={place?.name}
+          now={now}
+          onClose={() => closePopover("figures")}
+        />
       </Sheet>
     </header>
   );

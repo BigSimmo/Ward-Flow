@@ -38,7 +38,9 @@ describe("discharges board patient detail and navigation bridge", () => {
     const firstRow = rows[0];
 
     // Click on a non-button cell (e.g. Timing cell or Ward cell text)
-    const timingCell = within(firstRow).getByText(/Sat, 26 Sept|Mon, 28 Sept|Tue, 29 Sept|Wed, 30 Sept|Thu, 1 Oct/);
+    const timingCell = within(firstRow).getByText(
+      /Sat, 26 Sept|Sun, 27 Sept|Mon, 28 Sept|Tue, 29 Sept|Wed, 30 Sept|Thu, 1 Oct|\d{1,2}:\d{2}/,
+    );
     fireEvent.click(timingCell);
 
     // Detail drawer should now be open with the patient record

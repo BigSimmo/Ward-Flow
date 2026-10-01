@@ -101,7 +101,7 @@
 
 .badgeTitle {
   color: var(--ink);
-  font-size: 0.6875rem;
+  font-size: var(--t-0, 0.75rem);
 }
 
 .liveSyncDot {
@@ -109,7 +109,7 @@
   align-items: center;
   gap: 5px;
   color: var(--good);
-  font-size: 0.6875rem;
+  font-size: var(--t-0, 0.75rem);
   padding-left: 6px;
   border-left: 1px solid var(--line);
 }
@@ -124,8 +124,7 @@
 }
 
 @keyframes pulseSync {
-  0%,
-  100% {
+  0%, 100% {
     opacity: 1;
     transform: scale(1);
   }
@@ -623,7 +622,7 @@
 
 .searchMatchPill {
   font-family: var(--mono);
-  font-size: 0.6875rem;
+  font-size: var(--t-0, 0.75rem);
   color: var(--accent);
   background: var(--accent-soft);
   border: 1px solid var(--accent);
@@ -639,7 +638,7 @@
   right: 8px;
   pointer-events: none;
   font-family: var(--mono);
-  font-size: 0.6875rem;
+  font-size: var(--t-0, 0.75rem);
   color: var(--muted);
   background: var(--surface-2);
   border: 1px solid var(--line);
@@ -814,10 +813,7 @@
   min-width: 0;
   position: relative;
   overflow: hidden;
-  transition:
-    transform 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .summaryTile::before {
@@ -854,8 +850,8 @@
 }
 
 .summaryTileExpiries {
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.3);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--danger) 15%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent);
 }
 
 .summaryTileExpiriesClean::before {
@@ -863,7 +859,7 @@
 }
 
 .summaryTileSpecialling::before {
-  background: #8b5cf6;
+  background: var(--purple-accent, var(--accent));
 }
 
 .tileMeta {
@@ -897,7 +893,7 @@
 }
 
 .tileSub [data-testid="legal-limits-not-checked"] {
-  font-size: 0.6875rem;
+  font-size: var(--t-0, 0.75rem);
   color: var(--muted);
   white-space: normal;
 }
@@ -2322,7 +2318,7 @@ table.snapSheet {
 :global(:root:not([data-theme="light"])) .screen .viewModeBtn.active {
   background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--lift-sm);
 }
 
 /* ── NSQHS STANDARD 6 CLINICAL HANDOVER ACCREDITATION FOOTER ── */
@@ -2396,7 +2392,7 @@ table.snapSheet {
   padding-top: 8px;
   border-top: 1px solid var(--line);
   font-family: var(--display);
-  font-size: 0.6875rem;
+  font-size: var(--t-0, 0.75rem);
   color: var(--muted);
   text-align: center;
   letter-spacing: 0.02em;

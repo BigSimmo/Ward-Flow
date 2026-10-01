@@ -437,8 +437,8 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections, 
           ) : (
             referral.id
           )}{" "}
-          was sent to {referralDestinationLabels(referral).join(", ").toLowerCase()} — none of which is answered by
-          matching a bed. There is no bed shortlist for this referral.
+          was sent to {referralDestinationLabels(referral).join(", ").toLowerCase()} — none of which is
+          answered by matching a bed. There is no bed shortlist for this referral.
         </p>
         {gpSourceNotice}
         {edAddressing && edAddressing.state === "queued" ? (
@@ -1268,7 +1268,9 @@ function MatchRow({
             Accepts this referral
           </span>
         ) : (
-          <span className={styles.declinedBadge}>Ineligible / full</span>
+          <span className={styles.declinedBadge}>
+            Ineligible / full
+          </span>
         )}
       </div>
 
@@ -1279,10 +1281,7 @@ function MatchRow({
       <details className={styles.criteriaDisclosure} data-testid={`ward-referral-match-criteria-${unit.id}`}>
         <summary className={styles.criteriaSummary}>
           <span className={styles.criteriaSummaryTitle}>
-            Clinical criteria:{" "}
-            <strong>
-              {passingGates} of {totalGates} gates met
-            </strong>
+            Clinical criteria: <strong>{passingGates} of {totalGates} gates met</strong>
           </span>
           <span className={styles.criteriaSummaryHint}>{accepts ? "View gates" : "Inspect mismatch"}</span>
         </summary>

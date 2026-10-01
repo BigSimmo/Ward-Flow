@@ -2847,26 +2847,54 @@ button.searchBox:hover {
   font-weight: 600;
 }
 
+.workspaceSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.workspaceBody {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.filterToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  padding: 8px 12px;
+}
+
 .triageQueueGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
-  gap: var(--ward-space-12);
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 12px;
   margin-bottom: var(--ward-space-16);
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .refCard {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r1);
-  padding: 0.875rem 1rem;
+  border-radius: var(--r2, 6px);
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 10px;
   cursor: pointer;
   transition:
     border-color 0.15s,
     box-shadow 0.15s,
     transform 0.15s;
+  list-style: none;
 }
 
 .refCard:hover {
@@ -2879,53 +2907,68 @@ button.searchBox:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 8px;
   font-family: var(--mono);
-  font-size: var(--t-0);
+  font-size: 13px;
   font-weight: 700;
 }
 
 .refId {
   color: var(--ink);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .refWait {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap !important;
 }
 
 .refWait[data-breach="true"] {
   color: var(--danger-ink);
   background: var(--danger-soft);
-  padding: 0.125rem 0.375rem;
-  border-radius: var(--r2);
-  border: 1px solid var(--danger);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill, 9999px);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .refPatientRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
-  font-size: var(--t-3);
+  gap: 8px;
+  font-size: var(--t-2, 13.5px);
+  color: var(--ink);
+}
+
+.refPatientRow b {
+  font-size: var(--t-2, 13.5px);
   color: var(--ink);
 }
 
 .refClinicalSummary {
-  font-size: var(--t-1);
+  font-size: var(--t-1, 13px);
   line-height: 1.45;
   color: var(--ink-soft);
-  background: var(--sunk);
-  padding: 0.5rem 0.625rem;
-  border-radius: var(--r2);
+  background: var(--surface-2);
+  padding: 8px 10px;
+  border-radius: var(--r2, 6px);
   border: 1px solid var(--line);
 }
 
 .refActionsRow {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
+  gap: 8px;
+  margin-top: 4px;
   flex-wrap: wrap;
 }
 
@@ -2933,16 +2976,41 @@ button.searchBox:hover {
   background: var(--accent);
   color: var(--on-accent);
   border: 1px solid var(--accent);
-  padding: 0.3125rem 0.625rem;
-  font-size: var(--t-0);
+  padding: 0 12px;
+  height: 30px;
+  font-size: var(--t-0, 12px);
   font-weight: 600;
-  border-radius: var(--r2);
+  border-radius: var(--r2, 6px);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: background 0.12s;
 }
 
 .btnSmPrimary:hover {
   background: var(--accent-press, var(--accent));
+}
+
+.btnSmSec {
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  padding: 0 12px;
+  height: 30px;
+  font-size: var(--t-0, 12px);
+  font-weight: 500;
+  border-radius: var(--r2, 6px);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+}
+
+.btnSmSec:hover {
+  background: var(--sunk);
+  border-color: var(--line-strong);
 }
 
 .btnSmPrimary[aria-disabled="true"] {

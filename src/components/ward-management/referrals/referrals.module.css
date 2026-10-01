@@ -1215,7 +1215,7 @@
   border: 0.0625rem solid var(--ward-border);
   border-radius: var(--radius-lg);
   background: var(--surface-raised);
-  box-shadow: 0 0.0625rem 0.1875rem rgba(0, 0, 0, 0.03);
+  box-shadow: var(--lift-sm);
 }
 
 .matchDossierTop {
@@ -1273,14 +1273,12 @@
   border: 0.0625rem solid var(--ward-border);
   border-radius: var(--radius-md);
   background: var(--surface-raised);
-  transition:
-    border-color 150ms ease,
-    box-shadow 150ms ease;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
 .bandGroupHasAvailable {
   border-color: var(--success-border);
-  box-shadow: 0 0.0625rem 0.1875rem rgba(16, 185, 129, 0.08);
+  box-shadow: var(--lift-sm);
 }
 
 .bandGroupHasAvailable > .bandSummary {
@@ -1322,7 +1320,7 @@
   padding: var(--ward-space-2) var(--ward-space-8);
   border-radius: var(--radius-sm);
   background: var(--ward-success);
-  color: #ffffff;
+  color: var(--surface);
   font-size: var(--t-0);
   font-weight: 700;
   line-height: var(--ward-leading-none);
@@ -1452,7 +1450,7 @@
   border-color: var(--success-border);
   border-left: 0.25rem solid var(--ward-success);
   background: var(--ward-success-soft);
-  box-shadow: 0 0.0625rem 0.125rem rgba(16, 185, 129, 0.05);
+  box-shadow: var(--lift-sm);
 }
 
 .matchRowDeclines {
@@ -3156,8 +3154,8 @@ input.historyField:focus-visible {
   padding: 0.875rem 1rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg, 8px);
-  background: var(--surface-subtle, #fafafa);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  background: var(--surface-2);
+  box-shadow: var(--lift-sm);
 }
 
 .clinicalCardHeader {
@@ -3545,7 +3543,7 @@ input.historyField:focus-visible {
   -webkit-backdrop-filter: blur(8px);
   padding: 0.75rem 1rem;
   margin-bottom: 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--lift-sm);
 }
 
 .inspectorHeaderLeft {
@@ -3714,10 +3712,10 @@ input.historyField:focus-visible {
 .timelineCard {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg, 8px);
-  background: var(--surface-subtle, #fafafa);
+  background: var(--surface-2);
   padding: 0.75rem 1rem;
   margin: 0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  box-shadow: var(--lift-sm);
 }
 
 .timelineHeaderRow {
@@ -3796,8 +3794,10 @@ input.historyField:focus-visible {
 }
 
 .timelineGlyph {
-  font-size: 0.5rem;
+  font-size: var(--t-0, 0.75rem);
   line-height: 1;
+  display: inline-block;
+  transform: scale(0.75);
   color: var(--surface);
 }
 
@@ -3992,15 +3992,15 @@ input.historyField:focus-visible {
 
 .cardPriorityBadge[data-priority="Emergency"],
 .cardPriorityBadge[data-priority="urgent"] {
-  background: var(--ward-danger-soft, #fee2e2);
-  color: var(--ward-danger, #b91c1c);
-  border: 1px solid var(--danger-border, #fca5a5);
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid var(--danger);
 }
 
 .cardPriorityBadge[data-priority="Routine"] {
-  background: var(--surface-2, #f1f5f9);
-  color: var(--ink-soft, #475569);
-  border: 1px solid var(--line, #e2e8f0);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
 }
 
 .cardContextRow {
@@ -4018,9 +4018,9 @@ input.historyField:focus-visible {
   align-items: center;
   font-size: var(--t-0, 0.75rem);
   font-weight: 600;
-  color: var(--ward-success, #15803d);
-  background: var(--ward-success-soft, #dcfce7);
-  border: 1px solid var(--success-border, #86efac);
+  color: var(--good);
+  background: var(--good-soft);
+  border: 1px solid var(--good);
   border-radius: 4px;
   padding: 0.15rem 0.45rem;
   line-height: 1.2;
@@ -4031,9 +4031,9 @@ input.historyField:focus-visible {
   align-items: center;
   font-size: var(--t-0, 0.75rem);
   font-weight: 600;
-  color: var(--ward-warning, #b45309);
-  background: var(--ward-warning-soft, #fef3c7);
-  border: 1px solid var(--warning-border, #fde68a);
+  color: var(--warn);
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
   border-radius: 4px;
   padding: 0.15rem 0.45rem;
   line-height: 1.2;
@@ -4075,9 +4075,9 @@ input.historyField:focus-visible {
 .cardRefusals {
   display: block;
   font-size: 0.75rem;
-  color: var(--ward-danger, #b91c1c);
-  background: var(--ward-danger-soft, #fee2e2);
-  border: 1px solid var(--danger-border, #fca5a5);
+  color: var(--danger);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
   border-radius: 4px;
   padding: 0.2rem 0.5rem;
   margin-top: 0.25rem;
@@ -4098,15 +4098,15 @@ input.historyField:focus-visible {
 }
 
 .decidedOutcomeBadge[data-outcome="admitted"] {
-  background: var(--ward-success-soft, #dcfce7);
-  color: var(--ward-success, #15803d);
-  border: 1px solid var(--success-border, #86efac);
+  background: var(--good-soft);
+  color: var(--good);
+  border: 1px solid var(--good);
 }
 
 .decidedOutcomeBadge[data-outcome="declined"] {
-  background: var(--ward-danger-soft, #fee2e2);
-  color: var(--ward-danger, #b91c1c);
-  border: 1px solid var(--danger-border, #fca5a5);
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid var(--danger);
 }
 
 .screen[data-referral-view="register"] .cardTop {
@@ -4513,8 +4513,8 @@ input.historyField:focus-visible {
   padding: 0.75rem 1rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg, 8px);
-  background: var(--surface-subtle, #fafafa);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  background: var(--surface-2);
+  box-shadow: var(--lift-sm);
   margin: 0;
 }
 
@@ -4583,9 +4583,9 @@ input.historyField:focus-visible {
   gap: 0.5rem;
   padding: 0.55rem 0.875rem;
   border-radius: var(--radius-md, 6px);
-  border: 1px solid var(--success-border, #86efac);
-  background: var(--ward-success-soft, #f0fdf4);
-  color: var(--ward-success, #166534);
+  border: 1px solid var(--good);
+  background: var(--good-soft);
+  color: var(--good);
   font-size: 0.8125rem;
   font-weight: 600;
   margin: 0;

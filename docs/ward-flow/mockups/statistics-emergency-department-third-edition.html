@@ -24,8 +24,6 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
     />
-    <link rel="stylesheet" href="suite-nav.css" />
-    <script src="suite-nav.js" defer></script>
     <style>
       /* ═══════════════════════════════════════════════════════════════════════
          WARD FLOW COMMAND. Third edition, light and dark.
@@ -4563,17 +4561,15 @@
      title at t-6, at 1100 by 92px at t-3, and at 320 by 13px. The heading of
      the first panel repeats the whole name directly below the bar. */
       .hdr1 .title {
-        flex: 0 0 auto;
-        min-width: 0;
+        flex: 0 1 auto;
       }
       .hdr1 h1 {
         min-width: 0;
-        overflow: visible;
-        text-overflow: clip;
-        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .hdr1 .end {
-        flex: 0 1 auto;
+        flex-shrink: 0;
       }
       @media (max-width: 1700px) {
         .hdr1 h1 {
@@ -5410,57 +5406,6 @@
     </style>
   </head>
   <body>
-    <!-- ═══════════════════════════════════════════════════════════════════
-         WARD FLOW STATISTICS SUITE MASTER NAVIGATION BAR
-         ═══════════════════════════════════════════════════════════════════ -->
-    <header class="suiteNavBar" role="navigation" aria-label="Ward Flow Statistics Suite Navigation">
-      <div class="suiteNavBrand">
-        <span class="suiteNavBeacon" aria-hidden="true"></span>
-        <span class="suiteNavTitle"><b>Ward Flow</b> <span class="suiteNavBadge">Statistics Suite</span></span>
-      </div>
-
-      <nav class="suiteNavTrack" role="tablist" aria-label="Select Statistics View">
-        <a href="statistics-third-edition.html" class="suiteNavPill" id="suite-tab-1"
-          ><span class="suiteNavPillNum">1</span> Hub Overview</a
-        >
-        <a href="statistics-overview-third-edition.html" class="suiteNavPill" id="suite-tab-2"
-          ><span class="suiteNavPillNum">2</span> Statewide Flow</a
-        >
-        <a href="statistics-service-third-edition.html" class="suiteNavPill" id="suite-tab-3"
-          ><span class="suiteNavPillNum">3</span> By Service</a
-        >
-        <a href="statistics-ward-third-edition.html" class="suiteNavPill" id="suite-tab-4"
-          ><span class="suiteNavPillNum">4</span> By Ward</a
-        >
-        <a
-          href="statistics-emergency-department-third-edition.html"
-          class="suiteNavPill active"
-          id="suite-tab-5"
-          aria-current="page"
-          ><span class="suiteNavPillNum">5</span> Emergency Dept</a
-        >
-        <a href="statistics-community-third-edition.html" class="suiteNavPill" id="suite-tab-6"
-          ><span class="suiteNavPillNum">6</span> Community Teams</a
-        >
-        <a href="statistics-compare-third-edition.html" class="suiteNavPill" id="suite-tab-7"
-          ><span class="suiteNavPillNum">7</span> Ward Comparisons</a
-        >
-      </nav>
-
-      <div class="suiteNavActions">
-        <button
-          type="button"
-          class="suiteThemeBtn"
-          onclick="toggleGlobalSuiteTheme()"
-          id="suiteThemeToggle"
-          title="Toggle Theme (Light/Dark)"
-        >
-          <span id="suiteThemeIcon">🌙</span> <span id="suiteThemeText">Dark</span>
-        </button>
-        <a href="statistics-portal.html" class="suitePortalLink" title="Showcase Portal View">Portal ↗</a>
-      </div>
-    </header>
-
     <div class="app hApp">
       <a class="skip" href="#deptPanes">Skip to the figures</a>
       <nav class="rail open" id="rail" aria-label="Ward Flow sections"></nav>
@@ -5566,19 +5511,7 @@
           <section class="panel" aria-labelledby="headTitle">
             <div class="ph" style="align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px">
               <div>
-                <h2
-                  id="headTitle"
-                  style="
-                    font-size: 14px;
-                    font-weight: 700;
-                    color: var(--accent-ink);
-                    text-transform: uppercase;
-                    letter-spacing: 0.04em;
-                    margin-bottom: 2px;
-                  "
-                >
-                  Metropolitan &amp; Regional EDs
-                </h2>
+                <h2 id="headTitle">Emergency department statistics</h2>
                 <span class="count" id="headCount"></span>
               </div>
               <div class="pillGroup" role="group" aria-label="Time Window">
@@ -7318,12 +7251,14 @@
           $("summaryPanel").innerHTML =
             '<div class="ph"><h2 id="sumTitle">' +
             esc(name) +
-            ' — Real-Time Triage Status</h2><span class="count">' +
+            '</h2><span class="count">' +
             (state.edFilter
               ? "1 department"
               : scopedEds().length + " " + plural(scopedEds().length, "department", "departments")) +
             "</span></div>" +
-            '<div class="pb" style="padding-bottom: 6px;"><div class="facts">' +
+            '<div class="pb"><p class="lede">' +
+            lede +
+            '</p><div class="facts">' +
             facts +
             "</div></div>" +
             '<dl class="band">' +

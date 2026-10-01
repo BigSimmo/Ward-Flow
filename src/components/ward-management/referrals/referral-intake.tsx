@@ -12,6 +12,7 @@ import {
   destinationOptions,
   suburbOptions,
 } from "@/components/ward-management/referrals/referral-destination-options";
+import { lookupCatchment } from "@/components/ward-management/ward-catchment";
 import {
   TENTATIVE_DIAGNOSIS_BLOCKS,
   tentativeDiagnosisPhrase,
@@ -1350,6 +1351,14 @@ export function ReferralIntakeForm() {
     () => (dayZero ? new Date(dayZero.getTime() + now * 60 * 1000) : new Date()),
     [dayZero, now],
   );
+  const formattedReferralDate = useMemo(() => {
+    return currentDate.toLocaleDateString("en-AU", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "Australia/Perth",
+    });
+  }, [currentDate]);
   const searchParams = useSearchParams();
   // See `readPatientId`'s own comment above: `useSearchParams` re-renders this component on the
   // client with the latest `?patientId=`, so a change to it — including one that does not remount
@@ -1417,7 +1426,6 @@ export function ReferralIntakeForm() {
   const [newUmrn, setNewUmrn] = useState("");
   const [newDob, setNewDob] = useState("");
   const [newGender, setNewGender] = useState<Gender | "not-recorded">("not-recorded");
-  const [newLegalStatus, setNewLegalStatus] = useState("Voluntary");
   const [addPatientError, setAddPatientError] = useState<string | null>(null);
   const pendingAddPatientRef = useRef<boolean>(false);
 
@@ -1593,6 +1601,25 @@ export function ReferralIntakeForm() {
   const draftSubjectIdRef = useRef(subject?.id);
   const [lastRejection, setLastRejection] = useState<Rejection | undefined>(undefined);
   const [confirmed, setConfirmed] = useState(false);
+  const [suburbFilter, setSuburbFilter] = useState("");
+  const [isSuburbDropdownOpen, setIsSuburbDropdownOpen] = useState(false);
+  const suburbComboboxRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: globalThis.MouseEvent) {
+      if (suburbComboboxRef.current && !suburbComboboxRef.current.contains(event.target as Node)) {
+        setIsSuburbDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredSuburbs = useMemo(() => {
+    const query = suburbFilter.trim().toLowerCase();
+    if (!query) return SUBURB_OPTIONS;
+    return SUBURB_OPTIONS.filter((s) => s.toLowerCase().includes(query));
+  }, [suburbFilter]);
 
   // Third Edition: Modals and Quick Clinical Utility Actions
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -1924,6 +1951,47 @@ export function ReferralIntakeForm() {
     if (draft.homeRegion === "Peel") return { name: "Mandurah CMHT" };
     return { name: "Fremantle CMHT" };
   }, [draft.homeRegion]);
+
+  const mappedReferralLocations = useMemo(() => {
+    let commLocation = radarComm.name;
+    let commNote = "Catchment-aligned community mental health team";
+    let commState: "catchment" | "contested" | "unknown" = "catchment";
+
+    if (
+      draft.suburb &&
+      draft.suburb !== UNANSWERED_VALUE &&
+      !(SUBURB_UNKNOWN_REASONS as readonly string[]).includes(draft.suburb)
+    ) {
+      const lookup = lookupCatchment(draft.suburb);
+      if (lookup.state === "reviewed" || lookup.state === "unreviewed") {
+        const teams = lookup.answers.flatMap((a) => a.clinics);
+        if (teams.length > 0) {
+          commLocation = teams.join(" / ");
+          commNote = lookup.state === "reviewed" ? "Direct catchment match" : "Provisional catchment match";
+        }
+      } else if (lookup.state === "contested") {
+        commLocation = lookup.answers.map((a) => a.clinics.join(", ")).join(" or ");
+        commNote = "Contested boundary — review required";
+        commState = "contested";
+      } else {
+        commLocation = radarComm.name;
+        commNote = "Regional fallback team";
+        commState = "unknown";
+      }
+    }
+
+    const acuteLocation = radarWard.name;
+    const acuteNote = `${radarWard.ready} beds ready (${radarPendingPreparation} preparing) · ${radarWard.occ}/${radarWard.total} occ`;
+
+    const edLocation = radarEd.name;
+    const edNote = `${radarEd.waiting}${radarEd.wait ? ` · ${radarEd.wait}` : ""}`;
+
+    return {
+      community: { name: commLocation, note: commNote, state: commState },
+      acute: { name: acuteLocation, note: acuteNote, state: "capacity" },
+      ed: { name: edLocation, note: edNote, state: "active" },
+    };
+  }, [draft.suburb, radarComm, radarWard, radarPendingPreparation, radarEd]);
 
   // Referral answers derivations
   const gateLegalVerified = draft.involuntaryBedNeeded !== UNANSWERED_VALUE;
@@ -2325,7 +2393,7 @@ export function ReferralIntakeForm() {
                   </span>
                 </div>
                 <p className={styles.personDetailSentence}>
-                  No patient record linked. This referral can still be sent; no identity will be inferred.
+                  This referral can still be raised and sent anonymously; no patient identity will be inferred.
                 </p>
               </div>
               <div className={styles.personActions}>
@@ -2532,20 +2600,9 @@ export function ReferralIntakeForm() {
                       </select>
                     </div>
                     <div className={styles.modalField}>
-                      <label htmlFor="new-patient-legal" className={styles.modalLabel}>
-                        Legal status
-                      </label>
-                      <select
-                        id="new-patient-legal"
-                        className={styles.modalSelect}
-                        value={newLegalStatus}
-                        onChange={(e) => setNewLegalStatus(e.target.value)}
-                      >
-                        <option value="Voluntary">Voluntary</option>
-                        <option value="Form 1A">Form 1A</option>
-                      </select>
+                      <span className={styles.modalLabel}>Legal status</span>
                       <p style={{ marginTop: 4, fontSize: "var(--t-0)", color: "var(--muted, #64748b)" }}>
-                        Not saved when you register the patient — ADD_PATIENT records identity only.
+                        MHA statutory instruments are recorded under Question 2 of this referral.
                       </p>
                     </div>
                   </div>
@@ -2638,43 +2695,76 @@ export function ReferralIntakeForm() {
                     </span>
                   </legend>
                   <div className={pageStyles.panelBody}>
-                    <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
-                      <div
-                        className={`${styles.questionHead} ${pageStyles.questionHead} ${pageStyles.questionLabelRow}`}
-                      >
-                        <label
-                          className={`${styles.fieldLegend} ${pageStyles.fieldLegend} ${pageStyles.questionLabel}`}
-                          htmlFor="ward-referral-intake-ageBand"
+                    {/* Row 1: Age band & Broad diagnosis category (tentative) */}
+                    <div className={pageStyles.fieldRow2}>
+                      <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
+                        <div
+                          className={`${styles.questionHead} ${pageStyles.questionHead} ${pageStyles.questionLabelRow}`}
                         >
-                          Age band
-                        </label>
-                        <QuestionState field="ageBand" draft={draft} />
+                          <label
+                            className={`${styles.fieldLegend} ${pageStyles.fieldLegend} ${pageStyles.questionLabel}`}
+                            htmlFor="ward-referral-intake-ageBand"
+                          >
+                            Age band
+                          </label>
+                          <QuestionState field="ageBand" draft={draft} />
+                        </div>
+                        <select
+                          id="ward-referral-intake-ageBand"
+                          data-testid="ward-referral-intake-ageBand"
+                          className={`${styles.select} ${pageStyles.select}`}
+                          value={draft.ageBand}
+                          onChange={(event) =>
+                            setDraft((current) => ({
+                              ...current,
+                              ageBand: event.target.value as Cohort | typeof UNANSWERED_VALUE,
+                            }))
+                          }
+                        >
+                          <option value={UNANSWERED_VALUE}>{UNANSWERED_OPTION_LABEL}</option>
+                          {AGE_BAND_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
                       </div>
-                      <select
-                        id="ward-referral-intake-ageBand"
-                        data-testid="ward-referral-intake-ageBand"
-                        className={`${styles.select} ${pageStyles.select}`}
-                        value={draft.ageBand}
-                        onChange={(event) =>
-                          setDraft((current) => ({
-                            ...current,
-                            ageBand: event.target.value as Cohort | typeof UNANSWERED_VALUE,
-                          }))
-                        }
-                      >
-                        {/* The unanswered state is a real leading option rather than a select with no
-                    option selected, so a clinician on a phone sees a prompt instead of a blank
-                    control — and so the state a screen reader announces is the state the form is
-                    actually in. Its presence and its position are pinned by the suite. */}
-                        <option value={UNANSWERED_VALUE}>{UNANSWERED_OPTION_LABEL}</option>
-                        {AGE_BAND_OPTIONS.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
+
+                      <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
+                        <div
+                          className={`${styles.questionHead} ${pageStyles.questionHead} ${pageStyles.questionLabelRow}`}
+                        >
+                          <label
+                            className={`${styles.fieldLegend} ${pageStyles.fieldLegend} ${pageStyles.questionLabel}`}
+                            htmlFor="ward-referral-intake-tentativeDiagnosis"
+                          >
+                            Broad diagnosis category (tentative)
+                          </label>
+                          <span className={pageStyles.optionalPill}>Optional · Tentative</span>
+                        </div>
+                        <select
+                          id="ward-referral-intake-tentativeDiagnosis"
+                          data-testid="ward-referral-intake-tentativeDiagnosis"
+                          className={`${styles.select} ${pageStyles.select}`}
+                          value={draft.tentativeDiagnosis}
+                          onChange={(event) =>
+                            setDraft((current) => ({
+                              ...current,
+                              tentativeDiagnosis: event.target.value as ReferralDraft["tentativeDiagnosis"],
+                            }))
+                          }
+                        >
+                          <option value={NO_DIAGNOSIS_VALUE}>Not recorded</option>
+                          {TENTATIVE_DIAGNOSIS_BLOCKS.map((block) => (
+                            <option key={block.code} value={block.code}>
+                              {tentativeDiagnosisPhrase(block.code)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
 
+                    {/* Row 2: Sex & Gender (decides which bed) */}
                     <div className={pageStyles.fieldRow2}>
                       <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
                         <div
@@ -2721,10 +2811,6 @@ export function ReferralIntakeForm() {
                         <div
                           className={`${styles.questionHead} ${pageStyles.questionHead} ${pageStyles.questionLabelRow}`}
                         >
-                          {/* T11 (after T10, item 8, owner answer 17 September 2026): "Gender (decides
-                          which bed)" — the exact wording build plan §2 gives, so a clinician never
-                          confuses this with the "Sex" question above it, which the gate no longer
-                          reads at all. */}
                           <label
                             className={`${styles.fieldLegend} ${pageStyles.fieldLegend} ${pageStyles.questionLabel}`}
                             htmlFor="ward-referral-intake-gender"
@@ -2753,11 +2839,6 @@ export function ReferralIntakeForm() {
                           ))}
                           <option value={NOT_RECORDED_VALUE}>Not yet recorded</option>
                         </select>
-                        {/* `historyHint`, not a new `fieldHint` class — this stylesheet has exactly
-                          one hint class, named for the question it was written for rather than for
-                          the shape it gives; see the sending-team field below for why a new alias
-                          class is a trap here (`styles.<missing>` renders unstyled and passes every
-                          gate silently). */}
                         <p className={`${styles.historyHint} ${pageStyles.note}`}>
                           Choose a gender, or &quot;Not yet recorded&quot;. None is chosen for you.
                         </p>
@@ -2772,43 +2853,7 @@ export function ReferralIntakeForm() {
                       </div>
                     </div>
 
-                    {/* T15 (item 12, owner answer 17 September 2026): "An admission from a referral
-                    carries the referral's broad diagnosis category, marked tentative." OPTIONAL —
-                    never a `QuestionState` badge, and never in `REQUIRED_FIELDS`: a referrer with no
-                    diagnosis to record is not made to invent one, the same discipline the written
-                    history holds to. */}
-                    <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
-                      <div
-                        className={`${styles.questionHead} ${pageStyles.questionHead} ${pageStyles.questionLabelRow}`}
-                      >
-                        <label
-                          className={`${styles.fieldLegend} ${pageStyles.fieldLegend} ${pageStyles.questionLabel}`}
-                          htmlFor="ward-referral-intake-tentativeDiagnosis"
-                        >
-                          Broad diagnosis category (tentative)
-                        </label>
-                      </div>
-                      <select
-                        id="ward-referral-intake-tentativeDiagnosis"
-                        data-testid="ward-referral-intake-tentativeDiagnosis"
-                        className={`${styles.select} ${pageStyles.select}`}
-                        value={draft.tentativeDiagnosis}
-                        onChange={(event) =>
-                          setDraft((current) => ({
-                            ...current,
-                            tentativeDiagnosis: event.target.value as ReferralDraft["tentativeDiagnosis"],
-                          }))
-                        }
-                      >
-                        <option value={NO_DIAGNOSIS_VALUE}>Not recorded</option>
-                        {TENTATIVE_DIAGNOSIS_BLOCKS.map((block) => (
-                          <option key={block.code} value={block.code}>
-                            {tentativeDiagnosisPhrase(block.code)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
+                    {/* Row 3: Home region & Suburb */}
                     <div className={pageStyles.fieldRow2}>
                       <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
                         <div
@@ -2841,27 +2886,11 @@ export function ReferralIntakeForm() {
                             </option>
                           ))}
                         </select>
+                        <p className={`${styles.fieldNote} ${pageStyles.note}`}>
+                          Determines default regional service boundary and psychiatric network.
+                        </p>
                       </div>
 
-                      {/*
-                       * The suburb, and the sentence beside it that says what becomes of the answer.
-                       *
-                       * ⚠️ **THIS NOTE HAS BEEN FALSE ONCE ALREADY, IN THE OTHER DIRECTION.** Until
-                       * 2026-08-30 `Referral` carried `homeRegion` and nothing finer, so the answer was read
-                       * for the destination picker below and then dropped — and the note said so, because a
-                       * control that quietly discards its answer is the "pretends to record" pattern the
-                       * destination spec refuses in as many words. `Referral.suburb` exists now (`CM-4`), so
-                       * that sentence became a FALSE REASSURANCE about what the record holds: worse than a
-                       * missing one, because a clinician who read it would believe the answer went nowhere.
-                       *
-                       * The note therefore says the opposite, and `tests/ward-referral-suburb-pin.test.ts`
-                       * pins it against `Referral.suburb`'s continued existence, so removing the field turns
-                       * this sentence red rather than quietly false a second time.
-                       *
-                       * ⚠️ **A SUBURB IS NOT AN ADDRESS (`PD-3`).** No street, number or postcode belongs
-                       * beside this picker, however natural it feels: `address` is UNRULED and the guard stays
-                       * closed on it. A ruling permitting a suburb is not a ruling permitting the category.
-                       */}
                       <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
                         <div
                           className={`${styles.questionHead} ${pageStyles.questionHead} ${pageStyles.questionLabelRow}`}
@@ -2874,40 +2903,143 @@ export function ReferralIntakeForm() {
                           </label>
                           <QuestionState field="suburb" draft={draft} />
                         </div>
-                        <select
-                          id="ward-referral-intake-suburb"
-                          data-testid="ward-referral-intake-suburb"
-                          className={`${styles.select} ${pageStyles.select}`}
-                          value={draft.suburb}
-                          onChange={(event) => setDraft((current) => ({ ...current, suburb: event.target.value }))}
-                        >
-                          <option value={UNANSWERED_VALUE}>{UNANSWERED_OPTION_LABEL}</option>
-                          {/*
-                    ⚠️ THE HONEST ANSWER, OFFERED FIRST AMONG THE REAL ONES.
-                    Without it a patient of no fixed abode cannot be referred, and the way past a
-                    required picker with no true option is to choose a plausible nearby suburb — which
-                    puts an invented place into the one field built to resolve against a real table.
-                    See `ReferralSuburb`; whether "not known" and "no fixed abode" are one answer or
-                    two is a clinical question on the owner's queue, and a second member appears here
-                    automatically rather than needing this list edited again.
-                  */}
-                          {SUBURB_UNKNOWN_REASONS.map((reason) => (
-                            <option key={reason} value={reason}>
-                              {suburbUnknownLabels[reason]}
-                            </option>
-                          ))}
-                          {SUBURB_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
+                        <div className={pageStyles.suburbComboboxContainer} ref={suburbComboboxRef}>
+                          <div className={pageStyles.suburbInputWrapper}>
+                            <input
+                              type="text"
+                              className={`${styles.suburbFilterInput} ${pageStyles.suburbFilterInput}`}
+                              placeholder="Type to filter suburbs..."
+                              value={suburbFilter}
+                              onChange={(event) => {
+                                const nextVal = event.target.value;
+                                setSuburbFilter(nextVal);
+                                setIsSuburbDropdownOpen(true);
+                                if (!nextVal.trim()) {
+                                  setDraft((current) => ({ ...current, suburb: UNANSWERED_VALUE }));
+                                } else {
+                                  const exactMatch = SUBURB_OPTIONS.find(
+                                    (s) => s.toLowerCase() === nextVal.trim().toLowerCase(),
+                                  );
+                                  if (exactMatch) {
+                                    setDraft((current) => ({ ...current, suburb: exactMatch }));
+                                  }
+                                }
+                              }}
+                              onFocus={() => setIsSuburbDropdownOpen(true)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Escape") {
+                                  setIsSuburbDropdownOpen(false);
+                                } else if (e.key === "Enter" && isSuburbDropdownOpen && filteredSuburbs.length > 0) {
+                                  e.preventDefault();
+                                  const pick = filteredSuburbs[0];
+                                  setDraft((current) => ({ ...current, suburb: pick }));
+                                  setSuburbFilter(pick);
+                                  setIsSuburbDropdownOpen(false);
+                                }
+                              }}
+                              aria-label="Filter suburb options"
+                              data-testid="ward-referral-intake-suburb-filter"
+                              autoComplete="off"
+                            />
+                            {suburbFilter ? (
+                              <button
+                                type="button"
+                                className={pageStyles.suburbClearBtn}
+                                onClick={() => {
+                                  setSuburbFilter("");
+                                  setDraft((current) => ({ ...current, suburb: UNANSWERED_VALUE }));
+                                  setIsSuburbDropdownOpen(true);
+                                }}
+                                aria-label="Clear suburb search"
+                                title="Clear"
+                              >
+                                ✕
+                              </button>
+                            ) : null}
+                          </div>
+
+                          {/* Floating autocomplete suggestions dropdown */}
+                          {isSuburbDropdownOpen ? (
+                            <div className={pageStyles.suburbDropdownMenu} role="listbox">
+                              <div
+                                className={pageStyles.suburbDropdownItemSpecial}
+                                role="option"
+                                aria-selected={draft.suburb === "not_known"}
+                                onClick={() => {
+                                  setDraft((current) => ({ ...current, suburb: "not_known" }));
+                                  setSuburbFilter(suburbUnknownLabels["not_known"]);
+                                  setIsSuburbDropdownOpen(false);
+                                }}
+                              >
+                                <span className={styles.suburbQuickDot} aria-hidden="true" />
+                                <span>Set &ldquo;Not known / No fixed address&rdquo;</span>
+                              </div>
+                              {filteredSuburbs.slice(0, 40).map((option) => (
+                                <div
+                                  key={option}
+                                  className={pageStyles.suburbDropdownItem}
+                                  role="option"
+                                  aria-selected={draft.suburb === option}
+                                  data-active={draft.suburb === option ? "true" : undefined}
+                                  onClick={() => {
+                                    setDraft((current) => ({ ...current, suburb: option }));
+                                    setSuburbFilter(option);
+                                    setIsSuburbDropdownOpen(false);
+                                  }}
+                                >
+                                  {option}
+                                </div>
+                              ))}
+                              {filteredSuburbs.length === 0 ? (
+                                <div className={pageStyles.suburbDropdownEmpty}>
+                                  No matching suburbs in catchment table
+                                </div>
+                              ) : null}
+                            </div>
+                          ) : null}
+
+                          {/* Accessible test-compatible hidden select */}
+                          <select
+                            id="ward-referral-intake-suburb"
+                            data-testid="ward-referral-intake-suburb"
+                            className={`${styles.select} ${pageStyles.accessibleSelectHidden}`}
+                            value={draft.suburb}
+                            onChange={(event) => {
+                              const val = event.target.value;
+                              setDraft((current) => ({ ...current, suburb: val }));
+                              if (val !== UNANSWERED_VALUE) {
+                                setSuburbFilter(
+                                  SUBURB_UNKNOWN_REASONS.includes(val as SuburbUnknownReason)
+                                    ? suburbUnknownLabels[val as SuburbUnknownReason]
+                                    : val,
+                                );
+                              } else {
+                                setSuburbFilter("");
+                              }
+                            }}
+                          >
+                            <option value={UNANSWERED_VALUE}>{UNANSWERED_OPTION_LABEL}</option>
+                            {SUBURB_UNKNOWN_REASONS.map((reason) => (
+                              <option key={reason} value={reason}>
+                                {suburbUnknownLabels[reason]}
+                              </option>
+                            ))}
+                            {SUBURB_OPTIONS.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                         <div className={styles.suburbQuickRow}>
                           <button
                             type="button"
                             className={styles.suburbQuickBtn}
                             data-active={draft.suburb === "not_known"}
-                            onClick={() => setDraft((current) => ({ ...current, suburb: "not_known" }))}
+                            onClick={() => {
+                              setDraft((current) => ({ ...current, suburb: "not_known" }));
+                              setSuburbFilter(suburbUnknownLabels["not_known"]);
+                            }}
                             aria-label="Set suburb to Not known / No fixed address"
                             data-testid="ward-referral-intake-suburb-quick-unknown"
                           >
@@ -2965,60 +3097,7 @@ export function ReferralIntakeForm() {
                     </span>
                   </legend>
                   <div className={pageStyles.panelBody}>
-                    <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
-                      <div
-                        className={`${styles.questionHead} ${pageStyles.questionHead} ${pageStyles.questionLabelRow}`}
-                      >
-                        <label
-                          className={`${styles.fieldLegend} ${pageStyles.fieldLegend} ${pageStyles.questionLabel}`}
-                          htmlFor="ward-referral-intake-source"
-                        >
-                          Referral source
-                        </label>
-                        <QuestionState field="source" draft={draft} />
-                      </div>
-                      <select
-                        id="ward-referral-intake-source"
-                        data-testid="ward-referral-intake-source"
-                        className={`${styles.select} ${pageStyles.select}`}
-                        value={draft.source}
-                        onChange={(event) =>
-                          setDraft((current) => {
-                            const nextSource = event.target.value as ReferralSource | typeof UNANSWERED_VALUE;
-                            const currentOriginSite =
-                              current.originSiteCode === UNANSWERED_VALUE
-                                ? undefined
-                                : wardSites.find((site) => site.code === current.originSiteCode);
-                            return {
-                              ...current,
-                              source: nextSource,
-                              // `ed_medical` may only name an origin site that has an emergency
-                              // department; a site already chosen that has none is discarded so the
-                              // draft never holds an impossible pair (the same discipline as
-                              // un-ticking a destination discarding its dependent answer).
-                              originSiteCode:
-                                nextSource === "ed_medical" &&
-                                currentOriginSite &&
-                                !currentOriginSite.emergencyDepartment
-                                  ? UNANSWERED_VALUE
-                                  : current.originSiteCode,
-                              // The sending ward only exists for a psychiatric-ward source; it is
-                              // discarded the moment the source stops being that, like un-ticking a
-                              // destination discards its dependent answer.
-                              originUnitId: nextSource === "psychiatric_ward" ? current.originUnitId : UNANSWERED_VALUE,
-                            };
-                          })
-                        }
-                      >
-                        <option value={UNANSWERED_VALUE}>{UNANSWERED_OPTION_LABEL}</option>
-                        {SOURCE_OPTIONS.map((option) => (
-                          <option key={option} value={option}>
-                            {SOURCE_LABELS[option] ?? option}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
+                    {/* Row 1: Referral source & Origin site */}
                     <div className={pageStyles.fieldRow2}>
                       <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
                         <div
@@ -3026,25 +3105,52 @@ export function ReferralIntakeForm() {
                         >
                           <label
                             className={`${styles.fieldLegend} ${pageStyles.fieldLegend} ${pageStyles.questionLabel}`}
-                            htmlFor="ward-referral-intake-sending-team"
+                            htmlFor="ward-referral-intake-source"
                           >
-                            Which team or service is sending this referral?
+                            Referral source
                           </label>
+                          <QuestionState field="source" draft={draft} />
                         </div>
-                        <p className={`${styles.historyHint} ${pageStyles.note}`}>
-                          Optional. The name of the team or service, as you would write it &mdash; not a code. Leave it
-                          blank if there is no sending team, as there is not for a police or ambulance referral.
-                        </p>
-                        <input
-                          id="ward-referral-intake-sending-team"
-                          data-testid="ward-referral-intake-sending-team"
-                          className={`${styles.historyField} ${pageStyles.select}`}
-                          type="text"
-                          value={draft.sendingTeamName}
+                        <select
+                          id="ward-referral-intake-source"
+                          data-testid="ward-referral-intake-source"
+                          className={`${styles.select} ${pageStyles.select}`}
+                          value={draft.source}
                           onChange={(event) =>
-                            setDraft((current) => ({ ...current, sendingTeamName: event.target.value }))
+                            setDraft((current) => {
+                              const nextSource = event.target.value as ReferralSource | typeof UNANSWERED_VALUE;
+                              const currentOriginSite =
+                                current.originSiteCode === UNANSWERED_VALUE
+                                  ? undefined
+                                  : wardSites.find((site) => site.code === current.originSiteCode);
+                              return {
+                                ...current,
+                                source: nextSource,
+                                // `ed_medical` may only name an origin site that has an emergency
+                                // department; a site already chosen that has none is discarded so the
+                                // draft never holds an impossible pair (the same discipline as
+                                // un-ticking a destination discarding its dependent answer).
+                                originSiteCode:
+                                  nextSource === "ed_medical" &&
+                                  currentOriginSite &&
+                                  !currentOriginSite.emergencyDepartment
+                                    ? UNANSWERED_VALUE
+                                    : current.originSiteCode,
+                                // The sending ward only exists for a psychiatric-ward source; it is
+                                // discarded the moment the source stops being that, like un-ticking a
+                                // destination discards its dependent answer.
+                                originUnitId: nextSource === "psychiatric_ward" ? current.originUnitId : UNANSWERED_VALUE,
+                              };
+                            })
                           }
-                        />
+                        >
+                          <option value={UNANSWERED_VALUE}>{UNANSWERED_OPTION_LABEL}</option>
+                          {SOURCE_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {SOURCE_LABELS[option] ?? option}
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
                       <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
@@ -3081,38 +3187,72 @@ export function ReferralIntakeForm() {
                       </div>
                     </div>
 
-                    {draft.source === "psychiatric_ward" ? (
-                      <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
+                    {/* Row 2: Sending team & (conditional) Sending ward */}
+                    <div className={pageStyles.fieldRow2}>
+                      <div
+                        className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup} ${draft.source !== "psychiatric_ward" ? pageStyles.fieldFull : ""}`}
+                      >
                         <div
                           className={`${styles.questionHead} ${pageStyles.questionHead} ${pageStyles.questionLabelRow}`}
                         >
                           <label
                             className={`${styles.fieldLegend} ${pageStyles.fieldLegend} ${pageStyles.questionLabel}`}
-                            htmlFor="ward-referral-intake-originUnitId"
+                            htmlFor="ward-referral-intake-sending-team"
                           >
-                            Sending ward
+                            Which team or service is sending this referral?
                           </label>
-                          <QuestionState field="originUnitId" draft={draft} />
+                          <span className={pageStyles.optionalPill}>Optional</span>
                         </div>
-                        <select
-                          id="ward-referral-intake-originUnitId"
-                          data-testid="ward-referral-intake-originUnitId"
-                          className={`${styles.select} ${pageStyles.select}`}
-                          value={draft.originUnitId}
+                        <input
+                          id="ward-referral-intake-sending-team"
+                          data-testid="ward-referral-intake-sending-team"
+                          className={`${styles.historyField} ${pageStyles.select}`}
+                          type="text"
+                          placeholder="e.g. Rockingham Mental Health Service, Police Crisis Team, St John Crew..."
+                          value={draft.sendingTeamName}
                           onChange={(event) =>
-                            setDraft((current) => ({ ...current, originUnitId: event.target.value }))
+                            setDraft((current) => ({ ...current, sendingTeamName: event.target.value }))
                           }
-                        >
-                          <option value={UNANSWERED_VALUE}>{UNANSWERED_OPTION_LABEL}</option>
-                          {units.map((unit) => (
-                            <option key={unit.id} value={unit.id}>
-                              {unit.name} ({unit.siteCode})
-                            </option>
-                          ))}
-                        </select>
+                        />
+                        <p className={`${styles.historyHint} ${pageStyles.note}`}>
+                          The name of the sending team or service, as you would write it. Leave blank if not applicable.
+                        </p>
                       </div>
-                    ) : null}
 
+                      {draft.source === "psychiatric_ward" ? (
+                        <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
+                          <div
+                            className={`${styles.questionHead} ${pageStyles.questionHead} ${pageStyles.questionLabelRow}`}
+                          >
+                            <label
+                              className={`${styles.fieldLegend} ${pageStyles.fieldLegend} ${pageStyles.questionLabel}`}
+                              htmlFor="ward-referral-intake-originUnitId"
+                            >
+                              Sending ward
+                            </label>
+                            <QuestionState field="originUnitId" draft={draft} />
+                          </div>
+                          <select
+                            id="ward-referral-intake-originUnitId"
+                            data-testid="ward-referral-intake-originUnitId"
+                            className={`${styles.select} ${pageStyles.select}`}
+                            value={draft.originUnitId}
+                            onChange={(event) =>
+                              setDraft((current) => ({ ...current, originUnitId: event.target.value }))
+                            }
+                          >
+                            <option value={UNANSWERED_VALUE}>{UNANSWERED_OPTION_LABEL}</option>
+                            {units.map((unit) => (
+                              <option key={unit.id} value={unit.id}>
+                                {unit.name} ({unit.siteCode})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {/* Row 3: Urgency */}
                     <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
                       <div
                         className={`${styles.questionHead} ${pageStyles.questionHead} ${pageStyles.questionLabelRow}`}
@@ -3150,7 +3290,7 @@ export function ReferralIntakeForm() {
                       <select
                         id="ward-referral-intake-urgency"
                         data-testid="ward-referral-intake-urgency"
-                        className={`${styles.select} ${pageStyles.select}`}
+                        className={`${styles.select} ${pageStyles.accessibleSelectHidden}`}
                         value={draft.urgency}
                         onChange={(event) =>
                           setDraft((current) => ({
@@ -3171,7 +3311,7 @@ export function ReferralIntakeForm() {
                       </select>
                     </div>
 
-                    <div className={pageStyles.fieldRow2}>
+                    <div className={pageStyles.switchGrid2x2}>
                       <fieldset
                         className={pageStyles.clinicalSwitchCard}
                         data-testid="ward-referral-intake-secureBedNeeded"
@@ -3261,9 +3401,7 @@ export function ReferralIntakeForm() {
                           </label>
                         </div>
                       </fieldset>
-                    </div>
 
-                    <div className={pageStyles.fieldRow2}>
                       <fieldset
                         className={pageStyles.clinicalSwitchCard}
                         data-testid="ward-referral-intake-highAcuityNursingNeeded"
@@ -3581,6 +3719,90 @@ export function ReferralIntakeForm() {
                       </div>
                     ) : null}
 
+                    {/* Target Referral Locations & Regional Catchment Corridor */}
+                    <div className={pageStyles.locationsCorridorCard} data-testid="ward-referral-target-locations">
+                      <div className={pageStyles.locationsCorridorHeader}>
+                        <div className={pageStyles.locationsCorridorTitleGroup}>
+                          <svg
+                            className={pageStyles.locationsIcon}
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                            <circle cx="12" cy="10" r="3" />
+                          </svg>
+                          <div>
+                            <h4 className={pageStyles.locationsCorridorTitle}>
+                              Target Referral Locations &amp; Catchment Corridors
+                            </h4>
+                            <p className={pageStyles.locationsCorridorSubtitle}>
+                              Target receiving facilities for this person across Community, Acute Inpatient, and Emergency Department pathways.
+                            </p>
+                          </div>
+                        </div>
+                        <span className={pageStyles.locationsCoverageBadge}>
+                          {radarCatchment}
+                        </span>
+                      </div>
+
+                      <div className={pageStyles.locationsGrid}>
+                        {/* Community Target */}
+                        <div className={pageStyles.locationCard} data-type="community">
+                          <div className={pageStyles.locationCardTop}>
+                            <span className={pageStyles.locationTypeTag}>Community Team</span>
+                            {draft.destinationKinds.includes("community_team") ? (
+                              <span className={pageStyles.locationSelectedBadge}>Selected</span>
+                            ) : null}
+                          </div>
+                          <span className={pageStyles.locationName}>{mappedReferralLocations.community.name}</span>
+                          <div className={pageStyles.locationMeta}>
+                            <span className={pageStyles.locationServiceNote}>
+                              {mappedReferralLocations.community.note}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Acute Inpatient Ward Target */}
+                        <div className={pageStyles.locationCard} data-type="acute">
+                          <div className={pageStyles.locationCardTop}>
+                            <span className={pageStyles.locationTypeTag}>Acute Inpatient Bed</span>
+                            {draft.destinationKinds.includes("psychiatric_ward") ? (
+                              <span className={pageStyles.locationSelectedBadge}>Selected</span>
+                            ) : null}
+                          </div>
+                          <span className={pageStyles.locationName}>{mappedReferralLocations.acute.name}</span>
+                          <div className={pageStyles.locationMeta}>
+                            <span className={pageStyles.locationServiceNote}>
+                              {mappedReferralLocations.acute.note}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Emergency Department Target */}
+                        <div className={pageStyles.locationCard} data-type="ed">
+                          <div className={pageStyles.locationCardTop}>
+                            <span className={pageStyles.locationTypeTag}>Emergency Department</span>
+                            {draft.destinationKinds.includes("emergency_department") ? (
+                              <span className={pageStyles.locationSelectedBadge}>Selected</span>
+                            ) : null}
+                          </div>
+                          <span className={pageStyles.locationName}>{mappedReferralLocations.ed.name}</span>
+                          <div className={pageStyles.locationMeta}>
+                            <span className={pageStyles.locationServiceNote}>
+                              {mappedReferralLocations.ed.note}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     <ul className={`${styles.destinationList} ${pageStyles.destinationList}`}>
                       {options.map((option) => (
                         <li
@@ -3610,7 +3832,7 @@ export function ReferralIntakeForm() {
                               </label>
                             </div>
                             <div className={pageStyles.destinationBadges}>
-                              {!option.catchment.outsideTheTable ? (
+                              {option.catchment.placedBySourceTable ? (
                                 <span className={pageStyles.badgePill} data-type="catchment">
                                   In Catchment
                                 </span>
@@ -3623,26 +3845,44 @@ export function ReferralIntakeForm() {
                             </div>
                           </div>
                           <div id={`ward-referral-intake-destination-facts-${option.kind}`}>
-                            <p className={`${styles.destinationNote} ${pageStyles.destinationNote}`}>
-                              {option.catchment.sentence}
-                            </p>
-                            {option.suggested ? (
-                              <p className={`${styles.destinationNote} ${pageStyles.destinationNote}`}>
-                                Suggested by the catchment table. Nothing is chosen for you.
-                              </p>
+                            {option.kind === "community_team" ? (
+                              <div className={pageStyles.destTargetLocationRow}>
+                                <strong>Target Team:</strong>
+                                <span>{mappedReferralLocations.community.name}</span>
+                              </div>
+                            ) : option.kind === "psychiatric_ward" ? (
+                              <div className={pageStyles.destTargetLocationRow}>
+                                <strong>Designated Inpatient Facility:</strong>
+                                <span>{mappedReferralLocations.acute.name}</span>
+                              </div>
+                            ) : option.kind === "emergency_department" ? (
+                              <div className={pageStyles.destTargetLocationRow}>
+                                <strong>Receiving Emergency Department:</strong>
+                                <span>{mappedReferralLocations.ed.name}</span>
+                              </div>
                             ) : null}
-                            <ul className={`${styles.destinationFacts} ${pageStyles.destinationFacts}`}>
-                              {option.figures.map((figure) => (
-                                <li key={figure} className={`${styles.destinationFact} ${pageStyles.destinationFact}`}>
-                                  {figure}
-                                </li>
-                              ))}
-                              {option.reasons.map((reason) => (
-                                <li key={reason} className={`${styles.destinationFact} ${pageStyles.destinationFact}`}>
-                                  {reason}
-                                </li>
-                              ))}
-                            </ul>
+                            <div className={pageStyles.destMetadataPanel}>
+                              <p className={`${styles.destinationNote} ${pageStyles.destinationNote}`}>
+                                {option.catchment.sentence}
+                              </p>
+                              {option.suggested ? (
+                                <p className={`${styles.destinationNote} ${pageStyles.destinationNote}`}>
+                                  Suggested by the catchment table. Nothing is chosen for you.
+                                </p>
+                              ) : null}
+                              <ul className={`${styles.destinationFacts} ${pageStyles.destinationFacts}`}>
+                                {option.figures.map((figure) => (
+                                  <li key={figure} className={`${styles.destinationFact} ${pageStyles.destinationFact}`}>
+                                    {figure}
+                                  </li>
+                                ))}
+                                {option.reasons.map((reason) => (
+                                  <li key={reason} className={`${styles.destinationFact} ${pageStyles.destinationFact}`}>
+                                    {reason}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
                           </div>
                         </li>
                       ))}
@@ -4280,7 +4520,7 @@ export function ReferralIntakeForm() {
                     </div>
                     <div className={pageStyles.letterheadMeta}>
                       <div>
-                        <b>Date:</b> 21 Sep 2026 AWST
+                        <b>Date:</b> {formattedReferralDate} AWST
                       </div>
                       <div>
                         <b>Ref:</b> <span className="mono">WF-PREVIEW-DRAFT</span>

@@ -913,7 +913,7 @@
 
 .breakdownBreachPill {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--t-0, 12px);
   font-weight: 700;
   color: var(--danger);
   background: var(--danger-soft);
@@ -1585,7 +1585,7 @@
 
 .dossierUmrnBadge {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--t-0, 12px);
   font-weight: 700;
   background: var(--surface);
   border: 1px solid var(--line-strong);
@@ -1596,7 +1596,7 @@
 }
 
 .dossierStatusChip {
-  font-size: 11px;
+  font-size: var(--t-0, 12px);
   font-weight: 600;
   background: var(--accent-soft);
   color: var(--accent-ink);

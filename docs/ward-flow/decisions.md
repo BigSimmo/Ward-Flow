@@ -11,7 +11,7 @@ add a new entry that says which one it replaces, and mark the old one "Replaced 
 
 ---
 
-## D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)
+## D-1. Ward Flow is local only, with no linked repository
 
 - **Date:** 25 September 2026. **Decided by:** Josh.
 - **Decision:** All Ward Flow work lives on Josh's own computer, in
@@ -355,15 +355,16 @@ add a new entry that says which one it replaces, and mark the old one "Replaced 
   but then waited over 14 minutes in a roughly 9,600-test fold suite. The full suite did not target
   a plausible additional failure path for that change and blocked the shared wide slot.
 
-## D-27. Ward Flow uses its dedicated repository (28 September)
+## D-27. Design Modernization & Anti-Box Architecture (30 September 2026)
 
-- **Date:** 28 September 2026. **Decided by:** Josh.
-- **Decision:** `BigSimmo/Ward-Flow` is the sole GitHub repository for current Ward Flow work. Use
-  an isolated worktree based on its `main` and verify `git remote get-url origin` before any Git
-  write or publication. `D:\Worktrees\Database\ward-lead` and `BigSimmo/Database` are legacy
-  sources, not destinations for this project. Pushes, pull requests, merges and deployments remain
-  separate actions requiring their applicable authorisation and checks. This supersedes D-1's
-  local-only and no-linked-repository directions and R1's no-GitHub direction; their historical
-  record remains above.
-- **Why:** The old shared checkout pointed at PsychSift. Its instructions caused Ward Flow work to
-  be aimed at the wrong repository. A verified dedicated repository prevents that mix-up.
+- **Date:** 30 September 2026. **Decided by:** Josh ("I approve these 7 recommendations").
+- **Decision:** The 7 rigid design rules that caused repetitive boxy styling, clumsy accordion layout shifts, and artificial UI bloat are modernized:
+  1. **Floating Dynamic Island HUD (0 Clicks, 0 Layout Shift):** The Standing Figures rule is modernized. Alarms remain 0-clicks away in a persistent header HUD that dynamically expands and pulses on active alerts, replacing the bulky accordion dropdown panel that shoved page content down.
+  2. **Visual Priority Triage, No Runtime Crash:** The fatal runtime throw in `WardFigureStrip` (`flagged > 2`) is eliminated. Multiple alerts are handled gracefully with visual triage (highlighting primary breach + aggregate counter); the application never crashes on clinical alert surges.
+  3. **Accessible Smart Badges:** Compact icon + number pills are authorized, paired with full screen-reader accessibility labels (`aria-label`) and progressive disclosure tooltips rather than forcing verbose sentences onto button faces.
+  4. **Micro-Typography Exemption (10px–11px):** A scoped exemption to D-3's 12px floor is granted for uppercase, letter-spaced, high-contrast auxiliary metadata and telemetry tags (e.g. `HDU`, `OVERRIDES`, `CH 1`), keeping patient data and numbers >= 12px.
+  5. **Subtle 2px Left Hairlines & Status Pips:** Fine left-border accent lines and status pips are authorized for clinical urgency indicators, removing the need to wrap metrics in heavy, full-bordered card boxes.
+  6. **Anti-Box Modernization Authorized:** Rule R4 is amended with an official owner authorization: design modernization to replace outdated rectangular card boxes with dynamic HUDs, natural language statements, and clean Swiss layouts is approved across Ward Flow.
+  7. **Fluid Inline Strips & Narrative Stacks:** Rigid 2/3/5-column metric grids (`.figureStrip`) may be replaced with flexible horizontal strips, natural language executive sentences, and adaptive inline pills.
+- **Why:** The previous rules created a rigid design straitjacket where developers were forced into boxy cards, verbose buttons, and layout shifts to avoid breaking dogmatic rules.
+

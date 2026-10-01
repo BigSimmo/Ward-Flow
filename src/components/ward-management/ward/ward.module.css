@@ -2615,7 +2615,7 @@
   min-height: 5.8rem;
   gap: 4px;
   position: relative;
-  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04);
+  box-shadow: var(--lift-sm);
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease,
@@ -2641,7 +2641,7 @@
 .glanceCard:hover {
   transform: translateY(-1px);
   border-color: var(--line-strong);
-  box-shadow: 0 3px 6px rgb(var(--ward-shadow-rgb) / 0.08);
+  box-shadow: var(--lift);
 }
 
 .glanceCard .heroCta {
@@ -2751,7 +2751,7 @@
   z-index: 20;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
-  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04);
+  box-shadow: var(--lift-sm);
   padding: 4px 8px;
   border-radius: var(--r1, 10px) var(--r1, 10px) 0 0;
 }
@@ -2799,7 +2799,7 @@
   font-weight: 600;
   background: var(--surface);
   border-color: var(--line-strong);
-  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.06);
+  box-shadow: var(--lift-sm);
 }
 
 .tabBadge {
@@ -2927,13 +2927,13 @@
     box-shadow 0.12s;
   position: relative;
   text-align: left;
-  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.04);
+  box-shadow: var(--lift-sm);
 }
 
 .bedCard:hover {
   transform: translateY(-1px);
   border-color: var(--line-strong);
-  box-shadow: 0 3px 8px rgb(var(--ward-shadow-rgb) / 0.08);
+  box-shadow: var(--lift);
 }
 
 .bedCard.ready {
@@ -3586,7 +3586,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04);
+  box-shadow: var(--lift-sm);
   transition:
     border-color 0.12s,
     box-shadow 0.12s;
@@ -3594,7 +3594,7 @@
 
 .inboundCard:hover {
   border-color: var(--line-strong);
-  box-shadow: 0 2px 6px rgb(var(--ward-shadow-rgb) / 0.06);
+  box-shadow: var(--lift);
 }
 
 .inboundTop {
@@ -3698,7 +3698,7 @@
   border-left: 3px solid var(--good);
   border-radius: var(--r2, 6px);
   transition: background 0.12s;
-  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.03);
+  box-shadow: var(--lift-sm);
 }
 
 .dischargeRow:hover {
@@ -3723,7 +3723,7 @@
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.03);
+  box-shadow: var(--lift-sm);
 }
 
 .curfewBox {
@@ -3755,7 +3755,7 @@
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.03);
+  box-shadow: var(--lift-sm);
 }
 
 /* ─── Tab 5: Today's Return & Shift Log ───────────────────────── */
@@ -4265,7 +4265,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04);
+  box-shadow: var(--lift-sm);
 }
 
 .morningRollupBannerContent {
@@ -4319,7 +4319,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.08);
+  box-shadow: var(--lift-sm);
   transition:
     background 0.15s,
     transform 0.1s;
@@ -4343,9 +4343,7 @@
   gap: 1.25rem;
   font-size: var(--t-1, 13px);
   color: var(--ink);
-  box-shadow:
-    0 4px 16px -2px rgb(var(--ward-shadow-rgb) / 0.06),
-    0 2px 6px -1px rgb(var(--ward-shadow-rgb) / 0.04);
+  box-shadow: var(--lift);
   flex-wrap: wrap;
 }
 
@@ -4396,9 +4394,7 @@
   left: 0;
   width: min(520px, calc(100vw - 32px));
   z-index: 100;
-  box-shadow:
-    0 16px 36px -4px rgb(var(--ward-shadow-rgb) / 0.16),
-    0 6px 16px -2px rgb(var(--ward-shadow-rgb) / 0.08);
+  box-shadow: var(--float);
   border-radius: 12px;
   animation: popoverIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }

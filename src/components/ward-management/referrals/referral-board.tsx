@@ -1488,24 +1488,36 @@ function DecidedSection({
                         <span className={styles.patientCardName}>{patientInfo.displayName}</span>
                       </span>
                       <span className={styles.cardTierGroup}>
-                        <span className={styles.priorityBadge} data-priority={getReferralPriority(referral, now)}>
+                        <span
+                          className={styles.priorityBadge}
+                          data-priority={getReferralPriority(referral, now)}
+                        >
                           <PriorityGlyph priority={getReferralPriority(referral, now)} />
                           <span className={styles.priorityText}>
                             {referralPriorityLabel(getReferralPriority(referral, now))}
                           </span>
                         </span>
-                        <span className={styles.cardTier} data-tier={referral.urgency}>
+                        <span
+                          className={styles.cardTier}
+                          data-tier={referral.urgency}
+                        >
                           {urgencyTierLabel(referral.urgency)}
                         </span>
-                        <span className={styles.waitBadge}>{decidedWaitLabel(referral)}</span>
+                        <span className={styles.waitBadge}>
+                          {decidedWaitLabel(referral)}
+                        </span>
                       </span>
                     </span>
 
                     <span className={styles.cardContextRow}>
-                      <span className={styles.cardService}>{referralPersonFactsStatingSex(referral).join(" · ")}</span>
+                      <span className={styles.cardService}>
+                        {referralPersonFactsStatingSex(referral).join(" · ")}
+                      </span>
                       <span
                         className={
-                          referralState(referral) === "accepted" ? styles.bedAssignedBadge : styles.bedDeclinedBadge
+                          referralState(referral) === "accepted"
+                            ? styles.bedAssignedBadge
+                            : styles.bedDeclinedBadge
                         }
                       >
                         {outcomeLabel(referral)}
@@ -1529,8 +1541,7 @@ function DecidedSection({
                         />
                       </span>
                       <span className={styles.cardDecidedTime}>
-                        ·{" "}
-                        {referralDecidedAt(referral) !== undefined
+                        · {referralDecidedAt(referral) !== undefined
                           ? `Decided ${formatInstantWithDay(referralDecidedAt(referral)!, now)}`
                           : "Not recorded"}
                       </span>

@@ -1,4 +1,4 @@
-<title>Ward Flow Statewide statistics</title>
+﻿<title>Ward Flow Statewide statistics</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <script>
   /* Runs before the stylesheet: names the page's language, and stamps a remembered Light or Dark
@@ -21,8 +21,6 @@
   rel="stylesheet"
   href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
 />
-<link rel="stylesheet" href="suite-nav.css" />
-<script src="suite-nav.js" defer></script>
 <style>
   /* ═══════════════════════════════════════════════════════════════════════
      WARD FLOW COMMAND. Third edition, light and dark.
@@ -4969,20 +4967,6 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    cursor: pointer;
-    transition:
-      transform 0.15s ease,
-      box-shadow 0.15s ease,
-      border-color 0.15s ease;
-  }
-  .gaugeCard:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-    border-color: var(--accent-ink);
-  }
-  .gaugeCard:focus-visible {
-    outline: 2px solid var(--accent-ink);
-    outline-offset: 2px;
   }
   .gaugeCardHeader {
     display: flex;
@@ -5333,36 +5317,6 @@
     min-width: 140px;
   }
 </style>
-
-<header class="suiteNavBar" role="navigation" aria-label="Ward Flow Statistics Suite">
-  <a class="suiteNavBrand" href="statistics-third-edition.html">
-    <div class="suiteNavBeacon" aria-hidden="true"></div>
-    <div class="suiteNavTitle">Ward Flow <span class="suiteNavBadge">Statistics Suite</span></div>
-  </a>
-  <nav class="suiteNavTrack" aria-label="Statistics Sections">
-    <a class="suiteNavPill" href="statistics-third-edition.html"><span class="suiteNavPillNum">1</span> Hub Overview</a>
-    <a class="suiteNavPill active" href="statistics-overview-third-edition.html"
-      ><span class="suiteNavPillNum">2</span> Statewide Flow</a
-    >
-    <a class="suiteNavPill" href="statistics-service-third-edition.html"
-      ><span class="suiteNavPillNum">3</span> By Service</a
-    >
-    <a class="suiteNavPill" href="statistics-ward-third-edition.html"><span class="suiteNavPillNum">4</span> By Ward</a>
-    <a class="suiteNavPill" href="statistics-emergency-department-third-edition.html"
-      ><span class="suiteNavPillNum">5</span> Emergency Dept</a
-    >
-    <a class="suiteNavPill" href="statistics-community-third-edition.html"
-      ><span class="suiteNavPillNum">6</span> Community Teams</a
-    >
-    <a class="suiteNavPill" href="statistics-compare-third-edition.html"
-      ><span class="suiteNavPillNum">7</span> Ward Comparisons</a
-    >
-  </nav>
-  <div class="suiteNavActions">
-    <button type="button" class="suiteThemeBtn" id="suiteThemeToggle" aria-label="Toggle visual theme">🌙 Dark</button>
-    <a class="suitePortalLink" href="index.html" title="Return to Ward Flow Portal">Portal ↗</a>
-  </div>
-</header>
 
 <div class="app hApp">
   <a class="skip" href="#overviewScope">Skip to the figures</a>
@@ -6344,13 +6298,7 @@
           var hy = (70 - 50 * Math.sin(angle)).toFixed(1);
 
           return (
-            '<div class="gaugeCard" role="link" tabindex="0" onclick="window.location.href=\'statistics-service-third-edition.html?service=' +
-            encodeURIComponent(s.id) +
-            "'\" onkeydown=\"if(event.key==='Enter')window.location.href='statistics-service-third-edition.html?service=" +
-            encodeURIComponent(s.id) +
-            '\'" title="View ' +
-            esc(s.name) +
-            ' service statistics">' +
+            '<div class="gaugeCard">' +
             '  <div class="gaugeCardHeader">' +
             '    <div class="gaugeTitle" style="color:' +
             s.color +
@@ -6410,7 +6358,9 @@
             "    <span><b>" +
             s.held +
             "</b> Pending</span>" +
-            '    <span style="color:var(--accent-ink); font-weight:600; display:inline-flex; align-items:center; gap:2px;">Service details &rarr;</span>' +
+            "    <span><b>" +
+            (s.ready + s.held) +
+            "</b> Total Free</span>" +
             "  </div>" +
             "</div>"
           );

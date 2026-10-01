@@ -390,7 +390,7 @@ export function WardGlobalSearch({
 
   const options = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
-  const showPopup = open && deferredQuery === query && query.trim().length > 0 && trimmed.length > 0;
+  const showPopup = open && query.trim().length > 0 && trimmed.length > 0;
 
   /*
    * THE ACTIVE ROW RESETS WHENEVER THE OPTION LIST CHANGES IDENTITY — same render-phase adjustment
@@ -544,7 +544,6 @@ export function WardGlobalSearch({
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
-            setActiveIndex(-1);
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}

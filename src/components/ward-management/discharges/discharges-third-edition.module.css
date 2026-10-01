@@ -47,8 +47,7 @@
   padding: 0.25rem;
   border: 1px solid var(--line);
   border-radius: var(--pill, 9999px);
-  background: var(--surface-2);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--ink) 4%, transparent);
 }
 .populationSwitch button,
 .statusFilters button,
@@ -817,11 +816,7 @@
   justify-content: space-between;
   gap: 0.25rem;
   cursor: pointer;
-  transition:
-    transform 0.12s ease,
-    border-color 0.12s ease,
-    box-shadow 0.12s ease,
-    background 0.12s ease;
+  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
   user-select: none;
   text-align: left;
 }
@@ -836,9 +831,7 @@
 }
 .kpiCardActive {
   border-color: var(--accent);
-  box-shadow:
-    0 0 0 1px var(--accent),
-    0 2px 8px -1px color-mix(in srgb, var(--accent) 20%, transparent);
+  box-shadow: 0 0 0 1px var(--accent), 0 2px 8px -1px color-mix(in srgb, var(--accent) 20%, transparent);
   background: color-mix(in srgb, var(--surface) 94%, var(--accent));
 }
 .kpiCard[data-tone="danger"] .kpiVal {
@@ -855,30 +848,22 @@
 }
 .kpiCard[data-tone="danger"].kpiCardActive {
   border-color: var(--danger);
-  box-shadow:
-    0 0 0 1px var(--danger),
-    0 2px 8px -1px color-mix(in srgb, var(--danger) 20%, transparent);
+  box-shadow: 0 0 0 1px var(--danger), 0 2px 8px -1px color-mix(in srgb, var(--danger) 20%, transparent);
   background: color-mix(in srgb, var(--surface) 94%, var(--danger));
 }
 .kpiCard[data-tone="good"].kpiCardActive {
   border-color: var(--good);
-  box-shadow:
-    0 0 0 1px var(--good),
-    0 2px 8px -1px color-mix(in srgb, var(--good) 20%, transparent);
+  box-shadow: 0 0 0 1px var(--good), 0 2px 8px -1px color-mix(in srgb, var(--good) 20%, transparent);
   background: color-mix(in srgb, var(--surface) 94%, var(--good));
 }
 .kpiCard[data-tone="warn"].kpiCardActive {
   border-color: var(--warn);
-  box-shadow:
-    0 0 0 1px var(--warn),
-    0 2px 8px -1px color-mix(in srgb, var(--warn) 20%, transparent);
+  box-shadow: 0 0 0 1px var(--warn), 0 2px 8px -1px color-mix(in srgb, var(--warn) 20%, transparent);
   background: color-mix(in srgb, var(--surface) 94%, var(--warn));
 }
 .kpiCard[data-tone="accent"].kpiCardActive {
   border-color: var(--accent);
-  box-shadow:
-    0 0 0 1px var(--accent),
-    0 2px 8px -1px color-mix(in srgb, var(--accent) 20%, transparent);
+  box-shadow: 0 0 0 1px var(--accent), 0 2px 8px -1px color-mix(in srgb, var(--accent) 20%, transparent);
   background: color-mix(in srgb, var(--surface) 94%, var(--accent));
 }
 .kpiTopRow {
@@ -889,7 +874,7 @@
 }
 .kpiActionHint {
   font-family: var(--mono);
-  font-size: 0.6875rem;
+  font-size: var(--t-0, 0.75rem);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -1185,11 +1170,11 @@
 }
 
 .interactiveRow:hover {
-  background-color: var(--surface-hover, rgba(0, 0, 0, 0.02));
+  background-color: var(--surface-hover, var(--surface-2));
 }
 
 .interactiveRow:focus-visible {
-  outline: 2px solid var(--focus-ring, #0284c7);
+  outline: 2px solid var(--focus-ring, var(--accent));
   outline-offset: -2px;
 }
 
@@ -1200,8 +1185,8 @@
   padding: 0.75rem 0.85rem;
   margin: 0.75rem 0;
   border-radius: var(--radius-sm, 6px);
-  background: var(--surface-raised, rgba(0, 0, 0, 0.03));
-  border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+  background: var(--surface-2);
+  border: 1px solid var(--line);
 }
 
 .linkedPatientHeader {
@@ -1211,17 +1196,17 @@
 }
 
 .linkedPatientLabel {
-  font-size: 0.7rem;
+  font-size: var(--t-0, 0.75rem);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--muted, #64748b);
+  color: var(--muted);
 }
 
 .linkedPatientName {
-  font-size: 0.95rem;
+  font-size: var(--t-2, 0.95rem);
   font-weight: 600;
-  color: var(--text-strong, #0f172a);
+  color: var(--ink);
 }
 
 .viewPatientRecordBtn {
@@ -1230,41 +1215,42 @@
   justify-content: center;
   align-self: flex-start;
   padding: 0.45rem 0.8rem;
-  font-size: 0.8rem;
+  font-size: var(--t-0, 0.75rem);
   font-weight: 600;
-  color: var(--primary, #0284c7);
-  background: rgba(2, 132, 199, 0.08);
-  border: 1px solid rgba(2, 132, 199, 0.25);
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
   border-radius: var(--radius-sm, 6px);
   cursor: pointer;
   transition: all var(--transition-fast, 150ms ease);
 }
 
 .viewPatientRecordBtn:hover {
-  background: rgba(2, 132, 199, 0.16);
-  border-color: rgba(2, 132, 199, 0.4);
+  background: var(--accent-subtle, var(--accent-soft));
+  border-color: var(--accent);
 }
 
 .patientHint {
   display: block;
-  font-size: 0.78rem;
+  font-size: var(--t-0, 0.75rem);
   font-weight: 500;
-  color: var(--text-muted, #475569);
+  color: var(--muted);
   margin-top: 0.15rem;
 }
 
 :global([data-theme="dark"]) .linkedPatientBridge {
-  background: var(--surface-3, rgba(255, 255, 255, 0.04));
-  border-color: var(--line-strong, rgba(255, 255, 255, 0.12));
+  background: var(--surface-3);
+  border-color: var(--line-strong);
 }
 
 :global([data-theme="dark"]) .viewPatientRecordBtn {
-  color: #38bdf8;
-  background: rgba(56, 189, 248, 0.12);
-  border-color: rgba(56, 189, 248, 0.3);
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent);
 }
 
 :global([data-theme="dark"]) .viewPatientRecordBtn:hover {
-  background: rgba(56, 189, 248, 0.2);
-  border-color: rgba(56, 189, 248, 0.45);
+  background: var(--accent-subtle, var(--accent-soft));
+  border-color: var(--accent);
 }
+

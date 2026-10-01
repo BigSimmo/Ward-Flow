@@ -564,7 +564,7 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
   ],
   [
     "/mockups/ward-flow/statistics/ward/[unitId]",
-    "0 of 22 instances reachable without state — and unlike every other entry here, this one records " +
+    "1 of 22 instances reachable without state — and unlike every other entry here, this one records " +
       "a limit of the SCAN rather than a gap in the navigation. The comparisons page " +
       "(statistics-compare-screen.tsx) links every ward in the network, one row each, built inside a " +
       "map — so the scan classifies it as a BUILT site and counts nought concrete instances from it, " +
@@ -574,7 +574,7 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
   ],
   [
     "/mockups/ward-flow/statistics/ed/[edId]",
-    "0 of 10 instances reachable without state — the same scan limit as the ward detail route above, " +
+    "1 of 10 instances reachable without state — the same scan limit as the ward detail route above, " +
       "and established the same way. The comparisons page lists every emergency department and links " +
       "each one; tests/ward-statistics-sections.dom.test.tsx pins that set against " +
       "allEmergencyDepartments() exactly.",
@@ -629,7 +629,7 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
     // What the hub actually covers is established by rendering it and reading the links back out:
     // tests/ward-statistics-community-chooser.dom.test.tsx pins the linked set against
     // COMMUNITY_TEAM_PAGES exactly and fails on a single missing team.
-    "0 of 64 instances reachable without state — a limit of the SCAN rather than a gap in the " +
+    "1 of 64 instances reachable without state — a limit of the SCAN rather than a gap in the " +
       "navigation. communityStatisticsHref's own definition in shell/ward-facade.ts is a real built " +
       "site; the hub's own call site is a plain function call and registers as neither concrete nor " +
       "built. Unlike the health-service entry above, a concrete literal COULD register for this route " +
@@ -681,13 +681,12 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
       "/mockups/ward-flow/ward/[unitId]/answer",
     ]);
 
-    // 436 .ts/.tsx files under src/ once PsychSift was removed (25 September 2026; 1306 before it),
-    // 349 after later clean-ups deleted dead shims (28 September 2026). Floored rather than pinned,
-    // because src/ grows and shrinks
+    // 436 .ts/.tsx files under src/ once PsychSift was removed (25 September 2026; 1306 before it).
+    // Floored rather than pinned, because src/ grows
     // for reasons that have nothing to do with Ward Flow — but a walk that resolved the wrong root
     // or lost its extension filter returns 0 or a handful, and every per-route result below would
     // then read "nothing links this route" for reasons having nothing to do with the navigation.
-    expect(sourceFiles.length).toBeGreaterThan(300);
+    expect(sourceFiles.length).toBeGreaterThan(340);
 
     // Positive pins: the scan reads file CONTENT, and tells a concrete href from a built one.
     const board = dynamicRouteScans.get("/mockups/ward-flow/board/[unitId]");

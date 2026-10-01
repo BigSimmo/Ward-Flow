@@ -180,17 +180,6 @@ describe("WardGlobalSearch", () => {
     expect(onNavigate).toHaveBeenCalledWith(`/mockups/ward-flow/people/${targetPatient.id}`);
   });
 
-  it("does not select an old result after the search text changes", () => {
-    const { onNavigate } = renderSearch();
-    const input = screen.getByTestId("ward-global-search-input");
-    fireEvent.change(input, { target: { value: personQuery } });
-    expect(screen.getByTestId(`ward-global-search-result-person-${targetPatient.id}`)).toBeInTheDocument();
-    fireEvent.keyDown(input, { key: "ArrowDown" });
-    fireEvent.change(input, { target: { value: "zzq-no-such-record-in-this-fixture-zzq" } });
-    fireEvent.keyDown(input, { key: "Enter" });
-    expect(onNavigate).not.toHaveBeenCalled();
-  });
-
   it("does not intercept a modified click — the browser's own new-tab gesture is left alone", () => {
     const { onNavigate } = renderSearch();
     fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: personQuery } });

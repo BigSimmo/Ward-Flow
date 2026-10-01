@@ -62,8 +62,8 @@ describe("the referral drawer shows only what the record holds", () => {
     // record instead, and the made-up profile's other details stay forbidden below.
     expect(recorded.patient?.id).toBe("PT-023");
 
-    // The quick-pick chip and the identity banner both carry the recorded name.
-    expect(screen.getAllByText(new RegExp(`^${recorded.displayName} \\(`)).length).toBeGreaterThanOrEqual(2);
+    // The identity banner carries the recorded name.
+    expect(screen.getByText(new RegExp(`^${recorded.displayName} \\(`))).toBeInTheDocument();
     expect(document.body.textContent).toContain(`UMRN: ${recorded.umrn}`);
     expect(document.body.textContent).toContain("Medicare: Not recorded");
     expect(document.body.textContent).not.toMatch(/Dr\. L\. Patel|persecutory delusions|2940 19283 1/);

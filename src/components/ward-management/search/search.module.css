@@ -3553,7 +3553,7 @@
 
 .timelineMonoTime {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--t-0, 0.75rem);
   font-weight: 600;
   color: var(--accent-ink);
   font-variant-numeric: tabular-nums;
@@ -3602,7 +3602,7 @@
 
 .historyLabel {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--t-0, 0.75rem);
 }
 
 .historyVal {

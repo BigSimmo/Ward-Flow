@@ -307,7 +307,7 @@
 
 .pressureService {
   color: var(--muted);
-  font-size: 0.6875rem;
+  font-size: var(--t-0, 0.75rem);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   white-space: nowrap;
@@ -478,8 +478,8 @@
 }
 
 .pressureList > li {
-  flex: 0 0 10.5rem;
-  min-width: 10.5rem;
+  flex: 1 1 clamp(6.75rem, calc((100% - 7 * var(--ward-space-8)) / 8), 8.75rem);
+  min-width: clamp(6.75rem, calc((100% - 7 * var(--ward-space-8)) / 8), 8.75rem);
   display: flex;
   scroll-snap-align: start;
 }
@@ -1066,7 +1066,8 @@
  */
 .diagramCanvas {
   position: relative;
-  min-height: 20rem;
+  min-height: 240px;
+  padding-bottom: 2rem;
 }
 
 /*
@@ -1163,6 +1164,7 @@
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: var(--ward-space-20);
+  padding-bottom: 2rem;
   pointer-events: none;
 }
 
@@ -1578,6 +1580,7 @@
   flex: 1 1 auto;
   flex-direction: column;
   gap: var(--ward-space-12);
+  padding-bottom: 2rem;
   overflow-y: auto;
 }
 
@@ -3316,7 +3319,7 @@
 .pressureStrip {
   padding: 0;
   overflow: hidden;
-  max-height: 11.25rem;
+  max-height: 12.5rem;
 }
 
 .regionHeader {
@@ -3796,6 +3799,10 @@
     flex-direction: column;
   }
 
+  .diagramScroll {
+    padding-bottom: calc(var(--co-shortlist-bar-reserve) + 2rem);
+  }
+
   .shortlistBackdrop {
     display: block;
     position: fixed;
@@ -3852,6 +3859,7 @@
     overflow-y: auto !important;
     overscroll-behavior: contain;
     max-height: calc(85dvh - 3.5rem);
+    padding-bottom: 2rem;
   }
 }
 

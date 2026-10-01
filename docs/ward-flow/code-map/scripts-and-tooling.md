@@ -628,10 +628,8 @@ generator `--check`s only when their own source changed.
      `npm run ward:governance:check`, `node scripts/check-ward-data.mjs` (data-file edits),
      `node scripts/ward-flow/check-drawing-rules.mjs <drawing.html>` (drawing edits),
      `npm run ward:test:sync:check` (design/test alignment).
-4. **Integrate**, following repository [`AGENTS.md`](../../../AGENTS.md) and [`HOW-WE-WORK.md`](../HOW-WE-WORK.md):
-   verify the remote is `BigSimmo/Ward-Flow`, run the selected checks for the candidate tree, and
-   integrate via reviewed task branch. (The former local-only ward line and `ward-lead` fold procedure
-   belonged to the pre-separation arrangement and are historical.)
+4. **Fold home**, per the owner's standing Ward Flow instruction: fold into the newest local ward
+   line, then bring that line to `ward-lead`. Never `origin/main`; Ward Flow is never pushed.
 
 ## Pitfalls in this area
 

@@ -3,7 +3,7 @@
 import React, { useCallback, useId, useMemo, useState } from "react";
 import { AlertTriangle, Clock } from "lucide-react";
 
-import { useOptionalWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "@/components/ward-management/ward-legal-clock";
 import { formTitleForCode } from "@/lib/form-register";
 import styles from "./ward-mha-calculator.module.css";
@@ -37,28 +37,12 @@ export interface FormDisplayRecord {
   safeguardMessage: string | null;
 }
 
-const perthDateTime = new Intl.DateTimeFormat("en-GB", {
-  timeZone: "Australia/Perth",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-  hourCycle: "h23",
-  weekday: "short",
-});
-
-function perthParts(date: Date): Record<string, string> {
-  return Object.fromEntries(perthDateTime.formatToParts(date).map(({ type, value }) => [type, value]));
-}
-
 /**
  * Checks if a moment falls outside standard business hours (17:00 to 08:00).
  * In WA hospital practice, normal day cover is 08:00 to 16:59:59.
  */
 export function isAfterHours(date: Date): boolean {
-  if (Number.isNaN(date.getTime())) return false;
-  const hours = Number(perthParts(date).hour);
+  const hours = date.getHours();
   return hours >= 17 || hours < 8;
 }
 
@@ -66,8 +50,8 @@ export function isAfterHours(date: Date): boolean {
  * Checks if a date falls on a weekend (Saturday or Sunday).
  */
 export function isWeekend(date: Date): boolean {
-  if (Number.isNaN(date.getTime())) return false;
-  return ["Sat", "Sun"].includes(perthParts(date).weekday);
+  const day = date.getDay();
+  return day === 0 || day === 6; // 0 = Sunday, 6 = Saturday
 }
 
 /**
@@ -132,24 +116,28 @@ export function formatStatutoryDateTime(d: Date): string {
 
 export function toDateInputValue(d: Date): string {
   if (Number.isNaN(d.getTime())) return "";
-  const { year, month, day } = perthParts(d);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
 export function toTimeInputValue(d: Date): string {
   if (Number.isNaN(d.getTime())) return "";
-  const { hour, minute } = perthParts(d);
-  return `${hour}:${minute}`;
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
 }
 
 export function parseDateTimeInput(dateStr: string, timeStr: string): Date | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr) || (timeStr && !/^\d{2}:\d{2}$/.test(timeStr))) return null;
-  const [year, month, day] = dateStr.split("-").map(Number);
-  const [hours, minutes] = (timeStr || "00:00").split(":").map(Number);
-  if (year < 100 || month < 1 || month > 12 || day < 1 || day > 31 || hours > 23 || minutes > 59) return null;
-  // Perth observes UTC+08:00 throughout the year. Interpret the typed wall time there.
-  const parsed = new Date(Date.UTC(year, month - 1, day, hours - 8, minutes));
-  return toDateInputValue(parsed) === dateStr && toTimeInputValue(parsed) === (timeStr || "00:00") ? parsed : null;
+  if (!dateStr) return null;
+  const parts = dateStr.split("-").map(Number);
+  if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
+  const [year, month, day] = parts;
+  const timeParts = timeStr ? timeStr.split(":").map(Number) : [0, 0];
+  const [hours, minutes] = timeParts;
+  const parsed = new Date(year, month - 1, day, hours || 0, minutes || 0, 0, 0);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 /**
@@ -215,13 +203,13 @@ export const calculateForm4B = getForm4BRecord;
  * or falls back to standard wall clock when mounted in tests or standalone.
  */
 function useResolvedClock(override?: Date): Date {
-  const demoInstant = useOptionalWardFlowClock();
+  const demoInstant = useWardFlowClock(-1);
 
   return useMemo(() => {
     if (override) return override;
-    if (demoInstant !== null) {
+    if (demoInstant !== -1) {
       const today = new Date();
-      const dayZero = parseDateTimeInput(toDateInputValue(today), "00:00") ?? today;
+      const dayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       return new Date(dayZero.getTime() + demoInstant * 60_000);
     }
     return new Date();
@@ -279,12 +267,10 @@ export function WardMhaCalculator({
     (preset: "today-0900" | "yesterday-1800" | "offset-48h" | "offset-70h" | "offset-20d") => {
       const target = new Date(now.getTime());
       if (preset === "today-0900") {
-        target.setTime(parseDateTimeInput(toDateInputValue(now), "09:00")?.getTime() ?? now.getTime());
+        target.setHours(9, 0, 0, 0);
       } else if (preset === "yesterday-1800") {
-        target.setTime(
-          parseDateTimeInput(toDateInputValue(new Date(now.getTime() - 86_400_000)), "18:00")?.getTime() ??
-            now.getTime(),
-        );
+        target.setDate(target.getDate() - 1);
+        target.setHours(18, 0, 0, 0);
       } else if (preset === "offset-48h") {
         target.setTime(target.getTime() - 48 * 60 * 60 * 1000);
       } else if (preset === "offset-70h") {

@@ -375,6 +375,7 @@ export function MovementsScreen() {
   const openMovements = movements.filter(isOpen);
   const openStages = journeyStages(openMovements, now);
   const waitingMovements = byLongestWait(openMovements, now);
+  const noOwnerMovements = openMovements.filter((movement) => movement.owner.trim().length === 0);
   const unacceptedTransport = byLongestWait(
     openMovements.filter((movement) => movement.transport !== undefined && movement.transport.acceptedAt === undefined),
     now,
@@ -388,7 +389,6 @@ export function MovementsScreen() {
   const [transportFilter, setTransportFilter] = useState<MovementLegState | "all">("all");
   const filteredLegs = useMemo(
     () => (transportFilter === "all" ? legs : legs.filter((leg) => leg.state === transportFilter)),
-    // eslint-disable-next-line react-hooks/preserve-manual-memoization -- filtered legs derived from transport legs
     [legs, transportFilter],
   );
   const withoutBookedTransport = openMovements.length - legs.length;
@@ -415,8 +415,7 @@ export function MovementsScreen() {
   const attentionMovements = [...attentionCore, ...attentionOutsideExtra];
 
   const horizonLanes = useMemo(
-    () =>
-      deriveMovementHorizonLanes(movements, units, now, {
+    () => deriveMovementHorizonLanes(movements, units, now, {
         includeProjections: false,
         people: { patients, referrals, movements },
       }),
@@ -551,7 +550,9 @@ export function MovementsScreen() {
       const target = movements.find((candidate) => candidate.id === movementId);
       if (target !== undefined && !isInServiceScope(target)) {
         openDetail(movementId);
-        announceToWardShell(`This patient is outside ${service}. Show all services to see it in the list.`);
+        announceToWardShell(
+          `This patient is outside ${service}. Show all services to see it in the list.`,
+        );
         return;
       }
     }
@@ -976,8 +977,7 @@ export function MovementsScreen() {
                               : leg.state === "Accepted"
                                 ? "accent"
                                 : "warning";
-                        const stateLabel =
-                          leg.state === "Accepted" ? "Booked" : (LEG_STATE_LABEL[leg.state] ?? leg.state);
+                        const stateLabel = leg.state === "Accepted" ? "Booked" : LEG_STATE_LABEL[leg.state] ?? leg.state;
 
                         return (
                           <button
@@ -998,9 +998,7 @@ export function MovementsScreen() {
                             </div>
                             <div className={styles.transportRunCorridor}>
                               <span className={styles.transportRunNode}>{originLabel}</span>
-                              <span className={styles.transportRunArrow} aria-hidden="true">
-                                →
-                              </span>
+                              <span className={styles.transportRunArrow} aria-hidden="true">→</span>
                               <span className={styles.transportRunNode}>{destinationLabel}</span>
                             </div>
                             <div className={styles.transportRunFooter}>
@@ -1238,23 +1236,10 @@ export function MovementsScreen() {
                   </>
                 ) : null}
                 {shapeTab === "waiting" ? (
-                  <ShapeMovementList
-                    movements={waitingMovements}
-                    now={now}
-                    referrals={referrals}
-                    patients={patients}
-                    onOpenDetail={openDetail}
-                  />
+                  <ShapeMovementList movements={waitingMovements} now={now} referrals={referrals} patients={patients} onOpenDetail={openDetail} />
                 ) : null}
                 {shapeTab === "resolved" ? (
-                  <ShapeMovementList
-                    movements={closedToday}
-                    now={now}
-                    referrals={referrals}
-                    patients={patients}
-                    onOpenDetail={openDetail}
-                    resolved
-                  />
+                  <ShapeMovementList movements={closedToday} now={now} referrals={referrals} patients={patients} onOpenDetail={openDetail} resolved />
                 ) : null}
               </div>
             </WardPanel>
@@ -1557,7 +1542,9 @@ function StageRow({
       ) : null}
       {closure || blocker ? (
         <p className={styles.recordReason}>
-          <span className={styles.recordReasonLabel}>{closure ? "Closure note" : "Delay barrier"}:</span>{" "}
+          <span className={styles.recordReasonLabel}>
+            {closure ? "Closure note" : "Delay barrier"}:
+          </span>{" "}
           {closure ? closure.reason : blocker}
         </p>
       ) : null}

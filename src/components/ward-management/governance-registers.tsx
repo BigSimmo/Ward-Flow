@@ -140,6 +140,7 @@ type WorkbenchProps = {
   api?: GovernanceApi;
   legacyChanges?: ReactNode;
   effectiveness?: ReactNode;
+  sampleData?: boolean;
 };
 const actor = { role: "coordinator" } as const;
 const categoryLabels: Record<AuditCategory, string> = {
@@ -462,8 +463,249 @@ interface GovernanceDecisionItem {
   tone: "good" | "warn" | "accent";
 }
 
-// The override and decision lists start empty (25 Sept 2026). Until then they were seeded with
-// typed example overrides naming sample patients, and the KPI counts above them read those.
+interface GovernanceRestrictiveItem {
+  id: string;
+  form: string;
+  patient: string;
+  unit: string;
+  authorisedBy: string;
+  startTime: string;
+  reviewDue: string;
+  status: string;
+  tone: "good" | "warn" | "accent";
+}
+
+interface GovernanceSearchSeizureItem {
+  id: string;
+  patient: string;
+  unit: string;
+  officer: string;
+  articles: string;
+  time: string;
+  status: string;
+  tone: "good" | "warn" | "accent";
+}
+
+const SAMPLE_OVERRIDES: GovernanceOverrideItem[] = [
+  {
+    id: "OVR-107",
+    movement: "WF-014",
+    patient: "Harper, Chloe",
+    unit: "bty-adult-secure",
+    service: "East Metro",
+    route: "East Metro · Bentley Adult Secure",
+    category: "Acuity Ceiling Override",
+    reason: "Emergency department escalation · locked bed bypass authorised to mitigate acute self-harm risk.",
+    by: "Duty Consultant Psychiatrist",
+    recordedAgoText: "Earlier today",
+    status: "Pending Review",
+    reviewed: false,
+    reviewer: null,
+    decision: null,
+    reviewerReason: null,
+  },
+  {
+    id: "OVR-106",
+    movement: "WF-022",
+    patient: "Gallagher, Liam",
+    unit: "scgh-mental-health-unit",
+    service: "North Metro",
+    route: "North Metro · Sir Charles Gairdner MHU",
+    category: "Catchment Boundary Bypass",
+    reason: "Catchment boundary bypass authorised: patient resides in South Metro, urgent specialist stabilization needed.",
+    by: "State Bed Coordinator",
+    recordedAgoText: "Shift handover",
+    status: "Pending Review",
+    reviewed: false,
+    reviewer: null,
+    decision: null,
+    reviewerReason: null,
+  },
+  {
+    id: "OVR-105",
+    movement: "WF-004",
+    patient: "Vance, Eleanor",
+    unit: "bty-adult-secure",
+    service: "East Metro",
+    route: "East Metro · Bentley Adult Secure",
+    category: "Legal Form Deadline Review",
+    reason: "Involuntary detention Form 3D continuation review expedited pending statutory tribunal scheduling.",
+    by: "Flow Coordinator",
+    recordedAgoText: "Morning roll-up",
+    status: "Pending Review",
+    reviewed: false,
+    reviewer: null,
+    decision: null,
+    reviewerReason: null,
+  },
+  {
+    id: "OVR-104",
+    movement: "WF-028",
+    patient: "Chen, Marcus",
+    unit: "fre-adult-open",
+    service: "South Metro to East Metro",
+    route: "South Metro to East Metro · Fremantle",
+    category: "Catchment Boundary Bypass",
+    reason: "Receiving clinical team agreed placement due to specialized dual-diagnosis rehabilitation program.",
+    by: "State Bed Coordinator",
+    recordedAgoText: "Yesterday",
+    status: "Upheld",
+    reviewed: true,
+    reviewer: "Clinical Director",
+    decision: "Upheld in Full",
+    reviewerReason:
+      "Clinical justification verified against admission continuity protocol. Cross-boundary placement supported.",
+  },
+  {
+    id: "OVR-103",
+    movement: "WF-009",
+    patient: "Wren, Tobias",
+    unit: "gry-adult-secure",
+    service: "North Metro",
+    route: "North Metro · Graylands Hospital",
+    category: "Acuity Ceiling Override",
+    reason: "Emergency department escalation · locked bed bypass authorised to mitigate acute self-harm risk.",
+    by: "Duty Consultant Psychiatrist",
+    recordedAgoText: "Earlier today",
+    status: "Upheld",
+    reviewed: true,
+    reviewer: "Clinical Director",
+    decision: "Upheld in Full",
+    reviewerReason: "Emergency bypass justified by high-acuity crisis presentation. Staffing uplift confirmed on ward.",
+  },
+  {
+    id: "OVR-102",
+    movement: "WF-011",
+    patient: "Al-Mansoor, Tariq",
+    unit: "bty-adult-secure",
+    service: "North Metro to East Metro",
+    route: "North Metro to East Metro · Bentley",
+    category: "Cohort & Gender Mix Exception",
+    reason: "Specialist trauma-informed single room placement allocated following high occupancy in secure corridor.",
+    by: "State Bed Coordinator",
+    recordedAgoText: "Yesterday morning",
+    status: "Upheld",
+    reviewed: true,
+    reviewer: "Governance Lead Psychiatrist",
+    decision: "Upheld with Recommendations",
+    reviewerReason: "Placement satisfied safety criteria with dedicated 1:1 nursing cohort plan documented.",
+  },
+  {
+    id: "OVR-101",
+    movement: "WF-031",
+    patient: "Miller, David",
+    unit: "bun-adult-open",
+    service: "North Metro to WACHS",
+    route: "North Metro to WACHS · Bunbury",
+    category: "Catchment Boundary Bypass",
+    reason: "Metropolitan ICU bed saturation decompression · regional bed allocated with medical transport.",
+    by: "Executive Director On-Call",
+    recordedAgoText: "Previous shift",
+    status: "Upheld",
+    reviewed: true,
+    reviewer: "Governance Lead Psychiatrist",
+    decision: "Upheld in Full",
+    reviewerReason: "Inter-hospital transfer executed under statewide critical care load balancing policy.",
+  },
+];
+
+const SAMPLE_DECISIONS: GovernanceDecisionItem[] = [
+  {
+    id: "DEC-091",
+    auditor: "Clinical Director",
+    time: "Yesterday",
+    subject: "OVR-104 (Marcus Chen)",
+    category: "Catchment Boundary Bypass",
+    verdict: "Upheld in Full",
+    tone: "good",
+  },
+  {
+    id: "DEC-090",
+    auditor: "Clinical Director",
+    time: "Earlier today",
+    subject: "OVR-103 (Tobias Wren)",
+    category: "Acuity Ceiling Override",
+    verdict: "Upheld in Full",
+    tone: "good",
+  },
+  {
+    id: "DEC-089",
+    auditor: "Governance Lead Psychiatrist",
+    time: "Yesterday morning",
+    subject: "OVR-102 (Tariq Al-Mansoor)",
+    category: "Cohort & Gender Mix Exception",
+    verdict: "Upheld with Recommendations",
+    tone: "good",
+  },
+  {
+    id: "DEC-088",
+    auditor: "Governance Lead Psychiatrist",
+    time: "Previous shift",
+    subject: "OVR-101 (David Miller)",
+    category: "Catchment Boundary Bypass",
+    verdict: "Upheld in Full",
+    tone: "good",
+  },
+];
+
+const SAMPLE_RESTRICTIVE_PRACTICES: GovernanceRestrictiveItem[] = [
+  {
+    id: "RP-101",
+    form: "Form 10 (Bodily Restraint)",
+    patient: "Harper, Chloe · UMRN UM100412",
+    unit: "Bentley · Adult Secure Unit",
+    authorisedBy: "Dr. S. Banner (Consultant)",
+    startTime: "Earlier today",
+    reviewDue: "Midday review",
+    status: "Active · Clinical Observation",
+    tone: "warn",
+  },
+  {
+    id: "RP-102",
+    form: "Form 11 (Seclusion)",
+    patient: "Vance, Eleanor · UMRN UM100884",
+    unit: "Bentley · Adult Secure Unit",
+    authorisedBy: "Dr. C. Thorne (Duty Consultant)",
+    startTime: "Yesterday morning",
+    reviewDue: "Concluded",
+    status: "Concluded · Form 11B Endorsed",
+    tone: "good",
+  },
+  {
+    id: "RP-103",
+    form: "Form 10 (Bodily Restraint)",
+    patient: "Gallagher, Liam · UMRN UM100721",
+    unit: "Sir Charles Gairdner MHU",
+    authorisedBy: "Dr. M. Reid (Psychiatrist)",
+    startTime: "Previous shift",
+    reviewDue: "Concluded",
+    status: "Ceased · Clinical Review",
+    tone: "good",
+  },
+];
+
+const SAMPLE_SEARCH_SEIZURE: GovernanceSearchSeizureItem[] = [
+  {
+    id: "SS-2026-081",
+    patient: "Chen, Marcus · UMRN UM100612",
+    unit: "Fremantle · Adult Mental Health",
+    officer: "Authorised Mental Health Practitioner",
+    articles: "Prohibited electronic recording device",
+    time: "Yesterday morning",
+    status: "Secured in Ward Safe",
+    tone: "accent",
+  },
+  {
+    id: "SS-2026-079",
+    patient: "Wren, Tobias · UMRN UM100503",
+    unit: "Graylands · Secure Care Unit",
+    officer: "Senior Registered Nurse",
+    articles: "Non-prescribed medication",
+    time: "Earlier today",
+    status: "Logged & Handed to Pharmacy",
+    tone: "good",
+  },
+];
 
 /** Original required props remain compatible; only the mounted coordinator view supplies its guarded API. */
 export function GovernanceWorkbench(props: WorkbenchProps) {
@@ -477,7 +719,9 @@ function GovernanceSession({
   api,
   legacyChanges,
   effectiveness,
+  sampleData,
 }: WorkbenchProps) {
+  const hasSampleData = sampleData !== undefined ? sampleData : Boolean(api);
   const patientOf = usePatientOf();
   const [tab, setTab] = useState<GovernanceRegisterTab>("overrides");
   const [category, setCategory] = useState<"all" | AuditCategory>("all");
@@ -493,9 +737,15 @@ function GovernanceSession({
     decision: AuditReview["decision"];
   } | null>(null);
 
-  const [overrideList, setOverrideList] = useState<GovernanceOverrideItem[]>([]);
-  const [decisionList, setDecisionList] = useState<GovernanceDecisionItem[]>([]);
-  const [selectedOverrideId, setSelectedOverrideId] = useState<string | null>(null);
+  const [overrideList, setOverrideList] = useState<GovernanceOverrideItem[]>(
+    hasSampleData ? SAMPLE_OVERRIDES : [],
+  );
+  const [decisionList, setDecisionList] = useState<GovernanceDecisionItem[]>(
+    hasSampleData ? SAMPLE_DECISIONS : [],
+  );
+  const [selectedOverrideId, setSelectedOverrideId] = useState<string | null>(
+    hasSampleData ? "OVR-107" : null,
+  );
 
   const [modalOpen, setModalOpen] = useState(false);
   // The endorse form starts empty. It used to arrive pre-filled with a verdict, a reviewing role and
@@ -617,8 +867,8 @@ function GovernanceSession({
     { id: "overrides", label: "Overrides Register", count: totalMonitored },
     { id: "decisions", label: "Decision Log", count: decisionList.length },
     { id: "access", label: "Session Access Record", count: 0 },
-    { id: "restrictive", label: "Restrictive Practices (Forms 10/11)", count: 0 },
-    { id: "search-seizure", label: "Search & Seizure (Form 8)", count: 0 },
+    { id: "restrictive", label: "Restrictive Practices (Forms 10/11)", count: hasSampleData ? SAMPLE_RESTRICTIVE_PRACTICES.length : 0 },
+    { id: "search-seizure", label: "Search & Seizure (Form 8)", count: hasSampleData ? SAMPLE_SEARCH_SEIZURE.length : 0 },
     { id: "legacy", label: "Legacy facts" },
     ...(effectiveness ? [{ id: "measures" as const, label: "Effectiveness" }] : []),
   ];
@@ -653,7 +903,7 @@ function GovernanceSession({
     setTab(next);
     choose(null);
     if (next === "overrides") {
-      setSelectedOverrideId(null);
+      setSelectedOverrideId(hasSampleData ? "OVR-107" : null);
     }
     setAnnouncement(
       next === "overrides" || next === "captured"
@@ -822,11 +1072,56 @@ function GovernanceSession({
 
   return (
     <div className={thirdEdition.governanceWorkspace} data-testid="ward-governance-workbench">
-      <div className={thirdEdition.topBar}>
-        <div className={thirdEdition.barMeta}>
-          <span className={thirdEdition.barTitle}>Clinical Governance Workbench</span>
-          <span className={thirdEdition.barDot}>·</span>
-          <span className={thirdEdition.barSubtitle}>Statewide Gate Exceptions &amp; Allocation Overrides</span>
+      <div className={thirdEdition.executiveSentence} role="region" aria-label="Clinical governance indicators">
+        <p className={thirdEdition.sentenceText}>
+          <span className={thirdEdition.sentenceIntro}>This session:</span> monitoring{" "}
+          <span className={thirdEdition.metricToken} data-tone="warn">
+            <span className={`${thirdEdition.metricValue} mono`} id="kpi-monitored">
+              {totalMonitored}
+            </span>{" "}
+            <span className={thirdEdition.metricLabel}>Overrides Monitored</span>
+          </span>
+          , including{" "}
+          <span className={thirdEdition.metricToken} data-tone="accent">
+            <span className={`${thirdEdition.metricValue} mono`} id="kpi-catchment">
+              {catchmentBypasses}
+            </span>{" "}
+            <span className={thirdEdition.metricLabel}>Catchment Bypasses</span>
+          </span>{" "}
+          and{" "}
+          <span className={thirdEdition.metricToken} data-tone="warn">
+            <span className={`${thirdEdition.metricValue} mono`} id="kpi-acuity">
+              {acuityCeilings}
+            </span>{" "}
+            <span className={thirdEdition.metricLabel}>Acuity Ceilings Bypassed</span>
+          </span>
+          . Governance status:{" "}
+          <span className={thirdEdition.metricToken} data-tone="good">
+            <span className={`${thirdEdition.metricValue} mono`} id="kpi-upheld">
+              {reviewedUpheld}
+            </span>{" "}
+            <span className={thirdEdition.metricLabel}>Reviewed &amp; Upheld</span>
+          </span>
+          {" "}— <span className={thirdEdition.sentenceSub}>Safety incidents not recorded</span>.
+        </p>
+      </div>
+
+      <div className={thirdEdition.workspaceBar} role="region" aria-label="Governance session status and actions">
+        <div className={thirdEdition.workspaceMeta}>
+          <span className={thirdEdition.sessionDot} aria-hidden="true" />
+          <p className={thirdEdition.workspaceNote}>Captured this session · resets with demo</p>
+          <span className={thirdEdition.metaDot} aria-hidden="true">·</span>
+          <div className={thirdEdition.summary}>
+            <span className={thirdEdition.summaryPill}>
+              <strong>{allowed ? events.length : "—"}</strong> captured
+            </span>
+            <span className={thirdEdition.summaryPill}>
+              <strong>{allowed ? unreviewed : "—"}</strong> unreviewed
+            </span>
+            <span className={thirdEdition.summaryPill}>
+              <strong>{allowed ? followUp : "—"}</strong> follow-up
+            </span>
+          </div>
         </div>
         <div className={thirdEdition.reviewEntry}>
           <button
@@ -838,52 +1133,6 @@ function GovernanceSession({
           >
             + Endorse Current Audit
           </button>
-        </div>
-      </div>
-
-      <div className={thirdEdition.kpiStrip} role="region" aria-label="Clinical governance indicators">
-        <div className={thirdEdition.kpiCard} data-tone="warn">
-          <span className={thirdEdition.kpiLabel}>Overrides Monitored</span>
-          <span className={`${thirdEdition.kpiVal} mono`} id="kpi-monitored">
-            {totalMonitored}
-          </span>
-          <span className={thirdEdition.kpiSub}>This session</span>
-        </div>
-        <div className={thirdEdition.kpiCard} data-tone="accent">
-          <span className={thirdEdition.kpiLabel}>Catchment Bypasses</span>
-          <span className={`${thirdEdition.kpiVal} mono`} id="kpi-catchment">
-            {catchmentBypasses}
-          </span>
-          <span className={thirdEdition.kpiSub}>Cross-HSP Allocations</span>
-        </div>
-        <div className={thirdEdition.kpiCard} data-tone="warn">
-          <span className={thirdEdition.kpiLabel}>Acuity Ceilings Bypassed</span>
-          <span className={`${thirdEdition.kpiVal} mono`} id="kpi-acuity">
-            {acuityCeilings}
-          </span>
-          <span className={thirdEdition.kpiSub}>HD · Locked Ward Exceptions</span>
-        </div>
-        <div className={thirdEdition.kpiCard} data-tone="good">
-          <span className={thirdEdition.kpiLabel}>Reviewed &amp; Upheld</span>
-          <span className={`${thirdEdition.kpiVal} mono`} id="kpi-upheld">
-            {reviewedUpheld}
-          </span>
-          <span className={thirdEdition.kpiSub}>Safety incidents not recorded</span>
-        </div>
-      </div>
-
-      <div className={thirdEdition.workspaceBar}>
-        <p>Captured this session · resets with demo</p>
-        <div className={thirdEdition.summary}>
-          <span>
-            <strong>{allowed ? events.length : "—"}</strong> captured
-          </span>
-          <span>
-            <strong>{allowed ? unreviewed : "—"}</strong> unreviewed
-          </span>
-          <span>
-            <strong>{allowed ? followUp : "—"}</strong> follow-up
-          </span>
         </div>
       </div>
 
@@ -1530,11 +1779,31 @@ function GovernanceSession({
                 </tr>
               </thead>
               <tbody id="restrictiveTableBody">
-                <tr>
-                  <td colSpan={7} style={{ textAlign: "center", padding: "2rem", color: "var(--muted)" }}>
-                    Statutory register for Form 10 and Form 11 clinical records.
-                  </td>
-                </tr>
+                {!hasSampleData || SAMPLE_RESTRICTIVE_PRACTICES.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: "center", padding: "2rem", color: "var(--muted)" }}>
+                      Statutory register for Form 10 and Form 11 clinical records.
+                    </td>
+                  </tr>
+                ) : (
+                  SAMPLE_RESTRICTIVE_PRACTICES.map((row) => (
+                    <tr key={row.id} role="row">
+                      <td>
+                        <strong>{row.form}</strong>
+                      </td>
+                      <td>{row.patient}</td>
+                      <td>{row.unit}</td>
+                      <td>{row.authorisedBy}</td>
+                      <td className="mono">{row.startTime}</td>
+                      <td className="mono">{row.reviewDue}</td>
+                      <td>
+                        <span className={thirdEdition.badge} data-tone={row.tone}>
+                          {row.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -1569,11 +1838,31 @@ function GovernanceSession({
                 </tr>
               </thead>
               <tbody id="searchSeizureTableBody">
-                <tr>
-                  <td colSpan={7} style={{ textAlign: "center", padding: "2rem", color: "var(--muted)" }}>
-                    Statutory register for Form 8 records.
-                  </td>
-                </tr>
+                {!hasSampleData || SAMPLE_SEARCH_SEIZURE.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: "center", padding: "2rem", color: "var(--muted)" }}>
+                      Statutory register for Form 8 records.
+                    </td>
+                  </tr>
+                ) : (
+                  SAMPLE_SEARCH_SEIZURE.map((row) => (
+                    <tr key={row.id} role="row">
+                      <td className="mono">
+                        <strong>{row.id}</strong>
+                      </td>
+                      <td>{row.patient}</td>
+                      <td>{row.unit}</td>
+                      <td>{row.officer}</td>
+                      <td>{row.articles}</td>
+                      <td className="mono">{row.time}</td>
+                      <td>
+                        <span className={thirdEdition.badge} data-tone={row.tone}>
+                          {row.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

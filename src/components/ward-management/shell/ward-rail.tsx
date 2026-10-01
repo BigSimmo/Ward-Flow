@@ -314,7 +314,7 @@ const CLINICAL_PERSONAS = [
     id: "chen",
     name: "Dr S. Chen",
     initials: "SC",
-    role: "State Access Coordinator",
+    role: "Bed coordinator",
   },
   {
     id: "gallagher",
@@ -799,8 +799,8 @@ export function WardRail({ asAt }: WardRailProps) {
           </div>
           <div className={styles.shiftMeta}>
             <span className={styles.shiftTitle}>{shiftProgress.shiftTitle}</span>
-            <span className={styles.shiftSub} title="Dr S. Chen · State Access Desk">
-              Dr S. Chen · State Access Desk
+            <span className={styles.shiftSub} title="Dr S. Chen · Bed coordinator">
+              Dr S. Chen · Bed coordinator
             </span>
           </div>
         </div>
@@ -977,7 +977,7 @@ export function WardRail({ asAt }: WardRailProps) {
             }}
           >
             <Plus aria-hidden="true" className={styles.btnRailReferralIcon} />
-            <span>Raise Referral</span>
+            <span>New referral</span>
           </button>
         </div>
 

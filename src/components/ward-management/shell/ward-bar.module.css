@@ -307,6 +307,7 @@
   align-items: center;
   justify-content: center;
   min-height: var(--spacing-tap, 3rem);
+  min-width: var(--spacing-tap, 3rem);
   padding: 0;
   margin: 0;
   border: 0;
@@ -314,6 +315,10 @@
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
+}
+
+.scopeBadgeLabel {
+  white-space: nowrap;
 }
 
 .scopeBadgeInner {
@@ -588,6 +593,7 @@
   font-size: var(--t-1);
   color: var(--ink);
   min-height: var(--spacing-tap, 3rem);
+  min-width: var(--spacing-tap, 3rem);
   box-sizing: border-box;
   background: transparent;
   border: none;
@@ -1827,6 +1833,18 @@
 }
 
 @media (max-width: 40rem) {
+  .bar {
+    padding: 0.25rem 0.125rem;
+    gap: 0.0625rem;
+    box-sizing: border-box;
+  }
+
+  .title {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: calc(100% - 15.5rem);
+  }
+
   .cockpitCapsule {
     min-width: 0;
     max-width: 100%;
@@ -1835,12 +1853,15 @@
     flex-wrap: nowrap;
     flex-shrink: 0;
     border-radius: var(--pill, 9999px);
-    padding: 0 0.25rem 0 0.5rem;
+    padding: 0 0.125rem 0 0.25rem;
+    gap: 0.125rem;
+    box-sizing: border-box;
   }
 
   .titleGroup {
     max-width: 100%;
     min-width: 0;
+    overflow: hidden;
   }
 
   .place,
@@ -1848,7 +1869,107 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 5.5rem;
+    max-width: 1.5rem;
+  }
+
+  .scopeBadgeBtn {
+    min-width: var(--spacing-tap, 3rem);
+    width: var(--spacing-tap, 3rem);
+    flex-shrink: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  .scopeBadgeInner {
+    padding: 0;
+    gap: 0.125rem;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .scopeBadgeLabel {
+    display: none;
+  }
+
+  .centerGroup {
+    flex: 0 0 auto;
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    margin-left: 0;
+  }
+
+  .searchWrap {
+    flex: 0 0 auto;
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    width: var(--spacing-tap, 3rem);
+    box-sizing: border-box;
+  }
+
+  .searchWrap :global([data-testid="ward-global-search"]) {
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    width: var(--spacing-tap, 3rem);
+    display: flex;
+    box-sizing: border-box;
+  }
+
+  .searchWrap :global([data-testid="ward-global-search"] > div) {
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    width: var(--spacing-tap, 3rem);
+    padding: 0 !important;
+    gap: 0 !important;
+    box-sizing: border-box;
+  }
+
+  .searchWrap :global([data-testid="ward-global-search"] svg) {
+    display: none;
+  }
+
+  .searchWrap :global([data-testid="ward-global-search-input"]) {
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    width: var(--spacing-tap, 3rem);
+    padding: 0 0.25rem;
+    box-sizing: border-box;
+  }
+
+  .drawerTriggers {
+    margin-left: auto;
+    flex-shrink: 0;
+    gap: 0.0625rem;
+  }
+
+  .drawerTrigger {
+    padding: 0 0.125rem;
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    box-sizing: border-box;
+  }
+
+  .primaryWrap {
+    flex-shrink: 0;
+  }
+
+  .primaryMain {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .primary {
+    min-width: var(--spacing-tap, 3rem);
+    max-width: var(--spacing-tap, 3rem);
+    width: var(--spacing-tap, 3rem);
+    padding: 0 0.125rem;
+    gap: 0;
+    box-sizing: border-box;
   }
 
   .demoTime {
@@ -2252,6 +2373,50 @@
   font-size: var(--t-0);
   font-weight: 500;
   opacity: 0.85;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * FIGURES & CLINICAL TELEMETRY TRIGGER & DRAWER
+ * ────────────────────────────────────────────────────────────────────────── */
+.alarmBadge {
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--danger-ink);
+  background: var(--danger-soft);
+  border-radius: var(--radius-pill);
+  padding: 0.0625rem 0.4375rem;
+  box-shadow: inset 0 0 0 1px var(--danger);
+  animation: pulseAlarmBadge 2s infinite ease-in-out;
+}
+
+@keyframes pulseAlarmBadge {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alarmBadge {
+    animation: none;
+  }
+}
+
+.drawerSheetFigures {
+  max-width: 32rem;
+  width: 100%;
+}
+
+.figuresCarrierBody {
+  padding: 0;
+  overflow-y: auto;
 }
 
 @media (forced-colors: active) {

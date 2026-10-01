@@ -1,22 +1,22 @@
 # Ward Flow — status
 
-**Historical status of the former Database ward line.** Last substantively measured
-**25 September 2026**. Ward Flow now lives in its own public repository,
-[`BigSimmo/Ward-Flow`](https://github.com/BigSimmo/Ward-Flow). For current work, start with
-[Ward Flow's entry point](README.md) and the repository [AGENTS.md](../../AGENTS.md), then inspect
-`main` and the current code. The older branches, checkout paths, run results and open-work claims
-below are dated history; they are not instructions or current verification. Preserve this record
-while moving active status to the current repository workflow.
+**Where things stand. Update this file in place; do not start a new dated copy.** Last written
+**25 September 2026** (top five structural defects resolved across ED routing, bed board, movements timeline, and governance; tip confirm with `git log -1`).
+The 17–21 September text is kept below where it is still true. Every measured figure below names
+the tree it came from. Before acting, run `git -C D:/Worktrees/Database/ward-lead log -1` and
+re-check anything you rely on.
 
-## Historical snapshot (25 September 2026)
+## Today (25 September 2026)
 
-- At that time, threads worked in separate worktrees and folded into the local Database ward line.
-  That process is historical; use the current repository [AGENTS.md](../../AGENTS.md).
-- Guards in the old Claude settings and former Database checkout applied to that environment only.
-  Do not infer the public repository's permissions or provider state from them.
-- Every figure below names the tree it was measured on and is history unless re-run on current code.
+- **How work runs changed today.** Many project threads build at once, each in its own worktree and
+  branch; they fold into the line one at a time with the fold lock, after merging the line in and
+  retesting. See [`HOW-WE-WORK.md`](HOW-WE-WORK.md) §2 and §4.
+- **Guards added today (in Claude's own settings, outside the repository):** pushing or opening a
+  pull request from a Ward Flow folder or branch is refused, and so are Railway and Supabase tools.
+- **The tip is not tracked here.** Run `git -C D:/Worktrees/Database/ward-lead log -1`. Every figure
+  below names the tree it was measured on and is history unless re-run.
 
-## Former Database line
+## The line
 
 - **The one canonical master ward line** is branch `codex/task-ward-flow-live-state-20260831`, checked out in
   `D:/Worktrees/Database/ward-lead`. All relevant feature and audit branches (`fix/ward-flow-p0-chrome-strip`,
@@ -27,8 +27,7 @@ while moving active status to the current repository workflow.
 - `ward/journey-tooling-20260918` is the same line under an older name and is kept in step by folding;
   it was last equal at `57ccf4725d`. `fix/ward-flow-elevation-waves-abcd` (locked worktree
   `ward-lead-elevation`) is fully contained in the line and holds nothing unfolded — checked 21 Sept.
-- The former Database ward line was local only. That restriction described the old repository; it
-  does not define the public `BigSimmo/Ward-Flow` workflow.
+- It is local only and never pushed. Nothing on it goes to `origin/main`.
 - 🔴 **THE FULL WARD SUITE RAN ON 21 SEPTEMBER, THE FIRST TIME SINCE 17 SEPTEMBER, AND IT IS RED.**
   41 ward test files failed and **none was in `tests/ward-expected-reds.json`**. Re-run on a clean
   detached checkout of the committed tree (`D:/Worktrees/Database/suite-check-20260921`) to exclude

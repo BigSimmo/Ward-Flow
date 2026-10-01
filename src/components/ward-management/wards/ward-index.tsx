@@ -4,11 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import {
-  designationSummary,
-  unitHasLockedBeds,
-  unitHasOpenBeds,
-} from "@/components/ward-management/ward-bed-designation";
+import { designationSummary, unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { remainingSpeciallingCapacity } from "@/components/ward-management/ward-admissions";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
@@ -26,7 +22,13 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
  */
 
 type ServiceFilter = "all" | "NMHS" | "SMHS" | "EMHS" | "WACHS" | "Private";
-type CohortFilter = "all" | "adult-acute" | "older-adult" | "perinatal" | "forensic" | "sub-acute";
+type CohortFilter =
+  | "all"
+  | "adult-acute"
+  | "older-adult"
+  | "perinatal"
+  | "forensic"
+  | "sub-acute";
 type AvailFilter = "all" | "vacant" | "full" | "high-acuity";
 
 interface WardMetadata {
@@ -154,8 +156,7 @@ const WARD_METADATA: Record<string, WardMetadata> = {
     num: "Gary Davies",
     ext: "7314",
     vocera: "#NUM-74",
-    criteria:
-      "Older adult assessment, diagnostic workup, and community transition planning for Eastern Hills catchment.",
+    criteria: "Older adult assessment, diagnostic workup, and community transition planning for Eastern Hills catchment.",
     mhaForms: "Form 1A, Form 2, Form 6A",
     security: "All open",
     securityTone: "good",
@@ -229,8 +230,7 @@ const WARD_METADATA: Record<string, WardMetadata> = {
     num: "Julian Croft",
     ext: "3310",
     vocera: "#NUM-33",
-    criteria:
-      "Private adult voluntary inpatient stabilization, mood disorder therapies, and anxiety treatment programs.",
+    criteria: "Private adult voluntary inpatient stabilization, mood disorder therapies, and anxiety treatment programs.",
     mhaForms: "Voluntary Admissions, Form 1A",
     security: "All open",
     securityTone: "good",
@@ -284,16 +284,13 @@ const WARD_METADATA: Record<string, WardMetadata> = {
   },
 };
 
-function getServiceCode(
-  serviceName?: HealthService | string,
-): "NMHS" | "SMHS" | "EMHS" | "WACHS" | "Private" | "OTHER" {
+function getServiceCode(serviceName?: HealthService | string): "NMHS" | "SMHS" | "EMHS" | "WACHS" | "Private" | "OTHER" {
   if (!serviceName) return "OTHER";
   if (serviceName.includes("North Metro")) return "NMHS";
   if (serviceName.includes("South Metro")) return "SMHS";
   if (serviceName.includes("East Metro")) return "EMHS";
   if (serviceName.includes("WACHS") || serviceName.includes("Country")) return "WACHS";
-  if (serviceName.includes("Private") || serviceName.includes("St John") || serviceName.includes("SJGM"))
-    return "Private";
+  if (serviceName.includes("Private") || serviceName.includes("St John") || serviceName.includes("SJGM")) return "Private";
   return "OTHER";
 }
 
@@ -303,7 +300,8 @@ function getCohortKey(unit: Unit): "adult-acute" | "older-adult" | "perinatal" |
     return "older-adult";
   if (/perinatal|mbu|mother|youth|adolescent/i.test(unit.cohort) || /perinatal|mbu|youth|adolescent/i.test(unit.name))
     return "perinatal";
-  if (/sub-acute|rehab/i.test(unit.cohort) || /sub-acute|rehab/i.test(unit.name)) return "sub-acute";
+  if (/sub-acute|rehab/i.test(unit.cohort) || /sub-acute|rehab/i.test(unit.name))
+    return "sub-acute";
   return "adult-acute";
 }
 
@@ -539,9 +537,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                 title="Click to view all operational wards"
                 tabIndex={0}
                 role="button"
-                aria-pressed={
-                  selectedService === "all" && selectedAvail === "all" && selectedCohort === "all" && !searchQuery
-                }
+                aria-pressed={selectedService === "all" && selectedAvail === "all" && selectedCohort === "all" && !searchQuery}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
@@ -608,6 +604,17 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             </div>
           </div>
         </header>
+
+        {/* Natural Language Executive Statement */}
+        <div className={styles.executiveStatement} role="status">
+          <span className={styles.statementPip} aria-hidden="true" />
+          <span className={styles.statementText}>
+            <strong>Statewide Census:</strong> {units.length} operational inpatient units &middot;{" "}
+            <span className={styles.statementVal}>{totalStaffedBeds}</span> staffed beds &middot;{" "}
+            <span className={styles.statementVal}>{networkOccupancyPct}%</span> network occupancy &middot;{" "}
+            <span className={styles.statementValGood}>{totalAvailableBeds}</span> beds ready for intake
+          </span>
+        </div>
 
         {/* 2-Row Structured Filter Cockpit (Option 2 Architecture) */}
         <section className={styles.cockpitPanel} aria-label="Directory Filters">
@@ -1023,7 +1030,9 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
               (Showing {filteredUnits.length} of {units.length} statewide wards)
             </span>
           </div>
-          <div className={styles.directorySubHint}>Click any ward to inspect NUM contact &amp; criteria</div>
+          <div className={styles.directorySubHint}>
+            Click any ward to inspect NUM contact &amp; criteria
+          </div>
         </div>
 
         {/* 3. Canonical Service Headings & Navigation Anchor Points */}
@@ -1094,9 +1103,14 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                   <div className={styles.cardTop}>
                     <div className={styles.cardHeaderRow}>
                       <div className={styles.cardTitleGroup}>
-                        <h4 className={styles.wardTitle} title={unit.name}>
-                          {unit.name}
-                        </h4>
+                        <div className={styles.cardTitleLine}>
+                          <span
+                            className={styles.cardStatusPip}
+                            data-tone={occNum >= 100 ? "danger" : occNum >= 90 ? "warn" : "good"}
+                            aria-hidden="true"
+                          />
+                          <h4 className={styles.wardTitle} title={unit.name}>{unit.name}</h4>
+                        </div>
                         <div className={styles.wardFacility} title={site?.name ?? unit.siteCode}>
                           {site?.name ?? unit.siteCode}
                         </div>
@@ -1143,9 +1157,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                       </span>
                       <span className={styles.meterAvailHint}>
                         {cap.available > 0 ? (
-                          <span className={styles.meterAvailGood}>
-                            <b>{cap.available}</b> ready
-                          </span>
+                          <span className={styles.meterAvailGood}><b>{cap.available}</b> ready</span>
                         ) : (
                           <span className={styles.meterAvailFull}>0 ready</span>
                         )}
@@ -1176,12 +1188,12 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                       }
                     >
                       <span className={styles.statColLabel}>Available</span>
-                      <span
-                        className={`${styles.statColVal} ${cap.available > 0 ? styles.vacantGood : styles.fullDanger}`}
-                      >
+                      <span className={`${styles.statColVal} ${cap.available > 0 ? styles.vacantGood : styles.fullDanger}`}>
                         {cap.available}
                       </span>
-                      <span className={styles.statColSub}>{cap.available > 0 ? "Ready" : "None"}</span>
+                      <span className={styles.statColSub}>
+                        {cap.available > 0 ? "Ready" : "None"}
+                      </span>
                     </div>
 
                     <div
@@ -1196,7 +1208,9 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                       <span className={`${styles.statColVal} ${activeSpecialling > 0 ? styles.speciallingActive : ""}`}>
                         {activeSpecialling}
                       </span>
-                      <span className={styles.statColSub}>{activeSpecialling > 0 ? "Active" : "None"}</span>
+                      <span className={styles.statColSub}>
+                        {activeSpecialling > 0 ? "Active" : "None"}
+                      </span>
                     </div>
                   </div>
 
@@ -1434,7 +1448,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                 <div style={{ fontSize: "var(--t-1, 13px)", color: "var(--ink)", fontWeight: 600, marginTop: "2px" }}>
                   NUM: {profileMeta.num} · Direct Ext. {profileMeta.ext} · Vocera: {profileMeta.vocera}
                 </div>
-                <div style={{ fontSize: "11px", color: "var(--muted)", marginTop: "2px" }}>
+                <div style={{ fontSize: "var(--t-0, 12px)", color: "var(--muted)", marginTop: "2px" }}>
                   Contact Bed Desk coordinator for priority admission authorization.
                 </div>
               </div>

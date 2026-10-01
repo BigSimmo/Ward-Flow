@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { globSync } from "node:fs";
 import { spawn } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -11,7 +12,16 @@ import { vitestLeaseMode } from "./test-run-selection.mjs";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const vitestBin = path.join(projectRoot, "node_modules", "vitest", "vitest.mjs");
-const args = process.argv.slice(2);
+const rawArgs = process.argv.slice(2);
+const args = rawArgs.flatMap((arg) => {
+  if (arg.startsWith("-") || !/[*?]/.test(arg)) return [arg];
+  try {
+    const matched = globSync(arg.replace(/\\/g, "/"), { cwd: projectRoot });
+    return matched.length > 0 ? matched : [arg];
+  } catch {
+    return [arg];
+  }
+});
 
 export const VITEST_BUILTIN_REPORTERS = new Set([
   "default",

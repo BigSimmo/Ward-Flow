@@ -34,7 +34,7 @@
 /* Barrier Escalation Alert Card */
 .barrierAlertCard {
   background: var(--surface);
-  border: 1px solid rgba(176, 59, 46, 0.25);
+  border: 1px solid var(--danger-soft);
   border-left: 4px solid var(--danger);
   border-radius: var(--r2);
   padding: 12px 16px;
@@ -42,7 +42,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  box-shadow: var(--lift-sm, 0 1px 2px rgba(18, 30, 49, 0.04));
+  box-shadow: var(--lift-sm);
 }
 
 @media (max-width: 768px) {
@@ -59,14 +59,14 @@
 }
 
 .barrierBadge {
-  font-size: 11px;
+  font-size: 12px; /* 12px floor */
   font-family: var(--mono);
   font-weight: 700;
   padding: 2px 7px;
   border-radius: var(--pill, 999px);
-  background: var(--danger-soft, rgba(176, 59, 46, 0.12));
+  background: var(--danger-soft);
   color: var(--danger-ink, var(--danger));
-  border: 1px solid rgba(176, 59, 46, 0.25);
+  border: 1px solid var(--danger-soft);
   text-transform: uppercase;
 }
 
@@ -111,7 +111,7 @@
 
 .streamTabBtn[data-active="true"] {
   background: var(--accent);
-  color: #fff;
+  color: var(--surface);
   border-color: var(--accent);
 }
 
@@ -132,7 +132,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  box-shadow: var(--lift-sm, 0 1px 2px rgba(18, 30, 49, 0.04));
+  box-shadow: var(--lift-sm);
 }
 
 @media (max-width: 900px) {
@@ -184,13 +184,13 @@
 }
 
 .chkChip {
-  font-size: 11px;
+  font-size: 12px; /* 12px floor */
   font-weight: 600;
   padding: 2px 8px;
   border-radius: var(--pill, 999px);
-  background: var(--good-soft, rgba(34, 117, 80, 0.12));
+  background: var(--good-soft);
   color: var(--good-ink, var(--good));
-  border: 1px solid rgba(34, 117, 80, 0.25);
+  border: 1px solid var(--good-soft);
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -202,7 +202,7 @@
   font-weight: 600;
   border-radius: var(--r1);
   background: var(--good);
-  color: #fff;
+  color: var(--surface);
   border: none;
   cursor: pointer;
   white-space: nowrap;

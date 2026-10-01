@@ -59,6 +59,10 @@ const APPROVED_SHARED_MODULES = new Map([
     "@/components/ui/tooltip",
     "the existing portal, viewport positioning and focus/Escape lifecycle for the drawn closed-rail card; avoids clipping inside the required scrolling rail without duplicating overlay infrastructure (visual wave Task 1)",
   ],
+  [
+    "@/components/developer-area/ward-flow-access-gate",
+    "the passwordless gate that keeps Ward Flow private without Clinical KB database access",
+  ],
   ["@/components/contextual-back-link", "shared back navigation"],
   ["@/lib/form-register", "shared form registration"],
   ["@/lib/client-store-factory", "shared client-side store helper"],
@@ -77,6 +81,10 @@ const APPROVED_SHARED_MODULES = new Map([
 const APPROVED_ROUTE_REFERENCES = new Map([
   ["src/lib/developer-area/headers.ts", "route list for the developer-area header"],
   ["src/proxy.ts", "the constellation-to-network redirect kept for historical deep links"],
+  [
+    "src/lib/developer-area/link-access-shared.ts",
+    "where the access gate sends a visitor who asked for no page: Ward Flow, since the developer hub it used to name was retired",
+  ],
   /*
    * ⚠️ THESE TWO ARE NOT OUTSIDE WARD FLOW — THEY ARE WARD FLOW, SITED ELSEWHERE ON PURPOSE, and
    * they are here because the literal this guard matches (`mockups/ward-flow`) is a PREFIX of
@@ -107,7 +115,6 @@ const APPROVED_ROUTE_REFERENCES = new Map([
     "src/app/page.tsx",
     'the front page: Ward Flow is the only app left, so "/" redirects to its Coordinator view (Josh, 26 September 2026)',
   ],
-  ["src/app/not-found.tsx", "the standalone app's not-found fallback returns visitors to its only product, Ward Flow"],
 ]);
 
 const WARD_ROUTE_LITERAL = "mockups/ward-flow";
@@ -257,8 +264,7 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // 8 -> 9 on 2026-09-13: Task 1 deliberately reuses Tooltip's portal and focus lifecycle for
     // the drawing's closed-rail card; the specific extraction cost is documented beside its entry.
     // 9 → 10 on 2026-09-23: the same Sheet stack must coordinate custom Ward dialogs.
-    // 10 -> 9 on 2026-09-28: the developer-key access gate was removed at Josh's request.
-    expect(APPROVED_SHARED_MODULES.size).toBe(9);
+    expect(APPROVED_SHARED_MODULES.size).toBe(10);
     // ⚠️ AND THE MEMBERSHIP, NOT ONLY THE COUNT. A size pin cannot tell a widening from a SWAP:
     // remove one approved module, add another, and the count stays unchanged while Ward Flow's seam
     // has changed — which is the thing this list exists to control. The argument is already made
@@ -269,6 +275,7 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     expect([...APPROVED_SHARED_MODULES.keys()].sort()).toEqual([
       "@/components/clinical-dashboard/brand",
       "@/components/contextual-back-link",
+      "@/components/developer-area/ward-flow-access-gate",
       "@/components/ui-primitives",
       "@/components/ui/missing-value",
       "@/components/ui/sheet",
@@ -290,9 +297,6 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // skipped Ward Flow's routes by name, because there is no PsychSift shell left to skip.
     // 6 -> 7 on 2026-09-26: the front page "/" had no page after the PsychSift removal and showed
     // "not found"; Josh ruled it opens the Coordinator view, so src/app/page.tsx names the route.
-    // 7 -> 8 in the standalone app: its not-found fallback names the only product route.
-    // 8 -> 7 on 2026-09-28: the developer-key gate went, and with it link-access-shared.ts's
-    // default destination.
     expect(APPROVED_ROUTE_REFERENCES.size).toBe(7);
     expect(wardFiles.length).toBeGreaterThan(50);
     expect(allSourceFiles.length).toBeGreaterThan(wardFiles.length);

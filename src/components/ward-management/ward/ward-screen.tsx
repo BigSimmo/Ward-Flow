@@ -1144,6 +1144,30 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
    * event in its own state would let the two drift apart, and a mismatch there would override a
    * different action than the one on screen.
    */
+  function handleAcceptInPrinciple(movementId: string, unitId: string) {
+    priorRejectionCountRef.current = rejections.length;
+    dispatch({
+      type: "ACCEPT_IN_PRINCIPLE",
+      role: "ward",
+      now,
+      movementId,
+      unitId,
+    });
+    setCheckToken((token) => token + 1);
+  }
+
+  function handlePullPatient(movementId: string, unitId: string) {
+    priorRejectionCountRef.current = rejections.length;
+    dispatch({
+      type: "PULL_PATIENT",
+      role: "ward",
+      now,
+      movementId,
+      unitId,
+    });
+    setCheckToken((t) => t + 1);
+  }
+
   function submitOverride(event: FormEvent<HTMLFormElement>, movementId: string) {
     event.preventDefault();
     if (!overrideReason || !lastActionRejection) return;
@@ -1979,7 +2003,7 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
                 <span
                   className={styles.tabBadge}
                   id="badgeReturn"
-                  style={{ color: "var(--crimson, #c53030)", fontWeight: 700 }}
+                  style={{ color: "var(--danger)", fontWeight: 700 }}
                   title="2 decisions due this shift"
                   aria-label="2 decisions due this shift"
                 >
@@ -2000,6 +2024,7 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
         >
           <WardHomeTab
             unit={unit}
+            onAcceptInPrinciple={handleAcceptInPrinciple}
             units={units}
             capacity={capacity}
             accepted={accepted}
@@ -2042,6 +2067,19 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
           data-active={activeTab === "return"}
         >
           <WardDecisionsCockpit unit={unit} />
+          <div
+            className={styles.censusCommandCard}
+            style={{ marginTop: "1rem", padding: "16px 20px" }}
+          >
+            <details className={styles.clinicalDisclosure} open style={{ borderTop: "none", paddingTop: 0, marginTop: 0 }}>
+              <summary style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink)", cursor: "pointer" }}>
+                Update allocatable count directly
+              </summary>
+              <div style={{ marginTop: "10px" }}>
+                {presentation !== "answer" ? capacityConfirmationForm() : null}
+              </div>
+            </details>
+          </div>
           {/* Preserved test contracts for automated test suites (visually hidden) */}
           <div className={styles.visuallyHidden}>
             {/*
@@ -2477,12 +2515,6 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
                   </p>
                 </details>
 
-                <details className={styles.clinicalDisclosure} open>
-                  <summary>Update allocatable count directly</summary>
-                  <div style={{ marginTop: "10px" }}>
-                    {presentation !== "answer" ? capacityConfirmationForm() : null}
-                  </div>
-                </details>
               </div>
             </section>
 
@@ -3436,6 +3468,7 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
         >
           <WardArrivalsCorridor
             unit={unit}
+            onPullPatient={handlePullPatient}
             accepted={accepted}
             now={now}
             resolvePatientIdentity={resolvePatientIdentity}

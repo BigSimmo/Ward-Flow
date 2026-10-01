@@ -424,16 +424,16 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
               setTransportFilter(transportFilter === "three_hours_or_more" ? "all" : "three_hours_or_more")
             }
             aria-pressed={transportFilter === "three_hours_or_more"}
-            aria-label={`Road Travel (≥3h): ${roadCount} patients. Click to filter.`}
+            aria-label={`Road Travel: ${roadCount} patients. Click to filter.`}
           >
             <div className={pageStyles.kpiLabelRow}>
-              <span className={pageStyles.kpiLabel}>Road Travel (&ge;3h)</span>
+              <span className={pageStyles.kpiLabel}>Road Travel</span>
               <span className={pageStyles.kpiToneBadge} data-tone="warn">
                 <PlacementStatusGlyph tone="warn" />
               </span>
             </div>
             <span className={`${pageStyles.kpiVal} ${pageStyles.warnVal}`}>{roadCount}</span>
-            <span className={pageStyles.kpiSub}>Ground transfer (&ge;3 hours)</span>
+            <span className={pageStyles.kpiSub}>Long-distance ground transfer</span>
           </button>
           <button
             type="button"
@@ -580,7 +580,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                     onClick={() => setTransportFilter("three_hours_or_more")}
                   >
                     <PlacementStatusGlyph tone="warn" />
-                    <span>Road &ge;3h ({roadCount})</span>
+                    <span>Road ({roadCount})</span>
                   </button>
                 </div>
               </div>
@@ -858,7 +858,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                       </div>
                       <div className={pageStyles.transportSummaryItem}>
                         <PlacementStatusGlyph tone="warn" />
-                        <span className={pageStyles.transportSummaryLabel}>Ground &ge;3h:</span>
+                        <span className={pageStyles.transportSummaryLabel}>Ground:</span>
                         <strong className={`${pageStyles.mono} ${pageStyles.warnVal}`}>{roadCount}</strong>
                       </div>
                     </div>

@@ -113,27 +113,31 @@ try {
   } else {
     console.log("ready-check: type check not needed for this change class.");
   }
-  // The unit tests related to the branch's changed files, run on the merged tree (Josh, 26
-  // September: tonight's bed-release reds were only caught by the full gate, 40 minutes later).
-  console.log("ready-check: running the related unit tests on the merged result...");
-  const related = spawnSync(
-    process.execPath,
-    [
-      path.join(path.dirname(fileURLToPath(import.meta.url)), "related-tests.mjs"),
-      "--base",
-      onto,
-      "--head",
-      branch,
-      "--root",
-      folder,
-    ],
-    { stdio: "inherit" },
-  );
-  console.log(`ready-check: related tests exit ${related.status}.`);
-  if (related.status !== 0) code = 1;
-  if (plan.tier === "focused" && !existsSync(path.join(folder, "related-tests-report.json"))) {
-    console.log("ready-check: no focused test report; executable work needs a related contract or FULL gate.");
-    code = 1;
+  if (code !== 0) {
+    console.log("ready-check: related tests not run because type checking failed. Fix that failure first.");
+  } else {
+    // The unit tests related to the branch's changed files, run on the merged tree (Josh, 26
+    // September: tonight's bed-release reds were only caught by the full gate, 40 minutes later).
+    console.log("ready-check: running the related unit tests on the merged result...");
+    const related = spawnSync(
+      process.execPath,
+      [
+        path.join(path.dirname(fileURLToPath(import.meta.url)), "related-tests.mjs"),
+        "--base",
+        onto,
+        "--head",
+        branch,
+        "--root",
+        folder,
+      ],
+      { stdio: "inherit" },
+    );
+    console.log(`ready-check: related tests exit ${related.status}.`);
+    if (related.status !== 0) code = 1;
+    if (plan.tier === "focused" && !existsSync(path.join(folder, "related-tests-report.json"))) {
+      console.log("ready-check: no focused test report; executable work needs a related contract or FULL gate.");
+      code = 1;
+    }
   }
 } finally {
   unlinkModules();

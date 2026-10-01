@@ -77,14 +77,14 @@ export function WardBedsMatrix({
         <div style={{ display: "flex", gap: "6px" }}>
           <span
             className={styles.podFilterBtn}
-            style={{ background: "var(--good-soft, rgba(34, 117, 80, 0.12))", color: "var(--good)" }}
+            style={{ background: "var(--good-soft)", color: "var(--good)" }}
           >
             {readyCount} Ready
           </span>
           <span className={styles.podFilterBtn}>{occupiedCount} Occupied</span>
           <span
             className={styles.podFilterBtn}
-            style={{ background: "var(--warn-soft, rgba(130, 93, 16, 0.12))", color: "var(--warn)" }}
+            style={{ background: "var(--warn-soft)", color: "var(--warn)" }}
           >
             {leaveCount} On Leave
           </span>

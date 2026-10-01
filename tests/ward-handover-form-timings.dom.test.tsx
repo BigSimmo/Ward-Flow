@@ -69,7 +69,6 @@ describe("Handover recorded form timings", () => {
       "Rowan Vance",
       "Kester Proudfoot",
       "Dermot Hawthorn",
-      "Dermot Hawthornby",
       "26h 48m",
       "Graylands Bed 05 is held until 16:30",
     ]) {

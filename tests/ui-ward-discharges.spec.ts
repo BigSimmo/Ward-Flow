@@ -269,7 +269,6 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     await page.getByRole("link", { name: "Bed board" }).click();
     await page.locator(`#ward-board-tile-${release.admissionId}`).click();
     await page.getByTestId("ward-board-record-leaving-submit").click();
-    await page.getByTestId("ward-board-confirm-proceed").click();
 
     await goBackToWard(page);
     // A completed release is terminal and drops off the ward's pending list (spec D10).

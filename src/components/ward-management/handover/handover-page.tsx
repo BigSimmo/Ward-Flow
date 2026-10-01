@@ -1026,7 +1026,9 @@ export function HandoverPage() {
               />
               {searchQuery.trim().length > 0 ? (
                 <div className={pageStyles.searchFeedbackGroup}>
-                  <span className={pageStyles.searchMatchPill}>{filteredMovements.length} matching</span>
+                  <span className={pageStyles.searchMatchPill}>
+                    {filteredMovements.length} matching
+                  </span>
                   <button
                     type="button"
                     className={pageStyles.searchClearBtn}
@@ -1682,11 +1684,7 @@ export function HandoverPage() {
                                                   !flag.label.includes("Observations") &&
                                                   !flag.label.includes("Specialling") &&
                                                   !flag.label.includes("Supervision") &&
-                                                  !(
-                                                    flag.label === "Urgent" &&
-                                                    (movement.flaggedUrgent ||
-                                                      movementObservationLabel(movement) === "Urgent")
-                                                  ),
+                                                  !(flag.label === "Urgent" && (movement.flaggedUrgent || movementObservationLabel(movement) === "Urgent")),
                                               )
                                               .map((flag, idx) => (
                                                 <span key={idx} className={`${pageStyles.statusPill} ${flag.tone}`}>
@@ -1988,8 +1986,7 @@ export function HandoverPage() {
                   </div>
                 </div>
                 <div className={pageStyles.accreditationLegal}>
-                  National Safety and Quality Health Service (NSQHS) Standards · Standard 6: Clinical Handover ·
-                  Government of Western Australia Department of Health
+                  National Safety and Quality Health Service (NSQHS) Standards · Standard 6: Clinical Handover · Government of Western Australia Department of Health
                 </div>
               </footer>
             </div>
