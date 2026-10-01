@@ -1054,6 +1054,11 @@
   border-color: var(--accent);
 }
 
+.btnPrimary:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
 .btnDanger {
   background: var(--danger-soft);
   color: var(--danger-ink);

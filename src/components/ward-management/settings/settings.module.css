@@ -2785,6 +2785,17 @@
     flex-direction: column;
     gap: 0.25rem;
   }
+
+  .categoryRail {
+    width: 100%;
+    flex-direction: column;
+    overflow-x: visible;
+  }
+
+  .catItem {
+    width: 100%;
+    white-space: normal;
+  }
 }
 
 /* Sidebar Search Feedback & Domain Match Pills */

@@ -1,12 +1,12 @@
 .notice {
   margin: 0.25rem 0 0;
-  color: var(--text-muted);
+  color: var(--muted, var(--text-muted));
   font-size: var(--t-1);
   line-height: 1.4;
 }
 
 .tag {
-  color: var(--text-muted);
+  color: var(--muted, var(--text-muted));
   font-size: var(--t-1);
   white-space: nowrap;
 }
