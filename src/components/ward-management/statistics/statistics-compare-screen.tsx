@@ -705,7 +705,7 @@ function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admission
                 onBlur={() => setHoveredWard(null)}
               >
                 <title>
-                  {unit.name}: {stay === null ? "Not recorded" : `${stay.toFixed(1)} days average stay`}
+                  {`${unit.name}: ${stay === null ? "Not recorded" : `${stay.toFixed(1)} days average stay`}`}
                 </title>
               </rect>
 

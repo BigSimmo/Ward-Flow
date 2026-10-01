@@ -1054,7 +1054,7 @@
   border-color: var(--accent);
 }
 
-.btnPrimary:hover {
+.btnPrimary:not([aria-disabled="true"]):hover {
   background: var(--accent);
   color: var(--on-accent);
 }
