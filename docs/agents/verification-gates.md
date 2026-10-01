@@ -1,5 +1,7 @@
 # Verification Gates and the Gate Arbiter
 
+For task lifecycle, evidence-backed completion and local receipt handoff, read [task receipt guidance](../task-receipts.md).
+
 <!-- BEGIN:verification-gates -->
 
 ## Gate selection

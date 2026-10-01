@@ -23,6 +23,8 @@ dependencies. Publication to GitHub or a provider still needs the authority stat
 
 # How these rules are organised
 
+Read and follow [task lifecycle and receipt handoff](docs/task-receipts.md) at task start, checkpoint, blocker, resume and completion. Reuse the original task identity; local receipt export is a handoff, not canonical reconciliation.
+
 This file is the always-loaded Ward Flow core. Some older checks locate policy headings in this
 file; the repository boundary above governs their interpretation. Open a reference file only when
 its topic applies and its instructions have been verified for this repository.
