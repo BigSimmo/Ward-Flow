@@ -5,6 +5,8 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const script = path.resolve(__dirname, "../scripts/ward-flow/fold-lock.mjs");
+const preflightScript = path.resolve(__dirname, "../scripts/ward-flow/fold-preflight.mjs");
+const readyScript = path.resolve(__dirname, "../scripts/ward-flow/ready-check.mjs");
 
 function fixture() {
   const root = mkdtempSync(path.join(tmpdir(), "ward-fold-lock-"));
@@ -32,12 +34,130 @@ function fixture() {
         WARD_FLOW_LOGS: path.join(root, "notes"),
         WARD_FOLD_WORKTREE: root,
         WARD_FOLD_LINE: "HEAD",
+        WARD_FOLD_TEST_FIXTURE: "1",
       },
     });
   return { root, git, lock, run };
 }
 
 describe("Ward fold lock recovery", () => {
+  it("refuses every configured remote, including a non-origin remote, before mutation", () => {
+    const { git, root, lock } = fixture();
+    git(["remote", "add", "upstream", "https://github.com/example/ward-flow.git"]);
+    for (const target of [script, preflightScript, readyScript]) {
+      const result = spawnSync(process.execPath, [target, "acquire", "owner"], {
+        cwd: root,
+        encoding: "utf8",
+        timeout: 15000,
+      });
+      expect(result.status).toBe(2);
+      expect(result.stderr).toContain(
+        target === readyScript ? "Cannot verify Ward Flow" : "retired in a linked repository",
+      );
+      expect(existsSync(lock)).toBe(false);
+    }
+  });
+
+  it("fails closed when Git cannot verify remotes", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "ward-fold-not-a-repository-"));
+    for (const target of [script, preflightScript, readyScript]) {
+      const result = spawnSync(process.execPath, [target, "acquire", "owner"], {
+        cwd: root,
+        encoding: "utf8",
+        timeout: 15000,
+      });
+      expect(result.status).toBe(2);
+      expect(result.stderr).toContain(
+        target === readyScript ? "Cannot verify Ward Flow" : "Cannot verify repository remotes",
+      );
+      expect(existsSync(path.join(root, ".git"))).toBe(false);
+    }
+  });
+
+  it("refuses the retired fold workflow in a repository with a remote", () => {
+    const { git, lock, run, root } = fixture();
+    git(["remote", "add", "origin", "https://github.com/example/ward-flow.git"]);
+    const status = run("status");
+    expect(status.status).toBe(2);
+    expect(status.stderr).toContain("retired in a linked repository");
+    expect(existsSync(lock)).toBe(false);
+
+    const preflight = spawnSync(
+      process.execPath,
+      [preflightScript, "--branch", "HEAD", "--create-backup", "test", "--ward-lead", root],
+      { cwd: root, encoding: "utf8", timeout: 15000, env: { ...process.env, WARD_FOLD_TEST_FIXTURE: "1" } },
+    );
+    expect(preflight.status).toBe(2);
+    expect(preflight.stderr).toContain("retired in a linked repository");
+  });
+
+  it("refuses a fold target from another Git repository", () => {
+    const { root, lock } = fixture();
+    const other = mkdtempSync(path.join(tmpdir(), "other-fold-repo-"));
+    execFileSync("git", ["init", "--quiet"], { cwd: other });
+    const otherLock = path.join(other, ".git", "ward-fold.lock");
+
+    const acquire = spawnSync(process.execPath, [script, "acquire", "owner"], {
+      cwd: root,
+      encoding: "utf8",
+      timeout: 15000,
+      env: { ...process.env, WARD_FOLD_WORKTREE: other, WARD_FOLD_LINE: "HEAD", WARD_FOLD_TEST_FIXTURE: "1" },
+    });
+    expect(acquire.status).toBe(2);
+    expect(acquire.stderr).toContain("different Git repository");
+    expect(existsSync(lock)).toBe(false);
+    expect(existsSync(otherLock)).toBe(false);
+
+    const preflight = spawnSync(
+      process.execPath,
+      [preflightScript, "--branch", "HEAD", "--create-backup", "test", "--ward-lead", other],
+      { cwd: root, encoding: "utf8", timeout: 15000, env: { ...process.env, WARD_FOLD_TEST_FIXTURE: "1" } },
+    );
+    expect(preflight.status).toBe(2);
+    expect(preflight.stderr).toContain("different Git repository");
+    expect(existsSync(otherLock)).toBe(false);
+  });
+
+  it("refuses remote-less repositories without explicit test-only permission", () => {
+    const { root, lock } = fixture();
+    for (const target of [script, preflightScript, readyScript]) {
+      const result = spawnSync(process.execPath, [target, "acquire", "owner"], {
+        cwd: root,
+        encoding: "utf8",
+        env: { ...process.env, WARD_FOLD_TEST_FIXTURE: "" },
+      });
+      expect(result.status).toBe(2);
+      expect(existsSync(lock)).toBe(false);
+    }
+  });
+
+  it("checks ignored collisions at the root when invoked from a subdirectory", () => {
+    const { root, git, run } = fixture();
+    git(["branch", "-M", "main"]);
+    git(["checkout", "-b", "candidate"]);
+    writeFileSync(path.join(root, "blocked.txt"), "candidate content");
+    git(["add", "blocked.txt"]);
+    git(["-c", "user.name=Ward Test", "-c", "user.email=ward@example.invalid", "commit", "-m", "candidate"]);
+    git(["checkout", "main"]);
+    writeFileSync(path.join(root, ".git", "info", "exclude"), "blocked.txt\n");
+    writeFileSync(path.join(root, "blocked.txt"), "local data");
+    mkdirSync(path.join(root, "subdir"));
+    expect(run("acquire", "owner").status).toBe(0);
+    const result = spawnSync(
+      process.execPath,
+      [preflightScript, "--branch", "candidate", "--create-backup", "test", "--who", "owner"],
+      {
+        cwd: path.join(root, "subdir"),
+        encoding: "utf8",
+        env: { ...process.env, WARD_FOLD_TEST_FIXTURE: "1" },
+      },
+    );
+    expect(result.status).toBe(1);
+    expect(result.stdout + result.stderr).toContain("blocked.txt");
+    expect(readFileSync(path.join(root, "blocked.txt"), "utf8")).toBe("local data");
+    expect(git(["branch", "--list", "backup/*"])).toBe("");
+  });
+
   it("does not release a lock with missing ownership data", () => {
     const { lock, run } = fixture();
     mkdirSync(lock);
@@ -77,6 +197,7 @@ describe("Ward fold lock recovery", () => {
                 WARD_FLOW_LOGS: path.join(root, "notes"),
                 WARD_FOLD_WORKTREE: root,
                 WARD_FOLD_LINE: "HEAD",
+                WARD_FOLD_TEST_FIXTURE: "1",
               },
             });
             child.once("error", reject);

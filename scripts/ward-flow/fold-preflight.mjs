@@ -23,7 +23,24 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-const LINE = "codex/task-ward-flow-live-state-20260831";
+try {
+  const remote = execFileSync("git", ["remote"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  if (!remote && process.env.WARD_FOLD_TEST_FIXTURE !== "1") {
+    console.error(
+      "Missing repository destination. Retired fold commands require an explicit test-only fixture opt-in.",
+    );
+    process.exit(2);
+  }
+  if (remote) {
+    console.error("The local Ward line fold workflow is retired in a linked repository.");
+    process.exit(2);
+  }
+} catch {
+  console.error("Cannot verify repository remotes. Refusing the retired local Ward workflow.");
+  process.exit(2);
+}
+
+const LINE = "main";
 const STALE_MS = 3 * 60 * 60 * 1000;
 
 const args = process.argv.slice(2);
@@ -44,7 +61,9 @@ function usage() {
   process.exit(2);
 }
 
-const wardLead = path.resolve(opts["ward-lead"] ?? "D:/Worktrees/Database/ward-lead");
+const wardLead = path.resolve(
+  opts["ward-lead"] ?? execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim(),
+);
 const git = (argv) => execFileSync("git", ["-C", wardLead, ...argv], { encoding: "utf8" }).trim();
 const tryGit = (argv) => {
   try {
@@ -53,6 +72,19 @@ const tryGit = (argv) => {
     return undefined;
   }
 };
+
+const currentCommonDir = path.resolve(
+  execFileSync("git", ["rev-parse", "--git-common-dir"], { encoding: "utf8" }).trim(),
+);
+const targetCommonDir = path.resolve(wardLead, git(["rev-parse", "--git-common-dir"]));
+if (
+  process.platform === "win32"
+    ? targetCommonDir.toLowerCase() !== currentCommonDir.toLowerCase()
+    : targetCommonDir !== currentCommonDir
+) {
+  console.error("Fold target belongs to a different Git repository. Refusing to inspect or change it.");
+  process.exit(2);
+}
 
 const problems = [];
 const notes = [];
