@@ -509,7 +509,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
       expect(hud).toBeDefined();
       expect(gapTable).toBeDefined();
       expect(within(hud).getByRole("img", { name: "Live synthetic board clock" })).toBeDefined();
-      expect(within(hud).getByRole("button", { name: /available .* ready/iu })).toBeDefined();
+      expect(within(hud).getByRole("button", { name: /available\s*\d+\s+ready/iu })).toBeDefined();
     });
   });
 });
