@@ -352,6 +352,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
 
   return (
     <main
+      id="main-content"
       className={styles.screen}
       data-testid="ward-person-screen"
       data-ward-design="third-edition"

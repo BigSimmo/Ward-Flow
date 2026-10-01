@@ -2162,11 +2162,11 @@
 /* ─── Two-Column Caseload Workspace ────────────────────────────────── */
 .workspaceGrid {
   display: grid;
-  grid-template-columns: 1.18fr 0.82fr;
-  gap: 14px;
-  flex: 1 1 auto;
-  min-height: 640px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1.35fr) minmax(20rem, 0.85fr);
+  gap: var(--ward-space-16);
+  flex: 0 0 auto;
+  min-height: 0;
+  align-items: start;
 }
 
 @media (max-width: 1040px) {
@@ -2196,11 +2196,9 @@
 }
 
 .panelTitle {
-  font-size: var(--t-1);
+  font-size: var(--t-4);
   font-weight: 600;
   color: var(--ink);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   margin: 0;
 }
 
@@ -2219,7 +2217,8 @@
 .patientList {
   overflow-y: auto;
   flex: 1 1 auto;
-  min-height: 520px;
+  min-height: 0;
+  max-height: 40rem;
   padding: 10px 14px;
   display: flex;
   flex-direction: column;
@@ -2243,7 +2242,7 @@
   gap: 12px;
   overflow-y: auto;
   flex: 1 1 auto;
-  min-height: 520px;
+  min-height: 0;
 }
 
 /* ─── Population Group Heading ─────────────────────────────────────── */
@@ -3416,7 +3415,7 @@
   flex-direction: column;
   overflow-y: auto;
   max-height: calc(100vh - 280px);
-  min-height: 580px;
+  min-height: 0;
 }
 
 .denseRow {

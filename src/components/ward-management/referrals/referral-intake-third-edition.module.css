@@ -7,7 +7,6 @@
   font-family: var(--body);
   display: block;
 
-  --ink: var(--ink);
   --warning-border: var(--warn);
   --surface-subtle: var(--surface);
   --surface-raised: var(--surface);
@@ -16,12 +15,12 @@
 
 /* Header */
 .hdr1 {
-  height: 44px;
+  min-height: 64px;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
   display: flex;
   align-items: center;
-  padding: 0 20px;
+  padding: 12px 24px;
   gap: 16px;
   position: sticky;
   top: 0;
@@ -38,7 +37,7 @@
 
 .hdrTitleText {
   margin: 0;
-  font-size: var(--t-3);
+  font-size: var(--t-5);
   font-weight: 600;
   color: var(--ink);
 }
@@ -211,8 +210,7 @@
   flex-direction: column !important;
   gap: 14px !important;
   min-width: 0 !important;
-  position: sticky !important;
-  top: 72px !important;
+  position: static !important;
   align-self: start !important;
 }
 
@@ -281,7 +279,7 @@
 .ph h2,
 .ph h3 {
   margin: 0;
-  font-size: var(--t-3, 14px);
+  font-size: var(--t-4, 16px);
   font-weight: 700;
   color: var(--ink);
 }
