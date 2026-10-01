@@ -405,10 +405,9 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
   // "Ready" names exactly that one number — by ward and the cohort each ward serves.
   const readyRows = serviceUnits.map((unit) => ({ unit, capacity: unitCapacity(unit, bedReleases) }));
   const totalReady = readyRows.reduce((sum, row) => sum + row.capacity.available, 0);
-  // The drawing states this beside the total as a second headline tile ("Wards with none ready")
-  // rather than only inside the table — a reader planning a placement needs to know whether the
-  // total above is spread across every ward or concentrated in one, and the table alone makes that
-  // a manual scan rather than a stated fact.
+  const totalBedBase = serviceUnits.reduce((sum, unit) => sum + unit.beds, 0);
+  const totalOccupied = readyRows.reduce((sum, row) => sum + row.capacity.occupied, 0);
+  const networkOccupancyPct = totalBedBase > 0 ? Math.round((totalOccupied / totalBedBase) * 100) : 0;
   const zeroReadyWards = readyRows.filter((row) => row.capacity.available === 0).length;
   /*
    * ⚠️ **THE OWNER'S RULING OF 2026-09-07: beds the patient has already left.**
@@ -546,7 +545,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                 </button>
               </div>
               <details className={`${pageStyles.measureDetails} source-print`}>
-                <summary>Service scope</summary>
+                <summary>Service scope & network definitions</summary>
                 <div className={pageStyles.measureDetailsBody}>
                   <p className={styles.body} data-testid="ward-statistics-service-summary">
                     Recorded network scope: {serviceSites.length} {serviceSites.length === 1 ? "hospital" : "hospitals"}
@@ -555,6 +554,33 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                   </p>
                 </div>
               </details>
+              <dl
+                className={`${pageStyles.kpiBand} ${pageStyles.placementBand}`}
+                data-testid="ward-statistics-service-exec-band"
+              >
+                <div>
+                  <dt>Total Bed Base</dt>
+                  <dd data-testid="ward-statistics-service-exec-total-beds">{totalBedBase}</dd>
+                  <dd className={pageStyles.kpiCaption}>Recorded acute mental health capacity.</dd>
+                </div>
+                <div>
+                  <dt>Network Occupancy</dt>
+                  <dd data-testid="ward-statistics-service-exec-occupancy">{networkOccupancyPct}%</dd>
+                  <dd className={pageStyles.kpiCaption}>
+                    {totalOccupied} of {totalBedBase} beds occupied.
+                  </dd>
+                </div>
+                <div>
+                  <dt>Ready Beds</dt>
+                  <dd data-testid="ward-statistics-service-exec-ready-beds">{totalReady}</dd>
+                  <dd className={pageStyles.kpiCaption}>Empty and clinically allocatable immediately.</dd>
+                </div>
+                <div>
+                  <dt>Out of Area Placements</dt>
+                  <dd data-testid="ward-statistics-service-exec-ooa">{outOfAreaEntries.length}</dd>
+                  <dd className={pageStyles.kpiCaption}>Patients from outside home catchment.</dd>
+                </div>
+              </dl>
             </div>
           </WardPanel>
 
@@ -801,28 +827,34 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
 
           <WardPanel title="Sent and taken in, over the last 30 days" testId="ward-statistics-service-flow">
             <div className={styles.panelBody} role="group" aria-label="Thirty day service flow content" tabIndex={0}>
-              <p className={styles.body}>
-                <strong>Not recorded.</strong> No daily history is recorded, so neither 30-day series is shown.
-              </p>
-              <DemonstrationChart series={sentSeries} testId="ward-statistics-service-sent-chart" />
-              <DemonstrationChart series={takenInSeries} testId="ward-statistics-service-taken-in-chart" />
+              <details className={`${pageStyles.measureDetails} source-print`}>
+                <summary>View historical referral flow records</summary>
+                <p className={styles.body}>
+                  <strong>Not recorded.</strong> No daily history is recorded, so neither 30-day series is shown.
+                </p>
+                <DemonstrationChart series={sentSeries} testId="ward-statistics-service-sent-chart" />
+                <DemonstrationChart series={takenInSeries} testId="ward-statistics-service-taken-in-chart" />
+              </details>
             </div>
           </WardPanel>
         </div>
 
         <div className={pageStyles.pageFoot}>
-          <StatFootnote
-            groups={[
-              {
-                heading: "Measures unavailable from the current record",
-                items: [
-                  "Current net flow is not calculated from these placement counts.",
-                  "Declines by service: referral and movement declines have different attribution.",
-                  "Measured distance: travel bands are synthetic and do not come from a map.",
-                ],
-              },
-            ]}
-          />
+          <details className={`${pageStyles.measureDetails} source-print`}>
+            <summary>Audit notes & unavailable measures</summary>
+            <StatFootnote
+              groups={[
+                {
+                  heading: "Measures unavailable from the current record",
+                  items: [
+                    "Current net flow is not calculated from these placement counts.",
+                    "Declines by service: referral and movement declines have different attribution.",
+                    "Measured distance: travel bands are synthetic and do not come from a map.",
+                  ],
+                },
+              ]}
+            />
+          </details>
 
           <p className={styles.body}>
             <Link href={STATISTICS_SERVICE_CHOOSER_HREF} data-testid="ward-statistics-service-chooser-link">

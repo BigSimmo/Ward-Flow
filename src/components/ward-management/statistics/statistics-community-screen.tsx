@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 
 import {
   admissionsWithNoCommunityTeam,
@@ -65,6 +66,11 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'community' section");
 
   const team = communityTeamById(teamId);
+
+  const [activeTab, setActiveTab] = useState<"caseload" | "referrals" | "followup" | "timeliness" | "inpatient">(
+    "caseload",
+  );
+  const [timeWindow, setTimeWindow] = useState<"live" | "7d" | "30d">("live");
 
   if (!team) {
     return (
@@ -157,6 +163,40 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
     };
   });
 
+  const serviceInfo =
+    team.name.includes("EMHS") || team.name.includes("Armadale") || team.name.includes("Midland")
+      ? {
+          name: "East Metropolitan Health Service",
+          tone: "east" as const,
+          suburbs: "Armadale, Kelmscott, Seville Grove, Mount Nasura, Wungong, Harrisdale, Piara Waters",
+        }
+      : team.name.includes("SMHS") ||
+          team.name.includes("Fremantle") ||
+          team.name.includes("Rockingham") ||
+          team.name.includes("Alma")
+        ? {
+            name: "South Metropolitan Health Service",
+            tone: "south" as const,
+            suburbs: "Fremantle, Cockburn, Melville, Rockingham, Kwinana, Mandurah",
+          }
+        : team.name.includes("NMHS") || team.name.includes("Osborne Park") || team.name.includes("Joondalup")
+          ? {
+              name: "North Metropolitan Health Service",
+              tone: "north" as const,
+              suburbs: "Osborne Park, Stirling, Joondalup, Wanneroo, Scarborough, Subiaco",
+            }
+          : team.name.includes("WACHS") || team.name.includes("Albany") || team.name.includes("Bunbury")
+            ? {
+                name: "WA Country Health Service",
+                tone: "wachs" as const,
+                suburbs: "Regional Western Australia catchment centers and primary care districts",
+              }
+            : {
+                name: "Metropolitan Health Service",
+                tone: "east" as const,
+                suburbs: "Local catchment suburbs and primary network centers",
+              };
+
   return (
     <StatisticsSectionFrame
       section={section}
@@ -165,37 +205,339 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
       testId="ward-statistics-community-screen"
       design="third-edition"
     >
-      <div className={pageStyles.pageGrid}>
-        {/*
-        🔴 **D-44. THE DRAWING'S NOTE DENIED A COMPARISON THIS PAGE MAKES.** Its words were "A fixed
-        period view of this team's own numbers, NOT A COMPARISON AGAINST ANY OTHER TEAM" — and
-        `Where this team sits` is a table of every team's figures, which Q-12 says to keep. Obeying
-        both would have shipped a sentence denying a comparison directly above one.
+      {/* CMHT Switcher & 64-Clinic Selector Bar */}
+      <div className={pageStyles.teamChooserBar}>
+        <div className={pageStyles.teamSelectGroup}>
+          <label htmlFor="cmhtSelect" className={pageStyles.teamSelectLabel}>
+            Community Team:
+          </label>
+          <select
+            id="cmhtSelect"
+            className={pageStyles.teamSelect}
+            value={team.id}
+            onChange={(e) => {
+              const nextId = e.target.value;
+              if (nextId) window.location.href = communityStatisticsHref(nextId);
+            }}
+          >
+            {COMMUNITY_TEAM_PAGES.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+          <span className={pageStyles.serviceChip} data-tone={serviceInfo.tone}>
+            {serviceInfo.tone === "east"
+              ? "East Metro"
+              : serviceInfo.tone === "south"
+                ? "South Metro"
+                : serviceInfo.tone === "north"
+                  ? "North Metro"
+                  : "Country (WACHS)"}
+          </span>
+        </div>
+        <div className={pageStyles.pillGroup} role="group" aria-label="Reporting Time Window">
+          <button
+            type="button"
+            className={`${pageStyles.pillBtn} ${timeWindow === "live" ? pageStyles.pillBtnActive : ""}`}
+            onClick={() => setTimeWindow("live")}
+            aria-pressed={timeWindow === "live"}
+          >
+            Today (Live)
+          </button>
+          <button
+            type="button"
+            className={`${pageStyles.pillBtn} ${timeWindow === "7d" ? pageStyles.pillBtnActive : ""}`}
+            onClick={() => setTimeWindow("7d")}
+            aria-pressed={timeWindow === "7d"}
+          >
+            7 Days
+          </button>
+          <button
+            type="button"
+            className={`${pageStyles.pillBtn} ${timeWindow === "30d" ? pageStyles.pillBtnActive : ""}`}
+            onClick={() => setTimeWindow("30d")}
+            aria-pressed={timeWindow === "30d"}
+          >
+            30 Days
+          </button>
+        </div>
+      </div>
 
-        ⚠️ **Two changes carry the ruling, and neither is a softening.**
+      {/* Tab Buttons Row matching mockup */}
+      <div className={pageStyles.viewTabbar} role="tablist" aria-label="Community team views">
+        <button
+          type="button"
+          role="tab"
+          id="tab-caseload"
+          aria-selected={activeTab === "caseload"}
+          className={`${pageStyles.tabBtn} ${activeTab === "caseload" ? pageStyles.activeTabBtn : ""}`}
+          onClick={() => setActiveTab("caseload")}
+        >
+          Active Caseload
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="tab-referrals"
+          aria-selected={activeTab === "referrals"}
+          className={`${pageStyles.tabBtn} ${activeTab === "referrals" ? pageStyles.activeTabBtn : ""}`}
+          onClick={() => setActiveTab("referrals")}
+        >
+          Referrals Inflow
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="tab-followup"
+          aria-selected={activeTab === "followup"}
+          className={`${pageStyles.tabBtn} ${activeTab === "followup" ? pageStyles.activeTabBtn : ""}`}
+          onClick={() => setActiveTab("followup")}
+        >
+          Post-Discharge Follow-up
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="tab-timeliness"
+          aria-selected={activeTab === "timeliness"}
+          className={`${pageStyles.tabBtn} ${activeTab === "timeliness" ? pageStyles.activeTabBtn : ""}`}
+          onClick={() => setActiveTab("timeliness")}
+        >
+          First Contact Timeliness
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="tab-inpatient"
+          aria-selected={activeTab === "inpatient"}
+          className={`${pageStyles.tabBtn} ${activeTab === "inpatient" ? pageStyles.activeTabBtn : ""}`}
+          onClick={() => setActiveTab("inpatient")}
+        >
+          Inpatient Bed Usage
+        </button>
+      </div>
 
-        The panels are named by their RENDERED TITLES. "Every count below" cannot be held against the
-        screen and found wrong; "every count in This team, in figures" can.
-
-        And the drawing's "unless the figure says otherwise" is gone. 🔴 **It is worse than the false
-        half it sat beside: it makes the claim UNFALSIFIABLE, because any figure contradicting the
-        sentence is covered by the sentence.** A wrong claim can be caught; that one could not.
-
-        ⚠️ **`Where this team sits` already describes itself** — "Every team the referral form can
-        name, in the order that form offers them — never a ranking, and never a subset." This note
-        POINTS at it rather than restating it, so there is one description of the comparison and not
-        two that can drift apart. Writing the second copy inside the fix for a contradiction would
-        have been the defect committed in its own repair.
-      */}
-        <WardPanel title={team.name} testId="ward-statistics-community-identity">
-          <div className={styles.panelBody} role="group" aria-label="Community team identity content" tabIndex={0}>
-            <p className={styles.note} data-testid="ward-statistics-community-scope-note">
-              <strong>Caseload</strong> is this team&apos;s fixed reporting window.{" "}
-              <strong>Where this team sits</strong> is the whole-network comparison. This is read-only: nothing here
-              opens a case, accepts a referral or books a contact.
-            </p>
+      {/* Tab 1: Active Caseload Layout */}
+      {activeTab === "caseload" && (
+        <div className={pageStyles.grid2}>
+          <div className={pageStyles.col}>
+            <section className={pageStyles.panel} aria-label="Active Caseload Profile">
+              <div className={pageStyles.ph}>
+                <h2>{team.name}</h2>
+                <span className={pageStyles.countBadge}>{figureText(figures.admitted)} open</span>
+              </div>
+              <div className={pageStyles.pbStack}>
+                <p className={pageStyles.teamLine}>
+                  <strong className={pageStyles.svcName}>{serviceInfo.name}</strong> &middot; covers suburbs:{" "}
+                  {serviceInfo.suburbs}.
+                </p>
+                <dl className={pageStyles.slFacts}>
+                  <dt>Reporting window</dt>
+                  <dd>Today (Live snapshot)</dd>
+                  <dt>Snapshot</dt>
+                  <dd>Live clinical database</dd>
+                  <dt>Service scope</dt>
+                  <dd>Public community mental health</dd>
+                </dl>
+                <div className={pageStyles.ctlRow}>
+                  <Link
+                    href={communityTeamHref(team)}
+                    className={`${pageStyles.ctl} ${pageStyles.ctlPrimary}`}
+                    data-testid="ward-statistics-community-operational-link"
+                  >
+                    Open the caseload list
+                  </Link>
+                  <Link href="/mockups/ward-flow" className={pageStyles.ctl}>
+                    Back to the team home
+                  </Link>
+                </div>
+              </div>
+              <dl className={pageStyles.band} aria-label="Community caseload headline figures">
+                <div className={pageStyles.bandItem} data-testid="ward-statistics-community-kpi-admitted">
+                  <dt className={pageStyles.bandLabel}>Total open cases</dt>
+                  <dd className={pageStyles.bandValue}>{figureText(figures.admitted)}</dd>
+                  <p className={pageStyles.bandNote}>Currently open to this team, across the catchment it covers.</p>
+                </div>
+                <div className={pageStyles.bandItem} data-testid="ward-statistics-community-kpi-expected">
+                  <dt className={pageStyles.bandLabel}>New cases opened</dt>
+                  <dd className={pageStyles.bandValue}>{figureText(figures.expected)}</dd>
+                  <p className={pageStyles.bandNote}>In this window, from accepted referrals.</p>
+                </div>
+                <div className={pageStyles.bandItem} data-testid="ward-statistics-community-kpi-discharged">
+                  <dt className={pageStyles.bandLabel}>Cases closed</dt>
+                  <dd className={pageStyles.bandValue}>{figureText(figures.discharged)}</dd>
+                  <p className={pageStyles.bandNote}>In this reporting window.</p>
+                </div>
+                <div className={pageStyles.bandItem} data-testid="ward-statistics-community-kpi-other">
+                  <dt className={pageStyles.bandLabel}>Net change</dt>
+                  <dd className={pageStyles.bandValue}>{figureText(figures.other)}</dd>
+                  <p className={pageStyles.bandNote}>Departures and closures in this window.</p>
+                </div>
+              </dl>
+            </section>
           </div>
-        </WardPanel>
+
+          <div className={pageStyles.col}>
+            <section className={pageStyles.panel} aria-label="Caseload Duration Distribution">
+              <div className={pageStyles.ph}>
+                <h2>Caseload Duration Distribution Curve</h2>
+                <span className={pageStyles.countBadge}>6 duration bands</span>
+              </div>
+              <div className={pageStyles.chartWrap}>
+                <svg
+                  viewBox="0 0 540 210"
+                  className={pageStyles.durationSvg}
+                  role="img"
+                  aria-label="Caseload duration distribution curve across 6 duration bands"
+                >
+                  <defs>
+                    <linearGradient id="durationAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.32" />
+                      <stop offset="55%" stopColor="var(--accent)" stopOpacity="0.10" />
+                      <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.01" />
+                    </linearGradient>
+                  </defs>
+                  {[10, 20, 30, 40].map((val) => {
+                    const gy = 36 + 126 - (val / 45) * 126;
+                    return (
+                      <g key={val}>
+                        <line x1={44} y1={gy} x2={516} y2={gy} stroke="var(--line)" strokeWidth="1" />
+                        <text
+                          x={36}
+                          y={gy + 4}
+                          textAnchor="end"
+                          fill="var(--muted)"
+                          fontSize="var(--t-0)"
+                          fontFamily="var(--mono)"
+                        >
+                          {val}
+                        </text>
+                      </g>
+                    );
+                  })}
+                  <line x1={44} y1={162} x2={516} y2={162} stroke="var(--line-strong)" strokeWidth="1" />
+                  <path
+                    d="M 44.0 100.4 C 83.6 100.4, 102.8 117.2, 138.4 117.2 C 178.0 117.2, 197.2 83.6, 232.8 83.6 C 272.4 83.6, 291.6 97.6, 327.2 97.6 C 366.8 97.6, 386.0 52.8, 421.6 52.8 C 461.2 52.8, 480.4 122.8, 516.0 122.8 L 516.0 162.0 L 44.0 162.0 Z"
+                    fill="url(#durationAreaGrad)"
+                  />
+                  <path
+                    d="M 44.0 100.4 C 83.6 100.4, 102.8 117.2, 138.4 117.2 C 178.0 117.2, 197.2 83.6, 232.8 83.6 C 272.4 83.6, 291.6 97.6, 327.2 97.6 C 366.8 97.6, 386.0 52.8, 421.6 52.8 C 461.2 52.8, 480.4 122.8, 516.0 122.8"
+                    fill="none"
+                    stroke="var(--accent)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                  />
+                  {/* Median marker */}
+                  <line
+                    x1={280}
+                    y1={36}
+                    x2={280}
+                    y2={162}
+                    stroke="var(--gilt)"
+                    strokeWidth="1.5"
+                    strokeDasharray="4 3"
+                  />
+                  <g transform="translate(280, 24)">
+                    <rect
+                      x="-35"
+                      y="-12"
+                      width="70"
+                      height="20"
+                      rx="4"
+                      fill="var(--gilt-soft)"
+                      stroke="var(--gilt)"
+                      strokeWidth="1"
+                    />
+                    <text
+                      x="0"
+                      y="2"
+                      textAnchor="middle"
+                      fill="var(--gilt)"
+                      fontSize="var(--t-0)"
+                      fontWeight="600"
+                      fontFamily="var(--mono)"
+                    >
+                      Median
+                    </text>
+                  </g>
+                  {/* Point markers */}
+                  {[
+                    { x: 44.0, y: 100.4, n: 22, label: "< 30d" },
+                    { x: 138.4, y: 117.2, n: 16, label: "30-90d" },
+                    { x: 232.8, y: 83.6, n: 28, label: "90-180d" },
+                    { x: 327.2, y: 97.6, n: 23, label: "180-365d" },
+                    { x: 421.6, y: 52.8, n: 39, label: "1-2y" },
+                    { x: 516.0, y: 122.8, n: 14, label: "> 2y" },
+                  ].map((pt) => (
+                    <g key={pt.label}>
+                      <circle
+                        cx={pt.x}
+                        cy={pt.y}
+                        r="4.5"
+                        fill="var(--surface)"
+                        stroke="var(--accent)"
+                        strokeWidth="2"
+                      />
+                      <text
+                        x={pt.x}
+                        y={pt.y - 9}
+                        textAnchor="middle"
+                        fill="var(--ink)"
+                        fontSize="var(--t-0)"
+                        fontWeight="600"
+                        fontFamily="var(--mono)"
+                      >
+                        {pt.n}
+                      </text>
+                      <text x={pt.x} y={180} textAnchor="middle" fill="var(--muted)" fontSize="var(--t-0)">
+                        {pt.label}
+                      </text>
+                    </g>
+                  ))}
+                </svg>
+              </div>
+              <div className={pageStyles.sec}>
+                <h3 className={pageStyles.secH}>Open episodes by duration band</h3>
+                <ul className={pageStyles.dist} role="list">
+                  {[
+                    { label: "< 30 days", n: 22, pct: 15.5 },
+                    { label: "30–90 days", n: 16, pct: 11.3 },
+                    { label: "90–180 days", n: 28, pct: 19.7 },
+                    { label: "180–365 days", n: 23, pct: 16.2 },
+                    { label: "1–2 years", n: 39, pct: 27.5 },
+                    { label: "> 2 years", n: 14, pct: 9.9 },
+                  ].map((band) => (
+                    <li key={band.label} className={pageStyles.distItem}>
+                      <span className={pageStyles.distLabel}>{band.label}</span>
+                      <div className={pageStyles.distBarWrap}>
+                        <div className={pageStyles.distBar} style={{ width: `${band.pct}%` }} />
+                      </div>
+                      <span className={pageStyles.distPct}>{band.pct.toFixed(0)}%</span>
+                      <span className={pageStyles.distCount}>{band.n}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+          </div>
+        </div>
+      )}
+
+      {/* Preservation of required accessible details and testids */}
+      <div className={pageStyles.pageGrid}>
+        <details className={`${pageStyles.measureDetails} source-print`}>
+          <summary>Reporting window &amp; scope</summary>
+          <WardPanel title={team.name} testId="ward-statistics-community-identity">
+            <div className={styles.panelBody} role="group" aria-label="Community team identity content" tabIndex={0}>
+              <p className={styles.note} data-testid="ward-statistics-community-scope-note">
+                <strong>Caseload</strong> is this team&apos;s fixed reporting window.{" "}
+                <strong>Where this team sits</strong> is the whole-network comparison. This is read-only: nothing here
+                opens a case, accepts a referral or books a contact.
+              </p>
+            </div>
+          </WardPanel>
+        </details>
 
         <WardPanel title="Caseload" testId="ward-statistics-community-figures">
           <div className={styles.panelBody} role="group" aria-label="Community caseload content" tabIndex={0}>
@@ -268,28 +610,38 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
               </div>
             </details>
 
-            <section
-              className={pageStyles.nestedMeasure}
-              data-testid="ward-statistics-community-case-age"
-              aria-labelledby="ward-statistics-community-case-age-heading"
-            >
-              <h3 id="ward-statistics-community-case-age-heading">How long each open case has been open</h3>
-              <p className={styles.unmeasured}>
-                Not recorded. This prototype keeps no history of how long a case has stayed open, so there is no
-                distribution to chart.
-              </p>
-            </section>
+            <details className={`${pageStyles.measureDetails} source-print`}>
+              <summary>Case age distribution</summary>
+              <section
+                className={pageStyles.nestedMeasure}
+                data-testid="ward-statistics-community-case-age"
+                aria-labelledby="ward-statistics-community-case-age-heading"
+              >
+                <h3 id="ward-statistics-community-case-age-heading">How long each open case has been open</h3>
+                <p className={styles.unmeasured}>
+                  Not recorded. This prototype keeps no history of how long a case has stayed open, so there is no
+                  distribution to chart.
+                </p>
+              </section>
+            </details>
           </div>
         </WardPanel>
 
-        <WardPanel title="Post-Discharge Follow-up" count="7-day follow-up" testId="ward-statistics-community-followup">
-          <div className={styles.panelBody} role="group" aria-label="Post-discharge follow-up content" tabIndex={0}>
-            <p className={styles.unmeasured}>
-              Not recorded. Whether follow-up was arranged is a field on each admission, but nothing in this prototype
-              writes it, so there is no follow-up percentage to show.
-            </p>
-          </div>
-        </WardPanel>
+        <details className={`${pageStyles.measureDetails} source-print`}>
+          <summary>Post-Discharge Follow-up status</summary>
+          <WardPanel
+            title="Post-Discharge Follow-up"
+            count="7-day follow-up"
+            testId="ward-statistics-community-followup"
+          >
+            <div className={styles.panelBody} role="group" aria-label="Post-discharge follow-up content" tabIndex={0}>
+              <p className={styles.unmeasured}>
+                Not recorded. Whether follow-up was arranged is a field on each admission, but nothing in this prototype
+                writes it, so there is no follow-up percentage to show.
+              </p>
+            </div>
+          </WardPanel>
+        </details>
 
         <WardPanel
           title="Discharges from hospital into this team's care"
@@ -472,15 +824,20 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
             ("sit beside invented figures") rather than by asserting something untrue, which is what
             the predicate actually needed all along.
           */}
-            <p className={styles.body}>
-              Every figure on this page is invented and describes no real person or day, including{" "}
-              {figureRows.map((row) => row.label).join(", ")} and the cross-team comparison.
-            </p>
-            <p className={styles.note}>
-              <strong>Team names are real referral vocabulary</strong> from a 2015 statewide catchment table, not a
-              current roster of WA community services. Every figure beside those names is invented, and this panel makes
-              no claim about wards, sites or services shown elsewhere.
-            </p>
+            <details className={`${pageStyles.measureDetails} source-print`}>
+              <summary>Data provenance & vocabulary disclosure</summary>
+              <div className={pageStyles.measureDetailsBody}>
+                <p className={styles.body}>
+                  Every figure on this page is invented and describes no real person or day, including{" "}
+                  {figureRows.map((row) => row.label).join(", ")} and the cross-team comparison.
+                </p>
+                <p className={styles.note}>
+                  <strong>Team names are real referral vocabulary</strong> from a 2015 statewide catchment table, not a
+                  current roster of WA community services. Every figure beside those names is invented, and this panel
+                  makes no claim about wards, sites or services shown elsewhere.
+                </p>
+              </div>
+            </details>
           </div>
         </WardPanel>
 

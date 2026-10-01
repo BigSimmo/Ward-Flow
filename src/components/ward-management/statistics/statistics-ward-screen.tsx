@@ -419,6 +419,10 @@ export function StatisticsWardScreen({
                 <dd>{capacity.occupied}</dd>
               </div>
               <div>
+                <dt>Occupancy</dt>
+                <dd>{unit.beds > 0 ? ((capacity.occupied / unit.beds) * 100).toFixed(1) : "0.0"}%</dd>
+              </div>
+              <div>
                 <dt>Ready</dt>
                 <dd>{capacity.available}</dd>
               </div>
@@ -481,7 +485,7 @@ export function StatisticsWardScreen({
                 onChange={(e) => setBedSearchQuery(e.target.value)}
                 aria-label="Filter bed status matrix"
               />
-              <span className={styles.note} style={{ fontSize: "12px" }}>
+              <span className={styles.note}>
                 Showing {filteredBedMatrix.length} of {bedMatrixList.length} beds
               </span>
             </div>
@@ -490,7 +494,17 @@ export function StatisticsWardScreen({
                 <caption className={pageStyles.srOnly}>Operational bed inventory and current allocation status</caption>
                 <thead>
                   <tr>
-                    <th scope="col">Bed</th>
+                    <th scope="col" className={pageStyles.sortable}>
+                      <button
+                        type="button"
+                        className={pageStyles.sortBtn}
+                        onClick={() => {
+                          setPoliteNotice("Beds displayed in default order.");
+                        }}
+                      >
+                        Bed
+                      </button>
+                    </th>
                     <th scope="col">Status</th>
                     <th scope="col">Patient</th>
                     <th scope="col">Admitted</th>
@@ -619,6 +633,138 @@ export function StatisticsWardScreen({
           </div>
         </WardPanel>
 
+        {/* 30-Day Occupancy Area Chart matching third-edition mockup */}
+        <WardPanel
+          title="30-Day Inpatient Occupancy Trajectory"
+          count="Operational Benchmark Line"
+          testId="ward-statistics-ward-occupancy-trajectory"
+          dataTabSection="occ"
+        >
+          <div className={styles.panelBody} role="group" aria-label="30-day occupancy trajectory content" tabIndex={0}>
+            <div className={pageStyles.areaChartSvgWrap}>
+              <svg
+                viewBox="0 0 860 220"
+                role="img"
+                aria-label="30-day occupancy trajectory with operational benchmark line"
+                style={{ width: "100%", height: "auto", display: "block" }}
+              >
+                <defs>
+                  <linearGradient id="wardOccAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.32" />
+                    <stop offset="60%" stopColor="var(--accent)" stopOpacity="0.10" />
+                    <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.01" />
+                  </linearGradient>
+                </defs>
+                {/* Horizontal grid lines */}
+                {[12, 16, 20, 24].map((tick) => {
+                  const y = 30 + 150 - ((tick - 10) / (Math.max(unit.beds, 28) - 10)) * 150;
+                  return (
+                    <g key={tick}>
+                      <line x1={55} y1={y} x2={835} y2={y} stroke="var(--line)" strokeWidth="1" />
+                      <text
+                        x={45}
+                        y={y + 4}
+                        textAnchor="end"
+                        fill="var(--muted)"
+                        fontSize="var(--t-0)"
+                        fontFamily="var(--mono)"
+                      >
+                        {tick}
+                      </text>
+                    </g>
+                  );
+                })}
+                {/* Benchmark line */}
+                {(() => {
+                  const benchVal = unit.beds * 0.85;
+                  const benchY = 30 + 150 - ((benchVal - 10) / (Math.max(unit.beds, 28) - 10)) * 150;
+                  return (
+                    <g>
+                      <line
+                        x1={55}
+                        y1={benchY}
+                        x2={835}
+                        y2={benchY}
+                        stroke="var(--warn)"
+                        strokeWidth="1.5"
+                        strokeDasharray="4 3"
+                      />
+                      <text
+                        x={830}
+                        y={benchY - 6}
+                        textAnchor="end"
+                        fill="var(--warn)"
+                        fontSize="var(--t-0)"
+                        fontWeight="600"
+                      >
+                        Operational benchmark ({benchVal.toFixed(1)} beds)
+                      </text>
+                    </g>
+                  );
+                })()}
+                {/* Baseline */}
+                <line x1={55} y1={180} x2={835} y2={180} stroke="var(--line-strong)" strokeWidth="1" />
+                {/* Smooth Catmull-Rom Bezier Spline Path from demonstration series */}
+                {(() => {
+                  const maxVal = Math.max(unit.beds, 28);
+                  const minVal = 10;
+                  const plotW = 780;
+                  const plotH = 150;
+                  const pts = occupancySeries.points.map((p, i) => {
+                    const x = 55 + (i / Math.max(1, occupancySeries.points.length - 1)) * plotW;
+                    const y = 30 + plotH - ((p.value - minVal) / (maxVal - minVal)) * plotH;
+                    return { x, y };
+                  });
+                  if (pts.length < 2) return null;
+                  let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+                  for (let i = 0; i < pts.length - 1; i++) {
+                    const p0 = i > 0 ? pts[i - 1] : pts[i];
+                    const p1 = pts[i];
+                    const p2 = pts[i + 1];
+                    const p3 = i < pts.length - 2 ? pts[i + 2] : p2;
+                    const cp1x = p1.x + (p2.x - p0.x) / 6;
+                    const cp1y = p1.y + (p2.y - p0.y) / 6;
+                    const cp2x = p2.x - (p3.x - p1.x) / 6;
+                    const cp2y = p2.y - (p3.y - p1.y) / 6;
+                    d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+                  }
+                  const areaD = `${d} L ${pts[pts.length - 1].x.toFixed(1)} 180 L ${pts[0].x.toFixed(1)} 180 Z`;
+                  return (
+                    <>
+                      <path d={areaD} fill="url(#wardOccAreaGrad)" />
+                      <path d={d} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" />
+                      <circle
+                        cx={pts[pts.length - 1].x}
+                        cy={pts[pts.length - 1].y}
+                        r="4.5"
+                        fill="var(--surface)"
+                        stroke="var(--accent)"
+                        strokeWidth="2"
+                      />
+                    </>
+                  );
+                })()}
+                {/* Date axis labels */}
+                <text x={55} y={202} fill="var(--muted)" fontSize="var(--t-0)">
+                  30d ago
+                </text>
+                <text x={250} y={202} fill="var(--muted)" fontSize="var(--t-0)">
+                  23d ago
+                </text>
+                <text x={445} y={202} fill="var(--muted)" fontSize="var(--t-0)">
+                  15d ago
+                </text>
+                <text x={640} y={202} fill="var(--muted)" fontSize="var(--t-0)">
+                  8d ago
+                </text>
+                <text x={835} y={202} fill="var(--muted)" textAnchor="end" fontSize="var(--t-0)" fontWeight="600">
+                  Today
+                </text>
+              </svg>
+            </div>
+          </div>
+        </WardPanel>
+
         <WardPanel title="Occupancy over the window" testId="ward-statistics-ward-occupancy" dataTabSection="occ">
           <div
             className={`${styles.panelBody} ${pageStyles.trendStack}`}
@@ -626,11 +772,14 @@ export function StatisticsWardScreen({
             aria-label="Occupancy over the window content"
             tabIndex={0}
           >
-            <p className={styles.note} data-testid="ward-stat-trends-disclaimer">
-              Neither trend below is recorded — both charts below are demonstration data, not a measurement of this
-              ward. This prototype keeps only the ward&apos;s current state, never a day-by-day history, so neither
-              trend was ever recorded — see each chart&apos;s own caption for what it stands in for.
-            </p>
+            <details className={`${pageStyles.measureDetails} source-print`}>
+              <summary>Technical trend disclosure</summary>
+              <p className={styles.note} data-testid="ward-stat-trends-disclaimer">
+                Neither trend below is recorded — both charts below are demonstration data, not a measurement of this
+                ward. This prototype keeps only the ward&apos;s current state, never a day-by-day history, so neither
+                trend was ever recorded — see each chart&apos;s own caption for what it stands in for.
+              </p>
+            </details>
             <DemonstrationChart series={occupancySeries} testId="ward-stat-occupancy-trend" />
             <DemonstrationChart series={readySeries} testId="ward-stat-ready-trend" />
           </div>
@@ -652,10 +801,13 @@ export function StatisticsWardScreen({
                   )}
                 </p>
 
-                <p className={styles.note} data-testid="ward-stat-los-bands-not-shown">
-                  Stays grouped by length are not shown. The average above is this page&apos;s only length-of-stay
-                  figure.
-                </p>
+                <details className={`${pageStyles.measureDetails} source-print`}>
+                  <summary>Length of stay grouping disclosure</summary>
+                  <p className={styles.note} data-testid="ward-stat-los-bands-not-shown">
+                    Stays grouped by length are not shown. The average above is this page&apos;s only length-of-stay
+                    figure.
+                  </p>
+                </details>
               </div>
             </WardPanel>
             <WardPanel
@@ -669,9 +821,13 @@ export function StatisticsWardScreen({
                 aria-label="Admissions and discharges content"
                 tabIndex={0}
               >
-                <p className={styles.note} data-testid="ward-stat-flow-history-not-recorded">
-                  Day-by-day admissions and discharges are not recorded in Ward Flow, so the last 7 days are not shown.
-                </p>
+                <details className={`${pageStyles.measureDetails} source-print`}>
+                  <summary>Admissions and discharges telemetry disclosure</summary>
+                  <p className={styles.note} data-testid="ward-stat-flow-history-not-recorded">
+                    Day-by-day admissions and discharges are not recorded in Ward Flow, so the last 7 days are not
+                    shown.
+                  </p>
+                </details>
 
                 <h3 className={styles.subHeading}>Average time a bed stood empty</h3>
                 {/*
@@ -994,10 +1150,13 @@ export function StatisticsWardScreen({
                   <p className={styles.note}>Clinically ready: description, not a target.</p>
                 </section>
 
-                <p className={styles.note} data-testid="ward-stat-delayed-people-not-shown">
-                  A list of the people delayed, with their barriers and review times, is not recorded in Ward Flow. The
-                  counts by reason above are what the records hold.
-                </p>
+                <details className={`${pageStyles.measureDetails} source-print`}>
+                  <summary>Delayed people disclosure</summary>
+                  <p className={styles.note} data-testid="ward-stat-delayed-people-not-shown">
+                    A list of the people delayed, with their barriers and review times, is not recorded in Ward Flow.
+                    The counts by reason above are what the records hold.
+                  </p>
+                </details>
               </div>
             </WardPanel>
             <WardPanel
@@ -1096,13 +1255,16 @@ export function StatisticsWardScreen({
               to see the same measures for another.
             </p>
 
-            <p className={styles.note}>
-              Every figure here is invented and computed from this prototype&apos;s own state as the page renders.
-            </p>
-            <p className={styles.note}>
-              <strong>Unsupported measures</strong>: a measure the record cannot support says so in words rather than
-              showing a nought, because a nought that was never measured reads exactly like a nought that was.
-            </p>
+            <details className={`${pageStyles.measureDetails} source-print`}>
+              <summary>Record and provenance limits</summary>
+              <p className={styles.note}>
+                Every figure here is invented and computed from this prototype&apos;s own state as the page renders.
+              </p>
+              <p className={styles.note}>
+                <strong>Unsupported measures</strong>: a measure the record cannot support says so in words rather than
+                showing a nought, because a nought that was never measured reads exactly like a nought that was.
+              </p>
+            </details>
           </div>
         </WardPanel>
       </div>
