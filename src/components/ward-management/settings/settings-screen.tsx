@@ -54,10 +54,7 @@ import {
   PARALLEL_REFERRAL_CAP_RANGE,
   PULL_HOLD_RANGE_MINUTES,
 } from "@/components/ward-management/ward-model";
-import {
-  useAudioBuzzPreference,
-  setAudioBuzzPreference,
-} from "@/components/ward-management/shell/ward-sound-store";
+import { useAudioBuzzPreference, setAudioBuzzPreference } from "@/components/ward-management/shell/ward-sound-store";
 import {
   useWallboardRefreshPreference,
   setWallboardRefreshPreference,
@@ -72,7 +69,8 @@ import styles from "./settings.module.css";
 function playSyntheticUrgentChime() {
   if (typeof window === "undefined" || !("AudioContext" in window || "webkitAudioContext" in window)) return;
   try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const AudioCtx =
+      window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     const ctx = new AudioCtx();
     const now = ctx.currentTime;
     const osc1 = ctx.createOscillator();
@@ -872,9 +870,7 @@ export function SettingsScreen() {
           title="System Operations"
           status={hasUnsavedRules ? "warning" : "nominal"}
           statusText={
-            hasUnsavedRules
-              ? "Unsaved configuration draft pending"
-              : "All coordination parameters synchronized"
+            hasUnsavedRules ? "Unsaved configuration draft pending" : "All coordination parameters synchronized"
           }
           ariaLabel="System operations status summary"
           className={styles.hudWrapper}
@@ -885,9 +881,7 @@ export function SettingsScreen() {
               value: hasUnsavedRules ? "Draft (Unsaved)" : "Synced",
               subtext: hasUnsavedRules ? "Pending Changes" : undefined,
               tone: hasUnsavedRules ? "warn" : "good",
-              ariaLabel: hasUnsavedRules
-                ? "Sync Status: Draft (Unsaved) Pending Changes"
-                : "Sync Status: Synced",
+              ariaLabel: hasUnsavedRules ? "Sync Status: Draft (Unsaved) Pending Changes" : "Sync Status: Synced",
             },
             {
               id: "kpi-mode",
@@ -898,9 +892,7 @@ export function SettingsScreen() {
             {
               id: "kpi-morning-rollup",
               label: "Rollup",
-              value: formatMinutesToTime(
-                configuration.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES,
-              ),
+              value: formatMinutesToTime(configuration.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES),
               subtext: `${configuration.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES}m`,
               tone: "accent",
             },
@@ -983,9 +975,7 @@ export function SettingsScreen() {
                       </span>
                     ) : (
                       <div className={styles.searchFeedbackZeroWrap}>
-                        <span className={styles.searchFeedbackZero}>
-                          No settings match &ldquo;{searchQuery}&rdquo;
-                        </span>
+                        <span className={styles.searchFeedbackZero}>No settings match &ldquo;{searchQuery}&rdquo;</span>
                         <a
                           href="#clear-filter"
                           className={styles.searchFeedbackClearLink}
@@ -1113,14 +1103,11 @@ export function SettingsScreen() {
                           <WardPanel title="Appearance" testId="ward-settings-appearance">
                             <div className={styles.preferenceBody}>
                               <p className={styles.panelLead}>
-                                Choose your preferred visual presentation. Theme applies instantly across all clinical boards and persists across browser sessions.
+                                Choose your preferred visual presentation. Theme applies instantly across all clinical
+                                boards and persists across browser sessions.
                               </p>
 
-                              <div
-                                className={styles.themeSelectorGrid}
-                                role="group"
-                                aria-label="Appearance"
-                              >
+                              <div className={styles.themeSelectorGrid} role="group" aria-label="Appearance">
                                 {APPEARANCE_CHOICES.map((choice) => {
                                   const isSelected = appearance === choice.value;
                                   return (
@@ -1199,12 +1186,15 @@ export function SettingsScreen() {
                           <WardPanel title="Navigation rail" testId="ward-settings-rail">
                             <div className={styles.preferenceBody}>
                               <p className={styles.panelLead}>
-                                Adjust primary sidebar density. Expanded mode provides full text labels; collapsed mode maximizes clinical workspace area.
+                                Adjust primary sidebar density. Expanded mode provides full text labels; collapsed mode
+                                maximizes clinical workspace area.
                               </p>
 
                               {/* Rail Preview Miniature Wireframes */}
                               <div className={styles.railVisualContainer} aria-hidden="true">
-                                <div className={`${styles.railMiniOption} ${!railOpen ? styles.railMiniOptionActive : ""}`}>
+                                <div
+                                  className={`${styles.railMiniOption} ${!railOpen ? styles.railMiniOptionActive : ""}`}
+                                >
                                   <div className={styles.railMiniWireframeCollapsed}>
                                     <div className={styles.wireRailNarrow}>
                                       <span className={styles.wireIcon} />
@@ -1216,7 +1206,9 @@ export function SettingsScreen() {
                                   <span className={styles.railMiniLabel}>Narrow (Icons Only)</span>
                                 </div>
 
-                                <div className={`${styles.railMiniOption} ${railOpen ? styles.railMiniOptionActive : ""}`}>
+                                <div
+                                  className={`${styles.railMiniOption} ${railOpen ? styles.railMiniOptionActive : ""}`}
+                                >
                                   <div className={styles.railMiniWireframeExpanded}>
                                     <div className={styles.wireRailWide}>
                                       <span className={styles.wireRow} />
@@ -1256,7 +1248,9 @@ export function SettingsScreen() {
                         <div className={styles.a11yCard}>
                           <div className={styles.a11yCardHeader}>
                             <span className={styles.a11yTitle}>Contrast Ratio</span>
-                            <span className={styles.badge} data-tone="good">WCAG 2.1 AA</span>
+                            <span className={styles.badge} data-tone="good">
+                              WCAG 2.1 AA
+                            </span>
                           </div>
                           <p className={styles.a11yDesc}>
                             4.5:1 minimum text contrast across all dark and light themes, verified with token hierarchy.
@@ -1265,7 +1259,9 @@ export function SettingsScreen() {
                         <div className={styles.a11yCard}>
                           <div className={styles.a11yCardHeader}>
                             <span className={styles.a11yTitle}>Forced Colors</span>
-                            <span className={styles.badge} data-tone="good">Supported</span>
+                            <span className={styles.badge} data-tone="good">
+                              Supported
+                            </span>
                           </div>
                           <p className={styles.a11yDesc}>
                             Adheres to Windows High Contrast mode and system forced-color palettes automatically.
@@ -1274,7 +1270,9 @@ export function SettingsScreen() {
                         <div className={styles.a11yCard}>
                           <div className={styles.a11yCardHeader}>
                             <span className={styles.a11yTitle}>Reduced Motion</span>
-                            <span className={styles.badge} data-tone="good">Respected</span>
+                            <span className={styles.badge} data-tone="good">
+                              Respected
+                            </span>
                           </div>
                           <p className={styles.a11yDesc}>
                             Transitions and layout animations disable instantly when prefers-reduced-motion is active.
@@ -1329,7 +1327,8 @@ export function SettingsScreen() {
                             </div>
                             <p className={styles.surgeBannerDesc}>
                               Rapidly switches operational parameters between standard baseline thresholds and emergency
-                              surge capacity. Toggling modifies draft levers below; changes only take effect upon saving.
+                              surge capacity. Toggling modifies draft levers below; changes only take effect upon
+                              saving.
                             </p>
                           </div>
                           <button
@@ -1346,8 +1345,12 @@ export function SettingsScreen() {
                           <div className={`${styles.surgeDiffCard} ${isSurge ? styles.surgeDiffCardActive : ""}`}>
                             <span className={styles.surgeDiffLabel}>ED Access Target</span>
                             <div className={styles.surgeDiffValues}>
-                              <span className={styles.surgeDiffStandard}>4h standard</span>
-                              <span className={styles.surgeDiffSurge}>2h surge</span>
+                              <span className={styles.surgeDiffStandard}>
+                                {defaultWardConfiguration().edAccessTargetMinutes / 60}h standard
+                              </span>
+                              <span className={styles.surgeDiffSurge}>
+                                {ED_ACCESS_TARGET_RANGE_MINUTES.min / 60}h surge
+                              </span>
                             </div>
                             <span className={styles.surgeDiffEffect}>
                               Halves dwell ceiling to accelerate mental health clearance from ED.
@@ -1397,11 +1400,17 @@ export function SettingsScreen() {
                                 </p>
                               </div>
                               {draft.edAccessTargetMinutes <= 120 ? (
-                                <span className={styles.badge} data-tone="danger">Surge (2h)</span>
+                                <span className={styles.badge} data-tone="danger">
+                                  Surge ({draft.edAccessTargetMinutes / 60}h)
+                                </span>
                               ) : draft.edAccessTargetMinutes <= 240 ? (
-                                <span className={styles.badge} data-tone="good">Standard (4h)</span>
+                                <span className={styles.badge} data-tone="good">
+                                  Standard ({draft.edAccessTargetMinutes / 60}h)
+                                </span>
                               ) : (
-                                <span className={styles.badge} data-tone="warn">Extended ({draft.edAccessTargetMinutes / 60}h)</span>
+                                <span className={styles.badge} data-tone="warn">
+                                  Extended ({draft.edAccessTargetMinutes / 60}h)
+                                </span>
                               )}
                             </div>
                             <div className={styles.paramCardBody}>
@@ -1503,15 +1512,19 @@ export function SettingsScreen() {
                                   <span className={styles.rowTag}>{draft.parallelReferralCap} Units</span>
                                 </span>
                                 <p className={styles.paramCardRationale}>
-                                  Read by the coordinator&rsquo;s shortlist, the referral intake form, and the statistics
-                                  screen — how many wards one referral may be sent to in one act. Saved changes are
-                                  recorded in the audit trail.
+                                  Read by the coordinator&rsquo;s shortlist, the referral intake form, and the
+                                  statistics screen — how many wards one referral may be sent to in one act. Saved
+                                  changes are recorded in the audit trail.
                                 </p>
                               </div>
                               {draft.parallelReferralCap >= 5 ? (
-                                <span className={styles.badge} data-tone="warn">Surge (5 units)</span>
+                                <span className={styles.badge} data-tone="warn">
+                                  Surge (5 units)
+                                </span>
                               ) : (
-                                <span className={styles.badge} data-tone="good">Standard ({draft.parallelReferralCap} units)</span>
+                                <span className={styles.badge} data-tone="good">
+                                  Standard ({draft.parallelReferralCap} units)
+                                </span>
                               )}
                             </div>
                             <div className={styles.paramCardBody}>
@@ -1616,11 +1629,17 @@ export function SettingsScreen() {
                                 </p>
                               </div>
                               {draft.pullHoldMinutes <= 45 ? (
-                                <span className={styles.badge} data-tone="danger">Surge (45m)</span>
+                                <span className={styles.badge} data-tone="danger">
+                                  Surge (45m)
+                                </span>
                               ) : draft.pullHoldMinutes <= 90 ? (
-                                <span className={styles.badge} data-tone="good">Standard (90m)</span>
+                                <span className={styles.badge} data-tone="good">
+                                  Standard (90m)
+                                </span>
                               ) : (
-                                <span className={styles.badge} data-tone="warn">Extended ({draft.pullHoldMinutes}m)</span>
+                                <span className={styles.badge} data-tone="warn">
+                                  Extended ({draft.pullHoldMinutes}m)
+                                </span>
                               )}
                             </div>
                             <div className={styles.paramCardBody}>
@@ -1711,10 +1730,7 @@ export function SettingsScreen() {
 
                         {/* Parameter Card 4: Morning Rollup Deadline */}
                         {isRowVisible("setting-morning-rollup") && (
-                          <div
-                            className={styles.paramCard}
-                            data-testid="setting-morning-rollup-row"
-                          >
+                          <div className={styles.paramCard} data-testid="setting-morning-rollup-row">
                             <div className={styles.paramCardHeader}>
                               <div className={styles.paramCardTitleCol}>
                                 <span className={styles.paramCardTitle}>
@@ -1728,7 +1744,9 @@ export function SettingsScreen() {
                                   available beds ({OPERATIONAL_DEFAULT_LABEL}).
                                 </p>
                               </div>
-                              <span className={styles.badge} data-tone="good">{OPERATIONAL_DEFAULT_LABEL}</span>
+                              <span className={styles.badge} data-tone="good">
+                                {OPERATIONAL_DEFAULT_LABEL}
+                              </span>
                             </div>
                             <div className={styles.paramCardBody}>
                               <div className={styles.paramReadoutBox}>
@@ -1824,10 +1842,13 @@ export function SettingsScreen() {
                                 </span>
                                 <p className={styles.paramCardRationale}>
                                   Configures visual warnings before recorded legal due times. Your default, not a legal
-                                  limit. The urgent warning is automatically clamped strictly below the standard warning.
+                                  limit. The urgent warning is automatically clamped strictly below the standard
+                                  warning.
                                 </p>
                               </div>
-                              <span className={styles.badge} data-tone="accent">Auto-Clamped</span>
+                              <span className={styles.badge} data-tone="accent">
+                                Auto-Clamped
+                              </span>
                             </div>
 
                             {/* Sub-Card 1: First warning (urgent) */}
@@ -1958,8 +1979,8 @@ export function SettingsScreen() {
                                     </span>
                                   </span>
                                   <span className={styles.rowDesc} data-testid="setting-due-soon-desc">
-                                    Shows a recorded legal due time as due soon from this time. Your default, not a legal
-                                    limit.
+                                    Shows a recorded legal due time as due soon from this time. Your default, not a
+                                    legal limit.
                                   </span>
                                 </div>
                                 <div className={styles.sliderBox}>
@@ -2062,10 +2083,16 @@ export function SettingsScreen() {
                             )}
 
                             {/* Visual Timeline Countdown Simulation (0 buttons) */}
-                            <div className={styles.timelineGraphContainer} aria-hidden="true" style={{ margin: "0 1.25rem 1.25rem" }}>
+                            <div
+                              className={styles.timelineGraphContainer}
+                              aria-hidden="true"
+                              style={{ margin: "0 1.25rem 1.25rem" }}
+                            >
                               <div className={styles.timelineGraphHeader}>
                                 <span className={styles.timelineGraphTitle}>Warning Threshold Cascade</span>
-                                <span className={styles.badge} data-tone="accent">Visual Countdown</span>
+                                <span className={styles.badge} data-tone="accent">
+                                  Visual Countdown
+                                </span>
                               </div>
                               <div className={styles.timelineTrack}>
                                 <div className={styles.timelineSegmentCalm}>
@@ -2075,12 +2102,18 @@ export function SettingsScreen() {
                                   Due Soon ({formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)})
                                 </div>
                                 <div className={styles.timelineSegmentUrgent}>
-                                  Urgent ({formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)})
+                                  Urgent ({formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}
+                                  )
                                 </div>
                               </div>
                               <div className={styles.timelineMilestonesRow}>
-                                <span>T - {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)} (Second Warning)</span>
-                                <span>T - {formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)} (First Warning)</span>
+                                <span>
+                                  T - {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)} (Second Warning)
+                                </span>
+                                <span>
+                                  T - {formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}{" "}
+                                  (First Warning)
+                                </span>
                                 <span>T - 0 (Deadline)</span>
                               </div>
                             </div>
@@ -2090,7 +2123,6 @@ export function SettingsScreen() {
 
                       {/* Unwired Demonstration Controls Container */}
                       <div className={styles.rowsContainer}>
-
                         {/* Form 4A Warning Stepper & Slider */}
                         {isRowVisible("setting-form4a-warn") && (
                           <div
@@ -2320,8 +2352,7 @@ export function SettingsScreen() {
                     </section>
                   )}
                   {/* DOMAIN 3: BED ALLOCATION WEIGHTS */}
-                  {(isRowVisible("setting-gender-mix") ||
-                    isRowVisible("setting-acuity-ceiling")) && (
+                  {(isRowVisible("setting-gender-mix") || isRowVisible("setting-acuity-ceiling")) && (
                     <section id="cat-allocation" className={styles.settingsSection} aria-labelledby="allocation-title">
                       <header className={styles.sectionHeader}>
                         <div>
@@ -2329,15 +2360,12 @@ export function SettingsScreen() {
                           <h2 id="allocation-title" className={styles.secTitle}>
                             Bed Allocation &amp; Capacity Rules
                           </h2>
-                          <p className={styles.secDesc}>
-                            Bay integrity enforcement and ward acuity profile limits.
-                          </p>
+                          <p className={styles.secDesc}>Bay integrity enforcement and ward acuity profile limits.</p>
                         </div>
                         <span className={styles.rowTag}>2 Parameters (Demo)</span>
                       </header>
 
                       <div className={styles.rowsContainer}>
-
                         {/* Gender Bay Protection */}
                         {isRowVisible("setting-gender-mix") && (
                           <div className={styles.settingRow} data-testid="setting-gender-mix-row">
@@ -2827,8 +2855,9 @@ export function SettingsScreen() {
                           </div>
 
                           <p className={styles.telemetryDesc}>
-                            Ward Flow client-side caching maintains active bed coordination states, ephemeral search logs,
-                            and governance audit trails. Zero identifiable patient records leave this browser without explicit export.
+                            Ward Flow client-side caching maintains active bed coordination states, ephemeral search
+                            logs, and governance audit trails. Zero identifiable patient records leave this browser
+                            without explicit export.
                           </p>
 
                           {/* Visual Storage Quota Bar */}
@@ -2836,7 +2865,8 @@ export function SettingsScreen() {
                             <div className={styles.quotaHeader}>
                               <span className={styles.quotaLabel}>Browser Cache &amp; Storage Quota</span>
                               <span className={styles.quotaValue}>
-                                {storageEstimate.usedFormatted} of {storageEstimate.quotaFormatted} ({storageEstimate.percent}%)
+                                {storageEstimate.usedFormatted} of {storageEstimate.quotaFormatted} (
+                                {storageEstimate.percent}%)
                               </span>
                             </div>
                             <div
@@ -2873,7 +2903,9 @@ export function SettingsScreen() {
                             </div>
                             <div className={styles.cacheMetricItem}>
                               <span className={styles.metricLabel}>Appearance &amp; Rail</span>
-                              <strong className={styles.metricVal}>{appearance} · {railOpen ? "Expanded" : "Collapsed"}</strong>
+                              <strong className={styles.metricVal}>
+                                {appearance} · {railOpen ? "Expanded" : "Collapsed"}
+                              </strong>
                               <span className={styles.metricSub}>Client-persisted UI mode</span>
                             </div>
                           </div>
@@ -2891,7 +2923,10 @@ export function SettingsScreen() {
                               <span>Export Configuration JSON</span>
                             </button>
 
-                            <label className={styles.btnSecondaryLabel} title="Upload and restore a configuration JSON backup">
+                            <label
+                              className={styles.btnSecondaryLabel}
+                              title="Upload and restore a configuration JSON backup"
+                            >
                               <Upload size={14} aria-hidden="true" />
                               <span>Import Backup JSON</span>
                               <input
@@ -2925,7 +2960,10 @@ export function SettingsScreen() {
                             <div className={styles.dangerZoneMeta}>
                               <h3 className={styles.dangerZoneTitle}>Baseline Reset &amp; Disaster Recovery</h3>
                               <p className={styles.dangerZoneDesc}>
-                                Restoring the factory baseline overwrites all coordination thresholds (ED target, parallel cap, pull hold buffer, morning rollup, due-time alerts) back to WA Health clinical standards, resets UI appearance and rail preferences, and records an audited governance entry.
+                                Restoring the factory baseline overwrites all coordination thresholds (ED target,
+                                parallel cap, pull hold buffer, morning rollup, due-time alerts) back to WA Health
+                                clinical standards, resets UI appearance and rail preferences, and records an audited
+                                governance entry.
                               </p>
                             </div>
                           </div>
@@ -2976,7 +3014,9 @@ export function SettingsScreen() {
                     <span key={diff.label} className={styles.diffChip}>
                       <span className={styles.diffChipLabel}>{diff.label}:</span>
                       <span className={styles.diffChipFrom}>{diff.from}</span>
-                      <span className={styles.diffChipArrow} aria-hidden="true">→</span>
+                      <span className={styles.diffChipArrow} aria-hidden="true">
+                        →
+                      </span>
                       <span className={styles.diffChipTo}>{diff.to}</span>
                     </span>
                   ))}

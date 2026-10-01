@@ -65,13 +65,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
         { id: "m-zero-5", label: "Specialling", value: 0, tone: "neutral" },
       ];
 
-      render(
-        <WardDynamicIsland
-          title="Zero State HUD"
-          status="nominal"
-          metrics={zeroMetrics}
-        />
-      );
+      render(<WardDynamicIsland title="Zero State HUD" status="nominal" metrics={zeroMetrics} />);
 
       const zeroElements = screen.getAllByText("0");
       expect(zeroElements).toHaveLength(5);
@@ -94,7 +88,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
             expiriesPassed: 42,
             specialling: 120,
           })}
-        />
+        />,
       );
       expect(screen.getByText("999999")).toBeDefined();
       expect(screen.getByText("999")).toBeDefined();
@@ -108,7 +102,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
             expectedCount: 7777,
             departedCount: 6666,
           })}
-        />
+        />,
       );
       expect(screen.getByText("9999")).toBeDefined();
       expect(screen.getByText("8888")).toBeDefined();
@@ -121,7 +115,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
             awaitingBedCount: 5000,
             breachesCount: 999,
           })}
-        />
+        />,
       );
       expect(screen.getByText("9999")).toBeDefined();
       expect(screen.getByText("999")).toBeDefined();
@@ -138,12 +132,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
         { id: "p-with-subtext", label: "Queue", value: 5, subtext: "" },
       ];
 
-      const { container } = render(
-        <WardDynamicIsland
-          title="Pathological HUD"
-          metrics={pathologicalMetrics}
-        />
-      );
+      const { container } = render(<WardDynamicIsland title="Pathological HUD" metrics={pathologicalMetrics} />);
 
       // Verify no runtime error
       expect(container.querySelector("section")).toBeDefined();
@@ -156,44 +145,21 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
     });
 
     it("renders empty metrics list and default status text without throwing", () => {
-      const { container, rerender } = render(
-        <WardDynamicIsland
-          title="Empty Metrics HUD"
-          metrics={[]}
-        />
-      );
+      const { container, rerender } = render(<WardDynamicIsland title="Empty Metrics HUD" metrics={[]} />);
 
       expect(screen.getByRole("status").getAttribute("aria-label")).toBe("Nominal status");
       expect(container.querySelectorAll("li")).toHaveLength(0);
 
       // Warning default status text
-      rerender(
-        <WardDynamicIsland
-          title="Empty Metrics HUD"
-          status="warning"
-          metrics={[]}
-        />
-      );
+      rerender(<WardDynamicIsland title="Empty Metrics HUD" status="warning" metrics={[]} />);
       expect(screen.getByRole("status").getAttribute("aria-label")).toBe("Attention required");
 
       // Alarm default status text
-      rerender(
-        <WardDynamicIsland
-          title="Empty Metrics HUD"
-          status="alarm"
-          metrics={[]}
-        />
-      );
+      rerender(<WardDynamicIsland title="Empty Metrics HUD" status="alarm" metrics={[]} />);
       expect(screen.getByRole("status").getAttribute("aria-label")).toBe("Critical pressure");
 
       // Neutral default status text
-      rerender(
-        <WardDynamicIsland
-          title="Empty Metrics HUD"
-          status="neutral"
-          metrics={[]}
-        />
-      );
+      rerender(<WardDynamicIsland title="Empty Metrics HUD" status="neutral" metrics={[]} />);
       expect(screen.getByRole("status").getAttribute("aria-label")).toBe("Monitoring");
     });
   });
@@ -210,7 +176,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
             isSurgeMode: isSurge,
             hasUnsavedRules: false,
           })}
-        />
+        />,
       );
 
       for (let i = 0; i < 50; i++) {
@@ -221,7 +187,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
               isSurgeMode: isSurge,
               hasUnsavedRules: false,
             })}
-          />
+          />,
         );
 
         const modeVal = screen.getByText(isSurge ? "Surge Mode" : "Standard");
@@ -236,30 +202,20 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
 
     it("transitions ED Pressure breaches from 0 to alarm across multiple cycles with pulse pip", () => {
       const { rerender } = render(
-        <WardDynamicIsland
-          {...buildEdHudProps({ breachesCount: 0, awaitingBedCount: 1 })}
-        />
+        <WardDynamicIsland {...buildEdHudProps({ breachesCount: 0, awaitingBedCount: 1 })} />,
       );
 
       const statusPip = screen.getByRole("status");
       expect(statusPip.className).toMatch(/statusPipNominal/);
 
       // Trigger critical breach
-      rerender(
-        <WardDynamicIsland
-          {...buildEdHudProps({ breachesCount: 4, awaitingBedCount: 1 })}
-        />
-      );
+      rerender(<WardDynamicIsland {...buildEdHudProps({ breachesCount: 4, awaitingBedCount: 1 })} />);
       expect(statusPip.className).toMatch(/statusPipAlarm/);
       expect(screen.getByText("4")).toBeDefined();
       expect(screen.getByText("4").className).toMatch(/metricToneDanger/);
 
       // Resolve breach
-      rerender(
-        <WardDynamicIsland
-          {...buildEdHudProps({ breachesCount: 0, awaitingBedCount: 1 })}
-        />
-      );
+      rerender(<WardDynamicIsland {...buildEdHudProps({ breachesCount: 0, awaitingBedCount: 1 })} />);
       expect(statusPip.className).toMatch(/statusPipNominal/);
       expect(screen.getByText("0").className).toMatch(/metricToneGood/);
     });
@@ -274,7 +230,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
             statusFilter: "all",
             onFilterChange: (f) => onFilterChange(f),
           })}
-        />
+        />,
       );
 
       const blockedBtn = screen.getByTestId("ward-discharge-kpi-blocked");
@@ -304,7 +260,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
               currentFilter = next as "all" | "blocked" | "confirmed";
             },
           })}
-        />
+        />,
       );
 
       const blockedBtn = screen.getByTestId("ward-discharge-kpi-blocked");
@@ -320,7 +276,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
           {...buildDischargesHudProps({
             statusFilter: currentFilter,
           })}
-        />
+        />,
       );
       expect(blockedBtn.getAttribute("aria-pressed")).toBe("true");
 
@@ -333,7 +289,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
           {...buildDischargesHudProps({
             statusFilter: currentFilter,
           })}
-        />
+        />,
       );
       expect(blockedBtn.getAttribute("aria-pressed")).toBe("false");
     });
@@ -352,7 +308,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
             { id: "m-btn-1", label: "Button Metric", value: 12, onClick: clickSpy, testId: "interactive-btn" },
             { id: "m-static-1", label: "Static Metric", value: 34, testId: "static-metric" },
           ]}
-        />
+        />,
       );
 
       const btn = screen.getByTestId("interactive-btn");
@@ -369,10 +325,8 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
       render(
         <WardDynamicIsland
           title="Keyboard HUD"
-          metrics={[
-            { id: "k-btn", label: "Focusable Metric", value: 99, onClick: enterClick, testId: "focus-btn" },
-          ]}
-        />
+          metrics={[{ id: "k-btn", label: "Focusable Metric", value: 99, onClick: enterClick, testId: "focus-btn" }]}
+        />,
       );
 
       const btn = screen.getByTestId("focus-btn");
@@ -397,7 +351,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
             { id: "aria-1", label: "Occupied", value: 19 },
             { id: "aria-2", label: "Ready", value: 3, onClick: vi.fn() },
           ]}
-        />
+        />,
       );
 
       // Outer region
@@ -423,10 +377,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
   // ==========================================================================
   describe("4. Overflow, Stylesheet Resilience & Design Tokens", () => {
     it("CSS file enforces overflow-x auto, scrollbar suppression, and flex-wrap nowrap", () => {
-      const cssPath = resolve(
-        process.cwd(),
-        "src/components/ward-management/shell/ward-dynamic-island.module.css"
-      );
+      const cssPath = resolve(process.cwd(), "src/components/ward-management/shell/ward-dynamic-island.module.css");
       const css = readFileSync(cssPath, "utf8");
 
       // Verify horizontal scrolling with hidden scrollbar
@@ -445,10 +396,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
     });
 
     it("verifies ZERO raw hex, rgb, or hsl color literals in ward-dynamic-island.module.css", () => {
-      const cssPath = resolve(
-        process.cwd(),
-        "src/components/ward-management/shell/ward-dynamic-island.module.css"
-      );
+      const cssPath = resolve(process.cwd(), "src/components/ward-management/shell/ward-dynamic-island.module.css");
       const css = readFileSync(cssPath, "utf8");
 
       // Remove comments before searching
@@ -468,10 +416,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
     });
 
     it("verifies strict 12px text size floor across all styles in ward-dynamic-island.module.css", () => {
-      const cssPath = resolve(
-        process.cwd(),
-        "src/components/ward-management/shell/ward-dynamic-island.module.css"
-      );
+      const cssPath = resolve(process.cwd(), "src/components/ward-management/shell/ward-dynamic-island.module.css");
       const css = readFileSync(cssPath, "utf8");
       const cleanCss = css.replace(/\/\*[\s\S]*?\*\//g, "");
 
@@ -493,12 +438,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
         tone: i % 2 === 0 ? "good" : "warn",
       }));
 
-      const { container } = render(
-        <WardDynamicIsland
-          title="Wide Load HUD"
-          metrics={manyMetrics}
-        />
-      );
+      const { container } = render(<WardDynamicIsland title="Wide Load HUD" metrics={manyMetrics} />);
 
       const items = container.querySelectorAll("li");
       expect(items).toHaveLength(25);
@@ -513,7 +453,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
           <HandoverPage />
-        </WardFlowProvider>
+        </WardFlowProvider>,
       );
 
       const hud = screen.getByTestId("ward-handover-kpi-strip");
@@ -526,7 +466,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
           <DischargeBoard />
-        </WardFlowProvider>
+        </WardFlowProvider>,
       );
 
       const blockedFilterBtn = screen.getByTestId("ward-discharge-kpi-blocked");
@@ -545,7 +485,7 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
           <LegalFormsScreen />
-        </WardFlowProvider>
+        </WardFlowProvider>,
       );
 
       const passedBtn = screen.getByTestId("ward-legal-kpi-passed");
@@ -560,15 +500,16 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
           <CapacityScreen />
-        </WardFlowProvider>
+        </WardFlowProvider>,
       );
 
-      const hud = screen.getByTestId("ward-capacity-hud-island");
+      const hud = screen.getByLabelText("Statewide Bed Telemetry");
       const gapTable = screen.getByTestId("ward-capacity-gap-table");
 
       expect(hud).toBeDefined();
       expect(gapTable).toBeDefined();
-      expect(screen.getByText("Statewide Capacity")).toBeDefined();
+      expect(within(hud).getByRole("img", { name: "Live synthetic board clock" })).toBeDefined();
+      expect(within(hud).getByRole("button", { name: /available .* ready/iu })).toBeDefined();
     });
   });
 });

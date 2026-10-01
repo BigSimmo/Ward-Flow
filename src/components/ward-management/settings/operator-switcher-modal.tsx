@@ -65,7 +65,7 @@ export const OPERATOR_STATIONS: readonly OperatorStation[] = [
     path: edHref("fsh-ed"),
     avatarText: "FS",
     avatarTone: "ed",
-    description: "Tertiary emergency department liaison — acute referral intake and breach monitoring.",
+    description: "Tertiary emergency department liaison — acute referral intake and delay monitoring.",
   },
   {
     group: "Community",
@@ -162,12 +162,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onNavigate }: OperatorS
               Select a clinical workstation to simulate immediate role and perspective handoff.
             </p>
           </div>
-          <button
-            type="button"
-            className={styles.btnSecondary}
-            onClick={onClose}
-            aria-label="Close operator switcher"
-          >
+          <button type="button" className={styles.btnSecondary} onClick={onClose} aria-label="Close operator switcher">
             <X size={16} aria-hidden="true" />
           </button>
         </header>
@@ -204,9 +199,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onNavigate }: OperatorS
                               </span>
                             )}
                           </div>
-                          {station.description && (
-                            <p className={styles.stationDesc}>{station.description}</p>
-                          )}
+                          {station.description && <p className={styles.stationDesc}>{station.description}</p>}
                           <code className={styles.stationPath}>{station.path}</code>
                         </div>
                         <ArrowRight size={16} className={styles.stationArrow} aria-hidden="true" />

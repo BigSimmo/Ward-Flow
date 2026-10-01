@@ -735,6 +735,7 @@ export function CapacityScreen() {
                   className={`${styles.networkTable} ${showAllColumns ? styles.detailTable : styles.compactTable}`}
                   wrapperClassName={styles.networkTableScroll}
                   testId="ward-capacity-network-table"
+                  hasScrollThreshold={showAllColumns}
                 >
                   <thead>
                     <tr className={styles.stickyHeaderRow}>
@@ -1427,7 +1428,7 @@ function NetworkRow({
         */}
         <WardFreshness
           confirmedAt={row.confirmedAt}
-          confirmedByRole={row.unit.allocatable.source === "ward" ? "NUM" : undefined}
+          confirmedByRole={row.unit.allocatable.source === "ward" ? `NUM ${row.unit.name}` : undefined}
           derived={row.unit.allocatable.source !== "ward"}
           now={now}
         />
