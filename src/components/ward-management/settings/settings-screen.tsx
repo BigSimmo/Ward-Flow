@@ -1243,14 +1243,12 @@ export function SettingsScreen() {
                       <div className={styles.accessibilityBadgesGrid}>
                         <div className={styles.a11yCard}>
                           <div className={styles.a11yCardHeader}>
-                            <span className={styles.a11yTitle}>Contrast Ratio</span>
+                            <span className={styles.a11yTitle}>Text contrast target</span>
                             <span className={styles.badge} data-tone="good">
-                              WCAG 2.1 AA
+                              4.5:1
                             </span>
                           </div>
-                          <p className={styles.a11yDesc}>
-                            4.5:1 minimum text contrast across all dark and light themes, verified with token hierarchy.
-                          </p>
+                          <p className={styles.a11yDesc}>Normal text in light and dark themes.</p>
                         </div>
                         <div className={styles.a11yCard}>
                           <div className={styles.a11yCardHeader}>
