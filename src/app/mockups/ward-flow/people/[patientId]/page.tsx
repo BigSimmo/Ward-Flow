@@ -41,7 +41,12 @@ export default async function WardPersonPage({
 }) {
   const { patientId } = await params;
   const query = await searchParams;
-  const id = decodeURIComponent(patientId);
+  let id: string;
+  try {
+    id = decodeURIComponent(patientId);
+  } catch {
+    return <WardMovementNotFound requestedId={patientId} reason="not-a-person-id" />;
+  }
   if (!id.startsWith("PT-") && !id.startsWith("WF-")) {
     return <WardMovementNotFound requestedId={id} reason="not-a-person-id" />;
   }
