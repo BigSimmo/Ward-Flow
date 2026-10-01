@@ -1049,8 +1049,12 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
      * tautology removed above.
      */
     const outOfAreaLabels = OUT_OF_AREA_BANDS.map((b) => TRAVEL_BAND_LABELS[b]);
-    const renderedBands = await ledgerRows.evaluateAll((rows) =>
-      rows.map((row) => (row.children[2]?.textContent ?? "").trim()),
+    const ledgerHeaders = await page.getByTestId("ward-out-of-area-table").getByRole("columnheader").allTextContents();
+    const travelTimeColumn = ledgerHeaders.findIndex((heading) => heading.trim() === "Travel time");
+    expect(travelTimeColumn, "the ledger must label its travel-time column").toBeGreaterThanOrEqual(0);
+    const renderedBands = await ledgerRows.evaluateAll(
+      (rows, column) => rows.map((row) => (row.children[column]?.textContent ?? "").trim()),
+      travelTimeColumn,
     );
     expect(
       [...new Set(renderedBands)].filter((b) => !outOfAreaLabels.includes(b)),
