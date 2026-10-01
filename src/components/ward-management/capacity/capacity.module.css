@@ -2181,3 +2181,506 @@
     min-width: 0;
   }
 }
+
+/* Approved Capacity composition: white working surfaces, navy Network and compact census. */
+.screen {
+  --capacity-inset: var(--ward-space-16);
+  --capacity-control-height: 3rem;
+}
+.screen :global([data-ward-primitive="panel"]),
+.screen .secondary {
+  border-radius: 1rem;
+  box-shadow: none;
+}
+.screen :global([data-ward-primitive="panel-header"]) {
+  box-sizing: border-box;
+  min-height: 2.625rem;
+  padding: var(--ward-space-10) var(--capacity-inset);
+  align-items: center;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.screen :global([data-ward-primitive="panel-header"]) h2 {
+  color: var(--accent-ink);
+  font-size: var(--t-2);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+.screen :global([data-ward-panel-count]) {
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.screen .capacityGrid {
+  gap: var(--ward-space-16);
+  align-items: start;
+}
+.screen .networkHeaderRow {
+  padding: var(--capacity-inset) var(--capacity-inset) var(--ward-space-4);
+  border: 0;
+  background: var(--accent);
+}
+.screen .networkHeading,
+.screen .networkHeaderTime {
+  color: var(--on-accent);
+}
+.screen .networkHeading {
+  font-size: var(--t-2);
+  letter-spacing: -0.015em;
+}
+.screen .readySummary {
+  margin: 0;
+  padding: var(--ward-space-12) var(--capacity-inset) var(--capacity-inset);
+  border-radius: 0;
+  border: 0;
+  background: var(--accent);
+  gap: var(--ward-space-8);
+}
+.screen .readySummary :is(h3, p, li, strong, span),
+.screen .readySummary :global([data-ward-primitive="bar"]) b {
+  color: var(--on-accent);
+}
+.screen .readySummary h3 {
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 500;
+}
+.screen .readySummary .readyValue strong {
+  font-family: var(--display);
+  font-size: 3.25rem;
+  font-weight: 600;
+  letter-spacing: -0.06em;
+}
+.screen .readySummary :global([data-tone="accent"]) {
+  background: var(--on-accent);
+}
+.screen .readySummary :global([data-tone="good"]) {
+  outline: 1px solid var(--on-accent);
+  outline-offset: -1px;
+}
+.screen .preparationWarning,
+.screen .readySummary .preparationWarning {
+  padding: var(--ward-space-8);
+  border-radius: 0.75rem;
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.screen .sidebarTabs {
+  margin: var(--ward-space-12) var(--capacity-inset) 0;
+  padding: var(--ward-space-4);
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--surface-2);
+}
+.screen .sidebarTabs button {
+  min-height: var(--capacity-control-height);
+  border-radius: 0.75rem;
+}
+.screen .sidebarBody {
+  padding: var(--ward-space-8) var(--capacity-inset);
+}
+.screen .sidebarSectionTitle {
+  padding: var(--ward-space-8) 0;
+  color: var(--ink-soft);
+  text-transform: none;
+  letter-spacing: normal;
+}
+.screen .sidebarBody .freeingList {
+  padding: 0;
+}
+.screen .freeingItem {
+  gap: var(--ward-space-8);
+  padding: var(--ward-space-4) 0;
+  border-radius: 0;
+}
+.screen .freeingWardButton {
+  min-height: var(--capacity-control-height);
+}
+.screen .freeingWardName {
+  white-space: normal;
+  overflow: visible;
+  line-height: 1.35;
+  font-size: var(--t-0);
+}
+.screen .freeingBadge {
+  max-width: 6rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  font-weight: 500;
+  text-align: end;
+  white-space: normal;
+}
+.screen .excluded {
+  padding: var(--ward-space-8) 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.networkActions {
+  display: grid;
+  gap: var(--ward-space-4);
+  padding: var(--ward-space-8) var(--capacity-inset);
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+.networkActions button,
+.networkActions a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-12);
+  min-height: var(--capacity-control-height);
+  padding: var(--ward-space-8) var(--ward-space-12);
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  background: transparent;
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: var(--t-0);
+  text-align: start;
+  cursor: pointer;
+}
+.networkActions button[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--line-strong);
+  font-weight: 600;
+}
+.networkActions button:hover,
+.networkActions a:hover {
+  background: var(--surface-2);
+}
+.networkActions strong {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.networkActions :is(button, a):focus-visible,
+.screen .fullscreenButton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.screen .gapBandWrap,
+.screen .gapTable,
+.screen .gapTable :is(tbody, tfoot) tr {
+  background: var(--surface);
+}
+.screen .gapTable :is(tbody, tfoot) tr {
+  padding: var(--ward-space-12) var(--capacity-inset);
+  box-shadow: none;
+}
+.screen .gapTable tfoot tr {
+  border-inline-start: 1px solid var(--line);
+}
+.screen .gapHeader {
+  min-height: 1.75rem;
+  gap: var(--ward-space-8);
+  margin-bottom: var(--ward-space-4);
+}
+.screen .gapNeedText {
+  color: var(--accent-ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+}
+.screen .cohortIconWrap {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 0;
+  border-radius: 0.75rem;
+  background: transparent;
+}
+.screen .gapValueContainer {
+  align-items: center;
+  justify-content: space-between;
+  min-height: 1.75rem;
+  gap: var(--ward-space-8);
+}
+.screen .gapTable .gapNumber {
+  font-family: var(--display);
+  font-size: 1.875rem;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+.screen .gapTable :global([data-ward-primitive="chip"]) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  font-size: var(--t-0);
+}
+.screen .gapMicroGauge {
+  height: 3px;
+  margin-top: var(--ward-space-8);
+  border: 0;
+  box-shadow: none;
+}
+
+.screen .filters {
+  gap: var(--ward-space-8) var(--ward-space-12);
+  padding: var(--ward-space-10) var(--capacity-inset);
+  background: var(--surface);
+}
+.tableToolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  flex-basis: 100%;
+  gap: var(--ward-space-8);
+}
+.columnSummary {
+  flex: 1 1 18rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.4;
+}
+.screen .fullscreenButton {
+  min-height: var(--capacity-control-height);
+  padding: var(--ward-space-8) var(--ward-space-12);
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: var(--t-0);
+  font-weight: 600;
+  cursor: pointer;
+}
+.screen .filters :global([data-ward-primitive="filters"]) {
+  flex: 1 1 32rem;
+  width: auto;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ward-space-4);
+  padding: var(--ward-space-4);
+  border: 0;
+  border-radius: 0.75rem;
+  background: var(--surface-2);
+}
+.screen .filters :global([data-ward-primitive="filters"]) button {
+  justify-content: space-between;
+  min-height: var(--capacity-control-height);
+  padding: var(--ward-space-8) var(--ward-space-12);
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  text-align: start;
+  white-space: normal;
+}
+.screen .filters button[aria-pressed="true"] {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.screen .filters :global([data-ward-primitive="filters"]) button span {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.screen .sortControl select,
+.screen .attentionAction,
+.screen .networkTable :is(.wardRowSelect, .groupFoldButton, .refreshButton) {
+  min-height: var(--capacity-control-height);
+}
+.screen .networkTable {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.screen .detailTable {
+  --ward-table-min-width: 100rem;
+}
+.screen .compactTable {
+  --ward-table-min-width: 52rem;
+  --ward-table-cell-inset: 0.375rem 0.75rem;
+}
+/* Eight key columns remain: ward, ready, locked, freeing, blocked, occupied, confirmed, update. */
+.screen
+  .compactTable
+  tr
+  > :is(
+    :nth-child(2),
+    :nth-child(6),
+    :nth-child(7),
+    :nth-child(9),
+    :nth-child(10),
+    :nth-child(11),
+    :nth-child(13),
+    :nth-child(14),
+    :nth-child(15)
+  ) {
+  display: none;
+}
+.screen .networkTable :is(th, td) {
+  padding: var(--ward-space-4) var(--ward-space-12);
+  vertical-align: middle;
+  line-height: 1.35;
+}
+.screen .networkTable th {
+  color: var(--ink-soft);
+  font-family: var(--body);
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: var(--t-0);
+  white-space: normal;
+}
+.screen .networkTable thead th {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line-strong);
+}
+.screen .networkTable :is(th, td):first-child {
+  min-width: 12rem;
+  max-width: 14rem;
+  box-shadow: none;
+  border-inline-end: 1px solid var(--line);
+}
+.screen
+  .networkTable
+  :is(th, td):is(:nth-child(3), :nth-child(4), :nth-child(5), :nth-child(8), :nth-child(11), :nth-child(12)) {
+  text-align: end;
+  font-family: var(--body);
+  font-variant-numeric: tabular-nums;
+}
+.screen .networkTable .groupSummaryRow :is(th, td) {
+  padding-block: var(--ward-space-4);
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.screen .networkTable :is(.readyBadge, .lockedBadge, .blockedBadge) {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+}
+.screen .networkTable .who {
+  margin-top: 0;
+  color: var(--muted);
+  line-height: 1.35;
+}
+.screen .compactTable .matchMark {
+  display: block;
+  margin-top: var(--ward-space-4);
+  font-size: var(--t-0);
+}
+.screen .matchMark :global([data-ward-primitive="chip"]) {
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--accent-ink);
+  font-size: var(--t-0);
+  font-weight: 600;
+}
+.screen .networkTable tr[data-ward-network-row-matches="true"] td,
+.screen .networkTable tr[data-selected="true"] td {
+  background: var(--accent-soft);
+}
+.screen .networkTable .confirmationCell {
+  min-width: 9rem;
+  max-width: 12rem;
+  font-size: var(--t-0);
+  font-weight: 400;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.screen .networkTable .refreshButton {
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  background: transparent;
+  color: var(--accent-ink);
+  font-size: var(--t-0);
+  font-weight: 500;
+}
+.tableFullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 1000);
+  height: 100dvh;
+  box-sizing: border-box;
+  padding: var(--capacity-inset);
+  background: var(--surface);
+  display: flex;
+}
+.screen .tableFullscreen > :global([data-ward-primitive="panel"]) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: none;
+}
+.screen .tableFullscreen .networkBody {
+  flex: 1;
+  min-height: 0;
+}
+.screen .tableFullscreen .networkTableScroll {
+  max-height: none;
+}
+@media (max-width: 45rem) {
+  .screen .filters :global([data-ward-primitive="filters"]) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex-basis: 100%;
+  }
+  .screen .networkTable :is(th, td):first-child {
+    min-width: 9rem;
+    max-width: 10rem;
+  }
+  .tableFullscreen {
+    padding: var(--ward-space-8);
+  }
+}
+@media (forced-colors: active) {
+  .networkActions button[aria-pressed="true"],
+  .screen .filters button[aria-pressed="true"] {
+    border: 2px solid Highlight;
+  }
+  .screen .networkTable tr[data-ward-network-row-matches="true"] td {
+    outline: 1px solid Highlight;
+  }
+}
+@media (forced-colors: active), print {
+  .screen :is(.networkHeaderRow, .readySummary) {
+    background: var(--surface);
+  }
+  .screen :is(.networkHeading, .networkHeaderTime),
+  .screen .readySummary :is(h3, p, li, strong, span),
+  .screen .readySummary :global([data-ward-primitive="bar"]) b {
+    color: var(--ink);
+  }
+  .screen .readySummary :global([data-tone="accent"]) {
+    background: var(--accent);
+  }
+}
+@media print {
+  .tableFullscreen {
+    position: static;
+    height: auto;
+    padding: 0;
+    display: block;
+  }
+  .networkActions,
+  .tableToolbar {
+    display: none;
+  }
+  .screen :is(.compactTable, .detailTable) {
+    --ward-table-min-width: 0;
+  }
+  .screen .networkTable :is(th, td):first-child {
+    position: static;
+    min-width: 0;
+    max-width: none;
+  }
+}

@@ -12,10 +12,15 @@ import type { HealthService, Unit } from "@/components/ward-management/ward-mode
 import { WardBar, type WardBarSegment } from "@/components/ward-management/ward-bar";
 import { WardChip, type WardChipLevel } from "@/components/ward-management/ward-chip";
 import { WardFilters } from "@/components/ward-management/ward-controls";
+import { useWardModalFocus } from "../ward-modal-focus";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
-import { BED_RELEASE_BLOCKED_FIGURE_LABEL, bedReleaseStateLabels, isOpen } from "@/components/ward-management/ward-derivations";
+import {
+  BED_RELEASE_BLOCKED_FIGURE_LABEL,
+  bedReleaseStateLabels,
+  isOpen,
+} from "@/components/ward-management/ward-derivations";
 import { siteLabel } from "@/components/ward-management/ward-absence-labels";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
@@ -85,6 +90,10 @@ export function CapacityScreen() {
   const [selection, setSelection] = useState<{ unitId: string; generation: number } | null>(null);
   const [networkTab, setNetworkTab] = useState("freeing");
   const [wardSort, setWardSort] = useState("name");
+  const [tableFullscreen, setTableFullscreen] = useState(false);
+  const [showAllColumns, setShowAllColumns] = useState(false);
+  const tableDialog = useRef<HTMLDivElement>(null);
+  useWardModalFocus(tableFullscreen, tableDialog, () => setTableFullscreen(false));
   const selectionOrigin = useRef<HTMLElement | null>(null);
   const selectionOriginId = useRef<string | null>(null);
   const restoreNetworkFocus = useRef(false);
@@ -104,6 +113,7 @@ export function CapacityScreen() {
    */
   const previouslySelectedUnitId = useRef<string | undefined>(undefined);
   function selectWard(unitId: string, opener?: HTMLElement) {
+    setTableFullscreen(false);
     selectionOrigin.current = opener ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     selectionOriginId.current = selectionOrigin.current?.id || null;
     setSelection({ unitId, generation: worldGeneration });
@@ -130,6 +140,11 @@ export function CapacityScreen() {
     target?.focus();
   }, [selectedUnitId]);
   const [networkFilterId, setNetworkFilterId] = useState("all");
+  function highlightWards(filterId: string) {
+    setNetworkFilterId(filterId);
+    tableDialog.current?.scrollIntoView({ block: "start" });
+    tableDialog.current?.focus({ preventScroll: true });
+  }
 
   const gapRows = bedKindGaps(movements, units, now);
   const gapTotals = bedKindTotals(gapRows);
@@ -283,9 +298,7 @@ export function CapacityScreen() {
             title="Statewide Capacity"
             status={shortfalls.length > 0 ? "alarm" : unallocatedCount > 0 ? "warning" : "nominal"}
             statusText={
-              shortfalls.length > 0
-                ? `${shortfalls.length} specialty bed shortfalls`
-                : "Statewide capacity nominal"
+              shortfalls.length > 0 ? `${shortfalls.length} specialty bed shortfalls` : "Statewide capacity nominal"
             }
             ariaLabel="Statewide capacity indicators"
             className={styles.headerIsland}
@@ -587,10 +600,9 @@ export function CapacityScreen() {
                         <button
                           type="button"
                           className={styles.attentionAction}
-                          onClick={() => {
-                            setNetworkFilterId("needs-confirming");
-                            document.getElementById("capacity-wards")?.scrollIntoView({ block: "start" });
-                          }}
+                          aria-pressed={networkFilterId === "needs-confirming"}
+                          aria-controls="capacity-wards"
+                          onClick={() => highlightWards("needs-confirming")}
                         >
                           {networkRows.filter((row) => !isConfirmationFresh(row.unit, now)).length} wards need
                           confirming{service !== null ? " across the whole network" : ""} · Highlight wards
@@ -598,20 +610,76 @@ export function CapacityScreen() {
                       </>
                     )}
                   </div>
-                  <div className={styles.sidebarFooter}>
-                    <Link href="/mockups/ward-flow/discharges">Discharge board</Link>
+                  <div className={styles.networkActions} role="group" aria-label="Network shortcuts">
+                    {networkFilters.map((filter) => (
+                      <button
+                        type="button"
+                        key={filter.id}
+                        aria-pressed={networkFilterId === filter.id}
+                        aria-controls="capacity-wards"
+                        onClick={() => highlightWards(filter.id)}
+                      >
+                        <span>
+                          {filter.id === "all"
+                            ? "All wards"
+                            : filter.id === "ready"
+                              ? "Ready wards"
+                              : filter.id === "locked-ready"
+                                ? "Locked beds ready"
+                                : "Check confirmations"}
+                        </span>
+                        <strong>{networkRows.filter(filter.predicate).length}</strong>
+                      </button>
+                    ))}
+                    <Link href="/mockups/ward-flow/discharges">
+                      Open discharge board <span aria-hidden="true">→</span>
+                    </Link>
                   </div>
                 </>
               )}
             </aside>
           </div>
 
-          <div id="capacity-wards" className={styles.wardsSection}>
+          <div
+            id="capacity-wards"
+            ref={tableDialog}
+            className={`${styles.wardsSection} ${tableFullscreen ? styles.tableFullscreen : ""}`}
+            role={tableFullscreen ? "dialog" : undefined}
+            aria-modal={tableFullscreen ? true : undefined}
+            aria-label={tableFullscreen ? "Ward capacity full screen" : undefined}
+            tabIndex={-1}
+          >
             <WardPanel
               title="Wards"
               count={`${networkRows.length} ${networkRows.length === 1 ? "ward" : "wards"} in the network, ${matchingNetworkRows.length} matching`}
             >
               <div className={styles.filters}>
+                <div className={styles.tableToolbar}>
+                  <p id="capacity-column-summary" className={styles.columnSummary} aria-live="polite">
+                    {showAllColumns
+                      ? "All 17 columns shown. Key columns returns to the eight-column census."
+                      : "8 key columns shown. More columns adds bed kinds, release forecasts and ward details."}
+                  </p>
+                  <button
+                    type="button"
+                    className={styles.fullscreenButton}
+                    aria-pressed={showAllColumns}
+                    aria-describedby="capacity-column-summary"
+                    aria-controls="capacity-network-table-region"
+                    onClick={() => setShowAllColumns((wasShown) => !wasShown)}
+                  >
+                    {showAllColumns ? "Key columns" : "More columns"}
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.fullscreenButton}
+                    aria-expanded={tableFullscreen}
+                    aria-controls="capacity-wards"
+                    onClick={() => setTableFullscreen((wasFullscreen) => !wasFullscreen)}
+                  >
+                    {tableFullscreen ? "Close full screen" : "Full screen"}
+                  </button>
+                </div>
                 <WardFilters
                   legend="Highlight wards"
                   activeId={networkFilterId}
@@ -642,12 +710,17 @@ export function CapacityScreen() {
                   </div>
                 </label>
               </div>
-              <div className={styles.networkBody} role="region" aria-label="Ward capacity table" tabIndex={0}>
+              <div
+                id="capacity-network-table-region"
+                className={styles.networkBody}
+                role="region"
+                aria-label="Ward capacity table"
+                tabIndex={0}
+              >
                 <WardTable
-                  className={styles.networkTable}
+                  className={`${styles.networkTable} ${showAllColumns ? styles.detailTable : styles.compactTable}`}
                   wrapperClassName={styles.networkTableScroll}
                   testId="ward-capacity-network-table"
-                  hasScrollThreshold
                 >
                   <thead>
                     <tr className={styles.stickyHeaderRow}>
@@ -1182,7 +1255,7 @@ function NetworkRow({
         {row.oldestBlockedSince !== undefined ? (
           <small className={styles.beingMadeReady} data-testid="ward-capacity-network-blocked-since">
             {dayOf(row.oldestBlockedSince) > dayOf(now)
-              ? `expected release in ${dayOf(row.oldestBlockedSince) - dayOf(now)} days`
+              ? `expected release in ${dayOf(row.oldestBlockedSince) - dayOf(now)} ${dayOf(row.oldestBlockedSince) - dayOf(now) === 1 ? "day" : "days"}`
               : `held up since ${formatInstantWithDay(row.oldestBlockedSince, now)}`}
           </small>
         ) : null}
@@ -1319,7 +1392,7 @@ function NetworkRow({
           {row.unit.authorised ? "Yes" : "No"}
         </span>
       </td>
-      <td>
+      <td className={styles.confirmationCell}>
         {/*
           🔴 WHO CONFIRMED IT, RESTORED 2026-09-05 — MY FOLD DROPPED IT AND A GREEN TEST HID THAT.
           The old capacity view passed `confirmedByRole` and `derived`; this screen replaced it and
