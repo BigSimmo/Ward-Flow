@@ -1,5 +1,7 @@
 # PsychSift design system — document set
 
+> **Current scope.** This document set was inherited from PsychSift. Apply shared design rules only within the [Ward Flow repository boundary](../../AGENTS.md). PsychSift project state, hosted CI and historical measured figures are not current Ward Flow evidence.
+
 The system of record for the v2 design system. **Rules and roles live here; values live
 only in the token files.** Source-of-truth ranking: `AGENTS.md` → `ckb-v2-tokens.css` →
 committed tests → `.design-sync/conventions.md` → this set. Where this set contradicts a
@@ -32,11 +34,13 @@ Reading order:
    with no row there is a suggestion.
 6. [FIX-GUIDE.md](FIX-GUIDE.md) — Hazard 1–2 sweep dispositions (Fixed / Documented / Deferred / Out-of-scope).
 
-Canonical code: `src/app/ckb-v2-tokens.css` is the **v2 target layer** and `globals.css` remains
-the compatibility layer. The source now mounts `.ckb-v2` literally on the global `<html>`, so every
-production surface is observed under v2. The generated [adoption manifest](adoption-manifest.json)
-records that observation. Declared v2 surfaces may keep `baseline.status: "not-committed"` with
-empty `files` so `check:design-system-adoption` / `check:design-system-contract` stay green during
-draft; human-approved Linux screenshots and exact hosted provenance remain the draft→ready gate,
-not a red CI check. Design project `08d6f126-3fd0-4764-aedf-0062a467280a` is not verified by this
-repository; local design-sync parity is not remote publication proof.
+The inherited design references identify `src/app/ckb-v2-tokens.css` as the v2 target
+layer and `globals.css` as the compatibility layer. Neither `adoption-manifest.json`
+nor `adoption-contract.json` is present in this checkout. This document therefore
+does not establish current rendered adoption, baseline status or check enforcement.
+
+Preserve the existing requirement for human-approved screenshots and exact hosted
+provenance when claiming design readiness. Inspect the current Ward Flow checks and
+applicable acceptance rules before making that claim; historical green checks and
+declared surfaces are insufficient. Design project `08d6f126-3fd0-4764-aedf-0062a467280a`
+is not verified by this repository; local design-sync parity is not remote publication proof.
