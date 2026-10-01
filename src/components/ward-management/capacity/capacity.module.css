@@ -53,109 +53,10 @@
   font-weight: 500;
 }
 
-/* Statewide Bed Telemetry Capsule matching user design & Option 1 */
-.telemetryCapsule {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.875rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 9999px;
-  padding: 0.3125rem 0.875rem;
-  box-shadow: var(--lift);
-}
-
-.telemetryItem {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: var(--t-0);
-  line-height: 1;
-}
-
-.interactiveItem {
-  cursor: pointer;
-  padding: 0.1875rem 0.375rem;
-  border-radius: var(--r1);
-  transition: background 0.15s ease;
-}
-
-.interactiveItem:hover {
-  background: var(--surface-2);
-}
-
-.interactiveItem:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
-.telemetryLabel {
-  font-size: 0.75rem; /* 12px floor */
-  font-weight: 700;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.telemetryVal {
-  font-family: var(--mono);
-  font-size: var(--t-1);
-  font-weight: 700;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-}
-
-.telemetrySub {
-  font-size: 0.75rem; /* 12px floor */
-  color: var(--muted);
-  font-weight: 500;
-}
-
-.microMeter {
-  width: 2.5rem;
-  height: 0.375rem;
-  border-radius: 9999px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  overflow: hidden;
-  margin: 0 0.125rem;
-}
-
-.microMeterBar {
-  height: 100%;
-  border-radius: 9999px;
-  background: var(--accent);
-  transition: width 0.3s ease;
-}
-
-.telemetryPillGood {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
-  background: var(--good-soft);
-  color: var(--good);
-  border: 1px solid var(--good);
-  font-family: var(--mono);
-  font-size: 0.75rem; /* 12px floor */
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.2;
-}
-
-.telemetryPillDanger {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
-  background: var(--danger-soft);
-  color: var(--danger);
-  border: 1px solid var(--danger);
-  font-family: var(--mono);
-  font-size: 0.75rem; /* 12px floor */
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.2;
+/* Statewide Bed Telemetry Dynamic HUD Island */
+.headerIsland {
+  width: auto;
+  margin-bottom: 0;
 }
 
 /*
@@ -749,7 +650,7 @@
   border-radius: 9999px;
   background: var(--surface-2);
   color: var(--muted);
-  font-size: 0.75rem;
+  font-size: var(--t-00, 0.75rem);
   font-weight: 600;
 }
 
@@ -1655,7 +1556,7 @@
   border-radius: 9999px;
   background: var(--good-soft);
   color: var(--good);
-  border: 1px solid var(--good);
+  border: 1px solid var(--good-border, var(--good));
   font-size: var(--t-0);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -2074,7 +1975,7 @@
   background: var(--surface);
   border: 1px solid var(--line);
   color: var(--muted);
-  font-size: 0.75rem;
+  font-size: var(--t-00, 0.75rem);
   font-weight: 500;
 }
 .groupWardCount {
@@ -2127,7 +2028,7 @@
   color: var(--warn);
   border: 1px solid var(--warn);
   font-family: var(--mono);
-  font-size: 0.75rem;
+  font-size: var(--t-00, 0.75rem);
   font-weight: 600;
 }
 .refreshButton {

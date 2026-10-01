@@ -40,6 +40,7 @@ import {
 
 import styles from "./alerts.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
+import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 
 /**
  * **THE ALERTS SCREEN — what is addressed to a role right now, across every movement and referral.**
@@ -846,38 +847,57 @@ export function AlertsScreen() {
           </div>
         )}
 
-        {/* Third-Edition 4-KPI Summary Strip */}
-        <div className={styles.kpiStrip}>
-          <div className={styles.kpiCard} data-tone={legal.length > 0 ? "danger" : "good"}>
-            <div className={styles.kpiHeaderRow}>
-              <span className={styles.kpiLabel}>Form expiries passed</span>
-              <LegalLimitsNotChecked variant="tag" />
-            </div>
-            <span className={styles.kpiVal}>{legal.length}</span>
-            <span className={styles.kpiSub}>
-              {legal.length > 0
-                ? "Form past expiry / action required"
-                : `0 of ${withDeadline.length} with a written deadline passed`}
-            </span>
-          </div>
-          <div className={styles.kpiCard} data-tone={declined.length > 0 ? "danger" : "good"}>
-            <span className={styles.kpiLabel}>Placement Gridlock</span>
-            <span className={styles.kpiVal}>{declined.length}</span>
-            <span className={styles.kpiSub}>
-              {declined.length > 0 ? "≥3 Parallel Declines" : `0 of ${declineCandidates} declined by every ward asked`}
-            </span>
-          </div>
-          <div className={styles.kpiCard} data-tone={prolongedEdCount > 0 ? "warn" : "good"}>
-            <span className={styles.kpiLabel}>Prolonged ED Wait (&gt;24h)</span>
-            <span className={styles.kpiVal}>{prolongedEdCount}</span>
-            <span className={styles.kpiSub}>Metropolitan Emergency Hubs</span>
-          </div>
-          <div className={styles.kpiCard} data-tone="accent">
-            <span className={styles.kpiLabel}>Active Monitored</span>
-            <span className={styles.kpiVal}>{totalActive}</span>
-            <span className={styles.kpiSub}>Separated by Role</span>
-          </div>
-        </div>
+        {/* Contextual Dynamic HUD Island */}
+        <WardDynamicIsland
+          title="Clinical Alerts"
+          status={legal.length > 0 || declined.length > 0 ? "alarm" : prolongedEdCount > 0 ? "warning" : "nominal"}
+          statusText={
+            legal.length > 0
+              ? `${legal.length} form expiries passed`
+              : declined.length > 0
+                ? `${declined.length} placement gridlocks`
+                : prolongedEdCount > 0
+                  ? `${prolongedEdCount} prolonged ED waits`
+                  : "All clinical escalation tiers nominal"
+          }
+          ariaLabel="Clinical alerts summary indicators"
+          testId="ward-alerts-hud-island"
+          metrics={[
+            {
+              id: "kpi-legal-expiries",
+              label: "Form expiries passed",
+              value: legal.length,
+              tone: legal.length > 0 ? "danger" : "good",
+              subtext:
+                legal.length > 0
+                  ? "Form past expiry / action required"
+                  : `0 of ${withDeadline.length} with a written deadline passed`,
+            },
+            {
+              id: "kpi-gridlock",
+              label: "Placement Gridlock",
+              value: declined.length,
+              tone: declined.length > 0 ? "danger" : "good",
+              subtext:
+                declined.length > 0
+                  ? "≥3 Parallel Declines"
+                  : `0 of ${declineCandidates} declined by every ward asked`,
+            },
+            {
+              id: "kpi-ed-wait",
+              label: "Prolonged ED Wait",
+              value: prolongedEdCount,
+              tone: prolongedEdCount > 0 ? "warn" : "good",
+            },
+            {
+              id: "kpi-active-monitored",
+              label: "Active Monitored",
+              value: totalActive,
+              tone: "accent",
+            },
+          ]}
+          actions={<LegalLimitsNotChecked variant="tag" />}
+        />
 
         {/* Unified Operational Filter & Control Toolbar */}
         <div className={styles.toolbarCard}>

@@ -201,15 +201,8 @@
 }
 
 @keyframes pulseSurge {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.4;
-    transform: scale(1.2);
-  }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.2); }
 }
 
 .eyebrow {
@@ -370,14 +363,8 @@
 }
 
 @keyframes popoverFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .popoverHdr {
@@ -566,6 +553,11 @@
   border-color: var(--danger-ink);
 }
 
+/* Micro-HUD Dynamic Island Wrapper */
+.hudWrapper {
+  margin-bottom: var(--ward-space-12, 0.75rem);
+}
+
 /* KPI Summary Strip */
 .kpiStrip {
   display: grid;
@@ -679,9 +671,7 @@
   background: var(--surface);
   color: var(--ink);
   outline: none;
-  transition:
-    border-color 0.12s,
-    box-shadow 0.12s;
+  transition: border-color 0.12s, box-shadow 0.12s;
   min-height: var(--ward-tap, 48px);
 }
 
@@ -1863,9 +1853,7 @@
 .stationArrow {
   color: var(--muted);
   flex-shrink: 0;
-  transition:
-    transform 0.15s ease,
-    color 0.15s ease;
+  transition: transform 0.15s ease, color 0.15s ease;
 }
 
 .stationBtn:hover .stationArrow {

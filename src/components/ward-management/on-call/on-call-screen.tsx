@@ -28,6 +28,7 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 
 import styles from "./on-call.module.css";
 
@@ -194,7 +195,8 @@ export function OnCallScreen() {
 
     // 1. Network-wide roles
     for (const role of NETWORK_ON_CALL_ROLES) {
-      const facility = role.id === "bed-coordinator" ? "Central Bed Desk" : "Clinical Governance & Statewide Tier 3";
+      const facility =
+        role.id === "bed-coordinator" ? "Central Bed Desk" : "Clinical Governance & Statewide Tier 3";
       const holder = role.id === "bed-coordinator" ? "Operations Lead" : "Executive Duty Lead";
 
       items.push({
@@ -326,68 +328,61 @@ export function OnCallScreen() {
               </span>
             </div>
           </div>
-          <div className={styles.headerActions}>
+        </header>
+
+        {/* Dynamic HUD Island derived from roster facts */}
+        <WardDynamicIsland
+          testId="ward-on-call-hud-island"
+          title="On-Call Network"
+          status={consultantCount === 0 ? "warning" : "nominal"}
+          statusText={
+            consultantCount === 0
+              ? "Consultant coverage gap"
+              : "All statewide on-call networks active"
+          }
+          ariaLabel="On-call management indicators"
+          metrics={[
+            {
+              id: "kpi-bed-desk-lead",
+              label: "Bed Desk Lead",
+              value: "Active",
+              subtext: "20:00–08:00",
+              tone: "accent",
+            },
+            {
+              id: "kpi-duty-consultants",
+              label: "Duty Consultants",
+              value: consultantCount,
+              subtext: "Rostered",
+              tone: consultantCount > 0 ? "good" : "danger",
+            },
+            {
+              id: "kpi-exec-escalation",
+              label: "Executive Escalation",
+              value: "On Standby",
+              tone: "warn",
+            },
+            {
+              id: "kpi-ed-liaison",
+              label: "ED Liaison",
+              value: departments.length,
+              subtext: "EDs active",
+              tone: "good",
+            },
+          ]}
+          actions={
             <button
               ref={triggerButtonRef}
               type="button"
               className={`${styles.btn} ${styles.dangerBtn}`}
+              data-testid="ward-tier-3-escalate-btn"
               onClick={() => setEscalationOpen(true)}
+              aria-label="Trigger Tier 3 Escalation"
             >
               <ShieldAlert size={14} aria-hidden="true" className={styles.btnIcon} />! Trigger Tier 3 Escalation
             </button>
-          </div>
-        </header>
-
-        {/* 4-Card KPI Strip derived from roster facts */}
-        <div className={styles.kpiStrip} aria-label="On-call directory metrics">
-          <div className={styles.kpiCard} data-tone="accent">
-            <div className={styles.kpiCardTop}>
-              <span className={styles.kpiLabel}>State Bed Desk Lead</span>
-              <span className={`${styles.kpiPill} ${styles.kpiPillAccent}`}>Active on Duty</span>
-            </div>
-            <div className={styles.kpiValRow}>
-              <Layers size={18} aria-hidden="true" className={styles.kpiLeadIcon} />
-              <span className={styles.kpiVal}>Central Coordination</span>
-            </div>
-            <div className={styles.kpiSub}>Shift 20:00–08:00 &middot; Statewide Bed Desk</div>
-          </div>
-
-          <div className={styles.kpiCard} data-tone="good">
-            <div className={styles.kpiCardTop}>
-              <span className={styles.kpiLabel}>Duty Consultant Coverage</span>
-              <span className={`${styles.kpiPill} ${styles.kpiPillGood}`}>{consultantCount} Rostered</span>
-            </div>
-            <div className={styles.kpiValRow}>
-              <Building2 size={18} aria-hidden="true" className={styles.kpiLeadIcon} />
-              <span className={styles.kpiVal}>Adult &amp; Specialty</span>
-            </div>
-            <div className={styles.kpiSub}>Psychiatric Consultant Roster &middot; Statewide</div>
-          </div>
-
-          <div className={styles.kpiCard} data-tone="warn">
-            <div className={styles.kpiCardTop}>
-              <span className={styles.kpiLabel}>Executive Escalation</span>
-              <span className={`${styles.kpiPill} ${styles.kpiPillWarn}`}>On Standby</span>
-            </div>
-            <div className={styles.kpiValRow}>
-              <ShieldCheck size={18} aria-hidden="true" className={styles.kpiLeadIcon} />
-              <span className={styles.kpiVal}>Governance Lead</span>
-            </div>
-            <div className={styles.kpiSub}>Standing by for Tier 3 Overrides &middot; Home Roster</div>
-          </div>
-
-          <div className={styles.kpiCard} data-tone="good">
-            <div className={styles.kpiCardTop}>
-              <span className={styles.kpiLabel}>ED Liaison Coverage</span>
-              <span className={`${styles.kpiPill} ${styles.kpiPillGood}`}>{departments.length} Active</span>
-            </div>
-            <div className={styles.kpiValRow}>
-              <Radio size={18} aria-hidden="true" className={styles.kpiLeadIcon} />
-              <span className={styles.kpiVal}>Hospital Emergency</span>
-            </div>
-            <div className={styles.kpiSub}>Emergency Department Liaison Network</div>
-          </div>
-        </div>
+          }
+        />
 
         {/* Filter Bar & Fast Search */}
         <div className={styles.filterControlBar}>
@@ -464,9 +459,7 @@ export function OnCallScreen() {
                       <th scope="col">Level</th>
                       <th scope="col">Shift</th>
                       <th scope="col">Status</th>
-                      <th scope="col" className={styles.actionColHeader}>
-                        Action
-                      </th>
+                      <th scope="col" className={styles.actionColHeader}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -564,9 +557,7 @@ export function OnCallScreen() {
                       <th scope="col">Health Service</th>
                       <th scope="col">Liaison Role</th>
                       <th scope="col">Handover</th>
-                      <th scope="col" className={styles.actionColHeader}>
-                        Action
-                      </th>
+                      <th scope="col" className={styles.actionColHeader}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -583,7 +574,9 @@ export function OnCallScreen() {
                             </td>
                             <td className={styles.siteCell}>{site?.name ?? "Regional Directory"}</td>
                             <td>
-                              <span className={styles.serviceChip}>{site?.service ?? "Regional"}</span>
+                              <span className={styles.serviceChip}>
+                                {site?.service ?? "Regional"}
+                              </span>
                             </td>
                             <td>
                               <span className={styles.coordinatorRole}>{coordinatorTitle}</span>

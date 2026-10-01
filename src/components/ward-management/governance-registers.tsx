@@ -2,7 +2,6 @@
 
 import { CheckCircle2, ChevronDown, ChevronRight, ClipboardList, Fingerprint, History } from "lucide-react";
 import Link from "next/link";
-import { formTitleForCode } from "@/lib/form-register";
 import { useState, useEffect, useRef, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { OverrideRegister } from "@/components/ward-management/override-register";
@@ -24,6 +23,7 @@ import { LEAVING_DESTINATIONS } from "./ward-admissions";
 import { legalFormReceiptCorrectionReasonLabels } from "./ward-change-reasons";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import { movementHref, unitHref } from "./shell/ward-facade";
+import { WardDynamicIsland } from "./shell/ward-dynamic-island";
 
 import se from "./ward-modes-second-edition.module.css";
 import thirdEdition from "./governance-third-edition.module.css";
@@ -513,8 +513,7 @@ const SAMPLE_OVERRIDES: GovernanceOverrideItem[] = [
     service: "North Metro",
     route: "North Metro · Sir Charles Gairdner MHU",
     category: "Catchment Boundary Bypass",
-    reason:
-      "Catchment boundary bypass authorised: patient resides in South Metro, urgent specialist stabilization needed.",
+    reason: "Catchment boundary bypass authorised: patient resides in South Metro, urgent specialist stabilization needed.",
     by: "State Bed Coordinator",
     recordedAgoText: "Shift handover",
     status: "Pending Review",
@@ -653,7 +652,7 @@ const SAMPLE_DECISIONS: GovernanceDecisionItem[] = [
 const SAMPLE_RESTRICTIVE_PRACTICES: GovernanceRestrictiveItem[] = [
   {
     id: "RP-101",
-    form: `Form 10${formTitleForCode("10") ? ` (${formTitleForCode("10")})` : ""}`,
+    form: "Form 10 (Bodily Restraint)",
     patient: "Harper, Chloe · UMRN UM100412",
     unit: "Bentley · Adult Secure Unit",
     authorisedBy: "Dr. S. Banner (Consultant)",
@@ -664,7 +663,7 @@ const SAMPLE_RESTRICTIVE_PRACTICES: GovernanceRestrictiveItem[] = [
   },
   {
     id: "RP-102",
-    form: `Form 11${formTitleForCode("11") ? ` (${formTitleForCode("11")})` : ""}`,
+    form: "Form 11 (Seclusion)",
     patient: "Vance, Eleanor · UMRN UM100884",
     unit: "Bentley · Adult Secure Unit",
     authorisedBy: "Dr. C. Thorne (Duty Consultant)",
@@ -675,7 +674,7 @@ const SAMPLE_RESTRICTIVE_PRACTICES: GovernanceRestrictiveItem[] = [
   },
   {
     id: "RP-103",
-    form: `Form 10${formTitleForCode("10") ? ` (${formTitleForCode("10")})` : ""}`,
+    form: "Form 10 (Bodily Restraint)",
     patient: "Gallagher, Liam · UMRN UM100721",
     unit: "Sir Charles Gairdner MHU",
     authorisedBy: "Dr. M. Reid (Psychiatrist)",
@@ -714,7 +713,15 @@ export function GovernanceWorkbench(props: WorkbenchProps) {
   return <GovernanceSession key={props.api?.worldGeneration ?? "unavailable"} {...props} />;
 }
 
-function GovernanceSession({ movements, units, now, api, legacyChanges, effectiveness, sampleData }: WorkbenchProps) {
+function GovernanceSession({
+  movements,
+  units,
+  now,
+  api,
+  legacyChanges,
+  effectiveness,
+  sampleData,
+}: WorkbenchProps) {
   const hasSampleData = sampleData !== undefined ? sampleData : Boolean(api);
   const patientOf = usePatientOf();
   const [tab, setTab] = useState<GovernanceRegisterTab>("overrides");
@@ -731,9 +738,15 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
     decision: AuditReview["decision"];
   } | null>(null);
 
-  const [overrideList, setOverrideList] = useState<GovernanceOverrideItem[]>(hasSampleData ? SAMPLE_OVERRIDES : []);
-  const [decisionList, setDecisionList] = useState<GovernanceDecisionItem[]>(hasSampleData ? SAMPLE_DECISIONS : []);
-  const [selectedOverrideId, setSelectedOverrideId] = useState<string | null>(hasSampleData ? "OVR-107" : null);
+  const [overrideList, setOverrideList] = useState<GovernanceOverrideItem[]>(
+    hasSampleData ? SAMPLE_OVERRIDES : [],
+  );
+  const [decisionList, setDecisionList] = useState<GovernanceDecisionItem[]>(
+    hasSampleData ? SAMPLE_DECISIONS : [],
+  );
+  const [selectedOverrideId, setSelectedOverrideId] = useState<string | null>(
+    hasSampleData ? "OVR-107" : null,
+  );
 
   const [modalOpen, setModalOpen] = useState(false);
   // The endorse form starts empty. It used to arrive pre-filled with a verdict, a reviewing role and
@@ -855,16 +868,8 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
     { id: "overrides", label: "Overrides Register", count: totalMonitored },
     { id: "decisions", label: "Decision Log", count: decisionList.length },
     { id: "access", label: "Session Access Record", count: 0 },
-    {
-      id: "restrictive",
-      label: "Restrictive Practices (Forms 10/11)",
-      count: hasSampleData ? SAMPLE_RESTRICTIVE_PRACTICES.length : 0,
-    },
-    {
-      id: "search-seizure",
-      label: "Search & Seizure (Form 8)",
-      count: hasSampleData ? SAMPLE_SEARCH_SEIZURE.length : 0,
-    },
+    { id: "restrictive", label: "Restrictive Practices (Forms 10/11)", count: hasSampleData ? SAMPLE_RESTRICTIVE_PRACTICES.length : 0 },
+    { id: "search-seizure", label: "Search & Seizure (Form 8)", count: hasSampleData ? SAMPLE_SEARCH_SEIZURE.length : 0 },
     { id: "legacy", label: "Legacy facts" },
     ...(effectiveness ? [{ id: "measures" as const, label: "Effectiveness" }] : []),
   ];
@@ -1068,47 +1073,58 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
 
   return (
     <div className={thirdEdition.governanceWorkspace} data-testid="ward-governance-workbench">
-      <div className={thirdEdition.executiveSentence} role="region" aria-label="Clinical governance indicators">
-        <p className={thirdEdition.sentenceText}>
-          <span className={thirdEdition.sentenceIntro}>This session:</span> monitoring{" "}
-          <span className={thirdEdition.metricToken} data-tone="warn">
-            <span className={`${thirdEdition.metricValue} mono`} id="kpi-monitored">
-              {totalMonitored}
-            </span>{" "}
-            <span className={thirdEdition.metricLabel}>Overrides Monitored</span>
+      <WardDynamicIsland
+        title={
+          <>
+            Governance HUD <span style={{ opacity: 0.75, fontWeight: 500, fontSize: "var(--t-0, 12px)" }}>· This session</span>
+          </>
+        }
+        status={totalMonitored > 0 ? "warning" : "nominal"}
+        statusText={totalMonitored > 0 ? `${totalMonitored} overrides monitored` : "All clinical gates nominal"}
+        ariaLabel="Clinical governance indicators"
+        testId="ward-governance-hud-island"
+        metrics={[
+          {
+            id: "kpi-monitored",
+            label: "Overrides",
+            value: totalMonitored,
+            tone: "warn",
+            ariaLabel: `${totalMonitored} Overrides Monitored`,
+          },
+          {
+            id: "kpi-catchment",
+            label: "Catchment",
+            value: catchmentBypasses,
+            tone: "accent",
+            ariaLabel: `${catchmentBypasses} Catchment Bypasses`,
+          },
+          {
+            id: "kpi-acuity",
+            label: "Acuity",
+            value: acuityCeilings,
+            tone: "warn",
+            ariaLabel: `${acuityCeilings} Acuity Ceilings Bypassed`,
+          },
+          {
+            id: "kpi-upheld",
+            label: "Upheld",
+            value: reviewedUpheld,
+            tone: "good",
+            ariaLabel: `${reviewedUpheld} Reviewed & Upheld`,
+          },
+        ]}
+        actions={
+          <span className={thirdEdition.sentenceSub} style={{ margin: 0, paddingLeft: 4 }}>
+            Safety incidents not recorded
           </span>
-          , including{" "}
-          <span className={thirdEdition.metricToken} data-tone="accent">
-            <span className={`${thirdEdition.metricValue} mono`} id="kpi-catchment">
-              {catchmentBypasses}
-            </span>{" "}
-            <span className={thirdEdition.metricLabel}>Catchment Bypasses</span>
-          </span>{" "}
-          and{" "}
-          <span className={thirdEdition.metricToken} data-tone="warn">
-            <span className={`${thirdEdition.metricValue} mono`} id="kpi-acuity">
-              {acuityCeilings}
-            </span>{" "}
-            <span className={thirdEdition.metricLabel}>Acuity Ceilings Bypassed</span>
-          </span>
-          . Governance status:{" "}
-          <span className={thirdEdition.metricToken} data-tone="good">
-            <span className={`${thirdEdition.metricValue} mono`} id="kpi-upheld">
-              {reviewedUpheld}
-            </span>{" "}
-            <span className={thirdEdition.metricLabel}>Reviewed &amp; Upheld</span>
-          </span>{" "}
-          — <span className={thirdEdition.sentenceSub}>Safety incidents not recorded</span>.
-        </p>
-      </div>
+        }
+      />
 
       <div className={thirdEdition.workspaceBar} role="region" aria-label="Governance session status and actions">
         <div className={thirdEdition.workspaceMeta}>
           <span className={thirdEdition.sessionDot} aria-hidden="true" />
           <p className={thirdEdition.workspaceNote}>Captured this session · resets with demo</p>
-          <span className={thirdEdition.metaDot} aria-hidden="true">
-            ·
-          </span>
+          <span className={thirdEdition.metaDot} aria-hidden="true">·</span>
           <div className={thirdEdition.summary}>
             <span className={thirdEdition.summaryPill}>
               <strong>{allowed ? events.length : "—"}</strong> captured
