@@ -17,12 +17,7 @@ import {
 
 import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
 
-import {
-  destinationUnit,
-  searchMovements,
-  stageCopy,
-  type MovementSearchQuery,
-} from "@/components/ward-management/ward-derivations";
+import { destinationUnit, stageCopy } from "@/components/ward-management/ward-derivations";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
@@ -386,11 +381,11 @@ export function WardGlobalSearch({
     }
 
     return g;
-  }, [smartResults, units]);
+  }, [smartResults, units, patients, movements]);
 
   const options = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
-  const showPopup = open && query.trim().length > 0 && trimmed.length > 0;
+  const showPopup = open && deferredQuery === query && query.trim().length > 0 && trimmed.length > 0;
 
   /*
    * THE ACTIVE ROW RESETS WHENEVER THE OPTION LIST CHANGES IDENTITY — same render-phase adjustment
@@ -544,6 +539,7 @@ export function WardGlobalSearch({
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
+            setActiveIndex(-1);
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}

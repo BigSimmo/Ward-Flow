@@ -816,7 +816,11 @@
   justify-content: space-between;
   gap: 0.25rem;
   cursor: pointer;
-  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease,
+    background 0.12s ease;
   user-select: none;
   text-align: left;
 }
@@ -831,7 +835,9 @@
 }
 .kpiCardActive {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent), 0 2px 8px -1px color-mix(in srgb, var(--accent) 20%, transparent);
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 2px 8px -1px color-mix(in srgb, var(--accent) 20%, transparent);
   background: color-mix(in srgb, var(--surface) 94%, var(--accent));
 }
 .kpiCard[data-tone="danger"] .kpiVal {
@@ -848,22 +854,30 @@
 }
 .kpiCard[data-tone="danger"].kpiCardActive {
   border-color: var(--danger);
-  box-shadow: 0 0 0 1px var(--danger), 0 2px 8px -1px color-mix(in srgb, var(--danger) 20%, transparent);
+  box-shadow:
+    0 0 0 1px var(--danger),
+    0 2px 8px -1px color-mix(in srgb, var(--danger) 20%, transparent);
   background: color-mix(in srgb, var(--surface) 94%, var(--danger));
 }
 .kpiCard[data-tone="good"].kpiCardActive {
   border-color: var(--good);
-  box-shadow: 0 0 0 1px var(--good), 0 2px 8px -1px color-mix(in srgb, var(--good) 20%, transparent);
+  box-shadow:
+    0 0 0 1px var(--good),
+    0 2px 8px -1px color-mix(in srgb, var(--good) 20%, transparent);
   background: color-mix(in srgb, var(--surface) 94%, var(--good));
 }
 .kpiCard[data-tone="warn"].kpiCardActive {
   border-color: var(--warn);
-  box-shadow: 0 0 0 1px var(--warn), 0 2px 8px -1px color-mix(in srgb, var(--warn) 20%, transparent);
+  box-shadow:
+    0 0 0 1px var(--warn),
+    0 2px 8px -1px color-mix(in srgb, var(--warn) 20%, transparent);
   background: color-mix(in srgb, var(--surface) 94%, var(--warn));
 }
 .kpiCard[data-tone="accent"].kpiCardActive {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent), 0 2px 8px -1px color-mix(in srgb, var(--accent) 20%, transparent);
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 2px 8px -1px color-mix(in srgb, var(--accent) 20%, transparent);
   background: color-mix(in srgb, var(--surface) 94%, var(--accent));
 }
 .kpiTopRow {
@@ -1166,7 +1180,7 @@
 /* ─── Interactive Row & Patient Bridge ─── */
 .interactiveRow {
   cursor: pointer;
-  transition: background-color var(--transition-fast, 150ms ease);
+  transition: background-color 150ms ease;
 }
 
 .interactiveRow:hover {
@@ -1222,11 +1236,11 @@
   border: 1px solid var(--accent);
   border-radius: var(--radius-sm, 6px);
   cursor: pointer;
-  transition: all var(--transition-fast, 150ms ease);
+  transition: all 150ms ease;
 }
 
 .viewPatientRecordBtn:hover {
-  background: var(--accent-subtle, var(--accent-soft));
+  background: var(--accent-soft);
   border-color: var(--accent);
 }
 
@@ -1250,7 +1264,6 @@
 }
 
 :global([data-theme="dark"]) .viewPatientRecordBtn:hover {
-  background: var(--accent-subtle, var(--accent-soft));
+  background: var(--accent-soft);
   border-color: var(--accent);
 }
-

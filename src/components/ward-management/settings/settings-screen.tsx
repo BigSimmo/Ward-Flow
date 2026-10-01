@@ -49,10 +49,7 @@ import {
   PARALLEL_REFERRAL_CAP_RANGE,
   PULL_HOLD_RANGE_MINUTES,
 } from "@/components/ward-management/ward-model";
-import {
-  useAudioBuzzPreference,
-  setAudioBuzzPreference,
-} from "@/components/ward-management/shell/ward-sound-store";
+import { useAudioBuzzPreference, setAudioBuzzPreference } from "@/components/ward-management/shell/ward-sound-store";
 import {
   useWallboardRefreshPreference,
   setWallboardRefreshPreference,
@@ -991,10 +988,7 @@ export function SettingsScreen() {
 
                         {/* Second Warning Before A Legal Due Time Stepper & Slider */}
                         {isRowVisible("setting-due-soon") && (
-                          <div
-                            className={`${styles.settingRow} ${styles.vertical}`}
-                            data-testid="setting-due-soon-row"
-                          >
+                          <div className={`${styles.settingRow} ${styles.vertical}`} data-testid="setting-due-soon-row">
                             <div className={styles.rowMeta}>
                               <span className={styles.rowTitle}>
                                 Second warning before a legal due time

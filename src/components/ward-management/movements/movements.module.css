@@ -585,7 +585,9 @@
   background: var(--surface);
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
   box-sizing: border-box;
 }
 
@@ -1175,7 +1177,9 @@
   background: var(--surface);
   box-shadow: var(--lift-sm);
   scroll-margin-block: 0.5rem;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .movementRecord:last-child {
@@ -1826,7 +1830,6 @@
   font-size: var(--t-0);
 }
 
-
 @media (max-width: 78.125rem) {
   .trafficSplit {
     grid-template-columns: 1fr;
@@ -2375,7 +2378,10 @@
   line-height: 1.3;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .jumpToWardBtn:hover {
@@ -2406,7 +2412,10 @@
   line-height: 1.3;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .jumpToWardLink:hover {

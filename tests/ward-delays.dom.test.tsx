@@ -44,7 +44,9 @@ describe("Delays screen typography floor and DOM assertions (O-16.2)", () => {
     const requiredFloors = ["delays-cause", "delays-profile", "delays-wait", "delays-since"] as const;
     for (const floor of requiredFloors) {
       const elements = document.querySelectorAll(`[data-ward-type-floor="${floor}"]`);
-      expect(elements.length, `Expected at least one [data-ward-type-floor="${floor}"] in Delays DOM`).toBeGreaterThan(0);
+      expect(elements.length, `Expected at least one [data-ward-type-floor="${floor}"] in Delays DOM`).toBeGreaterThan(
+        0,
+      );
     }
   });
 

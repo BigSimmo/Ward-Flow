@@ -269,8 +269,15 @@
         animation: pulseAnimation 2s infinite ease-in-out;
       }
       @keyframes pulseAnimation {
-        0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.25); opacity: 0.6; }
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.25);
+          opacity: 0.6;
+        }
       }
       .flightDeckBadgeText {
         font-size: var(--t-0);
@@ -959,9 +966,7 @@
         <div class="railScroll">
           <div class="railGroup">
             <div class="railEyebrow">Transit Hub</div>
-            <button class="railLink" type="button" aria-current="page">
-              Transit Command
-            </button>
+            <button class="railLink" type="button" aria-current="page">Transit Command</button>
             <button class="railLink" type="button" onclick="location.href = 'ward-board-third-edition.html'">
               Ward Bed Board
             </button>
@@ -1004,16 +1009,16 @@
               <span class="flightDeckBadgeText">TRANSIT DISPATCH COMMAND</span>
             </div>
             <span class="flightDeckSep" aria-hidden="true">&middot;</span>
-            <span class="flightDeckCount">
-              <strong>13</strong> active patient transfers across statewide network
-            </span>
+            <span class="flightDeckCount"> <strong>13</strong> active patient transfers across statewide network </span>
           </div>
           <div class="hdrEnd">
             <button class="btn sm" id="themeToggle" type="button">Dark Theme</button>
             <button
               class="btn primary sm"
               type="button"
-              onclick="openHandoverModal('WF-028', 'Joondalup Health Campus ED', 'Graylands Hospital — Dorrington Ward')"
+              onclick="
+                openHandoverModal('WF-028', 'Joondalup Health Campus ED', 'Graylands Hospital — Dorrington Ward')
+              "
             >
               + Transport Handover
             </button>
@@ -1024,7 +1029,10 @@
           <!-- Honesty Governance Card -->
           <div class="govCard" data-testid="ward-officer-governance">
             <b>Transport Logistics Contract:</b>
-            <span>The system records transport provider organisations (Ambulance service, Patient transport service, Ward escort), never individual driver names. Displays every active transit run across Western Australia.</span>
+            <span
+              >The system records transport provider organisations (Ambulance service, Patient transport service, Ward
+              escort), never individual driver names. Displays every active transit run across Western Australia.</span
+            >
           </div>
 
           <!-- 4-Card Executive Telemetry Strip -->
@@ -1113,7 +1121,11 @@
                   </div>
                   <div class="jobHeaderActions">
                     <span class="jobWaitMeta">48m elapsed</span>
-                    <button type="button" class="btnInspect" onclick="openFormVerificationModal('WF-028', 'Elena Rostova')">
+                    <button
+                      type="button"
+                      class="btnInspect"
+                      onclick="openFormVerificationModal('WF-028', 'Elena Rostova')"
+                    >
                       Inspect Form 4A
                     </button>
                   </div>
@@ -1140,9 +1152,7 @@
                     <span class="stageBar" data-s="now"></span>
                     <span class="stageBar" data-s="todo"></span>
                   </div>
-                  <p class="stageLine">
-                    <strong>Collected</strong><span>, next delivered</span>
-                  </p>
+                  <p class="stageLine"><strong>Collected</strong><span>, next delivered</span></p>
                 </div>
 
                 <!-- Metadata Matrix -->
@@ -1178,7 +1188,9 @@
                   <button type="button" class="actionButton" disabled>Accepted</button>
                   <button type="button" class="actionButton" disabled>En route</button>
                   <button type="button" class="actionButton activeStep">Collected</button>
-                  <button type="button" class="actionButton primary" onclick="confirmArrival('WF-028')">Delivered</button>
+                  <button type="button" class="actionButton primary" onclick="confirmArrival('WF-028')">
+                    Delivered
+                  </button>
                 </div>
               </div>
 
@@ -1193,7 +1205,11 @@
                   </div>
                   <div class="jobHeaderActions">
                     <span class="jobWaitMeta">22m elapsed</span>
-                    <button type="button" class="btnInspect" onclick="openFormVerificationModal('WF-009', 'Tobias Wren')">
+                    <button
+                      type="button"
+                      class="btnInspect"
+                      onclick="openFormVerificationModal('WF-009', 'Tobias Wren')"
+                    >
                       Inspect Form 1A
                     </button>
                   </div>
@@ -1220,9 +1236,7 @@
                     <span class="stageBar" data-s="todo"></span>
                     <span class="stageBar" data-s="todo"></span>
                   </div>
-                  <p class="stageLine">
-                    <strong>En route</strong><span>, next collected</span>
-                  </p>
+                  <p class="stageLine"><strong>En route</strong><span>, next collected</span></p>
                 </div>
 
                 <!-- Metadata Matrix -->
@@ -1257,7 +1271,9 @@
                 <div class="actionRow">
                   <button type="button" class="actionButton" disabled>Accepted</button>
                   <button type="button" class="actionButton activeStep">En route</button>
-                  <button type="button" class="actionButton primary" onclick="recordStage('WF-009', 'Collected')">Collected</button>
+                  <button type="button" class="actionButton primary" onclick="recordStage('WF-009', 'Collected')">
+                    Collected
+                  </button>
                   <button type="button" class="actionButton" disabled>Delivered</button>
                 </div>
               </div>
@@ -1274,7 +1290,11 @@
                   </div>
                   <div class="jobHeaderActions">
                     <span class="jobWaitMeta">8m elapsed</span>
-                    <button type="button" class="btnInspect" onclick="openFormVerificationModal('WF-041', 'Marcus Chen')">
+                    <button
+                      type="button"
+                      class="btnInspect"
+                      onclick="openFormVerificationModal('WF-041', 'Marcus Chen')"
+                    >
                       Inspect Dossier
                     </button>
                   </div>
@@ -1301,9 +1321,7 @@
                     <span class="stageBar" data-s="todo"></span>
                     <span class="stageBar" data-s="todo"></span>
                   </div>
-                  <p class="stageLine">
-                    <strong>Accepted</strong><span>, next en route</span>
-                  </p>
+                  <p class="stageLine"><strong>Accepted</strong><span>, next en route</span></p>
                 </div>
 
                 <!-- Metadata Matrix -->
@@ -1337,7 +1355,9 @@
                 <!-- Segmented Action Buttons -->
                 <div class="actionRow">
                   <button type="button" class="actionButton activeStep">Accepted</button>
-                  <button type="button" class="actionButton primary" onclick="recordStage('WF-041', 'En route')">En route</button>
+                  <button type="button" class="actionButton primary" onclick="recordStage('WF-041', 'En route')">
+                    En route
+                  </button>
                   <button type="button" class="actionButton" disabled>Collected</button>
                   <button type="button" class="actionButton" disabled>Delivered</button>
                 </div>
@@ -1372,16 +1392,20 @@
 
           <div style="display: grid; gap: 8px">
             <label style="display: flex; align-items: center; gap: 8px; font-size: var(--t-1)">
-              <input type="checkbox" checked disabled /> Patient identity verified with Emergency Department liaison nurse
+              <input type="checkbox" checked disabled /> Patient identity verified with Emergency Department liaison
+              nurse
             </label>
             <label style="display: flex; align-items: center; gap: 8px; font-size: var(--t-1)">
-              <input type="checkbox" checked disabled /> Form 4A original document received with physical medical records package
+              <input type="checkbox" checked disabled /> Form 4A original document received with physical medical
+              records package
             </label>
             <label style="display: flex; align-items: center; gap: 8px; font-size: var(--t-1)">
-              <input type="checkbox" checked disabled /> Personal effects manifest signed and loaded in vehicle secure compartment
+              <input type="checkbox" checked disabled /> Personal effects manifest signed and loaded in vehicle secure
+              compartment
             </label>
             <label style="display: flex; align-items: center; gap: 8px; font-size: var(--t-1)">
-              <input type="checkbox" checked disabled /> Destination receiving nurse notified of vehicle transit departure
+              <input type="checkbox" checked disabled /> Destination receiving nurse notified of vehicle transit
+              departure
             </label>
           </div>
         </div>

@@ -417,9 +417,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                     0 Pending
                   </span>
                 )}
-                <h2 className={styles.panelTitle}>
-                  {activeMovement ? "Incoming Referral" : "Bed request"}
-                </h2>
+                <h2 className={styles.panelTitle}>{activeMovement ? "Incoming Referral" : "Bed request"}</h2>
               </div>
               {activeMovement && <span className={styles.panelSub}>Emergency Department Origin</span>}
             </div>

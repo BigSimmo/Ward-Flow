@@ -11,10 +11,8 @@ import styles from "./ward-flow-layout.module.css";
 
 /**
  * Holds the shared reducer state and clock above every ward route, same as the
- * pre-move layout. The order matters, matching
- * `src/app/mockups/care-plan/layout.tsx` and `src/app/mockups/caring-contacts/layout.tsx`:
- * `WardFlowAccessGate` is outermost, so an unauthorised visitor meets the developer-key
- * screen and never reaches `WardFlowProvider` or any prototype content. No
+ * pre-move layout. There is no access gate: the developer key was removed on 28 September 2026
+ * at Josh's request, so Ward Flow (synthetic data only) opens without one. No
  * screen wires the provider itself: a route rendered without this layout in its
  * path must throw via `useWardFlow` rather than render a substituted empty world.
  *
@@ -58,8 +56,8 @@ import styles from "./ward-flow-layout.module.css";
  * ðŸ”´ **D-16, THE PRIMARY-ACTION SEAM: `WardBar` BECAME `WardBarMount` HERE.** The bar's own
  * `primaryAction` prop needs `WARD_PRIMARY_ACTIONS` resolved against the current route
  * (`resolveWardPrimaryAction`, `ward-nav.ts`) â€” a lookup this layout cannot perform itself despite
- * being the file the brief names for it: this file must stay a Server Component (it renders
- * `WardFlowAccessGate` directly, which reads `next/headers`), so it cannot call `usePathname()`.
+ * being the file the brief names for it: this file is a Server Component, so it cannot call
+ * `usePathname()`.
  * `WardBarMount` (`shell/ward-bar.tsx`, exported alongside `WardBar` itself) is the thin Client
  * Component that does that one resolution and passes the result into `WardBar` as a prop â€” see its
  * own doc comment for the full reasoning. This layout's own composition is otherwise unchanged.

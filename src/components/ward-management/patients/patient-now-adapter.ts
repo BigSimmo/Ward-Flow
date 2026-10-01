@@ -6,7 +6,12 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import { patientDisplayName } from "@/components/ward-management/ward-patients";
 import { edById } from "@/components/ward-management/ward-sites";
 import { stageCopy, transportLeg } from "@/components/ward-management/ward-derivations";
-import { type PatientNowRecord, type DocumentRecord, clock, dur } from "@/components/ward-management/patients/patient-now-records";
+import {
+  type PatientNowRecord,
+  type DocumentRecord,
+  clock,
+  dur,
+} from "@/components/ward-management/patients/patient-now-records";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 
@@ -221,7 +226,9 @@ export function resolvePatientNowRecord(
         ? [
             ["Status", transportLeg(movement.transport) ?? "Booked"],
             ["Provider", movement.transport.provider ?? "Patient Transport"],
-            ...(movement.transport.cadNumber ? [["CAD (dispatch) number", movement.transport.cadNumber] as [string, string]] : []),
+            ...(movement.transport.cadNumber
+              ? [["CAD (dispatch) number", movement.transport.cadNumber] as [string, string]]
+              : []),
             ...(movement.transport.estimatedAt
               ? [["Quoted ETA", `${clock(movement.transport.estimatedAt)} AWST`] as [string, string]]
               : []),
@@ -320,9 +327,7 @@ export function resolvePatientNowRecord(
         (m.referralId && referrals.some((r) => r.id === m.referralId && r.patientId === patient.id)),
     );
     const linkedReferral = referrals.find(
-      (r) =>
-        r.patientId === patient.id ||
-        (linkedMovement && r.id === linkedMovement.referralId),
+      (r) => r.patientId === patient.id || (linkedMovement && r.id === linkedMovement.referralId),
     );
     const linkedAdmission = admissions.find(
       (a) =>
@@ -345,7 +350,8 @@ export function resolvePatientNowRecord(
         from: "The presentation open now",
         by: "Author not recorded here",
         when: "Active presentation",
-        status: activeMovement.legalForm.dueAt !== undefined ? `Runs to ${clock(activeMovement.legalForm.dueAt)}` : "Active",
+        status:
+          activeMovement.legalForm.dueAt !== undefined ? `Runs to ${clock(activeMovement.legalForm.dueAt)}` : "Active",
       });
     }
 
@@ -357,7 +363,9 @@ export function resolvePatientNowRecord(
       const originEdName = originEd?.name ?? "Emergency Department";
       const acceptedUnit = activeMovement.acceptedUnitId
         ? liveUnit(activeMovement.acceptedUnitId)
-        : (activeAdmission ? liveUnit(activeAdmission.unitId) : undefined);
+        : activeAdmission
+          ? liveUnit(activeAdmission.unitId)
+          : undefined;
 
       let verdictTone: "danger" | "good" | "warn" = "warn";
       let verdictShort = "Seeking Bed";
@@ -425,7 +433,9 @@ export function resolvePatientNowRecord(
           ? [
               ["Status", transportLeg(activeMovement.transport) ?? "Booked"],
               ["Provider", activeMovement.transport.provider ?? "Patient Transport"],
-              ...(activeMovement.transport.cadNumber ? [["CAD (dispatch) number", activeMovement.transport.cadNumber] as [string, string]] : []),
+              ...(activeMovement.transport.cadNumber
+                ? [["CAD (dispatch) number", activeMovement.transport.cadNumber] as [string, string]]
+                : []),
               ...(activeMovement.transport.estimatedAt
                 ? [["Quoted ETA", `${clock(activeMovement.transport.estimatedAt)} AWST`] as [string, string]]
                 : []),
@@ -452,7 +462,9 @@ export function resolvePatientNowRecord(
             source: "Emergency Department",
             route: "Patient transport",
             tier: activeMovement.urgency,
-            legal: activeMovement.legalForm ? legalFormName(activeMovement.legalForm) : (activeMovement.legalStatus ?? patient.legalStatus ?? "Not recorded"),
+            legal: activeMovement.legalForm
+              ? legalFormName(activeMovement.legalForm)
+              : (activeMovement.legalStatus ?? patient.legalStatus ?? "Not recorded"),
             forms: specialDocuments,
             asked: activeMovement.referredUnitIds.map((uid) => ({
               ward: liveUnit(uid)?.name ?? uid,

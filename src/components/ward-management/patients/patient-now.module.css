@@ -2646,7 +2646,7 @@
 .clearanceModalBox {
   background: var(--surface);
   border: 1px solid var(--line-strong);
-  border-radius: var(--r3);
+  border-radius: var(--r2);
   box-shadow: var(--lift);
   width: 100%;
   max-width: 480px;

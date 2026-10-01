@@ -93,12 +93,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onNavigate }: OperatorS
               Select a clinical workstation to simulate immediate role and perspective handoff.
             </p>
           </div>
-          <button
-            type="button"
-            className={styles.btnSecondary}
-            onClick={onClose}
-            aria-label="Close operator switcher"
-          >
+          <button type="button" className={styles.btnSecondary} onClick={onClose} aria-label="Close operator switcher">
             <X size={16} aria-hidden="true" />
           </button>
         </header>

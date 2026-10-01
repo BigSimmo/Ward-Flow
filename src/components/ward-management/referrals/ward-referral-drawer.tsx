@@ -292,7 +292,11 @@ export function useWardCapacity(): WardCapacityRecord[] {
   }, [units, bedReleases]);
 }
 
-export function WardReferralDrawer({
+export function WardReferralDrawer(props: WardReferralDrawerProps) {
+  return <WardReferralDrawerContent key={props.initialCategory ?? "ward"} {...props} />;
+}
+
+function WardReferralDrawerContent({
   onClose,
   onSelectPatient,
   withBackdrop = false,
@@ -452,19 +456,6 @@ export function WardReferralDrawer({
     announceToWardShell(`Selected patient ${p.name} for clinical referral.`);
   }
 
-  useEffect(() => {
-    if (!initialCategory) return;
-    if (initialCategory === "community") {
-      handleSelectPatient("WF-002");
-    } else if (initialCategory === "ed") {
-      handleSelectPatient("WF-004");
-      setDestType("ed");
-    } else if (initialCategory === "ward") {
-      handleSelectPatient("WF-009");
-      setDestType("ward");
-    }
-  }, [initialCategory]);
-
   function toggleRisk(key: string) {
     setRiskFlags((prev) => ({ ...prev, [key]: !prev[key] }));
   }
@@ -598,7 +589,13 @@ export function WardReferralDrawer({
   return (
     <>
       {withBackdrop ? <div className={styles.drawerBackdrop} onClick={onClose} aria-hidden="true" /> : null}
-      <div ref={drawerRef} className={styles.drawerWide} role="dialog" aria-modal="true" aria-labelledby="referralDrawerTitle">
+      <div
+        ref={drawerRef}
+        className={styles.drawerWide}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="referralDrawerTitle"
+      >
         <div className={styles.drawerHead} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           <div className={styles.dragHandle} aria-hidden="true" />
           <div className={styles.drawerHeadTop}>
@@ -1322,19 +1319,33 @@ export function WardReferralDrawer({
                           </button>
                           {isGateExpanded ? (
                             <div className={styles.gateGrid}>
-                              <div className={styles.gatePillPassed}>✓ Age Cohort: {u.cohort} (Patient is {ageSexLabel(currentPatient)})</div>
+                              <div className={styles.gatePillPassed}>
+                                ✓ Age Cohort: {u.cohort} (Patient is {ageSexLabel(currentPatient)})
+                              </div>
                               <div className={styles.gatePillPassed}>✓ Legal Status: {legalStatus} Permitted</div>
-                              <div className={styles.gatePillPassed}>✓ Clinical Acuity: {u.security} Unit Appropriate</div>
+                              <div className={styles.gatePillPassed}>
+                                ✓ Clinical Acuity: {u.security} Unit Appropriate
+                              </div>
                               <div className={styles.gatePillPassed}>✓ Gender Designation: Ensuite Bed Ready</div>
                               <div className={isMedicalCleared ? styles.gatePillPassed : styles.gatePillPending}>
-                                {isMedicalCleared ? "✓ Medical Clearance: Affirmed (ECG & Labs Clear)" : "⏳ Medical Clearance: Pending MO Signoff"}
+                                {isMedicalCleared
+                                  ? "✓ Medical Clearance: Affirmed (ECG & Labs Clear)"
+                                  : "⏳ Medical Clearance: Pending MO Signoff"}
                               </div>
                               <div className={styles.gatePillPassed}>✓ Security Assessment: Non-Forensic Case</div>
-                              <div className={styles.gatePillPassed}>✓ Catchment Agreement: {u.healthService ?? "Metro Reciprocal"} Active</div>
-                              <div className={styles.gatePillPassed}>✓ Nursing Ratio: Standard Acute (No 1:1 Special Order)</div>
-                              <div className={styles.gatePillPassed}>✓ Physical Mobility: Ground Floor Direct Access</div>
+                              <div className={styles.gatePillPassed}>
+                                ✓ Catchment Agreement: {u.healthService ?? "Metro Reciprocal"} Active
+                              </div>
+                              <div className={styles.gatePillPassed}>
+                                ✓ Nursing Ratio: Standard Acute (No 1:1 Special Order)
+                              </div>
+                              <div className={styles.gatePillPassed}>
+                                ✓ Physical Mobility: Ground Floor Direct Access
+                              </div>
                               <div className={isTier1 ? styles.gatePillPassed : styles.gatePillPending}>
-                                {isTier1 ? "✓ Bed Availability: Ready to Admit" : "⏳ Bed Status: Awaiting Bed Turnover"}
+                                {isTier1
+                                  ? "✓ Bed Availability: Ready to Admit"
+                                  : "⏳ Bed Status: Awaiting Bed Turnover"}
                               </div>
                             </div>
                           ) : null}
@@ -1352,7 +1363,9 @@ export function WardReferralDrawer({
                               <span className={`${styles.pulseDot} ${styles.pulseDotGood}`} />
                               <span>TIER 1: READY TO PLACE NOW (IMMEDIATE CONFIRMED VACANCIES)</span>
                             </div>
-                            <span style={{ fontFamily: "var(--mono)", fontSize: 11 }}>{tier1Units.length} Available</span>
+                            <span style={{ fontFamily: "var(--mono)", fontSize: 11 }}>
+                              {tier1Units.length} Available
+                            </span>
                           </div>
                           {tier1Units.map((u) => renderUnitCard(u, true))}
                         </div>
@@ -1365,7 +1378,9 @@ export function WardReferralDrawer({
                               <span className={styles.pulseDot} />
                               <span>TIER 2: SUITABLE COHORT · AWAITING DISCHARGE TURNAROUND</span>
                             </div>
-                            <span style={{ fontFamily: "var(--mono)", fontSize: 11 }}>{tier2Units.length} Units Full</span>
+                            <span style={{ fontFamily: "var(--mono)", fontSize: 11 }}>
+                              {tier2Units.length} Units Full
+                            </span>
                           </div>
                           {tier2Units.map((u) => renderUnitCard(u, false))}
                         </div>

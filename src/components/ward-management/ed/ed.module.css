@@ -2012,7 +2012,7 @@ tr.qRow:focus-visible {
 .seenSection {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius, 8px);
+  border-radius: 8px;
   overflow: hidden;
   box-shadow: var(--lift-sm);
 }
@@ -4877,7 +4877,7 @@ tr.qRow:focus-visible {
 }
 
 .edNetworkToggleBar:hover {
-  background: var(--line-soft);
+  background: var(--line);
 }
 
 .edNetworkToggleBar:focus-visible {

@@ -215,7 +215,7 @@
 .drawerOverlay {
   position: fixed;
   inset: 0;
-  background: var(--scrim, var(--surface-translucent, var(--surface)));
+  background: var(--scrim, var(--surface));
   backdrop-filter: blur(2px);
   display: flex;
   justify-content: flex-end;

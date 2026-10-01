@@ -679,12 +679,12 @@
 
 .rosterTable {
   composes: table from "../ward-table/ward-table.module.css";
-  --ward-table-min-width: 44rem;
+  --ward-table-min-width: 52rem;
 }
 
 .edDirectoryTable {
   composes: table from "../ward-table/ward-table.module.css";
-  --ward-table-min-width: 42rem;
+  --ward-table-min-width: 48rem;
 }
 
 .actionColHeader {

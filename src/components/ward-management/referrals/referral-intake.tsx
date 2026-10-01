@@ -160,8 +160,10 @@ const SOURCE_LABELS: Record<ReferralSource, string> = {
 };
 
 const DESTINATION_SUBTITLES: Record<ReferralDestinationKind, string> = {
-  psychiatric_ward: "Acute inpatient bed request for clinical stabilization, bed coordination, and nursing observation.",
-  emergency_department: "Immediate clinical triage, acute medical clearance, and emergency resuscitation / observation.",
+  psychiatric_ward:
+    "Acute inpatient bed request for clinical stabilization, bed coordination, and nursing observation.",
+  emergency_department:
+    "Immediate clinical triage, acute medical clearance, and emergency resuscitation / observation.",
   community_team: "Outpatient clinical review, crisis diversion, and community care coordination.",
 };
 
@@ -1171,7 +1173,9 @@ function patientDraftPrefill(patient: Patient | undefined): Pick<ReferralDraftPr
   if (patient === undefined) return {};
 
   const sex =
-    patient.sex !== undefined && (RECORDED_SEXES as readonly string[]).includes(patient.sex) ? (patient.sex as RecordedSex) : undefined;
+    patient.sex !== undefined && (RECORDED_SEXES as readonly string[]).includes(patient.sex)
+      ? (patient.sex as RecordedSex)
+      : undefined;
   const gender = patient.gender;
   const suburb = patient.suburb !== undefined && SUBURB_OPTIONS.includes(patient.suburb) ? patient.suburb : undefined;
 
@@ -3139,7 +3143,8 @@ export function ReferralIntakeForm() {
                                 // The sending ward only exists for a psychiatric-ward source; it is
                                 // discarded the moment the source stops being that, like un-ticking a
                                 // destination discards its dependent answer.
-                                originUnitId: nextSource === "psychiatric_ward" ? current.originUnitId : UNANSWERED_VALUE,
+                                originUnitId:
+                                  nextSource === "psychiatric_ward" ? current.originUnitId : UNANSWERED_VALUE,
                               };
                             })
                           }
@@ -3743,13 +3748,12 @@ export function ReferralIntakeForm() {
                               Target Referral Locations &amp; Catchment Corridors
                             </h4>
                             <p className={pageStyles.locationsCorridorSubtitle}>
-                              Target receiving facilities for this person across Community, Acute Inpatient, and Emergency Department pathways.
+                              Target receiving facilities for this person across Community, Acute Inpatient, and
+                              Emergency Department pathways.
                             </p>
                           </div>
                         </div>
-                        <span className={pageStyles.locationsCoverageBadge}>
-                          {radarCatchment}
-                        </span>
+                        <span className={pageStyles.locationsCoverageBadge}>{radarCatchment}</span>
                       </div>
 
                       <div className={pageStyles.locationsGrid}>
@@ -3779,9 +3783,7 @@ export function ReferralIntakeForm() {
                           </div>
                           <span className={pageStyles.locationName}>{mappedReferralLocations.acute.name}</span>
                           <div className={pageStyles.locationMeta}>
-                            <span className={pageStyles.locationServiceNote}>
-                              {mappedReferralLocations.acute.note}
-                            </span>
+                            <span className={pageStyles.locationServiceNote}>{mappedReferralLocations.acute.note}</span>
                           </div>
                         </div>
 
@@ -3795,9 +3797,7 @@ export function ReferralIntakeForm() {
                           </div>
                           <span className={pageStyles.locationName}>{mappedReferralLocations.ed.name}</span>
                           <div className={pageStyles.locationMeta}>
-                            <span className={pageStyles.locationServiceNote}>
-                              {mappedReferralLocations.ed.note}
-                            </span>
+                            <span className={pageStyles.locationServiceNote}>{mappedReferralLocations.ed.note}</span>
                           </div>
                         </div>
                       </div>
@@ -3814,7 +3814,10 @@ export function ReferralIntakeForm() {
                         >
                           <div className={pageStyles.destinationHeaderRow}>
                             <div className={pageStyles.destinationNameGroup}>
-                              <label className={`${styles.destinationName} ${pageStyles.destinationName}`}>
+                              <label
+                                aria-label={option.label}
+                                className={`${styles.destinationName} ${pageStyles.destinationName}`}
+                              >
                                 <input
                                   type="checkbox"
                                   data-testid={`ward-referral-intake-destination-${option.kind}`}
@@ -3825,9 +3828,7 @@ export function ReferralIntakeForm() {
                                 />
                                 <div className={pageStyles.destTitleStack}>
                                   <span>{option.label}</span>
-                                  <span className={pageStyles.destSubtitle}>
-                                    {DESTINATION_SUBTITLES[option.kind]}
-                                  </span>
+                                  <span className={pageStyles.destSubtitle}>{DESTINATION_SUBTITLES[option.kind]}</span>
                                 </div>
                               </label>
                             </div>
@@ -3872,12 +3873,18 @@ export function ReferralIntakeForm() {
                               ) : null}
                               <ul className={`${styles.destinationFacts} ${pageStyles.destinationFacts}`}>
                                 {option.figures.map((figure) => (
-                                  <li key={figure} className={`${styles.destinationFact} ${pageStyles.destinationFact}`}>
+                                  <li
+                                    key={figure}
+                                    className={`${styles.destinationFact} ${pageStyles.destinationFact}`}
+                                  >
                                     {figure}
                                   </li>
                                 ))}
                                 {option.reasons.map((reason) => (
-                                  <li key={reason} className={`${styles.destinationFact} ${pageStyles.destinationFact}`}>
+                                  <li
+                                    key={reason}
+                                    className={`${styles.destinationFact} ${pageStyles.destinationFact}`}
+                                  >
                                     {reason}
                                   </li>
                                 ))}

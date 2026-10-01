@@ -60,7 +60,13 @@ function getPatientDisplayName(
   movements: Movement[],
   resolveIdentity: ((subject: Movement) => ResolvedPatientInfo) | undefined,
 ): string {
-  const customName = (movement as any).patientName ?? (movement as any).displayName;
+  // Some explicitly supplied notification DTOs carry a display name; validate that boundary without an unchecked cast.
+  const customName =
+    "patientName" in movement && typeof movement.patientName === "string"
+      ? movement.patientName
+      : "displayName" in movement && typeof movement.displayName === "string"
+        ? movement.displayName
+        : undefined;
   if (customName) return customName;
   try {
     const resolved = resolveIdentity ? resolveIdentity(movement) : resolveSubjectPatient(movement, { movements });

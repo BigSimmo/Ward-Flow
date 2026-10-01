@@ -1,5 +1,7 @@
 "use client";
 
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
+import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import React from "react";
 import Link from "next/link";
 import styles from "./ward-telemetry-ribbon.module.css";
@@ -24,11 +26,14 @@ export function WardTelemetryRibbon({
   acceptedCount,
   onOpenBedList,
 }: WardTelemetryRibbonProps) {
+  const { bedReleases } = useWardFlow();
+  const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const occPercent = unit.beds > 0 ? Math.round((capacity.occupied / unit.beds) * 100) : 0;
   const constraints = unit.intakeConstraints ?? [];
 
   return (
     <div className={styles.ribbon} role="region" aria-label="Live Capacity Telemetry">
+      <p>{pendingPreparation} being made ready</p>
       {/* 1. Staffed Beds */}
       <div className={styles.cell} data-state="accent">
         <div className={styles.topRow}>
@@ -70,7 +75,7 @@ export function WardTelemetryRibbon({
             ready bed{capacity.available === 1 ? "" : "s"} on this ward right now
           </span>
           <span className={styles.badge} data-tone="good">
-            Cleaned
+            Recorded ready count
           </span>
         </div>
         <div className={styles.valueRow}>

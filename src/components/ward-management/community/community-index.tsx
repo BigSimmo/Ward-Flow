@@ -644,7 +644,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
           </div>
         </div>
         <div className="sr-only">
-          <p data-testid="community-index-about">About this list</p>
+          <p data-testid="community-index-about">Every community team a referral can name in this prototype</p>
           <p data-testid="community-index-provenance">
             These teams are listed alphabetically because the record holds a team&apos;s name and nothing else to group
             by. The catchment table this list is derived from does link each team to a set of suburbs, but that link is

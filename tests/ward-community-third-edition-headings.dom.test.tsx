@@ -13,7 +13,7 @@ vi.mock("next/link", () => ({
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { CommunityScreen } from "@/components/ward-management/community/community-screen";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -144,5 +144,27 @@ describe("the community team screen's Sovereign action bar and telemetry capsule
         [],
       );
     }
+  });
+});
+
+describe("community live-route source integrity", () => {
+  it("uses the provider population on Fremantle routes just as explicit provider inputs do", () => {
+    function ProviderInputs() {
+      const { admissions, referrals } = useWardFlow();
+      return <CommunityScreen teamId="alma-street-fremantle" admissions={admissions} referrals={referrals} />;
+    }
+    const live = render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CommunityScreen teamId="alma-street-fremantle" />
+      </WardFlowProvider>,
+    );
+    const liveText = live.container.textContent;
+    live.unmount();
+    const explicit = render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ProviderInputs />
+      </WardFlowProvider>,
+    );
+    expect(liveText).toBe(explicit.container.textContent);
   });
 });

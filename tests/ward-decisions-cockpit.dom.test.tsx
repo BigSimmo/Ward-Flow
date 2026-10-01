@@ -15,7 +15,7 @@ describe("ward decisions cockpit", () => {
   } as unknown as Unit;
 
   it("renders chronological shift milestone ribbon with 4 gates", () => {
-    render(<WardDecisionsCockpit unit={mockUnit} />);
+    render(<WardDecisionsCockpit unit={mockUnit} demonstration />);
     expect(screen.getByRole("button", { name: /GATE 1 · 07:00–09:30/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /GATE 2 · 09:30–13:00/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /GATE 3 · 11:00–14:00/i })).toBeInTheDocument();
@@ -23,7 +23,7 @@ describe("ward decisions cockpit", () => {
   });
 
   it("renders action queue filter strip and toggles filter views", () => {
-    render(<WardDecisionsCockpit unit={mockUnit} />);
+    render(<WardDecisionsCockpit unit={mockUnit} demonstration />);
     const allButton = screen.getByRole("button", { name: /All Gates/i });
     const urgentButton = screen.getByRole("button", { name: /Immediate Actions/i });
     const barriersButton = screen.getByRole("button", { name: /Barriers & Escalation/i });
@@ -42,7 +42,7 @@ describe("ward decisions cockpit", () => {
   });
 
   it("allows re-affirming staffing handshake and records audit log entry", () => {
-    render(<WardDecisionsCockpit unit={mockUnit} />);
+    render(<WardDecisionsCockpit unit={mockUnit} demonstration />);
     const confirmBtn = screen.getByRole("button", { name: /Re-affirm Handshake/i });
     expect(confirmBtn).toBeInTheDocument();
 
@@ -54,7 +54,7 @@ describe("ward decisions cockpit", () => {
   });
 
   it("allows accepting referral Aaron K to Bed 04", () => {
-    render(<WardDecisionsCockpit unit={mockUnit} />);
+    render(<WardDecisionsCockpit unit={mockUnit} demonstration />);
     const acceptBtn = screen.getByRole("button", { name: /✓ Accept to Bed 04/i });
     expect(acceptBtn).toBeInTheDocument();
 

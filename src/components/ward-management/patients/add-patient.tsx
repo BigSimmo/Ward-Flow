@@ -137,7 +137,7 @@ const PRESENTING_COMPLAINTS = [
 ] as const;
 
 export function AddPatientForm() {
-  const { dispatch, patients, movements } = useWardFlow();
+  const { dispatch, patients, movements, rejections } = useWardFlow();
   const now = useWardFlowClock();
   const router = useRouter();
 
@@ -166,6 +166,7 @@ export function AddPatientForm() {
   const [d4Notice, setD4Notice] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const priorSubmissionRef = useRef<{ patients: typeof patients; rejectionCount: number } | null>(null);
   const resetDialogRef = useRef<HTMLDivElement | null>(null);
   useWardModalFocus(showResetConfirm, resetDialogRef, () => setShowResetConfirm(false));
 
@@ -180,9 +181,25 @@ export function AddPatientForm() {
       suburb.trim().length > 0 ||
       healthService.trim().length > 0 ||
       facility.trim().length > 0 ||
+      indigenousStatus !== "not-stated" ||
+      triageUrgency !== "4" ||
+      legalStatus !== "Voluntary" ||
+      presentingComplaint !== "assessment" ||
       clinicalNotes.trim().length > 0
     );
-  }, [draft, genderChoice, address, suburb, healthService, facility, clinicalNotes]);
+  }, [
+    draft,
+    genderChoice,
+    address,
+    suburb,
+    healthService,
+    facility,
+    indigenousStatus,
+    triageUrgency,
+    legalStatus,
+    presentingComplaint,
+    clinicalNotes,
+  ]);
 
   useEffect(() => {
     if (!isDirty || isSubmitting) return;
@@ -197,13 +214,23 @@ export function AddPatientForm() {
   const performReset = () => {
     setDraft(initialDraft());
     setGenderChoice(GENDER_NOT_RECORDED);
+    setIndigenousStatus("not-stated");
     setAddress("");
     setSuburb("");
+    setHealthService("");
+    setFacility("");
+    setTriageUrgency("4");
+    setLegalStatus("Voluntary");
+    setPresentingComplaint("assessment");
     setClinicalNotes("");
+    setAssignedSearch(null);
+    setAttemptedSubmit(false);
+    setLastRejection(undefined);
+    setD4Notice(null);
+    setIsSubmitting(false);
+    priorSubmissionRef.current = null;
     setShowResetConfirm(false);
   };
-
-  const priorPatientsRef = useRef<typeof patients | undefined>(undefined);
 
   const answered = answeredDraft(draft);
   const outstanding = unansweredFieldNames(draft);
@@ -227,23 +254,25 @@ export function AddPatientForm() {
   const foundSomething = exactMatches.length > 0 || nearMatches.length > 0;
 
   useEffect(() => {
-    const prior = priorPatientsRef.current;
-    if (prior === undefined) return;
-    if (patients.length <= prior.length) {
-      setLastRejection("Patient could not be added. Check the identity details and existing records.");
-      priorPatientsRef.current = undefined;
-      setIsSubmitting(false);
+    const prior = priorSubmissionRef.current;
+    if (!prior) return;
+    if (patients.length <= prior.patients.length) {
+      if (rejections.length > prior.rejectionCount && rejections[0]?.attempted === "ADD_PATIENT") {
+        setLastRejection("Patient could not be added. Check the identity details and existing records.");
+        priorSubmissionRef.current = null;
+        setIsSubmitting(false);
+      }
       return;
     }
-    const priorIds = new Set(prior.map((patient) => patient.id));
+    const priorIds = new Set(prior.patients.map((patient) => patient.id));
     const added = patients.filter((patient) => !priorIds.has(patient.id));
     if (added.length === 0) {
       setIsSubmitting(false);
       throw new Error("AddPatientForm: patients grew but no new id was found against the prior snapshot.");
     }
-    priorPatientsRef.current = undefined;
+    priorSubmissionRef.current = null;
     router.push(`/mockups/ward-flow/people/${added[0].id}`);
-  }, [patients, router]);
+  }, [patients, rejections, router]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -254,7 +283,7 @@ export function AddPatientForm() {
     }
     setIsSubmitting(true);
     setLastRejection(undefined);
-    priorPatientsRef.current = patients;
+    priorSubmissionRef.current = { patients, rejectionCount: rejections.length };
     const suburbTrimmed = suburb.trim();
     dispatch({
       type: "ADD_PATIENT",
@@ -279,7 +308,7 @@ export function AddPatientForm() {
     setAttemptedSubmit(true);
   }
 
-  function handleUnconnected(featureName?: string) {
+  function handleUnconnected() {
     setD4Notice("Not wired in this prototype.");
   }
 
@@ -317,7 +346,7 @@ export function AddPatientForm() {
               <button
                 type="button"
                 className={styles.headerBtn}
-                onClick={() => handleUnconnected("Save draft")}
+                onClick={() => handleUnconnected()}
                 aria-label="Save draft"
               >
                 Save draft
@@ -325,7 +354,7 @@ export function AddPatientForm() {
               <button
                 type="button"
                 className={styles.headerBtn}
-                onClick={() => handleUnconnected("Print intake")}
+                onClick={() => handleUnconnected()}
                 aria-label="Print intake"
               >
                 Print
@@ -567,9 +596,7 @@ export function AddPatientForm() {
                           </option>
                         ))}
                       </select>
-                      <p className={styles.fieldNote}>
-                        Not saved to the record.
-                      </p>
+                      <p className={styles.fieldNote}>Not saved to the record.</p>
                     </div>
 
                     {/* Address */}
@@ -586,9 +613,7 @@ export function AddPatientForm() {
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
                       />
-                      <p className={styles.fieldNote}>
-                        Not saved to the record.
-                      </p>
+                      <p className={styles.fieldNote}>Not saved to the record.</p>
                     </div>
 
                     {/* Suburb — optional; ADD_PATIENT stores Patient.suburb when provided. */}
@@ -625,9 +650,7 @@ export function AddPatientForm() {
                           </option>
                         ))}
                       </select>
-                      <p className={styles.fieldNote}>
-                        Not saved to the record.
-                      </p>
+                      <p className={styles.fieldNote}>Not saved to the record.</p>
                     </div>
 
                     {/* Health service catchment */}
@@ -647,9 +670,7 @@ export function AddPatientForm() {
                           </option>
                         ))}
                       </select>
-                      <p className={styles.fieldNote}>
-                        Not saved to the record.
-                      </p>
+                      <p className={styles.fieldNote}>Not saved to the record.</p>
                     </div>
                   </div>
                 </div>
@@ -801,8 +822,7 @@ export function AddPatientForm() {
                   type="submit"
                   className={styles.submit}
                   data-testid="ward-add-patient-submit"
-                  disabled={isSubmitting}
-                  aria-disabled={answered ? undefined : "true"}
+                  aria-disabled={answered && !isSubmitting ? undefined : "true"}
                   aria-describedby={answered ? undefined : UNAVAILABLE_REASON_ID}
                   onClick={ignoreUnavailableActivation}
                 >
@@ -1074,8 +1094,12 @@ export function AddPatientForm() {
               <h3 id="reset-dialog-title" style={{ margin: 0, fontSize: "1.1rem", fontWeight: 600 }}>
                 Reset patient form?
               </h3>
-              <p id="reset-dialog-desc" style={{ margin: 0, fontSize: "0.95rem", color: "var(--ink-soft)", lineHeight: 1.5 }}>
-                You have entered patient details or clinical notes. Resetting the form will clear all unsaved fields in this session.
+              <p
+                id="reset-dialog-desc"
+                style={{ margin: 0, fontSize: "0.95rem", color: "var(--ink-soft)", lineHeight: 1.5 }}
+              >
+                You have entered patient details or clinical notes. Resetting the form will clear all unsaved fields in
+                this session.
               </p>
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem" }}>
                 <button

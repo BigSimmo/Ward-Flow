@@ -85,9 +85,12 @@ const CLAIMS = [
     // tests/ward-capacity-controls.dom.test.tsx on 2026-09-16 and C1 added
     // tests/ward-capacity-service-scope.dom.test.tsx on 2026-09-17. Same rule: the count must match AND
     // each named addition must be the reason for it.
+    //
+    // 2026-10-01: PR12 adds tests/ward-capacity.dom.test.tsx for the Ward capacity-confirmation
+    // form. Eighteen now; preserve the original correction and check this named addition too.
     claim:
-      "tests/ward-capacity-* was FOURTEEN files when the plan claimed fifteen; seventeen now for unrelated " +
-      "reasons (D9 added one on 2026-09-12, the WF-27 controls test one on 2026-09-16, C1 service-scope on 2026-09-17), which does not make the plan's figure right",
+      "tests/ward-capacity-* was FOURTEEN files when the plan claimed fifteen; eighteen now for unrelated " +
+      "reasons (D9 added one on 2026-09-12, the WF-27 controls test one on 2026-09-16, C1 service-scope on 2026-09-17, Ward capacity-confirmation form on 2026-10-01), which does not make the plan's figure right",
     check: () => {
       const n = existsSync(p("tests"))
         ? readdirSync(p("tests")).filter((f) => f.startsWith("ward-capacity")).length
@@ -95,10 +98,11 @@ const CLAIMS = [
       const absorbed = existsSync(p("tests/ward-capacity-absorbed-morning-coverage.dom.test.tsx"));
       const controls = existsSync(p("tests/ward-capacity-controls.dom.test.tsx"));
       const serviceScope = existsSync(p("tests/ward-capacity-service-scope.dom.test.tsx"));
+      const capacityForm = existsSync(p("tests/ward-capacity.dom.test.tsx"));
       // Every half, so this cannot pass by a DIFFERENT file arriving or a named one being renamed.
       return {
-        ok: n === 17 && absorbed && controls && serviceScope,
-        saw: `${n} files, D9 addition ${absorbed ? "present" : "ABSENT"}, WF-27 addition ${controls ? "present" : "ABSENT"}, C1 addition ${serviceScope ? "present" : "ABSENT"}`,
+        ok: n === 18 && absorbed && controls && serviceScope && capacityForm,
+        saw: `${n} files, D9 addition ${absorbed ? "present" : "ABSENT"}, WF-27 addition ${controls ? "present" : "ABSENT"}, C1 addition ${serviceScope ? "present" : "ABSENT"}, capacity-confirmation form addition ${capacityForm ? "present" : "ABSENT"}`,
       };
     },
   },
@@ -141,7 +145,8 @@ const CLAIMS = [
       const community = read("src/components/ward-management/community/community-screen.tsx") || "";
       // The old homes must be clear. A builder declared in BOTH places is two sources of truth
       // for one route, which is the defect the extraction existed to close.
-      const leftBehind = /function (?:personHref|patientHref)\s*\(/.test(search) || /function communityTeamHref\s*\(/.test(community);
+      const leftBehind =
+        /function (?:personHref|patientHref)\s*\(/.test(search) || /function communityTeamHref\s*\(/.test(community);
       return {
         ok: patientExported && communityExported && !leftBehind,
         saw:

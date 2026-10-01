@@ -194,8 +194,7 @@ export function OnCallScreen() {
 
     // 1. Network-wide roles
     for (const role of NETWORK_ON_CALL_ROLES) {
-      const facility =
-        role.id === "bed-coordinator" ? "Central Bed Desk" : "Clinical Governance & Statewide Tier 3";
+      const facility = role.id === "bed-coordinator" ? "Central Bed Desk" : "Clinical Governance & Statewide Tier 3";
       const holder = role.id === "bed-coordinator" ? "Operations Lead" : "Executive Duty Lead";
 
       items.push({
@@ -465,7 +464,9 @@ export function OnCallScreen() {
                       <th scope="col">Level</th>
                       <th scope="col">Shift</th>
                       <th scope="col">Status</th>
-                      <th scope="col" className={styles.actionColHeader}>Action</th>
+                      <th scope="col" className={styles.actionColHeader}>
+                        Action
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -563,7 +564,9 @@ export function OnCallScreen() {
                       <th scope="col">Health Service</th>
                       <th scope="col">Liaison Role</th>
                       <th scope="col">Handover</th>
-                      <th scope="col" className={styles.actionColHeader}>Action</th>
+                      <th scope="col" className={styles.actionColHeader}>
+                        Action
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -580,9 +583,7 @@ export function OnCallScreen() {
                             </td>
                             <td className={styles.siteCell}>{site?.name ?? "Regional Directory"}</td>
                             <td>
-                              <span className={styles.serviceChip}>
-                                {site?.service ?? "Regional"}
-                              </span>
+                              <span className={styles.serviceChip}>{site?.service ?? "Regional"}</span>
                             </td>
                             <td>
                               <span className={styles.coordinatorRole}>{coordinatorTitle}</span>

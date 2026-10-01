@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 
 import { StatisticsSectionFrame } from "@/components/ward-management/statistics/statistics-section-frame";
@@ -68,6 +68,17 @@ export function StatisticsWardScreen({
   const units = unitsOverride ?? liveUnits;
   const admissions = admissionsOverride ?? liveAdmissions;
   const unit = units.find((candidate) => candidate.id === unitId);
+
+  const [activeTab, setActiveTab] = useState<string>("all");
+  const [d4Notice, setD4Notice] = useState<string | null>(null);
+  const [politeNotice, setPoliteNotice] = useState<string | null>(null);
+  const [bedSearchQuery, setBedSearchQuery] = useState<string>("");
+
+  const triggerD4 = useCallback((actionName?: string) => {
+    const msg = actionName ? `${actionName}: Not wired in this prototype.` : "Not wired in this prototype.";
+    setD4Notice(msg);
+    setPoliteNotice(msg);
+  }, []);
 
   const section = statisticsSectionById("units");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'units' section");
@@ -230,18 +241,7 @@ export function StatisticsWardScreen({
     { baseline: capacity.available, volatility: 1, minValue: 0, maxValue: unit.beds },
   );
 
-  const [activeTab, setActiveTab] = useState<string>("all");
-  const [d4Notice, setD4Notice] = useState<string | null>(null);
-  const [politeNotice, setPoliteNotice] = useState<string | null>(null);
-  const [bedSearchQuery, setBedSearchQuery] = useState<string>("");
-
-  const triggerD4 = useCallback((actionName?: string) => {
-    const msg = actionName ? `${actionName}: Not wired in this prototype.` : "Not wired in this prototype.";
-    setD4Notice(msg);
-    setPoliteNotice(msg);
-  }, []);
-
-  const bedMatrixList = useMemo(() => {
+  const bedMatrixList = (() => {
     const occupiedCount = capacity.occupied;
     const availableCount = capacity.available;
     const pendingCount = pendingPreparation;
@@ -303,9 +303,9 @@ export function StatisticsWardScreen({
       }
     }
     return list;
-  }, [unit.beds, capacity.occupied, capacity.available, pendingPreparation, admissions, unit.id, now]);
+  })();
 
-  const filteredBedMatrix = useMemo(() => {
+  const filteredBedMatrix = (() => {
     if (!bedSearchQuery.trim()) return bedMatrixList;
     const q = bedSearchQuery.toLowerCase().trim();
     return bedMatrixList.filter(
@@ -315,7 +315,7 @@ export function StatisticsWardScreen({
         b.pt.toLowerCase().includes(q) ||
         b.target.toLowerCase().includes(q),
     );
-  }, [bedMatrixList, bedSearchQuery]);
+  })();
 
   const TABS = [
     { id: "all", label: "All Sections", badge: "All" },
@@ -746,8 +746,8 @@ export function StatisticsWardScreen({
                       the discharge plan, and at least one is about the person rather than about the bed. They are
                       deliberately not listed here because this page does not own that record shape. The nearest
                       equivalent elsewhere in this prototype measures from the moment a referral was raised, which this
-                      derivation cannot see, because it is given admissions only, by design. Supporting this figure would
-                      require a new recorded instant or a different derivation input.
+                      derivation cannot see, because it is given admissions only, by design. Supporting this figure
+                      would require a new recorded instant or a different derivation input.
                     </p>
                   </details>
                 </div>

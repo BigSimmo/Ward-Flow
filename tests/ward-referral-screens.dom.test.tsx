@@ -583,8 +583,7 @@ describe("ReferralIntakeForm", () => {
 
     for (const el of freeTextControls) {
       const testId = el.getAttribute("data-testid");
-      const expectedTag =
-        testId === SENDING_TEAM_TESTID || testId === SUBURB_FILTER_TESTID ? "INPUT" : "TEXTAREA";
+      const expectedTag = testId === SENDING_TEAM_TESTID || testId === SUBURB_FILTER_TESTID ? "INPUT" : "TEXTAREA";
       expect(
         el.tagName,
         `${testId} is a ${el.tagName} and must be a ${expectedTag}. A written account needs a ` +
@@ -3662,7 +3661,9 @@ describe("OutOfAreaBoard — the entries", () => {
     for (const admission of subjects) {
       const expected = expectedStayLabel(admission);
       const cells = screen.getByTestId(`ward-out-of-area-row-${admission.id}`).querySelectorAll("td");
-      expect(cells[cells.length - 1]?.textContent, `${admission.id}'s row shows the wrong length of stay`).toBe(expected);
+      expect(cells[cells.length - 1]?.textContent, `${admission.id}'s row shows the wrong length of stay`).toBe(
+        expected,
+      );
       expect(
         screen.getByTestId(`ward-out-of-area-card-${admission.id}`).textContent ?? "",
         `${admission.id}'s phone card shows the wrong length of stay`,

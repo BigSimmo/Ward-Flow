@@ -224,7 +224,10 @@ export function deriveEdWarning(
 
   // Black (Critical Gridlock): wait beyond the severe-pressure default, or multiple past-target
   // patients with 0 beds available.
-  if (longestWaitMinutes >= ED_SEVERE_PRESSURE_WAIT_MINUTES || (pastAccessTargetCount >= 2 && freeInpatientBeds === 0)) {
+  if (
+    longestWaitMinutes >= ED_SEVERE_PRESSURE_WAIT_MINUTES ||
+    (pastAccessTargetCount >= 2 && freeInpatientBeds === 0)
+  ) {
     const hours = Math.floor(longestWaitMinutes / 60);
     const mins = longestWaitMinutes % 60;
     return {
@@ -237,7 +240,9 @@ export function deriveEdWarning(
   // Red (High Alert): any patient past the access target, or 5+ waiting.
   if (pastAccessTargetCount > 0 || waitingCount >= 5) {
     const reason =
-      pastAccessTargetCount > 0 ? `${pastAccessTargetCount} ${pastTargetWords}` : `${waitingCount} waiting for admission`;
+      pastAccessTargetCount > 0
+        ? `${pastAccessTargetCount} ${pastTargetWords}`
+        : `${waitingCount} waiting for admission`;
     return {
       code: "red",
       label: "Past access target",

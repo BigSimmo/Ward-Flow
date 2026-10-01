@@ -48,14 +48,7 @@ export function WardBedsMatrix({
   for (let i = 0; i < filteredBeds.length; i += 4) {
     const bayNum = Math.floor(i / 4) + 1;
     const slice = filteredBeds.slice(i, i + 4);
-    let title = `Bay ${bayNum} — Acute Inpatient (Beds ${slice[0]?.bedLabel ?? ""} – ${slice[slice.length - 1]?.bedLabel ?? ""})`;
-    if (bayNum === 1)
-      title = `Bay 1 — Male Acute (Beds ${slice[0]?.bedLabel ?? "01"} – ${slice[slice.length - 1]?.bedLabel ?? "04"})`;
-    if (bayNum === 2)
-      title = `Bay 2 — Female Acute (Beds ${slice[0]?.bedLabel ?? "05"} – ${slice[slice.length - 1]?.bedLabel ?? "08"})`;
-    if (bayNum >= 3 && slice.some((b) => b.isHdu)) {
-      title = `HDU High Acuity & Seclusion Suites (Beds ${slice[0]?.bedLabel ?? "13"} – ${slice[slice.length - 1]?.bedLabel ?? "16"})`;
-    }
+    const title = `Bed group ${bayNum} (Beds ${slice[0]?.bedLabel ?? ""} – ${slice[slice.length - 1]?.bedLabel ?? ""})`;
     bays.push({ title, beds: slice });
   }
 
@@ -70,22 +63,16 @@ export function WardBedsMatrix({
         <div className={styles.headingGroup}>
           <h2 className={styles.title}>Interactive Bed Matrix &amp; Bay Roster</h2>
           <p className={styles.subtitle}>
-            {unit.beds} Acute Inpatient Beds partitioned into clinical bays with telemetry, patient LOS, and active
-            restrictions.
+            {unit.beds} beds grouped for display, with recorded patient stays and restrictions. Display groups do not
+            designate clinical bays or patient sex.
           </p>
         </div>
         <div style={{ display: "flex", gap: "6px" }}>
-          <span
-            className={styles.podFilterBtn}
-            style={{ background: "var(--good-soft)", color: "var(--good)" }}
-          >
+          <span className={styles.podFilterBtn} style={{ background: "var(--good-soft)", color: "var(--good)" }}>
             {readyCount} Ready
           </span>
           <span className={styles.podFilterBtn}>{occupiedCount} Occupied</span>
-          <span
-            className={styles.podFilterBtn}
-            style={{ background: "var(--warn-soft)", color: "var(--warn)" }}
-          >
+          <span className={styles.podFilterBtn} style={{ background: "var(--warn-soft)", color: "var(--warn)" }}>
             {leaveCount} On Leave
           </span>
         </div>
@@ -170,7 +157,7 @@ export function WardBedsMatrix({
                       {bed.status === "ready" ? "Ready for Allocation" : bed.statusText}
                     </div>
                     <div className={styles.bedPatientSub}>
-                      {bed.status === "ready" ? "Terminal Sanitize Complete" : "Unoccupied"}
+                      {bed.status === "ready" ? "Ready; cleaning completion not recorded" : "Unoccupied"}
                     </div>
                   </div>
                 )}

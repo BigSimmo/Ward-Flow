@@ -306,9 +306,7 @@ function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: War
     return { ...container, world: nextWorld, typedTextSeen: false, eventLog: [logged] };
   }
   const eventLog = [...(container.eventLog ?? []), logged];
-  const typedTextSeen =
-    container.typedTextSeen ||
-    !WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type);
+  const typedTextSeen = container.typedTextSeen || !WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type);
   return { ...container, world: nextWorld, typedTextSeen, eventLog };
 }
 

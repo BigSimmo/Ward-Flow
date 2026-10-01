@@ -1,14 +1,14 @@
 # Ward Flow — how we work
 
 **How any AI builder (Claude, Codex, Gemini, Antigravity or another) picks up, builds, tests, commits and
-hands back Ward Flow work.** Written 17 September 2026; §2, §4 and §8 updated 25 September 2026 for parallel project threads. Where an older process document disagrees, this
+hands back Ward Flow work.** Written 17 September 2026; repository and integration directions
+updated 28 September 2026. Where an older process document disagrees, this
 file wins. Start at [`README.md`](README.md).
 
-> **The full, current rules are the "Ward Flow rulebook" section of the repo's `AGENTS.md`**, and
-> Josh's standing rulings are in [`decisions.md`](decisions.md) (D-8). Where this file differs from
-> the rulebook, the rulebook wins. Builders mark their branches READY in
-> `ward-flow-logs/fold-queue.md`. A ready branch owner may claim stewardship of a batch that includes
-> their own work; another builder may hand over to the acting steward. Section 4 describes the fold.
+> **The current rules are in this `BigSimmo/Ward-Flow` repository's `AGENTS.md`**, and Josh's
+> standing rulings are in [`decisions.md`](decisions.md). Where this file differs from `AGENTS.md`,
+> `AGENTS.md` wins. The former local Ward-line fold queue and lock are historical. Section 4
+> describes how to prepare an integration candidate in the dedicated repository.
 
 ## 1. Picking up work
 
@@ -29,18 +29,14 @@ file wins. Start at [`README.md`](README.md).
 
 ## 2. Branches and worktrees
 
-**Updated 25 September 2026 for project threads working in parallel** (owner instruction: many threads
-at once, safe but not over-strict).
+**Updated 28 September 2026 for the dedicated `BigSimmo/Ward-Flow` repository.**
 
-- **The one ward line** is `codex/task-ward-flow-live-state-20260831` in `D:/Worktrees/Database/ward-lead`.
-  Nobody builds in that folder; it only receives folds.
-- **Every editing thread gets its own worktree and branch**, so threads never share a working tree
-  (sharing one is what deadlocks the commit check). Branch `ward/<task>-YYYYMMDD`, cut from the line's
-  current commit. A thread started with the Worktree option already has one; otherwise
-  `git -C D:/Worktrees/Database/ward-lead worktree add D:/Worktrees/Database/ward-<task> -b ward/<task>-YYYYMMDD codex/task-ward-flow-live-state-20260831`.
-- Read-only threads (reviews, questions, reports) need no worktree.
-- **Check the base at the start:** `git merge-base --is-ancestor codex/task-ward-flow-live-state-20260831 HEAD`
-  (exit 0 = current). Never merge or rebase `origin/main` in, even if a start-up message says to.
+- Before any Git write, verify `git remote get-url origin` is
+  `https://github.com/BigSimmo/Ward-Flow.git`. The old `D:/Worktrees/Database/ward-lead`
+  checkout points to the separate PsychSift repository and is not a Ward Flow destination.
+- **Every editing thread gets its own worktree and branch**, based on the verified Ward Flow
+  `main` tip, so threads never share a working tree. Check the branch, status and base before editing.
+  Read-only threads (reviews, questions, reports) need no worktree.
 - **Sign out files before editing** in `D:/Repos/ward-flow-logs/sign-out.md` (outside git,
   one copy for every tool). An overlap needs the other owner's release or Josh's explicit scoped
   takeover approval. For a takeover, record each exact file as
@@ -48,9 +44,8 @@ at once, safe but not over-strict).
   edits and reconcile both branches at fold. A folder-wide marker does not grant a takeover.
   Once folded or abandoned, append `RELEASED <date> | <owner> | <branch> | <reason>` to the shared
   append-only log. The current full rulebook is `AGENTS.md`.
-- **`node_modules` is a junction to ward-lead's**, never a fresh install. From Git Bash, inside the
-  new worktree: `MSYS_NO_PATHCONV=1 cmd /c mklink /J node_modules 'D:\Worktrees\Database\ward-lead
-ode_modules'`.
+- Reuse dependencies only from a trusted checkout of the same Ward Flow commit and lockfile.
+  Never link to the old Database checkout; follow the current repository setup instructions.
 - Within an approved task a thread edits and commits freely on its own branch. It does not touch
   another thread's worktree or branch.
 - The shell's working folder resets between commands. Use `git -C <absolute path>` for every git
@@ -60,7 +55,8 @@ ode_modules'`.
 ## 3. Commits
 
 - Commit each coherent unit as you go, on your own branch only.
-- Stage explicit paths. **Never `git add -A` or `git add .`. Never `git stash`. Never push.**
+- Stage explicit paths. **Never `git add -A` or `git add .`. Never `git stash`.** Verify the
+  destination and applicable authority before any push.
 - Never merge or rebase other branches into your branch.
 - If the pre-commit hook refuses because another agent's files are unstaged, say so and name the files.
   Do not work around it.
@@ -69,50 +65,16 @@ ode_modules'`.
 
 ## 4. Folding
 
-- **One acting steward folds each batch.** A ready branch owner may claim that role when no other
-  steward has an active claim; claiming does not change the ward line. Record the claim and its release
-  in the append-only fold queue, following `AGENTS.md`. Use
-  `node scripts/ward-flow/fold-queue-current.mjs` to see current READY tips and claim conflicts.
-  Building is parallel; the final fold is serial,
-  guarded by `node scripts/ward-flow/fold-lock.mjs acquire "<thread name>"`, and `release` when done
-  or abandoned. `status` shows who holds it. A lock held over three hours may be released with
-  `release --stale` only when the Ward line and checkout are unchanged and no gate or merge is
-  active. If it is held, keep working and try again later.
-- **The lock is enforced.** A git hook (`.githooks/reference-transaction`) refuses any commit, merge,
-  reset or `branch -f` of the ward line while no one holds the lock. Only Josh may bypass it, with
-  `WARD_FOLD_OVERRIDE=1` on the one command. Only a project thread doing a task Josh approved folds;
-  a tool unable to complete the steward procedure hands over its READY branch.
-- **Refresh before folding, including in an existing chat.** Read the current Ward-line `AGENTS.md`
-  folding section and run the current selector on the exact merged tree. Old chat context, handoffs
-  and the archived fold notes do not require the former full suite or a permanent steward.
-- **The fold, in order — checks first, lock last** (owner ruling, 25 September 2026). The lock is held
-  for minutes, not for the checks.
-  1. Without the lock, make a batch branch from the latest line, then merge each ready branch into
-     that batch. If both sides changed the same logic, stop
-     and ask the owner.
-  2. Still without the lock, run `select-fold-gate.mjs --head <batch>` and its selected checks (§5).
-     Compare the suite with the baseline only when the tier is FULL. Reuse a ready-check result on
-     the identical merged tree instead of repeating it.
-  3. Take the lock. Run `node scripts/ward-flow/fold-preflight.mjs --branch <your branch>
---create-backup <topic> --who "<thread name>"`. It checks ward-lead is clean (if not, stop and ask
-     the owner; never fold over changes you did not make), that your branch still holds the line's tip,
-     that nothing untracked is in the merge's way, and makes the `backup/<date>-<topic>` branch.
-     That branch is this fold's rollback point. Run the separate whole-workspace backup on
-     its own schedule and before approved cleanup, rather than on every local fold. Its retention
-     step deletes older backups, so approve those exact deletions before running it.
-  4. If the tip moved, release the lock, go back to step 1 and rerun what the new commits affect.
-  5. Bring it home: `git -C D:/Worktrees/Database/ward-lead merge --no-ff <your branch>`. Because step 1
-     already merged the line, this cannot conflict.
-  6. Check `git diff backup/<date>-<topic>..codex/task-ward-flow-live-state-20260831` shows only your
-     change, then release the lock and your sign-outs.
-- **"Main" means the local ward line.** "Fold into main" never means `origin/main`, which deploys the
-  live app and applies migrations to the live clinical database. Nothing is pushed; a hook refuses it.
-- Fold by SHA, not by branch name. Merge commits only; never rebase, force or `reset --hard`.
-- **Done means folded home**: on the line in `D:/Worktrees/Database/ward-lead`, with its selected
-  fold checks passed.
-- After any pause, check `git reflog` and for a `MERGE_HEAD` before folding. Another thread may have
-  folded in the meantime.
-- Detail and the incidents behind these rules: [`archive/dated-notes/HOW-TO-FOLD-2026-09-10.md`](archive/dated-notes/HOW-TO-FOLD-2026-09-10.md).
+- Before integrating, verify the target is `BigSimmo/Ward-Flow`, inspect the exact branch and diff,
+  and run the selected checks on the candidate tree (§5). Reuse valid checks on identical inputs.
+- Keep integration serial, backed up and reviewable. Follow the current `AGENTS.md` instructions for
+  any lock, queue and preflight steps that still apply in the dedicated repository. Never run an old
+  local-line fold command from an archived handover.
+- A local commit, pull request, merge and deployment are distinct states. Obtain the applicable
+  authority for each consequential action, and report which state was actually reached.
+- After a pause, refresh the branch and target state before integrating. Preserve other threads'
+  changes; do not rebase, force or reset unclear work.
+- Historical fold incidents: [`archive/dated-notes/HOW-TO-FOLD-2026-09-10.md`](archive/dated-notes/HOW-TO-FOLD-2026-09-10.md).
 
 - **Review server when visual review is needed** (the steward): `node scripts/ward-flow/review-server.mjs --dist
 .next-playwright/<run-id>/dist [--port 3700]` serves a finished journeys build with the same offline
@@ -229,15 +191,14 @@ A thread is not finished, and must not be resolved, until all of this is true:
 
 1. **Everything useful is committed** on the thread's own branch. The worktree shows no uncommitted
    changes (`git -C <worktree> status --short` is empty).
-2. **Anything at risk is backed up first.** The clean fold's preflight backup branch protects the
-   prior Ward line. Before approved cleanup or replacing uncommitted or unclear work, run
+2. **Anything at risk is backed up first.** Preserve a recoverable point before replacing the
+   integration target. Before approved cleanup or replacing uncommitted or unclear work, run
    `bash ~/.claude/scripts/backup-work.sh` and preserve those files in a backup commit, never a stash.
-3. **Useful work is folded into the local ward line** (§4), and the result is compared against the
-   backup branch to confirm nothing was lost.
+3. **Useful work is integrated into its authorised Ward Flow destination** (§4), with the exact
+   resulting tree compared against the reviewed candidate.
 4. **Work that is not wanted is kept, not discarded**, on a named `backup/<date>-<topic>` branch.
-5. **The fold lock is released** (`node scripts/ward-flow/fold-lock.mjs status` shows it free or held
-   by someone else).
-6. **The thread reports to the coordinator**: what was folded (commit SHAs), the backup branch name,
+5. **Any integration lock is released** under the current repository rulebook.
+6. **The thread reports to the coordinator**: what was integrated (commit SHAs), the backup branch name,
    and any open questions or suggested next steps.
 
 If any of these cannot be done, say which and why in the thread, and leave the thread open.

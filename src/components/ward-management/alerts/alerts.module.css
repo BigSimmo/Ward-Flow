@@ -581,7 +581,7 @@
 }
 .kpiCard[data-tone="warn"] {
   background: linear-gradient(180deg, var(--warn-soft) 0%, var(--surface) 40%);
-  border: 1px solid var(--warn-line, var(--warn));
+  border: 1px solid var(--warn);
   border-bottom-color: var(--warn);
 }
 .kpiCard[data-tone="warn"] .kpiVal {

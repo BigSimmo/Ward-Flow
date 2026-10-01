@@ -20,10 +20,7 @@ import { Sheet } from "@/components/ui/sheet";
 import { Tooltip } from "@/components/ui/tooltip";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
-import {
-  OPERATIONAL_DEFAULT_LABEL,
-  SHIFT_PATTERN,
-} from "@/components/ward-management/ward-operational-defaults";
+import { OPERATIONAL_DEFAULT_LABEL, SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";

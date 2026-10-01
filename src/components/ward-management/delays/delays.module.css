@@ -2907,7 +2907,9 @@
   padding: 0 10px;
   height: var(--ward-tap, 44px);
   min-width: 220px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .searchBox:focus-within {
@@ -2950,7 +2952,9 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
 }
 
 .iconBtn:hover {
@@ -3192,10 +3196,19 @@
   flex-shrink: 0;
 }
 
-.legendDotYours { background: var(--accent); }
-.legendDotWards { background: var(--svc-north); }
-.legendDotTransport { background: var(--svc-south); }
-.legendDotBreached { background: var(--danger); box-shadow: 0 0 0 2px var(--danger-soft); }
+.legendDotYours {
+  background: var(--accent);
+}
+.legendDotWards {
+  background: var(--svc-north);
+}
+.legendDotTransport {
+  background: var(--svc-south);
+}
+.legendDotBreached {
+  background: var(--danger);
+  box-shadow: 0 0 0 2px var(--danger-soft);
+}
 
 .radarCanvasBox {
   position: relative;
@@ -3501,9 +3514,15 @@
   transition: width 0.2s;
 }
 
-.durationSegCatastrophic { background: var(--danger); }
-.durationSegAccessBlocked { background: var(--warn); }
-.durationSegRoutine { background: var(--accent); }
+.durationSegCatastrophic {
+  background: var(--danger);
+}
+.durationSegAccessBlocked {
+  background: var(--warn);
+}
+.durationSegRoutine {
+  background: var(--accent);
+}
 
 .durationPills {
   display: grid;
@@ -4317,7 +4336,6 @@
   gap: 12px;
 }
 
-
 /* ================================================================================
  * PERFECTED THIRD EDITION: 60% / 40% MASTER-DETAIL WORKSPACE
  * ================================================================================ */
@@ -4440,7 +4458,9 @@
   color: var(--ink);
   font-size: var(--t-0, 12px);
   outline: none;
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 }
 
 .searchInput:focus {
@@ -4512,7 +4532,10 @@
   display: flex;
   flex-direction: column;
   cursor: pointer;
-  transition: border-color 0.12s, box-shadow 0.12s, background 0.12s;
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s,
+    background 0.12s;
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
@@ -4529,7 +4552,9 @@
 .patientCardSelected {
   border-color: var(--accent);
   background: var(--surface-2);
-  box-shadow: inset 3px 0 0 var(--accent), var(--lift-sm);
+  box-shadow:
+    inset 3px 0 0 var(--accent),
+    var(--lift-sm);
 }
 
 .patientCardBreached {
@@ -5588,10 +5613,18 @@
   flex-shrink: 0;
 }
 
-.legendDotYours { background: var(--accent); }
-.legendDotWards { background: var(--accent-subtle, var(--accent)); }
-.legendDotTransport { background: var(--brand, var(--ink)); }
-.legendDotBreached { background: var(--danger); }
+.legendDotYours {
+  background: var(--accent);
+}
+.legendDotWards {
+  background: var(--accent);
+}
+.legendDotTransport {
+  background: var(--ink);
+}
+.legendDotBreached {
+  background: var(--danger);
+}
 
 .radarCanvasBox {
   position: relative;
@@ -5847,9 +5880,18 @@
   border-radius: 4px;
 }
 
-.triageTagT1 { background: var(--danger-soft); color: var(--danger); }
-.triageTagT2 { background: var(--warn-soft); color: var(--warn); }
-.triageTagT3 { background: var(--surface-2); color: var(--muted); }
+.triageTagT1 {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.triageTagT2 {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.triageTagT3 {
+  background: var(--surface-2);
+  color: var(--muted);
+}
 
 .escalatedTag {
   font-size: var(--t-0, 12px);
@@ -5985,10 +6027,18 @@
   text-transform: uppercase;
 }
 
-.cardOwnerTagYours { color: var(--accent); }
-.cardOwnerTagWards { color: var(--accent-subtle, var(--accent)); }
-.cardOwnerTagTransport { color: var(--brand, var(--ink)); }
-.cardOwnerTagEd { color: var(--muted); }
+.cardOwnerTagYours {
+  color: var(--accent);
+}
+.cardOwnerTagWards {
+  color: var(--accent);
+}
+.cardOwnerTagTransport {
+  color: var(--ink);
+}
+.cardOwnerTagEd {
+  color: var(--muted);
+}
 
 .cardStagnation {
   font-family: var(--mono);

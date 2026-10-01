@@ -319,7 +319,9 @@
   border-radius: var(--r1);
   color: var(--ink);
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 .actionBtn:hover {
   background: var(--sunk);
@@ -329,5 +331,3 @@
   outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
-
-

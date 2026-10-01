@@ -198,8 +198,8 @@ export function PatientSearchPage() {
   const [tierFilter, setTierFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"wait-desc" | "tier-asc" | "name-asc" | "urm-asc" | "opened-desc">("wait-desc");
   const [viewMode, setViewMode] = useState<"cards" | "dense">("cards");
-  const [preview, setPreview] = useState<PreviewSelection | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [requestedPreview, setPreview] = useState<PreviewSelection | null>(null);
+  const [requestedSelectedId, setSelectedId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [accessRecord, setAccessRecord] = useState<AccessEntry[]>([]);
 
@@ -386,7 +386,7 @@ export function PatientSearchPage() {
           stage: stageCopy[m.stage].label,
           transportNeeded: Boolean(m.transport),
           transportStatus: m.transport ? "Vehicle dispatched" : isTransit ? "In-Transit" : "Pending allocation",
-          nurseEscort: Boolean((m as any).escort),
+          nurseEscort: Boolean(m.transport?.escortRequired),
           presence: "live",
           presenceLabel: "Live in Hospital",
           presenceDetail: `Present in ${originText} · ${isTransit ? "In-Transit" : m.acceptedUnitId ? "Bed hold active" : "Awaiting transfer"}`,
@@ -481,25 +481,15 @@ export function PatientSearchPage() {
     return { total, live, unplaced, notIn, past, breaches, holds, transit };
   }, [unifiedCaseload]);
 
-  // Sync selected patient
-  useEffect(() => {
-    if (unifiedCaseload.length > 0) {
-      if (!selectedId || !unifiedCaseload.some((p) => p.id === selectedId)) {
-        const first = unifiedCaseload[0];
-        setSelectedId(first.id);
-        if (first.originalSubject.kind === "movement") {
-          setPreview({ kind: "movement", movement: first.originalSubject.movement });
-        } else if (first.originalSubject.kind === "referral") {
-          setPreview({ kind: "referral", referral: first.originalSubject.referral });
-        } else {
-          setPreview({ kind: "person", patient: first.originalSubject.patient });
-        }
-      }
-    } else {
-      setSelectedId(null);
-      setPreview(null);
-    }
-  }, [unifiedCaseload, selectedId]);
+  // Derive the fallback from the current filtered population instead of synchronising state in an effect.
+  const selectedRow = unifiedCaseload.find((row) => row.id === requestedSelectedId) ?? unifiedCaseload[0] ?? null;
+  const selectedId = selectedRow?.id ?? null;
+  const preview: PreviewSelection | null =
+    selectedRow === null
+      ? null
+      : requestedPreview && (requestedSelectedId === null || selectedId === requestedSelectedId)
+        ? requestedPreview
+        : selectedRow.originalSubject;
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -1203,7 +1193,7 @@ Clinical Note: ${p.clinicalNote}`;
                     id="sortSelect"
                     className={styles.facetSelect}
                     value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
+                    onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                     aria-label="Sort patient records"
                     style={{ minWidth: "135px" }}
                   >

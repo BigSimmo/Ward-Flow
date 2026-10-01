@@ -333,15 +333,14 @@ function DischargeWorkspace() {
       : null;
   // Never retain the selected DTO: each render obtains a newly guarded current read.
   const detailRecord = opened?.status === "allowed" ? opened.value : null;
-  const fallbackRecord = selected ? records.find((record) => record.admissionId === selected.admissionId) ?? null : null;
-  const activeRecord = detailRecord ?? (openError ? null : fallbackRecord);
   const detailRelease =
     population === "releases" && releaseId && visibleReleaseIds.includes(releaseId)
       ? scopedReleases.find((release) => release.id === releaseId)
       : undefined;
-  const linkedReleaseRecord =
-    detailRelease ? records.find((record) => record.admissionId === detailRelease.admissionId) ?? null : null;
-  const selectedUnitId = activeRecord?.unitId ?? detailRelease?.unitId;
+  const linkedReleaseRecord = detailRelease
+    ? (records.find((record) => record.admissionId === detailRelease.admissionId) ?? null)
+    : null;
+  const selectedUnitId = detailRecord?.unitId ?? detailRelease?.unitId;
   const selectedUnit = units.find((unit) => unit.id === selectedUnitId);
   const shown = population === "records" ? visibleRecords.length : visibleReleaseIds.length;
   const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
@@ -362,14 +361,14 @@ function DischargeWorkspace() {
   };
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && (selected !== null || releaseId !== null)) {
+      if (event.key === "Escape" && (selected !== null || releaseId !== null || openError)) {
         clearSelection();
         listRef.current?.focus();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selected, releaseId]);
+  }, [selected, releaseId, openError]);
   const focusDetail = () => detailRef.current?.focus();
   const openRecord = (record: DischargeRecord) => {
     setReleaseId(null);
@@ -378,8 +377,8 @@ function DischargeWorkspace() {
     try {
       setSelected({ admissionId: record.admissionId, handle: openDischargeRecord(RECORD_ACTOR, record.admissionId) });
     } catch {
-      setSelected({ admissionId: record.admissionId, handle: { generation: -1, requestId: -1 } });
-      setOpenError(false);
+      setSelected(null);
+      setOpenError(true);
     }
     focusDetail();
   };
@@ -1001,11 +1000,7 @@ function DischargeWorkspace() {
                                     {unitLabel(unit, release.unitId)}
                                   </button>
                                   <span className={pageStyles.secondary}>{healthServiceLabel(unit)}</span>
-                                  {linked && (
-                                    <span className={pageStyles.patientHint}>
-                                      {recordName(linked)}
-                                    </span>
-                                  )}
+                                  {linked && <span className={pageStyles.patientHint}>{recordName(linked)}</span>}
                                 </td>
                                 <td data-label="Timing" className={styles.timingCell}>
                                   {release.state !== "discharged" && release.expectedAt < now ? (
@@ -1075,7 +1070,7 @@ function DischargeWorkspace() {
               )}
             </footer>
           </section>
-          {Boolean(selected || releaseId) && (
+          {Boolean(selected || releaseId || openError) && (
             <div
               className={`${styles.scrim} ${pageStyles.scrim}`}
               onClick={() => {
@@ -1088,7 +1083,7 @@ function DischargeWorkspace() {
           )}
           <aside
             ref={detailRef}
-            className={`${pageStyles.detail} ${styles.detailPanel}${selected || releaseId ? ` ${styles.open} ${pageStyles.open}` : ""}`}
+            className={`${pageStyles.detail} ${styles.detailPanel}${selected || releaseId || openError ? ` ${styles.open} ${pageStyles.open}` : ""}`}
             tabIndex={-1}
             aria-labelledby="discharge-detail-heading"
             onKeyDown={(event) => {
@@ -1100,9 +1095,9 @@ function DischargeWorkspace() {
           >
             <header className={pageStyles.panelHeader}>
               <h2 id="discharge-detail-heading">
-                {activeRecord ? "Admission record" : detailRelease ? "Anonymous release" : "Record detail"}
+                {detailRecord ? "Admission record" : detailRelease ? "Anonymous release" : "Record detail"}
               </h2>
-              {(selected || releaseId) && (
+              {(selected || releaseId || openError) && (
                 <button
                   type="button"
                   className={pageStyles.quietButton}
@@ -1116,25 +1111,25 @@ function DischargeWorkspace() {
               )}
             </header>
             <div className={pageStyles.detailBody} role="region" aria-label="Selected discharge details" tabIndex={0}>
-              {activeRecord ? (
+              {detailRecord ? (
                 <>
-                  <span className={pageStyles.eyebrow}>{activeRecord.admissionId}</span>
-                  <h3>{recordName(activeRecord)}</h3>
-                  {activeRecord.identity.kind === "linked" && (
-                    <p className={pageStyles.mono}>UMRN {activeRecord.identity.patient.umrn}</p>
+                  <span className={pageStyles.eyebrow}>{detailRecord.admissionId}</span>
+                  <h3>{recordName(detailRecord)}</h3>
+                  {detailRecord.identity.kind === "linked" && (
+                    <p className={pageStyles.mono}>UMRN {detailRecord.identity.patient.umrn}</p>
                   )}
-                  <p>{unitLabel(selectedUnit, activeRecord.unitId)}</p>
+                  <p>{unitLabel(selectedUnit, detailRecord.unitId)}</p>
                   <div className={pageStyles.detailStatus}>
-                    {badge(recordStage(activeRecord))}
-                    {recordStatus(activeRecord) === "blocked" && badge("blocked")}
+                    {badge(recordStage(detailRecord))}
+                    {recordStatus(detailRecord) === "blocked" && badge("blocked")}
                   </div>
                   <dl>
                     <dt>Expected discharge</dt>
                     <dd>
-                      {recordedMoment(activeRecord.expectedDischargeAt, dayZero)}
+                      {recordedMoment(detailRecord.expectedDischargeAt, dayZero)}
                       {/* Walkthrough D8 (25 Sept 2026): not offered once the person has left, because the
                           reducer refuses a new date for a departed stay. */}
-                      {recordStage(activeRecord) === "departed" ? null : !showUpdateDate ? (
+                      {recordStage(detailRecord) === "departed" ? null : !showUpdateDate ? (
                         <div style={{ marginTop: "0.5rem" }}>
                           <button
                             type="button"
@@ -1143,8 +1138,8 @@ function DischargeWorkspace() {
                             onClick={() => {
                               setShowUpdateDate(true);
                               setNewTimeDraft(
-                                activeRecord.expectedDischargeAt !== null
-                                  ? formatInstantWithDay(activeRecord.expectedDischargeAt, now)
+                                detailRecord.expectedDischargeAt !== null
+                                  ? formatInstantWithDay(detailRecord.expectedDischargeAt, now)
                                   : "14:00",
                               );
                             }}
@@ -1164,17 +1159,19 @@ function DischargeWorkspace() {
                               // (the discharge record is the truth, Josh 25 Sept); it used to move the
                               // date to today. With no date recorded yet, today.
                               const today = parseReleaseDayInstant(now, "today", newTimeDraft);
-                              const recorded = activeRecord.expectedDischargeAt;
+                              const recorded = detailRecord.expectedDischargeAt;
                               parsed =
                                 today === undefined || recorded === null
                                   ? today
-                                  : today + (Math.floor(recorded / MINUTES_PER_DAY) - Math.floor(now / MINUTES_PER_DAY)) * MINUTES_PER_DAY;
+                                  : today +
+                                    (Math.floor(recorded / MINUTES_PER_DAY) - Math.floor(now / MINUTES_PER_DAY)) *
+                                      MINUTES_PER_DAY;
                             }
                             if (parsed !== undefined) {
                               dispatch({
                                 type: "UPDATE_EXPECTED_DISCHARGE",
                                 role: "coordinator",
-                                admissionId: activeRecord.admissionId,
+                                admissionId: detailRecord.admissionId,
                                 expectedDischargeAt: parsed,
                                 now,
                               });
@@ -1219,41 +1216,41 @@ function DischargeWorkspace() {
                     </dd>
                     <dt>Date recorded</dt>
                     <dd>
-                      {recordedMoment(activeRecord.dischargeDateSetAt, dayZero)}
+                      {recordedMoment(detailRecord.dischargeDateSetAt, dayZero)}
                       <span className={pageStyles.secondary}>
-                        {activeRecord.dischargeDateSetBy ?? "Role not recorded"}
+                        {detailRecord.dischargeDateSetBy ?? "Role not recorded"}
                       </span>
                     </dd>
                     <dt>Discharge confirmation</dt>
                     <dd>
-                      {activeRecord.dischargeConfirmedAt === null
+                      {detailRecord.dischargeConfirmedAt === null
                         ? "Not confirmed"
-                        : recordedMoment(activeRecord.dischargeConfirmedAt, dayZero)}
+                        : recordedMoment(detailRecord.dischargeConfirmedAt, dayZero)}
                       <span className={pageStyles.secondary}>
-                        {activeRecord.dischargeConfirmedBy ?? "Role not recorded"}
+                        {detailRecord.dischargeConfirmedBy ?? "Role not recorded"}
                       </span>
                     </dd>
-                    {activeRecord.blockReason && (
+                    {detailRecord.blockReason && (
                       <>
                         <dt>Recorded blocker</dt>
-                        <dd className={pageStyles.blocker}>{activeRecord.blockReason}</dd>
+                        <dd className={pageStyles.blocker}>{detailRecord.blockReason}</dd>
                       </>
                     )}
                     <dt>Recorded departure</dt>
-                    <dd>{recordedMoment(activeRecord.leftAt, dayZero)}</dd>
+                    <dd>{recordedMoment(detailRecord.leftAt, dayZero)}</dd>
                     <dt>Destination</dt>
                     <dd>
-                      {LEAVING_DESTINATIONS.find((item) => item.id === activeRecord.leavingDestination)?.label ??
+                      {LEAVING_DESTINATIONS.find((item) => item.id === detailRecord.leavingDestination)?.label ??
                         "Not recorded"}
                     </dd>
                   </dl>
-                  {activeRecord.blockReason && (
+                  {detailRecord.blockReason && (
                     <div className={pageStyles.drawerSection}>
                       <h4 className={pageStyles.drawerSubheading}>
                         <ShieldAlert size={14} className={pageStyles.inlineIcon} aria-hidden="true" />
                         Barrier Mitigation
                       </h4>
-                      <p className={pageStyles.barrierHighlight}>{activeRecord.blockReason}</p>
+                      <p className={pageStyles.barrierHighlight}>{detailRecord.blockReason}</p>
                       <p className={pageStyles.drawerInfoText}>
                         Active discharge barrier registered. Cross-service coordination required to clear egress path.
                       </p>
@@ -1262,13 +1259,13 @@ function DischargeWorkspace() {
                           type="button"
                           className={pageStyles.actionBtnDisabled}
                           aria-disabled="true"
-                          aria-describedby={`mitigate-note-${activeRecord.admissionId}`}
+                          aria-describedby={`mitigate-note-${detailRecord.admissionId}`}
                           title="Not wired in this prototype."
                           onClick={ignoreUnavailableActivation}
                         >
                           + Mitigate barrier
                         </button>
-                        <span id={`mitigate-note-${activeRecord.admissionId}`} className={pageStyles.planActionNote}>
+                        <span id={`mitigate-note-${detailRecord.admissionId}`} className={pageStyles.planActionNote}>
                           Not wired in this prototype.
                         </span>
                       </div>
@@ -1280,9 +1277,9 @@ function DischargeWorkspace() {
                       Transport Coordination
                     </h4>
                     <p className={pageStyles.drawerInfoText}>
-                      {activeRecord.leavingDestination
+                      {detailRecord.leavingDestination
                         ? `Target egress: ${
-                            LEAVING_DESTINATIONS.find((item) => item.id === activeRecord.leavingDestination)?.label ??
+                            LEAVING_DESTINATIONS.find((item) => item.id === detailRecord.leavingDestination)?.label ??
                             "Not recorded"
                           }`
                         : "No departure destination recorded yet for this admission."}
@@ -1292,13 +1289,13 @@ function DischargeWorkspace() {
                         type="button"
                         className={pageStyles.actionBtnDisabled}
                         aria-disabled="true"
-                        aria-describedby={`transport-note-${activeRecord.admissionId}`}
+                        aria-describedby={`transport-note-${detailRecord.admissionId}`}
                         title="Not wired in this prototype."
                         onClick={ignoreUnavailableActivation}
                       >
                         + Book transport
                       </button>
-                      <span id={`transport-note-${activeRecord.admissionId}`} className={pageStyles.planActionNote}>
+                      <span id={`transport-note-${detailRecord.admissionId}`} className={pageStyles.planActionNote}>
                         Not wired in this prototype.
                       </span>
                     </div>

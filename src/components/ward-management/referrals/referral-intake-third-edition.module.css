@@ -964,7 +964,9 @@
   display: flex !important;
   flex-direction: column !important;
   gap: 6px !important;
-  transition: border-color 0.12s, background 0.12s !important;
+  transition:
+    border-color 0.12s,
+    background 0.12s !important;
 }
 
 .locationCard:hover {

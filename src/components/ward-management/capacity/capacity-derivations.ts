@@ -345,7 +345,8 @@ export function networkWardRows(
                 dayOf(admission.expectedDischargeAt) === dayOf(now),
             ).length,
       // 🔴 ALL FIVE FROM THE CANONICAL DERIVATIONS, NEVER COUNTED HERE — see the row type's note.
-      confirmed: releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).confirmedToday,
+      confirmed:
+        releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).confirmedToday,
       expected: releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).expectedToday,
       blocked: releases === undefined ? undefined : capacityBreakdown(unit, releases, leave ?? [], now).blockedToday,
       // WLQ-10: unscoped by day, deliberately — see the field's own doc comment on `NetworkWardRow`.

@@ -168,6 +168,8 @@ describe("the breakpoint scale", () => {
    * a count would stay green if a breakpoint moved between files, or if the walk silently narrowed.
    */
   const KNOWN_BREAKPOINTS = [
+    // PR12 clinical metadata changes from two to four bounded columns at 52rem.
+    "src/components/ward-management/referrals/referrals.module.css: 52",
     // ⚠️ ADDED 2026-09-04, AND THE GATE HAD BEEN RED SINCE THESE TWO FILES LANDED. `ed-home` (48)
     // and `ed-service-bands` (60) are part of the ED cluster's design-language adoption; both were
     // committed without their rows, so this assertion was failing on the integration line at the

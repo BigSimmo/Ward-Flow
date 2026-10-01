@@ -2067,21 +2067,20 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
           data-active={activeTab === "return"}
         >
           <WardDecisionsCockpit unit={unit} />
-          <div
-            className={styles.censusCommandCard}
-            style={{ marginTop: "1rem", padding: "16px 20px" }}
-          >
-            <details className={styles.clinicalDisclosure} open style={{ borderTop: "none", paddingTop: 0, marginTop: 0 }}>
+          <div className={styles.censusCommandCard} style={{ marginTop: "1rem", padding: "16px 20px" }}>
+            <details
+              className={styles.clinicalDisclosure}
+              open
+              style={{ borderTop: "none", paddingTop: 0, marginTop: 0 }}
+            >
               <summary style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink)", cursor: "pointer" }}>
                 Update allocatable count directly
               </summary>
-              <div style={{ marginTop: "10px" }}>
-                {presentation !== "answer" ? capacityConfirmationForm() : null}
-              </div>
+              <div style={{ marginTop: "10px" }}>{presentation !== "answer" ? capacityConfirmationForm() : null}</div>
             </details>
           </div>
-          {/* Preserved test contracts for automated test suites (visually hidden) */}
-          <div className={styles.visuallyHidden}>
+          {/* Operational controls remain visible and keyboard reachable alongside the summary. */}
+          <div>
             {/*
           🔴 **THE COUNT SAYS "SINCE THIS PAGE OPENED", NOT "TODAY", AND THE FILE ALREADY KNEW.**
           `confirmedToday` is `useState` (:252) — it counts taps in THIS SESSION and resets on
@@ -2514,7 +2513,6 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
                     counts and are not added to that total.
                   </p>
                 </details>
-
               </div>
             </section>
 

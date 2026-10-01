@@ -560,7 +560,9 @@
 
 .chartBarInteractive {
   cursor: pointer;
-  transition: filter 0.15s ease, opacity 0.15s ease;
+  transition:
+    filter 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .chartBarInteractive:hover {
@@ -693,7 +695,10 @@
   flex-direction: column;
   gap: 0.25rem;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    box-shadow 0.15s;
   user-select: none;
 }
 
@@ -759,4 +764,3 @@
   color: var(--ink);
   line-height: 1.45;
 }
-

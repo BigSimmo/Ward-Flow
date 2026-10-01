@@ -707,13 +707,15 @@
   align-items: baseline;
   gap: 5px;
   padding: 1px 8px;
-  border-radius: var(--r-full, 9999px);
+  border-radius: 9999px;
   font-size: var(--t-1, 12px);
   font-weight: 600;
   background: var(--surface);
   border: 1px solid var(--line);
   vertical-align: middle;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 }
 .metricToken:hover {
   border-color: var(--line-strong);

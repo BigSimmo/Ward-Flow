@@ -454,8 +454,10 @@ export function CommunityScreen({
   teamId,
   admissions,
   referrals,
+  demonstration = false,
 }: {
   teamId: string;
+  demonstration?: boolean;
   admissions?: Admission[];
   referrals?: Referral[];
 }) {
@@ -508,7 +510,9 @@ export function CommunityScreen({
 
   const hasExplicitProps = Boolean(admissions || referrals);
   const isDemoMode =
-    !hasExplicitProps && (teamId === "alma-street-fremantle" || teamId === "fremantle" || teamId === "alma-street");
+    demonstration &&
+    !hasExplicitProps &&
+    (teamId === "alma-street-fremantle" || teamId === "fremantle" || teamId === "alma-street");
 
   // Apply dark theme by default on initial mount for prototype demonstration
   useEffect(() => {

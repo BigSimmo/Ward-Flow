@@ -15,9 +15,24 @@ interface AuditRecord {
 
 export interface WardDecisionsCockpitProps {
   unit: Unit;
+  demonstration?: boolean;
 }
 
-export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
+export function WardDecisionsCockpit({ unit, demonstration = false }: WardDecisionsCockpitProps) {
+  if (!demonstration)
+    return (
+      <section className={styles.container} aria-label="Ward decision controls">
+        <h2>Decision cockpit</h2>
+        <p>
+          Not wired in this prototype. This illustrative cockpit does not record clinical decisions or send messages.
+        </p>
+        <p>Use the ward overview, arrival and discharge controls for supported record updates.</p>
+      </section>
+    );
+  return <WardDecisionsDemonstration unit={unit} />;
+}
+
+function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
   // ─── Shift Capacity Handshake (Gate 1) ───
   const physicalBeds = unit.beds ?? 20;
   const occupiedBeds = 18;
@@ -49,7 +64,7 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
   const [declineReason, setDeclineReason] = useState("acuity");
   const [barrierPathway, setBarrierPathway] = useState("social-work");
 
-  // ─── Real-Time Audit Log ───
+  // ─── Fictional Demonstration Log ───
   const [auditLog, setAuditLog] = useState<AuditRecord[]>([
     {
       id: "a1",
@@ -71,7 +86,9 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
 
   const showToast = useCallback((msg: string) => {
     if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    setToastText(msg);
+    setToastText(
+      `Demonstration preview only: ${msg}. Not wired in this prototype; no clinical record was changed and no message was sent.`,
+    );
     toastTimeoutRef.current = setTimeout(() => {
       setToastText(null);
     }, 3200);
@@ -87,8 +104,8 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
       const newItem: AuditRecord = {
         id: `aud-${Date.now()}`,
         icon,
-        title,
-        detail,
+        title: `Demonstration only: ${title}`,
+        detail: `Simulated scenario: ${detail} No clinical record was changed and no message was sent.`,
         time: `${nowTime} AWST`,
         author: `NUM ${unit.name}`,
       };
@@ -206,7 +223,11 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
 
   const handleDeclareAwol = () => {
     setMarcusState("awol");
-    addAuditItem("🚨", "Leave Overdue / AWOL Declared", "Marcus V. declared AWOL under MHA 2014 Part 7.");
+    addAuditItem(
+      "🚨",
+      "Leave Overdue / AWOL Declared",
+      "Demonstration only: no absence declaration has been recorded.",
+    );
     showToast("AWOL alert broadcast to hospital security");
   };
 
@@ -248,11 +269,15 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
 
   return (
     <div className={styles.container}>
+      <p role="note">
+        Demonstration only. All people, events and actions below are illustrative; no clinical record is changed and no
+        message is sent.
+      </p>
       {/* ─── Header Non-Duplication Contract Banner ─── */}
       <div className={styles.contractBanner}>
         <div>
           <div className={styles.contractTitle}>
-            <span>🛡️ Pure Ward Decision &amp; Sign-Off Cockpit</span>
+            <span>Illustrative decision cockpit</span>
             <span
               className={`${styles.chip} ${styles.chipNeutral}`}
               style={{ fontSize: "10px", textTransform: "uppercase" }}
@@ -261,8 +286,8 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
             </span>
           </div>
           <div className={styles.contractSubtitle}>
-            This tab strictly contains <strong>clinical &amp; operational human sign-offs</strong> required from ward
-            staff. Physical bed states live on <strong>Beds ({unit.beds})</strong>, patient transit on{" "}
+            This optional demonstration shows <strong>fictional clinical interactions</strong>, not recorded sign-offs.
+            Physical bed states live on <strong>Beds ({unit.beds})</strong>, patient transit on{" "}
             <strong>Arrivals</strong>, and pharmacy scripts on <strong>Discharges</strong>.
           </div>
         </div>
@@ -449,7 +474,7 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
             <div className={styles.panelTitleGroup}>
               <span
                 className={`${styles.chip} ${styles.chipGood}`}
-                style={{ fontFamily: "var(--font-geist-mono, monospace)", fontSize: "10.5px" }}
+                style={{ fontFamily: "var(--mono, monospace)", fontSize: "10.5px" }}
               >
                 GATE 1 · 07:00–09:30
               </span>
@@ -469,7 +494,7 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
                   </span>
                   <span
                     className={`${styles.chip} ${styles.chipNeutral}`}
-                    style={{ fontFamily: "var(--font-geist-mono, monospace)" }}
+                    style={{ fontFamily: "var(--mono, monospace)" }}
                   >
                     {physicalBeds} Physical · {occupiedBeds} Occupied
                   </span>
@@ -542,7 +567,7 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
                   <span
                     style={{
                       fontSize: "12px",
-                      fontFamily: "var(--font-geist-mono, monospace)",
+                      fontFamily: "var(--mono, monospace)",
                       color: "var(--good)",
                       fontWeight: 700,
                     }}
@@ -572,7 +597,7 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
             <div className={styles.panelTitleGroup}>
               <span
                 className={`${styles.chip} ${styles.chipDanger}`}
-                style={{ fontFamily: "var(--font-geist-mono, monospace)", fontSize: "10.5px" }}
+                style={{ fontFamily: "var(--mono, monospace)", fontSize: "10.5px" }}
               >
                 GATE 2 · 09:30–13:00
               </span>
@@ -640,7 +665,7 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
                       </div>
                       <div style={{ fontSize: "11px", opacity: 0.9 }}>
                         {intakeState === "accepted" &&
-                          "Aaron K. admitted under MHA 2014 Form 3A. Bed allocated upon departure of Keira P."}
+                          "Demonstration only: no admission or bed allocation has been recorded."}
                         {intakeState === "declined" &&
                           `Clinical reason: ${declineReason}. Documented in statewide queue.`}
                         {intakeState === "deferred" &&
@@ -667,7 +692,7 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
             <div className={styles.panelTitleGroup}>
               <span
                 className={`${styles.chip} ${styles.chipGood}`}
-                style={{ fontFamily: "var(--font-geist-mono, monospace)", fontSize: "10.5px" }}
+                style={{ fontFamily: "var(--mono, monospace)", fontSize: "10.5px" }}
               >
                 GATE 3 · 11:00–14:00
               </span>
@@ -820,7 +845,7 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
             <div className={styles.panelTitleGroup}>
               <span
                 className={`${styles.chip} ${styles.chipAccent}`}
-                style={{ fontFamily: "var(--font-geist-mono, monospace)", fontSize: "10.5px" }}
+                style={{ fontFamily: "var(--mono, monospace)", fontSize: "10.5px" }}
               >
                 GATE 4 · 14:00–18:00
               </span>
@@ -888,7 +913,7 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
                         {marcusState === "returned" &&
                           "Mental state exam verified. Section 17 Form 7 closed on ward record."}
                         {marcusState === "extended" && "New return target: 15:00 AWST. Treating consultant notified."}
-                        {marcusState === "awol" && "Apprehension order dispatched under WA Mental Health Act 2014."}
+                        {marcusState === "awol" && "Not wired in this prototype. No order has been dispatched."}
                       </div>
                     </div>
                   </div>
@@ -955,10 +980,10 @@ export function WardDecisionsCockpit({ unit }: WardDecisionsCockpitProps) {
         <div className={styles.panelStrip}>
           <div className={styles.panelTitleGroup}>
             <span style={{ color: "var(--good)", fontWeight: 700 }}>✓</span>
-            <h3 className={styles.panelTitle}>Completed Sign-Offs (Today&apos;s Shift Audit Trail)</h3>
+            <h3 className={styles.panelTitle}>Demonstration interaction history</h3>
           </div>
           <span className={`${styles.chip} ${styles.chipNeutral}`} style={{ fontSize: "10.5px" }}>
-            Immutable WA Health Clinical Audit Log
+            Illustrative local log; not a clinical audit record
           </span>
         </div>
 

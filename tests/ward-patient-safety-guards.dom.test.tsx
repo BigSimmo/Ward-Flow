@@ -193,8 +193,8 @@ describe("AddPatientForm Patient Safety & Privacy Defenses", () => {
 
     fireEvent.click(submitBtn);
 
-    // While submitting, submit button is disabled and text indicates in-flight status
-    expect(submitBtn).toBeDisabled();
+    // While submitting, the focusable control is aria-disabled; the submit handler also rejects repeats.
+    expect(submitBtn).toHaveAttribute("aria-disabled", "true");
     expect(submitBtn).toHaveTextContent("Adding patient...");
   });
 

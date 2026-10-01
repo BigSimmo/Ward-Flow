@@ -1,5 +1,8 @@
 "use client";
 
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
+import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import React, { useState } from "react";
 import styles from "./ward-home-tab.module.css";
 import type { Unit, Movement, Rejection, DeclineReason } from "@/components/ward-management/ward-model";
@@ -59,8 +62,7 @@ interface WardHomeTabProps {
   toggleDecline: (movementId: string) => void;
   declineReason: DeclineReason | "" | undefined;
   setDeclineReason:
-    | React.Dispatch<React.SetStateAction<DeclineReason | undefined>>
-    | ((reason: DeclineReason | undefined) => void);
+    React.Dispatch<React.SetStateAction<DeclineReason | undefined>> | ((reason: DeclineReason | undefined) => void);
   submitDecline: (event: React.FormEvent<HTMLFormElement>, movementId: string) => void;
   priorRejectionCountRef: React.MutableRefObject<number>;
   rejections: Rejection[];
@@ -119,46 +121,25 @@ export function WardHomeTab({
   liveFormAlerts,
   onOpenDecisions,
 }: WardHomeTabProps) {
-  const [form4ASighted, setForm4ASighted] = useState(false);
+  const { bedReleases } = useWardFlow();
+  const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const [affirmationChecked, setAffirmationChecked] = useState(false);
 
   return (
     <div className={styles.homeWrap}>
-      {/* 1. Urgent Statutory Deadline Alert */}
-      <div className={styles.alertStrip}>
-        <div className={styles.alertMain}>
-          <div className={styles.alertTitleRow}>
-            <span className={styles.alertClock}>{form4ASighted ? "Sighted" : "54m left"}</span>
-            <strong style={{ color: "var(--danger)", fontSize: "13.5px" }}>
-              Mental Health Act Form 4A Due for Extension
-            </strong>
-            <span className={styles.pillBadge}>Statutory Deadline</span>
-          </div>
-          <div className={styles.alertText}>
-            Patient <strong>Gianna Marrowvale</strong> (Bed 03 &middot; Involuntary Inpatient) transfer examination
-            recorded due at 11:42 AWST.
+      <p>{pendingPreparation} being made ready</p>
+      {liveFormAlerts.map((alert) => (
+        <div className={styles.alertStrip} key={alert.key} data-tone={alert.tone}>
+          <div className={styles.alertMain}>
+            <div className={styles.alertTitleRow}>
+              <span className={styles.alertClock}>{alert.countdown}</span>
+              <strong>{alert.title}</strong>
+            </div>
+            <p className={styles.alertText}>{alert.text}</p>
           </div>
         </div>
-        <div className={styles.alertActions}>
-          <button
-            type="button"
-            className={styles.btnAlertAct}
-            onClick={() => setForm4ASighted(true)}
-            aria-pressed={form4ASighted}
-          >
-            {form4ASighted ? "✓ Sighted" : "Mark Sighted"}
-          </button>
-          <button
-            type="button"
-            className={styles.btnAlertAct}
-            onClick={() => {
-              if (onOpenDecisions) onOpenDecisions();
-            }}
-          >
-            Complete Review
-          </button>
-        </div>
-      </div>
+      ))}
+      <LegalLimitsNotChecked variant="tag" />
 
       {/* 2. Home 2-Column Command Grid */}
       <div className={styles.homeGrid}>
@@ -175,7 +156,7 @@ export function WardHomeTab({
                 <span>Ward Census &amp; Physical Turnover Telemetry</span>
               </div>
               <span style={{ fontSize: "11px", fontFamily: "var(--mono)", color: "var(--muted)" }}>
-                Updated 10:44 AWST
+                Current ward record
               </span>
             </div>
             <div className={styles.cardBody}>
@@ -185,7 +166,7 @@ export function WardHomeTab({
                   <span className={styles.censusBoxVal} style={{ color: "var(--good)" }}>
                     {capacity.available}
                   </span>
-                  <span className={styles.censusBoxFoot}>Clean &amp; allocatable</span>
+                  <span className={styles.censusBoxFoot}>Ready count; preparation shown above</span>
                 </div>
                 <div className={styles.censusBox}>
                   <span className={styles.censusBoxLabel}>Inbound Pulled</span>
@@ -342,8 +323,8 @@ export function WardHomeTab({
                   <span className={styles.timelineTime}>08:15</span>
                   <div className={styles.timelineBody}>
                     <span>
-                      <strong>Section 17 Leave Sighted:</strong> Luke Daviecroft (Bed 02) departed on unescorted
-                      grounds leave.
+                      <strong>Section 17 Leave Sighted:</strong> Luke Daviecroft (Bed 02) departed on unescorted grounds
+                      leave.
                     </span>
                     <span className={styles.timelineRole}>RN Shift Lead</span>
                   </div>

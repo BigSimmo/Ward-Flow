@@ -1769,6 +1769,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     when: string;
     actionLabel?: string;
     onAction?: () => void;
+    transportMovementId?: string;
   };
 
   const priorityFlags: PriorityFlag[] = [];
@@ -1803,7 +1804,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         why: `${m.acceptedUnitId ? (units.find((u) => u.id === m.acceptedUnitId)?.name ?? m.acceptedUnitId) + " holds the bed" : "A bed is held"} and no transport is booked. The handover cannot be marked ready until it is.`,
         when: `waiting ${splitDuration(Math.max(now - m.openedAt, 0))}`,
         actionLabel: "Book transport",
-        onAction: () => toggleBookTransport(m.id),
+        transportMovementId: m.id,
       });
     }
     if (
@@ -1928,7 +1929,6 @@ export function EdScreen({ edId }: EdScreenProps) {
     category?: TimelineEventCategory;
     categoryLabel?: string;
     patientName?: string;
-    patientId?: string;
     movementId?: string;
     referralId?: string;
     badgeText?: string;
@@ -2002,7 +2002,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "arrivals",
         categoryLabel: "Arrivals & Departures",
         patientName: patientInfo.displayName,
-        patientId: m.patientId,
+
         movementId: m.id,
         badgeText: "Arrived",
         badgeTone: isLongWait ? "warn" : "quiet",
@@ -2032,7 +2032,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "clinical",
         categoryLabel: "Clinical & Legal",
         patientName: patientInfo.displayName,
-        patientId: m.patientId,
+
         movementId: m.id,
         badgeText: "Medically Cleared",
         badgeTone: "good",
@@ -2055,7 +2055,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "clinical",
         categoryLabel: "Clinical & Legal",
         patientName: patientInfo.displayName,
-        patientId: m.patientId,
+
         movementId: m.id,
         badgeText: "Examined",
         badgeTone: "info",
@@ -2080,7 +2080,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "clinical",
         categoryLabel: "Clinical & Legal",
         patientName: patientInfo.displayName,
-        patientId: m.patientId,
+
         movementId: m.id,
         badgeText: formCode,
         badgeTone: "purple",
@@ -2108,7 +2108,7 @@ export function EdScreen({ edId }: EdScreenProps) {
             category: "bed_search",
             categoryLabel: "Bed searches",
             patientName: patientInfo.displayName,
-            patientId: m.patientId,
+
             movementId: m.id,
             badgeText: "Bed Declined",
             badgeTone: "warn",
@@ -2136,7 +2136,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "bed_search",
         categoryLabel: "Bed searches",
         patientName: patientInfo.displayName,
-        patientId: m.patientId,
+
         movementId: m.id,
         badgeText: "Bed Accepted",
         badgeTone: "good",
@@ -2165,7 +2165,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "transport",
         categoryLabel: "Transport",
         patientName: patientInfo.displayName,
-        patientId: m.patientId,
+
         movementId: m.id,
         badgeText: "Transport Booked",
         badgeTone: "good",
@@ -2192,7 +2192,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "arrivals",
         categoryLabel: "Arrivals & Departures",
         patientName: patientInfo.displayName,
-        patientId: m.patientId,
+
         movementId: m.id,
         badgeText: "Departed",
         badgeTone: "quiet",
@@ -2227,7 +2227,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "bed_search",
         categoryLabel: "Bed searches",
         patientName: patientDisplayName,
-        patientId: r.patientId,
+
         referralId: r.id,
         badgeText: "Referral Raised",
         badgeTone: "quiet",
@@ -2248,7 +2248,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "arrivals",
         categoryLabel: "Arrivals & Departures",
         patientName: patientDisplayName,
-        patientId: r.patientId,
+
         referralId: r.id,
         badgeText: "Triaged",
         badgeTone: "quiet",
@@ -2876,7 +2876,15 @@ export function EdScreen({ edId }: EdScreenProps) {
                         <span className={styles.attentionWhy}>{flag.why}</span>
                         {flag.actionLabel ? (
                           <span className={styles.attentionAct}>
-                            <button type="button" className={styles.attentionActionBtn} onClick={flag.onAction}>
+                            <button
+                              type="button"
+                              className={styles.attentionActionBtn}
+                              onClick={
+                                flag.transportMovementId
+                                  ? () => toggleBookTransport(flag.transportMovementId!)
+                                  : flag.onAction
+                              }
+                            >
                               {flag.actionLabel}
                             </button>
                           </span>
@@ -4203,7 +4211,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                     aria-expanded={isFormDropdownOpen}
                                     data-tone={formTone}
                                     data-none={!currentFormCode ? "true" : undefined}
-                                    aria-label={`Legal form ${currentFormCode ? currentFormCode : "none recorded"} for ${patientInfo.displayName}. Change it.`}
+                                    aria-label={`Legal form ${currentFormCode ? currentFormCode : "none recorded"} for the selected patient. Change it.`}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setFormDropdownOpenFor((current) =>
@@ -4331,7 +4339,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                     aria-haspopup="listbox"
                                     aria-expanded={isReviewOpen}
                                     data-tone={reviewTone}
-                                    aria-label={`Review status ${currentReviewStatus} for ${patientInfo.displayName}. Change status.`}
+                                    aria-label={`Review status ${currentReviewStatus} for the selected patient. Change status.`}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setReviewDropdownOpenFor((curr) =>
@@ -4367,7 +4375,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                               setReviewStatusOverrides((prev) => ({ ...prev, [movement.id]: opt }));
                                               setReviewDropdownOpenFor(undefined);
                                               announceToWardShell(
-                                                `Review status set to ${opt} for ${patientInfo.displayName}.`,
+                                                `Review status set to ${opt} for the selected patient.`,
                                               );
                                             }}
                                           >
@@ -4474,7 +4482,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                               setClearanceOverrides((prev) => ({ ...prev, [movement.id]: "yes" }));
                                               setClearanceDropdownOpenFor(undefined);
                                               announceToWardShell(
-                                                `Medical clearance set to Yes for ${patientInfo.displayName}.`,
+                                                `Medical clearance set to Yes for the selected patient.`,
                                               );
                                             }}
                                           >
@@ -4490,7 +4498,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                               setClearanceOverrides((prev) => ({ ...prev, [movement.id]: "no" }));
                                               setClearanceDropdownOpenFor(undefined);
                                               announceToWardShell(
-                                                `Medical clearance set to No for ${patientInfo.displayName}.`,
+                                                `Medical clearance set to No for the selected patient.`,
                                               );
                                             }}
                                           >
@@ -4509,9 +4517,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                               e.stopPropagation();
                                               setClearanceOverrides((prev) => ({ ...prev, [movement.id]: null }));
                                               setClearanceDropdownOpenFor(undefined);
-                                              announceToWardShell(
-                                                `Medical clearance reset for ${patientInfo.displayName}.`,
-                                              );
+                                              announceToWardShell(`Medical clearance reset for the selected patient.`);
                                             }}
                                           >
                                             • Pending / Not recorded

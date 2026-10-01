@@ -60,42 +60,6 @@ export function WardDischargesMatrix({
         </button>
       </div>
 
-      {/* Active Discharge Barrier Escalation Card */}
-      <div className={styles.barrierAlertCard}>
-        <div className={styles.barrierInfo}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-            <span className={styles.barrierBadge}>Blocked Discharge &middot; 14 Days Overdue</span>
-            <span style={{ fontSize: "11px", color: "var(--muted)", fontWeight: 600 }}>
-              High Severity Egress Blocker
-            </span>
-          </div>
-          <div className={styles.barrierTitle}>
-            Rowan Ross (Bed 11 &middot; UM100032) &mdash; NDIS Supported Accommodation Delay
-          </div>
-          <div className={styles.barrierDesc}>
-            Patient clinically fit for discharge since 16 Sept. Blocked on NDIS complex home modification and provider
-            SIL transition. Occupying acute secure bed.
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
-          <button
-            type="button"
-            className={`${styles.btnDischargeAction} ${styles.btnSec}`}
-            onClick={() => alert("Social Work Case Log: NDIS Senior Liaison review scheduled.")}
-          >
-            Social Work Log
-          </button>
-          <button
-            type="button"
-            className={styles.btnDischargeAction}
-            style={{ background: "var(--danger)" }}
-            onClick={() => alert("Escalated to State Bed Flow Manager and Department of Communities NDIS Lead.")}
-          >
-            Escalate to State NDIS Lead
-          </button>
-        </div>
-      </div>
-
       {/* Stream Tabs */}
       <nav className={styles.streamTabs} aria-label="Discharge Operational Streams">
         <button

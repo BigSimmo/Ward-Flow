@@ -243,7 +243,6 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
     });
   }
 
-
   // Keyboard navigation for tablist
   const TAB_KEYS: TabKey[] = ["now", "history", "community", "details", "documents"];
   function handleTabKeyDown(e: ReactKeyboardEvent) {
@@ -399,8 +398,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
 
               <div className={styles.demographicChips}>
                 <span className={styles.demoChip}>
-                  <strong>UMRN</strong>{" "}
-                  <span className={styles.tabularNum}>{livePatient?.umrn ?? "UM100023"}</span>
+                  <strong>UMRN</strong> <span className={styles.tabularNum}>{livePatient?.umrn ?? "UM100023"}</span>
                 </span>
                 <span className={styles.demoDivider}>·</span>
                 <span className={styles.demoChip}>
@@ -437,10 +435,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
             <div className={styles.episodeStatusCluster}>
               {liveMovement ? (
                 <>
-                  <span
-                    className={`${styles.teleBadge} ${styles.teleBadgeTier1}`}
-                    data-tier={urgencyTier ?? undefined}
-                  >
+                  <span className={`${styles.teleBadge} ${styles.teleBadgeTier1}`} data-tier={urgencyTier ?? undefined}>
                     Tier {urgencyTier ?? 1} · Most Urgent
                   </span>
                   <span className={`${styles.teleBadge} ${styles.teleBadgeAcuity}`}>
@@ -461,12 +456,8 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                 </>
               ) : (
                 <>
-                  <span className={`${styles.teleBadge} ${styles.teleBadgeLegal}`}>
-                    Community Outpatient Dossier
-                  </span>
-                  <span className={styles.statusPillBadge}>
-                    {record.verdict.short}
-                  </span>
+                  <span className={`${styles.teleBadge} ${styles.teleBadgeLegal}`}>Community Outpatient Dossier</span>
+                  <span className={styles.statusPillBadge}>{record.verdict.short}</span>
                 </>
               )}
             </div>
@@ -477,7 +468,9 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
               <div className={styles.commBadge}>Community Outpatient Dossier</div>
               <div className={styles.commTitle}>Peel Community Mental Health Service · Active Outpatient Care</div>
               <div className={styles.commDesc}>
-                Patient is currently managed in community outpatient care. No active emergency department transit or inpatient bed pull is underway. To initiate inpatient admission or transfer, raise a coordinated intake referral.
+                Patient is currently managed in community outpatient care. No active emergency department transit or
+                inpatient bed pull is underway. To initiate inpatient admission or transfer, raise a coordinated intake
+                referral.
               </div>
             </div>
           )}
@@ -759,119 +752,119 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                   className={styles.jrn}
                   aria-label={`The seven stages. Stage ${currentStageIndex + 1} of ${STAGES.length}, ${STAGES[currentStageIndex].label}, is current`}
                 >
-                {STAGES.map((s, i) => {
-                  const recordedTransition = liveMovement?.stageChanges.find((change) => change.to === s.id);
-                  const stateAttr = liveMovement?.stage === s.id ? "now" : recordedTransition ? "recorded" : "todo";
-                  const isExpanded = expandedStageIndex === i;
-                  const detail = getStageBedflowDetail(s.id, liveMovement);
-                  const firstTime = detail.milestones.find((m) => m.time)?.time;
-                  const whenText =
-                    stateAttr === "recorded"
-                      ? `Recorded ${firstTime ?? ""}`.trim()
-                      : stateAttr === "now"
-                        ? `${waitedStr} since opened`
-                        : "No transition recorded";
-                  return (
-                    <li key={s.id} className={styles.jst} data-s={stateAttr}>
-                      <div className={styles.jIndicatorCol}>
-                        <span className={styles.jnode} aria-hidden="true">
-                          {i + 1}
-                        </span>
-                        {i < STAGES.length - 1 && <span className={styles.jline} />}
-                      </div>
-                      <div className={styles.jcontent}>
-                        <button
-                          type="button"
-                          id={`stage-header-${s.id}`}
-                          ref={(el) => {
-                            stageButtonRefs.current[i] = el;
-                          }}
-                          tabIndex={focusedStageIndex === i ? 0 : -1}
-                          className={styles.stageButton}
-                          aria-expanded={isExpanded}
-                          aria-controls={`stage-panel-${s.id}`}
-                          data-testid={`ward-patient-stage-btn-${s.id}`}
-                          onClick={() => {
-                            setFocusedStageIndex(i);
-                            setExpandedStageIndex(isExpanded ? null : i);
-                          }}
-                          onKeyDown={(e) => {
-                            let nextIndex: number | null = null;
-                            if (e.key === "ArrowDown" || e.key === "ArrowRight") {
-                              e.preventDefault();
-                              nextIndex = (i + 1) % STAGES.length;
-                            } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
-                              e.preventDefault();
-                              nextIndex = (i - 1 + STAGES.length) % STAGES.length;
-                            } else if (e.key === "Home") {
-                              e.preventDefault();
-                              nextIndex = 0;
-                            } else if (e.key === "End") {
-                              e.preventDefault();
-                              nextIndex = STAGES.length - 1;
-                            } else if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
+                  {STAGES.map((s, i) => {
+                    const recordedTransition = liveMovement?.stageChanges.find((change) => change.to === s.id);
+                    const stateAttr = liveMovement?.stage === s.id ? "now" : recordedTransition ? "recorded" : "todo";
+                    const isExpanded = expandedStageIndex === i;
+                    const detail = getStageBedflowDetail(s.id, liveMovement);
+                    const firstTime = detail.milestones.find((m) => m.time)?.time;
+                    const whenText =
+                      stateAttr === "recorded"
+                        ? `Recorded ${firstTime ?? ""}`.trim()
+                        : stateAttr === "now"
+                          ? `${waitedStr} since opened`
+                          : "No transition recorded";
+                    return (
+                      <li key={s.id} className={styles.jst} data-s={stateAttr}>
+                        <div className={styles.jIndicatorCol}>
+                          <span className={styles.jnode} aria-hidden="true">
+                            {i + 1}
+                          </span>
+                          {i < STAGES.length - 1 && <span className={styles.jline} />}
+                        </div>
+                        <div className={styles.jcontent}>
+                          <button
+                            type="button"
+                            id={`stage-header-${s.id}`}
+                            ref={(el) => {
+                              stageButtonRefs.current[i] = el;
+                            }}
+                            tabIndex={focusedStageIndex === i ? 0 : -1}
+                            className={styles.stageButton}
+                            aria-expanded={isExpanded}
+                            aria-controls={`stage-panel-${s.id}`}
+                            data-testid={`ward-patient-stage-btn-${s.id}`}
+                            onClick={() => {
+                              setFocusedStageIndex(i);
                               setExpandedStageIndex(isExpanded ? null : i);
-                            }
-                            if (nextIndex !== null) {
-                              setFocusedStageIndex(nextIndex);
-                              stageButtonRefs.current[nextIndex]?.focus();
-                            }
-                          }}
-                          title={`Click to ${isExpanded ? "collapse" : "view"} bedflow details for ${s.label}`}
-                        >
-                          <div className={styles.jnameRow}>
-                            <span className={styles.jname}>{s.label}</span>
-                            <div className={styles.stageRightCluster}>
-                              {whenText && <span className={styles.jwhen}>{whenText}</span>}
-                              <svg
-                                className={`${styles.stageChevron} ${isExpanded ? styles.stageChevronOpen : ""}`}
-                                width="12"
-                                height="12"
-                                viewBox="0 0 16 16"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2.5"
-                                aria-hidden="true"
-                              >
-                                <polyline points="4 6 8 10 12 6" />
-                              </svg>
-                            </div>
-                          </div>
-                        </button>
-
-                        {isExpanded && (
-                          <div
-                            id={`stage-panel-${s.id}`}
-                            role="region"
-                            aria-labelledby={`stage-header-${s.id}`}
-                            className={styles.stageDetailBox}
-                            data-testid={`ward-patient-stage-panel-${s.id}`}
+                            }}
+                            onKeyDown={(e) => {
+                              let nextIndex: number | null = null;
+                              if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+                                e.preventDefault();
+                                nextIndex = (i + 1) % STAGES.length;
+                              } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+                                e.preventDefault();
+                                nextIndex = (i - 1 + STAGES.length) % STAGES.length;
+                              } else if (e.key === "Home") {
+                                e.preventDefault();
+                                nextIndex = 0;
+                              } else if (e.key === "End") {
+                                e.preventDefault();
+                                nextIndex = STAGES.length - 1;
+                              } else if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                setExpandedStageIndex(isExpanded ? null : i);
+                              }
+                              if (nextIndex !== null) {
+                                setFocusedStageIndex(nextIndex);
+                                stageButtonRefs.current[nextIndex]?.focus();
+                              }
+                            }}
+                            title={`Click to ${isExpanded ? "collapse" : "view"} bedflow details for ${s.label}`}
                           >
-                            <div className={styles.stageDetailHeader}>
-                              <span className={styles.stageDetailBadge} data-tone={detail.badgeTone}>
-                                {detail.statusText}
-                              </span>
+                            <div className={styles.jnameRow}>
+                              <span className={styles.jname}>{s.label}</span>
+                              <div className={styles.stageRightCluster}>
+                                {whenText && <span className={styles.jwhen}>{whenText}</span>}
+                                <svg
+                                  className={`${styles.stageChevron} ${isExpanded ? styles.stageChevronOpen : ""}`}
+                                  width="12"
+                                  height="12"
+                                  viewBox="0 0 16 16"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2.5"
+                                  aria-hidden="true"
+                                >
+                                  <polyline points="4 6 8 10 12 6" />
+                                </svg>
+                              </div>
                             </div>
-                            <p className={styles.stageDetailSummary}>{detail.summary}</p>
-                            {detail.milestones.length > 0 && (
-                              <ul className={styles.stageMilestoneList}>
-                                {detail.milestones.map((m, mi) => (
-                                  <li key={mi} className={styles.stageMilestoneItem}>
-                                    {m.time && <span className={styles.stageMilestoneTime}>{m.time}</span>}
-                                    <span className={styles.stageMilestoneLabel}>{m.label}:</span>
-                                    <span className={styles.stageMilestoneText}>{m.detail}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
+                          </button>
+
+                          {isExpanded && (
+                            <div
+                              id={`stage-panel-${s.id}`}
+                              role="region"
+                              aria-labelledby={`stage-header-${s.id}`}
+                              className={styles.stageDetailBox}
+                              data-testid={`ward-patient-stage-panel-${s.id}`}
+                            >
+                              <div className={styles.stageDetailHeader}>
+                                <span className={styles.stageDetailBadge} data-tone={detail.badgeTone}>
+                                  {detail.statusText}
+                                </span>
+                              </div>
+                              <p className={styles.stageDetailSummary}>{detail.summary}</p>
+                              {detail.milestones.length > 0 && (
+                                <ul className={styles.stageMilestoneList}>
+                                  {detail.milestones.map((m, mi) => (
+                                    <li key={mi} className={styles.stageMilestoneItem}>
+                                      {m.time && <span className={styles.stageMilestoneTime}>{m.time}</span>}
+                                      <span className={styles.stageMilestoneLabel}>{m.label}:</span>
+                                      <span className={styles.stageMilestoneText}>{m.detail}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
               )}
 
               <dl className={`${styles.slFacts} ${styles.jfoot}`}>
@@ -1107,9 +1100,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                     <div className={styles.sec}>
                       <h3 className={styles.secH}>
                         Referrals
-                        <span className={styles.count}>
-                          {`${liveMovement?.referredUnitIds.length ?? 0} referred`}
-                        </span>
+                        <span className={styles.count}>{`${liveMovement?.referredUnitIds.length ?? 0} referred`}</span>
                       </h3>
 
                       {!liveMovement ? (
@@ -1126,9 +1117,9 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                             <table className={styles.referralTable} aria-label="Network bed placement status">
                               <thead>
                                 <tr>
-                                  <th>Unit / Facility</th>
-                                  <th>Status</th>
-                                  <th>Outcome / Re-Ask Condition</th>
+                                  <th scope="col">Unit / Facility</th>
+                                  <th scope="col">Status</th>
+                                  <th scope="col">Outcome / Re-Ask Condition</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -1141,18 +1132,26 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                                       <td className={styles.unitNameCell}>
                                         {unit?.name ?? uid}
                                         <div style={{ fontSize: "var(--t-0)", color: "var(--muted)", fontWeight: 400 }}>
-                                          {unit ? `${unit.cohort} · ${unit.lockedBeds > 0 ? "Secure" : "Open"}` : "Inpatient Unit"}
+                                          {unit
+                                            ? `${unit.cohort} · ${unit.lockedBeds > 0 ? "Secure" : "Open"}`
+                                            : "Inpatient Unit"}
                                         </div>
                                       </td>
                                       <td>
                                         {isAccepted ? (
-                                          <span className={styles.teleBadge} style={{ background: "var(--good-soft)", color: "var(--good-ink)" }}>
+                                          <span
+                                            className={styles.teleBadge}
+                                            style={{ background: "var(--good-soft)", color: "var(--good-ink)" }}
+                                          >
                                             Accepted
                                           </span>
                                         ) : withdrawal ? (
                                           <span className={styles.statusBadgeDeclined}>Declined</span>
                                         ) : (
-                                          <span className={styles.teleBadge} style={{ background: "var(--surface-2)", color: "var(--ink-soft)" }}>
+                                          <span
+                                            className={styles.teleBadge}
+                                            style={{ background: "var(--surface-2)", color: "var(--ink-soft)" }}
+                                          >
                                             Referred
                                           </span>
                                         )}
@@ -1162,7 +1161,8 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                                           <strong>Bed Allocated</strong>
                                         ) : withdrawal?.reason ? (
                                           <>
-                                            {withdrawal.reason.replace(/_/g, " ")}. <strong>Re-check after shift handover</strong>
+                                            {withdrawal.reason.replace(/_/g, " ")}.{" "}
+                                            <strong>Re-check after shift handover</strong>
                                           </>
                                         ) : (
                                           "Awaiting response from bed manager"
@@ -1442,8 +1442,8 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                             {liveMovement ? (
                               <>
                                 No transport vehicle has been logged for this patient yet. Once arranged by phone with
-                                the transport provider, click <strong>Mark as Booked</strong> to record the CAD (dispatch)
-                                number and quoted ETA.
+                                the transport provider, click <strong>Mark as Booked</strong> to record the CAD
+                                (dispatch) number and quoted ETA.
                               </>
                             ) : (
                               "No linked transport record displayed."
@@ -1779,7 +1779,8 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
             </div>
             <div className={styles.clearanceModalBody}>
               <p>
-                Under the WA Mental Health Act 2014 and clinical transit protocol, inter-hospital transfer requires signed emergency physician medical clearance confirming the patient is medically stable and fit for road transport.
+                Record the medical clearance provided by the treating team. This prototype does not determine fitness
+                for transport or legal transfer requirements.
               </p>
               <div
                 style={{
@@ -1790,9 +1791,13 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
                   border: "1px solid var(--line)",
                 }}
               >
-                <strong>Current Status:</strong> Fit to travel: <em>Not Assessed</em><br />
+                <strong>Current Status:</strong> Fit to travel: <em>Not Assessed</em>
+                <br />
                 <strong>Required Sign-off:</strong> Emergency Medicine Consultant / Senior Registrar on duty at{" "}
-                {liveMovement ? (edById(liveMovement.originEdId)?.name ?? "Emergency Department") : "Emergency Department"}.
+                {liveMovement
+                  ? (edById(liveMovement.originEdId)?.name ?? "Emergency Department")
+                  : "Emergency Department"}
+                .
               </div>
               <p>Submit request notification to ED triage &amp; Duty Medical Officer:</p>
               <label
@@ -1828,11 +1833,7 @@ export function PatientNowScreen({ patientId, movementId, initialExampleId = "WF
               )}
             </div>
             <div className={styles.clearanceModalFoot}>
-              <button
-                type="button"
-                className={styles.ctl}
-                onClick={() => setShowClearanceModal(false)}
-              >
+              <button type="button" className={styles.ctl} onClick={() => setShowClearanceModal(false)}>
                 Close
               </button>
               <button

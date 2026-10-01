@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useId, useMemo } from "react";
+import { useEffect, useRef, useState, useId, useSyncExternalStore } from "react";
 import Link from "next/link";
 
 import { WardFilters } from "@/components/ward-management/ward-controls";
@@ -69,7 +69,6 @@ import {
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "@/components/ward-management/ward-legal-clock";
 
-
 export type SystemicHoldCategory = "all" | "ward" | "transport" | "staffing";
 
 export interface SystemicDelayHold {
@@ -131,20 +130,18 @@ function radarX(waitMinutes: number): number {
   return 820 + Math.min((waitMinutes - 1440) / 480, 1) * 140;
 }
 
-export function DelaysScreen({
-  aliasFrom: aliasFromProp,
-  movements: movementsOverride,
-}: DelaysScreenProps = {}) {
-  const [aliasFrom, setAliasFrom] = useState<DelaysAliasFrom | null>(() => aliasFromProp ?? null);
-  const [aliasBannerDismissed, setAliasBannerDismissed] = useState(false);
+function subscribeToLocation(listener: () => void) {
+  window.addEventListener("popstate", listener);
+  return () => window.removeEventListener("popstate", listener);
+}
+function readAliasFromLocation() {
+  return parseDelaysAliasFrom(new URLSearchParams(window.location.search).get("from"));
+}
 
-  useEffect(() => {
-    if (aliasFromProp !== undefined) {
-      setAliasFrom(aliasFromProp);
-      return;
-    }
-    setAliasFrom(parseDelaysAliasFrom(new URLSearchParams(window.location.search).get("from")));
-  }, [aliasFromProp]);
+export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOverride }: DelaysScreenProps = {}) {
+  const fromSearch = useSyncExternalStore(subscribeToLocation, readAliasFromLocation, () => null);
+  const aliasFrom = aliasFromProp !== undefined ? aliasFromProp : fromSearch;
+  const [aliasBannerDismissed, setAliasBannerDismissed] = useState(false);
 
   const showAliasBanner = aliasFrom !== null && !aliasBannerDismissed;
 
@@ -178,7 +175,9 @@ export function DelaysScreen({
 
   // Search & Sort State
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortOrder, setSortOrder] = useState<"worstBlocker" | "longestWait" | "legalDeadline" | "triageRank">("worstBlocker");
+  const [sortOrder, setSortOrder] = useState<"worstBlocker" | "longestWait" | "legalDeadline" | "triageRank">(
+    "worstBlocker",
+  );
 
   // Refs for accessibility & drawer focus
   const detailColumnRef = useRef<HTMLDivElement>(null);
@@ -362,10 +361,10 @@ export function DelaysScreen({
   };
 
   // Pre-calculate Radar Points with 2D Beeswarm Band Dispersion
-  const radarPoints = useMemo(() => {
+  const radarPoints = (() => {
     function getJitter(str: string) {
       let hash = 0;
-      for (let i = 0; i < str.length; i++) hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      for (let i = 0; i < str.length; i++) hash = (hash << 5) - hash + str.charCodeAt(i);
       return Math.abs(hash);
     }
 
@@ -526,7 +525,7 @@ export function DelaysScreen({
     }
 
     return result;
-  }, [open, now]);
+  })();
 
   // The severe-wait mark is the ward's own labelled default (ward-operational-defaults.ts), not a
   // legal limit and not a national standard. The 24-hour line is gone until Josh rules on it (2A).
@@ -560,9 +559,7 @@ export function DelaysScreen({
               <span className={styles.liveDot} aria-hidden="true" />
               Delays &amp; Bottleneck Control
             </h1>
-            <span className={styles.pageSubtitle}>
-              Statewide Psychiatric Bed Coordination Desk · Western Australia
-            </span>
+            <span className={styles.pageSubtitle}>Statewide Psychiatric Bed Coordination Desk · Western Australia</span>
           </div>
 
           <div className={styles.mastheadMeta}>
@@ -594,11 +591,7 @@ export function DelaysScreen({
             data-from={aliasFrom}
           >
             <p>{delaysAliasBannerCopy(aliasFrom)}</p>
-            <button
-              type="button"
-              className={styles.aliasBannerDismiss}
-              onClick={() => setAliasBannerDismissed(true)}
-            >
+            <button type="button" className={styles.aliasBannerDismiss} onClick={() => setAliasBannerDismissed(true)}>
               Dismiss
             </button>
           </aside>
@@ -629,10 +622,7 @@ export function DelaysScreen({
         ) : null}
 
         {/* ─── PANEL 1: EXECUTIVE COORDINATION OVERVIEW (Who is holding people up) ─── */}
-        <WardPanel
-          title="Who is holding people up"
-          count={open.length === 0 ? undefined : `${open.length} waiting`}
-        >
+        <WardPanel title="Who is holding people up" count={open.length === 0 ? undefined : `${open.length} waiting`}>
           <div className={styles.topExecutiveControlRow}>
             <div className={styles.execStatusBadge}>
               <span className={styles.livePulseDot} aria-hidden="true" />
@@ -646,7 +636,15 @@ export function DelaysScreen({
                 onClick={() => setViewMode("cards")}
                 aria-pressed={viewMode === "cards"}
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
                   <rect x="3" y="3" width="7" height="7" rx="1" />
                   <rect x="14" y="3" width="7" height="7" rx="1" />
                   <rect x="14" y="14" width="7" height="7" rx="1" />
@@ -660,7 +658,15 @@ export function DelaysScreen({
                 onClick={() => setViewMode("radar")}
                 aria-pressed={viewMode === "radar"}
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
                   <circle cx="12" cy="12" r="10" />
                   <path d="M12 2a10 10 0 0 1 10 10" />
                   <path d="M12 12l7-7" />
@@ -673,7 +679,15 @@ export function DelaysScreen({
                 onClick={() => setViewMode("both")}
                 aria-pressed={viewMode === "both"}
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
                   <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
                 </svg>
                 Combined
@@ -697,10 +711,18 @@ export function DelaysScreen({
                 </div>
 
                 <div className={styles.radarLegend}>
-                  <div className={styles.legendItem}><span className={`${styles.legendDot} ${styles.legendDotYours}`} /> Yours (Coordinator)</div>
-                  <div className={styles.legendItem}><span className={`${styles.legendDot} ${styles.legendDotWards}`} /> Wards</div>
-                  <div className={styles.legendItem}><span className={`${styles.legendDot} ${styles.legendDotTransport}`} /> Transport</div>
-                  <div className={styles.legendItem}><span className={`${styles.legendDot} ${styles.legendDotBreached}`} /> Past recorded time / due soon</div>
+                  <div className={styles.legendItem}>
+                    <span className={`${styles.legendDot} ${styles.legendDotYours}`} /> Yours (Coordinator)
+                  </div>
+                  <div className={styles.legendItem}>
+                    <span className={`${styles.legendDot} ${styles.legendDotWards}`} /> Wards
+                  </div>
+                  <div className={styles.legendItem}>
+                    <span className={`${styles.legendDot} ${styles.legendDotTransport}`} /> Transport
+                  </div>
+                  <div className={styles.legendItem}>
+                    <span className={`${styles.legendDot} ${styles.legendDotBreached}`} /> Past recorded time / due soon
+                  </div>
                 </div>
               </div>
 
@@ -725,9 +747,7 @@ export function DelaysScreen({
                           : `due in ${splitDuration(legalDeadlineMinutes(radarTooltip.movement, now)!)}`}
                       </span>
                     ) : (
-                      <span className={styles.ttStatus}>
-                        Legal Status: {radarTooltip.movement.legalStatus}
-                      </span>
+                      <span className={styles.ttStatus}>Legal Status: {radarTooltip.movement.legalStatus}</span>
                     )}
                   </div>
                 )}
@@ -858,44 +878,87 @@ export function DelaysScreen({
                   />
 
                   {/* Grid Axes */}
-                  <line
-                    x1="86"
-                    y1="236"
-                    x2="976"
-                    y2="236"
-                    stroke="var(--line-strong)"
-                    strokeWidth="1.5"
-                  />
-                  <line
-                    x1="86"
-                    y1="16"
-                    x2="86"
-                    y2="236"
-                    stroke="var(--line-strong)"
-                    strokeWidth="1.5"
-                  />
+                  <line x1="86" y1="236" x2="976" y2="236" stroke="var(--line-strong)" strokeWidth="1.5" />
+                  <line x1="86" y1="16" x2="86" y2="236" stroke="var(--line-strong)" strokeWidth="1.5" />
 
                   {/* Y-Axis Labels aligned with the 4 band centers (52, 96, 152, 202) */}
-                  <text x="78" y="56" textAnchor="end" fill="var(--danger)" fontFamily="var(--body)" fontSize="12" fontWeight="700">Past time</text>
-                  <text x="78" y="100" textAnchor="end" fill="var(--warn)" fontFamily="var(--body)" fontSize="12" fontWeight="600">&lt;60m Due</text>
-                  <text x="78" y="156" textAnchor="end" fill="var(--ink)" fontFamily="var(--body)" fontSize="12" fontWeight="500">Severe</text>
-                  <text x="78" y="206" textAnchor="end" fill="var(--muted)" fontFamily="var(--body)" fontSize="12" fontWeight="500">Routine</text>
+                  <text
+                    x="78"
+                    y="56"
+                    textAnchor="end"
+                    fill="var(--danger)"
+                    fontFamily="var(--body)"
+                    fontSize="12"
+                    fontWeight="700"
+                  >
+                    Past time
+                  </text>
+                  <text
+                    x="78"
+                    y="100"
+                    textAnchor="end"
+                    fill="var(--warn)"
+                    fontFamily="var(--body)"
+                    fontSize="12"
+                    fontWeight="600"
+                  >
+                    &lt;60m Due
+                  </text>
+                  <text
+                    x="78"
+                    y="156"
+                    textAnchor="end"
+                    fill="var(--ink)"
+                    fontFamily="var(--body)"
+                    fontSize="12"
+                    fontWeight="500"
+                  >
+                    Severe
+                  </text>
+                  <text
+                    x="78"
+                    y="206"
+                    textAnchor="end"
+                    fill="var(--muted)"
+                    fontFamily="var(--body)"
+                    fontSize="12"
+                    fontWeight="500"
+                  >
+                    Routine
+                  </text>
 
                   {/* X-Axis Labels */}
-                  <text x="86" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">0h</text>
-                  <text x="210" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">4h</text>
-                  <text x="340" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">8h</text>
-                  <text x="460" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">12h</text>
-                  <text x="580" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">16h</text>
-                  <text x="700" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">20h</text>
-                  <text x="820" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">24h</text>
-                  <text x="950" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">28h+</text>
+                  <text x="86" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
+                    0h
+                  </text>
+                  <text x="210" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
+                    4h
+                  </text>
+                  <text x="340" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
+                    8h
+                  </text>
+                  <text x="460" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
+                    12h
+                  </text>
+                  <text x="580" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
+                    16h
+                  </text>
+                  <text x="700" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
+                    20h
+                  </text>
+                  <text x="820" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
+                    24h
+                  </text>
+                  <text x="950" y="253" textAnchor="middle" fill="var(--muted)" fontFamily="var(--mono)" fontSize="12">
+                    28h+
+                  </text>
 
                   {/* Dynamic Plotted Dots with 2D Beeswarm Dispersion */}
                   {radarPoints.map((pt) => {
                     const isSelected = selectedId === pt.movement.id;
                     const owner = ownerOf(
-                      groups.find((g) => g.movements.some((m) => m.id === pt.movement.id))?.cause ?? "awaiting_coordinator",
+                      groups.find((g) => g.movements.some((m) => m.id === pt.movement.id))?.cause ??
+                        "awaiting_coordinator",
                     );
 
                     let fillColor = "var(--ink)";
@@ -928,13 +991,7 @@ export function DelaysScreen({
                         onMouseLeave={() => setRadarTooltip(null)}
                       >
                         {/* Enlarged invisible tap/hover hit target (hit radius 16px = 32x32px minimum) */}
-                        <circle
-                          cx={pt.x}
-                          cy={pt.y}
-                          r={16}
-                          fill="transparent"
-                          stroke="transparent"
-                        />
+                        <circle cx={pt.x} cy={pt.y} r={16} fill="transparent" stroke="transparent" />
                         {pt.isBreached && (
                           <circle
                             cx={pt.x}
@@ -986,7 +1043,13 @@ export function DelaysScreen({
                   {breachedCount > 0 ? (
                     <div className={styles.sentinelBreach}>
                       <div className={styles.sentinelBreachLeft}>
-                        <svg className={styles.sentinelBreachIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg
+                          className={styles.sentinelBreachIcon}
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
                           <circle cx="12" cy="12" r="10" />
                           <line x1="12" y1="8" x2="12" y2="12" />
                           <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -1149,10 +1212,7 @@ export function DelaysScreen({
                     options={delayFilters.map((option) => ({
                       id: option.id,
                       label: option.label,
-                      count: groups.reduce(
-                        (sum, group) => sum + group.movements.filter(option.predicate).length,
-                        0,
-                      ),
+                      count: groups.reduce((sum, group) => sum + group.movements.filter(option.predicate).length, 0),
                     }))}
                   />
                 </div>
@@ -1190,14 +1250,27 @@ export function DelaysScreen({
                         id="sortOrderSelect"
                         className={styles.sortSelect}
                         value={sortOrder}
-                        onChange={(e) => setSortOrder(e.target.value as "worstBlocker" | "longestWait" | "legalDeadline" | "triageRank")}
+                        onChange={(e) =>
+                          setSortOrder(
+                            e.target.value as "worstBlocker" | "longestWait" | "legalDeadline" | "triageRank",
+                          )
+                        }
                       >
                         <option value="worstBlocker">Worst Blocker First</option>
                         <option value="longestWait">Longest ED Wait</option>
                         <option value="legalDeadline">Legal Expiry Due</option>
                         <option value="triageRank">Triage Rank (T1-T3)</option>
                       </select>
-                      <svg className={styles.sortSelectChevron} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <svg
+                        className={styles.sortSelectChevron}
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden="true"
+                      >
                         <polyline points="6 9 12 15 18 9" />
                       </svg>
                     </div>
@@ -1221,7 +1294,7 @@ export function DelaysScreen({
                           : markedOwner !== null
                             ? `Owner: ${markedOwner.toUpperCase()}`
                             : markedCause !== null
-                              ? DELAY_CAUSE_COPY.find((c) => c.cause === markedCause)?.title ?? markedCause
+                              ? (DELAY_CAUSE_COPY.find((c) => c.cause === markedCause)?.title ?? markedCause)
                               : "Filtered results"}
                     </strong>{" "}
                     ({markedCount} matching)
@@ -1261,9 +1334,7 @@ export function DelaysScreen({
                 const sortedItems = [...filteredItems];
                 if (sortOrder === "longestWait") {
                   sortedItems.sort(
-                    (a, b) =>
-                      a.movement.openedAt - b.movement.openedAt ||
-                      a.movement.id.localeCompare(b.movement.id),
+                    (a, b) => a.movement.openedAt - b.movement.openedAt || a.movement.id.localeCompare(b.movement.id),
                   );
                 } else if (sortOrder === "legalDeadline") {
                   sortedItems.sort((a, b) => {
@@ -1278,10 +1349,7 @@ export function DelaysScreen({
                     }
                     if (legalA !== undefined) return -1;
                     if (legalB !== undefined) return 1;
-                    return (
-                      a.movement.openedAt - b.movement.openedAt ||
-                      a.movement.id.localeCompare(b.movement.id)
-                    );
+                    return a.movement.openedAt - b.movement.openedAt || a.movement.id.localeCompare(b.movement.id);
                   });
                 } else if (sortOrder === "triageRank") {
                   sortedItems.sort(
@@ -1347,8 +1415,12 @@ export function DelaysScreen({
                   data-testid="delays-detail-backdrop"
                 />
                 <div style={{ display: "none" }}>
-                  <WardPanel title="What the blocker is"><div /></WardPanel>
-                  <WardPanel title="Escalations and resolved"><div /></WardPanel>
+                  <WardPanel title="What the blocker is">
+                    <div />
+                  </WardPanel>
+                  <WardPanel title="Escalations and resolved">
+                    <div />
+                  </WardPanel>
                 </div>
                 <div ref={detailColumnRef} className={styles.colDetail}>
                   <WardPanel title="Why this person is waiting">
@@ -1488,11 +1560,16 @@ export function DelaysScreen({
                               {/* D-b: this register is whole-network, so a row outside the chosen
                                   service is never dropped — only marked. */}
                               {isOutsideChosenService(movement) ? (
-                                <span className={styles.rowSub} data-testid={`delays-escalation-outside-${movement.id}`}>
+                                <span
+                                  className={styles.rowSub}
+                                  data-testid={`delays-escalation-outside-${movement.id}`}
+                                >
                                   {`Outside ${service}`}
                                 </span>
                               ) : null}
-                              <span className={styles.rowSub}>{formatInstantWithDay(escalationOf(movement).at, now)}</span>
+                              <span className={styles.rowSub}>
+                                {formatInstantWithDay(escalationOf(movement).at, now)}
+                              </span>
                             </li>
                           ))}
                         </ul>
@@ -1520,7 +1597,9 @@ export function DelaysScreen({
                               >
                                 <div className={styles.attentionCardTop}>
                                   {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                                  <span className={styles.attentionWho}>{resolvePatientIdentity(movement).formalName}</span>
+                                  <span className={styles.attentionWho}>
+                                    {resolvePatientIdentity(movement).formalName}
+                                  </span>
                                   <span className={styles.attentionWhen}>
                                     {splitDuration(Math.max(now - movement.openedAt, 0))} waiting
                                   </span>
@@ -1580,8 +1659,8 @@ export function DelaysScreen({
             <div className={styles.systemicHeader}>
               <span className="sr-only">
                 This model records delays only against a movement. Ward-wide closures and transport outages are not
-                represented as individual patient movements; systemic and facility holds active across the Western Australian
-                network are tracked below.
+                represented as individual patient movements; systemic and facility holds active across the Western
+                Australian network are tracked below.
               </span>
               <div className={styles.systemicTitleBlock}>
                 <span className={styles.systemicSubtitle}>
@@ -1595,7 +1674,15 @@ export function DelaysScreen({
                   onClick={() => handleProtoAction("Record a service-wide delay")}
                   aria-label="Record a service-wide or facility delay"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden="true"
+                  >
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
                   </svg>
@@ -1608,9 +1695,21 @@ export function DelaysScreen({
               {(
                 [
                   { id: "all", label: "All holds", count: SYSTEMIC_HOLDS.length },
-                  { id: "ward", label: "Ward closures", count: SYSTEMIC_HOLDS.filter((h) => h.category === "ward").length },
-                  { id: "transport", label: "Transport & fleet", count: SYSTEMIC_HOLDS.filter((h) => h.category === "transport").length },
-                  { id: "staffing", label: "Staffing surge", count: SYSTEMIC_HOLDS.filter((h) => h.category === "staffing").length },
+                  {
+                    id: "ward",
+                    label: "Ward closures",
+                    count: SYSTEMIC_HOLDS.filter((h) => h.category === "ward").length,
+                  },
+                  {
+                    id: "transport",
+                    label: "Transport & fleet",
+                    count: SYSTEMIC_HOLDS.filter((h) => h.category === "transport").length,
+                  },
+                  {
+                    id: "staffing",
+                    label: "Staffing surge",
+                    count: SYSTEMIC_HOLDS.filter((h) => h.category === "staffing").length,
+                  },
                 ] as const
               ).map((chip) => (
                 <button
@@ -1628,7 +1727,15 @@ export function DelaysScreen({
 
             {filteredHolds.length === 0 ? (
               <div className={styles.systemicEmptyState}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.5" aria-hidden="true">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="var(--muted)"
+                  strokeWidth="1.5"
+                  aria-hidden="true"
+                >
                   <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <p className={styles.systemicReason}>No active systemic holds recorded across the statewide network.</p>
@@ -1874,12 +1981,12 @@ function SelectedPerson({
 
       {/* Statutory Legal Clock Badge */}
       {legalForm && legalMinutes !== undefined && (
-        <div className={`${styles.legalClockCard} ${legalMinutes < 0 ? styles.legalClockCardBreached : styles.legalClockCardWarning}`}>
+        <div
+          className={`${styles.legalClockCard} ${legalMinutes < 0 ? styles.legalClockCardBreached : styles.legalClockCardWarning}`}
+        >
           <div className={styles.legalClockTop}>
             <span className={styles.legalClockForm}>{legalFormName(legalForm)}</span>
-            <span className={styles.legalClockStatus}>
-              {legalMinutes < 0 ? "PAST RECORDED TIME" : "DUE SOON"}
-            </span>
+            <span className={styles.legalClockStatus}>{legalMinutes < 0 ? "PAST RECORDED TIME" : "DUE SOON"}</span>
           </div>
           <div className={styles.legalClockCountdown}>
             {legalMinutes < 0
@@ -1971,23 +2078,30 @@ function SelectedPerson({
 
       {/* Candidate Wards Matcher */}
       <div className={styles.dossierSection} style={{ marginTop: 14 }}>
-        <h4 className={styles.dossierSectionTitle}>
-          Candidate Wards Shortlist
-        </h4>
+        <h4 className={styles.dossierSectionTitle}>Candidate Wards Shortlist</h4>
         <div className={styles.wardQueryList}>
-          {shortlistCandidates(movement, units, now).slice(0, 3).map((candidate) => (
-            <div key={candidate.unit.id} className={styles.wardQueryRow}>
-              <div className={styles.wardQueryLeft}>
-                <span className={styles.wardQueryName}>{candidate.unit.name}</span>
-                <span className={styles.wardQueryReason}>
-                  {candidate.availability === "eligible" ? "Eligible bed" : candidate.availability === "overridable" ? "Overridable" : "Unavailable"} · {candidate.verdict.eligible ? "Eligible" : "Requires override"}
+          {shortlistCandidates(movement, units, now)
+            .slice(0, 3)
+            .map((candidate) => (
+              <div key={candidate.unit.id} className={styles.wardQueryRow}>
+                <div className={styles.wardQueryLeft}>
+                  <span className={styles.wardQueryName}>{candidate.unit.name}</span>
+                  <span className={styles.wardQueryReason}>
+                    {candidate.availability === "eligible"
+                      ? "Eligible bed"
+                      : candidate.availability === "overridable"
+                        ? "Overridable"
+                        : "Unavailable"}{" "}
+                    · {candidate.verdict.eligible ? "Eligible" : "Requires override"}
+                  </span>
+                </div>
+                <span
+                  className={`${styles.wardQueryStatus} ${candidate.verdict.eligible ? styles.wardQueryStatusCandidate : styles.wardQueryStatusDeclined}`}
+                >
+                  {candidate.verdict.eligible ? "MATCH" : "OVERRIDE"}
                 </span>
               </div>
-              <span className={`${styles.wardQueryStatus} ${candidate.verdict.eligible ? styles.wardQueryStatusCandidate : styles.wardQueryStatusDeclined}`}>
-                {candidate.verdict.eligible ? "MATCH" : "OVERRIDE"}
-              </span>
-            </div>
-          ))}
+            ))}
           {movement.declines.map((decline) => (
             <div key={decline.unitId} className={styles.wardQueryRow}>
               <div className={styles.wardQueryLeft}>
@@ -1996,9 +2110,7 @@ function SelectedPerson({
                 </span>
                 <span className={styles.wardQueryReason}>{decline.reason}</span>
               </div>
-              <span className={`${styles.wardQueryStatus} ${styles.wardQueryStatusDeclined}`}>
-                DECLINED
-              </span>
+              <span className={`${styles.wardQueryStatus} ${styles.wardQueryStatusDeclined}`}>DECLINED</span>
             </div>
           ))}
         </div>
@@ -2101,7 +2213,9 @@ function PersonRow({
   const isBreached = legalMinutes !== undefined && legalMinutes < 0;
   const isImminent = legalMinutes !== undefined && legalMinutes >= 0 && legalMinutes <= 60;
   const owner = ownerOf(cause);
-  const activeBlocker = movement.blocker.trim() !== "" && !BLOCKERS_MEANING_NOTHING_IS_BLOCKING.some((inactive) => inactive === movement.blocker.trim());
+  const activeBlocker =
+    movement.blocker.trim() !== "" &&
+    !BLOCKERS_MEANING_NOTHING_IS_BLOCKING.some((inactive) => inactive === movement.blocker.trim());
 
   return (
     <li
@@ -2128,23 +2242,20 @@ function PersonRow({
             <span className={styles.cardPatientId} data-ward-primitive="record-id">
               {patientWho.formalName}
             </span>
-            <span className={`${styles.triageTag} ${styles[`triageTagT${movement.urgency}`]}`} data-tier={movement.urgency}>
+            <span
+              className={`${styles.triageTag} ${styles[`triageTagT${movement.urgency}`]}`}
+              data-tier={movement.urgency}
+            >
               T{movement.urgency}
             </span>
-            {movement.flaggedUrgent && (
-              <span className={styles.escalatedTag}>Escalated</span>
-            )}
-            {movement.security === "Secure" && (
-              <span className={styles.lockedBedFlag}>Needs Locked Bed</span>
-            )}
+            {movement.flaggedUrgent && <span className={styles.escalatedTag}>Escalated</span>}
+            {movement.security === "Secure" && <span className={styles.lockedBedFlag}>Needs Locked Bed</span>}
             {cleared === false ? (
               <span className={styles.uncleared}>NOT CLEARED</span>
             ) : cleared === true ? (
               <span className={styles.clearedBadge}>CLEARED</span>
             ) : null}
-            {marked && markLabel !== null && (
-              <span className={styles.markedBadge}>Marked: {markLabel}</span>
-            )}
+            {marked && markLabel !== null && <span className={styles.markedBadge}>Marked: {markLabel}</span>}
           </div>
 
           <div className={styles.cardWaitClock}>
@@ -2167,13 +2278,17 @@ function PersonRow({
         <div className={styles.cardLocRow}>
           <span className={styles.cardFacility}>{originName}</span>
           <span data-ward-type-floor="delays-profile" className={styles.cardDemographics}>
-            {movement.cohort} · {movement.security === "Secure" ? "Needs a locked bed" : "An open bed suits"} · {movement.legalStatus}
+            {movement.cohort} · {movement.security === "Secure" ? "Needs a locked bed" : "An open bed suits"} ·{" "}
+            {movement.legalStatus}
           </span>
         </div>
 
         {/* Statutory Legal Alert Strip */}
         {legalForm !== undefined && legalMinutes !== undefined && (isBreached || isImminent) && (
-          <div className={`${styles.cardLegalAlert} ${isImminent ? styles.cardLegalAlertImminent : ""}`} data-breached={isBreached}>
+          <div
+            className={`${styles.cardLegalAlert} ${isImminent ? styles.cardLegalAlertImminent : ""}`}
+            data-breached={isBreached}
+          >
             <span>
               <strong>{legalFormName(legalForm)}</strong>:{" "}
               {legalMinutes < 0
@@ -2187,7 +2302,9 @@ function PersonRow({
         {/* Blocker Strip */}
         <div className={styles.cardBlockerStrip}>
           <div className={styles.cardBlockerTop}>
-            <span className={`${styles.cardOwnerTag} ${owner === "yours" ? styles.cardOwnerTagYours : owner === "wards" ? styles.cardOwnerTagWards : owner === "transport" ? styles.cardOwnerTagTransport : styles.cardOwnerTagEd}`}>
+            <span
+              className={`${styles.cardOwnerTag} ${owner === "yours" ? styles.cardOwnerTagYours : owner === "wards" ? styles.cardOwnerTagWards : owner === "transport" ? styles.cardOwnerTagTransport : styles.cardOwnerTagEd}`}
+            >
               {owner.toUpperCase()}
             </span>
             <span data-ward-type-floor="delays-since" className={styles.cardStagnation}>
@@ -2214,4 +2331,3 @@ function PersonRow({
     </li>
   );
 }
-

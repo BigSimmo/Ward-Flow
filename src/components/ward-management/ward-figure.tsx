@@ -45,13 +45,7 @@ export function WardFigure({
  * is eliminated. Multiple alerts are handled gracefully with visual triage and data-flagged-count.
  * Strict testing environments continue to assert the threshold.
  */
-export function WardFigureStrip({
-  children,
-  strict = false,
-}: {
-  children: ReactNode;
-  strict?: boolean;
-}) {
+export function WardFigureStrip({ children, strict = false }: { children: ReactNode; strict?: boolean }) {
   const flagged = Children.toArray(children).filter(
     (child) => isValidElement<{ flagged?: boolean }>(child) && child.props.flagged === true,
   ).length;
@@ -72,4 +66,3 @@ export function WardFigureStrip({
     </dl>
   );
 }
-

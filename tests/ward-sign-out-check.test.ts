@@ -44,14 +44,10 @@ describe("ward sign-out-check", () => {
   });
 
   it("reports no clash on a non-clashing file", () => {
-    const run = spawnSync(
-      process.execPath,
-      [script, "src/components/ward-management/ward-eligibility.ts"],
-      {
-        cwd: gitRoot,
-        encoding: "utf8",
-      },
-    );
+    const run = spawnSync(process.execPath, [script, "src/components/ward-management/ward-eligibility.ts"], {
+      cwd: gitRoot,
+      encoding: "utf8",
+    });
     expect(run.status).toBe(0);
     expect(run.stdout).toContain("no clash for 1 file(s)");
   });

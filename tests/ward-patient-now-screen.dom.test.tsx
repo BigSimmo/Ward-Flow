@@ -208,7 +208,9 @@ describe("the patient-now screen", () => {
     );
     expect(within(root).queryByText(original.umrn)).not.toBeInTheDocument();
     expect(within(root).queryByText(original.dateOfBirth)).not.toBeInTheDocument();
-    expect(within(screen.getByTestId("ward-person-identity")).getByText(explicitIdentity("WF-004"))).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("ward-person-identity")).getByText(explicitIdentity("WF-004")),
+    ).toBeInTheDocument();
   });
 
   it("shows the person's recorded catchment without inventing a movement age band or owner", () => {
@@ -334,7 +336,9 @@ describe("the ward person route", () => {
     expect(screen.queryByTestId("ward-person-missing")).not.toBeInTheDocument();
     expect(screen.getByTestId("ward-person-identity")).toBeInTheDocument();
     // WF-005 names its patient since the seed-link work, so the identity is that person, not the id.
-    expect(within(screen.getByTestId("ward-person-identity")).getByText(explicitIdentity("WF-005"))).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("ward-person-identity")).getByText(explicitIdentity("WF-005")),
+    ).toBeInTheDocument();
   });
 
   it("renders the governed PersonScreen for an unknown WF- id that does not exist in movements", async () => {

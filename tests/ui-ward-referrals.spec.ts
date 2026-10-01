@@ -736,7 +736,9 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     // width, and this journey is phone width throughout. Nothing is hidden by that — every heading
     // and both of its counts are on the screen while shut, asserted here before anything is opened,
     // so "there is nothing available within an hour" is answerable without expanding a thing.
-    const bandGroups = page.getByTestId("ward-referral-match-list").locator("details");
+    const bandGroups = page
+      .getByTestId("ward-referral-match-list")
+      .locator('details[data-testid^="ward-referral-match-band-group-"]');
     await expect(bandGroups).toHaveCount(BAND_GROUP_COUNT);
     let unitsAcrossBands = 0;
     for (let index = 0; index < BAND_GROUP_COUNT; index += 1) {
@@ -916,7 +918,9 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
 
     // The five groups, and the sentence saying the times are invented, on the screen where the
     // acceptance is actually taken.
-    await expect(page.getByTestId("ward-referral-match-list").locator("details")).toHaveCount(BAND_GROUP_COUNT);
+    await expect(
+      page.getByTestId("ward-referral-match-list").locator('details[data-testid^="ward-referral-match-band-group-"]'),
+    ).toHaveCount(BAND_GROUP_COUNT);
     await expect(page.getByTestId("ward-referral-match-synthetic-notice")).toBeVisible();
 
     // Open the far group by CLICK, the way a coordinator does. At 375px the groups mount shut, so

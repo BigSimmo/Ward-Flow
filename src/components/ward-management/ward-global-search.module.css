@@ -89,7 +89,9 @@
   border: 1px solid var(--ward-border);
   border-radius: 0.5rem;
   background: var(--surface);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 /* `scope` is optional (`WardGlobalSearch`'s own prop) — without a chip in column 1, the field
@@ -170,7 +172,10 @@
   background: var(--surface-subtle);
   color: var(--ward-muted);
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .clear:hover {
@@ -316,7 +321,9 @@
   text-decoration: none;
   cursor: pointer;
   background: transparent;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .option:hover {
@@ -514,7 +521,10 @@
   border: 1px solid var(--ward-border);
   white-space: nowrap;
   line-height: 1.25;
-  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    color 0.12s ease,
+    background 0.12s ease;
 }
 
 .option:hover .resultKind,
@@ -561,7 +571,11 @@
   color: var(--ward-muted);
   opacity: 0;
   transform: translateX(-2px);
-  transition: opacity 0.12s ease, transform 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
 }
 
 .actionHintIcon {
