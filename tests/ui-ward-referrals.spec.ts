@@ -1049,8 +1049,11 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
      * tautology removed above.
      */
     const outOfAreaLabels = OUT_OF_AREA_BANDS.map((b) => TRAVEL_BAND_LABELS[b]);
-    const ledgerHeaders = await page.getByTestId("ward-out-of-area-table").getByRole("columnheader").allTextContents();
-    const travelTimeColumn = ledgerHeaders.findIndex((heading) => heading.trim() === "Travel time");
+    const ledgerHeaderTexts = await page
+      .getByTestId("ward-out-of-area-table")
+      .getByRole("columnheader")
+      .allTextContents();
+    const travelTimeColumn = ledgerHeaderTexts.findIndex((heading) => heading.trim() === "Travel time");
     expect(travelTimeColumn, "the ledger must label its travel-time column").toBeGreaterThanOrEqual(0);
     const renderedBands = await ledgerRows.evaluateAll(
       (rows, column) => rows.map((row) => (row.children[column]?.textContent ?? "").trim()),
@@ -1141,11 +1144,11 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
      * Nothing below is relaxed to make room for these — together they close deletion, reordering,
      * renaming and hiding, and neither adds a matcher that could later be loosened.
      */
-    const LEDGER_COLUMNS = ["Home region", "Unit", "Travel time", "Since arrival"];
+    const LEDGER_COLUMNS = ["Patient", "Home region", "Unit", "Travel time", "Since arrival"];
     const ledgerHeaders = tableScroll.locator("thead th");
     await expect(
       ledgerHeaders,
-      "the out-of-area ledger's table no longer carries exactly these four columns, in this order",
+      "the out-of-area ledger's table no longer carries exactly these five columns, in this order",
     ).toHaveText(LEDGER_COLUMNS);
     for (const [index, column] of LEDGER_COLUMNS.entries()) {
       await expect(

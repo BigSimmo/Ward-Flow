@@ -1816,6 +1816,29 @@
 }
 
 @media (max-width: 62.5rem) {
+  /* Keep all five ledger columns inside the tablet container. Desktop column
+   * floors total 39.5rem before padding, wider than the shell at 641px. */
+  .table {
+    --ward-table-min-width: 0;
+    table-layout: fixed;
+  }
+  .table thead th:nth-child(n),
+  .table tbody td {
+    min-width: 0;
+    padding-inline: 4px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .table .homeRegionText,
+  .table .stayCell,
+  .table td .travelBadge {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .table td .travelBadge {
+    padding-inline: 3px;
+    gap: 3px;
+  }
   /* 1000px / Tablet */
   .kpiStrip {
     grid-template-columns: repeat(2, 1fr);
