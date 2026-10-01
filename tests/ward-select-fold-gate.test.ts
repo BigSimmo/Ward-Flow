@@ -4,6 +4,11 @@ import { selectFoldGate } from "../scripts/ward-flow/select-fold-gate.mjs";
 describe("Ward fold gate selection", () => {
   it("keeps policy and documentation changes static", () => {
     expect(selectFoldGate(["AGENTS.md", "docs/ward-flow/README.md"]).tier).toBe("static");
+    expect(selectFoldGate(["GEMINI.md", "src/components/ward-management/CLAUDE.md"])).toMatchObject({
+      tier: "static",
+      typecheck: false,
+      journeys: false,
+    });
   });
 
   it("checks a queue script and its tests without selecting the full suite", () => {
