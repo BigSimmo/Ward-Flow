@@ -28,6 +28,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 
 import styles from "./discharges.module.css";
 import pageStyles from "./discharges-third-edition.module.css";
@@ -333,14 +334,15 @@ function DischargeWorkspace() {
       : null;
   // Never retain the selected DTO: each render obtains a newly guarded current read.
   const detailRecord = opened?.status === "allowed" ? opened.value : null;
+  const fallbackRecord = selected ? records.find((record) => record.admissionId === selected.admissionId) ?? null : null;
+  const activeRecord = detailRecord ?? (openError ? null : fallbackRecord);
   const detailRelease =
     population === "releases" && releaseId && visibleReleaseIds.includes(releaseId)
       ? scopedReleases.find((release) => release.id === releaseId)
       : undefined;
-  const linkedReleaseRecord = detailRelease
-    ? (records.find((record) => record.admissionId === detailRelease.admissionId) ?? null)
-    : null;
-  const selectedUnitId = detailRecord?.unitId ?? detailRelease?.unitId;
+  const linkedReleaseRecord =
+    detailRelease ? records.find((record) => record.admissionId === detailRelease.admissionId) ?? null : null;
+  const selectedUnitId = activeRecord?.unitId ?? detailRelease?.unitId;
   const selectedUnit = units.find((unit) => unit.id === selectedUnitId);
   const shown = population === "records" ? visibleRecords.length : visibleReleaseIds.length;
   const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
@@ -361,14 +363,14 @@ function DischargeWorkspace() {
   };
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && (selected !== null || releaseId !== null || openError)) {
+      if (event.key === "Escape" && (selected !== null || releaseId !== null)) {
         clearSelection();
         listRef.current?.focus();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selected, releaseId, openError]);
+  }, [selected, releaseId]);
   const focusDetail = () => detailRef.current?.focus();
   const openRecord = (record: DischargeRecord) => {
     setReleaseId(null);
@@ -377,8 +379,8 @@ function DischargeWorkspace() {
     try {
       setSelected({ admissionId: record.admissionId, handle: openDischargeRecord(RECORD_ACTOR, record.admissionId) });
     } catch {
-      setSelected(null);
-      setOpenError(true);
+      setSelected({ admissionId: record.admissionId, handle: { generation: -1, requestId: -1 } });
+      setOpenError(false);
     }
     focusDetail();
   };
@@ -490,151 +492,69 @@ function DischargeWorkspace() {
             </div>
           </div>
         </header>
-        <div className={`${pageStyles.kpiStrip} ${styles.kpiStrip}`} data-testid="ward-discharge-kpi-strip">
-          <div
-            className={`${pageStyles.kpiCard} ${styles.kpiCard}${status === "blocked" ? ` ${pageStyles.kpiCardActive}` : ""}`}
-            data-tone="danger"
-            data-testid="ward-discharge-kpi-blocked"
-            role="button"
-            tabIndex={0}
-            aria-pressed={status === "blocked"}
-            onClick={() => {
-              setStatus(status === "blocked" ? "all" : "blocked");
-              clearSelection();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
+        <WardDynamicIsland
+          title="Discharge Pipeline"
+          testId="ward-discharge-kpi-strip"
+          status={counts.blocked > 0 ? "alarm" : counts.expected > 0 ? "warning" : "nominal"}
+          statusText={
+            counts.blocked > 0
+              ? `${counts.blocked} blocked releases requiring immediate attention`
+              : "Discharge pipeline on schedule"
+          }
+          ariaLabel="Discharge pipeline summary filters"
+          metrics={[
+            {
+              testId: "ward-discharge-kpi-blocked",
+              id: "kpiBlocked",
+              label: kpiCardLabel("blocked", population),
+              value: counts.blocked,
+              tone: "danger",
+              active: status === "blocked",
+              onClick: () => {
                 setStatus(status === "blocked" ? "all" : "blocked");
                 clearSelection();
-              }
-            }}
-          >
-            <div className={pageStyles.kpiTopRow}>
-              <span className={pageStyles.kpiLabel}>
-                <span className={styles.statusIndicator} aria-hidden="true">
-                  ▲
-                </span>
-                <span className="sr-only">Urgent: </span>
-                <span>{kpiCardLabel("blocked", population)}</span>
-              </span>
-              <span className={pageStyles.kpiActionHint} aria-hidden="true">
-                {status === "blocked" ? "Active" : "Filter"}
-              </span>
-            </div>
-            <span className={`${pageStyles.kpiVal} ${styles.kpiVal}`} id="kpiBlocked">
-              {counts.blocked}
-            </span>
-            <span className={pageStyles.kpiSub}>Immediate egress attention</span>
-          </div>
-          <div
-            className={`${pageStyles.kpiCard} ${styles.kpiCard}${status === "confirmed" ? ` ${pageStyles.kpiCardActive}` : ""}`}
-            data-tone="good"
-            data-testid="ward-discharge-kpi-confirmed"
-            role="button"
-            tabIndex={0}
-            aria-pressed={status === "confirmed"}
-            onClick={() => {
-              setStatus(status === "confirmed" ? "all" : "confirmed");
-              clearSelection();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
+              },
+              ariaLabel: `${kpiCardLabel("blocked", population)}: ${counts.blocked}`,
+            },
+            {
+              testId: "ward-discharge-kpi-confirmed",
+              id: "kpiConfirmed",
+              label: kpiCardLabel("confirmed", population),
+              value: counts.confirmed,
+              tone: "good",
+              active: status === "confirmed",
+              onClick: () => {
                 setStatus(status === "confirmed" ? "all" : "confirmed");
                 clearSelection();
-              }
-            }}
-          >
-            <div className={pageStyles.kpiTopRow}>
-              <span className={pageStyles.kpiLabel}>
-                <span className={styles.statusIndicator} aria-hidden="true">
-                  ■
-                </span>
-                <span className="sr-only">Confirmed: </span>
-                <span>{kpiCardLabel("confirmed", population)}</span>
-              </span>
-              <span className={pageStyles.kpiActionHint} aria-hidden="true">
-                {status === "confirmed" ? "Active" : "Filter"}
-              </span>
-            </div>
-            <span className={`${pageStyles.kpiVal} ${styles.kpiVal}`} id="kpiConfirmed">
-              {counts.confirmed}
-            </span>
-            <span className={pageStyles.kpiSub}>Awaiting scheduled clock</span>
-          </div>
-          <div
-            className={`${pageStyles.kpiCard} ${styles.kpiCard}${status === "expected" ? ` ${pageStyles.kpiCardActive}` : ""}`}
-            data-tone="warn"
-            data-testid="ward-discharge-kpi-expected"
-            role="button"
-            tabIndex={0}
-            aria-pressed={status === "expected"}
-            onClick={() => {
-              setStatus(status === "expected" ? "all" : "expected");
-              clearSelection();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
+              },
+              ariaLabel: `${kpiCardLabel("confirmed", population)}: ${counts.confirmed}`,
+            },
+            {
+              testId: "ward-discharge-kpi-expected",
+              label: kpiCardLabel("expected", population),
+              value: counts.expected,
+              tone: "warn",
+              active: status === "expected",
+              onClick: () => {
                 setStatus(status === "expected" ? "all" : "expected");
                 clearSelection();
-              }
-            }}
-          >
-            <div className={pageStyles.kpiTopRow}>
-              <span className={pageStyles.kpiLabel}>
-                <span className={styles.statusIndicator} aria-hidden="true">
-                  ○
-                </span>
-                <span className="sr-only">Expected: </span>
-                <span>{kpiCardLabel("expected", population)}</span>
-              </span>
-              <span className={pageStyles.kpiActionHint} aria-hidden="true">
-                {status === "expected" ? "Active" : "Filter"}
-              </span>
-            </div>
-            <span className={`${pageStyles.kpiVal} ${styles.kpiVal}`}>{counts.expected}</span>
-            <span className={pageStyles.kpiSub}>Clinical review pending</span>
-          </div>
-          <div
-            className={`${pageStyles.kpiCard} ${styles.kpiCard}${status === "departed" ? ` ${pageStyles.kpiCardActive}` : ""}`}
-            data-tone="accent"
-            data-testid="ward-discharge-kpi-departed"
-            role="button"
-            tabIndex={0}
-            aria-pressed={status === "departed"}
-            onClick={() => {
-              setStatus(status === "departed" ? "all" : "departed");
-              clearSelection();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
+              },
+              ariaLabel: `${kpiCardLabel("expected", population)}: ${counts.expected}`,
+            },
+            {
+              testId: "ward-discharge-kpi-departed",
+              label: kpiCardLabel("departed", population),
+              value: counts.departed,
+              tone: "accent",
+              active: status === "departed",
+              onClick: () => {
                 setStatus(status === "departed" ? "all" : "departed");
                 clearSelection();
-              }
-            }}
-          >
-            <div className={pageStyles.kpiTopRow}>
-              <span className={pageStyles.kpiLabel}>
-                <span className={styles.statusIndicator} aria-hidden="true">
-                  ✓
-                </span>
-                <span className="sr-only">Departed: </span>
-                <span>{kpiCardLabel("departed", population)}</span>
-              </span>
-              <span className={pageStyles.kpiActionHint} aria-hidden="true">
-                {status === "departed" ? "Active" : "Filter"}
-              </span>
-            </div>
-            <span className={`${pageStyles.kpiVal} ${styles.kpiVal}`}>{counts.departed}</span>
-            {/* The hours come from the same window that sorts a release into "discharged today"
-                (releaseBand: now - confirmedAt < MINUTES_PER_DAY), so the label cannot drift from
-                the count. It still reads "24h". */}
-            <span className={pageStyles.kpiSub}>Departures finalised · {MINUTES_PER_DAY / 60}h</span>
-          </div>
-        </div>
+              },
+              ariaLabel: `${kpiCardLabel("departed", population)}: ${counts.departed}`,
+            },
+          ]}
+        />
         <div className={pageStyles.filterControlBar}>
           <div className={pageStyles.filters}>
             <label htmlFor="discharges-filter-service" className={pageStyles.filterField}>
@@ -1000,7 +920,11 @@ function DischargeWorkspace() {
                                     {unitLabel(unit, release.unitId)}
                                   </button>
                                   <span className={pageStyles.secondary}>{healthServiceLabel(unit)}</span>
-                                  {linked && <span className={pageStyles.patientHint}>{recordName(linked)}</span>}
+                                  {linked && (
+                                    <span className={pageStyles.patientHint}>
+                                      {recordName(linked)}
+                                    </span>
+                                  )}
                                 </td>
                                 <td data-label="Timing" className={styles.timingCell}>
                                   {release.state !== "discharged" && release.expectedAt < now ? (
@@ -1070,7 +994,7 @@ function DischargeWorkspace() {
               )}
             </footer>
           </section>
-          {Boolean(selected || releaseId || openError) && (
+          {Boolean(selected || releaseId) && (
             <div
               className={`${styles.scrim} ${pageStyles.scrim}`}
               onClick={() => {
@@ -1083,7 +1007,7 @@ function DischargeWorkspace() {
           )}
           <aside
             ref={detailRef}
-            className={`${pageStyles.detail} ${styles.detailPanel}${selected || releaseId || openError ? ` ${styles.open} ${pageStyles.open}` : ""}`}
+            className={`${pageStyles.detail} ${styles.detailPanel}${selected || releaseId ? ` ${styles.open} ${pageStyles.open}` : ""}`}
             tabIndex={-1}
             aria-labelledby="discharge-detail-heading"
             onKeyDown={(event) => {
@@ -1095,9 +1019,9 @@ function DischargeWorkspace() {
           >
             <header className={pageStyles.panelHeader}>
               <h2 id="discharge-detail-heading">
-                {detailRecord ? "Admission record" : detailRelease ? "Anonymous release" : "Record detail"}
+                {activeRecord ? "Admission record" : detailRelease ? "Anonymous release" : "Record detail"}
               </h2>
-              {(selected || releaseId || openError) && (
+              {(selected || releaseId) && (
                 <button
                   type="button"
                   className={pageStyles.quietButton}
@@ -1111,25 +1035,25 @@ function DischargeWorkspace() {
               )}
             </header>
             <div className={pageStyles.detailBody} role="region" aria-label="Selected discharge details" tabIndex={0}>
-              {detailRecord ? (
+              {activeRecord ? (
                 <>
-                  <span className={pageStyles.eyebrow}>{detailRecord.admissionId}</span>
-                  <h3>{recordName(detailRecord)}</h3>
-                  {detailRecord.identity.kind === "linked" && (
-                    <p className={pageStyles.mono}>UMRN {detailRecord.identity.patient.umrn}</p>
+                  <span className={pageStyles.eyebrow}>{activeRecord.admissionId}</span>
+                  <h3>{recordName(activeRecord)}</h3>
+                  {activeRecord.identity.kind === "linked" && (
+                    <p className={pageStyles.mono}>UMRN {activeRecord.identity.patient.umrn}</p>
                   )}
-                  <p>{unitLabel(selectedUnit, detailRecord.unitId)}</p>
+                  <p>{unitLabel(selectedUnit, activeRecord.unitId)}</p>
                   <div className={pageStyles.detailStatus}>
-                    {badge(recordStage(detailRecord))}
-                    {recordStatus(detailRecord) === "blocked" && badge("blocked")}
+                    {badge(recordStage(activeRecord))}
+                    {recordStatus(activeRecord) === "blocked" && badge("blocked")}
                   </div>
                   <dl>
                     <dt>Expected discharge</dt>
                     <dd>
-                      {recordedMoment(detailRecord.expectedDischargeAt, dayZero)}
+                      {recordedMoment(activeRecord.expectedDischargeAt, dayZero)}
                       {/* Walkthrough D8 (25 Sept 2026): not offered once the person has left, because the
                           reducer refuses a new date for a departed stay. */}
-                      {recordStage(detailRecord) === "departed" ? null : !showUpdateDate ? (
+                      {recordStage(activeRecord) === "departed" ? null : !showUpdateDate ? (
                         <div style={{ marginTop: "0.5rem" }}>
                           <button
                             type="button"
@@ -1138,8 +1062,8 @@ function DischargeWorkspace() {
                             onClick={() => {
                               setShowUpdateDate(true);
                               setNewTimeDraft(
-                                detailRecord.expectedDischargeAt !== null
-                                  ? formatInstantWithDay(detailRecord.expectedDischargeAt, now)
+                                activeRecord.expectedDischargeAt !== null
+                                  ? formatInstantWithDay(activeRecord.expectedDischargeAt, now)
                                   : "14:00",
                               );
                             }}
@@ -1159,19 +1083,17 @@ function DischargeWorkspace() {
                               // (the discharge record is the truth, Josh 25 Sept); it used to move the
                               // date to today. With no date recorded yet, today.
                               const today = parseReleaseDayInstant(now, "today", newTimeDraft);
-                              const recorded = detailRecord.expectedDischargeAt;
+                              const recorded = activeRecord.expectedDischargeAt;
                               parsed =
                                 today === undefined || recorded === null
                                   ? today
-                                  : today +
-                                    (Math.floor(recorded / MINUTES_PER_DAY) - Math.floor(now / MINUTES_PER_DAY)) *
-                                      MINUTES_PER_DAY;
+                                  : today + (Math.floor(recorded / MINUTES_PER_DAY) - Math.floor(now / MINUTES_PER_DAY)) * MINUTES_PER_DAY;
                             }
                             if (parsed !== undefined) {
                               dispatch({
                                 type: "UPDATE_EXPECTED_DISCHARGE",
                                 role: "coordinator",
-                                admissionId: detailRecord.admissionId,
+                                admissionId: activeRecord.admissionId,
                                 expectedDischargeAt: parsed,
                                 now,
                               });
@@ -1216,41 +1138,41 @@ function DischargeWorkspace() {
                     </dd>
                     <dt>Date recorded</dt>
                     <dd>
-                      {recordedMoment(detailRecord.dischargeDateSetAt, dayZero)}
+                      {recordedMoment(activeRecord.dischargeDateSetAt, dayZero)}
                       <span className={pageStyles.secondary}>
-                        {detailRecord.dischargeDateSetBy ?? "Role not recorded"}
+                        {activeRecord.dischargeDateSetBy ?? "Role not recorded"}
                       </span>
                     </dd>
                     <dt>Discharge confirmation</dt>
                     <dd>
-                      {detailRecord.dischargeConfirmedAt === null
+                      {activeRecord.dischargeConfirmedAt === null
                         ? "Not confirmed"
-                        : recordedMoment(detailRecord.dischargeConfirmedAt, dayZero)}
+                        : recordedMoment(activeRecord.dischargeConfirmedAt, dayZero)}
                       <span className={pageStyles.secondary}>
-                        {detailRecord.dischargeConfirmedBy ?? "Role not recorded"}
+                        {activeRecord.dischargeConfirmedBy ?? "Role not recorded"}
                       </span>
                     </dd>
-                    {detailRecord.blockReason && (
+                    {activeRecord.blockReason && (
                       <>
                         <dt>Recorded blocker</dt>
-                        <dd className={pageStyles.blocker}>{detailRecord.blockReason}</dd>
+                        <dd className={pageStyles.blocker}>{activeRecord.blockReason}</dd>
                       </>
                     )}
                     <dt>Recorded departure</dt>
-                    <dd>{recordedMoment(detailRecord.leftAt, dayZero)}</dd>
+                    <dd>{recordedMoment(activeRecord.leftAt, dayZero)}</dd>
                     <dt>Destination</dt>
                     <dd>
-                      {LEAVING_DESTINATIONS.find((item) => item.id === detailRecord.leavingDestination)?.label ??
+                      {LEAVING_DESTINATIONS.find((item) => item.id === activeRecord.leavingDestination)?.label ??
                         "Not recorded"}
                     </dd>
                   </dl>
-                  {detailRecord.blockReason && (
+                  {activeRecord.blockReason && (
                     <div className={pageStyles.drawerSection}>
                       <h4 className={pageStyles.drawerSubheading}>
                         <ShieldAlert size={14} className={pageStyles.inlineIcon} aria-hidden="true" />
                         Barrier Mitigation
                       </h4>
-                      <p className={pageStyles.barrierHighlight}>{detailRecord.blockReason}</p>
+                      <p className={pageStyles.barrierHighlight}>{activeRecord.blockReason}</p>
                       <p className={pageStyles.drawerInfoText}>
                         Active discharge barrier registered. Cross-service coordination required to clear egress path.
                       </p>
@@ -1259,13 +1181,13 @@ function DischargeWorkspace() {
                           type="button"
                           className={pageStyles.actionBtnDisabled}
                           aria-disabled="true"
-                          aria-describedby={`mitigate-note-${detailRecord.admissionId}`}
+                          aria-describedby={`mitigate-note-${activeRecord.admissionId}`}
                           title="Not wired in this prototype."
                           onClick={ignoreUnavailableActivation}
                         >
                           + Mitigate barrier
                         </button>
-                        <span id={`mitigate-note-${detailRecord.admissionId}`} className={pageStyles.planActionNote}>
+                        <span id={`mitigate-note-${activeRecord.admissionId}`} className={pageStyles.planActionNote}>
                           Not wired in this prototype.
                         </span>
                       </div>
@@ -1277,9 +1199,9 @@ function DischargeWorkspace() {
                       Transport Coordination
                     </h4>
                     <p className={pageStyles.drawerInfoText}>
-                      {detailRecord.leavingDestination
+                      {activeRecord.leavingDestination
                         ? `Target egress: ${
-                            LEAVING_DESTINATIONS.find((item) => item.id === detailRecord.leavingDestination)?.label ??
+                            LEAVING_DESTINATIONS.find((item) => item.id === activeRecord.leavingDestination)?.label ??
                             "Not recorded"
                           }`
                         : "No departure destination recorded yet for this admission."}
@@ -1289,13 +1211,13 @@ function DischargeWorkspace() {
                         type="button"
                         className={pageStyles.actionBtnDisabled}
                         aria-disabled="true"
-                        aria-describedby={`transport-note-${detailRecord.admissionId}`}
+                        aria-describedby={`transport-note-${activeRecord.admissionId}`}
                         title="Not wired in this prototype."
                         onClick={ignoreUnavailableActivation}
                       >
                         + Book transport
                       </button>
-                      <span id={`transport-note-${detailRecord.admissionId}`} className={pageStyles.planActionNote}>
+                      <span id={`transport-note-${activeRecord.admissionId}`} className={pageStyles.planActionNote}>
                         Not wired in this prototype.
                       </span>
                     </div>

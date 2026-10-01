@@ -61,6 +61,7 @@ import {
 import styles from "./handover.module.css";
 import pageStyles from "./handover-third-edition.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
+import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 
 /**
  * THE FILTER — owner ruling 2026-09-09 (`docs/ward-flow/owner-decisions-2026-09-09.md` §1).
@@ -1026,7 +1027,9 @@ export function HandoverPage() {
               />
               {searchQuery.trim().length > 0 ? (
                 <div className={pageStyles.searchFeedbackGroup}>
-                  <span className={pageStyles.searchMatchPill}>{filteredMovements.length} matching</span>
+                  <span className={pageStyles.searchMatchPill}>
+                    {filteredMovements.length} matching
+                  </span>
                   <button
                     type="button"
                     className={pageStyles.searchClearBtn}
@@ -1362,64 +1365,62 @@ export function HandoverPage() {
           role="tabpanel"
           aria-labelledby="tabBtn-snapshot"
         >
-          {/* Compact KPI strip — handover-perfected drawing order; legal wording keeps Form expiries */}
-          <div className={pageStyles.summaryStrip} data-testid="ward-handover-kpi-strip">
-            <div className={`${pageStyles.summaryTile} ${pageStyles.summaryTileCaseload}`}>
-              <div className={pageStyles.tileMeta}>
-                <span className={pageStyles.tileLabel}>Caseload in Scope</span>
-                <span className={pageStyles.tileSub}>
-                  {scopeLabel} · {includedOpenCount} of {totalOpenCount} open
-                </span>
-              </div>
-              <span className={pageStyles.tileValue}>{includedOpenCount}</span>
-            </div>
-
-            <div className={`${pageStyles.summaryTile} ${pageStyles.summaryTileReferrals}`}>
-              <div className={pageStyles.tileMeta}>
-                <span className={pageStyles.tileLabel}>Current Referrals</span>
-                <span className={pageStyles.tileSub}>Seeking bed placement</span>
-              </div>
-              <span className={`${pageStyles.tileValue} ${currentReferralsCount > 0 ? pageStyles.warn : ""}`}>
-                {currentReferralsCount}
-              </span>
-            </div>
-
-            <div className={`${pageStyles.summaryTile} ${pageStyles.summaryTileVacancies}`}>
-              <div className={pageStyles.tileMeta}>
-                <span className={pageStyles.tileLabel}>Allocatable Vacancies</span>
-                <span className={pageStyles.tileSub}>Confirmed ward capacity in scope</span>
-              </div>
-              <span className={pageStyles.tileValue}>{allocatableVacancies}</span>
-            </div>
-
-            <div
-              className={`${pageStyles.summaryTile} ${
-                breachedOnSheetCount + urgentOutsideFilter.length > 0
-                  ? pageStyles.summaryTileExpiries
-                  : pageStyles.summaryTileExpiriesClean
-              }`}
-            >
-              <div className={pageStyles.tileMeta}>
-                <span className={pageStyles.tileLabel}>Form expiries passed</span>
-                <span className={pageStyles.tileSub}>
-                  On sheet & urgent <LegalLimitsNotChecked variant="tag" />
-                </span>
-              </div>
-              <span
-                className={`${pageStyles.tileValue} ${breachedOnSheetCount + urgentOutsideFilter.length > 0 ? pageStyles.danger : pageStyles.good}`}
-              >
-                {breachedOnSheetCount + urgentOutsideFilter.length}
-              </span>
-            </div>
-
-            <div className={`${pageStyles.summaryTile} ${pageStyles.summaryTileSpecialling}`}>
-              <div className={pageStyles.tileMeta}>
-                <span className={pageStyles.tileLabel}>1:1 Specialling Roster</span>
-                <span className={pageStyles.tileSub}>Specialling or flagged urgent in scope</span>
-              </div>
-              <span className={pageStyles.tileValue}>{speciallingInScopeCount}</span>
-            </div>
-          </div>
+          {/* Contextual Dynamic HUD Island — replaces bulky 140px summary tiles */}
+          <WardDynamicIsland
+            title="Handover HUD"
+            status={
+              breachedOnSheetCount + urgentOutsideFilter.length > 0
+                ? "alarm"
+                : currentReferralsCount > allocatableVacancies
+                  ? "warning"
+                  : "nominal"
+            }
+            statusText={
+              breachedOnSheetCount + urgentOutsideFilter.length > 0
+                ? `${breachedOnSheetCount + urgentOutsideFilter.length} form expiries passed`
+                : `${includedOpenCount} caseload in scope · ${allocatableVacancies} vacancies`
+            }
+            ariaLabel="Handover summary indicators"
+            testId="ward-handover-kpi-strip"
+            metrics={[
+              {
+                id: "kpi-caseload",
+                label: "Caseload in Scope",
+                value: includedOpenCount,
+                tone: "accent",
+                subtext: `${scopeLabel} · ${includedOpenCount} of ${totalOpenCount} open`,
+              },
+              {
+                id: "kpi-referrals",
+                label: "Current Referrals",
+                value: currentReferralsCount,
+                tone: currentReferralsCount > 0 ? "warn" : "normal",
+                subtext: "Seeking bed placement",
+              },
+              {
+                id: "kpi-vacancies",
+                label: "Allocatable Vacancies",
+                value: allocatableVacancies,
+                tone: allocatableVacancies > 0 ? "good" : "muted",
+                subtext: "Confirmed ward capacity in scope",
+              },
+              {
+                id: "kpi-expiries",
+                label: "Form expiries passed",
+                value: breachedOnSheetCount + urgentOutsideFilter.length,
+                tone: breachedOnSheetCount + urgentOutsideFilter.length > 0 ? "danger" : "good",
+                subtext: "On sheet & urgent",
+              },
+              {
+                id: "kpi-specialling",
+                label: "1:1 Specialling Roster",
+                value: speciallingInScopeCount,
+                tone: speciallingInScopeCount > 0 ? "warn" : "normal",
+                subtext: "Specialling or flagged urgent in scope",
+              },
+            ]}
+            actions={<LegalLimitsNotChecked variant="tag" />}
+          />
 
           {/* THE CROWN JEWEL: RAPID PRINTABLE SNAPSHOT CARD */}
           <article className={pageStyles.snapshotCard} id="printableSnapshotCard" data-testid="ward-handover-sheet">
@@ -1682,11 +1683,7 @@ export function HandoverPage() {
                                                   !flag.label.includes("Observations") &&
                                                   !flag.label.includes("Specialling") &&
                                                   !flag.label.includes("Supervision") &&
-                                                  !(
-                                                    flag.label === "Urgent" &&
-                                                    (movement.flaggedUrgent ||
-                                                      movementObservationLabel(movement) === "Urgent")
-                                                  ),
+                                                  !(flag.label === "Urgent" && (movement.flaggedUrgent || movementObservationLabel(movement) === "Urgent")),
                                               )
                                               .map((flag, idx) => (
                                                 <span key={idx} className={`${pageStyles.statusPill} ${flag.tone}`}>
@@ -1988,8 +1985,7 @@ export function HandoverPage() {
                   </div>
                 </div>
                 <div className={pageStyles.accreditationLegal}>
-                  National Safety and Quality Health Service (NSQHS) Standards · Standard 6: Clinical Handover ·
-                  Government of Western Australia Department of Health
+                  National Safety and Quality Health Service (NSQHS) Standards · Standard 6: Clinical Handover · Government of Western Australia Department of Health
                 </div>
               </footer>
             </div>

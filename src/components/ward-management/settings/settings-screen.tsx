@@ -23,9 +23,9 @@ import { setRailOpenPreference, useRailOpenStore } from "@/components/ward-manag
 import type { WardAppearance } from "@/components/ward-management/shell/ward-shell-types";
 import { defaultWardConfiguration, type WardConfiguration } from "@/components/ward-management/ward-configuration";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 import {
   DUE_SOON_MINUTES,
   DUE_SOON_RANGE_MINUTES,
@@ -49,7 +49,10 @@ import {
   PARALLEL_REFERRAL_CAP_RANGE,
   PULL_HOLD_RANGE_MINUTES,
 } from "@/components/ward-management/ward-model";
-import { useAudioBuzzPreference, setAudioBuzzPreference } from "@/components/ward-management/shell/ward-sound-store";
+import {
+  useAudioBuzzPreference,
+  setAudioBuzzPreference,
+} from "@/components/ward-management/shell/ward-sound-store";
 import {
   useWallboardRefreshPreference,
   setWallboardRefreshPreference,
@@ -578,31 +581,66 @@ export function SettingsScreen() {
           </div>
         )}
 
-        {/* 4-Card KPI Strip — reads the SAVED configuration, never the draft below */}
-        <section className={styles.kpiStrip} aria-label="Operational KPI Summary">
-          <div className={styles.kpiCard} data-tone="accent">
-            <span className={styles.kpiLabel}>Legal Form Codes</span>
-            <span className={styles.kpiVal}>{SELECTABLE_LEGAL_FORMS.length} codes</span>
-            <span className={styles.kpiSub}>
-              Forms {SELECTABLE_LEGAL_FORMS.map((form) => form.code).join(", ")} available
-            </span>
-          </div>
-          <div className={styles.kpiCard} data-tone="warn">
-            <span className={styles.kpiLabel}>ED Access Target</span>
-            <span className={styles.kpiVal}>{configuration.edAccessTargetMinutes / 60} Hours</span>
-            <span className={styles.kpiSub}>Read by the Emergency department screen</span>
-          </div>
-          <div className={styles.kpiCard} data-tone="good">
-            <span className={styles.kpiLabel}>Pull Hold</span>
-            <span className={styles.kpiVal}>{configuration.pullHoldMinutes} Minutes</span>
-            <span className={styles.kpiSub}>Read by a pulled bed&rsquo;s own hold timer</span>
-          </div>
-          <div className={styles.kpiCard} data-tone="accent">
-            <span className={styles.kpiLabel}>Parallel Referral Cap</span>
-            <span className={styles.kpiVal}>{configuration.parallelReferralCap} Units</span>
-            <span className={styles.kpiSub}>Read by the shortlist, intake and statistics screens</span>
-          </div>
-        </section>
+        {/* Dynamic Island micro-HUD — reads the SAVED configuration, never the draft below */}
+        <WardDynamicIsland
+          testId="ward-settings-hud-island"
+          title="System Operations"
+          status={hasUnsavedRules ? "warning" : "nominal"}
+          statusText={
+            hasUnsavedRules
+              ? "Unsaved configuration draft pending"
+              : "All coordination parameters synchronized"
+          }
+          ariaLabel="System operations status summary"
+          className={styles.hudWrapper}
+          metrics={[
+            {
+              id: "kpi-sync-status",
+              label: "Sync",
+              value: hasUnsavedRules ? "Draft (Unsaved)" : "Synced",
+              subtext: hasUnsavedRules ? "Pending Changes" : undefined,
+              tone: hasUnsavedRules ? "warn" : "good",
+              ariaLabel: hasUnsavedRules
+                ? "Sync Status: Draft (Unsaved) Pending Changes"
+                : "Sync Status: Synced",
+            },
+            {
+              id: "kpi-mode",
+              label: "Mode",
+              value: savedSurge ? "Surge Mode" : "Standard",
+              tone: savedSurge ? "danger" : "normal",
+            },
+            {
+              id: "kpi-morning-rollup",
+              label: "Rollup",
+              value: formatMinutesToTime(
+                configuration.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES,
+              ),
+              subtext: `${configuration.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES}m`,
+              tone: "accent",
+            },
+            {
+              id: "kpi-ed-target",
+              label: "ED Target",
+              value: `${configuration.edAccessTargetMinutes / 60}h`,
+              subtext: `${configuration.edAccessTargetMinutes}m`,
+              tone: "normal",
+            },
+            {
+              id: "kpi-pull-hold",
+              label: "Pull Hold",
+              value: `${configuration.pullHoldMinutes}m`,
+              tone: "normal",
+            },
+            {
+              id: "kpi-parallel-cap",
+              label: "Cap",
+              value: `${configuration.parallelReferralCap} Wards`,
+              tone: "normal",
+              ariaLabel: `Parallel Referral Cap: ${configuration.parallelReferralCap} Wards`,
+            },
+          ]}
+        />
 
         {/* Settings Master Surface */}
         <div className={styles.settingsSurface}>
@@ -988,7 +1026,10 @@ export function SettingsScreen() {
 
                         {/* Second Warning Before A Legal Due Time Stepper & Slider */}
                         {isRowVisible("setting-due-soon") && (
-                          <div className={`${styles.settingRow} ${styles.vertical}`} data-testid="setting-due-soon-row">
+                          <div
+                            className={`${styles.settingRow} ${styles.vertical}`}
+                            data-testid="setting-due-soon-row"
+                          >
                             <div className={styles.rowMeta}>
                               <span className={styles.rowTitle}>
                                 Second warning before a legal due time

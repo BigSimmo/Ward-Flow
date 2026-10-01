@@ -100,6 +100,7 @@ import {
 
 import styles from "./ed.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 
@@ -1733,6 +1734,22 @@ export function EdScreen({ edId }: EdScreenProps) {
   // Ward Lead audit (2026-09-17): the "Withdrawn" chip's own count.
   const withdrawnCount = patients.filter(isEdInitiatedWithdrawal).length;
 
+  // ED Pressure Dynamic Island derivations
+  const presentingCount = patients.length;
+  const awaitingBedCount = patients.filter(
+    (m) => m.stage === "accepted_awaiting_bed" || m.stage === "pulled",
+  ).length;
+  const totalWaitMinutes = patients.reduce(
+    (sum, m) => sum + Math.max(now - m.openedAt, 0),
+    0,
+  );
+  const avgWaitMinutes =
+    presentingCount === 0 ? 0 : Math.round(totalWaitMinutes / presentingCount);
+  const avgWaitLabel = formatElapsed(avgWaitMinutes);
+  const breachesCount = patients.filter((m) => now - m.openedAt > accessTarget).length;
+  const isEdAlarm = breachesCount > 0;
+  const isEdWarn = awaitingBedCount > 3;
+
   const filteredPatients = patients.filter((m) => {
     if (boardFilter === "not_reviewed") return !m.examination && !m.edOutcome && !isEdInitiatedWithdrawal(m);
     if (boardFilter === "under_form") return !!m.legalForm && !isEdInitiatedWithdrawal(m);
@@ -1769,7 +1786,6 @@ export function EdScreen({ edId }: EdScreenProps) {
     when: string;
     actionLabel?: string;
     onAction?: () => void;
-    transportMovementId?: string;
   };
 
   const priorityFlags: PriorityFlag[] = [];
@@ -1804,7 +1820,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         why: `${m.acceptedUnitId ? (units.find((u) => u.id === m.acceptedUnitId)?.name ?? m.acceptedUnitId) + " holds the bed" : "A bed is held"} and no transport is booked. The handover cannot be marked ready until it is.`,
         when: `waiting ${splitDuration(Math.max(now - m.openedAt, 0))}`,
         actionLabel: "Book transport",
-        transportMovementId: m.id,
+        onAction: () => toggleBookTransport(m.id),
       });
     }
     if (
@@ -1929,6 +1945,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     category?: TimelineEventCategory;
     categoryLabel?: string;
     patientName?: string;
+    patientId?: string;
     movementId?: string;
     referralId?: string;
     badgeText?: string;
@@ -2002,7 +2019,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "arrivals",
         categoryLabel: "Arrivals & Departures",
         patientName: patientInfo.displayName,
-
+        patientId: m.patientId,
         movementId: m.id,
         badgeText: "Arrived",
         badgeTone: isLongWait ? "warn" : "quiet",
@@ -2032,7 +2049,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "clinical",
         categoryLabel: "Clinical & Legal",
         patientName: patientInfo.displayName,
-
+        patientId: m.patientId,
         movementId: m.id,
         badgeText: "Medically Cleared",
         badgeTone: "good",
@@ -2055,7 +2072,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "clinical",
         categoryLabel: "Clinical & Legal",
         patientName: patientInfo.displayName,
-
+        patientId: m.patientId,
         movementId: m.id,
         badgeText: "Examined",
         badgeTone: "info",
@@ -2080,7 +2097,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "clinical",
         categoryLabel: "Clinical & Legal",
         patientName: patientInfo.displayName,
-
+        patientId: m.patientId,
         movementId: m.id,
         badgeText: formCode,
         badgeTone: "purple",
@@ -2108,7 +2125,7 @@ export function EdScreen({ edId }: EdScreenProps) {
             category: "bed_search",
             categoryLabel: "Bed searches",
             patientName: patientInfo.displayName,
-
+            patientId: m.patientId,
             movementId: m.id,
             badgeText: "Bed Declined",
             badgeTone: "warn",
@@ -2136,7 +2153,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "bed_search",
         categoryLabel: "Bed searches",
         patientName: patientInfo.displayName,
-
+        patientId: m.patientId,
         movementId: m.id,
         badgeText: "Bed Accepted",
         badgeTone: "good",
@@ -2165,7 +2182,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "transport",
         categoryLabel: "Transport",
         patientName: patientInfo.displayName,
-
+        patientId: m.patientId,
         movementId: m.id,
         badgeText: "Transport Booked",
         badgeTone: "good",
@@ -2192,7 +2209,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "arrivals",
         categoryLabel: "Arrivals & Departures",
         patientName: patientInfo.displayName,
-
+        patientId: m.patientId,
         movementId: m.id,
         badgeText: "Departed",
         badgeTone: "quiet",
@@ -2227,7 +2244,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "bed_search",
         categoryLabel: "Bed searches",
         patientName: patientDisplayName,
-
+        patientId: r.patientId,
         referralId: r.id,
         badgeText: "Referral Raised",
         badgeTone: "quiet",
@@ -2248,7 +2265,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "arrivals",
         categoryLabel: "Arrivals & Departures",
         patientName: patientDisplayName,
-
+        patientId: r.patientId,
         referralId: r.id,
         badgeText: "Triaged",
         badgeTone: "quiet",
@@ -2876,15 +2893,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                         <span className={styles.attentionWhy}>{flag.why}</span>
                         {flag.actionLabel ? (
                           <span className={styles.attentionAct}>
-                            <button
-                              type="button"
-                              className={styles.attentionActionBtn}
-                              onClick={
-                                flag.transportMovementId
-                                  ? () => toggleBookTransport(flag.transportMovementId!)
-                                  : flag.onAction
-                              }
-                            >
+                            <button type="button" className={styles.attentionActionBtn} onClick={flag.onAction}>
                               {flag.actionLabel}
                             </button>
                           </span>
@@ -4211,7 +4220,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                     aria-expanded={isFormDropdownOpen}
                                     data-tone={formTone}
                                     data-none={!currentFormCode ? "true" : undefined}
-                                    aria-label={`Legal form ${currentFormCode ? currentFormCode : "none recorded"} for the selected patient. Change it.`}
+                                    aria-label={`Legal form ${currentFormCode ? currentFormCode : "none recorded"} for ${patientInfo.displayName}. Change it.`}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setFormDropdownOpenFor((current) =>
@@ -4339,7 +4348,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                     aria-haspopup="listbox"
                                     aria-expanded={isReviewOpen}
                                     data-tone={reviewTone}
-                                    aria-label={`Review status ${currentReviewStatus} for the selected patient. Change status.`}
+                                    aria-label={`Review status ${currentReviewStatus} for ${patientInfo.displayName}. Change status.`}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setReviewDropdownOpenFor((curr) =>
@@ -4375,7 +4384,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                               setReviewStatusOverrides((prev) => ({ ...prev, [movement.id]: opt }));
                                               setReviewDropdownOpenFor(undefined);
                                               announceToWardShell(
-                                                `Review status set to ${opt} for the selected patient.`,
+                                                `Review status set to ${opt} for ${patientInfo.displayName}.`,
                                               );
                                             }}
                                           >
@@ -4482,7 +4491,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                               setClearanceOverrides((prev) => ({ ...prev, [movement.id]: "yes" }));
                                               setClearanceDropdownOpenFor(undefined);
                                               announceToWardShell(
-                                                `Medical clearance set to Yes for the selected patient.`,
+                                                `Medical clearance set to Yes for ${patientInfo.displayName}.`,
                                               );
                                             }}
                                           >
@@ -4498,7 +4507,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                               setClearanceOverrides((prev) => ({ ...prev, [movement.id]: "no" }));
                                               setClearanceDropdownOpenFor(undefined);
                                               announceToWardShell(
-                                                `Medical clearance set to No for the selected patient.`,
+                                                `Medical clearance set to No for ${patientInfo.displayName}.`,
                                               );
                                             }}
                                           >
@@ -4517,7 +4526,9 @@ export function EdScreen({ edId }: EdScreenProps) {
                                               e.stopPropagation();
                                               setClearanceOverrides((prev) => ({ ...prev, [movement.id]: null }));
                                               setClearanceDropdownOpenFor(undefined);
-                                              announceToWardShell(`Medical clearance reset for the selected patient.`);
+                                              announceToWardShell(
+                                                `Medical clearance reset for ${patientInfo.displayName}.`,
+                                              );
                                             }}
                                           >
                                             • Pending / Not recorded
@@ -5893,70 +5904,43 @@ export function EdScreen({ edId }: EdScreenProps) {
               </span>
             </div>
 
-            <div className={styles.seenKpiGrid} role="region" aria-label="Timeline event summary">
-              <button
-                type="button"
-                className={`${styles.seenKpiCard} ${styles.kpiInfo} ${timelineCategoryFilter === "all" ? styles.seenKpiActive : ""}`}
-                onClick={() => setTimelineCategoryFilter("all")}
-                title="Show all recorded movements and events"
-              >
-                <div className={styles.seenKpiHeader}>
-                  <span className={styles.seenKpiVal}>{timelineEvents.length}</span>
-                  <span className={styles.seenKpiSub}>({inEdCount} in ED)</span>
-                </div>
-                <span className={styles.seenKpiLabel}>Total seen</span>
-              </button>
-              <button
-                type="button"
-                className={`${styles.seenKpiCard} ${styles.kpiInfo} ${timelineCategoryFilter === "arrivals" ? styles.seenKpiActive : ""}`}
-                onClick={() => setTimelineCategoryFilter((c) => (c === "arrivals" ? "all" : "arrivals"))}
-                title="Filter arrivals and triage events"
-              >
-                <div className={styles.seenKpiHeader}>
-                  <span className={styles.seenKpiVal}>{arrivalEventsCount}</span>
-                  <span className={styles.seenKpiSub}>({pendingTriageCount} pending triaged)</span>
-                </div>
-                <span className={styles.seenKpiLabel}>Arrivals</span>
-              </button>
-              <button
-                type="button"
-                className={`${styles.seenKpiCard} ${styles.kpiGood} ${timelineCategoryFilter === "bed_search" && acceptEventsCount > 0 ? styles.seenKpiActive : ""}`}
-                onClick={() => setTimelineCategoryFilter((c) => (c === "bed_search" ? "all" : "bed_search"))}
-                title="Filter bed search and allocation events"
-              >
-                <div className={styles.seenKpiHeader}>
-                  <span className={styles.seenKpiVal}>{bedSearchEventsCount}</span>
-                  <span className={styles.seenKpiSub}>({acceptEventsCount} bed allocated)</span>
-                </div>
-                <span className={styles.seenKpiLabel}>Bed search</span>
-              </button>
-              <button
-                type="button"
-                className={`${styles.seenKpiCard} ${styles.kpiWarn} ${timelineCategoryFilter === "bed_search" && declineEventsCount > 0 ? styles.seenKpiActive : ""}`}
-                onClick={() => setTimelineCategoryFilter((c) => (c === "bed_search" ? "all" : "bed_search"))}
-                title="Filter bed search declines"
-              >
-                <div className={styles.seenKpiHeader}>
-                  <span className={styles.seenKpiVal}>{declineEventsCount}</span>
-                  <span className={styles.seenKpiSub}>({declineEventsCount} lack of bed)</span>
-                </div>
-                <span className={styles.seenKpiLabel}>Declined</span>
-              </button>
-              <button
-                type="button"
-                className={`${styles.seenKpiCard} ${styles.kpiPurple} ${timelineCategoryFilter === "clinical" ? styles.seenKpiActive : ""}`}
-                onClick={() => setTimelineCategoryFilter((c) => (c === "clinical" ? "all" : "clinical"))}
-                title="Filter departed and clinical events"
-              >
-                <div className={styles.seenKpiHeader}>
-                  <span className={styles.seenKpiVal}>
-                    {departedEventsCount > 0 ? departedEventsCount : clinicalEventsCount}
-                  </span>
-                  <span className={styles.seenKpiSub}>(0 left AMA)</span>
-                </div>
-                <span className={styles.seenKpiLabel}>Discharged</span>
-              </button>
-            </div>
+            <WardDynamicIsland
+              testId="ward-ed-hud-island"
+              title="ED Pressure"
+              status={isEdAlarm ? "alarm" : isEdWarn ? "warning" : "nominal"}
+              statusText={
+                isEdAlarm
+                  ? `${breachesCount} past access target`
+                  : "Access target compliance nominal"
+              }
+              ariaLabel="Emergency department flow indicators"
+              metrics={[
+                {
+                  id: "kpi-presenting",
+                  label: "Presenting",
+                  value: presentingCount,
+                  tone: "accent",
+                },
+                {
+                  id: "kpi-awaiting-bed",
+                  label: "Awaiting Bed",
+                  value: awaitingBedCount,
+                  tone: awaitingBedCount > 0 ? "warn" : "good",
+                },
+                {
+                  id: "kpi-avg-wait",
+                  label: "Avg Wait",
+                  value: avgWaitLabel,
+                  tone: breachesCount > 0 ? "warn" : "normal",
+                },
+                {
+                  id: "kpi-breaches",
+                  label: "Past Target",
+                  value: breachesCount,
+                  tone: breachesCount > 0 ? "danger" : "good",
+                },
+              ]}
+            />
 
             <div className={styles.seenToolbar}>
               <div className={styles.seenFilterTabs} role="tablist" aria-label="Filter events by category">

@@ -1,0 +1,274 @@
+/*
+ * Dynamic HUD Island Capsule
+ *
+ * Compact, tactile executive micro-HUD replacing bulky 140px+ KPI card rectangles.
+ * Strictly adheres to token policy: no raw hex, no bare rgb/hsl.
+ * Strictly adheres to font size floor: minimum 12px everywhere.
+ */
+
+.islandWrapper {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+  margin-bottom: var(--space-3, 12px);
+  position: relative;
+  z-index: 10;
+}
+
+.islandWrapperCenter {
+  justify-content: center;
+}
+
+.islandWrapperEnd {
+  justify-content: flex-end;
+}
+
+.island {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  background: var(--surface-2, var(--surface-chrome));
+  border: 1px solid var(--line, var(--border));
+  border-radius: var(--pill, 9999px);
+  padding: 6px 14px;
+  box-shadow: var(--lift);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.island::-webkit-scrollbar {
+  display: none;
+}
+
+.island:hover {
+  border-color: var(--line-strong, var(--border-strong));
+  box-shadow: var(--lift);
+}
+
+.stageHead {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  padding-right: var(--space-2, 8px);
+  border-right: 1px solid var(--line, var(--border));
+  flex-shrink: 0;
+}
+
+.statusPip {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--pill, 9999px);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.statusPipNominal {
+  background: var(--good);
+}
+
+.statusPipNominal::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: var(--pill, 9999px);
+  border: 1px solid var(--good);
+  opacity: 0.4;
+}
+
+.statusPipWarning {
+  background: var(--warn);
+}
+
+.statusPipWarning::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: var(--pill, 9999px);
+  border: 1px solid var(--warn);
+  opacity: 0.4;
+}
+
+.statusPipAlarm {
+  background: var(--danger, var(--critical));
+  animation: pulseAlarm 2s infinite ease-in-out;
+}
+
+.statusPipAlarm::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: var(--pill, 9999px);
+  border: 1px solid var(--danger, var(--critical));
+  opacity: 0.5;
+}
+
+@keyframes pulseAlarm {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.75;
+  }
+}
+
+.statusPipNeutral {
+  background: var(--muted);
+}
+
+.stageTitle {
+  font-size: var(--t-0, 12px);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.metricsList {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex-wrap: nowrap;
+}
+
+.metricItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: var(--t-0, 12px);
+  color: var(--muted);
+  border-radius: var(--pill, 9999px);
+  padding: 3px 8px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.metricBtn {
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--t-0, 12px);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  border-radius: var(--pill, 9999px);
+  padding: 3px 8px;
+  min-height: 28px;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.metricBtn:hover {
+  background: var(--surface-3, var(--surface-hover));
+  color: var(--text);
+  border-color: var(--line, var(--border));
+}
+
+.metricBtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.metricBtnActive {
+  background: var(--surface-3, var(--surface-hover));
+  border-color: var(--accent);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.metricLabel {
+  font-size: var(--t-0, 12px);
+  font-weight: 550;
+  color: var(--muted);
+}
+
+.metricLabel::after {
+  content: ":";
+  margin-right: 2px;
+}
+
+.metricSubtext {
+  font-size: var(--t-0, 12px);
+  color: var(--muted);
+  opacity: 0.8;
+  margin-left: 4px;
+}
+
+.metricValue {
+  font-family: var(--font-mono, monospace);
+  font-size: var(--t-0, 12px);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.metricUnit {
+  font-size: var(--t-0, 12px);
+  font-weight: 500;
+  color: var(--muted);
+  margin-left: 2px;
+}
+
+.metricToneAccent {
+  color: var(--accent);
+}
+
+.metricToneGood {
+  color: var(--good);
+}
+
+.metricToneWarn {
+  color: var(--warn);
+}
+
+.metricToneDanger {
+  color: var(--danger, var(--critical));
+}
+
+.metricToneMuted {
+  color: var(--muted);
+}
+
+.divider {
+  width: 1px;
+  height: 12px;
+  background: var(--line, var(--border));
+  flex-shrink: 0;
+}
+
+.actionsArea {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: var(--space-2, 8px);
+  border-left: 1px solid var(--line, var(--border));
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .islandWrapper {
+    justify-content: stretch;
+    overflow-x: auto;
+  }
+
+  .island {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 6px 10px;
+    border-radius: var(--r-card, 12px);
+  }
+}

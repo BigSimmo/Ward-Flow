@@ -15,13 +15,15 @@ import { WardFilters } from "@/components/ward-management/ward-controls";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
-import { BED_RELEASE_BLOCKED_FIGURE_LABEL, bedReleaseStateLabels } from "@/components/ward-management/ward-derivations";
+import { BED_RELEASE_BLOCKED_FIGURE_LABEL, bedReleaseStateLabels, isOpen } from "@/components/ward-management/ward-derivations";
 import { siteLabel } from "@/components/ward-management/ward-absence-labels";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { WardServiceScopeBar } from "@/components/ward-management/shell/ward-service-scope-bar";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { wardIntakeConstraintLabels } from "@/components/ward-management/ward-change-reasons";
+import { outOfAreaLedger } from "@/components/ward-management/ward-referrals";
+import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 import { BedMap } from "./bed-map";
 import {
   bedKindGaps,
@@ -132,6 +134,8 @@ export function CapacityScreen() {
   const gapRows = bedKindGaps(movements, units, now);
   const gapTotals = bedKindTotals(gapRows);
   const shortfalls = gapRows.filter((row) => row.gap < 0);
+  const farPlacementsCount = outOfAreaLedger(admissions, units, now).entries.length;
+  const unallocatedCount = movements.filter((m) => isOpen(m) && !m.acceptedUnitId).length;
 
   // ⚠️ `bedReleases` PASSED DELIBERATELY. "Expected to free today" is not a fact `Unit` carries —
   // it lives in reducer state — so `networkWardRows` returns `undefined` for it unless the releases
@@ -274,74 +278,46 @@ export function CapacityScreen() {
             <span className={styles.pageSubtitle}>Statewide Inpatient Directory · Real-time census</span>
           </div>
 
-          <div className={styles.telemetryCapsule} aria-label="Statewide Bed Telemetry">
-            <div
-              className={`${styles.telemetryItem} ${styles.interactiveItem}`}
-              onClick={() => setNetworkFilterId("all")}
-              role="button"
-              tabIndex={0}
-              title="Click to view all operational wards"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") setNetworkFilterId("all");
-              }}
-            >
-              <span className={styles.telemetryLabel}>Wards</span>
-              <span className={styles.telemetryVal}>{networkRows.length}</span>
-              <span className={styles.telemetrySub}>{networkServiceGroups.length} clusters</span>
-            </div>
-
-            <div
-              className={styles.telemetryItem}
-              title={`${netTotals.beds} total staffed beds, ${totalOccupied} occupied (${((totalOccupied / netTotals.beds) * 100).toFixed(1)}% occupancy)`}
-            >
-              <span className={styles.telemetryLabel}>Beds</span>
-              <span className={styles.telemetryVal}>{netTotals.beds}</span>
-              <div
-                className={styles.microMeter}
-                aria-hidden="true"
-                title={`${((totalOccupied / netTotals.beds) * 100).toFixed(1)}% Occupancy`}
-              >
-                <div
-                  className={styles.microMeterBar}
-                  style={{
-                    width: `${netTotals.beds > 0 ? ((totalOccupied / netTotals.beds) * 100).toFixed(1) : 0}%`,
-                  }}
-                />
-              </div>
-              <span className={styles.telemetrySub}>
-                {netTotals.beds > 0 ? ((totalOccupied / netTotals.beds) * 100).toFixed(1) : 0}% occ
-              </span>
-            </div>
-
-            <div
-              className={`${styles.telemetryItem} ${styles.interactiveItem}`}
-              onClick={() => setNetworkFilterId("has-bed-ready")}
-              role="button"
-              tabIndex={0}
-              title="Click to filter wards with available beds"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") setNetworkFilterId("has-bed-ready");
-              }}
-            >
-              <span className={styles.telemetryLabel}>Available</span>
-              <span className={styles.telemetryPillGood}>{netTotals.ready} Ready</span>
-            </div>
-
-            <div
-              className={`${styles.telemetryItem} ${styles.interactiveItem}`}
-              onClick={() => setNetworkFilterId("has-locked-bed-ready")}
-              role="button"
-              tabIndex={0}
-              title="Click to filter locked / HDU units"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") setNetworkFilterId("has-locked-bed-ready");
-              }}
-            >
-              <span className={styles.telemetryLabel}>Locked/HDU</span>
-              <span className={styles.telemetryPillDanger}>{totalLockedReady}</span>
-              <span className={styles.telemetrySub}>0 1:1</span>
-            </div>
-          </div>
+          <WardDynamicIsland
+            testId="ward-capacity-hud-island"
+            title="Statewide Capacity"
+            status={shortfalls.length > 0 ? "alarm" : unallocatedCount > 0 ? "warning" : "nominal"}
+            statusText={
+              shortfalls.length > 0
+                ? `${shortfalls.length} specialty bed shortfalls`
+                : "Statewide capacity nominal"
+            }
+            ariaLabel="Statewide capacity indicators"
+            className={styles.headerIsland}
+            metrics={[
+              {
+                id: "kpi-mismatches",
+                label: "Mismatches",
+                value: shortfalls.length,
+                subtext: shortfalls.length > 0 ? `${shortfalls.length} bed types short` : "Balanced",
+                tone: shortfalls.length > 0 ? "warn" : "good",
+              },
+              {
+                id: "kpi-far-placements",
+                label: "Far Placements",
+                value: farPlacementsCount,
+                tone: farPlacementsCount > 0 ? "warn" : "normal",
+              },
+              {
+                id: "kpi-unallocated",
+                label: "Unallocated",
+                value: unallocatedCount,
+                tone: unallocatedCount > 0 ? "warn" : "good",
+              },
+              {
+                id: "kpi-offline",
+                label: "Offline",
+                value: 0,
+                subtext: "None offline",
+                tone: "muted",
+              },
+            ]}
+          />
         </header>
 
         {/*

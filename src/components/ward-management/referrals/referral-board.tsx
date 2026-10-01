@@ -37,6 +37,7 @@ import { referralWaitLine } from "./referral-wait";
 import styles from "./referrals.module.css";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 
 /**
  * Owner answer 2026-09-25 (R7, Q2): gender identity shown beside sex, never merged into it. Empty
@@ -483,104 +484,77 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
           </p>
         </header>
 
-        <div
-          className={styles.kpiGrid}
-          data-testid="ward-referral-kpis"
-          role="region"
-          aria-label="Key referral metrics"
-        >
-          <button
-            type="button"
-            className={`${styles.kpiCard} ${chipFilter === "all" && statusFilter === "pending" ? styles.kpiCardActive : ""}`}
-            onClick={() => {
-              setStatusFilter("pending");
-              setChipFilter("all");
-            }}
-            aria-pressed={chipFilter === "all" && statusFilter === "pending"}
-          >
-            <div className={styles.kpiHeader}>
-              <span className={styles.kpiLabel}>Awaiting triage</span>
-              <span className={`${styles.kpiDot} ${styles.kpiDotAccent}`} aria-hidden="true" />
-              <span className="sr-only">Warning status: pending triage</span>
-            </div>
-            <div className={styles.kpiValue}>{pendingCount}</div>
-            <div className={styles.kpiSub}>Oldest wait: {oldestQueuedWait}</div>
-          </button>
-
-          <button
-            type="button"
-            className={`${styles.kpiCard} ${chipFilter === "tier1" ? styles.kpiCardActive : ""}`}
-            onClick={() => {
-              setStatusFilter("pending");
-              setChipFilter(chipFilter === "tier1" ? "all" : "tier1");
-            }}
-            aria-pressed={chipFilter === "tier1"}
-          >
-            <div className={styles.kpiHeader}>
-              <span className={styles.kpiLabel}>Tier 1 Critical</span>
-              <span className={`${styles.kpiDot} ${styles.kpiDotDanger}`} aria-hidden="true" />
-              <span className="sr-only">Critical priority tier 1</span>
-            </div>
-            <div className={`${styles.kpiValue} ${styles.kpiValueDanger}`}>{tier1Count}</div>
-            <div className={styles.kpiSub}>Immediate clinical review</div>
-          </button>
-
-          <button
-            type="button"
-            className={`${styles.kpiCard} ${chipFilter === "beds" ? styles.kpiCardActive : ""}`}
-            onClick={() => {
-              setStatusFilter("pending");
-              setChipFilter(chipFilter === "beds" ? "all" : "beds");
-            }}
-            aria-pressed={chipFilter === "beds"}
-          >
-            <div className={styles.kpiHeader}>
-              <span className={styles.kpiLabel}>Inpatient Beds</span>
-              <span className={`${styles.kpiDot} ${styles.kpiDotWarn}`} aria-hidden="true" />
-              <span className="sr-only">Inpatient bed requests</span>
-            </div>
-            <div className={`${styles.kpiValue} ${styles.kpiValueWarn}`}>{bedRequestsCount}</div>
-            <div className={styles.kpiSub}>Psychiatric ward requests</div>
-          </button>
-
-          <button
-            type="button"
-            className={`${styles.kpiCard} ${chipFilter === "older" ? styles.kpiCardActive : ""}`}
-            onClick={() => {
-              setStatusFilter("pending");
-              setChipFilter(chipFilter === "older" ? "all" : "older");
-            }}
-            aria-pressed={chipFilter === "older"}
-          >
-            <div className={styles.kpiHeader}>
-              <span className={styles.kpiLabel}>Older Adult</span>
-              <span className={`${styles.kpiDot} ${styles.kpiDotCoord}`} aria-hidden="true" />
-              <span className="sr-only">Specialist psychogeriatric referrals</span>
-            </div>
-            <div className={styles.kpiValue}>{olderAdultCount}</div>
-            <div className={styles.kpiSub}>Specialist psychogeriatric</div>
-          </button>
-
-          <button
-            type="button"
-            className={`${styles.kpiCard} ${statusFilter === "accepted" || statusFilter === "declined" ? styles.kpiCardActive : ""}`}
-            onClick={() => {
-              setStatusFilter(statusFilter === "all" ? "accepted" : "all");
-              setChipFilter("all");
-            }}
-            aria-pressed={statusFilter === "accepted" || statusFilter === "declined"}
-          >
-            <div className={styles.kpiHeader}>
-              <span className={styles.kpiLabel}>Decided Today</span>
-              <span className={`${styles.kpiDot} ${styles.kpiDotGood}`} aria-hidden="true" />
-              <span className="sr-only">Decisions recorded</span>
-            </div>
-            <div className={`${styles.kpiValue} ${styles.kpiValueGood}`}>{decidedTotal}</div>
-            <div className={styles.kpiSub}>
-              {acceptedTotal} accepted · {declinedTotal} declined
-            </div>
-          </button>
-        </div>
+        <WardDynamicIsland
+          testId="ward-referral-kpis"
+          title="Referral Queue"
+          status={tier1Count > 0 ? "alarm" : pendingCount > 5 ? "warning" : "nominal"}
+          statusText={
+            tier1Count > 0
+              ? `${tier1Count} Tier 1 critical referrals requiring triage`
+              : `${pendingCount} awaiting triage · ${decidedTotal} decided today`
+          }
+          ariaLabel="Referral queue summary filters"
+          className={styles.hudWrapper}
+          metrics={[
+            {
+              id: "kpi-awaiting-triage",
+              label: "Awaiting Triage",
+              value: pendingCount,
+              subtext: oldestQueuedWait ? `Oldest: ${oldestQueuedWait}` : undefined,
+              tone: "accent",
+              active: chipFilter === "all" && statusFilter === "pending",
+              onClick: () => {
+                setStatusFilter("pending");
+                setChipFilter("all");
+              },
+            },
+            {
+              id: "kpi-tier1",
+              label: "Tier 1 Critical",
+              value: tier1Count,
+              tone: "critical",
+              active: chipFilter === "tier1",
+              onClick: () => {
+                setStatusFilter("pending");
+                setChipFilter(chipFilter === "tier1" ? "all" : "tier1");
+              },
+            },
+            {
+              id: "kpi-beds",
+              label: "Inpatient Beds",
+              value: bedRequestsCount,
+              tone: "warn",
+              active: chipFilter === "beds",
+              onClick: () => {
+                setStatusFilter("pending");
+                setChipFilter(chipFilter === "beds" ? "all" : "beds");
+              },
+            },
+            {
+              id: "kpi-older-adult",
+              label: "Older Adult",
+              value: olderAdultCount,
+              tone: "normal",
+              active: chipFilter === "older",
+              onClick: () => {
+                setStatusFilter("pending");
+                setChipFilter(chipFilter === "older" ? "all" : "older");
+              },
+            },
+            {
+              id: "kpi-decided",
+              label: "Decided Today",
+              value: decidedTotal,
+              subtext: `${acceptedTotal} acc · ${declinedTotal} dec`,
+              tone: "good",
+              active: statusFilter === "accepted" || statusFilter === "declined",
+              onClick: () => {
+                setStatusFilter(statusFilter === "all" ? "accepted" : "all");
+                setChipFilter("all");
+              },
+            },
+          ]}
+        />
 
         <div className={styles.registerToolbar} aria-label="Referral register controls">
           <div className={styles.toolbarTopRow}>
@@ -1488,24 +1462,36 @@ function DecidedSection({
                         <span className={styles.patientCardName}>{patientInfo.displayName}</span>
                       </span>
                       <span className={styles.cardTierGroup}>
-                        <span className={styles.priorityBadge} data-priority={getReferralPriority(referral, now)}>
+                        <span
+                          className={styles.priorityBadge}
+                          data-priority={getReferralPriority(referral, now)}
+                        >
                           <PriorityGlyph priority={getReferralPriority(referral, now)} />
                           <span className={styles.priorityText}>
                             {referralPriorityLabel(getReferralPriority(referral, now))}
                           </span>
                         </span>
-                        <span className={styles.cardTier} data-tier={referral.urgency}>
+                        <span
+                          className={styles.cardTier}
+                          data-tier={referral.urgency}
+                        >
                           {urgencyTierLabel(referral.urgency)}
                         </span>
-                        <span className={styles.waitBadge}>{decidedWaitLabel(referral)}</span>
+                        <span className={styles.waitBadge}>
+                          {decidedWaitLabel(referral)}
+                        </span>
                       </span>
                     </span>
 
                     <span className={styles.cardContextRow}>
-                      <span className={styles.cardService}>{referralPersonFactsStatingSex(referral).join(" · ")}</span>
+                      <span className={styles.cardService}>
+                        {referralPersonFactsStatingSex(referral).join(" · ")}
+                      </span>
                       <span
                         className={
-                          referralState(referral) === "accepted" ? styles.bedAssignedBadge : styles.bedDeclinedBadge
+                          referralState(referral) === "accepted"
+                            ? styles.bedAssignedBadge
+                            : styles.bedDeclinedBadge
                         }
                       >
                         {outcomeLabel(referral)}
@@ -1529,8 +1515,7 @@ function DecidedSection({
                         />
                       </span>
                       <span className={styles.cardDecidedTime}>
-                        ·{" "}
-                        {referralDecidedAt(referral) !== undefined
+                        · {referralDecidedAt(referral) !== undefined
                           ? `Decided ${formatInstantWithDay(referralDecidedAt(referral)!, now)}`
                           : "Not recorded"}
                       </span>
