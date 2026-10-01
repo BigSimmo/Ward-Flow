@@ -8,20 +8,30 @@
 // --branch defaults to HEAD; --onto defaults to the ward line (use the steward's pre-built batch
 // branch when there is one). Light git (merge-tree) finds clashes without touching any branch, index
 // or worktree. The merged tree is then written to a temporary folder, with node_modules as a junction
-// to ward-lead's copy, and tsc runs there on tsconfig.ward-gate.json (or tsconfig.typecheck.json if
-// the merged tree has no Ward-scoped config). The folder is removed afterwards: the junction is
-// unlinked first, so ward-lead's node_modules is never touched.
+// to this worktree's own installation, and tsc runs there on tsconfig.ward-gate.json (or
+// tsconfig.typecheck.json if the merged tree has no Ward-scoped config). The folder is removed
+// afterwards: the junction is unlinked first, so the installed dependencies are never touched.
 // Then scripts/ward-flow/related-tests.mjs selects and runs the related tests inside that folder.
 // Exit 0 = clean merge, no type errors, related tests pass; 1 = any of those fails; 2 = setup problem.
 // It is a narrow run: run it through run-slot (narrow) when the PC is busy.
 import { execFileSync, spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, lstatSync, mkdtempSync, rmSync } from "node:fs";
+import { copyFileSync, existsSync, lstatSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { selectFoldGate } from "./select-fold-gate.mjs";
 
-const LINE = "codex/task-ward-flow-live-state-20260831";
-const NODE_MODULES = "D:\\Worktrees\\Database\\ward-lead\\node_modules";
+try {
+  const remote = execFileSync("git", ["remote"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  if (remote) {
+    console.error("The local Ward line ready check is retired in a linked repository.");
+    process.exit(2);
+  }
+} catch {
+  console.error("Cannot verify repository remotes. Refusing the retired local Ward workflow.");
+  process.exit(2);
+}
+
+const LINE = "main";
 const TSC_CACHE_DIR = process.env.WARD_TSC_CACHE_DIR ?? "D:/Repos/ward-flow-logs/tsc-cache";
 const args = process.argv.slice(2);
 const opt = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
@@ -52,6 +62,21 @@ console.log(`ready-check: ${plan.tier} gate (${plan.reason}).`);
 if (plan.tier === "static" || plan.tier === "none") {
   console.log("ready-check: PASSED. Static checks for changed documentation remain due at fold.");
   process.exit(0);
+}
+
+const projectRoot = path.resolve(git(["rev-parse", "--show-toplevel"]));
+const NODE_MODULES = path.join(projectRoot, "node_modules");
+let installedDependencies;
+try {
+  installedDependencies = realpathSync(NODE_MODULES);
+} catch {
+  console.error("ready-check: install dependencies in this worktree before running executable checks.");
+  process.exit(2);
+}
+const relativeDependencies = path.relative(projectRoot, installedDependencies);
+if (relativeDependencies.startsWith("..") || path.isAbsolute(relativeDependencies)) {
+  console.error("ready-check: node_modules resolves outside this worktree; refusing a cross-checkout dependency link.");
+  process.exit(2);
 }
 
 // Scratch stays outside the protected Worktrees tree. Only this process-owned folder is removed.
