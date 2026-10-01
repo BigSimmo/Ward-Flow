@@ -81,6 +81,30 @@ export function isCanonicalWardFlowRemote(remoteUrl) {
 }
 
 const repositoryIdentityCache = new Map();
+let repositoryProbeEnvironment;
+
+// Hooks export Git-local variables. Clear them only for cross-checkout identity
+// probes so `git -C` reads the target repository rather than the invoking index.
+function checkoutProbeEnvironment() {
+  if (repositoryProbeEnvironment) return repositoryProbeEnvironment;
+  const env = { ...process.env };
+  const localVariables = execFileSync("git", ["rev-parse", "--local-env-vars"], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  })
+    .trim()
+    .split(/\r?\n/);
+  for (const name of localVariables) delete env[name];
+  repositoryProbeEnvironment = env;
+  return env;
+}
+
+function releasedBranches(line) {
+  return (line.split("|")[2] ?? "")
+    .split(",")
+    .map((branch) => branch.trim().split(/\s+/)[0])
+    .filter(Boolean);
+}
 
 /** Verify the checkout itself, regardless of which drive or host contains its worktree. */
 export function isPublicWardFlowCheckout(worktree) {
@@ -89,8 +113,13 @@ export function isPublicWardFlowCheckout(worktree) {
   if (repositoryIdentityCache.has(folder)) return repositoryIdentityCache.get(folder);
   let verified = false;
   try {
+    const env = checkoutProbeEnvironment();
     const run = (...args) =>
-      execFileSync("git", ["-C", worktree, ...args], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+      execFileSync("git", ["-C", worktree, ...args], {
+        encoding: "utf8",
+        env,
+        stdio: ["ignore", "pipe", "ignore"],
+      }).trim();
     verified =
       normalizedFolder(run("rev-parse", "--show-toplevel")) === folder &&
       isCanonicalWardFlowRemote(run("remote", "get-url", "origin")) &&
@@ -132,8 +161,7 @@ export function scopedActiveSignOutLines(signOutText, currentWorktree = "") {
       continue;
     }
     if (line.startsWith("RELEASED ")) {
-      const branch = line.split("|")[2]?.trim().split(/\s+/)[0];
-      const scopes = branches.get(branch);
+      const scopes = new Set(releasedBranches(line).flatMap((branch) => [...(branches.get(branch) ?? [])]));
       // Older unscoped releases belong to a sole known scope. An ambiguous one
       // closes only the legacy claim; new public releases must name their repo.
       const isPublic = /\brepo=BigSimmo\/Ward-Flow\b/i.test(line) || (scopes?.size === 1 && scopes.has("public"));
@@ -147,8 +175,7 @@ function signOutEntries(signOutText) {
   const entries = [];
   for (const line of signOutText.split(/\r?\n/)) {
     if (line.startsWith("RELEASED ")) {
-      const branch = line.split("|")[2]?.trim().split(/\s+/)[0];
-      if (branch) {
+      for (const branch of releasedBranches(line)) {
         for (let index = entries.length - 1; index >= 0; index -= 1) {
           if (entries[index].branch === branch) entries.splice(index, 1);
         }
