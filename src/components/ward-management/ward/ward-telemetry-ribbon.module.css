@@ -1,7 +1,7 @@
 /* Ward Flight Deck Telemetry Ribbon */
 .ribbon {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   background: var(--surface-2);
   border: 1px solid var(--line-strong, var(--line));
   border-radius: var(--r1);
@@ -22,7 +22,18 @@
   }
 }
 
+.preparationNote {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0.5rem 0.875rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  line-height: 1.4;
+}
+
 .cell {
+  min-width: 0;
   padding: 12px 14px;
   position: relative;
   border-right: 1px solid var(--line);
@@ -69,6 +80,7 @@
 
 .topRow {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 6px;
@@ -146,9 +158,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
 }
 
 .actionLink {

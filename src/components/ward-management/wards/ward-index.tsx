@@ -506,7 +506,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                 </span>
                 All wards
               </h1>
-              <span className={styles.pageSubtitleNote}>Statewide Inpatient Directory · Real-time census</span>
+              <span className={styles.pageSubtitleNote}>Statewide inpatient directory</span>
             </div>
 
             {/* Accessible text contract for automated suites */}
@@ -1034,7 +1034,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
               (Showing {filteredUnits.length} of {units.length} statewide wards)
             </span>
           </div>
-          <div className={styles.directorySubHint}>Click any ward to inspect NUM contact &amp; criteria</div>
+          <div className={styles.directorySubHint}>Ward contacts &amp; criteria</div>
         </div>
 
         {/* 3. Canonical Service Headings & Navigation Anchor Points */}

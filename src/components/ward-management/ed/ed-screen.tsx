@@ -1736,15 +1736,9 @@ export function EdScreen({ edId }: EdScreenProps) {
 
   // ED Pressure Dynamic Island derivations
   const presentingCount = patients.length;
-  const awaitingBedCount = patients.filter(
-    (m) => m.stage === "accepted_awaiting_bed" || m.stage === "pulled",
-  ).length;
-  const totalWaitMinutes = patients.reduce(
-    (sum, m) => sum + Math.max(now - m.openedAt, 0),
-    0,
-  );
-  const avgWaitMinutes =
-    presentingCount === 0 ? 0 : Math.round(totalWaitMinutes / presentingCount);
+  const awaitingBedCount = patients.filter((m) => m.stage === "accepted_awaiting_bed" || m.stage === "pulled").length;
+  const totalWaitMinutes = patients.reduce((sum, m) => sum + Math.max(now - m.openedAt, 0), 0);
+  const avgWaitMinutes = presentingCount === 0 ? 0 : Math.round(totalWaitMinutes / presentingCount);
   const avgWaitLabel = formatElapsed(avgWaitMinutes);
   const breachesCount = patients.filter((m) => now - m.openedAt > accessTarget).length;
   const isEdAlarm = breachesCount > 0;
@@ -2908,7 +2902,7 @@ export function EdScreen({ edId }: EdScreenProps) {
           <section className={`${styles.panel} ${styles.mod}`} aria-labelledby="ward-ed-lists-heading">
             <div className={styles.ph}>
               <h2 id="ward-ed-lists-heading">Department lists</h2>
-              <p className={styles.note}>Five readings of the same department. Press a name to open the person.</p>
+              <p className={styles.note}>Select a person to open their record.</p>
               <span className={styles.count}>
                 {departmentListTab === "review"
                   ? `${awaitingReviewPatients.length === 0 ? "none" : awaitingReviewPatients.length} awaiting review`
@@ -5908,11 +5902,7 @@ export function EdScreen({ edId }: EdScreenProps) {
               testId="ward-ed-hud-island"
               title="ED Pressure"
               status={isEdAlarm ? "alarm" : isEdWarn ? "warning" : "nominal"}
-              statusText={
-                isEdAlarm
-                  ? `${breachesCount} past access target`
-                  : "Access target compliance nominal"
-              }
+              statusText={isEdAlarm ? `${breachesCount} past access target` : "Access target compliance nominal"}
               ariaLabel="Emergency department flow indicators"
               metrics={[
                 {

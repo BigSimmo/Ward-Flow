@@ -33,7 +33,7 @@ export function WardTelemetryRibbon({
 
   return (
     <div className={styles.ribbon} role="region" aria-label="Live Capacity Telemetry">
-      <p>{pendingPreparation} being made ready</p>
+      <p className={styles.preparationNote}>{pendingPreparation} being made ready</p>
       {/* 1. Staffed Beds */}
       <div className={styles.cell} data-state="accent">
         <div className={styles.topRow}>
@@ -140,9 +140,7 @@ export function WardTelemetryRibbon({
           </span>
         </div>
         <div className={styles.subRow}>
-          <span>
-            {unit.lockedBeds > 0 ? "Secure Boundary &middot; 1 Seclusion Ready" : "Standard Security Boundary"}
-          </span>
+          <span>{unit.lockedBeds > 0 ? "Secure Boundary · 1 Seclusion Ready" : "Standard Security Boundary"}</span>
         </div>
       </div>
     </div>
