@@ -3,7 +3,7 @@
  * 🔴 **A HAND-MAINTAINED INDEX OF 161 FILES GOES STALE, AND STALENESS IS THE FIRST THEME IN THE
  * INDEX ITSELF.** So this generates it instead.
  *
- * The lesson store is the source of truth. Each lesson carries its own `name`, `description` and
+ * The versioned historical lesson copy supplies this index. Each lesson carries `name`, `description` and
  * `type` in frontmatter. This reads them and writes `docs/ward-flow/RULES.md`.
  *
  *     node scripts/ward-flow/rules-index.mjs            # write the index
@@ -22,19 +22,53 @@
 import { readFileSync, readdirSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-const STORE = join(process.env.USERPROFILE ?? process.env.HOME ?? "", ".claude", "projects", "D--Repos-Database", "memory");
+const STORE = join(process.cwd(), "docs", "ward-flow", "lessons");
 const OUT = join(process.cwd(), "docs", "ward-flow", "RULES.md");
 
 /** Theme → keywords matched against name + description. Order matters: first match wins. */
 const THEMES = [
-  ["Staleness — a true statement that stopped being true", ["stale", "expire", "no longer", "lag", "outstanding", "retraction", "supersede", "tree before", "observations"]],
-  ["Checks that cannot fail", ["cannot fail", "vacuity", "vacuous", "floor", "safeguard", "mutation", "control", "guard", "coverage", "unfailable", "measuring nothing", "absence"]],
-  ["Claims wider than their evidence", ["width", "wider", "scoped", "assert only", "prefix", "enumerate", "grep", "sample", "population", "diagnosis"]],
+  [
+    "Staleness — a true statement that stopped being true",
+    ["stale", "expire", "no longer", "lag", "outstanding", "retraction", "supersede", "tree before", "observations"],
+  ],
+  [
+    "Checks that cannot fail",
+    [
+      "cannot fail",
+      "vacuity",
+      "vacuous",
+      "floor",
+      "safeguard",
+      "mutation",
+      "control",
+      "guard",
+      "coverage",
+      "unfailable",
+      "measuring nothing",
+      "absence",
+    ],
+  ],
+  [
+    "Claims wider than their evidence",
+    ["width", "wider", "scoped", "assert only", "prefix", "enumerate", "grep", "sample", "population", "diagnosis"],
+  ],
   ["Never the exit code", ["exit code", "exit-code", "pipe", "failure message", "runner", "wrapper"]],
-  ["What no test can see", ["no test", "breakpoint", "token", "css", "render", "visual", "paint", "unreachable", "mockup", "screen"]],
-  ["Other chats and agents", ["chat", "agent", "subagent", "peer", "relay", "delegat", "parallel", "verifier", "controller", "model split"]],
-  ["Git, merges and protected work", ["git", "merge", "fold", "branch", "worktree", "commit", "backup", "protected", "reflog", "ancestor", "stash"]],
-  ["Clinical meaning on screen", ["clinical", "patient", "ward flow", "word", "sentence", "phrase", "disclos", "caveat", "qualif"]],
+  [
+    "What no test can see",
+    ["no test", "breakpoint", "token", "css", "render", "visual", "paint", "unreachable", "mockup", "screen"],
+  ],
+  [
+    "Other chats and agents",
+    ["chat", "agent", "subagent", "peer", "relay", "delegat", "parallel", "verifier", "controller", "model split"],
+  ],
+  [
+    "Git, merges and protected work",
+    ["git", "merge", "fold", "branch", "worktree", "commit", "backup", "protected", "reflog", "ancestor", "stash"],
+  ],
+  [
+    "Clinical meaning on screen",
+    ["clinical", "patient", "ward flow", "word", "sentence", "phrase", "disclos", "caveat", "qualif"],
+  ],
 ];
 
 function frontmatter(text) {
@@ -53,7 +87,9 @@ function collect() {
     console.error(`lesson store not found at ${STORE}`);
     process.exit(2);
   }
-  const files = readdirSync(STORE).filter((f) => f.endsWith(".md") && f !== "MEMORY.md").sort();
+  const files = readdirSync(STORE)
+    .filter((f) => f.endsWith(".md") && f !== "MEMORY.md" && f !== "README.md")
+    .sort();
   return files.map((file) => {
     const fm = frontmatter(readFileSync(join(STORE, file), "utf8"));
     return { file, description: fm.description ?? "(no description)", type: fm.type ?? "?" };
@@ -75,14 +111,16 @@ function render(entries) {
     else unfiled.push(e);
   }
   const lines = [
-    "# Ward Flow — the rules, generated",
+    "# Ward Flow — historical lessons index, generated",
     "",
     "> 🔴 **GENERATED FILE. DO NOT EDIT BY HAND.**",
     "> `node scripts/ward-flow/rules-index.mjs` regenerates it; `--check` fails when it is out of date.",
-    "> **The lesson store is the source of truth** — one file per lesson, written the day something",
-    "> went wrong. Edit a lesson there, not here.",
+    "> This historical index is background, not current operational authority. Read AGENTS.md and",
+    "> docs/ward-flow/README.md for the dedicated repository's current rules and accepted design.",
+    "> Imported branch, provider and model instructions do not govern present work.",
+    "> The former machine-local index is retained in Git history; no private lessons are imported.",
     "",
-    `**${entries.length} lessons.** Generated from \`~/.claude/projects/D--Repos-Database/memory\`.`,
+    `**${entries.length} historical lessons.** Generated only from the versioned \`docs/ward-flow/lessons\` copy.`,
     "",
     "⚠️ **A lesson naming a file, function or count can go stale exactly as any other claim does.**",
     "Re-derive before acting on one. This index proves the lessons EXIST, never that they are current.",

@@ -5,12 +5,12 @@ import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const LINE = "codex/task-ward-flow-live-state-20260831";
+const LINE = "origin/main";
 const TEST_RUNNER =
   /^(vitest\.config\.|tests\/setup\/|scripts\/(check-ward-expected-reds|run-vitest|test-runner-safety)\.mjs$|scripts\/ward-flow\/related-tests\.mjs$)/;
 const APP_WIDE =
   /^(package(-lock)?\.json$|next\.config\.|tsconfig[^/]*\.json$|src\/components\/ward-management\/(?:[^/]+\.[jt]sx?$|(?:engine|state|shell|reference)\/)|src\/lib\/ward-flow-|src\/app\/layout\.|src\/(?:proxy|middleware)\.)/;
-const DOC = /^(docs\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|\.agents\/skills\/)/;
+const DOC = /^(docs\/|README\.md$|\.agents\/skills\/)|(?:^|\/)(?:AGENTS|CLAUDE|GEMINI)\.md$/;
 const TOOL = /^(scripts\/|\.githooks\/|\.claude\/hooks\/|\.github\/)/;
 const TEST = /^tests\/.*\.(?:test|spec)\.[cm]?[jt]sx?$/;
 const WARD_UI = /^src\/(?:components\/ward-management\/|app\/mockups\/ward-flow\/)/;
@@ -22,7 +22,7 @@ export function selectFoldGate(changes) {
   const entries = changes.map((change) => (typeof change === "string" ? { path: change, status: "M" } : change));
   const paths = entries.map(({ path: file }) => file.replace(/\\/g, "/"));
   const browserScope = paths.some(
-    (file) => file.startsWith("src/") || /^(package(-lock)?\.json|next\.config\.)/.test(file),
+    (file) => !DOC.test(file) && (file.startsWith("src/") || /^(package(-lock)?\.json|next\.config\.)/.test(file)),
   );
   if (entries.some(({ status, path: file }) => status.startsWith("D") && !DOC.test(file))) {
     return { tier: "full", typecheck: true, journeys: browserScope, reason: "executable or test deletion" };
@@ -38,7 +38,7 @@ export function selectFoldGate(changes) {
   if (paths.some((file) => !DOC.test(file) && !TOOL.test(file) && !TEST.test(file) && !WARD_UI.test(file))) {
     return { tier: "full", typecheck: true, journeys: browserScope, reason: "unrecognised scope" };
   }
-  const hasUi = paths.some((file) => WARD_UI.test(file));
+  const hasUi = paths.some((file) => WARD_UI.test(file) && !DOC.test(file));
   const hasTool = paths.some((file) => TOOL.test(file));
   const hasTest = paths.some((file) => TEST.test(file));
   if (hasUi || hasTool || hasTest) {
@@ -58,7 +58,18 @@ if (process.argv[1] && same(process.argv[1], fileURLToPath(import.meta.url))) {
   const opt = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
   const base = opt("--base", LINE);
   const head = opt("--head", "HEAD");
-  const raw = execFileSync("git", ["diff", "--name-status", `${base}...${head}`], { encoding: "utf8" });
+  let raw;
+  try {
+    raw = execFileSync("git", ["diff", "--name-status", `${base}...${head}`], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  } catch {
+    console.error(
+      `Cannot compare Ward Flow refs ${base}...${head}. Verify the local refs or supply --base <ref> and --head <ref>. No gate selected.`,
+    );
+    process.exit(1);
+  }
   const changes = raw
     .trim()
     .split(/\r?\n/)

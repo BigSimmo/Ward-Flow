@@ -15,7 +15,7 @@
  *
  * WHAT THIS SCANS
  * ----------------
- * `docs/ward-flow/owner-*.md`. The brief also asked about `docs/ward-flow/*owner*ruling*.md` in
+ * `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md`. The brief also asked about `docs/ward-flow/*owner*ruling*.md` in
  * case it caught more — it does not: every file that pattern matches already starts with `owner-`
  * and is already in the first set. Both patterns are computed below so that stops being an assumption.
  * One file matches `*owner*` but not `owner-*` — `how-to-write-to-the-owner.md` — and is deliberately
@@ -81,7 +81,7 @@ function listFiles() {
     const all = readdirSync(dir).filter((f) => f !== outName);
     for (const f of all) {
       const relPath = `${prefix}${f}`;
-      if (/^owner-.*\.md$/.test(f)) {
+      if ((prefix === "" && f === "decisions.md") || /^owner-.*\.md$/.test(f)) {
         primary.push(relPath);
       } else if (/owner.*ruling.*\.md$/i.test(f)) {
         secondary.push(relPath);
@@ -168,11 +168,7 @@ function extractTableRowItems(lines) {
     if (cells.length < 2) continue;
     const idm = idCellRe.exec(cells[0]);
     if (!idm) continue;
-    const text = cells
-      .slice(1)
-      .join(" — ")
-      .replace(/\s+/g, " ")
-      .trim();
+    const text = cells.slice(1).join(" — ").replace(/\s+/g, " ").trim();
     if (!text) continue;
     items.push({ line: i + 1, id: idm[1], ordinal: null, text, kind: "table row" });
   }
@@ -260,7 +256,7 @@ function render(perFile, patterns) {
     "> `node scripts/ward-flow/owner-rulings-index.mjs` regenerates it; `--check` fails when it is out",
     "> of date. Edit a ruling in its own source file under `docs/ward-flow/`, never here.",
     "",
-    `Scanned \`docs/ward-flow/owner-*.md\` and \`docs/ward-flow/archive/dated-notes/owner-*.md\` — **${perFile.length} files**. The brief also asked about`,
+    `Scanned \`docs/ward-flow/decisions.md\`, \`docs/ward-flow/owner-*.md\` and \`docs/ward-flow/archive/dated-notes/owner-*.md\` — **${perFile.length} files**. The brief also asked about`,
     "`docs/ward-flow/*owner*ruling*.md`: that pattern matched " +
       (patterns.secondary.length === 0
         ? "**zero files beyond the first set** — every file it catches already starts with `owner-`."
@@ -273,8 +269,8 @@ function render(perFile, patterns) {
     "",
     "⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run",
     "below — it does NOT prove the ruling is still CURRENT.** Owner rulings in this corpus get",
-    "corrected, superseded and withdrawn inside these same files (search near an ID for \"WITHDRAWN\",",
-    "\"SUPERSEDED\", \"CORRECTED\", \"REVISED\" before relying on it). Always open the source file and read",
+    'corrected, superseded and withdrawn inside these same files (search near an ID for "WITHDRAWN",',
+    '"SUPERSEDED", "CORRECTED", "REVISED" before relying on it). Always open the source file and read',
     "the surrounding paragraph before acting on anything found here.",
     "",
     "⚠️ **This index does NOT distinguish a decided ruling from a question still awaiting the owner.**",
@@ -292,8 +288,8 @@ function render(perFile, patterns) {
     `## ID index — ${idKeys.length} distinct IDs`,
     "",
     "So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.",
-    "Bare numbered rulings (files that number \"1., 2., 3. …\" with no owner-issued letter code) are",
-    "NOT listed here — look them up under \"By file\" below instead, because a plain number is not a",
+    'Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are',
+    'NOT listed here — look them up under "By file" below instead, because a plain number is not a',
     "safe global key across 30 files.",
     "",
     "| ID | File(s) | One-line substance |",
@@ -316,6 +312,16 @@ function render(perFile, patterns) {
   lines.push("---", "", `## By file, newest first — ${withItems.length} files`, "");
   for (const f of sortedFiles) {
     lines.push(`### \`${f.file}\` (${f.date.display})`, "");
+    if (f.file === "decisions.md")
+      lines.push(
+        "**Recorded decision log.** Read the source for supersession and current scope; indexing does not grant authority.",
+        "",
+      );
+    if (/owner-question|owner-questions|to-settle/.test(f.file))
+      lines.push(
+        "**Question/proposal source.** An indexed item is not an approved decision; read the source for an explicit owner answer.",
+        "",
+      );
     if (f.title) lines.push(`**Title:** ${f.title}`, "");
     lines.push(`${f.items.length} item(s):`, "");
     for (const item of f.items) {

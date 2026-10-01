@@ -1,5 +1,12 @@
 # Ward Flow design system, third edition
 
+> **HISTORICAL DRAWING STANDARD.** Current app authority clarified 2 October 2026: preserve the
+> accepted app design on local `main`, following [the entry point](../README.md) and
+> [active screen acceptance](../SCREEN-DEFINITION-OF-DONE.md). The prescriptions below explain the
+> drawings; they do not authorise restyling the app. Typography/accent exceptions are scoped
+> historical decisions, not general permissions. Wording/punctuation rules concern authored
+> interface copy, not clinician-entered narrative or ordinary documentation.
+
 The one standard every Ward Flow mockup is built to. Rules first, then the tokens, the components rendered from the same stylesheet, the shell in both its states, the behaviours, the wording, the recipe, the plan for the eighteen mockups, and the index of the twelve screens.
 
 _Frozen on Tuesday 8 September 2026, version 3.0._

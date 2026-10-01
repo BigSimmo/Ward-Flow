@@ -60,7 +60,10 @@ Some headings remain for existing policy checks, including `## Bare PR publicati
 [`docs/ward-flow/README.md`](docs/ward-flow/README.md) is the product entry point for Ward Flow's
 mission and design. Its old worktree, fold and publication instructions are superseded by this
 repository boundary. The working engine is authoritative for behaviour and the latest approved app
-is authoritative for appearance. Synthetic data only. Do not use real patient information before
+is authoritative for appearance. For the 2 October 2026 stale-rules repair, the owner reconfirmed
+the current local `main` design as the baseline. Historical drawings and token prescriptions do
+not authorise restyling it; preserve understandable status and accessible controls.
+Synthetic data only. Do not use real patient information before
 the separately required clinical, privacy and legal reviews.
 
 ### Where work happens
@@ -232,9 +235,11 @@ For the rules on pasting the decisive gate line, stating verified versus assumed
 
 # Ward Flow provider safety
 
-This repository has no PsychSift Supabase or Railway deployment. Do not apply PsychSift migration,
-RAG, Railway or clinical database instructions to Ward Flow. For Azure work, verify the named Ward
-Flow resource, data boundary and user authority before any live provider action.
+Ward Flow does not use PsychSift's Supabase or Railway resources. A separate Ward Flow Railway
+target was documented on 27 September 2026 in `docs/hosting.md`; those dated records do not prove
+its current deployment state. Do not apply PsychSift migration, RAG or clinical database instructions
+to Ward Flow. For any provider action, verify the named Ward Flow resource, data boundary and user
+authority before acting.
 
 <!-- END:ward-flow-provider-safety -->
 
