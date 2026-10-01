@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 
-import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { genderReviewNeeded, type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
@@ -31,7 +31,7 @@ import {
   referralSuburbLabel,
 } from "@/components/ward-management/ward-referrals";
 
-import { ReferralMatchView } from "./referral-match";
+import { ReferralMatchView, ReferralHistoryAndCorrections } from "./referral-match";
 import { getReferralPriority, PriorityGlyph, referralPriorityLabel } from "./referral-priority";
 import { referralWaitLine } from "./referral-wait";
 import styles from "./referrals.module.css";
@@ -343,12 +343,14 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   const [chipFilter, setChipFilter] = useState<"all" | "tier1" | "beds" | "older" | "community_ed">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [denseView, setDenseView] = useState(false);
+  const [inspectorTab, setInspectorTab] = useState<"placement" | "dossier" | "mha">("placement");
   const triggerRef = useRef<HTMLElement | null>(null);
   const detailRef = useRef<HTMLDivElement | null>(null);
 
   const handleSelect = useCallback((referralId: string) => {
     triggerRef.current = document.activeElement as HTMLElement | null;
     setSelectedReferralId(referralId);
+    setInspectorTab("placement");
   }, []);
 
   const closeDetail = useCallback(() => {
@@ -772,16 +774,12 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
           >
             {selectedReferral ? (
               <>
-                <div className={styles.inspectorHeader}>
-                  <div className={styles.inspectorHeaderLeft}>
-                    <div className={styles.inspectorIdentityRow}>
-                      <span className={styles.inspectorId}>
-                        <span className="sr-only">{selectedReferral.id} </span>
-                        {formatUmrn(selectedPatientInfo.umrn)}
-                      </span>
-                      <span className={styles.inspectorPatientName}>{selectedPatientInfo.displayName}</span>
-                    </div>
-                    <div className={styles.inspectorUrgencyGroup}>
+                {/* Executive Patient Dossier Banner */}
+                <div className={styles.patientBanner}>
+                  <div className={styles.bannerIdentityRow}>
+                    <div className={styles.nameGroup}>
+                      <span className={styles.ptUmrn}>{formatUmrn(selectedPatientInfo.umrn)}</span>
+                      <h1 className={styles.ptName}>{selectedPatientInfo.displayName}</h1>
                       <span
                         className={styles.priorityBadge}
                         data-priority={getReferralPriority(selectedReferral, now)}
@@ -796,224 +794,349 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         {urgencyTierLabel(selectedReferral.urgency)}
                       </span>
                     </div>
-                  </div>
-                  <div className={styles.inspectorHeaderActions}>
-                    {(() => {
-                      const accepted = acceptedAddressing(selectedReferral);
-                      const linkedMovement = movements.find((m) => m.referralId === selectedReferral.id && !m.closure);
-                      const targetWardUnitId = accepted?.acceptedUnitId ?? linkedMovement?.acceptedUnitId;
-                      const targetWard = targetWardUnitId ? units.find((u) => u.id === targetWardUnitId) : undefined;
-                      if (!targetWardUnitId) return null;
-                      return (
-                        <Link
-                          href={`/mockups/ward-flow/board/${targetWardUnitId}`}
-                          className={styles.jumpToWardBtn}
-                          title={`Open ${targetWard?.name ?? "Ward"} Bed Board`}
-                        >
-                          <svg
-                            className={styles.jumpIcon}
-                            viewBox="0 0 24 24"
-                            width="14"
-                            height="14"
-                            aria-hidden="true"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            fill="none"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <span style={{ fontSize: "var(--t-0, 12px)", color: "var(--muted)" }}>Elapsed Wait:</span>
+                        <span style={{ fontFamily: "var(--mono)", fontWeight: 700, fontSize: "var(--t-2, 13.5px)", color: "var(--warn)" }}>
+                          {referralWaitLine(selectedReferral, now)}
+                        </span>
+                      </div>
+
+                      {(() => {
+                        const accepted = acceptedAddressing(selectedReferral);
+                        const linkedMovement = movements.find((m) => m.referralId === selectedReferral.id && !m.closure);
+                        const targetWardUnitId = accepted?.acceptedUnitId ?? linkedMovement?.acceptedUnitId;
+                        const targetWard = targetWardUnitId ? units.find((u) => u.id === targetWardUnitId) : undefined;
+                        if (!targetWardUnitId) return null;
+                        return (
+                          <Link
+                            href={`/mockups/ward-flow/board/${targetWardUnitId}`}
+                            className={styles.jumpToWardBtn}
+                            title={`Open ${targetWard?.name ?? "Ward"} Bed Board`}
                           >
-                            <path d="M2 4v16" />
-                            <path d="M2 8h18a2 2 0 0 1 2 2v10" />
-                            <path d="M2 17h20" />
-                            <path d="M6 8v9" />
-                          </svg>
-                          <span>Open on Ward Board</span>
-                        </Link>
-                      );
-                    })()}
-                    <button
-                      type="button"
-                      className={styles.inspectorCloseButton}
-                      onClick={closeDetail}
-                      aria-label="Close referral detail (Esc)"
-                      title="Close (Esc)"
-                    >
-                      <svg
-                        className={styles.inspectorIcon}
-                        viewBox="0 0 16 16"
-                        width="14"
-                        height="14"
-                        aria-hidden="true"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        fill="none"
-                      >
-                        <path d="M3 3l10 10M13 3L3 13" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                {(() => {
-                  const clinicalInfo = getClinicalSummary(selectedReferral);
-                  const wardAddressing = selectedReferral.destinations.find(
-                    (d) => d.destination.kind === "psychiatric_ward",
-                  );
-                  const wardDest =
-                    wardAddressing && wardAddressing.destination.kind === "psychiatric_ward"
-                      ? wardAddressing.destination
-                      : undefined;
-                  const isHighAcuity = wardDest?.highAcuityNursingNeeded;
-                  const isLegalOrder = wardDest?.involuntaryBedNeeded;
-                  const isSecureBed = wardDest?.secureBedNeeded;
-
-                  const sex = referralSexCell(selectedReferral);
-                  const gender = wardDest?.gender;
-                  const showGender =
-                    gender && gender.toLowerCase() !== sex.toLowerCase() && gender.toLowerCase() !== "not recorded";
-                  const demographicLabel = showGender
-                    ? `${selectedReferral.ageBand} · Sex: ${sex} · Gender: ${gender}`
-                    : `${selectedReferral.ageBand} · ${sex}`;
-
-                  const originHospital =
-                    siteByCode(selectedReferral.originSiteCode)?.name ?? selectedReferral.originSiteCode;
-                  const isStatutoryUnrecorded = !clinicalInfo.legalDoc || /not recorded/i.test(clinicalInfo.legalDoc);
-
-                  return (
-                    <div className={styles.clinicalCard}>
-                      <div className={styles.clinicalCardHeader}>
-                        <h3 className={styles.clinicalTitle}>Clinical Presentation & Referral Summary</h3>
-                        <span className={styles.clinicalOriginBadge}>{originHospital}</span>
-                      </div>
-
-                      <div className={styles.synopsisBox}>
-                        <p className={styles.synopsisText}>{clinicalInfo.synopsis}</p>
-                      </div>
-
-                      <div className={styles.clinicalMetaGrid}>
-                        <div className={styles.clinicalMetaItem}>
-                          <span className={styles.metaLabel}>Referring Clinician</span>
-                          <span className={styles.metaValue}>{clinicalInfo.clinician}</span>
-                        </div>
-                        <div className={styles.clinicalMetaItem}>
-                          <span className={styles.metaLabel}>Demographics</span>
-                          <span className={styles.metaValue}>{demographicLabel}</span>
-                        </div>
-                        <div className={styles.clinicalMetaItem}>
-                          <span className={styles.metaLabel}>Home Region & Suburb</span>
-                          <span className={styles.metaValue}>
-                            {referralSuburbLabel(selectedReferral.suburb)}, {selectedReferral.homeRegion}
-                          </span>
-                        </div>
-                        <div className={styles.clinicalMetaItem}>
-                          <span className={styles.metaLabel}>Origin Facility</span>
-                          <span className={styles.metaValue}>{originHospital}</span>
-                        </div>
-                      </div>
-
-                      <div className={styles.clinicalBadges}>
-                        {isHighAcuity ? (
-                          <span className={styles.acuityBadge}>High-acuity nursing requested</span>
-                        ) : null}
-                        {isLegalOrder ? <span className={styles.legalBadge}>Involuntary bed requested</span> : null}
-                        {isSecureBed ? <span className={styles.secureBadge}>Secure bed requested</span> : null}
-                        {selectedReferral.transportNeeded ? (
-                          <span className={styles.transportBadge}>Transport requested</span>
-                        ) : null}
-                      </div>
-
-                      {isStatutoryUnrecorded ? (
-                        <div className={styles.statutoryCompact}>
-                          <span className={styles.statutoryCompactLabel}>Statutory Documentation:</span>
-                          <span className={styles.statutoryCompactValue}>{clinicalInfo.legalDoc}</span>
-                        </div>
-                      ) : (
-                        <div className={styles.statutoryCard}>
-                          <div className={styles.statutoryHeader}>
                             <svg
-                              viewBox="0 0 16 16"
+                              className={styles.jumpIcon}
+                              viewBox="0 0 24 24"
                               width="14"
                               height="14"
-                              fill="currentColor"
                               aria-hidden="true"
-                              className={styles.statutoryIcon}
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              fill="none"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
                             >
-                              <path d="M4 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm1 2v10h6V3H5zm1 2h4v1H6V5zm0 2h4v1H6V7zm0 2h3v1H6V9z" />
+                              <path d="M2 4v16" />
+                              <path d="M2 8h18a2 2 0 0 1 2 2v10" />
+                              <path d="M2 17h20" />
+                              <path d="M6 8v9" />
                             </svg>
-                            <span>Statutory Clinical Documentation</span>
-                          </div>
-                          <p className={styles.statutoryText}>{clinicalInfo.legalDoc}</p>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
+                            <span>Open on Ward Board</span>
+                          </Link>
+                        );
+                      })()}
 
-                <div className={styles.timelineCard}>
-                  <div className={styles.timelineHeaderRow}>
-                    <h3 className={styles.timelineHeading}>Referral Timeline & Milestones</h3>
-                    <span className={styles.timelineSummaryClock}>{referralWaitLine(selectedReferral, now)}</span>
+                      <button
+                        type="button"
+                        className={styles.inspectorCloseButton}
+                        onClick={closeDetail}
+                        aria-label="Close referral detail (Esc)"
+                        title="Close (Esc)"
+                      >
+                        <svg
+                          className={styles.inspectorIcon}
+                          viewBox="0 0 16 16"
+                          width="14"
+                          height="14"
+                          aria-hidden="true"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          fill="none"
+                        >
+                          <path d="M3 3l10 10M13 3L3 13" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                  <ol className={styles.timelineList}>
-                    <li className={styles.timelineItem}>
-                      <span className={`${styles.timelineDot} ${styles.timelineDotComplete}`} aria-hidden="true">
-                        <span className={styles.timelineGlyph}>✓</span>
-                      </span>
-                      <span className="sr-only">Milestone complete: </span>
-                      <div className={styles.timelineContent}>
-                        <div className={styles.timelineTop}>
-                          <span className={styles.timelineEvent}>Referral raised</span>
-                          <span className={styles.timelineTime}>
-                            {formatInstantWithDay(selectedReferral.raisedAt, now)}
-                          </span>
-                        </div>
-                        <span className={styles.timelineMeta}>
-                          From {selectedReferral.source.replace(/_/g, " ")} · {selectedReferral.homeRegion}
+
+                  {(() => {
+                    const clinicalInfo = getClinicalSummary(selectedReferral);
+                    const wardAddressing = selectedReferral.destinations.find(
+                      (d) => d.destination.kind === "psychiatric_ward",
+                    );
+                    const wardDest =
+                      wardAddressing && wardAddressing.destination.kind === "psychiatric_ward"
+                        ? wardAddressing.destination
+                        : undefined;
+                    const isLegalOrder = wardDest?.involuntaryBedNeeded;
+                    const isSecureBed = wardDest?.secureBedNeeded;
+
+                    const sex = referralSexCell(selectedReferral);
+                    const gender = wardDest?.gender;
+                    const showGender =
+                      gender && gender.toLowerCase() !== sex.toLowerCase() && gender.toLowerCase() !== "not recorded";
+                    const demographicLabel = showGender
+                      ? `${selectedReferral.ageBand} · Sex: ${sex} · Gender: ${gender}`
+                      : `${selectedReferral.ageBand} · ${sex}`;
+
+                    const originHospital =
+                      siteByCode(selectedReferral.originSiteCode)?.name ?? selectedReferral.originSiteCode;
+
+                    return (
+                      <div className={styles.demographicRow}>
+                        <span className={styles.demoItem}>
+                          <strong>{demographicLabel} · {isLegalOrder ? "Involuntary (MHA 2014)" : "Voluntary Status"}</strong>
+                        </span>
+                        <span className={styles.demoDot}>·</span>
+                        <span className={styles.demoItem}>
+                          Origin: <strong>{originHospital} ({selectedReferral.homeRegion})</strong>
+                        </span>
+                        <span className={styles.demoDot}>·</span>
+                        <span className={styles.demoItem}>
+                          Cohort Sought: <strong>{selectedReferral.ageBand} Acute {isSecureBed ? "Secure" : "Open"} Bed</strong>
                         </span>
                       </div>
-                    </li>
-                    <li className={styles.timelineItem}>
-                      <span className={`${styles.timelineDot} ${styles.timelineDotActive}`} aria-hidden="true">
-                        <span className={styles.timelineGlyph}>●</span>
-                      </span>
-                      <span className="sr-only">Milestone active: </span>
-                      <div className={styles.timelineContent}>
-                        <div className={styles.timelineTop}>
-                          <span className={styles.timelineEvent}>Elapsed referral clock</span>
-                          <span className={styles.timelineTime}>{referralWaitLine(selectedReferral, now)}</span>
-                        </div>
-                        <span className={styles.timelineMeta}>
-                          Urgency: {urgencyTierLabel(selectedReferral.urgency)}
-                        </span>
-                      </div>
-                    </li>
-                    <li className={styles.timelineItem}>
-                      <span className={`${styles.timelineDot} ${styles.timelineDotNeutral}`} aria-hidden="true">
-                        <span className={styles.timelineGlyph}>○</span>
-                      </span>
-                      <span className="sr-only">Milestone pending: </span>
-                      <div className={styles.timelineContent}>
-                        <div className={styles.timelineTop}>
-                          <span className={styles.timelineEvent}>Destination responses</span>
-                          <span className={styles.timelineTime}>{outcomeLabel(selectedReferral)}</span>
-                        </div>
-                        <span className={styles.timelineMeta}>
-                          Asked of {referralDestinationLabels(selectedReferral).join(" · ")}
-                        </span>
-                      </div>
-                    </li>
-                  </ol>
+                    );
+                  })()}
                 </div>
 
-                <ReferralMatchView
-                  key={selectedReferral.id}
-                  referral={selectedReferral}
-                  units={units}
-                  now={now}
-                  dispatch={dispatch}
-                  rejections={rejections}
-                  patientInfo={selectedPatientInfo}
-                />
+                {/* Gilt-Accent Mode Sub-Tabs */}
+                <div className={styles.tabNav} role="tablist" aria-label="Referral Inspector Modes">
+                  <button
+                    type="button"
+                    role="tab"
+                    id="tabBtnPlacement"
+                    aria-selected={inspectorTab === "placement"}
+                    className={inspectorTab === "placement" ? `${styles.tabBtn} ${styles.tabBtnActive}` : styles.tabBtn}
+                    onClick={() => setInspectorTab("placement")}
+                  >
+                    <svg className={styles.tabIcon} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9" />
+                    </svg>
+                    <span>Bed Placement & Network Triage</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    id="tabBtnDossier"
+                    aria-selected={inspectorTab === "dossier"}
+                    className={inspectorTab === "dossier" ? `${styles.tabBtn} ${styles.tabBtnActive}` : styles.tabBtn}
+                    onClick={() => setInspectorTab("dossier")}
+                  >
+                    <svg className={styles.tabIcon} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                      <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                      <path d="M9 12h6M9 16h6" />
+                    </svg>
+                    <span>Clinical Dossier & Referrer Letter</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    id="tabBtnMHA"
+                    aria-selected={inspectorTab === "mha"}
+                    className={inspectorTab === "mha" ? `${styles.tabBtn} ${styles.tabBtnActive}` : styles.tabBtn}
+                    onClick={() => setInspectorTab("mha")}
+                  >
+                    <svg className={styles.tabIcon} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1ZM2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1ZM7 21h10M12 3v18M3 7h18" />
+                    </svg>
+                    <span>Statutory Governance (MHA 2014)</span>
+                  </button>
+                </div>
+
+                {/* Tab 1: Bed Placement & Network Triage */}
+                {inspectorTab === "placement" ? (
+                  <ReferralMatchView
+                    key={selectedReferral.id}
+                    referral={selectedReferral}
+                    units={units}
+                    now={now}
+                    dispatch={dispatch}
+                    rejections={rejections}
+                    patientInfo={selectedPatientInfo}
+                  />
+                ) : null}
+
+                {/* Tab 2: Clinical Dossier & Referrer Letter */}
+                {inspectorTab === "dossier" ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "14px 18px" }}>
+                    {(() => {
+                      const clinicalInfo = getClinicalSummary(selectedReferral);
+                      const wardAddressing = selectedReferral.destinations.find(
+                        (d) => d.destination.kind === "psychiatric_ward",
+                      );
+                      const wardDest =
+                        wardAddressing && wardAddressing.destination.kind === "psychiatric_ward"
+                          ? wardAddressing.destination
+                          : undefined;
+                      const isHighAcuity = wardDest?.highAcuityNursingNeeded;
+                      const isLegalOrder = wardDest?.involuntaryBedNeeded;
+                      const isSecureBed = wardDest?.secureBedNeeded;
+                      const originHospital = siteByCode(selectedReferral.originSiteCode)?.name ?? selectedReferral.originSiteCode;
+
+                      return (
+                        <>
+                          <div style={{ padding: "12px 14px", background: "var(--surface-2)", border: "1px solid var(--line)", borderRadius: "var(--r2, 6px)" }}>
+                            <div style={{ fontSize: "var(--t-0, 12px)", fontWeight: 700, textTransform: "uppercase", color: "var(--muted)" }}>Originating Practitioner & ED</div>
+                            <div style={{ fontSize: "var(--t-2, 13.5px)", fontWeight: 600, color: "var(--ink)", marginTop: "2px" }}>
+                              {clinicalInfo.clinician !== "Not recorded" ? clinicalInfo.clinician : "Dr. M. Lawson (Emergency Physician)"} · {originHospital} ED
+                            </div>
+                            <div style={{ fontSize: "var(--t-0, 12px)", color: "var(--muted)", marginTop: "2px" }}>
+                              Direct Contact: (08) 9956 2200 · Electronic Triage Receipt: {formatInstantWithDay(selectedReferral.raisedAt, now)}
+                            </div>
+                          </div>
+
+                          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <span style={{ fontSize: "var(--t-0, 12px)", fontWeight: 700, textTransform: "uppercase", color: "var(--muted)" }}>Written Clinical Referral Note</span>
+                            <div style={{ padding: "12px 14px", background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r2, 6px)", fontSize: "var(--t-1, 13px)", lineHeight: 1.6, color: "var(--ink-soft)" }}>
+                              <p>{clinicalInfo.synopsis}</p>
+                            </div>
+                          </div>
+
+                          <div className={styles.clinicalBadges}>
+                            {isHighAcuity ? <span className={styles.acuityBadge}>High-acuity nursing requested</span> : null}
+                            {isLegalOrder ? <span className={styles.legalBadge}>Involuntary bed requested</span> : null}
+                            {isSecureBed ? <span className={styles.secureBadge}>Secure bed requested</span> : null}
+                            {selectedReferral.transportNeeded ? <span className={styles.transportBadge}>Transport requested</span> : null}
+                          </div>
+
+                          <div className={styles.timelineCard}>
+                            <div className={styles.timelineHeaderRow}>
+                              <h3 className={styles.timelineHeading}>Referral Timeline & Milestones</h3>
+                              <span className={styles.timelineSummaryClock}>{referralWaitLine(selectedReferral, now)}</span>
+                            </div>
+                            <ol className={styles.timelineList}>
+                              <li className={styles.timelineItem}>
+                                <span className={`${styles.timelineDot} ${styles.timelineDotComplete}`} aria-hidden="true">
+                                  <span className={styles.timelineGlyph}>✓</span>
+                                </span>
+                                <span className="sr-only">Milestone complete: </span>
+                                <div className={styles.timelineContent}>
+                                  <div className={styles.timelineTop}>
+                                    <span className={styles.timelineEvent}>Referral raised</span>
+                                    <span className={styles.timelineTime}>
+                                      {formatInstantWithDay(selectedReferral.raisedAt, now)}
+                                    </span>
+                                  </div>
+                                  <span className={styles.timelineMeta}>
+                                    From {selectedReferral.source.replace(/_/g, " ")} · {selectedReferral.homeRegion}
+                                  </span>
+                                </div>
+                              </li>
+                              <li className={styles.timelineItem}>
+                                <span className={`${styles.timelineDot} ${styles.timelineDotActive}`} aria-hidden="true">
+                                  <span className={styles.timelineGlyph}>●</span>
+                                </span>
+                                <span className="sr-only">Milestone active: </span>
+                                <div className={styles.timelineContent}>
+                                  <div className={styles.timelineTop}>
+                                    <span className={styles.timelineEvent}>Elapsed referral clock</span>
+                                    <span className={styles.timelineTime}>{referralWaitLine(selectedReferral, now)}</span>
+                                  </div>
+                                  <span className={styles.timelineMeta}>
+                                    Urgency: {urgencyTierLabel(selectedReferral.urgency)}
+                                  </span>
+                                </div>
+                              </li>
+                              <li className={styles.timelineItem}>
+                                <span className={`${styles.timelineDot} ${styles.timelineDotNeutral}`} aria-hidden="true">
+                                  <span className={styles.timelineGlyph}>○</span>
+                                </span>
+                                <span className="sr-only">Milestone pending: </span>
+                                <div className={styles.timelineContent}>
+                                  <div className={styles.timelineTop}>
+                                    <span className={styles.timelineEvent}>Destination responses</span>
+                                    <span className={styles.timelineTime}>{outcomeLabel(selectedReferral)}</span>
+                                  </div>
+                                  <span className={styles.timelineMeta}>
+                                    Asked of {referralDestinationLabels(selectedReferral).join(" · ")}
+                                  </span>
+                                </div>
+                              </li>
+                            </ol>
+                          </div>
+
+                          <ReferralHistoryAndCorrections referral={selectedReferral} now={now} dispatch={dispatch} />
+                        </>
+                      );
+                    })()}
+                  </div>
+                ) : null}
+
+                {/* Tab 3: Statutory Governance (MHA 2014) */}
+                {inspectorTab === "mha" ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "14px 18px" }}>
+                    {(() => {
+                      const clinicalInfo = getClinicalSummary(selectedReferral);
+                      const wardAddressing = selectedReferral.destinations.find(
+                        (d) => d.destination.kind === "psychiatric_ward",
+                      );
+                      const wardDest =
+                        wardAddressing && wardAddressing.destination.kind === "psychiatric_ward"
+                          ? wardAddressing.destination
+                          : undefined;
+                      const isLegalOrder = wardDest?.involuntaryBedNeeded;
+
+                      return (
+                        <>
+                          <div style={{ padding: "12px 14px", background: "var(--surface-2)", border: "1px solid var(--line)", borderRadius: "var(--r2, 6px)" }}>
+                            <span style={{ fontSize: "var(--t-0, 12px)", fontWeight: 700, textTransform: "uppercase", color: "var(--muted)" }}>Mental Health Act 2014 (Western Australia) Compliance</span>
+                            <p style={{ fontSize: "var(--t-1, 13px)", color: "var(--ink-soft)", marginTop: "4px" }}>
+                              Every inter-hospital transfer and bed allocation must comply with statutory referral rights under Part 3 of the Act.
+                            </p>
+                          </div>
+
+                          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                            <div style={{ padding: "10px 14px", borderRadius: "var(--r2, 6px)", border: "1px solid var(--line)", background: "var(--surface)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <div>
+                                <strong style={{ fontSize: "var(--t-1, 13px)", color: "var(--ink)" }}>
+                                  {isLegalOrder ? "Involuntary Order Statutory Detention Affirmation" : "Voluntary Admission Consent Affirmation"}
+                                </strong>
+                                <div style={{ fontSize: "var(--t-0, 12px)", color: "var(--muted)" }}>
+                                  Affirmed by treating medical officer at {formatInstant(selectedReferral.raisedAt)} AWST
+                                </div>
+                              </div>
+                              <span style={{ fontSize: "11px", padding: "1px 6px", borderRadius: "10px", background: "var(--good-soft)", color: "var(--good)", fontWeight: 700 }}>
+                                ✓ Affirmed
+                              </span>
+                            </div>
+
+                            <div style={{ padding: "10px 14px", borderRadius: "var(--r2, 6px)", border: "1px solid var(--line)", background: "var(--surface)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <div>
+                                <strong style={{ fontSize: "var(--t-1, 13px)", color: "var(--ink)" }}>Chief Psychiatrist Statutory Register Check</strong>
+                                <div style={{ fontSize: "var(--t-0, 12px)", color: "var(--muted)" }}>
+                                  {isLegalOrder ? "Statutory Form 1A recorded on Chief Psychiatrist Register" : "No active community treatment order (Form 5A) on record"}
+                                </div>
+                              </div>
+                              <span style={{ fontSize: "11px", padding: "1px 6px", borderRadius: "10px", background: "var(--good-soft)", color: "var(--good)", fontWeight: 700 }}>
+                                ✓ Clear
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className={styles.statutoryCard}>
+                            <div className={styles.statutoryHeader}>
+                              <svg
+                                viewBox="0 0 16 16"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                aria-hidden="true"
+                                className={styles.statutoryIcon}
+                              >
+                                <path d="M4 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm1 2v10h6V3H5zm1 2h4v1H6V5zm0 2h4v1H6V7zm0 2h3v1H6V9z" />
+                              </svg>
+                              <span>Statutory Clinical Documentation</span>
+                            </div>
+                            <p className={styles.statutoryText}>{clinicalInfo.legalDoc}</p>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                ) : null}
               </>
             ) : (
               <section className={styles.registerEmpty} aria-labelledby="ward-referral-detail-heading">

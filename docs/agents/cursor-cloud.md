@@ -1,5 +1,9 @@
 # Cursor Cloud Specific Instructions
 
+> **Ward Flow scope — 1 October 2026.** This file contains inherited PsychSift guidance. The current [Ward Flow repository boundary](../../AGENTS.md) governs. References to PsychSift, Database, Supabase, OpenAI, foreign Railway targets or their credentials are historical and must not be followed here. Ward Flow stays synthetic; it must not reuse PsychSift resources. Read the [current hosting decisions](../hosting.md) before any separately authorised provider action.
+
+No Ward Flow Cloud setup is established by the copied commands below. Do not run their setup, maintenance, live-mode, login or provider procedures for this repository. Verify a Ward Flow-specific setup contract first.
+
 <!-- BEGIN:cursor-cloud-instructions -->
 
 ## Cursor Cloud specific instructions (not Codex Cloud)

@@ -1,5 +1,21 @@
 # Tests
 
+## Rules-repair update — 2 October 2026
+
+- `ward-selector-default-base.test.ts`: isolated Git fixtures prove both selectors default to
+  `origin/main`, retain explicit bases and fail on missing refs without provider calls.
+- `ward-owner-rulings-index.test.ts`: the central `decisions.md` is indexed, later edits invalidate
+  the generated record, and question-source provenance remains explicit.
+- `ward-nav.test.ts` and `ward-landmarks.test.ts`: nonempty route populations, uniqueness and
+  bidirectional coverage replace duplicated literal route totals. The page-heading and main-landmark
+  contracts remain; parsed SSR markup replaces tag-counting regexes. SSR checks do not prove appearance.
+- `ward-sign-out-check.test.ts`: isolated Git/sign-out fixtures replace workstation assumptions;
+  active claims, releases, approved exact takeovers and dormant unmerged changes stay protected.
+- `ward-screen-verification-lib.test.ts`: record validation accepts an actual checked revision and
+  rejects malformed revision metadata. Local folder/page hashes exclude shared appearance dependencies.
+- `ward-rules-index.test.ts`: historical indexing uses only committed lesson inputs; missing inputs
+  fail, changed lessons invalidate the index, and unmatched entries stay visible.
+
 This part covers every Ward Flow test file: everything matching `tests/ward-*`, `tests/ui-ward-*`
 and `tests/helpers/ward-*`, plus the two further files that import from
 `src/components/ward-management` or `src/app/mockups/ward-flow` without carrying a `ward-` name

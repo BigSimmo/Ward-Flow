@@ -3,45 +3,48 @@
 > 🔴 **GENERATED. DO NOT EDIT BY HAND.** Edit `docs/ward-flow/screen-verification.json` instead,
 > then run `node scripts/ward-flow/screen-verification.mjs`. `--check` fails on a stale page or a
 > broken record — never on an unverified or stale screen. See the script header for why.
+> Historical verdicts are retained. Current appearance is judged against the accepted app, not old drawings.
+> Checked revision identifies the reviewed commit; missing revisions remain unrecorded. Dirty inputs belong in notes.
+> Implementation hashes cover mapped screen folders/pages only, excluding shared shell, global CSS and transitive imports.
 
 **34 of 34 screens have been looked at.**
 
-| Screen (mockup) | Route | Verified on | By | Widths | Themes | Verdict | Drawing | Implementation hash at look |
-|---|---|---|---|---|---|---|---|---|
-| `command-third-edition.html` | `/` | 2026-09-18 | Antigravity controller, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | e229fe84a16c |
-| `delays-third-edition.html` | `/delays` | 2026-09-21 | Antigravity Builder Agent, independent adversarial reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | c4b5a8d48d2d |
-| `movement-third-edition.html` | `/movements` | 2026-09-24 | Antigravity Builder Agent & independent design reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | 99752a340973 |
-| `capacity-third-edition.html` | `/capacity` | 2026-09-21 | Antigravity controller, independent visual reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | 619b92bff80a |
-| `ward-third-edition.html` | `/ward/[unitId]` | 2026-09-21 | Antigravity Builder-Reviewer architecture, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 043d23dd8f6e |
-| `wards-third-edition.html` | `/wards` | 2026-09-17 | Antigravity controller, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 647304fff1c5 |
-| `bed-board-third-edition.html` | `/board/[unitId]` | 2026-09-24 | Antigravity Builder & Independent Reviewer Agents | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 903dc7f1390d |
-| `emergency-department-third-edition.html` | `/ed/[edId]` | 2026-09-24 | Antigravity Builder & Visual Reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 787c652cc494 |
-| `community-team-third-edition.html` | `/community/[teamId]` | 2026-09-21 | Lead Controller, Independent Reviewer Subagent | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 2fff2e229b7d |
-| `patient-search-third-edition.html` | `/search` | 2026-09-22 | Antigravity Builder Agent, independent adversarial reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | e3001856e2e0 |
-| `patient-now-third-edition.html` | `/people/[patientId]` | 2026-09-22 | Antigravity Builder Agent, independent adversarial reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | 13e8904bf660 |
-| `search-hub-third-edition.html` | `/hub` | 2026-09-13 | Codex controller (Astra), independent Sol visual reviewer | 390, 820, 1440 | light, dark | deviates | 🔴 STALE - the drawing changed since | not recorded |
-| `raise-a-referral-third-edition.html` | `/referrals/new` | 2026-09-24 | Antigravity Builder Agent, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 095070904ffa |
-| `statistics-overview-third-edition.html` | `/statistics/overview` | 2026-09-13 | Codex controller, independent Sol and Astra visual reviewers | 820, 1440 | light, dark | deviates | 🔴 STALE - the drawing changed since | not recorded |
-| `statistics-ward-third-edition.html` | `/statistics/ward/[unitId]` | 2026-09-13 | Codex controller, independent Sol and Astra visual reviewers | 390, 820, 1440 | light, dark | deviates | 🔴 STALE - the drawing changed since | not recorded |
-| `statistics-community-third-edition.html` | `/statistics/community/[teamId]` | 2026-09-13 | Codex controller, independent Sol and Astra visual reviewers | 820, 1440 | light, dark | deviates | 🔴 STALE - the drawing changed since | not recorded |
-| `statistics-emergency-department-third-edition.html` | `/statistics/ed/[edId]` | 2026-09-13 | Codex controller, independent Sol and Astra visual reviewers | 390, 1440 | light, dark | deviates | 🔴 STALE - the drawing changed since | not recorded |
-| `network-third-edition.html` | `/network` | 2026-09-13 | Codex controller (Astra), independent Sol visual reviewer | 390, 1440 | light, dark | deviates | 🔴 STALE - the drawing changed since | not recorded |
-| `governance-third-edition.html` | `/governance` | 2026-09-24 | Antigravity Builder Agent, independent adversarial reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | 9290ec52764e |
-| `handover-third-edition.html` | `/handover` | 2026-09-18 | Antigravity controller, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 2a54a2a0968d |
-| `discharges-third-edition.html` | `/discharges` | 2026-09-17 | Antigravity controller, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | not recorded |
-| `out-of-area-third-edition.html` | `/out-of-area` | 2026-09-24 | Antigravity Builder Agent, independent adversarial reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | 1992892affdd |
-| `on-call-third-edition.html` | `/on-call` | 2026-09-24 | Antigravity Builder Agent, independent adversarial reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | 69a7b31b2763 |
-| `alerts-third-edition.html` | `/alerts` | 2026-09-23 | Antigravity Builder Agent, independent adversarial reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 3b2d38e7dd71 |
-| `transport-officer-third-edition.html` | `/transport/officer` | 2026-09-17 | Antigravity controller, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | not recorded |
-| `legal-forms-third-edition.html` | `/legal-forms` | 2026-09-24 | Antigravity Builder Agent, independent reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | d2af07ed931a |
-| `add-a-patient-third-edition.html` | `/people/new` | 2026-09-17 | Antigravity controller, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 6b21cfd78276 |
-| `referrals-third-edition.html` | `/referrals` | 2026-09-21 | Antigravity Builder Agent, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 570b8979314d |
-| `settings-third-edition.html` | `/settings` | 2026-09-25 | Antigravity Builder Agent & Independent Adversarial Reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | d8ae1a6fe1cf |
-| `statistics-third-edition.html` | `/statistics` | 2026-09-18 | Antigravity controller, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | f89a6cf7e845 |
-| `statistics-compare-third-edition.html` | `/statistics/compare` | 2026-09-13 | Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection | 390, 820, 1440 | light, dark | deviates | 🔴 STALE - the drawing changed since | not recorded |
-| `statistics-service-third-edition.html` | `/statistics/service/[serviceId]` | 2026-09-13 | Codex controller, independent Sol and Astra visual reviewers | 390, 820, 1440 | light, dark | deviates | 🔴 STALE - the drawing changed since | not recorded |
-| `sign-in-third-edition.html` | `/mockups/ward-flow-sign-in` | 2026-09-18 | Antigravity controller, independent visual reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | 7b25dc9bdf9c |
-| `ward-answer-third-edition.html` | `/ward/[unitId]/answer` | 2026-09-13 | Codex controller (Astra), independent Sol visual reviewer | 390, 1440 | light, dark | deviates | 🔴 STALE - the drawing changed since | not recorded |
+| Screen (mockup) | Route | Verified on | By | Widths | Themes | Verdict | Historical drawing | Local implementation hash at look | Checked revision |
+|---|---|---|---|---|---|---|---|---|---|
+| `command-third-edition.html` | `/` | 2026-09-18 | Antigravity controller, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | e229fe84a16c | not recorded |
+| `delays-third-edition.html` | `/delays` | 2026-09-21 | Antigravity Builder Agent, independent adversarial reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | c4b5a8d48d2d | not recorded |
+| `movement-third-edition.html` | `/movements` | 2026-09-24 | Antigravity Builder Agent & independent design reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | 99752a340973 | not recorded |
+| `capacity-third-edition.html` | `/capacity` | 2026-09-21 | Antigravity controller, independent visual reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | 619b92bff80a | not recorded |
+| `ward-third-edition.html` | `/ward/[unitId]` | 2026-09-21 | Antigravity Builder-Reviewer architecture, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 043d23dd8f6e | not recorded |
+| `wards-third-edition.html` | `/wards` | 2026-09-17 | Antigravity controller, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 647304fff1c5 | not recorded |
+| `bed-board-third-edition.html` | `/board/[unitId]` | 2026-09-24 | Antigravity Builder & Independent Reviewer Agents | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 903dc7f1390d | not recorded |
+| `emergency-department-third-edition.html` | `/ed/[edId]` | 2026-09-24 | Antigravity Builder & Visual Reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 787c652cc494 | not recorded |
+| `community-team-third-edition.html` | `/community/[teamId]` | 2026-09-21 | Lead Controller, Independent Reviewer Subagent | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 2fff2e229b7d | not recorded |
+| `patient-search-third-edition.html` | `/search` | 2026-09-22 | Antigravity Builder Agent, independent adversarial reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | e3001856e2e0 | not recorded |
+| `patient-now-third-edition.html` | `/people/[patientId]` | 2026-09-22 | Antigravity Builder Agent, independent adversarial reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | 13e8904bf660 | not recorded |
+| `search-hub-third-edition.html` | `/hub` | 2026-09-13 | Codex controller (Astra), independent Sol visual reviewer | 390, 820, 1440 | light, dark | deviates | 🔴 STALE - the drawing changed since | not recorded | not recorded |
+| `raise-a-referral-third-edition.html` | `/referrals/new` | 2026-09-24 | Antigravity Builder Agent, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 095070904ffa | not recorded |
+| `statistics-overview-third-edition.html` | `/statistics/overview` | 2026-09-13 | Codex controller, independent Sol and Astra visual reviewers | 820, 1440 | light, dark | deviates | 🔴 STALE - the drawing changed since | not recorded | not recorded |
+| `statistics-ward-third-edition.html` | `/statistics/ward/[unitId]` | 2026-09-13 | Codex controller, independent Sol and Astra visual reviewers | 390, 820, 1440 | light, dark | deviates | 🔴 STALE - the drawing changed since | not recorded | not recorded |
+| `statistics-community-third-edition.html` | `/statistics/community/[teamId]` | 2026-09-13 | Codex controller, independent Sol and Astra visual reviewers | 820, 1440 | light, dark | deviates | 🔴 STALE - the drawing changed since | not recorded | not recorded |
+| `statistics-emergency-department-third-edition.html` | `/statistics/ed/[edId]` | 2026-09-13 | Codex controller, independent Sol and Astra visual reviewers | 390, 1440 | light, dark | deviates | 🔴 STALE - the drawing changed since | not recorded | not recorded |
+| `network-third-edition.html` | `/network` | 2026-09-13 | Codex controller (Astra), independent Sol visual reviewer | 390, 1440 | light, dark | deviates | 🔴 STALE - the drawing changed since | not recorded | not recorded |
+| `governance-third-edition.html` | `/governance` | 2026-09-24 | Antigravity Builder Agent, independent adversarial reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | 9290ec52764e | not recorded |
+| `handover-third-edition.html` | `/handover` | 2026-09-18 | Antigravity controller, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 2a54a2a0968d | not recorded |
+| `discharges-third-edition.html` | `/discharges` | 2026-09-17 | Antigravity controller, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | not recorded | not recorded |
+| `out-of-area-third-edition.html` | `/out-of-area` | 2026-09-24 | Antigravity Builder Agent, independent adversarial reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | 1992892affdd | not recorded |
+| `on-call-third-edition.html` | `/on-call` | 2026-09-24 | Antigravity Builder Agent, independent adversarial reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | 69a7b31b2763 | not recorded |
+| `alerts-third-edition.html` | `/alerts` | 2026-09-23 | Antigravity Builder Agent, independent adversarial reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 3b2d38e7dd71 | not recorded |
+| `transport-officer-third-edition.html` | `/transport/officer` | 2026-09-17 | Antigravity controller, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | not recorded | not recorded |
+| `legal-forms-third-edition.html` | `/legal-forms` | 2026-09-24 | Antigravity Builder Agent, independent reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | d2af07ed931a | not recorded |
+| `add-a-patient-third-edition.html` | `/people/new` | 2026-09-17 | Antigravity controller, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 6b21cfd78276 | not recorded |
+| `referrals-third-edition.html` | `/referrals` | 2026-09-21 | Antigravity Builder Agent, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | 570b8979314d | not recorded |
+| `settings-third-edition.html` | `/settings` | 2026-09-25 | Antigravity Builder Agent & Independent Adversarial Reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | d8ae1a6fe1cf | not recorded |
+| `statistics-third-edition.html` | `/statistics` | 2026-09-18 | Antigravity controller, independent visual reviewer | 390, 820, 1440 | light, dark | matches | 🔴 STALE - the drawing changed since | f89a6cf7e845 | not recorded |
+| `statistics-compare-third-edition.html` | `/statistics/compare` | 2026-09-13 | Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection | 390, 820, 1440 | light, dark | deviates | 🔴 STALE - the drawing changed since | not recorded | not recorded |
+| `statistics-service-third-edition.html` | `/statistics/service/[serviceId]` | 2026-09-13 | Codex controller, independent Sol and Astra visual reviewers | 390, 820, 1440 | light, dark | deviates | 🔴 STALE - the drawing changed since | not recorded | not recorded |
+| `sign-in-third-edition.html` | `/mockups/ward-flow-sign-in` | 2026-09-18 | Antigravity controller, independent visual reviewer | 390, 820, 1440 | light, dark | matches | DRAWING UNCHANGED since look | 7b25dc9bdf9c | not recorded |
+| `ward-answer-third-edition.html` | `/ward/[unitId]/answer` | 2026-09-13 | Codex controller (Astra), independent Sol visual reviewer | 390, 1440 | light, dark | deviates | 🔴 STALE - the drawing changed since | not recorded | not recorded |
 
 ## Deviations
 

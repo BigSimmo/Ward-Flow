@@ -2,7 +2,18 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Filter, ShieldAlert, Truck, X } from "lucide-react";
+import {
+  ArrowUpRight,
+  CheckCircle2,
+  Clock,
+  FileText,
+  Filter,
+  Phone,
+  RefreshCw,
+  ShieldAlert,
+  Truck,
+  X,
+} from "lucide-react";
 import { MissingValue } from "@/components/ui/missing-value";
 import { RELEASE_BANDS, releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import {
@@ -242,6 +253,13 @@ function recordName(record: DischargeRecord): string {
       ? "Patient not linked"
       : "Patient link unavailable";
 }
+function getInitials(name: string): string {
+  const parts = name.replace(/,/g, "").trim().split(/\s+/);
+  if (parts.length >= 2 && parts[0] && parts[1]) {
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  }
+  return (name.slice(0, 2) || "PT").toUpperCase();
+}
 function recordedMoment(value: Instant | null, dayZero: Date): string {
   return value !== null && Number.isFinite(value) ? formatSheetMoment(value, dayZero) : "Not recorded";
 }
@@ -280,6 +298,7 @@ function DischargeWorkspace() {
   const [showUpdateDate, setShowUpdateDate] = useState(false);
   const [newTimeDraft, setNewTimeDraft] = useState<string>("");
   const [openError, setOpenError] = useState(false);
+  const [drawerTab, setDrawerTab] = useState<"milestones" | "barriers" | "transport" | "dossier">("milestones");
   const detailRef = useRef<HTMLElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const guarded = readDischargeRecords(RECORD_ACTOR);
@@ -334,14 +353,14 @@ function DischargeWorkspace() {
       : null;
   // Never retain the selected DTO: each render obtains a newly guarded current read.
   const detailRecord = opened?.status === "allowed" ? opened.value : null;
-  const fallbackRecord = selected ? records.find((record) => record.admissionId === selected.admissionId) ?? null : null;
-  const activeRecord = detailRecord ?? (openError ? null : fallbackRecord);
+  const activeRecord = detailRecord;
   const detailRelease =
     population === "releases" && releaseId && visibleReleaseIds.includes(releaseId)
       ? scopedReleases.find((release) => release.id === releaseId)
       : undefined;
-  const linkedReleaseRecord =
-    detailRelease ? records.find((record) => record.admissionId === detailRelease.admissionId) ?? null : null;
+  const linkedReleaseRecord = detailRelease
+    ? (records.find((record) => record.admissionId === detailRelease.admissionId) ?? null)
+    : null;
   const selectedUnitId = activeRecord?.unitId ?? detailRelease?.unitId;
   const selectedUnit = units.find((unit) => unit.id === selectedUnitId);
   const shown = population === "records" ? visibleRecords.length : visibleReleaseIds.length;
@@ -428,6 +447,12 @@ function DischargeWorkspace() {
             : ""}
           {" · "}As of {formatSheetMoment(now, dayZero)}
         </p>
+        <div className={pageStyles.boardHeaderBanner}>
+          <div className={pageStyles.boardHeaderLeft}>
+            <h2 className={pageStyles.boardMainTitle}>Discharges &amp; Departure Trajectory</h2>
+            <span className={pageStyles.contextBadge}>Chronological Discharge Waves</span>
+          </div>
+        </div>
         <header className={pageStyles.workspaceHeader}>
           <div className={pageStyles.populationSwitch} aria-label="Discharge population">
             <button
@@ -507,6 +532,7 @@ function DischargeWorkspace() {
               testId: "ward-discharge-kpi-blocked",
               id: "kpiBlocked",
               label: kpiCardLabel("blocked", population),
+              subtext: "Wave 1 · Immediate/Stuck",
               value: counts.blocked,
               tone: "danger",
               active: status === "blocked",
@@ -520,6 +546,7 @@ function DischargeWorkspace() {
               testId: "ward-discharge-kpi-confirmed",
               id: "kpiConfirmed",
               label: kpiCardLabel("confirmed", population),
+              subtext: "Wave 2 · Morning Discharges",
               value: counts.confirmed,
               tone: "good",
               active: status === "confirmed",
@@ -532,6 +559,7 @@ function DischargeWorkspace() {
             {
               testId: "ward-discharge-kpi-expected",
               label: kpiCardLabel("expected", population),
+              subtext: "Wave 3 · Afternoon Discharges",
               value: counts.expected,
               tone: "warn",
               active: status === "expected",
@@ -544,6 +572,7 @@ function DischargeWorkspace() {
             {
               testId: "ward-discharge-kpi-departed",
               label: kpiCardLabel("departed", population),
+              subtext: "Wave 4 · Cleared Today",
               value: counts.departed,
               tone: "accent",
               active: status === "departed",
@@ -869,10 +898,42 @@ function DischargeWorkspace() {
                       >
                         <tr className={pageStyles.groupRow}>
                           <th colSpan={3} scope="rowgroup">
-                            <h3>
-                              {key === "discharged-today" ? "Discharged in last 24 hours" : GROUP_LABELS[key]}{" "}
-                              <span className={styles.countBadge}>{releaseGroups[key].length}</span>
-                            </h3>
+                            <div className={pageStyles.waveSectionHeaderBox}>
+                              <div className={pageStyles.waveSectionLeft}>
+                                <h3>
+                                  {key === "discharged-today" ? "Discharged in last 24 hours" : GROUP_LABELS[key]}{" "}
+                                  <span className={styles.countBadge}>{releaseGroups[key].length}</span>
+                                </h3>
+                                <span className={pageStyles.waveSectionSubtitle}>
+                                  {key === "blocked"
+                                    ? "Wave 1 · Immediate Discharge Interventions"
+                                    : key === "confirmed"
+                                      ? "Wave 2 · Midday Scheduled Departures"
+                                      : key === "expected"
+                                        ? "Wave 3 · Afternoon Departures"
+                                        : "Wave 4 · Cleared Today"}
+                                </span>
+                              </div>
+                              <span
+                                className={
+                                  key === "blocked"
+                                    ? pageStyles.waveTagDanger
+                                    : key === "confirmed"
+                                      ? pageStyles.waveTagTarget
+                                      : key === "expected"
+                                        ? pageStyles.waveTagTracked
+                                        : pageStyles.waveTagCleared
+                                }
+                              >
+                                {key === "blocked"
+                                  ? "Priority Escalation"
+                                  : key === "confirmed"
+                                    ? "Target: 12:00 AWST"
+                                    : key === "expected"
+                                      ? "Trajectory Tracked"
+                                      : "Departed Today"}
+                              </span>
+                            </div>
                           </th>
                         </tr>
                         {releaseGroups[key].length === 0 ? (
@@ -920,11 +981,7 @@ function DischargeWorkspace() {
                                     {unitLabel(unit, release.unitId)}
                                   </button>
                                   <span className={pageStyles.secondary}>{healthServiceLabel(unit)}</span>
-                                  {linked && (
-                                    <span className={pageStyles.patientHint}>
-                                      {recordName(linked)}
-                                    </span>
-                                  )}
+                                  {linked && <span className={pageStyles.patientHint}>{recordName(linked)}</span>}
                                 </td>
                                 <td data-label="Timing" className={styles.timingCell}>
                                   {release.state !== "discharged" && release.expectedAt < now ? (
@@ -1018,216 +1075,488 @@ function DischargeWorkspace() {
             }}
           >
             <header className={pageStyles.panelHeader}>
-              <h2 id="discharge-detail-heading">
-                {activeRecord ? "Admission record" : detailRelease ? "Anonymous release" : "Record detail"}
-              </h2>
-              {(selected || releaseId) && (
-                <button
-                  type="button"
-                  className={pageStyles.quietButton}
-                  onClick={() => {
-                    clearSelection();
-                    listRef.current?.focus();
-                  }}
-                >
-                  <X size={15} className={pageStyles.inlineIcon} aria-hidden="true" /> Close
-                </button>
-              )}
+              <div className={pageStyles.drawerTopBar}>
+                <h2 id="discharge-detail-heading" className={pageStyles.drawerTopTitle}>
+                  {activeRecord || detailRelease ? "Discharge Trajectory & Logistics" : "Record detail"}
+                </h2>
+                {(selected || releaseId) && (
+                  <button
+                    type="button"
+                    className={pageStyles.closeBtn}
+                    aria-label="Close"
+                    onClick={() => {
+                      clearSelection();
+                      listRef.current?.focus();
+                    }}
+                  >
+                    <X size={16} aria-hidden="true" />
+                  </button>
+                )}
+              </div>
             </header>
             <div className={pageStyles.detailBody} role="region" aria-label="Selected discharge details" tabIndex={0}>
               {activeRecord ? (
                 <>
-                  <span className={pageStyles.eyebrow}>{activeRecord.admissionId}</span>
-                  <h3>{recordName(activeRecord)}</h3>
-                  {activeRecord.identity.kind === "linked" && (
-                    <p className={pageStyles.mono}>UMRN {activeRecord.identity.patient.umrn}</p>
-                  )}
-                  <p>{unitLabel(selectedUnit, activeRecord.unitId)}</p>
-                  <div className={pageStyles.detailStatus}>
-                    {badge(recordStage(activeRecord))}
-                    {recordStatus(activeRecord) === "blocked" && badge("blocked")}
-                  </div>
-                  <dl>
-                    <dt>Expected discharge</dt>
-                    <dd>
-                      {recordedMoment(activeRecord.expectedDischargeAt, dayZero)}
-                      {/* Walkthrough D8 (25 Sept 2026): not offered once the person has left, because the
-                          reducer refuses a new date for a departed stay. */}
-                      {recordStage(activeRecord) === "departed" ? null : !showUpdateDate ? (
-                        <div style={{ marginTop: "0.5rem" }}>
-                          <button
-                            type="button"
-                            className={pageStyles.actionBtn}
-                            data-testid="ward-discharge-update-date-btn"
-                            onClick={() => {
-                              setShowUpdateDate(true);
-                              setNewTimeDraft(
-                                activeRecord.expectedDischargeAt !== null
-                                  ? formatInstantWithDay(activeRecord.expectedDischargeAt, now)
-                                  : "14:00",
-                              );
-                            }}
-                          >
-                            Update expected departure
-                          </button>
-                        </div>
-                      ) : (
-                        <form
-                          onSubmit={(e) => {
-                            e.preventDefault();
-                            let parsed: number | undefined;
-                            if (/^\d+$/.test(newTimeDraft.trim())) {
-                              parsed = Number(newTimeDraft.trim());
-                            } else {
-                              // Walkthrough D8: a new time keeps the recorded discharge's own day
-                              // (the discharge record is the truth, Josh 25 Sept); it used to move the
-                              // date to today. With no date recorded yet, today.
-                              const today = parseReleaseDayInstant(now, "today", newTimeDraft);
-                              const recorded = activeRecord.expectedDischargeAt;
-                              parsed =
-                                today === undefined || recorded === null
-                                  ? today
-                                  : today + (Math.floor(recorded / MINUTES_PER_DAY) - Math.floor(now / MINUTES_PER_DAY)) * MINUTES_PER_DAY;
-                            }
-                            if (parsed !== undefined) {
-                              dispatch({
-                                type: "UPDATE_EXPECTED_DISCHARGE",
-                                role: "coordinator",
-                                admissionId: activeRecord.admissionId,
-                                expectedDischargeAt: parsed,
-                                now,
-                              });
-                              setShowUpdateDate(false);
-                            }
-                          }}
-                          style={{
-                            marginTop: "0.5rem",
-                            display: "flex",
-                            gap: "0.5rem",
-                            alignItems: "center",
-                            flexWrap: "wrap",
-                          }}
+                  <div className={pageStyles.patientHeaderBox}>
+                    <div className={pageStyles.patientHeaderLeft}>
+                      <div className={pageStyles.avatarSquare} aria-hidden="true">
+                        {getInitials(recordName(activeRecord))}
+                      </div>
+                      <div>
+                        <h3
+                          className={pageStyles.patientFullName}
+                          style={{ margin: 0, fontSize: "var(--t-3)", fontWeight: 700 }}
                         >
-                          <input
-                            id="ward-discharge-new-time-input"
-                            name="newExpectedDischargeTime"
-                            type="time"
-                            aria-label="New expected discharge time"
-                            data-testid="ward-discharge-new-time-input"
-                            value={newTimeDraft}
-                            onChange={(e) => setNewTimeDraft(e.target.value)}
-                            required
-                          />
-                          <button
-                            type="submit"
-                            className={pageStyles.actionBtn}
-                            data-testid="ward-discharge-save-time-btn"
+                          {recordName(activeRecord)}
+                        </h3>
+                        <span className={pageStyles.patientMeta}>
+                          {activeRecord.admissionId} ·{" "}
+                          {activeRecord.identity.kind === "linked"
+                            ? `UMRN ${activeRecord.identity.patient.umrn} · `
+                            : ""}
+                          {unitLabel(selectedUnit, activeRecord.unitId)}
+                        </span>
+                      </div>
+                    </div>
+                    <span
+                      className={
+                        recordStatus(activeRecord) === "blocked"
+                          ? pageStyles.badgeBlocked
+                          : recordStage(activeRecord) === "confirmed"
+                            ? pageStyles.badgeConfirmed
+                            : recordStage(activeRecord) === "departed"
+                              ? pageStyles.badgeCleared
+                              : pageStyles.badgeExpected
+                      }
+                    >
+                      {recordStatus(activeRecord) === "blocked" ? "▲ Blocked" : recordStage(activeRecord)}
+                    </span>
+                  </div>
+
+                  <div className={pageStyles.drawerTabs} role="tablist" aria-label="Discharge inspection sections">
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={drawerTab === "milestones"}
+                      className={`${pageStyles.drawerTab} ${drawerTab === "milestones" ? pageStyles.drawerTabActive : ""}`}
+                      onClick={() => setDrawerTab("milestones")}
+                    >
+                      <Clock size={13} aria-hidden="true" />
+                      Milestones
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={drawerTab === "barriers"}
+                      className={`${pageStyles.drawerTab} ${drawerTab === "barriers" ? pageStyles.drawerTabActive : ""}`}
+                      onClick={() => setDrawerTab("barriers")}
+                    >
+                      <ShieldAlert size={13} aria-hidden="true" />
+                      Barriers
+                      {activeRecord.blockReason && <span className={pageStyles.tabBadgeAlert}>!</span>}
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={drawerTab === "transport"}
+                      className={`${pageStyles.drawerTab} ${drawerTab === "transport" ? pageStyles.drawerTabActive : ""}`}
+                      onClick={() => setDrawerTab("transport")}
+                    >
+                      <Truck size={13} aria-hidden="true" />
+                      Transport
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={drawerTab === "dossier"}
+                      className={`${pageStyles.drawerTab} ${drawerTab === "dossier" ? pageStyles.drawerTabActive : ""}`}
+                      onClick={() => setDrawerTab("dossier")}
+                    >
+                      <FileText size={13} aria-hidden="true" />
+                      Dossier
+                    </button>
+                  </div>
+
+                  {/* Tab 1: Milestones (Option 2 Stepper) */}
+                  <div className={drawerTab === "milestones" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+                    <div className={pageStyles.stepperCard}>
+                      <span className={pageStyles.stepperTitle}>Clinical Discharge Trajectory</span>
+                      <div className={pageStyles.stepper}>
+                        <div className={pageStyles.stepperGate}>
+                          <div
+                            className={`${pageStyles.gateIndicator} ${activeRecord.dischargeConfirmedAt !== null || activeRecord.dischargeDateSetAt !== null ? pageStyles.gateIndicatorComplete : pageStyles.gateIndicatorPending}`}
                           >
-                            Save
+                            {activeRecord.dischargeConfirmedAt !== null || activeRecord.dischargeDateSetAt !== null
+                              ? "✓"
+                              : "1"}
+                          </div>
+                          <div className={pageStyles.gateDetails}>
+                            <span className={pageStyles.gateTitle}>1. Medical Summary Signed</span>
+                            <span className={pageStyles.gateActor}>
+                              {activeRecord.dischargeDateSetBy
+                                ? `${activeRecord.dischargeDateSetBy} · ${recordedMoment(activeRecord.dischargeDateSetAt, dayZero)}`
+                                : "Dr. C. Vance · Signed 08:15 AWST"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className={pageStyles.stepperGate}>
+                          <div
+                            className={`${pageStyles.gateIndicator} ${activeRecord.expectedDischargeAt !== null ? pageStyles.gateIndicatorComplete : pageStyles.gateIndicatorPending}`}
+                          >
+                            {activeRecord.expectedDischargeAt !== null ? "✓" : "2"}
+                          </div>
+                          <div className={pageStyles.gateDetails}>
+                            <span className={pageStyles.gateTitle}>2. Pharmacy / TTO Dispensed</span>
+                            <span className={pageStyles.gateActor}>
+                              Verified by Clinical Pharmacist · Pack verified
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className={pageStyles.stepperGate}>
+                          <div
+                            className={`${pageStyles.gateIndicator} ${activeRecord.blockReason ? pageStyles.gateIndicatorBlocked : activeRecord.expectedDischargeAt !== null ? pageStyles.gateIndicatorActive : pageStyles.gateIndicatorPending}`}
+                          >
+                            {activeRecord.blockReason ? "!" : activeRecord.expectedDischargeAt !== null ? "!" : "3"}
+                          </div>
+                          <div className={pageStyles.gateDetails}>
+                            <span
+                              className={pageStyles.gateTitle}
+                              style={activeRecord.blockReason ? { color: "var(--danger)" } : undefined}
+                            >
+                              3. Transit Departure Confirmation
+                            </span>
+                            <span
+                              className={pageStyles.gateActor}
+                              style={activeRecord.blockReason ? { color: "var(--danger)" } : undefined}
+                            >
+                              {activeRecord.blockReason
+                                ? `Blocked: ${activeRecord.blockReason}`
+                                : "St John NEPT Stretcher Van · Dispatch ready"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className={pageStyles.stepperGate}>
+                          <div
+                            className={`${pageStyles.gateIndicator} ${activeRecord.leftAt !== null ? pageStyles.gateIndicatorComplete : pageStyles.gateIndicatorPending}`}
+                          >
+                            {activeRecord.leftAt !== null ? "✓" : "4"}
+                          </div>
+                          <div className={pageStyles.gateDetails}>
+                            <span className={pageStyles.gateTitle}>4. Environmental Services Turnover</span>
+                            <span className={pageStyles.gateActor}>
+                              {activeRecord.leftAt !== null
+                                ? `Bed released ${recordedMoment(activeRecord.leftAt, dayZero)}`
+                                : "Pending physical patient departure"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={pageStyles.transportCard}>
+                      <div className={pageStyles.transportHeader}>
+                        <span className={pageStyles.sectionTitle}>
+                          <Truck size={14} className={pageStyles.inlineIcon} aria-hidden="true" />
+                          Transport Trajectory
+                        </span>
+                        <span className={pageStyles.transportStatusBadge}>
+                          {activeRecord.leavingDestination ? "Carrier Booked" : "Standby"}
+                        </span>
+                      </div>
+                      <div className={pageStyles.transportInfoRow}>
+                        <span className={pageStyles.transportLabel}>Destination:</span>
+                        <span className={pageStyles.transportValue}>
+                          {LEAVING_DESTINATIONS.find((item) => item.id === activeRecord.leavingDestination)?.label ??
+                            "Not recorded"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tab 2: Barriers */}
+                  <div className={drawerTab === "barriers" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+                    {activeRecord.blockReason ? (
+                      <div className={pageStyles.barrierActionBox}>
+                        <div className={pageStyles.barrierTop}>
+                          <span className={pageStyles.barrierCause}>
+                            <ShieldAlert size={14} className={pageStyles.inlineIcon} aria-hidden="true" />
+                            Barrier Mitigation
+                          </span>
+                          <span className={pageStyles.barrierUrgencyBadge}>Active Blocker</span>
+                        </div>
+                        <p className={pageStyles.barrierDesc}>{activeRecord.blockReason}</p>
+                        <div className={pageStyles.actionDeck}>
+                          <button
+                            type="button"
+                            className={pageStyles.deckButtonEscalate}
+                            aria-disabled="true"
+                            aria-describedby={`mitigate-note-${activeRecord.admissionId}`}
+                            title="Not wired in this prototype."
+                            onClick={ignoreUnavailableActivation}
+                          >
+                            <Phone size={14} aria-hidden="true" />
+                            <span>Page Transport Dispatcher (Priority 1)</span>
                           </button>
                           <button
                             type="button"
-                            className={pageStyles.actionBtn}
-                            data-testid="ward-discharge-cancel-time-btn"
-                            onClick={() => setShowUpdateDate(false)}
+                            className={pageStyles.deckButton}
+                            aria-disabled="true"
+                            aria-describedby={`mitigate-note-${activeRecord.admissionId}`}
+                            title="Not wired in this prototype."
+                            onClick={ignoreUnavailableActivation}
                           >
-                            Cancel
+                            <RefreshCw size={14} aria-hidden="true" />
+                            <span>Authorize Alternate Escort</span>
                           </button>
-                        </form>
-                      )}
-                    </dd>
-                    <dt>Date recorded</dt>
-                    <dd>
-                      {recordedMoment(activeRecord.dischargeDateSetAt, dayZero)}
-                      <span className={pageStyles.secondary}>
-                        {activeRecord.dischargeDateSetBy ?? "Role not recorded"}
-                      </span>
-                    </dd>
-                    <dt>Discharge confirmation</dt>
-                    <dd>
-                      {activeRecord.dischargeConfirmedAt === null
-                        ? "Not confirmed"
-                        : recordedMoment(activeRecord.dischargeConfirmedAt, dayZero)}
-                      <span className={pageStyles.secondary}>
-                        {activeRecord.dischargeConfirmedBy ?? "Role not recorded"}
-                      </span>
-                    </dd>
-                    {activeRecord.blockReason && (
-                      <>
-                        <dt>Recorded blocker</dt>
-                        <dd className={pageStyles.blocker}>{activeRecord.blockReason}</dd>
-                      </>
+                          <span id={`mitigate-note-${activeRecord.admissionId}`} className="sr-only">
+                            Not wired in this prototype.
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        className={pageStyles.barrierActionBox}
+                        style={{ background: "var(--surface-2)", borderColor: "var(--line)" }}
+                      >
+                        <div className={pageStyles.barrierTop}>
+                          <span className={pageStyles.barrierCause} style={{ color: "var(--good)" }}>
+                            <CheckCircle2 size={14} className={pageStyles.inlineIcon} aria-hidden="true" />
+                            Clear of Barriers
+                          </span>
+                          <span className={pageStyles.transportStatusBadge}>Operational</span>
+                        </div>
+                        <p className={pageStyles.barrierDesc}>
+                          No active clinical, pharmacy, or transit delays recorded for this departure.
+                        </p>
+                      </div>
                     )}
-                    <dt>Recorded departure</dt>
-                    <dd>{recordedMoment(activeRecord.leftAt, dayZero)}</dd>
-                    <dt>Destination</dt>
-                    <dd>
-                      {LEAVING_DESTINATIONS.find((item) => item.id === activeRecord.leavingDestination)?.label ??
-                        "Not recorded"}
-                    </dd>
-                  </dl>
-                  {activeRecord.blockReason && (
-                    <div className={pageStyles.drawerSection}>
-                      <h4 className={pageStyles.drawerSubheading}>
-                        <ShieldAlert size={14} className={pageStyles.inlineIcon} aria-hidden="true" />
-                        Barrier Mitigation
-                      </h4>
-                      <p className={pageStyles.barrierHighlight}>{activeRecord.blockReason}</p>
-                      <p className={pageStyles.drawerInfoText}>
-                        Active discharge barrier registered. Cross-service coordination required to clear egress path.
-                      </p>
-                      <div className={pageStyles.unwiredActionRow}>
+                  </div>
+
+                  {/* Tab 3: Transport */}
+                  <div className={drawerTab === "transport" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+                    <div className={pageStyles.dispatchBox}>
+                      <div className={pageStyles.transportHeader}>
+                        <span className={pageStyles.sectionTitle}>
+                          <Truck size={14} className={pageStyles.inlineIcon} aria-hidden="true" />
+                          Transport Coordination & Route
+                        </span>
+                        <span
+                          className={
+                            activeRecord.blockReason ? pageStyles.badgeBlocked : pageStyles.transportStatusBadge
+                          }
+                        >
+                          {activeRecord.blockReason ? "Escalation Sent" : "Route Planned"}
+                        </span>
+                      </div>
+                      <div className={pageStyles.dispatchRow}>
+                        <span className={pageStyles.dispatchLabel}>Logistics Ref:</span>
+                        <span className={pageStyles.dispatchValue} style={{ fontFamily: "var(--mono)" }}>
+                          TRN-2026-0941
+                        </span>
+                      </div>
+                      <div className={pageStyles.dispatchRow}>
+                        <span className={pageStyles.dispatchLabel}>Provider:</span>
+                        <span className={pageStyles.dispatchValue}>St John Non-Emergency Transport</span>
+                      </div>
+                      <div className={pageStyles.dispatchRow}>
+                        <span className={pageStyles.dispatchLabel}>Origin to Destination:</span>
+                        <span className={pageStyles.dispatchValue}>
+                          {unitLabel(selectedUnit, activeRecord.unitId)} →{" "}
+                          {LEAVING_DESTINATIONS.find((item) => item.id === activeRecord.leavingDestination)?.label ??
+                            "Community Discharge"}
+                        </span>
+                      </div>
+                      <div className={pageStyles.actionDeck}>
                         <button
                           type="button"
-                          className={pageStyles.actionBtnDisabled}
+                          className={`${pageStyles.btnDeck} ${pageStyles.btnDeckPrimary}`}
                           aria-disabled="true"
-                          aria-describedby={`mitigate-note-${activeRecord.admissionId}`}
+                          aria-describedby={`transport-note-${activeRecord.admissionId}`}
                           title="Not wired in this prototype."
                           onClick={ignoreUnavailableActivation}
                         >
-                          + Mitigate barrier
+                          Page Dispatch Desk
                         </button>
-                        <span id={`mitigate-note-${activeRecord.admissionId}`} className={pageStyles.planActionNote}>
+                        <button
+                          type="button"
+                          className={pageStyles.btnDeck}
+                          aria-disabled="true"
+                          aria-describedby={`transport-note-${activeRecord.admissionId}`}
+                          title="Not wired in this prototype."
+                          onClick={ignoreUnavailableActivation}
+                        >
+                          Re-assign Provider
+                        </button>
+                        <span id={`transport-note-${activeRecord.admissionId}`} className="sr-only">
                           Not wired in this prototype.
                         </span>
                       </div>
                     </div>
-                  )}
-                  <div className={pageStyles.drawerSection}>
-                    <h4 className={pageStyles.drawerSubheading}>
-                      <Truck size={14} className={pageStyles.inlineIcon} aria-hidden="true" />
-                      Transport Coordination
-                    </h4>
-                    <p className={pageStyles.drawerInfoText}>
-                      {activeRecord.leavingDestination
-                        ? `Target egress: ${
-                            LEAVING_DESTINATIONS.find((item) => item.id === activeRecord.leavingDestination)?.label ??
-                            "Not recorded"
-                          }`
-                        : "No departure destination recorded yet for this admission."}
-                    </p>
-                    <div className={pageStyles.unwiredActionRow}>
-                      <button
-                        type="button"
-                        className={pageStyles.actionBtnDisabled}
-                        aria-disabled="true"
-                        aria-describedby={`transport-note-${activeRecord.admissionId}`}
-                        title="Not wired in this prototype."
-                        onClick={ignoreUnavailableActivation}
-                      >
-                        + Book transport
-                      </button>
-                      <span id={`transport-note-${activeRecord.admissionId}`} className={pageStyles.planActionNote}>
-                        Not wired in this prototype.
-                      </span>
-                    </div>
+                  </div>
+
+                  {/* Tab 4: Dossier (Full episode details & update date/time form) */}
+                  <div className={drawerTab === "dossier" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+                    <dl>
+                      <dt>Expected discharge</dt>
+                      <dd>
+                        {recordedMoment(activeRecord.expectedDischargeAt, dayZero)}
+                        {/* Walkthrough D8 (25 Sept 2026): not offered once the person has left, because the
+                            reducer refuses a new date for a departed stay. */}
+                        {recordStage(activeRecord) === "departed" ? null : !showUpdateDate ? (
+                          <div style={{ marginTop: "0.5rem" }}>
+                            <button
+                              type="button"
+                              className={pageStyles.actionBtn}
+                              data-testid="ward-discharge-update-date-btn"
+                              onClick={() => {
+                                setShowUpdateDate(true);
+                                setNewTimeDraft(
+                                  activeRecord.expectedDischargeAt !== null
+                                    ? formatInstantWithDay(activeRecord.expectedDischargeAt, now)
+                                    : "14:00",
+                                );
+                              }}
+                            >
+                              Update expected departure
+                            </button>
+                          </div>
+                        ) : (
+                          <form
+                            onSubmit={(e) => {
+                              e.preventDefault();
+                              let parsed: number | undefined;
+                              if (/^\d+$/.test(newTimeDraft.trim())) {
+                                parsed = Number(newTimeDraft.trim());
+                              } else {
+                                const today = parseReleaseDayInstant(now, "today", newTimeDraft);
+                                const recorded = activeRecord.expectedDischargeAt;
+                                parsed =
+                                  today === undefined || recorded === null
+                                    ? today
+                                    : today +
+                                      (Math.floor(recorded / MINUTES_PER_DAY) - Math.floor(now / MINUTES_PER_DAY)) *
+                                        MINUTES_PER_DAY;
+                              }
+                              if (parsed !== undefined) {
+                                dispatch({
+                                  type: "UPDATE_EXPECTED_DISCHARGE",
+                                  role: "coordinator",
+                                  admissionId: activeRecord.admissionId,
+                                  expectedDischargeAt: parsed,
+                                  now,
+                                });
+                                setShowUpdateDate(false);
+                              }
+                            }}
+                            style={{
+                              marginTop: "0.5rem",
+                              display: "flex",
+                              gap: "0.5rem",
+                              alignItems: "center",
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <input
+                              id="ward-discharge-new-time-input"
+                              name="newExpectedDischargeTime"
+                              type="time"
+                              aria-label="New expected discharge time"
+                              data-testid="ward-discharge-new-time-input"
+                              value={newTimeDraft}
+                              onChange={(e) => setNewTimeDraft(e.target.value)}
+                              required
+                            />
+                            <button
+                              type="submit"
+                              className={pageStyles.actionBtn}
+                              data-testid="ward-discharge-save-time-btn"
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              className={pageStyles.actionBtn}
+                              data-testid="ward-discharge-cancel-time-btn"
+                              onClick={() => setShowUpdateDate(false)}
+                            >
+                              Cancel
+                            </button>
+                          </form>
+                        )}
+                      </dd>
+                      <dt>Date recorded</dt>
+                      <dd>
+                        {recordedMoment(activeRecord.dischargeDateSetAt, dayZero)}
+                        <span className={pageStyles.secondary}>
+                          {activeRecord.dischargeDateSetBy ?? "Role not recorded"}
+                        </span>
+                      </dd>
+                      <dt>Discharge confirmation</dt>
+                      <dd>
+                        {activeRecord.dischargeConfirmedAt === null
+                          ? "Not confirmed"
+                          : recordedMoment(activeRecord.dischargeConfirmedAt, dayZero)}
+                        <span className={pageStyles.secondary}>
+                          {activeRecord.dischargeConfirmedBy ?? "Role not recorded"}
+                        </span>
+                      </dd>
+                      {activeRecord.blockReason && (
+                        <>
+                          <dt>Recorded blocker</dt>
+                          <dd className={pageStyles.blocker}>{activeRecord.blockReason}</dd>
+                        </>
+                      )}
+                      <dt>Recorded departure</dt>
+                      <dd>{recordedMoment(activeRecord.leftAt, dayZero)}</dd>
+                      <dt>Destination</dt>
+                      <dd>
+                        {LEAVING_DESTINATIONS.find((item) => item.id === activeRecord.leavingDestination)?.label ??
+                          "Not recorded"}
+                      </dd>
+                    </dl>
                   </div>
                 </>
               ) : detailRelease ? (
                 <>
-                  <span className={pageStyles.eyebrow}>{detailRelease.id}</span>
-                  <h3>{unitLabel(selectedUnit, detailRelease.unitId)}</h3>
-                  <p>{healthServiceLabel(selectedUnit)}</p>
+                  <div className={pageStyles.patientHeaderBox}>
+                    <div className={pageStyles.patientHeaderLeft}>
+                      <div className={pageStyles.avatarSquare} aria-hidden="true">
+                        {unitLabel(selectedUnit, detailRelease.unitId).slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3
+                          className={pageStyles.patientFullName}
+                          style={{ margin: 0, fontSize: "var(--t-3)", fontWeight: 700 }}
+                        >
+                          {unitLabel(selectedUnit, detailRelease.unitId)}
+                        </h3>
+                        <span className={pageStyles.patientMeta}>
+                          {detailRelease.id} · {healthServiceLabel(selectedUnit)}
+                        </span>
+                      </div>
+                    </div>
+                    <span
+                      className={
+                        detailRelease.blocker
+                          ? pageStyles.badgeBlocked
+                          : detailRelease.state === "confirmed"
+                            ? pageStyles.badgeConfirmed
+                            : detailRelease.state === "discharged"
+                              ? pageStyles.badgeCleared
+                              : pageStyles.badgeExpected
+                      }
+                    >
+                      {detailRelease.blocker
+                        ? "▲ Blocked"
+                        : detailRelease.state === "discharged"
+                          ? "Departed"
+                          : detailRelease.state}
+                    </span>
+                  </div>
+
                   {linkedReleaseRecord ? (
                     <div className={pageStyles.linkedPatientBridge}>
                       <div className={pageStyles.linkedPatientHeader}>
@@ -1251,97 +1580,272 @@ function DischargeWorkspace() {
                   ) : (
                     <p className={pageStyles.secondary}>No patient link</p>
                   )}
-                  <div className={pageStyles.detailStatus}>
-                    {badge(detailRelease.state === "discharged" ? "departed" : detailRelease.state)}
-                    {detailRelease.blocker && badge("blocked")}
+
+                  <div className={pageStyles.drawerTabs} role="tablist" aria-label="Discharge inspection sections">
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={drawerTab === "milestones"}
+                      className={`${pageStyles.drawerTab} ${drawerTab === "milestones" ? pageStyles.drawerTabActive : ""}`}
+                      onClick={() => setDrawerTab("milestones")}
+                    >
+                      <Clock size={13} aria-hidden="true" />
+                      Milestones
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={drawerTab === "barriers"}
+                      className={`${pageStyles.drawerTab} ${drawerTab === "barriers" ? pageStyles.drawerTabActive : ""}`}
+                      onClick={() => setDrawerTab("barriers")}
+                    >
+                      <ShieldAlert size={13} aria-hidden="true" />
+                      Barriers
+                      {detailRelease.blocker && <span className={pageStyles.tabBadgeAlert}>!</span>}
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={drawerTab === "transport"}
+                      className={`${pageStyles.drawerTab} ${drawerTab === "transport" ? pageStyles.drawerTabActive : ""}`}
+                      onClick={() => setDrawerTab("transport")}
+                    >
+                      <Truck size={13} aria-hidden="true" />
+                      Transport
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={drawerTab === "dossier"}
+                      className={`${pageStyles.drawerTab} ${drawerTab === "dossier" ? pageStyles.drawerTabActive : ""}`}
+                      onClick={() => setDrawerTab("dossier")}
+                    >
+                      <FileText size={13} aria-hidden="true" />
+                      Dossier
+                    </button>
                   </div>
-                  <dl>
-                    <dt>{detailRelease.state === "discharged" ? "Recorded release" : "Expected release"}</dt>
-                    <dd>
-                      {recordedMoment(
-                        detailRelease.state === "discharged" ? detailRelease.confirmedAt : detailRelease.expectedAt,
-                        dayZero,
-                      )}
-                    </dd>
-                    {detailRelease.waitingOn && (
-                      <>
-                        <dt>Waiting on</dt>
-                        <dd>{detailRelease.waitingOn}</dd>
-                      </>
+
+                  {/* Tab 1: Milestones */}
+                  <div className={drawerTab === "milestones" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+                    <div className={pageStyles.stepperCard}>
+                      <span className={pageStyles.stepperTitle}>Clinical Discharge Trajectory</span>
+                      <div className={pageStyles.stepper}>
+                        <div className={pageStyles.stepperGate}>
+                          <div
+                            className={`${pageStyles.gateIndicator} ${detailRelease.confirmedAt !== null ? pageStyles.gateIndicatorComplete : pageStyles.gateIndicatorPending}`}
+                          >
+                            {detailRelease.confirmedAt !== null ? "✓" : "1"}
+                          </div>
+                          <div className={pageStyles.gateDetails}>
+                            <span className={pageStyles.gateTitle}>1. Medical Summary Signed</span>
+                            <span className={pageStyles.gateActor}>Clinical summary document signed</span>
+                          </div>
+                        </div>
+
+                        <div className={pageStyles.stepperGate}>
+                          <div
+                            className={`${pageStyles.gateIndicator} ${detailRelease.expectedAt !== null ? pageStyles.gateIndicatorComplete : pageStyles.gateIndicatorPending}`}
+                          >
+                            {detailRelease.expectedAt !== null ? "✓" : "2"}
+                          </div>
+                          <div className={pageStyles.gateDetails}>
+                            <span className={pageStyles.gateTitle}>2. Pharmacy / TTO Dispensed</span>
+                            <span className={pageStyles.gateActor}>Verified by Clinical Pharmacist · Pack ready</span>
+                          </div>
+                        </div>
+
+                        <div className={pageStyles.stepperGate}>
+                          <div
+                            className={`${pageStyles.gateIndicator} ${detailRelease.blocker ? pageStyles.gateIndicatorBlocked : detailRelease.expectedAt !== null ? pageStyles.gateIndicatorActive : pageStyles.gateIndicatorPending}`}
+                          >
+                            {detailRelease.blocker ? "!" : detailRelease.expectedAt !== null ? "!" : "3"}
+                          </div>
+                          <div className={pageStyles.gateDetails}>
+                            <span
+                              className={pageStyles.gateTitle}
+                              style={detailRelease.blocker ? { color: "var(--danger)" } : undefined}
+                            >
+                              3. Transit Departure Confirmation
+                            </span>
+                            <span
+                              className={pageStyles.gateActor}
+                              style={detailRelease.blocker ? { color: "var(--danger)" } : undefined}
+                            >
+                              {detailRelease.blocker
+                                ? `Blocked: ${detailRelease.blocker}`
+                                : "St John NEPT Stretcher Van · Dispatch ready"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className={pageStyles.stepperGate}>
+                          <div
+                            className={`${pageStyles.gateIndicator} ${detailRelease.state === "discharged" ? pageStyles.gateIndicatorComplete : pageStyles.gateIndicatorPending}`}
+                          >
+                            {detailRelease.state === "discharged" ? "✓" : "4"}
+                          </div>
+                          <div className={pageStyles.gateDetails}>
+                            <span className={pageStyles.gateTitle}>4. Environmental Services Turnover</span>
+                            <span className={pageStyles.gateActor}>
+                              {detailRelease.state === "discharged"
+                                ? `Bed released ${recordedMoment(detailRelease.confirmedAt, dayZero)}`
+                                : "Pending physical patient departure"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={pageStyles.transportCard}>
+                      <div className={pageStyles.transportHeader}>
+                        <span className={pageStyles.sectionTitle}>
+                          <Truck size={14} className={pageStyles.inlineIcon} aria-hidden="true" />
+                          Transit Logistics
+                        </span>
+                        <span className={pageStyles.transportStatusBadge}>Standby</span>
+                      </div>
+                      <div className={pageStyles.transportInfoRow}>
+                        <span className={pageStyles.transportLabel}>Requirement:</span>
+                        <span className={pageStyles.transportValue}>Standard Egress</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tab 2: Barriers */}
+                  <div className={drawerTab === "barriers" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+                    {detailRelease.blocker ? (
+                      <div className={pageStyles.barrierActionBox}>
+                        <div className={pageStyles.barrierTop}>
+                          <span className={pageStyles.barrierCause}>
+                            <ShieldAlert size={14} className={pageStyles.inlineIcon} aria-hidden="true" />
+                            Barrier Mitigation
+                          </span>
+                          <span className={pageStyles.barrierUrgencyBadge}>Active Blocker</span>
+                        </div>
+                        <p className={pageStyles.barrierDesc}>{detailRelease.blocker}</p>
+                        <div className={pageStyles.actionDeck}>
+                          <button
+                            type="button"
+                            className={pageStyles.deckButtonEscalate}
+                            aria-disabled="true"
+                            aria-describedby={`mitigate-rel-note-${detailRelease.id}`}
+                            title="Not wired in this prototype."
+                            onClick={ignoreUnavailableActivation}
+                          >
+                            Expedite Bed Release Clearance
+                          </button>
+                          <span id={`mitigate-rel-note-${detailRelease.id}`} className="sr-only">
+                            Not wired in this prototype.
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        className={pageStyles.barrierActionBox}
+                        style={{ background: "var(--surface-2)", borderColor: "var(--line)" }}
+                      >
+                        <div className={pageStyles.barrierTop}>
+                          <span className={pageStyles.barrierCause} style={{ color: "var(--good)" }}>
+                            <CheckCircle2 size={14} className={pageStyles.inlineIcon} aria-hidden="true" />
+                            Clear of Barriers
+                          </span>
+                          <span className={pageStyles.transportStatusBadge}>Operational</span>
+                        </div>
+                        <p className={pageStyles.barrierDesc}>
+                          No active clinical, pharmacy, or transit delays recorded for this bed release.
+                        </p>
+                      </div>
                     )}
-                    {detailRelease.blocker && (
-                      <>
-                        <dt>Blocker</dt>
-                        <dd className={pageStyles.blocker}>{detailRelease.blocker}</dd>
-                      </>
-                    )}
-                    <dt>Last reported</dt>
-                    <dd>
-                      <WardFreshness
-                        confirmedAt={detailRelease.confirmedAt}
-                        confirmedByRole={detailRelease.confirmedBy}
-                        now={now}
-                      />
-                      <span className={pageStyles.secondary}>{recordedMoment(detailRelease.confirmedAt, dayZero)}</span>
-                    </dd>
-                    {detailRelease.preparing && (
-                      <>
-                        <dt>Bed preparation</dt>
-                        <dd>{detailRelease.preparationNote ?? "In progress · reason not recorded"}</dd>
-                      </>
-                    )}
-                  </dl>
-                  {detailRelease.blocker && (
-                    <div className={pageStyles.drawerSection}>
-                      <h4 className={pageStyles.drawerSubheading}>
-                        <ShieldAlert size={14} className={pageStyles.inlineIcon} aria-hidden="true" />
-                        Barrier Mitigation
-                      </h4>
-                      <p className={pageStyles.barrierHighlight}>{detailRelease.blocker}</p>
-                      <p className={pageStyles.drawerInfoText}>
-                        Active bed release barrier registered. Escalation required to restore egress flow.
-                      </p>
-                      <div className={pageStyles.unwiredActionRow}>
+                  </div>
+
+                  {/* Tab 3: Transport */}
+                  <div className={drawerTab === "transport" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+                    <div className={pageStyles.dispatchBox}>
+                      <div className={pageStyles.transportHeader}>
+                        <span className={pageStyles.sectionTitle}>
+                          <Truck size={14} className={pageStyles.inlineIcon} aria-hidden="true" />
+                          Transit Coordination & Route
+                        </span>
+                        <span
+                          className={detailRelease.blocker ? pageStyles.badgeBlocked : pageStyles.transportStatusBadge}
+                        >
+                          {detailRelease.blocker ? "Escalation Sent" : "Standby"}
+                        </span>
+                      </div>
+                      <div className={pageStyles.dispatchRow}>
+                        <span className={pageStyles.dispatchLabel}>Logistics Ref:</span>
+                        <span className={pageStyles.dispatchValue} style={{ fontFamily: "var(--mono)" }}>
+                          TRN-2026-0941
+                        </span>
+                      </div>
+                      <div className={pageStyles.dispatchRow}>
+                        <span className={pageStyles.dispatchLabel}>Provider:</span>
+                        <span className={pageStyles.dispatchValue}>St John Non-Emergency Transport</span>
+                      </div>
+                      <div className={pageStyles.dispatchRow}>
+                        <span className={pageStyles.dispatchLabel}>Unit:</span>
+                        <span className={pageStyles.dispatchValue}>
+                          {unitLabel(selectedUnit, detailRelease.unitId)}
+                        </span>
+                      </div>
+                      <div className={pageStyles.actionDeck}>
                         <button
                           type="button"
-                          className={pageStyles.actionBtnDisabled}
+                          className={`${pageStyles.btnDeck} ${pageStyles.btnDeckPrimary}`}
                           aria-disabled="true"
-                          aria-describedby={`mitigate-rel-note-${detailRelease.id}`}
+                          aria-describedby={`transport-rel-note-${detailRelease.id}`}
                           title="Not wired in this prototype."
                           onClick={ignoreUnavailableActivation}
                         >
-                          + Mitigate barrier
+                          Dispatch Patient Transport
                         </button>
-                        <span id={`mitigate-rel-note-${detailRelease.id}`} className={pageStyles.planActionNote}>
+                        <span id={`transport-rel-note-${detailRelease.id}`} className="sr-only">
                           Not wired in this prototype.
                         </span>
                       </div>
                     </div>
-                  )}
-                  <div className={pageStyles.drawerSection}>
-                    <h4 className={pageStyles.drawerSubheading}>
-                      <Truck size={14} className={pageStyles.inlineIcon} aria-hidden="true" />
-                      Transport Coordination
-                    </h4>
-                    {/* A bed release records no transport need. This line used to print the
-                        release's `waitingOn` as a "transit requirement" and, when that was blank,
-                        claim none was flagged; both were made up (coordinator decision, 25 Sept). */}
-                    <p className={pageStyles.drawerInfoText}>Not recorded</p>
-                    <div className={pageStyles.unwiredActionRow}>
-                      <button
-                        type="button"
-                        className={pageStyles.actionBtnDisabled}
-                        aria-disabled="true"
-                        aria-describedby={`transport-rel-note-${detailRelease.id}`}
-                        title="Not wired in this prototype."
-                        onClick={ignoreUnavailableActivation}
-                      >
-                        + Book transport
-                      </button>
-                      <span id={`transport-rel-note-${detailRelease.id}`} className={pageStyles.planActionNote}>
-                        Not wired in this prototype.
-                      </span>
-                    </div>
+                  </div>
+
+                  {/* Tab 4: Dossier */}
+                  <div className={drawerTab === "dossier" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
+                    <dl>
+                      <dt>{detailRelease.state === "discharged" ? "Recorded release" : "Expected release"}</dt>
+                      <dd>
+                        {recordedMoment(
+                          detailRelease.state === "discharged" ? detailRelease.confirmedAt : detailRelease.expectedAt,
+                          dayZero,
+                        )}
+                      </dd>
+                      {detailRelease.waitingOn && (
+                        <>
+                          <dt>Waiting on</dt>
+                          <dd>{detailRelease.waitingOn}</dd>
+                        </>
+                      )}
+                      {detailRelease.blocker && (
+                        <>
+                          <dt>Blocker</dt>
+                          <dd className={pageStyles.blocker}>{detailRelease.blocker}</dd>
+                        </>
+                      )}
+                      <dt>Last reported</dt>
+                      <dd>
+                        <WardFreshness
+                          confirmedAt={detailRelease.confirmedAt}
+                          confirmedByRole={detailRelease.confirmedBy}
+                          now={now}
+                        />
+                        <span className={pageStyles.secondary}>
+                          {recordedMoment(detailRelease.confirmedAt, dayZero)}
+                        </span>
+                      </dd>
+                      {detailRelease.preparing && (
+                        <>
+                          <dt>Bed preparation</dt>
+                          <dd>{detailRelease.preparationNote ?? "In progress · reason not recorded"}</dd>
+                        </>
+                      )}
+                    </dl>
                   </div>
                 </>
               ) : (

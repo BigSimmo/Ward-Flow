@@ -1,5 +1,47 @@
 # Screen definition of done
 
+## Active acceptance checklist — 2 October 2026
+
+The current accepted Ward Flow app is the appearance baseline. The owner reconfirmed the current
+local `main` design during the stale-rules review on 2 October. Old mockups and D-28 are historical
+references, not a new redesign commission. The historical checklist below is retained to explain
+earlier failures; its mockup-matching and blanket fold commands are superseded by this section and
+[HOW-WE-WORK](HOW-WE-WORK.md).
+
+- [ ] Record the accepted baseline revision and actual checked revision. Include any dirty inputs
+      in the evidence notes. Do not infer visual acceptance from a source hash or a passing test.
+- [ ] Preserve the accepted layout, interactions and synthetic-data disclosure, except for explicitly
+      authorised changes. Record intentional differences and their reasons.
+- [ ] Inspect the affected view against that baseline in a real browser, using the URL printed by
+      `npm run ensure` after confirming `/api/local-project-id`. Drawings are optional background.
+- [ ] Use Fast Preview for exploration and visual tweaks; Release Validation for integration/release.
+      During editing, inspect the affected target viewport in the default theme. At final acceptance,
+      check materially affected responsive/theme cases and record checked, reused and deferred evidence.
+      There is no blanket six-view or numerical-scoring requirement. Required safeguards still apply.
+- [ ] Keep meaningful status information, readable patient data, accessible controls and truthful
+      absence states. A measured zero remains a measurement. "None", "Not recorded" and
+      "Not applicable" describe different states; none requires an unnecessarily long sentence.
+- [ ] Do not change metadata sizes, edge accents, masthead geometry or scroll effects to satisfy a
+      historical specification. Preserve the accepted app; reproduce an actual defect before repair.
+- [ ] Confirm route reachability and affected interactions. A component's existence alone is not
+      proof that users can reach it.
+- [ ] Record actual visual evidence in `screen-verification.json`: date, reviewer, checked widths,
+      themes, verdict, `checkedRevision` (full commit SHA) and notes identifying the baseline and any
+      dirty inputs. Never populate a revision or refresh an old verdict without an actual review.
+- [ ] Select focused/static/full checks using the dedicated repository's gate selector. Typecheck
+      and journeys run only when required by that scope; a stylesheet edit does not automatically
+      commission the complete offline suite.
+
+### What the evidence record proves
+
+Drawing hashes age historical drawings only. The optional `implementationSha256` covers the mapped
+screen folder and route page, **not** shared shell, imported primitives, global styles, dependencies,
+runtime flags or every transitive import. Matching it does not establish whole-screen freshness.
+`checkedRevision` identifies the reviewed Git revision; dirty inputs and checked cases belong in
+notes. The generated record's `--check` validates its structure and synchronisation, not appearance.
+
+## Historical mockup checklist — retained, superseded for current acceptance
+
 > **Q004 owner-approved amendment, 2026-09-13:** For the current product-refinement commission, use [lean visual review](plans/product-refinement/VISUAL-REVIEW.md) instead of the blanket six-view coverage below. Compare every changed page at desktop in light/dark; phone/tablet coverage is by shared layout, with individual checks for complex or materially changed responsive screens. Record actual checked cells and explicitly identify reused family evidence/deferred cells. Numerical scoring is inactive; preserve historical scores for future polishing. Behavioral safeguards and honest evidence requirements remain. The baseline checklist below does not reinstate superseded Q004 coverage requirements.
 >
 > **Owner speed rule, 2026-09-21:** For all active visual work and styling fixes, use focused single-view verification while building (target viewport in default theme, at most one screenshot). Never run full backend suites for pure visual/styling edits. Perform responsive (mobile) and dark appearance checks at most once at final completion, and only where responsive layout changed.

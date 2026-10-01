@@ -1,5 +1,12 @@
 # Ward Flow — Universal Mockup Specification & Visual QA Protocol
 
+> **HISTORICAL MOCKUP SPECIFICATION — current application authority clarified 2 October 2026.**
+> Preserve the current accepted Ward Flow app. This document does not commission a redesign or
+> reinstate old card, stripe, typography, scroll-mask, header or six-view requirements. Follow
+> [the entry point](README.md), [the active screen checklist](SCREEN-DEFINITION-OF-DONE.md) and the
+> selected repository gates. Copy/punctuation prescriptions here do not govern typed narrative or
+> ordinary documentation. Keep status understandable, measured zeros numeric and absence truthful.
+
 > **DESIGN AUTHORITY:** The authoritative token dictionary and rules standard is [`docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md`](mockups/WARD-FLOW-DESIGN-SYSTEM.md) (Third Edition). Where tokens or palette hex codes below conflict, the Third Edition standard governs.
 > **Owner Ruling (9 September 2026):** Coloured bars along edges of rows, cards, or candidates and top highlights on panels are strictly banned. Radii follow `--r1` (10px panel) and `--r2` (6px controls).
 
@@ -16,7 +23,7 @@ Every screen must strictly enforce these 8 visual and operational laws:
    - Color tints, borders, and dot indicators only ever repeat what is already stated in text. A reader with complete color blindness or a black-and-white printout must lose zero clinical or operational information (WCAG 2.1 AA).
 2. **Tabular Numerals & Zero as "none"**:
    - All quantities, counts, percentages, timestamps, durations, and metrics must use `font-family: var(--mono)` with `font-variant-numeric: tabular-nums`.
-   - Any zero count or empty measurement must be rendered as the literal lowercase word `none` (styled with `.zero { color: var(--muted); }`). A numeric `0` is a measurement; `none` is an operational state.
+   - A measured zero remains numeric `0`. A count of absent work may use `none`; unknown or unrecorded measurements must say `Not recorded`, rather than being converted to zero or `none`.
 3. **Absence is Stated, Never Blank**:
    - Never render empty table cells, blank panels, or empty lists. Always use explicit absence statements: `"No movements waiting"`, `"Not tracked at this facility"`, `"No destination confirmed"`.
 4. **Strict 7-Step Typographic Floor & Tracking**:
@@ -37,7 +44,7 @@ Every screen must strictly enforce these 8 visual and operational laws:
 7. **Edge-Fading Scroll Masks**:
    - Any vertically scrolling container (queue list, drawer body, table) must apply CSS mask gradients (`--fade-top`, `--fade-bottom`) so overflowing text fades gently into the edge rather than abruptly clipping.
 8. **Synthetic Prototype Provenance Disclaimer**:
-   - The header must persistently feature the sovereign synthetic badge: `<span class="chip mark"><span class="long">Synthetic </span>prototype</span>` to clearly affirm non-medical device status.
+   - The historical header uses the synthetic badge: `<span class="chip mark"><span class="long">Synthetic </span>prototype</span>`. A disclosure identifies invented content; a badge does not establish regulatory status. Preserve the current app's disclosure presentation.
 
 ---
 
@@ -208,7 +215,8 @@ To avoid poorly built designs, every screen must undergo two verification checks
 
 ### 1. Embedded Visual QA Sentinel Script
 
-Every generated HTML page must include this script before `</body>`. It runs on load and renders a persistent diagnostic badge in the lower-right corner:
+This historical diagnostic example checks overflow, metadata and inline hex usage only. It is not
+a visual, accessibility or clinical acceptance gate and need not be added to the current app.
 
 ```html
 <script id="qa-sentinel">
@@ -245,10 +253,10 @@ Every generated HTML page must include this script before `</body>`. It runs on 
       const badge = document.createElement("div");
       badge.id = "qa-badge";
       badge.style.cssText =
-        "position:fixed;bottom:12px;right:12px;padding:6px 10px;font:11px/1.2 var(--mono);background:var(--surface);border:1px solid var(--line-strong);border-radius:4px;box-shadow:var(--lift);z-index:99999;pointer-events:none;display:flex;align-items:center;gap:6px;";
+        "position:fixed;bottom:12px;right:12px;padding:6px 10px;font:12px/1.2 var(--mono);background:var(--surface);border:1px solid var(--line-strong);border-radius:4px;box-shadow:var(--lift);z-index:99999;pointer-events:none;display:flex;align-items:center;gap:6px;";
       if (issues.length === 0) {
         badge.innerHTML =
-          '<span style="width:7px;height:7px;border-radius:50%;background:var(--good)"></span><span style="color:var(--good);font-weight:600">QA 100/100: PERFECTED</span>';
+          '<span style="width:7px;height:7px;border-radius:50%;background:var(--good)"></span><span style="color:var(--good);font-weight:600">No issues in the limited structural checks</span>';
       } else {
         badge.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:var(--danger)"></span><span style="color:var(--danger);font-weight:600">QA ISSUES: ${issues.length}</span>`;
         console.warn("Ward Flow QA Sentinel Issues:", issues);
@@ -266,12 +274,12 @@ The output must conclude with an explicit confirmation table verifying visual ch
 ```markdown
 ### Visual Review & Confirmation Report
 
-| Verification Dimension          | Standard                       | Status       | Evidence                                           |
-| :------------------------------ | :----------------------------- | :----------- | :------------------------------------------------- |
-| **Panel Sequence & Types**      | Matches authoritative drawing  | ✅ CONFIRMED | Panels, tabs, and tables preserve exact hierarchy  |
-| **Responsive (390, 820, 1440)** | Zero horizontal overflow       | ✅ CONFIRMED | Validated against mobile and desktop viewports     |
-| **Theme Parity**                | Light & Dark contrast >= 4.5:1 | ✅ CONFIRMED | All tokens resolve to Platinum / Night Duty scale  |
-| **Typographic Floor**           | Minimum 12px; Geist / Mono     | ✅ CONFIRMED | Uppercase tracked, numbers tabular, zero as "none" |
-| **State is a Word**             | No color-only status           | ✅ CONFIRMED | All statuses carry explicit text labels            |
-| **QA Sentinel Badge**           | Embedded in DOM                | ✅ CONFIRMED | Green dot 100/100 verified                         |
+| Verification Dimension          | Standard                       | Status               | Evidence                                           |
+| :------------------------------ | :----------------------------- | :------------------- | :------------------------------------------------- |
+| **Panel Sequence & Types**      | Matches authoritative drawing  | ✅ CONFIRMED         | Panels, tabs, and tables preserve exact hierarchy  |
+| **Responsive (390, 820, 1440)** | Zero horizontal overflow       | ✅ CONFIRMED         | Validated against mobile and desktop viewports     |
+| **Theme Parity**                | Light & Dark contrast >= 4.5:1 | ✅ CONFIRMED         | All tokens resolve to Platinum / Night Duty scale  |
+| **Typographic Floor**           | Minimum 12px; Geist / Mono     | ✅ CONFIRMED         | Uppercase tracked, numbers tabular, zero as "none" |
+| **State is a Word**             | No color-only status           | ✅ CONFIRMED         | All statuses carry explicit text labels            |
+| **Limited structural checks**   | Diagnostic example only        | Record actual result | Does not prove visual or accessibility acceptance  |
 ```

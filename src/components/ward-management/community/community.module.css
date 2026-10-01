@@ -2264,6 +2264,10 @@ button.searchBox:hover {
   background: var(--muted);
 }
 
+.dotSvc[data-svc="country"] {
+  background: var(--svc-country, var(--clinical-domain-capacity));
+}
+
 /* ── Top Action Bar & Team Selector ─────────────────────────────────────── */
 .topActionBarWrap {
   background: var(--surface);
