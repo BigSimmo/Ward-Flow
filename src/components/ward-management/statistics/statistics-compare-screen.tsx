@@ -20,6 +20,10 @@ import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 
 import styles from "./statistics-third-edition.module.css";
 
+function focusComparisonSection(id: string) {
+  queueMicrotask(() => document.getElementById(id)?.focus({ preventScroll: true }));
+}
+
 /**
  * WARD AND ED COMPARISONS — and the chooser that is the only way into the per-unit detail pages.
  *
@@ -86,8 +90,6 @@ export function StatisticsCompareScreen({
   const admissions = admissionsOverride ?? liveAdmissions;
   const units = unitsOverride ?? liveUnits;
   const emergencyDepartments = edsOverride ?? allEmergencyDepartments();
-
-  const [activeTab, setActiveTab] = useState<"split" | "matrix" | "chooser">("split");
 
   // 1. Inpatient Network KPI figures
   const totalBeds = units.reduce((sum, u) => sum + u.beds, 0);
@@ -212,37 +214,34 @@ export function StatisticsCompareScreen({
         </div>
       </div>
 
-      {/* ══════════ SOVEREIGN TABS ══════════ */}
-      <div className={styles.sovereignTabs} role="tablist" aria-label="Comparison views">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "split"}
-          className={`${styles.sovereignTab} ${activeTab === "split" ? styles.activeTab : ""}`}
-          onClick={() => setActiveTab("split")}
+      <nav className={styles.sovereignTabs} aria-label="Comparison sections">
+        <a
+          className={styles.sovereignTab}
+          href="#compare-ward-measures"
+          onClick={() => focusComparisonSection("compare-ward-measures")}
+          style={{ textDecoration: "none" }}
         >
-          Split Comparison
-          <span className={styles.tabBadge}>{units.length + emergencyDepartments.length}</span>
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "matrix"}
-          className={`${styles.sovereignTab} ${activeTab === "matrix" ? styles.activeTab : ""}`}
-          onClick={() => setActiveTab("matrix")}
+          Ward measures
+          <span className={styles.tabBadge}>{units.length}</span>
+        </a>
+        <a
+          className={styles.sovereignTab}
+          href="#compare-ed-measures"
+          onClick={() => focusComparisonSection("compare-ed-measures")}
+          style={{ textDecoration: "none" }}
         >
-          Correlation Matrix
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "chooser"}
-          className={`${styles.sovereignTab} ${activeTab === "chooser" ? styles.activeTab : ""}`}
-          onClick={() => setActiveTab("chooser")}
+          ED measures
+          <span className={styles.tabBadge}>{emergencyDepartments.length}</span>
+        </a>
+        <a
+          className={styles.sovereignTab}
+          href={`#${STATISTICS_UNIT_CHOOSER_ID}`}
+          onClick={() => focusComparisonSection(STATISTICS_UNIT_CHOOSER_ID)}
+          style={{ textDecoration: "none" }}
         >
           Unit Directory
-        </button>
-      </div>
+        </a>
+      </nav>
 
       <details className={`${styles.measureDetails} source-print`}>
         <summary>Scope &amp; attribution limits</summary>
@@ -280,7 +279,7 @@ export function StatisticsCompareScreen({
         </WardPanel>
       </details>
 
-      <div className={styles.compareRegion}>
+      <div id="compare-ward-measures" className={styles.compareRegion} tabIndex={-1}>
         <WardPanel title="Wards" count={`${units.length} wards`}>
           <div className={styles.panelBody}>
             <div className={styles.chartCard}>
@@ -311,7 +310,7 @@ export function StatisticsCompareScreen({
         </WardPanel>
       </div>
 
-      <div className={styles.compareRegion}>
+      <div id="compare-ed-measures" className={styles.compareRegion} tabIndex={-1}>
         <WardPanel title="Emergency departments" count={`${emergencyDepartments.length} departments`}>
           <div className={styles.panelBody}>
             <div className={styles.chartCard}>
@@ -349,7 +348,7 @@ export function StatisticsCompareScreen({
         </WardPanel>
       </div>
 
-      <div id={STATISTICS_UNIT_CHOOSER_ID} className={styles.compareRegion}>
+      <div id={STATISTICS_UNIT_CHOOSER_ID} className={styles.compareRegion} tabIndex={-1}>
         <WardPanel
           title="Choose a ward or emergency department"
           count={`${units.length + emergencyDepartments.length} units`}

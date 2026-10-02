@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 
 import {
   admissionsWithNoCommunityTeam,
@@ -25,6 +24,17 @@ import { figureText, isUnmeasured } from "./statistics-absence";
 import { communityFigures } from "./statistics-community-figures";
 import styles from "./statistics-sections.module.css";
 import pageStyles from "./statistics-community-third-edition.module.css";
+
+function openAndFocusCommunitySection(id: string) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  let details = target.closest("details");
+  while (details) {
+    details.open = true;
+    details = details.parentElement?.closest("details") ?? null;
+  }
+  queueMicrotask(() => target.focus({ preventScroll: true }));
+}
 
 /**
  * ONE COMMUNITY TEAM, IN FIGURES — and deliberately NOT a second copy of its operational page.
@@ -66,10 +76,6 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'community' section");
 
   const team = communityTeamById(teamId);
-
-  const [activeTab, setActiveTab] = useState<"caseload" | "referrals" | "followup" | "timeliness" | "inpatient">(
-    "caseload",
-  );
 
   if (!team) {
     return (
@@ -261,140 +267,132 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
         </p>
       </div>
 
-      {/* Tab Buttons Row matching mockup */}
-      <div className={pageStyles.viewTabbar} role="tablist" aria-label="Community team views">
-        <button
-          type="button"
-          role="tab"
-          id="tab-caseload"
-          aria-selected={activeTab === "caseload"}
-          className={`${pageStyles.tabBtn} ${activeTab === "caseload" ? pageStyles.activeTabBtn : ""}`}
-          onClick={() => setActiveTab("caseload")}
+      <nav className={pageStyles.viewTabbar} aria-label="Community statistics sections">
+        <a
+          className={pageStyles.tabBtn}
+          href="#community-stat-caseload"
+          onClick={() => openAndFocusCommunitySection("community-stat-caseload")}
+          style={{ textDecoration: "none" }}
         >
-          Active Caseload
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id="tab-referrals"
-          aria-selected={activeTab === "referrals"}
-          className={`${pageStyles.tabBtn} ${activeTab === "referrals" ? pageStyles.activeTabBtn : ""}`}
-          onClick={() => setActiveTab("referrals")}
+          Current figures
+        </a>
+        <a
+          className={pageStyles.tabBtn}
+          href="#community-stat-referrals"
+          onClick={() => openAndFocusCommunitySection("community-stat-referrals")}
+          style={{ textDecoration: "none" }}
         >
-          Referrals Inflow
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id="tab-followup"
-          aria-selected={activeTab === "followup"}
-          className={`${pageStyles.tabBtn} ${activeTab === "followup" ? pageStyles.activeTabBtn : ""}`}
-          onClick={() => setActiveTab("followup")}
+          Referrals
+        </a>
+        <a
+          className={pageStyles.tabBtn}
+          href="#community-stat-followup"
+          onClick={() => openAndFocusCommunitySection("community-stat-followup")}
+          style={{ textDecoration: "none" }}
         >
-          Post-Discharge Follow-up
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id="tab-timeliness"
-          aria-selected={activeTab === "timeliness"}
-          className={`${pageStyles.tabBtn} ${activeTab === "timeliness" ? pageStyles.activeTabBtn : ""}`}
-          onClick={() => setActiveTab("timeliness")}
+          Follow-up
+        </a>
+        <a
+          className={pageStyles.tabBtn}
+          href="#community-stat-first-contact"
+          onClick={() => openAndFocusCommunitySection("community-stat-first-contact")}
+          style={{ textDecoration: "none" }}
         >
-          First Contact Timeliness
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id="tab-inpatient"
-          aria-selected={activeTab === "inpatient"}
-          className={`${pageStyles.tabBtn} ${activeTab === "inpatient" ? pageStyles.activeTabBtn : ""}`}
-          onClick={() => setActiveTab("inpatient")}
+          First contact
+        </a>
+        <a
+          className={pageStyles.tabBtn}
+          href="#community-stat-inpatient"
+          onClick={() => openAndFocusCommunitySection("community-stat-inpatient")}
+          style={{ textDecoration: "none" }}
         >
-          Inpatient Bed Usage
-        </button>
-      </div>
+          People in beds
+        </a>
+      </nav>
 
-      {/* Tab 1: Active Caseload Layout */}
-      {activeTab === "caseload" && (
-        <div className={pageStyles.grid2}>
-          <div className={pageStyles.col}>
-            <section className={pageStyles.panel} aria-label="Active Caseload Profile">
-              <div className={pageStyles.ph}>
-                <h2>{team.name}</h2>
-                <span className={pageStyles.countBadge}>{figureText(figures.admitted)} in a bed</span>
-              </div>
-              <div className={pageStyles.pbStack}>
-                <p className={pageStyles.teamLine}>
-                  <strong className={pageStyles.svcName}>{serviceInfo.name}</strong> &middot; covers suburbs:{" "}
-                  {serviceInfo.suburbs}.
-                </p>
-                <dl className={pageStyles.slFacts}>
-                  <dt>Reporting window</dt>
-                  <dd>Current snapshot</dd>
-                  <dt>Snapshot</dt>
-                  <dd>Synthetic prototype state</dd>
-                  <dt>Service scope</dt>
-                  <dd>Public community mental health</dd>
-                </dl>
-                <div className={pageStyles.ctlRow}>
-                  <Link
-                    href={communityTeamHref(team)}
-                    className={`${pageStyles.ctl} ${pageStyles.ctlPrimary}`}
-                    data-testid="ward-statistics-community-operational-link"
-                  >
-                    Open the caseload list
-                  </Link>
-                  <Link href="/mockups/ward-flow" className={pageStyles.ctl}>
-                    Back to the team home
-                  </Link>
-                </div>
-              </div>
-              <dl className={pageStyles.band} aria-label="Community caseload headline figures">
-                <div className={pageStyles.bandItem} data-testid="ward-statistics-community-kpi-admitted">
-                  <dt className={pageStyles.bandLabel}>In a bed, or holding one</dt>
-                  <dd className={pageStyles.bandValue}>{figureText(figures.admitted)}</dd>
-                  <p className={pageStyles.bandNote}>
-                    Referred to this team and occupying or holding a hospital bed now.
-                  </p>
-                </div>
-                <div className={pageStyles.bandItem} data-testid="ward-statistics-community-kpi-expected">
-                  <dt className={pageStyles.bandLabel}>Of those, with a discharge date</dt>
-                  <dd className={pageStyles.bandValue}>{figureText(figures.expected)}</dd>
-                  <p className={pageStyles.bandNote}>A subset of people occupying or holding a bed now.</p>
-                </div>
-                <div className={pageStyles.bandItem} data-testid="ward-statistics-community-kpi-discharged">
-                  <dt className={pageStyles.bandLabel}>Discharged into the area</dt>
-                  <dd className={pageStyles.bandValue}>{figureText(figures.discharged)}</dd>
-                  <p className={pageStyles.bandNote}>Left a ward for the community this team serves.</p>
-                </div>
-                <div className={pageStyles.bandItem} data-testid="ward-statistics-community-kpi-other">
-                  <dt className={pageStyles.bandLabel}>Left the ward another way</dt>
-                  <dd className={pageStyles.bandValue}>{figureText(figures.other)}</dd>
-                  <p className={pageStyles.bandNote}>
-                    Transferred or left by a route other than discharge into the area.
-                  </p>
-                </div>
+      {/* Current figures stay visible while section links navigate this page. */}
+      <div className={pageStyles.grid2}>
+        <div className={pageStyles.col}>
+          <section
+            id="community-stat-caseload"
+            tabIndex={-1}
+            className={pageStyles.panel}
+            aria-label="Active Caseload Profile"
+          >
+            <div className={pageStyles.ph}>
+              <h2>{team.name}</h2>
+              <span className={pageStyles.countBadge}>{figureText(figures.admitted)} in a bed</span>
+            </div>
+            <div className={pageStyles.pbStack}>
+              <p className={pageStyles.teamLine}>
+                <strong className={pageStyles.svcName}>{serviceInfo.name}</strong> &middot; covers suburbs:{" "}
+                {serviceInfo.suburbs}.
+              </p>
+              <dl className={pageStyles.slFacts}>
+                <dt>Reporting window</dt>
+                <dd>Current snapshot</dd>
+                <dt>Snapshot</dt>
+                <dd>Synthetic prototype state</dd>
+                <dt>Service scope</dt>
+                <dd>Public community mental health</dd>
               </dl>
-            </section>
-          </div>
-
-          <div className={pageStyles.col}>
-            <section className={pageStyles.panel} aria-label="Caseload duration">
-              <div className={pageStyles.ph}>
-                <h2>Caseload duration</h2>
-                <span className={pageStyles.countBadge}>Not recorded</span>
+              <div className={pageStyles.ctlRow}>
+                <Link
+                  href={communityTeamHref(team)}
+                  className={`${pageStyles.ctl} ${pageStyles.ctlPrimary}`}
+                  data-testid="ward-statistics-community-operational-link"
+                >
+                  Open the caseload list
+                </Link>
+                <Link href="/mockups/ward-flow" className={pageStyles.ctl}>
+                  Back to the team home
+                </Link>
               </div>
-              <div className={pageStyles.pbStack}>
-                <p className={styles.unmeasured}>
-                  This prototype keeps no history of how long a case has stayed open, so there is no duration curve or
-                  distribution to show.
+            </div>
+            <dl className={pageStyles.band} aria-label="Community caseload headline figures">
+              <div className={pageStyles.bandItem} data-testid="ward-statistics-community-kpi-admitted">
+                <dt className={pageStyles.bandLabel}>In a bed, or holding one</dt>
+                <dd className={pageStyles.bandValue}>{figureText(figures.admitted)}</dd>
+                <p className={pageStyles.bandNote}>
+                  Referred to this team and occupying or holding a hospital bed now.
                 </p>
               </div>
-            </section>
-          </div>
+              <div className={pageStyles.bandItem} data-testid="ward-statistics-community-kpi-expected">
+                <dt className={pageStyles.bandLabel}>Of those, with a discharge date</dt>
+                <dd className={pageStyles.bandValue}>{figureText(figures.expected)}</dd>
+                <p className={pageStyles.bandNote}>A subset of people occupying or holding a bed now.</p>
+              </div>
+              <div className={pageStyles.bandItem} data-testid="ward-statistics-community-kpi-discharged">
+                <dt className={pageStyles.bandLabel}>Discharged into the area</dt>
+                <dd className={pageStyles.bandValue}>{figureText(figures.discharged)}</dd>
+                <p className={pageStyles.bandNote}>Left a ward for the community this team serves.</p>
+              </div>
+              <div className={pageStyles.bandItem} data-testid="ward-statistics-community-kpi-other">
+                <dt className={pageStyles.bandLabel}>Left the ward another way</dt>
+                <dd className={pageStyles.bandValue}>{figureText(figures.other)}</dd>
+                <p className={pageStyles.bandNote}>
+                  Transferred or left by a route other than discharge into the area.
+                </p>
+              </div>
+            </dl>
+          </section>
         </div>
-      )}
+
+        <div className={pageStyles.col}>
+          <section className={pageStyles.panel} aria-label="Caseload duration">
+            <div className={pageStyles.ph}>
+              <h2>Caseload duration</h2>
+              <span className={pageStyles.countBadge}>Not recorded</span>
+            </div>
+            <div className={pageStyles.pbStack}>
+              <p className={styles.unmeasured}>
+                This prototype keeps no history of how long a case has stayed open, so there is no duration curve or
+                distribution to show.
+              </p>
+            </div>
+          </section>
+        </div>
+      </div>
 
       {/* Preservation of required accessible details and testids */}
       <div className={pageStyles.pageGrid}>
@@ -506,7 +504,13 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
             count="7-day follow-up"
             testId="ward-statistics-community-followup"
           >
-            <div className={styles.panelBody} role="group" aria-label="Post-discharge follow-up content" tabIndex={0}>
+            <div
+              id="community-stat-followup"
+              className={styles.panelBody}
+              role="group"
+              aria-label="Post-discharge follow-up content"
+              tabIndex={-1}
+            >
               <p className={styles.unmeasured}>
                 Not recorded. Whether follow-up was arranged is a field on each admission, but nothing in this prototype
                 writes it, so there is no follow-up percentage to show.
@@ -541,7 +545,13 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
           <summary>Measures this record does not support</summary>
           <div className={pageStyles.unsupportedGrid}>
             <WardPanel title="Referrals into the team" testId="ward-statistics-community-referrals">
-              <div className={styles.panelBody} role="group" aria-label="Community referrals content" tabIndex={0}>
+              <div
+                id="community-stat-referrals"
+                className={styles.panelBody}
+                role="group"
+                aria-label="Community referrals content"
+                tabIndex={-1}
+              >
                 <p className={styles.unmeasured}>No reporting-window referral count is recorded for this team.</p>
               </div>
             </WardPanel>
@@ -553,7 +563,13 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
             </WardPanel>
 
             <WardPanel title="Time to first contact" testId="ward-statistics-community-first-contact">
-              <div className={styles.panelBody} role="group" aria-label="Time to first contact content" tabIndex={0}>
+              <div
+                id="community-stat-first-contact"
+                className={styles.panelBody}
+                role="group"
+                aria-label="Time to first contact content"
+                tabIndex={-1}
+              >
                 <p className={styles.unmeasured}>Time to first contact is not recorded in this prototype.</p>
               </div>
             </WardPanel>
@@ -567,7 +583,13 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
         </details>
 
         <WardPanel title="People currently in a hospital bed" testId="ward-statistics-community-in-hospital">
-          <div className={styles.panelBody} role="group" aria-label="People in hospital content" tabIndex={0}>
+          <div
+            id="community-stat-inpatient"
+            className={styles.panelBody}
+            role="group"
+            aria-label="People in hospital content"
+            tabIndex={-1}
+          >
             <p
               className={styles.measuredCount}
               data-testid="ward-statistics-community-in-hospital-count"
