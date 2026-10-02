@@ -81,11 +81,10 @@ run individually per file; nothing here was executed. Back to [the code map inde
   `<iframe>` (never a screenshot — these drawings build their own navigation with JavaScript, so a
   static capture renders a different, wrong design). Excludes the two superseded
   patient-search drawings by name.
-- **`scripts/ward-flow/sync-lessons.mjs`** (152 lines) — Copies the lesson store (working source)
-  into `docs/ward-flow/lessons/` (versioned backup), byte-for-byte, comparing content not mtime.
-  Never deletes from the repo copy — a file present in the repo but gone from the store is reported
-  under "only in repo" and left alone, because that is exactly the moment the backup exists for.
-  Exits 0 and does nothing if the store does not exist on this machine. `--check` mode for gates.
+- **`scripts/ward-flow/sync-lessons.mjs`** - Retired importer. Ordinary and `--check` runs
+  deliberately exit 1 without reading a private lesson store or writing files. The tracked
+  `docs/ward-flow/lessons/` files are the authoritative Ward Flow lesson source; maintain them
+  directly and use the in-repository lesson audit below. This stub is not a freshness gate.
 
 ## `scripts/ward-flow/` — checks, ratchets and gates
 
@@ -599,7 +598,6 @@ file in the repository against (`schemaVersion: 1`, `product: "ward-flow"`). Top
 | `docs/ward-flow/SCREEN-MAP.md`                                         | `screen-map.mjs`                                 | `node scripts/ward-flow/screen-map.mjs --check`                                                                                 |
 | `docs/ward-flow/SCREEN-VERIFICATION.md`                                | `screen-verification.mjs`                        | `node scripts/ward-flow/screen-verification.mjs --check`                                                                        |
 | `docs/ward-flow/mockups/CONTACT-SHEET.html`                            | `contact-sheet.mjs`                              | none (visual reference page, not a gate)                                                                                        |
-| `docs/ward-flow/lessons/*.md` (repo mirror of the lesson store)        | `sync-lessons.mjs`                               | `node scripts/ward-flow/sync-lessons.mjs --check`                                                                               |
 | `docs/ward-flow/LESSON-AUDIT-REPORT.md`                                | `audit-lessons.mjs`                              | `node scripts/ward-flow/audit-lessons.mjs --check`                                                                              |
 | `docs/ward-flow/journey/ward-journey-explorer.html`                    | `build-explorer.mjs` (via `ward:journey`)        | `npm run ward:journey` (build refuses rather than emitting a wrong page)                                                        |
 | `docs/ward-flow/journey/ward-journey.bpmn`                             | `build-bpmn.mjs` (via `ward:journey`)            | part of `npm run ward:journey`                                                                                                  |
