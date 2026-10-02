@@ -634,6 +634,8 @@
 }
 
 .flowMatrixTable {
+  composes: table from "../ward-table/ward-table.module.css";
+  --ward-table-cell-inset: 0.5rem 0.875rem;
   width: 100%;
   border-collapse: collapse;
   font-family: var(--body);
@@ -643,14 +645,12 @@
 }
 
 .flowMatrixTable th {
-  padding: 0.5rem 0.875rem;
   font-size: var(--t-0);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
   background: var(--surface-2);
-  border-bottom: 0.0625rem solid var(--line-strong);
   white-space: nowrap;
 }
 
@@ -661,8 +661,6 @@
 }
 
 .flowMatrixTable td {
-  padding: 0.5rem 0.875rem;
-  border-bottom: 0.0625rem solid var(--line);
   color: var(--ink-soft);
   vertical-align: middle;
 }

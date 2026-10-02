@@ -22,7 +22,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3, 0.75rem);
-  font-size: var(--ward-font-sm, 0.8125rem);
+  font-size: 0.8125rem;
   color: var(--ward-muted, var(--text-muted));
 }
 
@@ -98,14 +98,14 @@
 .patientAvatar {
   width: 48px;
   height: 48px;
-  border-radius: var(--radius-full, 9999px);
+  border-radius: 9999px;
   background: var(--ward-blue-soft, var(--clinical-accent-soft));
   color: var(--ward-blue, var(--clinical-accent));
   border: 1px solid var(--ward-blue-border, var(--clinical-accent-border));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--ward-font-lg, 1.125rem);
+  font-size: 1.125rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   flex-shrink: 0;
@@ -143,7 +143,7 @@
   align-items: center;
   gap: var(--space-2, 0.5rem);
   margin-top: var(--space-1, 0.25rem);
-  font-size: var(--ward-font-sm, 0.8125rem);
+  font-size: 0.8125rem;
   color: var(--ward-text, var(--text));
 }
 
@@ -168,7 +168,7 @@
   background: var(--surface-subtle, var(--surface));
   border-radius: var(--radius-md, 0.375rem);
   border: 1px solid var(--ward-divider, var(--border));
-  font-size: var(--ward-font-sm, 0.8125rem);
+  font-size: 0.8125rem;
   color: var(--ward-text, var(--text));
 }
 
@@ -201,17 +201,17 @@
   padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
   background: var(--ward-warning-soft, var(--surface-subtle));
   border: 1px solid var(--warning-border, var(--ward-border));
-  border-left: 4px solid var(--ward-warning, var(--ward-warning));
+  border-left: 4px solid var(--ward-warning);
   border-radius: var(--radius-md, 0.375rem);
   color: var(--ward-warning, var(--ward-text));
-  font-size: var(--ward-font-sm, 0.8125rem);
+  font-size: 0.8125rem;
   line-height: 1.4;
 }
 
 .blockerAlertIcon {
   flex-shrink: 0;
   margin-top: 2px;
-  color: var(--ward-warning, var(--ward-warning));
+  color: var(--ward-warning);
 }
 
 .blockerAlertBody {
@@ -247,14 +247,14 @@
 
 .closureTitle {
   margin: 0 0 var(--space-1, 0.25rem);
-  font-size: var(--ward-font-md, 0.9375rem);
+  font-size: 0.9375rem;
   font-weight: 700;
   color: var(--ward-heading, var(--text-heading));
 }
 
 .closureReason {
   margin: 0;
-  font-size: var(--ward-font-sm, 0.8125rem);
+  font-size: 0.8125rem;
   color: var(--ward-text, var(--text));
 }
 
@@ -284,7 +284,7 @@
 
 .stepperTitle {
   margin: 0;
-  font-size: var(--ward-font-sm, 0.8125rem);
+  font-size: 0.8125rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -295,7 +295,7 @@
   font-size: 12px;
   font-weight: 600;
   padding: 2px var(--space-2, 0.5rem);
-  border-radius: var(--radius-full, 9999px);
+  border-radius: 9999px;
   background: var(--ward-blue-soft, var(--surface-subtle));
   color: var(--ward-blue, var(--clinical-accent));
 }
@@ -372,7 +372,7 @@
 }
 
 .stepperStep[data-state="done"] .stepIcon {
-  color: var(--ward-success, var(--ward-success));
+  color: var(--ward-success);
 }
 
 .stepperStep[data-state="current"] .stepIcon {
@@ -418,7 +418,7 @@
 .figureCard[data-flagged="true"] {
   border-color: var(--warning-border, var(--ward-warning));
   background: var(--ward-warning-soft, var(--surface-raised));
-  border-left: 3px solid var(--ward-warning, var(--ward-warning));
+  border-left: 3px solid var(--ward-warning);
 }
 
 .figureLabel {
@@ -447,7 +447,7 @@
 
 .withheldFlagNote {
   font-size: 12px;
-  color: var(--ward-warning, var(--ward-warning));
+  color: var(--ward-warning);
   margin-top: var(--space-1, 0.25rem);
 }
 
@@ -512,7 +512,7 @@
 
 .panelCardTitle {
   margin: 0;
-  font-size: var(--ward-font-md, 0.9375rem);
+  font-size: 0.9375rem;
   font-weight: 700;
   color: var(--ward-heading, var(--text-heading));
 }
@@ -521,7 +521,7 @@
   font-size: 12px;
   font-weight: 600;
   padding: 1px var(--space-2, 0.5rem);
-  border-radius: var(--radius-full, 9999px);
+  border-radius: 9999px;
   background: var(--surface, var(--surface-raised));
   border: 1px solid var(--ward-border, var(--border));
   color: var(--ward-text, var(--text));
@@ -536,7 +536,7 @@
 
 .panelBlurb {
   margin: 0;
-  font-size: var(--ward-font-sm, 0.8125rem);
+  font-size: 0.8125rem;
   color: var(--ward-muted, var(--text-muted));
   line-height: 1.4;
 }
@@ -553,13 +553,13 @@
 }
 
 .destHeroTitle {
-  font-size: var(--ward-font-md, 0.9375rem);
+  font-size: 0.9375rem;
   font-weight: 700;
   color: var(--ward-blue, var(--clinical-accent));
 }
 
 .destHeroLede {
-  font-size: var(--ward-font-sm, 0.8125rem);
+  font-size: 0.8125rem;
   color: var(--ward-text, var(--text));
   line-height: 1.4;
 }
@@ -585,13 +585,13 @@
 }
 
 .gatePass {
-  color: var(--ward-success, var(--ward-success));
+  color: var(--ward-success);
   flex-shrink: 0;
   margin-top: 1px;
 }
 
 .gateFail {
-  color: var(--ward-danger, var(--ward-danger));
+  color: var(--ward-danger);
   flex-shrink: 0;
   margin-top: 1px;
 }
@@ -633,7 +633,7 @@
 }
 
 .candidateName {
-  font-size: var(--ward-font-sm, 0.8125rem);
+  font-size: 0.8125rem;
   font-weight: 700;
   color: var(--ward-heading, var(--text-heading));
 }
@@ -645,7 +645,7 @@
 
 .candidateRisk {
   font-size: 12px;
-  color: var(--ward-warning, var(--ward-warning));
+  color: var(--ward-warning);
   font-weight: 500;
 }
 
@@ -692,7 +692,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2, 0.5rem);
-  font-size: var(--ward-font-sm, 0.8125rem);
+  font-size: 0.8125rem;
   font-weight: 700;
   color: var(--ward-heading, var(--text-heading));
 }
@@ -738,7 +738,7 @@
 
 .factValue {
   margin: 0;
-  font-size: var(--ward-font-sm, 0.8125rem);
+  font-size: 0.8125rem;
   color: var(--ward-text, var(--text));
   line-height: 1.3;
 }
@@ -770,7 +770,7 @@
   top: 4px;
   width: 8px;
   height: 8px;
-  border-radius: var(--radius-full, 9999px);
+  border-radius: 9999px;
   background: var(--ward-blue, var(--clinical-accent));
   border: 2px solid var(--surface-raised, var(--surface));
 }
@@ -782,7 +782,7 @@
 }
 
 .timelineWhat {
-  font-size: var(--ward-font-sm, 0.8125rem);
+  font-size: 0.8125rem;
   color: var(--ward-text, var(--text));
   line-height: 1.35;
 }
@@ -830,7 +830,7 @@
 
 .actionSectionTitle {
   margin: 0;
-  font-size: var(--ward-font-sm, 0.8125rem);
+  font-size: 0.8125rem;
   font-weight: 700;
   color: var(--ward-heading, var(--text-heading));
 }
@@ -906,7 +906,7 @@
 
 .controlButtonDanger {
   background: var(--ward-danger-soft, var(--surface-raised));
-  color: var(--ward-danger, var(--ward-danger));
+  color: var(--ward-danger);
   border-color: var(--danger-border, var(--border));
 }
 
@@ -956,7 +956,7 @@
 }
 
 .attentionItem[data-level="stalled"] {
-  border-left: 3px solid var(--ward-warning, var(--ward-warning));
+  border-left: 3px solid var(--ward-warning);
 }
 
 .attentionHead {

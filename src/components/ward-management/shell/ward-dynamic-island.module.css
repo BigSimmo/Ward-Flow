@@ -278,7 +278,7 @@
     width: 100%;
     justify-content: flex-start;
     padding: 6px 10px;
-    border-radius: var(--r-card, 12px);
+    border-radius: 12px;
   }
 }
 

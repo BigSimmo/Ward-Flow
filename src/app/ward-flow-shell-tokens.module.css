@@ -94,6 +94,7 @@
 
 .wardShellTokens {
   --clinical-domain-capacity: var(--svc-wachs);
+  --svc-country: var(--clinical-domain-capacity);
   color-scheme: light;
 
   --ground-hi: #ecf0f4;

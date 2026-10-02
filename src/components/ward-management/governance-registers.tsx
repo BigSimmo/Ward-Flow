@@ -653,7 +653,7 @@ const SAMPLE_DECISIONS: GovernanceDecisionItem[] = [
 const SAMPLE_RESTRICTIVE_PRACTICES: GovernanceRestrictiveItem[] = [
   {
     id: "RP-101",
-    form: "Form 10 (Bodily Restraint)",
+    form: "Bodily restraint",
     patient: "Harper, Chloe · UMRN UM100412",
     unit: "Bentley · Adult Secure Unit",
     authorisedBy: "Dr. S. Banner (Consultant)",
@@ -664,7 +664,7 @@ const SAMPLE_RESTRICTIVE_PRACTICES: GovernanceRestrictiveItem[] = [
   },
   {
     id: "RP-102",
-    form: "Form 11 (Seclusion)",
+    form: "Seclusion",
     patient: "Vance, Eleanor · UMRN UM100884",
     unit: "Bentley · Adult Secure Unit",
     authorisedBy: "Dr. C. Thorne (Duty Consultant)",
@@ -675,7 +675,7 @@ const SAMPLE_RESTRICTIVE_PRACTICES: GovernanceRestrictiveItem[] = [
   },
   {
     id: "RP-103",
-    form: "Form 10 (Bodily Restraint)",
+    form: "Bodily restraint",
     patient: "Gallagher, Liam · UMRN UM100721",
     unit: "Sir Charles Gairdner MHU",
     authorisedBy: "Dr. M. Reid (Psychiatrist)",
