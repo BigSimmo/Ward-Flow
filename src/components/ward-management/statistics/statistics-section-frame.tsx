@@ -11,7 +11,6 @@ import {
 import type { StatisticsSection } from "@/components/ward-management/statistics/statistics-sections";
 import { STATISTICS_HOME_HREF } from "@/components/ward-management/statistics/statistics-sections";
 
-import { StatisticsNav } from "@/components/ward-management/statistics/statistics-nav";
 import styles from "./statistics-sections.module.css";
 import thirdEditionStyles from "./statistics-section-frame-third-edition.module.css";
 
@@ -182,7 +181,9 @@ function ThirdEditionFrame({
     >
       <main id="main-content" className={`${styles.main} ${thirdEditionStyles.main}`}>
         <header className={thirdEditionStyles.semanticHeader}>
-          <p data-testid="ward-statistics-section-eyebrow">{section.label}</p>
+          <p data-testid="ward-statistics-section-eyebrow" hidden={!title || title === section.label}>
+            {section.label}
+          </p>
           <h1>{title ?? section.label}</h1>
         </header>
         <div className={thirdEditionStyles.contextRow}>
@@ -203,11 +204,10 @@ function ThirdEditionFrame({
               <p data-testid="ward-statistics-section-access">
                 <CoordinatorAccessDisclaimer />
               </p>
-              <p>{subtitle}</p>
+              {subtitle && <p>{subtitle}</p>}
             </div>
           </details>
         </div>
-        <StatisticsNav />
         {children}
       </main>
     </div>

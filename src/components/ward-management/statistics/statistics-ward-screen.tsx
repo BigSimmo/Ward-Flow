@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
 
 import { StatisticsSectionFrame } from "@/components/ward-management/statistics/statistics-section-frame";
@@ -70,15 +70,7 @@ export function StatisticsWardScreen({
   const unit = units.find((candidate) => candidate.id === unitId);
 
   const [activeTab, setActiveTab] = useState<string>("all");
-  const [d4Notice, setD4Notice] = useState<string | null>(null);
-  const [politeNotice, setPoliteNotice] = useState<string | null>(null);
   const [bedSearchQuery, setBedSearchQuery] = useState<string>("");
-
-  const triggerD4 = useCallback((actionName?: string) => {
-    const msg = actionName ? `${actionName}: Not wired in this prototype.` : "Not wired in this prototype.";
-    setD4Notice(msg);
-    setPoliteNotice(msg);
-  }, []);
 
   const section = statisticsSectionById("units");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'units' section");
@@ -241,69 +233,36 @@ export function StatisticsWardScreen({
     { baseline: capacity.available, volatility: 1, minValue: 0, maxValue: unit.beds },
   );
 
-  const bedMatrixList = (() => {
-    const occupiedCount = capacity.occupied;
-    const availableCount = capacity.available;
-    const pendingCount = pendingPreparation;
-    const list = [];
-    const wardAdms = admissions.filter((a) => a.unitId === unit.id && a.state !== "departed");
-
-    for (let i = 1; i <= unit.beds; i++) {
-      const bedName = `Bed ${i < 10 ? `0${i}` : i}`;
-      // Rows come from this ward's admission records. Until 25 Sept 2026 each row carried a made-up
-      // "P-18x" person, beds beyond the records got typed stays and plans, and stays were divided by
-      // 86,400 although Ward Flow's clock counts minutes.
-      if (i <= wardAdms.length) {
-        const adm = wardAdms[i - 1];
-        const stayDays = adm.arrivedAt === null ? 0 : Math.max(1, Math.round((now - adm.arrivedAt) / MINUTES_PER_DAY));
-        list.push({
-          bed: bedName,
-          state: "Occupied",
-          pt: `${adm.id} (${adm.sex === "Female" ? "F" : adm.sex === "Male" ? "M" : adm.sex.toLowerCase()})`,
-          admitted: adm.arrivedAt === null ? "Not arrived yet" : `${stayDays}d ago`,
-          days: stayDays,
-          target: adm.expectedDischargeAt === null ? "No discharge date set" : "Discharge date set",
-        });
-      } else if (i <= occupiedCount) {
-        list.push({
-          bed: bedName,
-          state: "Occupied",
-          pt: "Not recorded",
-          admitted: "Not recorded",
-          days: 0,
-          target: "Not recorded",
-        });
-      } else if (i <= occupiedCount + availableCount) {
-        list.push({
-          bed: bedName,
-          state: "Available",
-          pt: "-",
-          admitted: "-",
-          days: 0,
-          target: "Ready to admit",
-        });
-      } else if (i <= occupiedCount + availableCount + pendingCount) {
-        list.push({
-          bed: bedName,
-          state: "Pending",
-          pt: "-",
-          admitted: "-",
-          days: 0,
-          target: "Being made ready",
-        });
-      } else {
-        list.push({
-          bed: bedName,
-          state: "Out of Service",
-          pt: "-",
-          admitted: "-",
-          days: 0,
-          target: "Reason not recorded",
-        });
-      }
-    }
-    return list;
-  })();
+  // The admission model records a ward, not a numbered bed assignment.
+  // Preserve each recorded lifecycle state rather than inferring occupancy from roster order.
+  const admissionStateLabels: Record<Admission["state"], string> = {
+    waitlisted: "Waitlisted",
+    pulled: "Pulled",
+    occupied: "Occupied",
+    departed: "Departed",
+  };
+  const bedMatrixList = admissions
+    .filter((admission) => admission.unitId === unit.id && admission.state !== "departed")
+    .map((admission) => {
+      const stayDays =
+        admission.arrivedAt === null || admission.arrivedAt > now
+          ? null
+          : Math.floor((now - admission.arrivedAt) / MINUTES_PER_DAY);
+      return {
+        id: admission.id,
+        bed: "Not recorded",
+        state: admissionStateLabels[admission.state],
+        pt: `${admission.id} (${admission.sex === "Female" ? "F" : admission.sex === "Male" ? "M" : admission.sex.toLowerCase()})`,
+        admitted:
+          admission.arrivedAt === null
+            ? "Not arrived yet"
+            : stayDays === null
+              ? "Inconsistent arrival time"
+              : `${stayDays}d ago`,
+        days: stayDays,
+        target: admission.expectedDischargeAt === null ? "No discharge date set" : "Discharge date set",
+      };
+    });
 
   const filteredBedMatrix = (() => {
     if (!bedSearchQuery.trim()) return bedMatrixList;
@@ -328,7 +287,7 @@ export function StatisticsWardScreen({
           ? "Not recorded"
           : `${statistics.averageLengthOfStayDays.toFixed(0)}d`,
     },
-    { id: "flow", label: "Admissions & Discharges", badge: "7d Flow" },
+    { id: "flow", label: "Admissions & Discharges", badge: "No 7d history" },
     { id: "ready", label: "Discharge Readiness", badge: `${headlineTotal} delayed` },
     { id: "longStay", label: "Long Stays", badge: `${statistics.longStays}` },
   ] as const;
@@ -337,30 +296,10 @@ export function StatisticsWardScreen({
     <StatisticsSectionFrame
       section={section}
       title={unit.name}
-      subtitle="Current capacity, flow and discharge measures for this ward, with record limits stated in place."
+      subtitle=""
       testId="ward-statistics-ward-screen"
       design="third-edition"
     >
-      {politeNotice ? (
-        <div className={pageStyles.srOnly} role="status" aria-live="polite">
-          {politeNotice}
-        </div>
-      ) : null}
-
-      {d4Notice ? (
-        <div className={pageStyles.d4NoticeBanner} role="status">
-          <span>{d4Notice}</span>
-          <button
-            type="button"
-            className={pageStyles.d4NoticeDismiss}
-            onClick={() => setD4Notice(null)}
-            aria-label="Dismiss notice"
-          >
-            Dismiss
-          </button>
-        </div>
-      ) : null}
-
       <nav className={pageStyles.sovereignTabs} aria-label="Ward Statistics Navigation">
         {TABS.map((tab) => (
           <button
@@ -419,6 +358,10 @@ export function StatisticsWardScreen({
                 <dd>{capacity.occupied}</dd>
               </div>
               <div>
+                <dt>Occupancy</dt>
+                <dd>{unit.beds > 0 ? ((capacity.occupied / unit.beds) * 100).toFixed(1) : "0.0"}%</dd>
+              </div>
+              <div>
                 <dt>Ready</dt>
                 <dd>{capacity.available}</dd>
               </div>
@@ -468,48 +411,59 @@ export function StatisticsWardScreen({
               </tbody>
             </WardTable>
 
+            <p className={styles.note}>
+              This roster records admission states. Numbered bed assignments are not recorded.
+            </p>
             <div className={pageStyles.tableTools}>
               <label htmlFor="bedMatrixSearch" className={pageStyles.srOnly}>
-                Search beds by patient, status, or number
+                Search admissions by ID or recorded state
               </label>
               <input
                 id="bedMatrixSearch"
                 type="search"
                 className={pageStyles.tableSearch}
-                placeholder="Search bed, status, or patient ID..."
+                placeholder="Search admission ID or state..."
                 value={bedSearchQuery}
                 onChange={(e) => setBedSearchQuery(e.target.value)}
-                aria-label="Filter bed status matrix"
+                aria-label="Filter recorded admission roster"
               />
-              <span className={styles.note} style={{ fontSize: "12px" }}>
-                Showing {filteredBedMatrix.length} of {bedMatrixList.length} beds
+              <span className={styles.note}>
+                Showing {filteredBedMatrix.length} of {bedMatrixList.length} admissions
               </span>
             </div>
             <div className={pageStyles.tableWrap}>
               <table className={pageStyles.dataTable}>
-                <caption className={pageStyles.srOnly}>Operational bed inventory and current allocation status</caption>
+                <caption className={pageStyles.srOnly}>
+                  Recorded admission roster; numbered bed assignments are not recorded
+                </caption>
                 <thead>
                   <tr>
-                    <th scope="col">Bed</th>
+                    <th scope="col">Assigned bed</th>
                     <th scope="col">Status</th>
-                    <th scope="col">Patient</th>
+                    <th scope="col">Admission / recorded sex</th>
                     <th scope="col">Admitted</th>
                     <th scope="col" className={pageStyles.n}>
                       Length of stay
                     </th>
                     <th scope="col">Discharge Target</th>
-                    <th scope="col">Action</th>
                   </tr>
                 </thead>
                 <tbody>
+                  {filteredBedMatrix.length === 0 ? (
+                    <tr>
+                      <td colSpan={6}>
+                        {bedMatrixList.length === 0
+                          ? "No current admissions recorded"
+                          : "No admissions match this search"}
+                      </td>
+                    </tr>
+                  ) : null}
                   {filteredBedMatrix.map((b) => {
                     let chipClass = pageStyles.chipMark;
                     if (b.state === "Occupied") chipClass = pageStyles.chipOccupied;
-                    else if (b.state === "Available") chipClass = pageStyles.chipReady;
-                    else if (b.state === "Out of Service") chipClass = pageStyles.chipAlert;
 
                     return (
-                      <tr key={b.bed}>
+                      <tr key={b.id}>
                         <td>
                           <strong>{b.bed}</strong>
                         </td>
@@ -520,18 +474,8 @@ export function StatisticsWardScreen({
                           <strong>{b.pt}</strong>
                         </td>
                         <td>{b.admitted}</td>
-                        <td className={pageStyles.n}>{b.days > 0 ? `${b.days} d` : "-"}</td>
+                        <td className={pageStyles.n}>{b.days === null ? "Not recorded" : `${b.days} d`}</td>
                         <td>{b.target}</td>
-                        <td>
-                          <button
-                            type="button"
-                            className={pageStyles.d4Btn}
-                            onClick={() => triggerD4(`Bed details for ${b.bed}`)}
-                            aria-label={`Details for ${b.bed}`}
-                          >
-                            Details
-                          </button>
-                        </td>
                       </tr>
                     );
                   })}
@@ -619,6 +563,15 @@ export function StatisticsWardScreen({
           </div>
         </WardPanel>
 
+        <WardPanel title="Occupancy history" testId="ward-statistics-ward-occupancy-trajectory" dataTabSection="occ">
+          <div className={styles.panelBody} role="group" aria-label="Occupancy history content" tabIndex={0}>
+            <p className={styles.note}>
+              Not recorded. This prototype retains the ward&apos;s current bed state, but no daily occupancy history or
+              operational benchmark.
+            </p>
+          </div>
+        </WardPanel>
+
         <WardPanel title="Occupancy over the window" testId="ward-statistics-ward-occupancy" dataTabSection="occ">
           <div
             className={`${styles.panelBody} ${pageStyles.trendStack}`}
@@ -626,11 +579,14 @@ export function StatisticsWardScreen({
             aria-label="Occupancy over the window content"
             tabIndex={0}
           >
-            <p className={styles.note} data-testid="ward-stat-trends-disclaimer">
-              Neither trend below is recorded — both charts below are demonstration data, not a measurement of this
-              ward. This prototype keeps only the ward&apos;s current state, never a day-by-day history, so neither
-              trend was ever recorded — see each chart&apos;s own caption for what it stands in for.
-            </p>
+            <details className={`${pageStyles.measureDetails} source-print`}>
+              <summary>Technical trend disclosure</summary>
+              <p className={styles.note} data-testid="ward-stat-trends-disclaimer">
+                Neither trend below is recorded — both charts below are demonstration data, not a measurement of this
+                ward. This prototype keeps only the ward&apos;s current state, never a day-by-day history, so neither
+                trend was ever recorded — see each chart&apos;s own caption for what it stands in for.
+              </p>
+            </details>
             <DemonstrationChart series={occupancySeries} testId="ward-stat-occupancy-trend" />
             <DemonstrationChart series={readySeries} testId="ward-stat-ready-trend" />
           </div>
@@ -652,10 +608,13 @@ export function StatisticsWardScreen({
                   )}
                 </p>
 
-                <p className={styles.note} data-testid="ward-stat-los-bands-not-shown">
-                  Stays grouped by length are not shown. The average above is this page&apos;s only length-of-stay
-                  figure.
-                </p>
+                <details className={`${pageStyles.measureDetails} source-print`}>
+                  <summary>Length of stay grouping disclosure</summary>
+                  <p className={styles.note} data-testid="ward-stat-los-bands-not-shown">
+                    Stays grouped by length are not shown. The average above is this page&apos;s only length-of-stay
+                    figure.
+                  </p>
+                </details>
               </div>
             </WardPanel>
             <WardPanel
@@ -669,9 +628,13 @@ export function StatisticsWardScreen({
                 aria-label="Admissions and discharges content"
                 tabIndex={0}
               >
-                <p className={styles.note} data-testid="ward-stat-flow-history-not-recorded">
-                  Day-by-day admissions and discharges are not recorded in Ward Flow, so the last 7 days are not shown.
-                </p>
+                <details className={`${pageStyles.measureDetails} source-print`}>
+                  <summary>Admissions and discharges telemetry disclosure</summary>
+                  <p className={styles.note} data-testid="ward-stat-flow-history-not-recorded">
+                    Day-by-day admissions and discharges are not recorded in Ward Flow, so the last 7 days are not
+                    shown.
+                  </p>
+                </details>
 
                 <h3 className={styles.subHeading}>Average time a bed stood empty</h3>
                 {/*
@@ -994,10 +957,13 @@ export function StatisticsWardScreen({
                   <p className={styles.note}>Clinically ready: description, not a target.</p>
                 </section>
 
-                <p className={styles.note} data-testid="ward-stat-delayed-people-not-shown">
-                  A list of the people delayed, with their barriers and review times, is not recorded in Ward Flow. The
-                  counts by reason above are what the records hold.
-                </p>
+                <details className={`${pageStyles.measureDetails} source-print`}>
+                  <summary>Delayed people disclosure</summary>
+                  <p className={styles.note} data-testid="ward-stat-delayed-people-not-shown">
+                    A list of the people delayed, with their barriers and review times, is not recorded in Ward Flow.
+                    The counts by reason above are what the records hold.
+                  </p>
+                </details>
               </div>
             </WardPanel>
             <WardPanel
@@ -1089,20 +1055,21 @@ export function StatisticsWardScreen({
             tabIndex={0}
           >
             <p className={styles.body}>
-              <strong>Another ward:</strong>{" "}
               <Link href={STATISTICS_UNIT_CHOOSER_HREF} data-testid="ward-statistics-ward-chooser-link">
                 Choose a different ward from the comparisons page
-              </Link>{" "}
-              to see the same measures for another.
+              </Link>
             </p>
 
-            <p className={styles.note}>
-              Every figure here is invented and computed from this prototype&apos;s own state as the page renders.
-            </p>
-            <p className={styles.note}>
-              <strong>Unsupported measures</strong>: a measure the record cannot support says so in words rather than
-              showing a nought, because a nought that was never measured reads exactly like a nought that was.
-            </p>
+            <details className={`${pageStyles.measureDetails} source-print`}>
+              <summary>Record and provenance limits</summary>
+              <p className={styles.note}>
+                Every figure here is invented and computed from this prototype&apos;s own state as the page renders.
+              </p>
+              <p className={styles.note}>
+                <strong>Unsupported measures</strong>: a measure the record cannot support says so in words rather than
+                showing a nought, because a nought that was never measured reads exactly like a nought that was.
+              </p>
+            </details>
           </div>
         </WardPanel>
       </div>

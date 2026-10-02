@@ -6,12 +6,6 @@
     "owner": "Remove invented data"
   },
   {
-    "file": "alerts/alerts-screen.tsx",
-    "rule": "hour window",
-    "text": "Prolonged ED Wait (＞24h)",
-    "owner": "Remove invented data"
-  },
-  {
     "file": "alerts/ward-broadcast-model.ts",
     "rule": "hour window",
     "text": "CRITICAL: Multiple patients exceeding 24 hours in emergency departments at Fiona",

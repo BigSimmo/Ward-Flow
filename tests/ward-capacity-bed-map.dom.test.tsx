@@ -154,7 +154,7 @@ describe("BedMap — the network's whole bed supply, one square per bed", () => 
     }
   });
 
-  it("is rendered on the Capacity screen beneath the network table", () => {
+  it("renders the overview first and exposes the legend when bed detail is selected", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <CapacityScreen />
@@ -162,6 +162,8 @@ describe("BedMap — the network's whole bed supply, one square per bed", () => 
     );
     const panel = screen.getByRole("region", { name: "Bed map" });
     expect(panel).toBeInTheDocument();
+    expect(within(panel).queryByLabelText("Bed map legend")).not.toBeInTheDocument();
+    fireEvent.click(within(panel).getByRole("button", { name: "Bed detail" }));
     expect(within(panel).getByLabelText("Bed map legend")).toBeInTheDocument();
   });
 

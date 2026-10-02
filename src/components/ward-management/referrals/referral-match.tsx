@@ -16,6 +16,7 @@ import {
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { NOT_RECORDED_LABEL, SYNTHETIC_TRAVEL_TIMES_NOTICE } from "@/components/ward-management/ward-distance";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { siteByCode } from "@/components/ward-management/ward-sites";
 import { wardAddressing, type EligibilityGate } from "@/components/ward-management/ward-eligibility";
 import {
   COMMUNITY_DECLINE_REASONS,
@@ -204,7 +205,7 @@ type ReferralMatchViewProps = {
  * Owns its own hooks (the draft note), independent of `ReferralMatchView`'s own strict hook order,
  * so it can be called from any of that component's three return branches without disturbing it.
  */
-function ReferralHistoryAndCorrections({
+export function ReferralHistoryAndCorrections({
   referral,
   now,
   dispatch,
@@ -353,6 +354,7 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections, 
    * until there is one.
    */
   const [declineReason, setDeclineReason] = useState<ReferralDeclineReason | undefined>(undefined);
+  const [expandedUnitGates, setExpandedUnitGates] = useState<Set<string>>(new Set());
   /**
    * A SEPARATE draft from `declineReason` above, deliberately — not a second use of the same
    * state. The `!ward` branch below can render an emergency-department decline control AND a
@@ -622,6 +624,26 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections, 
   /* Derived from the grouping's OWN output, never from a second read of the travel-band table. */
   const everyCandidateUnrecorded =
     groupedUnitCount > 0 && notRecordedIndex >= 0 && bandGroupCounts[notRecordedIndex].units === groupedUnitCount;
+
+  const tier1Candidates = candidates.filter(candidateAccepts);
+  const tier2Candidates = candidates.filter(
+    (c) =>
+      !candidateAccepts(c) &&
+      c.verdict.gates.every((g) => (g.gate === "allocatable_bed" || g.gate === "capacity_freshness" ? true : g.pass)),
+  );
+  const tier3Candidates = candidates.filter((c) => !candidateAccepts(c) && !tier2Candidates.includes(c));
+
+  const toggleGates = (id: string) => {
+    setExpandedUnitGates((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   /**
    * T12 (item 9, owner answer 9, 17 September 2026), the front door's own half of the same check
@@ -988,17 +1010,352 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections, 
         </p>
       ) : null}
 
-      <div className={styles.matchList} data-testid="ward-referral-match-list">
-        {bandGroups.map((group, index) => (
-          <BandGroup
-            key={`${group.band}-${bandGroupsOpenByDefault}`}
-            group={group}
-            counts={bandGroupCounts[index]}
-            openByDefault={bandGroupsOpenByDefault}
-            onAccept={handleAccept}
-            needsGenderPlacement={needsGenderPlacement}
-          />
-        ))}
+      {/* Alternative 2: 3-Tier Clinical Status Matrix */}
+      <div className={styles.alt2Banner} data-testid="ward-referral-alt2-banner">
+        <div>
+          <strong className={styles.alt2BannerTitle}>Alternative 2: 3-Tier Clinical Status Matrix</strong>
+          <div className={styles.alt2BannerSubtitle}>
+            Units are clustered by placement feasibility. Click any unit&apos;s criteria gate dropdown to inspect all
+            clinical and statutory verification points.
+          </div>
+        </div>
+        <span className={styles.bandAvailableBadge} style={{ fontWeight: 700 }}>
+          {candidates.length} Units Evaluated
+        </span>
+      </div>
+
+      {/* TIER 1: READY TO PLACE NOW */}
+      <div style={{ marginBottom: "14px" }}>
+        <div className={`${styles.secHeader} ${styles.secHeaderGood}`}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span className={`${styles.pulseDot} ${styles.pulseDotGood}`} aria-hidden="true" />
+            <span>TIER 1: READY TO PLACE NOW (IMMEDIATE CONFIRMED VACANCIES)</span>
+          </div>
+          <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
+            {tier1Candidates.length} {tier1Candidates.length === 1 ? "Unit Available" : "Units Available"}
+          </span>
+        </div>
+
+        {tier1Candidates.length === 0 ? (
+          <p className={styles.emptyNote} style={{ padding: "8px 18px" }}>
+            No units in the network currently meet all clinical criteria with an immediately confirmed allocatable bed.
+          </p>
+        ) : (
+          tier1Candidates.map((c) => {
+            const passedGates = c.verdict.gates.filter((g) => g.pass);
+            const totalGates = c.verdict.gates.length;
+            const gateKey = `alt2-t1-${c.unit.id}`;
+            const isGatesExpanded = expandedUnitGates.has(gateKey);
+            const freeBeds = c.unit.allocatable.value;
+            const bedLabel = freeBeds > 0 ? `${freeBeds} ${freeBeds === 1 ? "bed" : "beds"} ready` : "Bed ready";
+            const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
+            const occPct = c.unit.beds > 0 ? Math.round(((c.unit.beds - c.unit.empty.value) / c.unit.beds) * 100) : 0;
+            const shortName = c.unit.name.replace(/^(Hospital|Ward|Centre)\s+/i, "").split(" ")[0];
+
+            return (
+              <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardReady}`}>
+                <div className={styles.unitCardTop}>
+                  <div>
+                    <div className={styles.unitName}>
+                      <span>{c.unit.name}</span>
+                      <span className={styles.bandAvailableBadge} style={{ fontSize: "11px", padding: "1px 6px" }}>
+                        {bedLabel}
+                      </span>
+                    </div>
+                    <div className={styles.unitSub}>
+                      {hospitalName} · {c.unit.cohort} · Contact: Not recorded
+                    </div>
+                  </div>
+                  <button type="button" className={styles.btnGood} onClick={() => handleAccept(c.unit.id)}>
+                    ✓ Accept Bed at {shortName}
+                  </button>
+                </div>
+
+                <div className={styles.unitIntelRow}>
+                  <span>
+                    Bed Allocation: <strong>Allocatable bed recorded</strong>
+                  </span>
+                  <span className={styles.demoDot}>·</span>
+                  <span>
+                    Transit: <strong>Not recorded</strong>
+                  </span>
+                  <span className={styles.demoDot}>·</span>
+                  <span>
+                    Census:{" "}
+                    <strong>
+                      {c.unit.beds - c.unit.empty.value}/{c.unit.beds} ({occPct}% Occ)
+                    </strong>
+                  </span>
+                </div>
+
+                <div className={styles.gateSummary}>
+                  <button
+                    type="button"
+                    className={styles.gateToggle}
+                    onClick={() => toggleGates(gateKey)}
+                    aria-expanded={isGatesExpanded}
+                    aria-controls={`gate-grid-${gateKey}`}
+                  >
+                    <span>
+                      ✓ {passedGates.length}/{totalGates} Statutory & Clinical Criteria Met
+                    </span>
+                    <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
+                      {isGatesExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
+                    </span>
+                  </button>
+                  {isGatesExpanded ? (
+                    <div id={`gate-grid-${gateKey}`} className={styles.gateGrid}>
+                      {c.verdict.gates.map((g) => (
+                        <div key={g.gate} className={`${styles.gatePill} ${styles.gatePillPassed}`}>
+                          ✓ {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* TIER 2: CAPACITY CHECKS OUTSTANDING */}
+      <div style={{ marginBottom: "14px" }}>
+        <div className={`${styles.secHeader} ${styles.secHeaderWarn}`}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span className={`${styles.pulseDot} ${styles.pulseDotWarn}`} aria-hidden="true" />
+            <span>TIER 2: CAPACITY CHECKS OUTSTANDING</span>
+          </div>
+          <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
+            {tier2Candidates.length} {tier2Candidates.length === 1 ? "Unit" : "Units"}
+          </span>
+        </div>
+
+        {tier2Candidates.length === 0 ? (
+          <p className={styles.emptyNote} style={{ padding: "8px 18px" }}>
+            No candidates have capacity checks outstanding.
+          </p>
+        ) : (
+          tier2Candidates.map((c) => {
+            const gateKey = `alt2-t2-${c.unit.id}`;
+            const isGatesExpanded = expandedUnitGates.has(gateKey);
+            const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
+
+            return (
+              <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardTurnaround}`}>
+                <div className={styles.unitCardTop}>
+                  <div>
+                    <div className={styles.unitName}>
+                      <span>{c.unit.name}</span>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          padding: "1px 6px",
+                          borderRadius: "10px",
+                          background: "var(--warn-soft)",
+                          color: "var(--warn)",
+                          fontWeight: 700,
+                        }}
+                      >
+                        Capacity unresolved
+                      </span>
+                    </div>
+                    <div className={styles.unitSub}>
+                      {hospitalName} · {c.unit.cohort}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.btnSubtle}
+                    aria-disabled="true"
+                    aria-describedby={`turnaround-unavailable-${c.unit.id}`}
+                    title="Turnaround prioritisation is unavailable: no supported scheduling workflow is recorded here."
+                    onClick={ignoreUnavailableActivation}
+                  >
+                    Flag Turnaround Priority
+                  </button>
+                </div>
+                <span
+                  id={`turnaround-unavailable-${c.unit.id}`}
+                  className={styles.emptyNote}
+                  style={{ display: "block" }}
+                >
+                  Turnaround prioritisation is unavailable: no supported scheduling workflow is recorded here.
+                </span>
+
+                <div className={styles.unitIntelRow}>
+                  <span>
+                    Recorded capacity checks:{" "}
+                    <strong>
+                      {c.verdict.gates
+                        .filter((gate) => !gate.pass)
+                        .map((gate) => `${GATE_LABELS[gate.gate] ?? gate.gate}: ${gate.detail}`)
+                        .join(" · ")}
+                    </strong>
+                  </span>
+                </div>
+
+                <div className={styles.gateSummary}>
+                  <button
+                    type="button"
+                    className={`${styles.gateToggle} ${styles.gateToggleWarn}`}
+                    onClick={() => toggleGates(gateKey)}
+                    aria-expanded={isGatesExpanded}
+                    aria-controls={`gate-grid-${gateKey}`}
+                  >
+                    <span>Capacity checks outstanding · other recorded gates passed</span>
+                    <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
+                      {isGatesExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
+                    </span>
+                  </button>
+                  {isGatesExpanded ? (
+                    <div id={`gate-grid-${gateKey}`} className={styles.gateGrid}>
+                      {c.verdict.gates.map((g) => {
+                        const isPending = !g.pass;
+                        return (
+                          <div
+                            key={g.gate}
+                            className={`${styles.gatePill} ${isPending ? styles.gatePillPending : styles.gatePillPassed}`}
+                          >
+                            {isPending ? "○" : "✓"} {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* TIER 3: INELIGIBLE CRITERIA EXCLUSIONS */}
+      <div style={{ marginBottom: "14px" }}>
+        <div className={`${styles.secHeader} ${styles.secHeaderDanger}`}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span className={`${styles.pulseDot} ${styles.pulseDotDanger}`} aria-hidden="true" />
+            <span>TIER 3: INELIGIBLE CRITERIA EXCLUSIONS & STATUTORY POLICY LOCKOUTS</span>
+          </div>
+          <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
+            {tier3Candidates.length} {tier3Candidates.length === 1 ? "Unit Excluded" : "Units Excluded"}
+          </span>
+        </div>
+
+        {tier3Candidates.length === 0 ? (
+          <p className={styles.emptyNote} style={{ padding: "8px 18px" }}>
+            No units in this network are excluded by statutory or cohort criteria.
+          </p>
+        ) : (
+          tier3Candidates.map((c) => {
+            const gateKey = `alt2-t3-${c.unit.id}`;
+            const isGatesExpanded = expandedUnitGates.has(gateKey);
+            const failedGates = c.verdict.gates.filter((g) => !g.pass);
+            const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
+
+            return (
+              <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardIneligible}`}>
+                <div className={styles.unitCardTop}>
+                  <div>
+                    <div className={styles.unitName}>
+                      <span>{c.unit.name}</span>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          padding: "1px 6px",
+                          borderRadius: "10px",
+                          background: "var(--danger-soft)",
+                          color: "var(--danger)",
+                          fontWeight: 700,
+                        }}
+                      >
+                        Statutory Exclusion
+                      </span>
+                    </div>
+                    <div className={styles.unitSub}>
+                      {hospitalName} · {c.unit.cohort}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.btnSubtle}
+                    aria-disabled="true"
+                    aria-describedby={`clinical-override-unavailable-${c.unit.id}`}
+                    title="This clinical override is unavailable. Existing authorised, reason-gated exceptions remain in the ward request workflow."
+                    onClick={ignoreUnavailableActivation}
+                  >
+                    Clinical Override
+                  </button>
+                </div>
+                <span
+                  id={`clinical-override-unavailable-${c.unit.id}`}
+                  className={styles.emptyNote}
+                  style={{ display: "block" }}
+                >
+                  This clinical override is unavailable. Existing authorised, reason-gated exceptions remain in the ward
+                  request workflow.
+                </span>
+
+                <div className={styles.unitIntelRow}>
+                  <span>
+                    Statutory Barrier:{" "}
+                    <strong style={{ color: "var(--danger)" }}>
+                      ✕ {failedGates[0]?.detail ?? "Statutory policy restriction"}
+                    </strong>
+                  </span>
+                </div>
+
+                <div className={styles.gateSummary}>
+                  <button
+                    type="button"
+                    className={`${styles.gateToggle} ${styles.gateToggleDanger}`}
+                    onClick={() => toggleGates(gateKey)}
+                    aria-expanded={isGatesExpanded}
+                    aria-controls={`gate-grid-${gateKey}`}
+                  >
+                    <span>
+                      ✕ {failedGates.length} of {c.verdict.gates.length} Criteria Failed · Statutory Exclusion Breakdown
+                    </span>
+                    <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
+                      {isGatesExpanded ? "▲ Hide Failed Gate Breakdown" : "▼ Show Failed Gate Breakdown"}
+                    </span>
+                  </button>
+                  {isGatesExpanded ? (
+                    <div id={`gate-grid-${gateKey}`} className={styles.gateGrid}>
+                      {c.verdict.gates.map((g) => (
+                        <div
+                          key={g.gate}
+                          className={`${styles.gatePill} ${g.pass ? styles.gatePillPassed : styles.gatePillFailed}`}
+                        >
+                          {g.pass ? "✓" : "✕"} {GATE_LABELS[g.gate] ?? g.gate}: {g.detail}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div style={{ marginTop: "16px", borderTop: "1px solid var(--line)", paddingTop: "10px" }}>
+        <div className={styles.secHeader} style={{ margin: "0 18px 8px" }}>
+          <span>Travel Band Network Triage & Geography Breakdown</span>
+          <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>{groupedUnitCount} Units Mapped</span>
+        </div>
+        <div className={styles.matchList} data-testid="ward-referral-match-list">
+          {bandGroups.map((group, index) => (
+            <BandGroup
+              key={`${group.band}-${bandGroupsOpenByDefault}`}
+              group={group}
+              counts={bandGroupCounts[index]}
+              openByDefault={bandGroupsOpenByDefault}
+              onAccept={handleAccept}
+              needsGenderPlacement={needsGenderPlacement}
+            />
+          ))}
+        </div>
       </div>
 
       {/*
@@ -1036,8 +1393,6 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections, 
           value={declineReason ?? ""}
           onChange={(event) => {
             const chosen = event.target.value;
-            // Membership, never truthiness — the blank option must resolve to "no answer yet",
-            // never to a reason that merely sorts first.
             setDeclineReason(
               REFERRAL_DECLINE_REASONS.includes(chosen as ReferralDeclineReason)
                 ? (chosen as ReferralDeclineReason)

@@ -284,10 +284,14 @@ describe("the statistics overview now carries real figures, honestly", () => {
     expect(disclosures.length).toBeGreaterThanOrEqual(3);
   });
 
-  it("takes its section name and description from the shared section list", () => {
+  it("shows the shared section title and retained reporting scope and provenance", () => {
     renderOverview();
     const section = statisticsSectionById("overview");
     expect(section).toBeDefined();
-    expect(bodyText()).toContain(section?.description ?? "");
+    expect(screen.getByRole("heading", { level: 1, name: section!.label })).toBeTruthy();
+    expect(screen.getByTestId("ward-statistics-overview-scope").textContent).toContain("Network-wide current state");
+    expect(screen.getByTestId("ward-statistics-overview-invented-figures").textContent).toContain(
+      "Every figure here is invented and describes no real person or day.",
+    );
   });
 });

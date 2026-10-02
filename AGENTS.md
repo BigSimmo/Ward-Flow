@@ -23,7 +23,7 @@ dependencies. Publication to GitHub or a provider still needs the authority stat
 
 # How these rules are organised
 
-Read [task lifecycle and receipt handoff](docs/task-receipts.md) at task start, checkpoint, blocker, resume and completion. Reuse the original task identity; local export is not canonical reconciliation.
+Read and follow [task lifecycle and receipt handoff](docs/task-receipts.md) at task start, checkpoint, blocker, resume and completion. Reuse the original task identity; local receipt export is a handoff, not canonical reconciliation.
 
 This file is the always-loaded Ward Flow core. Some older checks locate policy headings in this
 file; the repository boundary above governs their interpretation. Open a reference file only when
@@ -188,7 +188,7 @@ For the verification principle, the tier table, and the rest of the gate-selecti
 
 ## Do not pay twice for the verdict GitHub is about to reach
 
-For current Ward verification entry points and the historical arbiter boundary, see [`docs/agents/verification-gates.md`](docs/agents/verification-gates.md). Preview the committed journey scope with `node scripts/ward-flow/select-journeys.mjs --base <task-base> --head HEAD --json`; a preview is not verification.
+For current Ward Flow gate selection, selector limits and evidence reuse, see [`docs/agents/task-efficiency.md`](docs/agents/task-efficiency.md). Unknown CI coverage requires running the selected gate or reporting it blocked; a declared workflow is not an observed verdict. The copied gate-claim examples in [`docs/agents/verification-gates.md`](docs/agents/verification-gates.md) require Ward-specific revalidation before use.
 <!-- END:process-hardening -->
 
 <!-- BEGIN:page-and-button-wiring -->

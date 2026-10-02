@@ -33,6 +33,7 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
   OPERATIONAL_DEFAULT_LABEL,
@@ -626,29 +627,47 @@ export function OfficerScreen() {
         {/* Unified Operational Telemetry & Provider Strip */}
         <section className={styles.fleetPanel} aria-label="Transport jobs by provider">
           <div className={styles.telemetrySection} aria-label="Transport overview metrics and provider telemetry">
-            {/* 4-card KPI Strip matching third-edition sovereign standard */}
-            <div className={styles.kpiStrip} aria-label="Transport overview metrics">
-              <div className={styles.kpiCard} data-tone="accent">
-                <span className={styles.kpiLabel}>Active Transit Runs</span>
-                <span className={styles.kpiVal}>{activeRuns}</span>
-                <span className={styles.kpiSub}>Dispatched or In Transit</span>
-              </div>
-              <div className={styles.kpiCard} data-tone="good">
-                <span className={styles.kpiLabel}>Patient On Board</span>
-                <span className={styles.kpiVal}>{inCustody}</span>
-                <span className={styles.kpiSub}>Patient On-Board Vehicle</span>
-              </div>
-              <div className={styles.kpiCard} data-tone="warn">
-                <span className={styles.kpiLabel}>Awaiting Departure</span>
-                <span className={styles.kpiVal}>{awaitingDeparture}</span>
-                <span className={styles.kpiSub}>ED Handover Pending</span>
-              </div>
-              <div className={styles.kpiCard} data-tone="escort">
-                <span className={styles.kpiLabel}>Escort Required</span>
-                <span className={styles.kpiVal}>{escortRequired}</span>
-                <span className={styles.kpiSub}>Mental Health Escort</span>
-              </div>
-            </div>
+            <WardDynamicIsland
+              testId="ward-officer-hud-island"
+              title="Transport Dispatch"
+              status={escortRequired > 0 || awaitingDeparture > 3 ? "warning" : "nominal"}
+              statusText={
+                escortRequired > 0
+                  ? `${escortRequired} transfers require clinical escort`
+                  : "Transport fleet dispatch nominal"
+              }
+              ariaLabel="Transport dispatch indicators"
+              metrics={[
+                {
+                  id: "kpi-active-transit",
+                  label: "Active Transit Runs",
+                  value: activeRuns,
+                  subtext: "Dispatched or In Transit",
+                  tone: "accent",
+                },
+                {
+                  id: "kpi-on-board",
+                  label: "Patient On Board",
+                  value: inCustody,
+                  subtext: "Patient On-Board Vehicle",
+                  tone: "good",
+                },
+                {
+                  id: "kpi-awaiting-departure",
+                  label: "Awaiting Departure",
+                  value: awaitingDeparture,
+                  subtext: "ED Handover Pending",
+                  tone: awaitingDeparture > 0 ? "warn" : "good",
+                },
+                {
+                  id: "kpi-escort-required",
+                  label: "Escort Required",
+                  value: escortRequired,
+                  subtext: escortRequired > 0 ? "Mental Health Escort" : "Standard",
+                  tone: escortRequired > 0 ? "danger" : "normal",
+                },
+              ]}
+            />
 
             {/* Streamlined Provider Telemetry Row */}
             <div className={styles.providerStrip}>

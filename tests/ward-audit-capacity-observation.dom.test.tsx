@@ -37,7 +37,9 @@ describe("capacity observations on the answer screen", () => {
         expectedRevision: (unit.allocatable.revision ?? 0) + 1,
       }),
     );
-    expect(screen.getByRole("status")).toHaveTextContent("Capacity confirmation requested");
+    expect(
+      screen.getAllByRole("status").filter((region) => region.textContent?.includes("Capacity confirmation requested")),
+    ).toHaveLength(1);
   });
 
   it("does not carry one ward's draft into another ward", () => {

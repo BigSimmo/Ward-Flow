@@ -101,6 +101,7 @@ export const DEMO_COMMUNITY_REFERRALS: DemoReferral[] = [
     primaryActionLabel: "Accept & Allocate",
     secActionLabel: "Liaison Review",
     declineActionLabel: "Decline / Redirect",
+    team: "fremantle",
   },
   {
     id: "RF-8819",
@@ -118,6 +119,7 @@ export const DEMO_COMMUNITY_REFERRALS: DemoReferral[] = [
     primaryActionLabel: "Accept & Allocate",
     secActionLabel: "Urgent Home Visit",
     declineActionLabel: "Decline / Redirect",
+    team: "fremantle",
   },
   {
     id: "RF-8824",
@@ -135,6 +137,7 @@ export const DEMO_COMMUNITY_REFERRALS: DemoReferral[] = [
     primaryActionLabel: "Accept & Allocate",
     secActionLabel: "Dispatch Crisis Team",
     declineActionLabel: "Decline",
+    team: "fremantle",
   },
   {
     id: "RF-8827",
@@ -152,6 +155,7 @@ export const DEMO_COMMUNITY_REFERRALS: DemoReferral[] = [
     primaryActionLabel: "Accept & Allocate",
     secActionLabel: "Intake Assessment",
     declineActionLabel: "Decline",
+    team: "fremantle",
   },
   {
     id: "RF-8831",
@@ -169,6 +173,7 @@ export const DEMO_COMMUNITY_REFERRALS: DemoReferral[] = [
     primaryActionLabel: "Accept & Allocate",
     secActionLabel: "Assign Key Clinician",
     declineActionLabel: "Decline",
+    team: "fremantle",
   },
   {
     id: "RF-8835",
@@ -430,7 +435,7 @@ export const DEMO_COMMUNITY_EGRESS: DemoEgress[] = [
     dischargeDatePlan: "Today 10:00",
     destination: "Private Residence",
     status: "today",
-    kpiStatusLabel: "Due Today 15:00",
+    kpiStatusLabel: "Due Today 3pm",
     kpiTone: "warn",
     assignedCoordinator: "RN T. Bradley",
     actionLabel: "Confirm Contact",
@@ -444,7 +449,7 @@ export const DEMO_COMMUNITY_EGRESS: DemoEgress[] = [
     dischargeDatePlan: "Today 11:30",
     destination: "Community Step-Down",
     status: "today",
-    kpiStatusLabel: "Due Today 16:30",
+    kpiStatusLabel: "Due Today 4pm",
     kpiTone: "warn",
     assignedCoordinator: "SW M. Davies",
     actionLabel: "Confirm Contact",
@@ -469,7 +474,7 @@ export const DEMO_COMMUNITY_EGRESS: DemoEgress[] = [
     patientId: "PT-3304",
     patientDetails: "M 48y",
     dischargingUnit: "Armadale Adult Open",
-    dischargeDatePlan: "23 Sep 11:00 (Planned)",
+    dischargeDatePlan: "23 Sep 11am (Planned)",
     destination: "Private Residence",
     status: "upcoming",
     kpiStatusLabel: "Due in 3 Days",
@@ -483,7 +488,7 @@ export const DEMO_COMMUNITY_EGRESS: DemoEgress[] = [
     patientId: "PT-2980",
     patientDetails: "M 62y",
     dischargingUnit: "RPH Adult Open",
-    dischargeDatePlan: "24 Sep 10:00 (Planned)",
+    dischargeDatePlan: "24 Sep 10am (Planned)",
     destination: "Independent Living",
     status: "upcoming",
     kpiStatusLabel: "Due in 4 Days",
@@ -505,8 +510,8 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 1 Assertive Outreach",
     category: "cto",
     keyClinician: "RN K. Vance",
-    lastContact: "Yesterday 14:00 (Home)",
-    nextReview: "Tomorrow 10:00 (Depot Clinic)",
+    lastContact: "Yesterday 2pm (Home)",
+    nextReview: "Tomorrow 10am (Depot Clinic)",
   },
   {
     id: "CL-02",
@@ -518,7 +523,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 1 High Acuity",
     category: "cto",
     keyClinician: "RN T. Bradley",
-    lastContact: "20 Sep 11:30 (Clinic)",
+    lastContact: "20 Sep 11am (Clinic)",
     nextReview: "Tribunal Review 28 Sep",
   },
   {
@@ -531,7 +536,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 2 Case Management",
     category: "depot",
     keyClinician: "Dr S. Chen",
-    lastContact: "19 Sep 15:00 (Telehealth)",
+    lastContact: "19 Sep 3pm (Telehealth)",
     nextReview: "Depot Injection 23 Sep",
   },
   {
@@ -544,7 +549,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 2 Case Management",
     category: "cto",
     keyClinician: "RN C. Davis",
-    lastContact: "18 Sep 09:30 (Home)",
+    lastContact: "18 Sep 9am (Home)",
     nextReview: "CTO Expiry 12 Oct 2026",
   },
   {
@@ -557,7 +562,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 1 Crisis Monitoring",
     category: "high",
     keyClinician: "Dr K. Rao",
-    lastContact: "17 Sep 16:00 (Clinic)",
+    lastContact: "17 Sep 4pm (Clinic)",
     nextReview: "Consultant Review 22 Sep",
   },
   {
@@ -570,7 +575,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 3 Maintenance",
     category: "depot",
     keyClinician: "RN K. Vance",
-    lastContact: "15 Sep 10:00 (Clinic)",
+    lastContact: "15 Sep 10am (Clinic)",
     nextReview: "Depot Injection 25 Sep",
   },
   {
@@ -583,7 +588,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 1 Assertive Outreach",
     category: "cto",
     keyClinician: "Dr S. Chen",
-    lastContact: "18 Sep 11:00 (Clinic)",
+    lastContact: "18 Sep 11am (Clinic)",
     nextReview: "CTO Review 15 Oct 2026",
   },
   {
@@ -596,7 +601,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 2 Case Management",
     category: "depot",
     keyClinician: "SW M. Davies",
-    lastContact: "14 Sep 14:00 (Home)",
+    lastContact: "14 Sep 2pm (Home)",
     nextReview: "Depot Clinic 28 Sep",
   },
   {
@@ -609,7 +614,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 1 High Acuity",
     category: "high",
     keyClinician: "OT E. Wilson",
-    lastContact: "19 Sep 10:00 (Clinic)",
+    lastContact: "19 Sep 10am (Clinic)",
     nextReview: "Tribunal Review 30 Sep",
   },
   {
@@ -622,7 +627,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 3 Maintenance",
     category: "all",
     keyClinician: "RN C. Davis",
-    lastContact: "12 Sep 15:30 (Telehealth)",
+    lastContact: "12 Sep 3pm (Telehealth)",
     nextReview: "6-Month Review Nov 2026",
   },
   {
@@ -635,7 +640,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 2 Case Management",
     category: "all",
     keyClinician: "RN K. Vance",
-    lastContact: "16 Sep 09:00 (Clinic)",
+    lastContact: "16 Sep 9am (Clinic)",
     nextReview: "Next Appt 29 Sep",
   },
   {
@@ -648,7 +653,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 1 High Acuity",
     category: "cto",
     keyClinician: "Dr K. Rao",
-    lastContact: "Yesterday 16:00 (Clinic)",
+    lastContact: "Yesterday 4pm (Clinic)",
     nextReview: "Depot Clinic 24 Sep",
   },
   {
@@ -661,7 +666,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 2 Case Management",
     category: "cto",
     keyClinician: "RN T. Bradley",
-    lastContact: "17 Sep 11:00 (Home)",
+    lastContact: "17 Sep 11am (Home)",
     nextReview: "CTO Review 05 Nov 2026",
   },
   {
@@ -674,7 +679,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 3 Maintenance",
     category: "depot",
     keyClinician: "RN C. Davis",
-    lastContact: "11 Sep 10:00 (Clinic)",
+    lastContact: "11 Sep 10am (Clinic)",
     nextReview: "Depot Clinic 25 Sep",
   },
   {
@@ -687,7 +692,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 1 Assertive Outreach",
     category: "high",
     keyClinician: "Dr S. Chen",
-    lastContact: "19 Sep 14:30 (Clinic)",
+    lastContact: "19 Sep 2pm (Clinic)",
     nextReview: "MDT Review 26 Sep",
   },
   {
@@ -700,7 +705,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 2 Case Management",
     category: "cto",
     keyClinician: "SW M. Davies",
-    lastContact: "18 Sep 15:00 (Home)",
+    lastContact: "18 Sep 3pm (Home)",
     nextReview: "CTO Review 18 Nov 2026",
   },
   {
@@ -713,7 +718,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 3 Maintenance",
     category: "all",
     keyClinician: "OT E. Wilson",
-    lastContact: "10 Sep 11:00 (Telehealth)",
+    lastContact: "10 Sep 11am (Telehealth)",
     nextReview: "Annual Review Dec 2026",
   },
   {
@@ -726,7 +731,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
     tier: "Tier 1 High Acuity",
     category: "cto",
     keyClinician: "RN T. Bradley",
-    lastContact: "20 Sep 09:00 (Clinic)",
+    lastContact: "20 Sep 9am (Clinic)",
     nextReview: "Tribunal Review 02 Oct",
   },
 ];
@@ -805,3 +810,267 @@ export const DEMO_COMMUNITY_STAFF: DemoStaff[] = [
     assignment: "Living Skills",
   },
 ];
+
+export interface CommunityTeamConfig {
+  name: string;
+  campus: string;
+  service: string;
+  svcDot: "south" | "east" | "north" | "country";
+  scope: string;
+  caseload: number;
+  triage: number;
+  urgentTriage: number;
+  inpatients: number;
+  inpatientsTotal: number;
+  egress: number;
+  staff: number;
+  cto: number;
+  crisis: number;
+  consultant: string;
+  inpatientSites: string;
+  outreach: string;
+  fleet1: string;
+  fleet2: string;
+  sector: string;
+}
+
+export const KNOWN_TEAM_CONFIGS: Record<string, CommunityTeamConfig> = {
+  fremantle: {
+    name: "Fremantle Adult CMHT (SMHS)",
+    campus: "Fremantle Hospital · Alma Street",
+    service: "South Metro (SMHS)",
+    svcDot: "south",
+    scope: "Alma St · 8 Suburbs",
+    caseload: 128,
+    triage: 5,
+    urgentTriage: 4,
+    inpatients: 14,
+    inpatientsTotal: 18,
+    egress: 4,
+    staff: 7,
+    cto: 18,
+    crisis: 2,
+    consultant: "Dr A. Nair",
+    inpatientSites: "4 Hospital Sites",
+    outreach: "Car 2 · Dr Nair & CNS Kowalski",
+    fleet1: "Vehicle 1 (Fremantle Coastal Sector)",
+    fleet2: "Vehicle 2 (Cockburn / Melville Sector)",
+    sector: "Fremantle / South Metro Sector Catchment",
+  },
+  "alma-street-fremantle": {
+    name: "Fremantle Adult CMHT (SMHS)",
+    campus: "Fremantle Hospital · Alma Street",
+    service: "South Metro (SMHS)",
+    svcDot: "south",
+    scope: "Alma St · 8 Suburbs",
+    caseload: 128,
+    triage: 5,
+    urgentTriage: 4,
+    inpatients: 14,
+    inpatientsTotal: 18,
+    egress: 4,
+    staff: 7,
+    cto: 18,
+    crisis: 2,
+    consultant: "Dr A. Nair",
+    inpatientSites: "4 Hospital Sites",
+    outreach: "Car 2 · Dr Nair & CNS Kowalski",
+    fleet1: "Vehicle 1 (Fremantle Coastal Sector)",
+    fleet2: "Vehicle 2 (Cockburn / Melville Sector)",
+    sector: "Fremantle / South Metro Sector Catchment",
+  },
+  midland: {
+    name: "Midland Adult CMHT (EMHS)",
+    campus: "Swan Health Campus · Midland",
+    service: "East Metro (EMHS)",
+    svcDot: "east",
+    scope: "Swan Valley · 12 Suburbs",
+    caseload: 142,
+    triage: 7,
+    urgentTriage: 5,
+    inpatients: 18,
+    inpatientsTotal: 22,
+    egress: 6,
+    staff: 8,
+    cto: 22,
+    crisis: 3,
+    consultant: "Dr S. Chen",
+    inpatientSites: "Swan Ward 1 & St John of God",
+    outreach: "Car 1 · Dr Chen & RN Bradley",
+    fleet1: "Vehicle 1 (Swan North Sector)",
+    fleet2: "Vehicle 2 (Swan Hills Sector)",
+    sector: "Midland / East Metro Sector Catchment",
+  },
+  stirling: {
+    name: "Stirling Adult CMHT (NMHS)",
+    campus: "Mirrabooka Health Hub · Stirling",
+    service: "North Metro (NMHS)",
+    svcDot: "north",
+    scope: "Stirling · 10 Suburbs",
+    caseload: 135,
+    triage: 4,
+    urgentTriage: 3,
+    inpatients: 12,
+    inpatientsTotal: 15,
+    egress: 5,
+    staff: 7,
+    cto: 16,
+    crisis: 2,
+    consultant: "Dr M. Taylor",
+    inpatientSites: "Sir Charles Gairdner (SCGH)",
+    outreach: "Car 3 · Dr Taylor & RN Adams",
+    fleet1: "Vehicle 1 (Stirling Coastal Sector)",
+    fleet2: "Vehicle 2 (Mirrabooka Inland Sector)",
+    sector: "Stirling / North Metro Sector Catchment",
+  },
+  rockingham: {
+    name: "Rockingham Adult CMHT (SMHS)",
+    campus: "Rockingham General Hospital Campus",
+    service: "South Metro (SMHS)",
+    svcDot: "south",
+    scope: "Kwinana / Rockingham · 9 Suburbs",
+    caseload: 118,
+    triage: 6,
+    urgentTriage: 4,
+    inpatients: 15,
+    inpatientsTotal: 18,
+    egress: 3,
+    staff: 6,
+    cto: 14,
+    crisis: 2,
+    consultant: "Dr K. O'Connor",
+    inpatientSites: "Mimidi Park Acute Unit",
+    outreach: "Car 4 · Dr O'Connor & CNS Lee",
+    fleet1: "Vehicle 1 (Rockingham Foreshore Sector)",
+    fleet2: "Vehicle 2 (Kwinana Industrial Sector)",
+    sector: "Rockingham / South Metro Sector Catchment",
+  },
+  armadale: {
+    name: "Armadale Adult CMHT (EMHS)",
+    campus: "Armadale Health Service Campus",
+    service: "East Metro (EMHS)",
+    svcDot: "east",
+    scope: "Armadale / Serpentine · 14 Suburbs",
+    caseload: 156,
+    triage: 8,
+    urgentTriage: 5,
+    inpatients: 20,
+    inpatientsTotal: 24,
+    egress: 7,
+    staff: 9,
+    cto: 25,
+    crisis: 3,
+    consultant: "Dr R. Patel",
+    inpatientSites: "Moodjar / Karalbrink Wards",
+    outreach: "Car 5 · Dr Patel & RN Wilson",
+    fleet1: "Vehicle 1 (Armadale Central Sector)",
+    fleet2: "Vehicle 2 (Serpentine / Hills Sector)",
+    sector: "Armadale / East Metro Sector Catchment",
+  },
+  joondalup: {
+    name: "Joondalup Adult CMHT (NMHS)",
+    campus: siteByCode("JHC")?.name ?? "Hospital not recorded",
+    service: "North Metro (NMHS)",
+    svcDot: "north",
+    scope: "Joondalup / Wanneroo · 16 Suburbs",
+    caseload: 148,
+    triage: 5,
+    urgentTriage: 3,
+    inpatients: 16,
+    inpatientsTotal: 19,
+    egress: 4,
+    staff: 8,
+    cto: 20,
+    crisis: 2,
+    consultant: "Dr L. Davies",
+    inpatientSites: "Joondalup Acute Mental Health",
+    outreach: "Car 6 · Dr Davies & CNS Scott",
+    fleet1: "Vehicle 1 (Joondalup Coastal Sector)",
+    fleet2: "Vehicle 2 (Wanneroo Outer Sector)",
+    sector: "Joondalup / North Metro Sector Catchment",
+  },
+};
+
+export function resolveCommunityTeamConfig(team: { id: string; name: string }): CommunityTeamConfig {
+  const normalizedId = team.id.replace(/^alma-street-/, "").replace(/-adult-cmht.*$/, "");
+  if (KNOWN_TEAM_CONFIGS[team.id]) return KNOWN_TEAM_CONFIGS[team.id];
+  if (KNOWN_TEAM_CONFIGS[normalizedId]) return KNOWN_TEAM_CONFIGS[normalizedId];
+
+  // Match by keyword in id or name
+  for (const [key, cfg] of Object.entries(KNOWN_TEAM_CONFIGS)) {
+    if (team.id.includes(key) || team.name.toLowerCase().includes(key)) {
+      return cfg;
+    }
+  }
+
+  // Deterministic fallback for any other WA CMHT
+  const nameLower = team.name.toLowerCase();
+  let service = "WA Country Health Service (WACHS)";
+  let svcDot: "south" | "east" | "north" | "country" = "country";
+  if (
+    nameLower.includes("south") ||
+    nameLower.includes("fremantle") ||
+    nameLower.includes("peel") ||
+    nameLower.includes("rockingham")
+  ) {
+    service = "South Metro (SMHS)";
+    svcDot = "south";
+  } else if (
+    nameLower.includes("east") ||
+    nameLower.includes("midland") ||
+    nameLower.includes("armadale") ||
+    nameLower.includes("kalamunda")
+  ) {
+    service = "East Metro (EMHS)";
+    svcDot = "east";
+  } else if (
+    nameLower.includes("north") ||
+    nameLower.includes("stirling") ||
+    nameLower.includes("joondalup") ||
+    nameLower.includes("osborne") ||
+    nameLower.includes("graylands") ||
+    nameLower.includes("selby")
+  ) {
+    service = "North Metro (NMHS)";
+    svcDot = "north";
+  }
+
+  const prefix = team.name.split(" ")[0].replace(/[^a-zA-Z]/g, "") || "Catchment";
+
+  let hash = 0;
+  for (let i = 0; i < team.name.length; i++) hash = (hash * 31 + team.name.charCodeAt(i)) & 0xffffffff;
+  const absHash = Math.abs(hash);
+
+  const caseload = 110 + (absHash % 45);
+  const triage = 4 + (absHash % 5);
+  const urgentTriage = Math.max(1, triage - 2);
+  const inpatients = 10 + (absHash % 9);
+  const inpatientsTotal = inpatients + 3 + (absHash % 4);
+  const egress = 3 + (absHash % 5);
+  const staff = 6 + (absHash % 4);
+  const cto = 12 + (absHash % 12);
+  const crisis = 2;
+
+  return {
+    name: team.name,
+    campus: `${prefix} Health Campus`,
+    service,
+    svcDot,
+    scope: `${prefix} · 8 Suburbs`,
+    caseload,
+    triage,
+    urgentTriage,
+    inpatients,
+    inpatientsTotal,
+    egress,
+    staff,
+    cto,
+    crisis,
+    consultant: "Dr M. Reynolds",
+    inpatientSites: `${prefix} Acute Unit & Satellite`,
+    outreach: `Car 1 · ${prefix} Outreach Team`,
+    fleet1: `Vehicle 1 (${prefix} North Sector)`,
+    fleet2: `Vehicle 2 (${prefix} South Sector)`,
+    sector: `${team.name} Catchment Sector`,
+  };
+}

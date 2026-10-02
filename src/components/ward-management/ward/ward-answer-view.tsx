@@ -31,6 +31,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 
 import styles from "./ward-answer-view.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 
 const WARD_GATE_LABELS: Record<EligibilityGate, string> = {
   acuity: "Acuity",
@@ -283,7 +284,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
 
   // Bed matrix cells
   const occupiedCount = capacity.occupied;
-  const occupancyPct = ((occupiedCount / Math.max(1, unit.beds)) * 100).toFixed(1);
+  const occupancyPct = Math.round((occupiedCount / Math.max(1, unit.beds)) * 100);
   const activeSpeciallingCount = movements.filter((m) => m.specialling && m.acceptedUnitId === unit.id).length;
 
   return (
@@ -333,33 +334,50 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
       </header>
 
       <main id="main-content" className={styles.workspace}>
-        {/* 4-Card KPI Strip */}
-        <div className={styles.kpiStrip}>
-          <div className={styles.kpiCard} data-tone="accent">
-            <span className={styles.kpiLabel}>Staffed Bed Capacity</span>
-            <span className={styles.kpiVal}>{unit.beds}</span>
-            <span className={styles.kpiSub}>
-              {currentUnit.lockedBeds > 0 ? "Locked High-Dependency" : "Open Inpatient Care"}
-            </span>
-          </div>
-          <div className={styles.kpiCard} data-tone="warn">
-            <span className={styles.kpiLabel}>Current Occupancy</span>
-            <span className={styles.kpiVal}>{occupiedCount}</span>
-            <span className={styles.kpiSub}>{occupancyPct}% Unit Saturation</span>
-          </div>
-          <div className={styles.kpiCard} data-tone="good">
-            <span className={styles.kpiLabel}>Physical Ready Vacancy</span>
-            <span className={styles.kpiVal}>{capacity.available}</span>
-            <span className={styles.kpiSub}>{unit.allocatable.value} Allocatable Beds</span>
-          </div>
-          <div className={styles.kpiCard} data-tone="danger">
-            <span className={styles.kpiLabel}>Active Specialling (1:1)</span>
-            <span className={styles.kpiVal}>{activeSpeciallingCount}</span>
-            <span className={styles.kpiSub}>
-              {activeSpeciallingCount > 0 ? "Specialling requested" : "No specialling requested"}
-            </span>
-          </div>
-        </div>
+        {/* Contextual Dynamic HUD Island */}
+        <WardDynamicIsland
+          testId="ward-unit-status-hud"
+          title="Unit Status"
+          status={breakdown.blockedToday > 0 ? "alarm" : capacity.available === 0 ? "warning" : "nominal"}
+          statusText={
+            breakdown.blockedToday > 0
+              ? `${breakdown.blockedToday} blocked beds`
+              : capacity.available === 0
+                ? "Zero ready capacity"
+                : "Nominal operational status"
+          }
+          ariaLabel="Unit status indicators"
+          metrics={[
+            {
+              id: "kpi-occupied",
+              label: "Occupied",
+              value: capacity.occupied,
+              subtext: `${occupancyPct}%`,
+              tone: "neutral",
+            },
+            {
+              id: "kpi-ready",
+              label: "Ready",
+              value: capacity.available,
+              subtext: `${capacity.available} allocatable`,
+              tone: "good",
+            },
+            {
+              id: "kpi-turnaround",
+              label: "Turnaround",
+              value: pendingPreparation,
+              subtext: pendingPreparation === 1 ? "1 cleaning" : `${pendingPreparation} cleaning`,
+              tone: "warn",
+            },
+            {
+              id: "kpi-blocked",
+              label: "Blocked",
+              value: breakdown.blockedToday,
+              subtext: breakdown.blockedToday > 0 ? `${breakdown.blockedToday} blocked` : undefined,
+              tone: breakdown.blockedToday > 0 ? "critical" : "neutral",
+            },
+          ]}
+        />
 
         {/* Stepper Bar */}
         {incoming.length > 0 ? (

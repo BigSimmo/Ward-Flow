@@ -7,13 +7,16 @@
 
 # Productivity workflows
 
-The repository exposes a validated catalog of 35 canonical Database skills. Run `npm run skills` to list them by category. `npm run check:skills` validates the 35 canonical skills, 8 compatibility aliases, and every Claude, Cursor, and PsychSift plugin `SKILL.md` for metadata, local links, npm commands, frozen-ledger discipline, provider approval boundaries, and destructive-action safeguards.
+For current Ward Flow work, use the on-demand [task brief, verification and continuation convention](agents/task-efficiency.md).
 
-The repository exposes seven offline-first workflow planners. Each planner inspects the current change through `scripts/ci-change-scope.mjs`, prints a minimal local verification sequence, and separates provider-backed commands into an explicit approval section.
+> **Historical reference, revalidated 1 October 2026:** The entire command list and execution
+> descriptions below belong to the former Database/PsychSift workflow. Its 35-skill catalogue,
+> planner scripts and npm planner commands are unavailable in this dedicated Ward Flow repository.
+> They are retained as historical background and must not be executed here. Ward Flow's
+> `origin/main` is a different repository history; it does not supply those tools.
 
-> **26 September 2026 note:** None of the `workflow:*` commands below are wired up as npm
-> scripts on this line — the planner scripts and the `.agents/skills/` catalogue that called them
-> left with PsychSift and remain on `origin/main`. Kept here for orientation only.
+The former seven offline-first planners used `scripts/ci-change-scope.mjs` to print verification
+sequences and a provider approval section. Their historical interface was:
 
 | Command                                         | Purpose                                                                                |
 | ----------------------------------------------- | -------------------------------------------------------------------------------------- |
@@ -25,7 +28,7 @@ The repository exposes seven offline-first workflow planners. Each planner inspe
 | `npm run workflow:operator-closeout`            | Inventory and deduplicate pending operator or confirmation-required actions.           |
 | `npm run workflow:lifecycle -- --phase <phase>` | Plan `status`, `start`, `reconcile`, `handoff`, `landed`, or `cleanup` lifecycle work. |
 
-## Safe execution
+## Historical execution interface
 
 - Planning is read-only by default.
 - Add `-- --run` to run only the printed local/offline checks.
@@ -43,7 +46,7 @@ The repository exposes seven offline-first workflow planners. Each planner inspe
   `node scripts/primary-checkout-lease.mjs --check` so primary writes fail closed under another
   owner or dirty/operation state without blocking read-only or feature worktrees.
 
-The existing shared `workflow:run`, `workflow:status`, `workflow:verify`, `workflow:deps`, `workflow:clean-state`, `workflow:export`, and `workflow:handoff` commands now resolve their shared implementation through the repository's Git common directory. This keeps them portable in linked and detached Codex worktrees. Set `CODEX_LOCAL_WORKFLOW_ROOT` only when the shared tools live somewhere non-standard.
+The former shared `workflow:run`, `workflow:status`, `workflow:verify`, `workflow:deps`, `workflow:clean-state`, `workflow:export`, and `workflow:handoff` commands resolved their implementation through that repository's Git common directory. Its `CODEX_LOCAL_WORKFLOW_ROOT` override was part of that interface, not a Ward Flow setup instruction.
 
 The matching agent skills lived in that repository's `.agents/skills/`; their historical presence
 does not establish availability in this checkout or the current agent environment.

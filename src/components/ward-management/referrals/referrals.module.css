@@ -2800,13 +2800,13 @@ input.historyField:focus-visible {
   align-content: start;
 }
 
-/* Fixed-height mobile detail grids must scroll their content, not collapse the final match panel. */
-.registerDetail {
-  grid-auto-rows: max-content;
-}
-
 .detailBackdrop {
   display: none;
+}
+
+.hudWrapper {
+  order: 1;
+  margin-bottom: var(--ward-space-12, 0.75rem);
 }
 
 .kpiGrid {
@@ -5460,4 +5460,425 @@ input.historyField:focus-visible {
 .suburbFilterInput:focus-visible {
   outline: 0.125rem solid var(--focus);
   outline-offset: 0.125rem;
+}
+
+/* ==========================================================================
+   Alternative 2: 3-Tier Clinical Status Matrix & Elevated Side Inspector
+   ========================================================================== */
+
+.alt2Banner {
+  margin: 0 18px 10px;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2, 6px);
+  font-size: var(--t-1, 13px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.alt2BannerTitle {
+  color: var(--accent-ink);
+  font-weight: 700;
+  display: block;
+}
+
+.alt2BannerSubtitle {
+  color: var(--muted);
+  font-size: var(--t-0, 12px);
+  margin-top: 1px;
+}
+
+.patientBanner {
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.bannerIdentityRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.nameGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.ptUmrn {
+  font-family: var(--mono);
+  font-size: var(--t-2, 13.5px);
+  font-weight: 700;
+  color: var(--accent-ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  padding: 3px 8px;
+  border-radius: var(--r2, 6px);
+  letter-spacing: 0.05em;
+}
+
+.ptName {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--t-4, 16px);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.demographicRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--t-1, 13px);
+  color: var(--ink-soft);
+}
+
+.demoItem strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.demoDot {
+  color: var(--line-strong);
+}
+
+.tabNav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+  padding: 0 16px;
+  background: var(--surface);
+}
+
+.tabBtn {
+  border: 0;
+  background: transparent;
+  padding: 10px 14px;
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.12s ease;
+}
+
+.tabBtn:hover {
+  color: var(--ink);
+}
+
+.tabBtnActive,
+.tabBtn[aria-selected="true"] {
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+
+.tabBtnActive::after,
+.tabBtn[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 10px;
+  right: 10px;
+  height: 2px;
+  background: var(--gilt);
+}
+
+.tabIcon {
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+.secHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 14px 18px 8px;
+  font-size: var(--t-0, 12px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.secHeaderGood {
+  color: var(--good);
+  border-bottom: 2px solid var(--good);
+  padding-bottom: 4px;
+}
+
+.secHeaderWarn {
+  color: var(--warn);
+  border-bottom: 2px solid var(--warn);
+  padding-bottom: 4px;
+}
+
+.secHeaderDanger {
+  color: var(--danger);
+  border-bottom: 2px solid var(--danger);
+  padding-bottom: 4px;
+}
+
+.pulseDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--warn);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.pulseDotGood {
+  background: var(--good);
+}
+
+.pulseDotWarn {
+  background: var(--warn);
+}
+
+.pulseDotDanger {
+  background: var(--danger);
+}
+
+.unitCard {
+  margin: 8px 18px;
+  border-radius: var(--r2, 6px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--line-strong);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.12s ease;
+}
+
+.unitCard:hover {
+  box-shadow: 0 2px 8px var(--ward-shadow-black-06);
+}
+
+.unitCardReady {
+  border-left-color: var(--good);
+  background: var(--surface);
+}
+
+.unitCardTurnaround {
+  border-left-color: var(--warn);
+  background: var(--surface);
+}
+
+.unitCardIneligible {
+  border-left-color: var(--danger);
+  background: var(--surface-2);
+  opacity: 0.94;
+}
+
+.unitCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.unitName {
+  font-size: var(--t-2, 13.5px);
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.unitSub {
+  font-size: var(--t-0, 12px);
+  color: var(--muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.unitIntelRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--t-0, 12px);
+  color: var(--ink-soft);
+  padding: 4px 8px;
+  border-radius: var(--r2, 6px);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+
+.unitIntelRow strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.gateSummary {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+  font-size: var(--t-0, 12px);
+}
+
+.gateToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  color: var(--good);
+  font-weight: 600;
+  user-select: none;
+  padding: 3px 6px;
+  border-radius: var(--r2, 6px);
+  background: transparent;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  transition: background 0.1s ease;
+}
+
+.gateToggle:hover {
+  background: var(--good-soft);
+}
+
+.gateToggleWarn {
+  color: var(--warn);
+}
+
+.gateToggleWarn:hover {
+  background: var(--warn-soft);
+}
+
+.gateToggleDanger {
+  color: var(--danger);
+}
+
+.gateToggleDanger:hover {
+  background: var(--danger-soft);
+}
+
+.gateGrid {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-radius: var(--r2, 6px);
+  border: 1px solid var(--line);
+  font-size: var(--t-0, 12px);
+}
+
+.gatePill {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--ink-soft);
+  line-height: 1.35;
+}
+
+.gatePillPassed {
+  color: var(--good);
+  font-weight: 500;
+}
+
+.gatePillFailed {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.gatePillPending {
+  color: var(--warn);
+  font-weight: 500;
+}
+
+.inspectorFoot {
+  padding: 12px 18px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: 0 0 var(--r1, 10px) var(--r1, 10px);
+}
+
+.btnGood {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--r2, 6px);
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  background: var(--good);
+  color: var(--ward-fixed-white);
+  border: 1px solid var(--good);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.btnGood:hover {
+  background: var(--ward-fixed-success-ink);
+}
+
+.btnSubtle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--r2, 6px);
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  border: 1px solid var(--line-strong);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.btnSubtle:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.btnDangerAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--r2, 6px);
+  font-size: var(--t-1, 13px);
+  font-weight: 600;
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border: 1px solid var(--danger);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.btnDangerAction:hover {
+  background: var(--ward-fixed-danger-border);
 }

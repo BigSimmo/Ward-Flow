@@ -88,6 +88,8 @@ import {
   DEMO_COMMUNITY_EGRESS,
   DEMO_COMMUNITY_CASELOAD,
   DEMO_COMMUNITY_STAFF,
+  resolveCommunityTeamConfig,
+  type CommunityTeamConfig,
   type DemoReferral,
   type DemoInpatient,
   type DemoEgress,
@@ -509,10 +511,7 @@ export function CommunityScreen({
   const [egressFilter, setEgressFilter] = useState<"all" | "overdue" | "today" | "upcoming">("all");
 
   const hasExplicitProps = Boolean(admissions || referrals);
-  const isDemoMode =
-    demonstration &&
-    !hasExplicitProps &&
-    (teamId === "alma-street-fremantle" || teamId === "fremantle" || teamId === "alma-street");
+  const isDemoMode = demonstration && !hasExplicitProps;
 
   // Apply dark theme by default on initial mount for prototype demonstration
   useEffect(() => {
@@ -871,7 +870,9 @@ export function CommunityScreen({
     closeTransportCancel();
   }
 
-  const team = communityTeamById(teamId);
+  const team =
+    communityTeamById(teamId) ??
+    (teamId === "fremantle" || teamId === "alma-street" ? communityTeamById("alma-street-fremantle") : null);
   const source = admissions ?? liveAdmissions;
   // Membership is read off the referral now, so the referrals are as much an input to this screen
   // as the admissions are. Overridable together, and from the same place, so a test cannot supply
@@ -897,6 +898,7 @@ export function CommunityScreen({
     );
   }
 
+  const teamConfig = resolveCommunityTeamConfig(team);
   const lists = communityHubLists(source, team, sourceReferrals);
   const unattributable = admissionsWithNoCommunityTeam(source, sourceReferrals);
   /*
@@ -959,6 +961,9 @@ export function CommunityScreen({
     }
     return true;
   });
+  const hasAnyReferralsForTeam = sourceReferrals.some((r) =>
+    r.destinations.some((d) => d.destination.kind === "community_team" && d.destination.teamName === team.name),
+  );
   const caseloadRows = caseloadRowsForTeam(sourceReferrals, movements, patients, team, [
     ...lists.currentlyAdmitted,
     ...lists.dischargedIntoTheArea,
@@ -1114,89 +1119,6 @@ export function CommunityScreen({
                     </button>
                   </div>
                 </details>
-
-                <div className={styles.searchWrap} id="searchWrap" data-open={searchOpen ? "true" : "false"}>
-                  <button
-                    type="button"
-                    className={styles.searchBox}
-                    onClick={() => setSearchOpen(true)}
-                    aria-label="Search sample patients by name or UMRN"
-                  >
-                    <svg
-                      viewBox="0 0 16 16"
-                      width="14"
-                      height="14"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      aria-hidden="true"
-                    >
-                      <circle cx="7" cy="7" r="4.5" />
-                      <path d="M10.5 10.5L14 14" />
-                    </svg>
-                    <span className={styles.searchInputPlaceholder}>Search sample patients by name or UMRN...</span>
-                    <kbd className={styles.searchKbd}>/</kbd>
-                  </button>
-                  {searchOpen && (
-                    <div className={styles.qPop} id="qPop" role="listbox">
-                      <div className={styles.searchPopInputWrap}>
-                        <input
-                          type="search"
-                          id="q"
-                          autoFocus
-                          className={styles.searchInput}
-                          placeholder="Type UMRN or name..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                        <button
-                          type="button"
-                          className={styles.searchPopClose}
-                          onClick={() => setSearchOpen(false)}
-                          aria-label="Close search"
-                        >
-                          &times;
-                        </button>
-                      </div>
-                      {searchQuery.trim() === "" ? (
-                        <p className={styles.qHitMeta} data-testid="ward-community-search-hint">
-                          Type a name or UMRN to search the sample patients.
-                        </p>
-                      ) : searchResults.length === 0 ? (
-                        <p className={styles.qHitMeta} data-testid="ward-community-search-empty">
-                          No sample patient matches &ldquo;{searchQuery.trim()}&rdquo;.
-                        </p>
-                      ) : (
-                        searchResults.slice(0, SEARCH_RESULT_LIMIT).map((patient) => (
-                          <div
-                            key={patient.id}
-                            className={styles.qHit}
-                            role="option"
-                            aria-selected={false}
-                            data-testid={`ward-community-search-hit-${patient.id}`}
-                            onClick={() => {
-                              setSelectedPatientId(patient.id);
-                              setActiveDrawer("pxDrawer");
-                              setSearchOpen(false);
-                            }}
-                          >
-                            <div className={styles.qHitTop}>
-                              <span>
-                                {patientDisplayName(patient)} · {patient.umrn}
-                              </span>
-                              <span className={`${styles.statusPillBadge} ${styles.neutral}`}>
-                                {patient.legalStatus ?? "Legal status not recorded"}
-                              </span>
-                            </div>
-                            <span className={styles.qHitMeta}>
-                              {patient.catchmentCommunityTeam ?? "Community team not recorded"}
-                            </span>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
-                </div>
 
                 <div className={styles.menu} id="svcMenu">
                   <button
@@ -1360,47 +1282,6 @@ export function CommunityScreen({
                   </button>
                 </div>
               </header>
-
-              {teamNotices.length > 0 ? (
-                <section aria-label="Notices for this team" data-testid="ward-community-notices">
-                  <p className={styles.teamNoticesHead}>
-                    Notices <span>· {unreadTeamNoticeCount} unread</span>
-                  </p>
-                  <ol className={styles.teamNoticesFeed}>
-                    {teamNotices.map((notice) => {
-                      const isRead = notice.readAt !== undefined;
-                      return (
-                        <li key={notice.id} data-notice-read={isRead}>
-                          <time>{formatInstantWithDay(notice.raisedAt, now)}</time>
-                          <div className={styles.teamNoticeContent}>
-                            <span>{notice.sentence}</span>
-                            {isRead ? (
-                              <span className={styles.teamNoticeReadLabel}>
-                                <span className={styles.readDot} aria-hidden="true" />
-                                Read
-                              </span>
-                            ) : (
-                              <div className={styles.noticeStatusActionRow}>
-                                <span className={styles.alertBadge}>
-                                  <span className={styles.alertDot} aria-hidden="true" />
-                                  Unread
-                                </span>
-                                <button
-                                  type="button"
-                                  className={styles.teamNoticeMarkRead}
-                                  onClick={() => markTeamNoticeRead(notice.id)}
-                                >
-                                  Mark as read
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                </section>
-              ) : null}
             </>
           )}
 
@@ -1469,18 +1350,95 @@ export function CommunityScreen({
                 </div>
 
                 <div className={styles.catchmentScopeChip} id="catchmentScopeBadge">
-                  <span
-                    className={styles.dotSvc}
-                    data-svc={team.id === "fremantle" ? "south" : team.id === "midland" ? "east" : "south"}
-                    id="scopeSvcDot"
-                  />
-                  <span id="scopeCatchmentText">
-                    {team.name.split(" ")[0]} · {communityTeamSuburbCounts().get(team.name) ?? 8} Suburbs
-                  </span>
+                  <span className={styles.dotSvc} data-svc={teamConfig.svcDot} id="scopeSvcDot" />
+                  <span id="scopeCatchmentText">{teamConfig.scope}</span>
                 </div>
               </div>
 
               <div className={styles.actionRightGroup}>
+                <div className={styles.searchWrap} id="searchWrap" data-open={searchOpen ? "true" : "false"}>
+                  <button
+                    type="button"
+                    className={styles.searchBox}
+                    onClick={() => setSearchOpen(true)}
+                    aria-label="Search sample patients by name or UMRN"
+                  >
+                    <svg
+                      viewBox="0 0 16 16"
+                      width="14"
+                      height="14"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      aria-hidden="true"
+                    >
+                      <circle cx="7" cy="7" r="4.5" />
+                      <path d="M10.5 10.5L14 14" />
+                    </svg>
+                    <span className={styles.searchInputPlaceholder}>Search sample patients by name or UMRN...</span>
+                    <kbd className={styles.searchKbd}>/</kbd>
+                  </button>
+                  {searchOpen && (
+                    <div className={styles.qPop} id="qPop" role="listbox">
+                      <div className={styles.searchPopInputWrap}>
+                        <input
+                          type="search"
+                          id="q"
+                          autoFocus
+                          className={styles.searchInput}
+                          placeholder="Type UMRN or name..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                        <button
+                          type="button"
+                          className={styles.searchPopClose}
+                          onClick={() => setSearchOpen(false)}
+                          aria-label="Close search"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                      {searchQuery.trim() === "" ? (
+                        <p className={styles.qHitMeta} data-testid="ward-community-search-hint">
+                          Type a name or UMRN to search the sample patients.
+                        </p>
+                      ) : searchResults.length === 0 ? (
+                        <p className={styles.qHitMeta} data-testid="ward-community-search-empty">
+                          No sample patient matches &ldquo;{searchQuery.trim()}&rdquo;.
+                        </p>
+                      ) : (
+                        searchResults.slice(0, SEARCH_RESULT_LIMIT).map((patient) => (
+                          <div
+                            key={patient.id}
+                            className={styles.qHit}
+                            role="option"
+                            aria-selected={false}
+                            data-testid={`ward-community-search-hit-${patient.id}`}
+                            onClick={() => {
+                              setSelectedPatientId(patient.id);
+                              setActiveDrawer("pxDrawer");
+                              setSearchOpen(false);
+                            }}
+                          >
+                            <div className={styles.qHitTop}>
+                              <span>
+                                {patientDisplayName(patient)} · {patient.umrn}
+                              </span>
+                              <span className={`${styles.statusPillBadge} ${styles.neutral}`}>
+                                {patient.legalStatus ?? "Legal status not recorded"}
+                              </span>
+                            </div>
+                            <span className={styles.qHitMeta}>
+                              {patient.catchmentCommunityTeam ?? "Community team not recorded"}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <button
                   type="button"
                   className={styles.btnPrimaryAction}
@@ -1580,11 +1538,11 @@ export function CommunityScreen({
                     setActiveTab("tab-caseload");
                     scrollToSection("section-caseload");
                   }}
-                  title={`Active Caseload: ${isDemoMode ? DEMO_COMMUNITY_CASELOAD.length : caseloadRows.length} Patients (All Allocated)`}
+                  title={`Active Caseload: ${isDemoMode ? teamConfig.caseload : caseloadRows.length} Patients (All Allocated)`}
                 >
                   <span className={styles.telemetryLabel}>Caseload</span>
                   <span className={styles.telemetryVal} id="cardCaseloadVal">
-                    {isDemoMode ? 128 : caseloadRows.length}
+                    {isDemoMode ? teamConfig.caseload : caseloadRows.length}
                   </span>
                   <span className={styles.telemetryPillNeutral} id="cardCaseloadBadge">
                     Allocated
@@ -1598,19 +1556,19 @@ export function CommunityScreen({
                     setActiveTab("tab-triage");
                     scrollToSection("ward-community-waiting");
                   }}
-                  title={`Priority Referral Triage Queue: ${isDemoMode ? 5 : waitingReferrals.length} Waiting`}
+                  title={`Priority Referral Triage Queue: ${isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length} Waiting`}
                 >
                   <span className={styles.telemetryLabel}>Triage</span>
                   <span className={styles.telemetryVal} id="cardTriageVal">
-                    {isDemoMode ? 5 : waitingReferrals.length}
+                    {isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length}
                   </span>
-                  {isDemoMode ? (
+                  {isDemoMode && !hasAnyReferralsForTeam ? (
                     <span
                       className={styles.telemetryPillWarn}
                       id="cardTriageBadge"
                       style={{ color: "var(--danger-ink)" }}
                     >
-                      4 Urgent
+                      {teamConfig.urgentTriage} Urgent
                     </span>
                   ) : (
                     <span
@@ -1635,13 +1593,14 @@ export function CommunityScreen({
                     setActiveTab("tab-inpatients");
                     scrollToSection("ward-community-admitted");
                   }}
-                  title={`Catchment Acute Inpatients: ${isDemoMode ? 14 : inBedCount} In Bed / ${isDemoMode ? 18 : lists.currentlyAdmitted.length} Total`}
+                  title={`Catchment Acute Inpatients: ${isDemoMode ? teamConfig.inpatients : inBedCount} In Bed / ${isDemoMode ? teamConfig.inpatientsTotal : lists.currentlyAdmitted.length} Total`}
                 >
                   <span className={styles.telemetryLabel}>Inpatients</span>
                   <span className={styles.telemetryVal} id="cardInpatientsVal">
                     {isDemoMode ? (
                       <>
-                        14<small>/18</small>
+                        {teamConfig.inpatients}
+                        <small>/{teamConfig.inpatientsTotal}</small>
                       </>
                     ) : (
                       <>
@@ -1662,11 +1621,11 @@ export function CommunityScreen({
                     setActiveTab("tab-egress");
                     scrollToSection("ward-community-expected-back");
                   }}
-                  title={`7-Day Post-Discharge Follow-Up: ${isDemoMode ? 4 : lists.expectedBack.length} Discharged`}
+                  title={`7-Day Post-Discharge Follow-Up: ${isDemoMode ? teamConfig.egress : lists.expectedBack.length} Discharged`}
                 >
                   <span className={styles.telemetryLabel}>Egress</span>
                   <span className={styles.telemetryVal} id="cardEgressVal">
-                    {isDemoMode ? 4 : lists.expectedBack.length}
+                    {isDemoMode ? teamConfig.egress : lists.expectedBack.length}
                   </span>
                   <span className={styles.telemetryPillGood} id="cardEgressBadge">
                     On Track
@@ -1680,11 +1639,11 @@ export function CommunityScreen({
                     setActiveTab("tab-caseload");
                     scrollToSection("section-caseload");
                   }}
-                  title={`Community Treatment Orders: ${isDemoMode ? 18 : form5ACount} Active Statutory Orders`}
+                  title={`Community Treatment Orders: ${isDemoMode ? teamConfig.cto : form5ACount} Active Statutory Orders`}
                 >
                   <span className={styles.telemetryLabel}>CTOs</span>
                   <span className={styles.telemetryVal} id="cardCtoVal">
-                    {isDemoMode ? 18 : form5ACount}
+                    {isDemoMode ? teamConfig.cto : form5ACount}
                   </span>
                   <span className={styles.telemetryPillAccent} id="cardCtoBadge">
                     Form 5A
@@ -1695,11 +1654,11 @@ export function CommunityScreen({
                 <div
                   className={`${styles.telemetryItem} ${styles.interactiveItem}`}
                   onClick={() => setActiveModalType("crisis")}
-                  title="Catchment Crisis Response: 2 In Field · Outreach Car 2"
+                  title={`Catchment Crisis Response: ${teamConfig.crisis} In Field · Outreach Car 2`}
                 >
                   <span className={styles.telemetryLabel}>Crisis</span>
                   <span className={styles.telemetryVal} id="cardCrisisVal">
-                    2
+                    {isDemoMode ? teamConfig.crisis : 2}
                   </span>
                   <span className={styles.telemetryPillGood} id="cardCrisisBadge">
                     Active
@@ -1708,6 +1667,47 @@ export function CommunityScreen({
               </div>
             </div>
           </section>
+
+          {teamNotices.length > 0 ? (
+            <section aria-label="Notices for this team" data-testid="ward-community-notices">
+              <p className={styles.teamNoticesHead}>
+                Notices <span>· {unreadTeamNoticeCount} unread</span>
+              </p>
+              <ol className={styles.teamNoticesFeed}>
+                {teamNotices.map((notice) => {
+                  const isRead = notice.readAt !== undefined;
+                  return (
+                    <li key={notice.id} data-notice-read={isRead}>
+                      <time>{formatInstantWithDay(notice.raisedAt, now)}</time>
+                      <div className={styles.teamNoticeContent}>
+                        <span>{notice.sentence}</span>
+                        {isRead ? (
+                          <span className={styles.teamNoticeReadLabel}>
+                            <span className={styles.readDot} aria-hidden="true" />
+                            Read
+                          </span>
+                        ) : (
+                          <div className={styles.noticeStatusActionRow}>
+                            <span className={styles.alertBadge}>
+                              <span className={styles.alertDot} aria-hidden="true" />
+                              Unread
+                            </span>
+                            <button
+                              type="button"
+                              className={styles.teamNoticeMarkRead}
+                              onClick={() => markTeamNoticeRead(notice.id)}
+                            >
+                              Mark as read
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
+          ) : null}
 
           {/* ── Operational Tab Bar ── */}
           <nav className={styles.tabBarWrap} aria-label="Community Operational Tabs">
@@ -1726,7 +1726,9 @@ export function CommunityScreen({
                   }}
                 >
                   <span>Waiting for the team&apos;s answer</span>
-                  <span className={styles.tabBadge}>{isDemoMode ? 5 : waitingReferrals.length}</span>
+                  <span className={styles.tabBadge}>
+                    {isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length}
+                  </span>
                 </button>
               </li>
               <li role="presentation">
@@ -1743,7 +1745,9 @@ export function CommunityScreen({
                   }}
                 >
                   <span>In a bed or holding one</span>
-                  <span className={styles.tabBadge}>{isDemoMode ? 14 : lists.currentlyAdmitted.length}</span>
+                  <span className={styles.tabBadge}>
+                    {isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length}
+                  </span>
                 </button>
               </li>
               <li role="presentation">
@@ -1760,7 +1764,7 @@ export function CommunityScreen({
                   }}
                 >
                   <span>Expected back</span>
-                  <span className={styles.tabBadge}>{isDemoMode ? 4 : lists.expectedBack.length}</span>
+                  <span className={styles.tabBadge}>{isDemoMode ? teamConfig.egress : lists.expectedBack.length}</span>
                 </button>
               </li>
               <li role="presentation">
@@ -1777,7 +1781,7 @@ export function CommunityScreen({
                   }}
                 >
                   <span>Active Caseload &amp; CTOs</span>
-                  <span className={styles.tabBadge}>{isDemoMode ? 128 : caseloadRows.length}</span>
+                  <span className={styles.tabBadge}>{isDemoMode ? teamConfig.caseload : caseloadRows.length}</span>
                 </button>
               </li>
               <li role="presentation">
@@ -1795,7 +1799,7 @@ export function CommunityScreen({
                 >
                   <span>This team</span>
                   <span className={styles.tabBadge} style={{ color: "var(--good)" }}>
-                    7 Staff
+                    {isDemoMode ? `${teamConfig.staff} Staff` : "7 Staff"}
                   </span>
                 </button>
               </li>
@@ -1957,7 +1961,10 @@ export function CommunityScreen({
                 aria-label="Waiting for the team's answer details"
                 tabIndex={0}
               >
-                {isDemoMode ? (
+                {waitingReferrals.length === 0 &&
+                isDemoMode &&
+                demoTeamReferrals.length > 0 &&
+                !hasAnyReferralsForTeam ? (
                   <>
                     <div className={styles.filterToolbar}>
                       <div className={styles.filterChipsGroup}>
@@ -2029,7 +2036,7 @@ export function CommunityScreen({
                       </div>
                     </div>
                     {demoVisibleReferrals.length === 0 ? (
-                      <p className={styles.emptyNote}>
+                      <p className={styles.emptyNote} data-testid="ward-community-waiting-empty">
                         No referral matching the selected triage priority is waiting for an answer.
                       </p>
                     ) : (
@@ -2172,7 +2179,11 @@ export function CommunityScreen({
                         No referral matching the selected triage priority is waiting for an answer.
                       </p>
                     ) : (
-                      <ul id="triageGrid" className={styles.cardList} data-testid="ward-community-waiting-list">
+                      <ul
+                        id="triageGrid"
+                        className={`${styles.cardList} ${styles.triageQueueGrid}`}
+                        data-testid="ward-community-waiting-list"
+                      >
                         {visibleWaitingReferrals.map((referral) => {
                           const declineOpen = declineOpenFor === referral.id;
                           // Blocked only until a reason is chosen — the same "state a reason before
@@ -2414,7 +2425,7 @@ export function CommunityScreen({
                   <span>In a bed or holding one</span>
                 </h2>
                 <span className={styles.badgePill} data-ward-panel-count>
-                  {isDemoMode ? 14 : lists.currentlyAdmitted.length}
+                  {isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length}
                 </span>
               </div>
               <div className={styles.panelBody} role="region" aria-label="In a bed or holding one details" tabIndex={0}>
@@ -3570,7 +3581,7 @@ export function CommunityScreen({
                       <span>Catchment Multidisciplinary Team Roster &amp; Duty Allocations</span>
                     </h2>
                     <span className={styles.badgePill} id="teamStaffCountBadge">
-                      7 Key Clinicians Active
+                      {teamConfig.staff} Key Clinicians Active
                     </span>
                   </div>
                   <div className={styles.panelBody}>
@@ -3583,7 +3594,7 @@ export function CommunityScreen({
                                 className={styles.staffName}
                                 id={staff.name === "Dr A. Nair" ? "leadConsultantName" : undefined}
                               >
-                                {staff.name}
+                                {staff.name === "Dr A. Nair" ? teamConfig.consultant : staff.name}
                               </div>
                               <div className={styles.staffRole}>{staff.role}</div>
                             </div>
@@ -3618,7 +3629,7 @@ export function CommunityScreen({
                       <div className={styles.clinicRoomItem}>
                         <div className={styles.clinicRoomTop}>
                           <span className={styles.clinicRoomTitle}>Room 1 · Consultant Clinic</span>
-                          <span className={`${styles.statusPillBadge} ${styles.good}`}>09:00-13:00</span>
+                          <span className={`${styles.statusPillBadge} ${styles.good}`}>9am – 1pm</span>
                         </div>
                         <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
                           Dr K. Rao · Urgent Intakes &amp; Medication Reviews
@@ -3627,7 +3638,7 @@ export function CommunityScreen({
                       <div className={styles.clinicRoomItem}>
                         <div className={styles.clinicRoomTop}>
                           <span className={styles.clinicRoomTitle}>Room 2 · Depot &amp; Physical Health</span>
-                          <span className={`${styles.statusPillBadge} ${styles.good}`}>09:00-16:30</span>
+                          <span className={`${styles.statusPillBadge} ${styles.good}`}>9am – 5pm</span>
                         </div>
                         <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
                           RN C. Davis · Long-acting injections, ECG, metabolic monitoring
@@ -3656,7 +3667,7 @@ export function CommunityScreen({
                       <div className={styles.clinicRoomItem}>
                         <div className={styles.clinicRoomTop}>
                           <span className={styles.clinicRoomTitle} id="fleetVehicle1Title">
-                            Vehicle 1 (Fremantle Coastal Sector)
+                            {teamConfig.fleet1}
                           </span>
                           <span className={`${styles.statusPillBadge} ${styles.warn}`}>In Field</span>
                         </div>
@@ -3667,7 +3678,7 @@ export function CommunityScreen({
                       <div className={styles.clinicRoomItem}>
                         <div className={styles.clinicRoomTop}>
                           <span className={styles.clinicRoomTitle} id="fleetVehicle2Title">
-                            Vehicle 2 (Cockburn / Melville Sector)
+                            {teamConfig.fleet2}
                           </span>
                           <span className={`${styles.statusPillBadge} ${styles.good}`}>At Base</span>
                         </div>
@@ -3678,7 +3689,7 @@ export function CommunityScreen({
                       <div className={styles.clinicRoomItem}>
                         <div className={styles.clinicRoomTop}>
                           <span className={styles.clinicRoomTitle}>Morning MDT Huddle Log</span>
-                          <span className={`${styles.statusPillBadge} ${styles.neutral}`}>10:00 Completed</span>
+                          <span className={`${styles.statusPillBadge} ${styles.neutral}`}>10am Completed</span>
                         </div>
                         <span style={{ fontSize: "var(--t-1)", color: "var(--ink-soft)" }}>
                           14 Catchment cases reviewed · 2 Inpatient transfers coordinated
@@ -4629,13 +4640,15 @@ export function CommunityScreen({
                             <div>
                               <b>Supervising Psychiatrist:</b>{" "}
                               <span id="pxPsychiatrist">
-                                {selectedPatientId === "PT-3712" ? "Dr J. Lim" : "Dr A. Nair"}
+                                {selectedPatientId === "PT-3712" ? "Dr J. Lim" : teamConfig.consultant}
                               </span>
                             </div>
                             <div>
                               <b>Current Placement:</b>{" "}
                               <span id="pxPlacement">
-                                {selectedPatientId === "PT-3712" ? "SCGH Adult Open" : "FSH Adult Secure (Bed 03)"}
+                                {selectedPatientId === "PT-3712"
+                                  ? "SCGH Adult Open"
+                                  : `${teamConfig.campus} Secure (Bed 03)`}
                               </span>
                             </div>
                             <div>
@@ -5444,7 +5457,7 @@ export function CommunityScreen({
                           Mobile Outreach Vehicle 2 (Car 2)
                         </div>
                         <div style={{ fontSize: "var(--t-0)", color: "var(--muted)", marginTop: "2px" }}>
-                          Catchment: {team.name} · Alma St · South Metro
+                          Catchment: {team.name} · {teamConfig.campus} · {teamConfig.service}
                         </div>
                       </div>
                       <span className={styles.telemetryPillGood}>Active in Field</span>
@@ -5469,7 +5482,7 @@ export function CommunityScreen({
                           Duty Consultant
                         </div>
                         <div style={{ fontSize: "var(--t-2)", fontWeight: 600, color: "var(--ink)", marginTop: "2px" }}>
-                          Dr A. Nair (MBBS, FRANZCP)
+                          {teamConfig.consultant} (MBBS, FRANZCP)
                         </div>
                         <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Direct Mobile: 0411 902 441</div>
                       </div>
@@ -5509,7 +5522,7 @@ export function CommunityScreen({
                       }}
                     >
                       <b>Current Deployment:</b> Urgent joint assessment PT-4620 with MHERT / WA Police co-response.
-                      En-route Alma St to catchment residence. Duress beacon active &amp; verified.
+                      En-route {teamConfig.campus} to catchment residence. Duress beacon active &amp; verified.
                     </div>
 
                     <div

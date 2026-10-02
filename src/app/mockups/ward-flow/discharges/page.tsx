@@ -4,7 +4,7 @@ import { DischargeBoard } from "@/components/ward-management/discharges/discharg
 
 export const metadata: Metadata = {
   title: "Discharges — Ward Flow",
-  description: "Synthetic, live discharge and egress board for the Ward Flow prototype — blocked releases first.",
+  description: "Synthetic, live discharge and departure board for the Ward Flow prototype — blocked releases first.",
 };
 
 export default function WardDischargesPage() {

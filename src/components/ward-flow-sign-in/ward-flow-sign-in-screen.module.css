@@ -559,7 +559,7 @@
 }
 
 .roleTargetChip {
-  font-family: var(--mono);
+  font-family: var(--body);
   font-size: var(--t-0);
   font-weight: 500;
   color: var(--muted);
@@ -568,6 +568,9 @@
   border-radius: 4px;
   border: 1px solid var(--line);
   align-self: flex-start;
+  max-width: 100%;
+  text-align: left;
+  overflow-wrap: anywhere;
 }
 
 .roleCard[aria-pressed="true"] .roleTargetChip {

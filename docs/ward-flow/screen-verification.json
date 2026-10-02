@@ -5,288 +5,519 @@
       "mockup": "command-third-edition.html",
       "route": "/",
       "verified": {
-        "date": "2026-09-18",
-        "who": "Antigravity controller, independent visual reviewer",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "5483eebe7b75e497cc270c42db514a936315012b17a1d393c600d8b8a62f5b8e",
-        "implementationSha256": "e229fe84a16cc1108ea7afdce3c1df115abfebefc8fa65914702d53d7a28ad7e",
-        "notes": "Command Console (/) verified against Third Edition Mockup (command-third-edition.html): Full operational header with role and scope badges, statewide urgent attention cards, open queue strip with accurate status counts, interactive shortlist drawer with candidate breakdown, override controls, and referral routing. Scored 198/200 on multi-viewport visual audit across 390px, 820px, and 1440px in light and dark modes with 0 horizontal overflow, 0 clipping, and 0 console errors."
-      }
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
+        "verdict": "deviates",
+        "implementationSha256": "38ca886993fb97eb14640b7824180168b330094f7d9377e16f2f059430308239",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-18",
+          "who": "Antigravity controller, independent visual reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "5483eebe7b75e497cc270c42db514a936315012b17a1d393c600d8b8a62f5b8e",
+          "implementationSha256": "e229fe84a16cc1108ea7afdce3c1df115abfebefc8fa65914702d53d7a28ad7e",
+          "notes": "Command Console (/) verified against Third Edition Mockup (command-third-edition.html): Full operational header with role and scope badges, statewide urgent attention cards, open queue strip with accurate status counts, interactive shortlist drawer with candidate breakdown, override controls, and referral routing. Scored 198/200 on multi-viewport visual audit across 390px, 820px, and 1440px in light and dark modes with 0 horizontal overflow, 0 clipping, and 0 console errors."
+        }
+      ]
     },
     {
       "mockup": "delays-third-edition.html",
       "route": "/delays",
       "verified": {
-        "date": "2026-09-21",
-        "who": "Antigravity Builder Agent, independent adversarial reviewer",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "0c6a72730be72fc76c397434c21a4bb84b85519932b50a606f788c15621b9287",
-        "implementationSha256": "c4b5a8d48d2d3af1224f1fc6bbee596f142d622f0e53834806c560d399503894",
-        "notes": "Delays and Exceptions Console (/mockups/ward-flow/delays) elevated to Third Edition Sovereign standard (delays-third-edition.html): Complete removal of obsolete provenance panel per user directive; 'Delays with no named person' elevated into an active systemic and facility delays tracker (Fremantle 4W norovirus isolation, Secure Escort Fleet maintenance delay, SCGH MHU nursing ratio surge) with category filter chips and Rule D4 '+ Log systemic hold' action feedback; elevated ownerStrip with proportional meter bars, tabular figures, and urgent alert text; elevated PersonRow with urgency tier badges (T1/T2/T3), medical clearance pills, origin line, blocker row with owner tags, and quiet elapsed time; zero accidental right-hand void when no patient is chosen via columnsClosed (20rem 1fr / 28rem 1.4fr); responsive mobile sheet drawer with backdrop and Esc dismissal. Strict 12px font floor enforced across all viewports. Scored 198.5/200 on independent adversarial audit across 390px, 820px, and 1440px in light and dark modes with 0 horizontal document overflow, 0 clipping, and 59/59 passing Vitest tests."
-      }
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
+        "verdict": "deviates",
+        "implementationSha256": "89d79b36931e201ed22484066e00b57978bd92812c9d4b7d22176774b3ff4059",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-21",
+          "who": "Antigravity Builder Agent, independent adversarial reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "0c6a72730be72fc76c397434c21a4bb84b85519932b50a606f788c15621b9287",
+          "implementationSha256": "c4b5a8d48d2d3af1224f1fc6bbee596f142d622f0e53834806c560d399503894",
+          "notes": "Delays and Exceptions Console (/mockups/ward-flow/delays) elevated to Third Edition Sovereign standard (delays-third-edition.html): Complete removal of obsolete provenance panel per user directive; 'Delays with no named person' elevated into an active systemic and facility delays tracker (Fremantle 4W norovirus isolation, Secure Escort Fleet maintenance delay, SCGH MHU nursing ratio surge) with category filter chips and Rule D4 '+ Log systemic hold' action feedback; elevated ownerStrip with proportional meter bars, tabular figures, and urgent alert text; elevated PersonRow with urgency tier badges (T1/T2/T3), medical clearance pills, origin line, blocker row with owner tags, and quiet elapsed time; zero accidental right-hand void when no patient is chosen via columnsClosed (20rem 1fr / 28rem 1.4fr); responsive mobile sheet drawer with backdrop and Esc dismissal. Strict 12px font floor enforced across all viewports. Scored 198.5/200 on independent adversarial audit across 390px, 820px, and 1440px in light and dark modes with 0 horizontal document overflow, 0 clipping, and 59/59 passing Vitest tests."
+        }
+      ]
     },
     {
       "mockup": "movement-third-edition.html",
       "route": "/movements",
       "verified": {
-        "date": "2026-09-24",
-        "who": "Antigravity Builder Agent & independent design reviewer",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "e2cb9f881203a648b5042bae0b761cc4a7010164446aae76e1ba69cd255042e0",
-        "implementationSha256": "99752a3409730a283415adfb092caf714eb9fb06dd86c1b492b1a33d87451090",
-        "notes": "Movements Screen (/mockups/ward-flow/movements) elevated to Sovereign Third Edition standard: Fixed worklist card spacing with 16px horizontal container insets (eliminating edge and scrollbar collisions); elevated card hierarchy with patient ID, wait timer progress meter, route line with arrow glyph, clinical alert pills, delay barrier callout with accent border, and primary ('Review patient') and secondary ('What is recorded') buttons; elevated top toolbar with segmented pill switches for 'Every movement' vs 'Resolved today' and Arrange controls (Stage, Transport, Longest wait); fixed Transport right now overlapping defect by enforcing flex-shrink: 0 and text truncation on corridor nodes; compacted Transport feed height to 12.5rem; expanded Shape of the day panel to primary prominence in sidebar with 5 functional tabs (Stage, Transport, Waiting, Resolved, No owner), sleek proportion meters, tabular patient counts, and direct review shortcuts. Strict 12px font floor, zero horizontal overflow, zero clipping, 48px touch targets, and design token compliance verified."
-      }
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
+        "verdict": "deviates",
+        "implementationSha256": "5bb5b8c8b097328381cb788942abd4717d2aa1cc54eec907c30939e6a11d2d18",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-24",
+          "who": "Antigravity Builder Agent & independent design reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "e2cb9f881203a648b5042bae0b761cc4a7010164446aae76e1ba69cd255042e0",
+          "implementationSha256": "99752a3409730a283415adfb092caf714eb9fb06dd86c1b492b1a33d87451090",
+          "notes": "Movements Screen (/mockups/ward-flow/movements) elevated to Sovereign Third Edition standard: Fixed worklist card spacing with 16px horizontal container insets (eliminating edge and scrollbar collisions); elevated card hierarchy with patient ID, wait timer progress meter, route line with arrow glyph, clinical alert pills, delay barrier callout with accent border, and primary ('Review patient') and secondary ('What is recorded') buttons; elevated top toolbar with segmented pill switches for 'Every movement' vs 'Resolved today' and Arrange controls (Stage, Transport, Longest wait); fixed Transport right now overlapping defect by enforcing flex-shrink: 0 and text truncation on corridor nodes; compacted Transport feed height to 12.5rem; expanded Shape of the day panel to primary prominence in sidebar with 5 functional tabs (Stage, Transport, Waiting, Resolved, No owner), sleek proportion meters, tabular patient counts, and direct review shortcuts. Strict 12px font floor, zero horizontal overflow, zero clipping, 48px touch targets, and design token compliance verified."
+        }
+      ]
     },
     {
       "mockup": "capacity-third-edition.html",
       "route": "/capacity",
       "verified": {
-        "date": "2026-09-21",
-        "who": "Antigravity controller, independent visual reviewer",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "46e732347d1ab00a4b36a22870b42eccbb264fb48460c4bf2e7fa55442da0369",
-        "implementationSha256": "619b92bff80aea47b353924c4ec196c36d37243e9e218f4b7d39bde1ef2e76df",
-        "notes": "Capacity Screen (/capacity) fully elevated to Third Edition Sovereign standard (capacity-third-edition.html): Redesigned Network sidebar card with live timestamp, proportional two-tone ready meter bar, gilded interactive tabs (Beds freeing / Attention), and soft green pill badges for freeing wards. Resolved horizontal scrolling defect by making networkTableScroll the unified scroller with sticky first column (Ward identity) and sticky headers, eliminating double scrollbars and ugly 2px dark border. Enforced strict 12px font floor across all metrics and labels, removed side-stripe anti-pattern from attention items, and added fold indicator badges. Scored 198/200 on multi-viewport visual audit across 390px, 820px, and 1440px in light and dark modes with 0 horizontal overflow, passing all 64 Vitest capacity test suites."
-      }
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
+        "verdict": "deviates",
+        "implementationSha256": "e6542c7321e383138dd7104a0e26e5b3cb53076a12295ae0d1653acdfeb32de6",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-21",
+          "who": "Antigravity controller, independent visual reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "46e732347d1ab00a4b36a22870b42eccbb264fb48460c4bf2e7fa55442da0369",
+          "implementationSha256": "619b92bff80aea47b353924c4ec196c36d37243e9e218f4b7d39bde1ef2e76df",
+          "notes": "Capacity Screen (/capacity) fully elevated to Third Edition Sovereign standard (capacity-third-edition.html): Redesigned Network sidebar card with live timestamp, proportional two-tone ready meter bar, gilded interactive tabs (Beds freeing / Attention), and soft green pill badges for freeing wards. Resolved horizontal scrolling defect by making networkTableScroll the unified scroller with sticky first column (Ward identity) and sticky headers, eliminating double scrollbars and ugly 2px dark border. Enforced strict 12px font floor across all metrics and labels, removed side-stripe anti-pattern from attention items, and added fold indicator badges. Scored 198/200 on multi-viewport visual audit across 390px, 820px, and 1440px in light and dark modes with 0 horizontal overflow, passing all 64 Vitest capacity test suites."
+        }
+      ]
     },
     {
       "mockup": "ward-third-edition.html",
       "route": "/ward/[unitId]",
       "verified": {
-        "date": "2026-09-21",
-        "who": "Antigravity Builder-Reviewer architecture, independent visual reviewer",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "130792a6786cec2b54b8ff0cd715832285aff9be032b55d6318ac06fb95258ee",
-        "implementationSha256": "043d23dd8f6eff039e9c700a8cf11e2ac10caa44ac68fa69c6353621cf69400a",
-        "notes": "Ward Screen (/ward/[unitId]) fully upgraded to Perfected Third Edition Sovereign standard (ward-perfected-third-edition.html): Action Bar with Enter Ward / Open Bed Board primary action and high-contrast secondary buttons; 5-metric Live Capacity Glance Strip; 5 operational tabs (Worth Your Attention, Coming In, On the Way Out, Bed Board & Roster, Today's Return & Shift Log); Priority Queue with clinical summaries and breach elapsed timers; Statutory & Acuity Alerts; Inbound Intake transit tracking; Outbound scheduled discharges, Section 2A/2B leave with curfew monitoring, and NDIS/SAT egress barrier blocks; Shift Coordinator timestamped activity ledger; full preservation of existing state reducers, query parameters, accessible landmarks, and test nodes. Strict 12px font floor enforced across all elements. Scored 200/200 on adversarial audit across 390px, 820px, and 1440px in light and dark modes with 0 horizontal overflow, 0 console errors, and Rule D4 toast feedback active. Partial repair verification on 2026-09-23 by Codex controller; final integrated product source 26c7ea618938b2a860f6eb899bac2deb9b4d8f0f. This supplements the historical verification above without renewing its full-design verdict, date or hashes. Focused observations include earlier c4d inputs where recorded; they are not all a fresh full-screen check at 26c. Evidence: local ward-flow-audit-20260923/implementation/browser-verification.md and repair-closure-register.md. Focused phone navigation reached the Ward view with contained document width. Shared Menu was48px high, opened navigation and returned focus after Escape. No renewed full Ward design, tablet or physical-device acceptance."
-      }
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
+        "verdict": "deviates",
+        "implementationSha256": "078d4ec59fd234df49e2746896855c270f9417c8fb0a93d5e02afc64689d074b",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-21",
+          "who": "Antigravity Builder-Reviewer architecture, independent visual reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "130792a6786cec2b54b8ff0cd715832285aff9be032b55d6318ac06fb95258ee",
+          "implementationSha256": "043d23dd8f6eff039e9c700a8cf11e2ac10caa44ac68fa69c6353621cf69400a",
+          "notes": "Ward Screen (/ward/[unitId]) fully upgraded to Perfected Third Edition Sovereign standard (ward-perfected-third-edition.html): Action Bar with Enter Ward / Open Bed Board primary action and high-contrast secondary buttons; 5-metric Live Capacity Glance Strip; 5 operational tabs (Worth Your Attention, Coming In, On the Way Out, Bed Board & Roster, Today's Return & Shift Log); Priority Queue with clinical summaries and breach elapsed timers; Statutory & Acuity Alerts; Inbound Intake transit tracking; Outbound scheduled discharges, Section 2A/2B leave with curfew monitoring, and NDIS/SAT egress barrier blocks; Shift Coordinator timestamped activity ledger; full preservation of existing state reducers, query parameters, accessible landmarks, and test nodes. Strict 12px font floor enforced across all elements. Scored 200/200 on adversarial audit across 390px, 820px, and 1440px in light and dark modes with 0 horizontal overflow, 0 console errors, and Rule D4 toast feedback active. Partial repair verification on 2026-09-23 by Codex controller; final integrated product source 26c7ea618938b2a860f6eb899bac2deb9b4d8f0f. This supplements the historical verification above without renewing its full-design verdict, date or hashes. Focused observations include earlier c4d inputs where recorded; they are not all a fresh full-screen check at 26c. Evidence: local ward-flow-audit-20260923/implementation/browser-verification.md and repair-closure-register.md. Focused phone navigation reached the Ward view with contained document width. Shared Menu was48px high, opened navigation and returned focus after Escape. No renewed full Ward design, tablet or physical-device acceptance."
+        }
+      ]
     },
     {
       "mockup": "wards-third-edition.html",
       "route": "/wards",
       "verified": {
-        "date": "2026-09-17",
-        "who": "Antigravity controller, independent visual reviewer",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "f110345a8c70f54fa55bf30b8cfd70d719bf21ee8f0018668e2c9bd69c4c3f36",
-        "implementationSha256": "647304fff1c5b123e86524ec0fb0b3b6223c7ad4bf786dd56a3b143ee377d3ac",
-        "notes": "Ward Directory Cards rebuilt to Third Edition Sovereign standard: 4 statewide KPI summary cards; 5 Health Service Cluster tabs (All Units, NMHS, SMHS, EMHS, WACHS); interactive cohort and availability filter pills; live instant search input; 23 square ward cards with live occupancy progress bars, 2x2 stats tiles, flow badges, and Enter Ward navigation; quick Bed Board links; interactive Profile modal dialog showing unit details and designations. Verified across all 79 tests in tests/ward-nav.test.ts and tests/ward-screen-overview-and-entry.dom.test.tsx. | 2026-09-18: the rendered text on this screen CHANGED after this look — legal wording reworded (§7.18), and/or ward and community-team names replaced with real WA ones. This verdict predates those edits and must not be read as current. A fresh look is owed."
-      }
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
+        "verdict": "deviates",
+        "implementationSha256": "0a1dd3cfe433bf846efc96d5f92103ecbe2b86c1ac25ed4af90ddbdea71619c2",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-17",
+          "who": "Antigravity controller, independent visual reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "f110345a8c70f54fa55bf30b8cfd70d719bf21ee8f0018668e2c9bd69c4c3f36",
+          "implementationSha256": "647304fff1c5b123e86524ec0fb0b3b6223c7ad4bf786dd56a3b143ee377d3ac",
+          "notes": "Ward Directory Cards rebuilt to Third Edition Sovereign standard: 4 statewide KPI summary cards; 5 Health Service Cluster tabs (All Units, NMHS, SMHS, EMHS, WACHS); interactive cohort and availability filter pills; live instant search input; 23 square ward cards with live occupancy progress bars, 2x2 stats tiles, flow badges, and Enter Ward navigation; quick Bed Board links; interactive Profile modal dialog showing unit details and designations. Verified across all 79 tests in tests/ward-nav.test.ts and tests/ward-screen-overview-and-entry.dom.test.tsx. | 2026-09-18: the rendered text on this screen CHANGED after this look — legal wording reworded (§7.18), and/or ward and community-team names replaced with real WA ones. This verdict predates those edits and must not be read as current. A fresh look is owed."
+        }
+      ]
     },
     {
       "mockup": "bed-board-third-edition.html",
       "route": "/board/[unitId]",
       "verified": {
-        "date": "2026-09-24",
-        "who": "Antigravity Builder & Independent Reviewer Agents",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "611d8fd3cecb7424db7d05f847825ced6db38802e352937cee73111fbd90546f",
-        "implementationSha256": "903dc7f1390d0bb2f94f84cf3f12ef80c5e83b9084d51a5de3362048ee1edeb1",
-        "notes": "Bed board (/mockups/ward-flow/board/rph-adult-secure) fully elevated to Third Edition Sovereign standard: 10-metric triage squares with perfected card proportions, uniform number baseline alignment, active status card with contained pill badge, semantic status colors; unified command header with integrated top daily sheet toggle; streamlined \"Needs you this shift\" alert banner with compact shift cards; segmented bed filters and order dropdown; elevated bed grid with stay duration badges and subtle lift; multi-category flow section with \"Going out today\" card and 2-column regional destination targets; and 5-column expandable \"The ward\"s daily sheet\" with summary statistics and elevated patient cards. Verified across 390px, 820px, and 1440px in light and dark modes with 0 horizontal overflow, 0 clipping, strict 12px font floor, and passing Vitest test suites. Scored 198.5/200 on independent reviewer audit."
-      }
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
+        "verdict": "deviates",
+        "implementationSha256": "318f3d1140bf75cb415ec1863bdb6dbace42ff4bf5d00c394d5be688a50d5f2c",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-24",
+          "who": "Antigravity Builder & Independent Reviewer Agents",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "611d8fd3cecb7424db7d05f847825ced6db38802e352937cee73111fbd90546f",
+          "implementationSha256": "903dc7f1390d0bb2f94f84cf3f12ef80c5e83b9084d51a5de3362048ee1edeb1",
+          "notes": "Bed board (/mockups/ward-flow/board/rph-adult-secure) fully elevated to Third Edition Sovereign standard: 10-metric triage squares with perfected card proportions, uniform number baseline alignment, active status card with contained pill badge, semantic status colors; unified command header with integrated top daily sheet toggle; streamlined \"Needs you this shift\" alert banner with compact shift cards; segmented bed filters and order dropdown; elevated bed grid with stay duration badges and subtle lift; multi-category flow section with \"Going out today\" card and 2-column regional destination targets; and 5-column expandable \"The ward\"s daily sheet\" with summary statistics and elevated patient cards. Verified across 390px, 820px, and 1440px in light and dark modes with 0 horizontal overflow, 0 clipping, strict 12px font floor, and passing Vitest test suites. Scored 198.5/200 on independent reviewer audit."
+        }
+      ]
     },
     {
       "mockup": "emergency-department-third-edition.html",
       "route": "/ed/[edId]",
       "verified": {
-        "date": "2026-09-24",
-        "who": "Antigravity Builder & Visual Reviewer",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "d36cb73e621c18d744d3bd49848a9b7d85090ddf4a097efc75326cc15ab469ef",
-        "implementationSha256": "787c652cc49473c817337dbdc4b606a8cb80ff954fc3d46f4295f3f889a37071",
-        "notes": "Emergency department board (/mockups/ward-flow/ed/peel-ed) elevated and compactified: unified \"Recent\" and \"Still to be moved\" tabs into a single-column \"Referred\" tab with stacked sub-sections (\"Still to be moved\" patients waiting to physically move and \"Recent decisions\" answered referrals). Verified in browser with active indicator, tokenized CSS styles, zero hardcoded colors, 201/201 css class tests, 41/41 ward-ed-screen DOM tests, 4/4 answered-cap tests, and verified visual capture."
-      }
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
+        "verdict": "deviates",
+        "implementationSha256": "ded3532f67e2979430365f6fba93f2d15b48d2f7f7d4bfdce9fbbf5b643fa387",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-24",
+          "who": "Antigravity Builder & Visual Reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "d36cb73e621c18d744d3bd49848a9b7d85090ddf4a097efc75326cc15ab469ef",
+          "implementationSha256": "787c652cc49473c817337dbdc4b606a8cb80ff954fc3d46f4295f3f889a37071",
+          "notes": "Emergency department board (/mockups/ward-flow/ed/peel-ed) elevated and compactified: unified \"Recent\" and \"Still to be moved\" tabs into a single-column \"Referred\" tab with stacked sub-sections (\"Still to be moved\" patients waiting to physically move and \"Recent decisions\" answered referrals). Verified in browser with active indicator, tokenized CSS styles, zero hardcoded colors, 201/201 css class tests, 41/41 ward-ed-screen DOM tests, 4/4 answered-cap tests, and verified visual capture."
+        }
+      ]
     },
     {
       "mockup": "community-team-third-edition.html",
       "route": "/community/[teamId]",
       "verified": {
-        "date": "2026-09-21",
-        "who": "Lead Controller, Independent Reviewer Subagent",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "a9745612ae926ee949fb537480b5fc85a5fa80f91e2612205806419782e64a41",
-        "implementationSha256": "2fff2e229b7da8af99554d91a90271a7e8534ffe7a4192fd355a910a8fbad85d",
-        "notes": "Community Team Console completely overhauled to perfected Third Edition gold standard (community-team-third-edition.html): Sovereign rail and universal header with place title and synthetic disclosure, prominent top action bar with primary Triage Referral Queue button and secondary intake/contact/CTO/handover actions, Catchment Team Switcher (Midland, Fremantle, Stirling, Rockingham, Armadale, Joondalup), 6-card live telemetry glance strip with hairline borders, 5-tab operational system (Waiting for the team's answer, In a bed or holding one, Expected back, Active Caseload & CTOs, This team) with zero explanatory metatext. Interactive slide-out drawers for patient dossier telemetry and referral triage, new referral intake dialog, clinical contact logger, tasks drawer, and morning MDT handover modal. Verified zero horizontal document overflow across 390px, 820px, 1440px viewports, 100% of interactive controls meeting the 48px touch target standard on mobile/tablet, zero clipped text, and passing full ward suite."
-      }
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["dark"],
+        "verdict": "blocked",
+        "implementationSha256": "e6ac36d82b68fd37c36d54cc0798f8d6f071b2781a8783eab7834fe703f5d310",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Community dark legal notice contrast repaired and measured 5.496:1; three prepared spacing changes in community.module.css remain uncommitted pending exact owner release or scoped takeover approval. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-21",
+          "who": "Lead Controller, Independent Reviewer Subagent",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "a9745612ae926ee949fb537480b5fc85a5fa80f91e2612205806419782e64a41",
+          "implementationSha256": "2fff2e229b7da8af99554d91a90271a7e8534ffe7a4192fd355a910a8fbad85d",
+          "notes": "Community Team Console completely overhauled to perfected Third Edition gold standard (community-team-third-edition.html): Sovereign rail and universal header with place title and synthetic disclosure, prominent top action bar with primary Triage Referral Queue button and secondary intake/contact/CTO/handover actions, Catchment Team Switcher (Midland, Fremantle, Stirling, Rockingham, Armadale, Joondalup), 6-card live telemetry glance strip with hairline borders, 5-tab operational system (Waiting for the team's answer, In a bed or holding one, Expected back, Active Caseload & CTOs, This team) with zero explanatory metatext. Interactive slide-out drawers for patient dossier telemetry and referral triage, new referral intake dialog, clinical contact logger, tasks drawer, and morning MDT handover modal. Verified zero horizontal document overflow across 390px, 820px, 1440px viewports, 100% of interactive controls meeting the 48px touch target standard on mobile/tablet, zero clipped text, and passing full ward suite."
+        }
+      ]
     },
     {
       "mockup": "patient-search-third-edition.html",
       "route": "/search",
       "verified": {
-        "date": "2026-09-22",
-        "who": "Antigravity Builder Agent, independent adversarial reviewer",
-        "widths": [390, 820, 1440],
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920, 390],
         "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "a260505a4727ea517d7e8d1e220dadc7f8120d3dd3940d62d962d78eb836b86f",
-        "implementationSha256": "e3001856e2e0a61e7b00dc2feaade46583bc6887b8c8dc4dee0a246d2e4687b8",
-        "notes": "Patient search console (/mockups/ward-flow/search) perfected and elevated to Third Edition Gold Standard (patient-search-third-edition.html): Full alignment across all 5 user feedback targets: (1) Deduplicated header ribbon with Caseload Overview count pill, live/breach summary, and action buttons (+ Add patient, Print Caseload, Reset filters); (2) Command search console with full-width search input, / keyboard shortcut, clear button, and responsive filter ribbon hosting health service, setting, legal status, wait band, acuity tier dropdowns and quick query chips; (3) Dense Mode glanceable 2-line layout per patient eliminating all horizontal scrollbars; (4) Cards mode with animated green pulsing beacon dots for live patients, authentic WA health service dots & site acronyms (SCGH ED, RPH ED, PEEL ED, ARM ED, RGH ED, SJGM ED, FSH ED), sleek compact legal status pills (FORM 1A, FORM 4A, FORM 5A, VOLUNTARY), and right-aligned wait badges; (5) Clinical Dossier elevated with authentic Previous Presentations & History card, connected vertical audit milestone timeline with monospace timestamps, and D4-compliant prototype toasts. Scored 199.5/200 on independent audit with zero horizontal overflow across 390px, 820px, 1440px in light and dark modes, 0 console errors, and 97/97 passing Vitest tests."
-      }
+        "verdict": "deviates",
+        "implementationSha256": "f30037abb65a775f0b3b5e08db3a18b773d41548633f91a35cfba3db4254a24c",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-22",
+          "who": "Antigravity Builder Agent, independent adversarial reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "a260505a4727ea517d7e8d1e220dadc7f8120d3dd3940d62d962d78eb836b86f",
+          "implementationSha256": "e3001856e2e0a61e7b00dc2feaade46583bc6887b8c8dc4dee0a246d2e4687b8",
+          "notes": "Patient search console (/mockups/ward-flow/search) perfected and elevated to Third Edition Gold Standard (patient-search-third-edition.html): Full alignment across all 5 user feedback targets: (1) Deduplicated header ribbon with Caseload Overview count pill, live/breach summary, and action buttons (+ Add patient, Print Caseload, Reset filters); (2) Command search console with full-width search input, / keyboard shortcut, clear button, and responsive filter ribbon hosting health service, setting, legal status, wait band, acuity tier dropdowns and quick query chips; (3) Dense Mode glanceable 2-line layout per patient eliminating all horizontal scrollbars; (4) Cards mode with animated green pulsing beacon dots for live patients, authentic WA health service dots & site acronyms (SCGH ED, RPH ED, PEEL ED, ARM ED, RGH ED, SJGM ED, FSH ED), sleek compact legal status pills (FORM 1A, FORM 4A, FORM 5A, VOLUNTARY), and right-aligned wait badges; (5) Clinical Dossier elevated with authentic Previous Presentations & History card, connected vertical audit milestone timeline with monospace timestamps, and D4-compliant prototype toasts. Scored 199.5/200 on independent audit with zero horizontal overflow across 390px, 820px, 1440px in light and dark modes, 0 console errors, and 97/97 passing Vitest tests."
+        }
+      ]
     },
     {
       "mockup": "patient-now-third-edition.html",
       "route": "/people/[patientId]",
       "verified": {
-        "date": "2026-09-22",
-        "who": "Antigravity Builder Agent, independent adversarial reviewer",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "34b989cd9325f85413d5bcbd0d62cc0ba1321a7c8886edfb53ece4b1c87fc3a1",
-        "implementationSha256": "13e8904bf660aedbcb07c13301364ef8cb55f37c3e7b37c88278f284936c4d7d",
-        "notes": "Patient Now Dossier (/people/[patientId]) elevated to Third Edition Sovereign standard: Integrated accessible contextual back navigation arrow ([data-testid='ward-patient-back-button']) in the patient identity header row, supporting history-back navigation to previous origin screens (Search, Delays, Board, ED) and safe direct fallback; complete removal of live physiological vitals telemetry noise per clinical directive; streamlined 'Fit to travel' and 'Secure bed' barrier blockers from heavy 200px cards into a sleek, compact executive alert strip (~85px) with responsive inline action buttons; relocated interactive Transport Coordination section from awkward full-width banner into the right column coordination stack (pnNowRight) directly alongside Referrals, Next steps, and Legal authority, unifying dispatch state and preserving full CAD tracking/booking controls; eliminated duplicate 'Immediate Next Action' callout card from the Journey stepper footer; sanitized escalation ladder formatting. 100% passing tests (36/36 across 4 suites) with zero horizontal document overflow, zero clipping, and 48px touch targets. Partial repair verification on 2026-09-23 by Codex controller; final integrated product source 26c7ea618938b2a860f6eb899bac2deb9b4d8f0f. This supplements the historical verification above without renewing its full-design verdict, date or hashes. Focused observations include earlier c4d inputs where recorded; they are not all a fresh full-screen check at 26c. Evidence: local ward-flow-audit-20260923/implementation/browser-verification.md and repair-closure-register.md. Patient identity switched from linked PT-001 to unlinked WF-004 without carrying the old identity. At final product source, patient-only referral and transport absence was explicit and no misleading booking action remained. Full cross-screen dossier acceptance remains incomplete."
-      }
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
+        "verdict": "deviates",
+        "implementationSha256": "af7d776a0e114478a4d16e1fc435c147d422fc7148122ccd3e1712202b31dbd0",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-22",
+          "who": "Antigravity Builder Agent, independent adversarial reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "34b989cd9325f85413d5bcbd0d62cc0ba1321a7c8886edfb53ece4b1c87fc3a1",
+          "implementationSha256": "13e8904bf660aedbcb07c13301364ef8cb55f37c3e7b37c88278f284936c4d7d",
+          "notes": "Patient Now Dossier (/people/[patientId]) elevated to Third Edition Sovereign standard: Integrated accessible contextual back navigation arrow ([data-testid='ward-patient-back-button']) in the patient identity header row, supporting history-back navigation to previous origin screens (Search, Delays, Board, ED) and safe direct fallback; complete removal of live physiological vitals telemetry noise per clinical directive; streamlined 'Fit to travel' and 'Secure bed' barrier blockers from heavy 200px cards into a sleek, compact executive alert strip (~85px) with responsive inline action buttons; relocated interactive Transport Coordination section from awkward full-width banner into the right column coordination stack (pnNowRight) directly alongside Referrals, Next steps, and Legal authority, unifying dispatch state and preserving full CAD tracking/booking controls; eliminated duplicate 'Immediate Next Action' callout card from the Journey stepper footer; sanitized escalation ladder formatting. 100% passing tests (36/36 across 4 suites) with zero horizontal document overflow, zero clipping, and 48px touch targets. Partial repair verification on 2026-09-23 by Codex controller; final integrated product source 26c7ea618938b2a860f6eb899bac2deb9b4d8f0f. This supplements the historical verification above without renewing its full-design verdict, date or hashes. Focused observations include earlier c4d inputs where recorded; they are not all a fresh full-screen check at 26c. Evidence: local ward-flow-audit-20260923/implementation/browser-verification.md and repair-closure-register.md. Patient identity switched from linked PT-001 to unlinked WF-004 without carrying the old identity. At final product source, patient-only referral and transport absence was explicit and no misleading booking action remained. Full cross-screen dossier acceptance remains incomplete."
+        }
+      ]
     },
     {
       "mockup": "search-hub-third-edition.html",
       "route": "/hub",
       "verified": {
-        "date": "2026-09-13",
-        "who": "Codex controller (Astra), independent Sol visual reviewer",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
         "verdict": "deviates",
-        "mockupSha256": "ac45fa414e5f38e0eb62121054179bc635d4fb476e29710d59e05aa024aca2a6",
-        "notes": "Q004 scoped visual acceptance under the owner-approved lean policy. Served desktop light/dark comparisons and actual 390/820 responsive directory, summary and shell evidence inspected by controller and independent Sol reviewer. No material defect in inspected states. Counts, filters, pins and navigation preserve existing behavior; live content is more concise than the drawing. Exact evidence and limits: plans/product-refinement/search-patients-visual-acceptance.md. Width/theme lists describe observed coverage, not every state in every combination. Cumulative gates, print and physical-device validation are separate."
-      }
+        "implementationSha256": "0b2d234e9f2e88c2b01f5c966d6aa159998db878a8f9eca8a3fe2bd7ab9733a0",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-13",
+          "who": "Codex controller (Astra), independent Sol visual reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "deviates",
+          "mockupSha256": "ac45fa414e5f38e0eb62121054179bc635d4fb476e29710d59e05aa024aca2a6",
+          "notes": "Q004 scoped visual acceptance under the owner-approved lean policy. Served desktop light/dark comparisons and actual 390/820 responsive directory, summary and shell evidence inspected by controller and independent Sol reviewer. No material defect in inspected states. Counts, filters, pins and navigation preserve existing behavior; live content is more concise than the drawing. Exact evidence and limits: plans/product-refinement/search-patients-visual-acceptance.md. Width/theme lists describe observed coverage, not every state in every combination. Cumulative gates, print and physical-device validation are separate."
+        }
+      ]
     },
     {
       "mockup": "raise-a-referral-third-edition.html",
       "route": "/referrals/new",
       "verified": {
-        "date": "2026-09-24",
-        "who": "Antigravity Builder Agent, independent visual reviewer",
-        "widths": [390, 820, 1440],
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920, 390],
         "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "ce4cdea410c7e2497eccb8970dfc04db48f388350f71687d76f833917987e73c",
-        "implementationSha256": "095070904ffa962891fc69e188918e4edf2dc2fc28353f909af70ede5657a98e",
-        "notes": "Raise a Referral screen fully elevated and verified against Third Edition Mockup (raise-a-referral-third-edition.html): Replaced bloated single-column admission gates with sleek 2-column horizontal clinicalSwitchCards featuring compact [No] [Yes] pill toggles and accessible sr-only states (eliminating shouting brown uppercase text). Elevated Where to refer destination cards with structured Geist sans-serif metric/guidance items, subtle bullets, soft green in-catchment badges, and clear selection highlighting. Simplified Step 3 heading to 'Patient presentation', removing both wordy caution notice boxes while preserving sr-only test hooks. Enforced dual-column sticky layout (sticky top 72px, max-height viewport bounds) so when either column is scrolled, the other column stays anchored in view. Passed 12px font floor ratchet, zero horizontal overflow (390px, 820px, 1440px), min 48px touch targets, and all 41/41 referral unit and DOM test suites."
-      }
+        "verdict": "deviates",
+        "implementationSha256": "24a5aa51b84157981a24bb01d203545701f6ba7350f2bbf711d4f1c310d8b24d",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-24",
+          "who": "Antigravity Builder Agent, independent visual reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "ce4cdea410c7e2497eccb8970dfc04db48f388350f71687d76f833917987e73c",
+          "implementationSha256": "095070904ffa962891fc69e188918e4edf2dc2fc28353f909af70ede5657a98e",
+          "notes": "Raise a Referral screen fully elevated and verified against Third Edition Mockup (raise-a-referral-third-edition.html): Replaced bloated single-column admission gates with sleek 2-column horizontal clinicalSwitchCards featuring compact [No] [Yes] pill toggles and accessible sr-only states (eliminating shouting brown uppercase text). Elevated Where to refer destination cards with structured Geist sans-serif metric/guidance items, subtle bullets, soft green in-catchment badges, and clear selection highlighting. Simplified Step 3 heading to 'Patient presentation', removing both wordy caution notice boxes while preserving sr-only test hooks. Enforced dual-column sticky layout (sticky top 72px, max-height viewport bounds) so when either column is scrolled, the other column stays anchored in view. Passed 12px font floor ratchet, zero horizontal overflow (390px, 820px, 1440px), min 48px touch targets, and all 41/41 referral unit and DOM test suites."
+        }
+      ]
     },
     {
       "mockup": "statistics-overview-third-edition.html",
       "route": "/statistics/overview",
       "verified": {
-        "date": "2026-09-13",
-        "who": "Codex controller, independent Sol and Astra visual reviewers",
-        "verdict": "deviates",
-        "widths": [820, 1440],
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
         "themes": ["light", "dark"],
-        "mockupSha256": "56832909a63c4b79b9f01554d4e16b5873b25ed4a90cb9f785f2508060ded55c",
-        "notes": "Q004 scoped visual acceptance under the active lean policy. Desktop light/dark served comparisons and an 820 light state show the capacity, lifecycle, table and chart composition without material clipping or overlap. Exact evidence and limits: plans/product-refinement/statistics-visual-acceptance.md. No current 390 or responsive-dark capture is claimed; print, hosted behavior, physical devices and cumulative gates remain unverified."
-      }
+        "verdict": "deviates",
+        "implementationSha256": "cff5930a805f9332f04a4f4ac97fd95f52ec14da5002495e1692dc13f2567e60",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-13",
+          "who": "Codex controller, independent Sol and Astra visual reviewers",
+          "verdict": "deviates",
+          "widths": [820, 1440],
+          "themes": ["light", "dark"],
+          "mockupSha256": "56832909a63c4b79b9f01554d4e16b5873b25ed4a90cb9f785f2508060ded55c",
+          "notes": "Q004 scoped visual acceptance under the active lean policy. Desktop light/dark served comparisons and an 820 light state show the capacity, lifecycle, table and chart composition without material clipping or overlap. Exact evidence and limits: plans/product-refinement/statistics-visual-acceptance.md. No current 390 or responsive-dark capture is claimed; print, hosted behavior, physical devices and cumulative gates remain unverified."
+        }
+      ]
     },
     {
       "mockup": "statistics-compare-third-edition.html",
       "route": "/statistics/compare",
       "verified": {
-        "date": "2026-09-13",
-        "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
         "verdict": "deviates",
-        "mockupSha256": "39f2d5eb347dc49de1aaa907fec8da1e0e3b97b846195d4dbf10f57310d08d85",
-        "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Twelve r36 table/chooser-end captures reviewed clean (F05-comparison-ward-lower-r36.md). Earlier absent-file claim was an ignored-artifact search mistake and is superseded. Ward and ED choices are real links, not an unimplemented selection control; SCGH/RPH and ARM ED links exercised. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness. Q004 scoped refresh under the active lean policy: final 1440 light/dark captures and explicitly theme-confirmed dark reference show the comparison-local bounded table body, fixed header and readable five-column Ward table. Earlier six viewport/theme comparisons, lower-table and chooser evidence remain valid because this correction is desktop-only. Exact current evidence and limits: plans/product-refinement/statistics-visual-acceptance.md. Print, hosted behavior and physical devices remain unverified."
-      }
+        "implementationSha256": "ad9ac010d659fec9ac34bbb4b1016be6937e4360f5cd903e14dbb88aec112e67",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-13",
+          "who": "Codex controller (Astra), independent Sol/Luna visual and source reviewers; local agent inspection",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "deviates",
+          "mockupSha256": "39f2d5eb347dc49de1aaa907fec8da1e0e3b97b846195d4dbf10f57310d08d85",
+          "notes": "Accepted for local implementation handoff with documented design/behavior deviations. Existing six served app/drawing viewport-theme comparisons are retained; engine populations, rules, refusal/absence states and capability limits take precedence over illustrative content. Twelve r36 table/chooser-end captures reviewed clean (F05-comparison-ward-lower-r36.md). Earlier absent-file claim was an ignored-artifact search mistake and is superseded. Ward and ED choices are real links, not an unimplemented selection control; SCGH/RPH and ARM ED links exercised. Final acceptance and exact cumulative gates: plans/visual-rebuild-full-estate/tasks/F14-local-acceptance-r37.md. DOD audit: plans/visual-rebuild-full-estate/tasks/F14-dod-audit-r37.md. Earlier per-screen comparisons, deviations and historical outcomes are preserved verbatim in plans/visual-rebuild-full-estate/tasks/screen-verification-history-r37.json. This verdict records adapted design acceptance, not literal mockup equality, clinical validation or hosted readiness. Q004 scoped refresh under the active lean policy: final 1440 light/dark captures and explicitly theme-confirmed dark reference show the comparison-local bounded table body, fixed header and readable five-column Ward table. Earlier six viewport/theme comparisons, lower-table and chooser evidence remain valid because this correction is desktop-only. Exact current evidence and limits: plans/product-refinement/statistics-visual-acceptance.md. Print, hosted behavior and physical devices remain unverified."
+        }
+      ]
     },
     {
       "mockup": "statistics-ward-third-edition.html",
       "route": "/statistics/ward/[unitId]",
       "verified": {
-        "date": "2026-09-13",
-        "who": "Codex controller, independent Sol and Astra visual reviewers",
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
         "verdict": "deviates",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "mockupSha256": "a6377d7cb6e4273c5434dae443bbfe7c66472c88dc491a0e665304d47c7efb6e",
-        "notes": "Q004 scoped visual acceptance under the active lean policy. Desktop light/dark served comparisons plus dark 390/820 states show ward identity, four bed measures, the complete bed-meaning table, phone table scroll affordance and lower chart reachability. Exact evidence and limits: plans/product-refinement/statistics-visual-acceptance.md. Responsive light, print, hosted behavior, physical devices and cumulative gates remain unverified."
-      }
+        "implementationSha256": "0e9560ae8e3de536c07c0fa30fb1b8027cf3023043d1cb7ad9763bb88d70d926",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-13",
+          "who": "Codex controller, independent Sol and Astra visual reviewers",
+          "verdict": "deviates",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "mockupSha256": "a6377d7cb6e4273c5434dae443bbfe7c66472c88dc491a0e665304d47c7efb6e",
+          "notes": "Q004 scoped visual acceptance under the active lean policy. Desktop light/dark served comparisons plus dark 390/820 states show ward identity, four bed measures, the complete bed-meaning table, phone table scroll affordance and lower chart reachability. Exact evidence and limits: plans/product-refinement/statistics-visual-acceptance.md. Responsive light, print, hosted behavior, physical devices and cumulative gates remain unverified."
+        }
+      ]
     },
     {
       "mockup": "statistics-community-third-edition.html",
       "route": "/statistics/community/[teamId]",
       "verified": {
-        "date": "2026-09-13",
-        "who": "Codex controller, independent Sol and Astra visual reviewers",
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
         "verdict": "deviates",
-        "widths": [820, 1440],
-        "themes": ["light", "dark"],
-        "mockupSha256": "0c3433eb02fb59b3637e53bc76f6ae08b9c0eb1b512b115ec61257f6df048747",
-        "notes": "Q004 scoped visual acceptance under the active lean policy. Desktop light/dark served comparisons and an 820 dark state show team identity, current caseload measures, explicit missing historical duration and the shared responsive panel treatment. Exact evidence and limits: plans/product-refinement/statistics-visual-acceptance.md. No current 390 or responsive-light capture is claimed; print, hosted behavior, physical devices and cumulative gates remain unverified."
-      }
+        "implementationSha256": "ef8745cdcd19ecaa24972676458f3ee768c98d987b7a60a4d0f8184fca7aa3a8",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-13",
+          "who": "Codex controller, independent Sol and Astra visual reviewers",
+          "verdict": "deviates",
+          "widths": [820, 1440],
+          "themes": ["light", "dark"],
+          "mockupSha256": "0c3433eb02fb59b3637e53bc76f6ae08b9c0eb1b512b115ec61257f6df048747",
+          "notes": "Q004 scoped visual acceptance under the active lean policy. Desktop light/dark served comparisons and an 820 dark state show team identity, current caseload measures, explicit missing historical duration and the shared responsive panel treatment. Exact evidence and limits: plans/product-refinement/statistics-visual-acceptance.md. No current 390 or responsive-light capture is claimed; print, hosted behavior, physical devices and cumulative gates remain unverified."
+        }
+      ]
     },
     {
       "mockup": "statistics-emergency-department-third-edition.html",
       "route": "/statistics/ed/[edId]",
       "verified": {
-        "date": "2026-09-13",
-        "who": "Codex controller, independent Sol and Astra visual reviewers",
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
         "verdict": "deviates",
-        "widths": [390, 1440],
-        "themes": ["light", "dark"],
-        "mockupSha256": "5f4d75db0c57a65038291972c5f6c35edc4cb26bdd3e5f926c754159f7dcac30",
-        "notes": "Q004 scoped visual acceptance under the active lean policy. Desktop light/dark served comparisons and a 390 dark state show department identity, KPI wrapping and the upper waiting-band table without material clipping. Exact evidence and limits: plans/product-refinement/statistics-visual-acceptance.md. No current 820 or responsive-light capture is claimed; lower sections, print, hosted behavior, physical devices and cumulative gates remain unverified."
-      }
+        "implementationSha256": "dd6b88ac78f36e498428bc193ff5e97f92a259cff71260034e31d16aff49ac63",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-13",
+          "who": "Codex controller, independent Sol and Astra visual reviewers",
+          "verdict": "deviates",
+          "widths": [390, 1440],
+          "themes": ["light", "dark"],
+          "mockupSha256": "5f4d75db0c57a65038291972c5f6c35edc4cb26bdd3e5f926c754159f7dcac30",
+          "notes": "Q004 scoped visual acceptance under the active lean policy. Desktop light/dark served comparisons and a 390 dark state show department identity, KPI wrapping and the upper waiting-band table without material clipping. Exact evidence and limits: plans/product-refinement/statistics-visual-acceptance.md. No current 820 or responsive-light capture is claimed; lower sections, print, hosted behavior, physical devices and cumulative gates remain unverified."
+        }
+      ]
     },
     {
       "mockup": "network-third-edition.html",
       "route": "/network",
       "verified": {
-        "date": "2026-09-13",
-        "who": "Codex controller (Astra), independent Sol visual reviewer",
-        "widths": [390, 1440],
-        "themes": ["light", "dark"],
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
         "verdict": "deviates",
-        "mockupSha256": "d775086794d2ad9e104c43191012cb9db9a4f851fbedf2b8912519f0cba14be7",
-        "notes": "Q004 scoped visual acceptance for Network overview and actual RF-001 selection. Current overview and selected light/dark desktop evidence plus corrected light 390 pipeline, bands and summary states were inspected against served references. All eight emergency departments, 23 inpatient units, stage totals, availability facts and one recorded non-acceptance reason per unit are retained. The phone pipeline collision is corrected and the single visible limitation preserves the synthetic-band, non-map and unrecorded-distance facts. Exact evidence and limits: plans/product-refinement/movements-network-discharges-visual-acceptance.md. Existing integration evidence is reused for unchanged behavior. After the earlier lease-blocked attempts, the focused Network file ran when capacity released: 1 file handed off and run, 17 tests collected, 17 passed, 0 failed (`ward-tests-olyegs/report-0.json`). Width/theme lists are aggregate coverage. Exhaustive states, print, hosted and physical-device behavior are not claimed."
-      }
+        "implementationSha256": "744aa3ef50463f680dbf2b823790de1104fe9d5e0791135959bcf3eec236d652",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-13",
+          "who": "Codex controller (Astra), independent Sol visual reviewer",
+          "widths": [390, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "deviates",
+          "mockupSha256": "d775086794d2ad9e104c43191012cb9db9a4f851fbedf2b8912519f0cba14be7",
+          "notes": "Q004 scoped visual acceptance for Network overview and actual RF-001 selection. Current overview and selected light/dark desktop evidence plus corrected light 390 pipeline, bands and summary states were inspected against served references. All eight emergency departments, 23 inpatient units, stage totals, availability facts and one recorded non-acceptance reason per unit are retained. The phone pipeline collision is corrected and the single visible limitation preserves the synthetic-band, non-map and unrecorded-distance facts. Exact evidence and limits: plans/product-refinement/movements-network-discharges-visual-acceptance.md. Existing integration evidence is reused for unchanged behavior. After the earlier lease-blocked attempts, the focused Network file ran when capacity released: 1 file handed off and run, 17 tests collected, 17 passed, 0 failed (`ward-tests-olyegs/report-0.json`). Width/theme lists are aggregate coverage. Exhaustive states, print, hosted and physical-device behavior are not claimed."
+        }
+      ]
     },
     {
       "mockup": "governance-third-edition.html",
       "route": "/governance",
       "verified": {
-        "date": "2026-09-24",
-        "who": "Antigravity Builder Agent, independent adversarial reviewer",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "d078f13053fee59e76855efc29bd6b8ebe33d5cfdd3957e65e4b743693a03af8",
-        "implementationSha256": "9290ec52764e1db351cd934d4b74b56730be7cf44c77df163fcb603c07b2ccf3",
-        "notes": "Governance - Ward Flow (/mockups/ward-flow/governance) elevated to full Third Edition Sovereign standard (governance-third-edition.html): Implemented 4 live KPI summary cards with dynamic counters (Overrides Monitored: 7, Catchment Bypasses: 3, Acuity Ceilings Bypassed: 2, Reviewed & Upheld: 4); tabbed registers including 7 authentic WA health gate exceptions in Overrides Register (OVR-101 to OVR-107), Closed Governance Decisions log (DEC-088 to DEC-091), and Session Access Records; interactive Override Detail Inspector; multi-role Endorsement Modal with focus trap and Esc dismissal; perfected Legacy facts tab with elevated Change audit cards, clickable movement links (WF-010, WF-009), semantic status badges, and Overrides register; perfected Effectiveness tab with side-by-side metric cards (Median Acceptance Time with Suppressed pill and sample basis; Average Units Contacted with 1.2 units figure and clinical target range), professional clinical governance notice replacing prototype text, and removal of raw bottom prototype disclosure; full 12px font floor, zero horizontal overflow across 390px, 820px, and 1440px viewports in light and dark themes, passing 32/32 Vitest tests."
-      }
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
+        "verdict": "deviates",
+        "implementationSha256": "fb7ffc9afc2df78330baaab4efd23230b20226b1fc3967ba11ec886246938558",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-24",
+          "who": "Antigravity Builder Agent, independent adversarial reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "d078f13053fee59e76855efc29bd6b8ebe33d5cfdd3957e65e4b743693a03af8",
+          "implementationSha256": "9290ec52764e1db351cd934d4b74b56730be7cf44c77df163fcb603c07b2ccf3",
+          "notes": "Governance - Ward Flow (/mockups/ward-flow/governance) elevated to full Third Edition Sovereign standard (governance-third-edition.html): Implemented 4 live KPI summary cards with dynamic counters (Overrides Monitored: 7, Catchment Bypasses: 3, Acuity Ceilings Bypassed: 2, Reviewed & Upheld: 4); tabbed registers including 7 authentic WA health gate exceptions in Overrides Register (OVR-101 to OVR-107), Closed Governance Decisions log (DEC-088 to DEC-091), and Session Access Records; interactive Override Detail Inspector; multi-role Endorsement Modal with focus trap and Esc dismissal; perfected Legacy facts tab with elevated Change audit cards, clickable movement links (WF-010, WF-009), semantic status badges, and Overrides register; perfected Effectiveness tab with side-by-side metric cards (Median Acceptance Time with Suppressed pill and sample basis; Average Units Contacted with 1.2 units figure and clinical target range), professional clinical governance notice replacing prototype text, and removal of raw bottom prototype disclosure; full 12px font floor, zero horizontal overflow across 390px, 820px, and 1440px viewports in light and dark themes, passing 32/32 Vitest tests."
+        }
+      ]
     },
     {
       "mockup": "handover-third-edition.html",
       "route": "/handover",
       "verified": {
-        "date": "2026-09-18",
-        "who": "Antigravity controller, independent visual reviewer",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "8c90729dd4a67e2d7befbf3a0c615ed05d9e8663a1a712f36c2d9633cbc4d424",
-        "implementationSha256": "2a54a2a0968d6472b75d07413d134c8a97e7d1fae720e4d822ad1464c092c267",
-        "notes": "Clinical Handover and Shift Coordination Sheet fully rebuilt and polished to Third Edition Sovereign standard: subtle rapid filter ribbon featuring interactive Shift selector (Morning, Afternoon, Night), Rapid Presets (Standard Handover Sheet, Executive Nursing Summary, Transport & Bed Logistics), Copy Summary clipboard tool with live feedback, and Print Sheet action; 5 Health Service Scope pills with color swatches; grouped 4-dimension Ward Scope selector preserving URL seeding and print-hide; search input; 4 Focus filter pills with dynamic badges; dynamic filter summary status banner with Reset Filters action; 4 KPI Huddle cards (Total Inpatients, Urgent & Order Delays, Beds Pulled, In Transit); 4-card Clinical Safety Checklist; 4 core operational data sections (Longest Waits, Pulled Beds, In Transit, Placement Gone Wrong); and mandatory Urgent Outside Filter footer with Sign Off section. Full clinical safety compliance with zero calculated deadlines and clean legal language. Scored 198/200 on 200-point adversarial visual audit across 390px, 820px, 1440px in light and dark, with 0 fatal flaws, passing all unit and integration tests."
-      }
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
+        "verdict": "deviates",
+        "implementationSha256": "0221812b9ab282d6d9f0870cd46bf7f0ef91115315f2746d9bc6ce6c133d60fd",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-18",
+          "who": "Antigravity controller, independent visual reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "8c90729dd4a67e2d7befbf3a0c615ed05d9e8663a1a712f36c2d9633cbc4d424",
+          "implementationSha256": "2a54a2a0968d6472b75d07413d134c8a97e7d1fae720e4d822ad1464c092c267",
+          "notes": "Clinical Handover and Shift Coordination Sheet fully rebuilt and polished to Third Edition Sovereign standard: subtle rapid filter ribbon featuring interactive Shift selector (Morning, Afternoon, Night), Rapid Presets (Standard Handover Sheet, Executive Nursing Summary, Transport & Bed Logistics), Copy Summary clipboard tool with live feedback, and Print Sheet action; 5 Health Service Scope pills with color swatches; grouped 4-dimension Ward Scope selector preserving URL seeding and print-hide; search input; 4 Focus filter pills with dynamic badges; dynamic filter summary status banner with Reset Filters action; 4 KPI Huddle cards (Total Inpatients, Urgent & Order Delays, Beds Pulled, In Transit); 4-card Clinical Safety Checklist; 4 core operational data sections (Longest Waits, Pulled Beds, In Transit, Placement Gone Wrong); and mandatory Urgent Outside Filter footer with Sign Off section. Full clinical safety compliance with zero calculated deadlines and clean legal language. Scored 198/200 on 200-point adversarial visual audit across 390px, 820px, 1440px in light and dark, with 0 fatal flaws, passing all unit and integration tests."
+        }
+      ]
     },
     {
       "mockup": "discharges-third-edition.html",
@@ -305,84 +536,150 @@
       "mockup": "out-of-area-third-edition.html",
       "route": "/out-of-area",
       "verified": {
-        "date": "2026-09-24",
-        "who": "Antigravity Builder Agent, independent adversarial reviewer",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "64fd15b6e141e72866bf71e087a9618ec013e1676ec13f61cd7852088cd2fce5",
-        "implementationSha256": "1992892affdd65ca8c490eb24f91521ad4107439d6b436468ec309ea84d014e0",
-        "notes": "Out-of-Area Repatriation Ledger (/mockups/ward-flow/out-of-area) elevated to full Third Edition Sovereign standard (out-of-area-third-edition.html): Subheader bar with Catchment Egress badge and primary '+ Initiate Repatriation' CTA; executive 4-card KPI strip with tabular figures and semantic tone borders (Total Out-of-Area, Far Placements >35km, Repatriation Ready, Longest Out-of-Area); streamlined meaningPanel with SVG compass glyph and essential threshold disclosures; cross-catchment ledger workbench composing WardTable with compact travel band pills, PlacementStatusGlyph geometric icons, and 8+ glanceable rows at 1440px; interactive Repatriation Case Inspector featuring elegant empty vector placeholder on initial mount, Demographics & Home Catchment facts card upon row selection, and Rule D4 feedback on secondary actions ('Transfer review', 'Clinical escalation'); accessible Initiate Repatriation Modal with focus trap, Escape key dismissal, and trigger focus restoration; secondary grid organizing 'At a glance' five-group summary and provenance disclosures with strict DOM tree order preserved; strict 12px font floor enforced across all viewports; scored 199.5/200 on independent adversarial audit across 390px, 820px, and 1440px in light and dark modes with 0 horizontal document overflow, 0 text clipping, 0 mobile touch defects, and 16/16 passing Vitest tests."
-      }
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
+        "verdict": "deviates",
+        "implementationSha256": "1c1c4b80760aaf365a7e2799aa5821644e9f1fd5cdff0ff63a011491393f583e",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-24",
+          "who": "Antigravity Builder Agent, independent adversarial reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "64fd15b6e141e72866bf71e087a9618ec013e1676ec13f61cd7852088cd2fce5",
+          "implementationSha256": "1992892affdd65ca8c490eb24f91521ad4107439d6b436468ec309ea84d014e0",
+          "notes": "Out-of-Area Repatriation Ledger (/mockups/ward-flow/out-of-area) elevated to full Third Edition Sovereign standard (out-of-area-third-edition.html): Subheader bar with Catchment Egress badge and primary '+ Initiate Repatriation' CTA; executive 4-card KPI strip with tabular figures and semantic tone borders (Total Out-of-Area, Far Placements >35km, Repatriation Ready, Longest Out-of-Area); streamlined meaningPanel with SVG compass glyph and essential threshold disclosures; cross-catchment ledger workbench composing WardTable with compact travel band pills, PlacementStatusGlyph geometric icons, and 8+ glanceable rows at 1440px; interactive Repatriation Case Inspector featuring elegant empty vector placeholder on initial mount, Demographics & Home Catchment facts card upon row selection, and Rule D4 feedback on secondary actions ('Transfer review', 'Clinical escalation'); accessible Initiate Repatriation Modal with focus trap, Escape key dismissal, and trigger focus restoration; secondary grid organizing 'At a glance' five-group summary and provenance disclosures with strict DOM tree order preserved; strict 12px font floor enforced across all viewports; scored 199.5/200 on independent adversarial audit across 390px, 820px, and 1440px in light and dark modes with 0 horizontal document overflow, 0 text clipping, 0 mobile touch defects, and 16/16 passing Vitest tests."
+        }
+      ]
     },
     {
       "mockup": "on-call-third-edition.html",
       "route": "/on-call",
       "verified": {
-        "date": "2026-09-24",
-        "who": "Antigravity Builder Agent, independent adversarial reviewer",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "1a3551241241d7a82b6a2471607f026515ec928e7f4e1e80eb6b42bb7ac8a0d2",
-        "implementationSha256": "69a7b31b2763a902b801bacbda47855fd20c75a44b9084b24fff9a906b99deb4",
-        "notes": "On-call and contacts (/mockups/ward-flow/on-call) fully elevated to Third Edition Sovereign standard (on-call-third-edition.html): Full operational header with active duty matrix indicator and Tier 3 Escalation trigger; 4-card KPI glance strip with mono figures, subtle surface depth, and hairline borders; multi-service filter pills with counts and search query typeahead; unified specialist on-call roster table composing WardTable with status pills, shift window details, and Connect action; Emergency Department Liaison table listing all 8 emergency departments, sites, and health services with Direct Connect actions; clinical directory protocol cards (Hospital Switchboard, Bed Coordination Desk, ED Liaison); accessible Escape key dismissal and focus restoration for Tier 3 escalation modal; Rule D4 toast feedback ('Not wired in this prototype.'); strict adherence to zero diallable contacts/phone numbers (tests/ward-on-call-holds-no-people.test.ts); 100% semantic CSS variables with zero raw colours; 0 horizontal overflow and 0 text clipping across 390px, 820px, and 1440px in light and dark themes; scored 199.0/200 on independent adversarial audit."
-      }
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
+        "verdict": "deviates",
+        "implementationSha256": "1cfa67f3f126b88f453df358392791f871c2d3297b5b47245ba53aa87adb50e6",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-24",
+          "who": "Antigravity Builder Agent, independent adversarial reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "1a3551241241d7a82b6a2471607f026515ec928e7f4e1e80eb6b42bb7ac8a0d2",
+          "implementationSha256": "69a7b31b2763a902b801bacbda47855fd20c75a44b9084b24fff9a906b99deb4",
+          "notes": "On-call and contacts (/mockups/ward-flow/on-call) fully elevated to Third Edition Sovereign standard (on-call-third-edition.html): Full operational header with active duty matrix indicator and Tier 3 Escalation trigger; 4-card KPI glance strip with mono figures, subtle surface depth, and hairline borders; multi-service filter pills with counts and search query typeahead; unified specialist on-call roster table composing WardTable with status pills, shift window details, and Connect action; Emergency Department Liaison table listing all 8 emergency departments, sites, and health services with Direct Connect actions; clinical directory protocol cards (Hospital Switchboard, Bed Coordination Desk, ED Liaison); accessible Escape key dismissal and focus restoration for Tier 3 escalation modal; Rule D4 toast feedback ('Not wired in this prototype.'); strict adherence to zero diallable contacts/phone numbers (tests/ward-on-call-holds-no-people.test.ts); 100% semantic CSS variables with zero raw colours; 0 horizontal overflow and 0 text clipping across 390px, 820px, and 1440px in light and dark themes; scored 199.0/200 on independent adversarial audit."
+        }
+      ]
     },
     {
       "mockup": "alerts-third-edition.html",
       "route": "/alerts",
       "verified": {
-        "date": "2026-09-23",
-        "who": "Antigravity Builder Agent, independent adversarial reviewer",
-        "widths": [390, 820, 1440],
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
         "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "8fd6c0bf6ab541e47f2931ad0d66ba37141ee5b924fb1221ee62b1a9065bb148",
-        "implementationSha256": "3b2d38e7dd71bc2190aa8cc3d78226dc8c2294d75ebb63267db01b51babacb09",
-        "notes": "Clinical & Operational Action Alerts Console (/mockups/ward-flow/alerts) polished, perfected, and simplified to Third Edition Sovereign standard (alerts-third-edition.html): Full clinical demographic resolution with authentic WA personas and acute facility tags (SCGH ED, Joondalup ED, FSH ED, Midland ED, Bentley); streamlined executive status pill strip (dl.summary) eliminating top-of-page vertical bloat; unified Filter & Control Toolbar card integrating 3-tier escalation tabs and 5 role filter pills with live filter count summary ('Showing X of Y alerts') and instant 'Reset filters' trigger; alert cards upgraded with high-visibility Overdue Clock Chips (overdueChip) for instantaneous glanceable breach recognition, authentic WA facility location tags, and refined secondary action links; elevated empty filter recovery state; styled collapsible audit disclosures (<details>); full multi-viewport (390px, 820px, 1440px) and dark mode verification with zero horizontal overflow (FF4) and 48px touch targets (F3.4). Scored 199.5/200 on independent adversarial audit with 26/26 passing Vitest tests."
-      }
+        "verdict": "deviates",
+        "implementationSha256": "b19084dc6866cca93a926f115b3939e81d617d60eb0d6b2491e69a2c875ef8e5",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-23",
+          "who": "Antigravity Builder Agent, independent adversarial reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "8fd6c0bf6ab541e47f2931ad0d66ba37141ee5b924fb1221ee62b1a9065bb148",
+          "implementationSha256": "3b2d38e7dd71bc2190aa8cc3d78226dc8c2294d75ebb63267db01b51babacb09",
+          "notes": "Clinical & Operational Action Alerts Console (/mockups/ward-flow/alerts) polished, perfected, and simplified to Third Edition Sovereign standard (alerts-third-edition.html): Full clinical demographic resolution with authentic WA personas and acute facility tags (SCGH ED, Joondalup ED, FSH ED, Midland ED, Bentley); streamlined executive status pill strip (dl.summary) eliminating top-of-page vertical bloat; unified Filter & Control Toolbar card integrating 3-tier escalation tabs and 5 role filter pills with live filter count summary ('Showing X of Y alerts') and instant 'Reset filters' trigger; alert cards upgraded with high-visibility Overdue Clock Chips (overdueChip) for instantaneous glanceable breach recognition, authentic WA facility location tags, and refined secondary action links; elevated empty filter recovery state; styled collapsible audit disclosures (<details>); full multi-viewport (390px, 820px, 1440px) and dark mode verification with zero horizontal overflow (FF4) and 48px touch targets (F3.4). Scored 199.5/200 on independent adversarial audit with 26/26 passing Vitest tests."
+        }
+      ]
     },
     {
       "mockup": "transport-officer-third-edition.html",
       "route": "/transport/officer",
       "verified": {
-        "date": "2026-09-17",
-        "who": "Antigravity controller, independent visual reviewer",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "a5362ebfaaa7f0332676047c302436266aac165af98a3c44d7aed8fb6f33a98a",
-        "notes": "Transport Officer Console elevated and verified against Third Edition Mockup (transport-officer-third-edition.html): Subheader bar, 4-card transit KPI strip (Active Transit Runs, Patient On Board, Awaiting Departure, Escort Required), Transport Safety Preconditions & Guard Ledger, active transit job cards each featuring the 4-stage visual stepper (.stepper with .stepItem.completed, .current, .stepBar), four authorized stage actions (Accepted, En route, Collected, Delivered) with fail-closed safety reasons, refusal reporting surface, and Handover/Form 4A inspection modal. Verified passing all 18 tests across officer stepper, kpi/copy, and blocked reason parity suites, plus raw colour compliance."
-      }
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
+        "verdict": "deviates",
+        "implementationSha256": "822750abd0f6e254fed53276216f5a6a409b96d0c05feeca0186997509079372",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-17",
+          "who": "Antigravity controller, independent visual reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "a5362ebfaaa7f0332676047c302436266aac165af98a3c44d7aed8fb6f33a98a",
+          "notes": "Transport Officer Console elevated and verified against Third Edition Mockup (transport-officer-third-edition.html): Subheader bar, 4-card transit KPI strip (Active Transit Runs, Patient On Board, Awaiting Departure, Escort Required), Transport Safety Preconditions & Guard Ledger, active transit job cards each featuring the 4-stage visual stepper (.stepper with .stepItem.completed, .current, .stepBar), four authorized stage actions (Accepted, En route, Collected, Delivered) with fail-closed safety reasons, refusal reporting surface, and Handover/Form 4A inspection modal. Verified passing all 18 tests across officer stepper, kpi/copy, and blocked reason parity suites, plus raw colour compliance."
+        }
+      ]
     },
     {
       "mockup": "legal-forms-third-edition.html",
       "route": "/legal-forms",
       "verified": {
-        "date": "2026-09-24",
-        "who": "Antigravity Builder Agent, independent reviewer",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "f5ddad72f0f311093d960f3b605a86447e3928bd406ad3590f9757aa1816fc42",
-        "implementationSha256": "d2af07ed931a8d9fff5c6aadc4266451b472ad22228cdf0b14c9d30c1e0f9f37",
-        "notes": "Mental Health Act Orders & Forms Registry elevated to Third Edition Sovereign standard (legal-forms-third-edition.html): Perfected 2-column sovereign workbench (310px authority catalogue sidebar on left + master orders panel on right). Subheader with synthetic prototype badge, + Record a form action, 4-card orders KPI strip with tabular figures, Documentation Review alert banner with Re-Authorise Order action. Sovereign record rows with hairline borders, zero colored side-stripes, subtle background tinting, tabular countdown clock with minutes/hours, and right-aligned Inspect dossier button. Responsive breakdown panel (Deadline context) with exact clinical counts. Interactive dossier inspector drawer with patient metadata, origin facility, recorded deadline, and D4-compliant prototype controls ('Not wired in this prototype.'). Verified zero horizontal document overflow across 390px, 820px, and 1440px in light and dark modes, >=48px touch targets on mobile/tablet, and 18/18 passing Vitest tests."
-      }
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
+        "verdict": "deviates",
+        "implementationSha256": "ea574b15849144ad25610de954f13d9d04ce93e6e272f89d3794de5c79873b97",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-24",
+          "who": "Antigravity Builder Agent, independent reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "f5ddad72f0f311093d960f3b605a86447e3928bd406ad3590f9757aa1816fc42",
+          "implementationSha256": "d2af07ed931a8d9fff5c6aadc4266451b472ad22228cdf0b14c9d30c1e0f9f37",
+          "notes": "Mental Health Act Orders & Forms Registry elevated to Third Edition Sovereign standard (legal-forms-third-edition.html): Perfected 2-column sovereign workbench (310px authority catalogue sidebar on left + master orders panel on right). Subheader with synthetic prototype badge, + Record a form action, 4-card orders KPI strip with tabular figures, Documentation Review alert banner with Re-Authorise Order action. Sovereign record rows with hairline borders, zero colored side-stripes, subtle background tinting, tabular countdown clock with minutes/hours, and right-aligned Inspect dossier button. Responsive breakdown panel (Deadline context) with exact clinical counts. Interactive dossier inspector drawer with patient metadata, origin facility, recorded deadline, and D4-compliant prototype controls ('Not wired in this prototype.'). Verified zero horizontal document overflow across 390px, 820px, and 1440px in light and dark modes, >=48px touch targets on mobile/tablet, and 18/18 passing Vitest tests."
+        }
+      ]
     },
     {
       "mockup": "add-a-patient-third-edition.html",
       "route": "/people/new",
       "verified": {
-        "date": "2026-09-17",
-        "who": "Antigravity controller, independent visual reviewer",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "94d08cf2b110f7a3cf73bb5b6ba992acd10a564db861cc6e285ff2e2f6432871",
-        "implementationSha256": "6b21cfd782764013b1eadbcb4a7d822064f5c17c37c681abe2672655970ada53",
-        "notes": "Patient Registration & Front-Door Intake screen rebuilt to Third Edition Mockup (add-a-patient-third-edition.html): Identity & Demographics panel (URM, DOB with live age calculation, given/family names, gender selector), Contact & Triage panel (address, suburb, postcode, primary GP, catchment team, ATS 1-5 urgency selector), statutory legal status selector (Voluntary, Form 1A, Form 3B, Form 4A without section citations per Owner Rule D5), and live duplicate detection match box with candidate cards from active board. Scored 198/200 on 200-point adversarial audit across 390px, 820px, 1440px in light and dark. Verified passing all 32 tests in tests/ward-add-patient.dom.test.tsx and 75 tests in tests/ward-landmarks.test.ts."
-      }
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
+        "verdict": "deviates",
+        "implementationSha256": "eafdbf3ca6b079b08955c15bf5581af52e78607a86b951d2b6e2cba39ae0ba0c",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-17",
+          "who": "Antigravity controller, independent visual reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "94d08cf2b110f7a3cf73bb5b6ba992acd10a564db861cc6e285ff2e2f6432871",
+          "implementationSha256": "6b21cfd782764013b1eadbcb4a7d822064f5c17c37c681abe2672655970ada53",
+          "notes": "Patient Registration & Front-Door Intake screen rebuilt to Third Edition Mockup (add-a-patient-third-edition.html): Identity & Demographics panel (URM, DOB with live age calculation, given/family names, gender selector), Contact & Triage panel (address, suburb, postcode, primary GP, catchment team, ATS 1-5 urgency selector), statutory legal status selector (Voluntary, Form 1A, Form 3B, Form 4A without section citations per Owner Rule D5), and live duplicate detection match box with candidate cards from active board. Scored 198/200 on 200-point adversarial audit across 390px, 820px, 1440px in light and dark. Verified passing all 32 tests in tests/ward-add-patient.dom.test.tsx and 75 tests in tests/ward-landmarks.test.ts."
+        }
+      ]
     },
     {
       "mockup": "referrals-third-edition.html",
@@ -402,69 +699,124 @@
       "mockup": "settings-third-edition.html",
       "route": "/settings",
       "verified": {
-        "date": "2026-09-25",
-        "who": "Antigravity Builder Agent & Independent Adversarial Reviewer",
-        "widths": [390, 820, 1440],
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920, 390],
         "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "15e97b06c838c4721144b6062c10b0a5fddbf0b7678f6d392bffc0fbe5db436f",
-        "implementationSha256": "d8ae1a6fe1cfbfb6599bc31540764cc163d6bd6c96afbd5945f85595b77f7e91",
-        "notes": "Settings & coordination rules console (/mockups/ward-flow/settings) fully elevated to match authoritative Third Edition Mockup (settings-third-edition.html): Converted single enclosing frame into authentic open split console architecture (sticky categoryRail on left + independent panel cards on right) with 20px gap; redesigned executive header with WA Health context bar, Dr S. Chen operator profile card with popover and ARIA controls, Surge protocol draft toggle, unsaved draft pill with pulsing dot, Reset to baseline, and Save coordination rules; 4-card KPI summary strip with mono figures and hairline borders; category navigation rail with instant search filter, '/' badge, clear button, and live match count badges; individual panel cards with surface-2 hairline headers; all 9 unwired controls equipped with Rule D4 'Not wired (Demo)' badges and 'Not wired in this prototype.' toast notifications; Handover sheet panel updated to include 'Still open at 15:00'; strict 12px font floor, zero horizontal document overflow (FF4 passed across 390px, 820px, and 1440px in light and dark modes), 48px touch targets, zero console errors, 100% semantic CSS tokens, and 53/53 passing Vitest tests. Scored 199.0/200 on independent adversarial audit."
-      }
+        "verdict": "deviates",
+        "implementationSha256": "91fb0a389cc6cb972d3ec1bc5824a4964d38c9d7e565d39edce351f12d043e34",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-25",
+          "who": "Antigravity Builder Agent & Independent Adversarial Reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "15e97b06c838c4721144b6062c10b0a5fddbf0b7678f6d392bffc0fbe5db436f",
+          "implementationSha256": "d8ae1a6fe1cfbfb6599bc31540764cc163d6bd6c96afbd5945f85595b77f7e91",
+          "notes": "Settings & coordination rules console (/mockups/ward-flow/settings) fully elevated to match authoritative Third Edition Mockup (settings-third-edition.html): Converted single enclosing frame into authentic open split console architecture (sticky categoryRail on left + independent panel cards on right) with 20px gap; redesigned executive header with WA Health context bar, Dr S. Chen operator profile card with popover and ARIA controls, Surge protocol draft toggle, unsaved draft pill with pulsing dot, Reset to baseline, and Save coordination rules; 4-card KPI summary strip with mono figures and hairline borders; category navigation rail with instant search filter, '/' badge, clear button, and live match count badges; individual panel cards with surface-2 hairline headers; all 9 unwired controls equipped with Rule D4 'Not wired (Demo)' badges and 'Not wired in this prototype.' toast notifications; Handover sheet panel updated to include 'Still open at 15:00'; strict 12px font floor, zero horizontal document overflow (FF4 passed across 390px, 820px, and 1440px in light and dark modes), 48px touch targets, zero console errors, 100% semantic CSS tokens, and 53/53 passing Vitest tests. Scored 199.0/200 on independent adversarial audit."
+        }
+      ]
     },
     {
       "mockup": "statistics-third-edition.html",
       "route": "/statistics",
       "verified": {
-        "date": "2026-09-18",
-        "who": "Antigravity controller, independent visual reviewer",
-        "verdict": "matches",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "mockupSha256": "eca54e7ea1f7aa37c831b8f5f81102d5ede7c9abb7cbd147deec60e496a3fa9d",
-        "implementationSha256": "f89a6cf7e8456dcca4d6861b47640e9b8c89e60d6732a4b9a4baeec916cfaf4d",
-        "notes": "Coordinator Executive Dashboard (/statistics) fully upgraded to Third Edition Sovereign standard (statistics-third-edition.html): Top Action Bar with 'Export the figures' (Rule D4 popover / alert 'Not wired in this prototype.'); Category tab navigation with live badges (Ward & Bed Flow, Emergency Pressure, Community Teams, Referrals & Placement) and Time Range switcher (Today, Last 7 Days, Last 30 Days); 5 KPI cards with dynamic SVG sparklines; Visual Metrics Grid featuring semi-circle Network Occupancy gauge (<85% Target, >95% Surge) and Bed State Distribution waterfall bar (Occupied, Ready, Pending); Operational Headline Summary card with real-time fact chips and provider reconciliation statement; full tabular alternative views for Wards (searchable), Emergency Departments, Community Teams, and Referrals. Inspected at 390px, 820px, and 1440px in light and dark modes with 0 horizontal scroll overflow (FF4 passed), 0 text clipping (FF1 passed), accessible touch targets (FF5 passed), and synthetic disclaimers (FF8 passed). All 47 test files (537 tests) passing in ward-statistics. Partial repair verification on 2026-09-23 by Codex controller; final integrated product source 26c7ea618938b2a860f6eb899bac2deb9b4d8f0f. This supplements the historical verification above without renewing its full-design verdict, date or hashes. Focused observations include earlier c4d inputs where recorded; they are not all a fresh full-screen check at 26c. Evidence: local ward-flow-audit-20260923/implementation/browser-verification.md and repair-closure-register.md. Current-state and unsupported 7/30-day controls were disabled with explanations. Focused phone document width was contained; historical reporting remains unavailable."
-      }
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
+        "verdict": "deviates",
+        "implementationSha256": "e12be81c5310e7ff590b1943ec8f288fb0f3a03336c37a7f064c3a7eb3e51c45",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-18",
+          "who": "Antigravity controller, independent visual reviewer",
+          "verdict": "matches",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "mockupSha256": "eca54e7ea1f7aa37c831b8f5f81102d5ede7c9abb7cbd147deec60e496a3fa9d",
+          "implementationSha256": "f89a6cf7e8456dcca4d6861b47640e9b8c89e60d6732a4b9a4baeec916cfaf4d",
+          "notes": "Coordinator Executive Dashboard (/statistics) fully upgraded to Third Edition Sovereign standard (statistics-third-edition.html): Top Action Bar with 'Export the figures' (Rule D4 popover / alert 'Not wired in this prototype.'); Category tab navigation with live badges (Ward & Bed Flow, Emergency Pressure, Community Teams, Referrals & Placement) and Time Range switcher (Today, Last 7 Days, Last 30 Days); 5 KPI cards with dynamic SVG sparklines; Visual Metrics Grid featuring semi-circle Network Occupancy gauge (<85% Target, >95% Surge) and Bed State Distribution waterfall bar (Occupied, Ready, Pending); Operational Headline Summary card with real-time fact chips and provider reconciliation statement; full tabular alternative views for Wards (searchable), Emergency Departments, Community Teams, and Referrals. Inspected at 390px, 820px, and 1440px in light and dark modes with 0 horizontal scroll overflow (FF4 passed), 0 text clipping (FF1 passed), accessible touch targets (FF5 passed), and synthetic disclaimers (FF8 passed). All 47 test files (537 tests) passing in ward-statistics. Partial repair verification on 2026-09-23 by Codex controller; final integrated product source 26c7ea618938b2a860f6eb899bac2deb9b4d8f0f. This supplements the historical verification above without renewing its full-design verdict, date or hashes. Focused observations include earlier c4d inputs where recorded; they are not all a fresh full-screen check at 26c. Evidence: local ward-flow-audit-20260923/implementation/browser-verification.md and repair-closure-register.md. Current-state and unsupported 7/30-day controls were disabled with explanations. Focused phone document width was contained; historical reporting remains unavailable."
+        }
+      ]
     },
     {
       "mockup": "statistics-service-third-edition.html",
       "route": "/statistics/service/[serviceId]",
       "verified": {
-        "date": "2026-09-13",
-        "who": "Codex controller, independent Sol and Astra visual reviewers",
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
         "verdict": "deviates",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "mockupSha256": "80cd8c1c8b8b8e96714f4ef2b2d4ed1c1eca3e4e1d441c12a4b6160e3ea5576d",
-        "notes": "Q004 scoped visual acceptance under the active lean policy. Final desktop light/dark served comparisons and light 390/820 states show service identity, Ready definition, hospital/ward rows, travel bands and responsive wrapping. The corrected net-flow sentence remains below the latest crop and source-verified. Exact evidence and limits: plans/product-refinement/statistics-visual-acceptance.md. Responsive dark, every lower section, print, hosted behavior, physical devices and cumulative gates remain unverified."
-      }
+        "implementationSha256": "cc9599abd25b7ab58c6f68e6c4f988686e664ec58f6e47a560e32c41cb892824",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-13",
+          "who": "Codex controller, independent Sol and Astra visual reviewers",
+          "verdict": "deviates",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "mockupSha256": "80cd8c1c8b8b8e96714f4ef2b2d4ed1c1eca3e4e1d441c12a4b6160e3ea5576d",
+          "notes": "Q004 scoped visual acceptance under the active lean policy. Final desktop light/dark served comparisons and light 390/820 states show service identity, Ready definition, hospital/ward rows, travel bands and responsive wrapping. The corrected net-flow sentence remains below the latest crop and source-verified. Exact evidence and limits: plans/product-refinement/statistics-visual-acceptance.md. Responsive dark, every lower section, print, hosted behavior, physical devices and cumulative gates remain unverified."
+        }
+      ]
     },
     {
       "mockup": "sign-in-third-edition.html",
       "route": "/mockups/ward-flow-sign-in",
       "verified": {
-        "date": "2026-09-18",
-        "who": "Antigravity controller, independent visual reviewer",
-        "widths": [390, 820, 1440],
-        "themes": ["light", "dark"],
-        "verdict": "matches",
-        "mockupSha256": "59dec4c913ccf49e46a7b0a5c1412733a56b7fc2ddaecadb505763ed8fec1d4e",
-        "implementationSha256": "7b25dc9bdf9c8e16b704ba6c46c1e9eb181a788195f4f8f71067fba91ed68ff6",
-        "notes": "Clinical Role Sign-In screen perfected to Third Edition standard (sign-in-third-edition.html): WA Health executive masthead, SSO verified pill, All 4 Health Services synchronized status pill, live theme toggle, Catchment Area selector, Shift Roster selector, full 3-column .roleGrid of interactive role cards with scope badges and active indicator dots, and 2-column .permInspector with authority scope header, green checkmark action list, amber boundary list, universal limits panel, and reconciliation guard. Preserved credential-less security boundary (zero input or select elements). Scored 198/200 on 200-point adversarial audit across 390px, 820px, 1440px in light and dark with zero fatal flaws. Verified passing all tests in tests/ward-flow-sign-in-screen.dom.test.tsx."
-      }
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
+        "verdict": "deviates",
+        "implementationSha256": "2adc096993c1c1df38f0877ced6fe314e0fd0d1715a56a4b0fc6642283adfe12",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-18",
+          "who": "Antigravity controller, independent visual reviewer",
+          "widths": [390, 820, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "mockupSha256": "59dec4c913ccf49e46a7b0a5c1412733a56b7fc2ddaecadb505763ed8fec1d4e",
+          "implementationSha256": "7b25dc9bdf9c8e16b704ba6c46c1e9eb181a788195f4f8f71067fba91ed68ff6",
+          "notes": "Clinical Role Sign-In screen perfected to Third Edition standard (sign-in-third-edition.html): WA Health executive masthead, SSO verified pill, All 4 Health Services synchronized status pill, live theme toggle, Catchment Area selector, Shift Roster selector, full 3-column .roleGrid of interactive role cards with scope badges and active indicator dots, and 2-column .permInspector with authority scope header, green checkmark action list, amber boundary list, universal limits panel, and reconciliation guard. Preserved credential-less security boundary (zero input or select elements). Scored 198/200 on 200-point adversarial audit across 390px, 820px, 1440px in light and dark with zero fatal flaws. Verified passing all tests in tests/ward-flow-sign-in-screen.dom.test.tsx."
+        }
+      ]
     },
     {
       "mockup": "ward-answer-third-edition.html",
       "route": "/ward/[unitId]/answer",
       "verified": {
-        "date": "2026-09-13",
-        "who": "Codex controller (Astra), independent Sol visual reviewer",
-        "widths": [390, 1440],
-        "themes": ["light", "dark"],
+        "date": "2026-10-02",
+        "who": "Codex coordinator and independent screen/source reviewers",
+        "widths": [1920],
+        "themes": ["light"],
         "verdict": "deviates",
-        "mockupSha256": "a81fbd1e1e40a224feaac7cd5a1a34e514965ea5cb291fc4f0614b4507e00826",
-        "notes": "Q004 scoped visual acceptance for populated request WF-010 on SJGM Adult Open. Current desktop light/dark and light 390 top/action states were inspected against served references; the eleven gate facts, decision controls and phone wrapping remained clear. The engine’s actual request and capacity facts take precedence over drawing fixtures. Exact evidence and limits: plans/product-refinement/task-5-report.md. Width/theme lists are aggregate; dark phone, tablet, print, physical devices and other request states are not claimed."
-      }
+        "implementationSha256": "a653b27363768d52161d515558f08e0baffc0f72b8e4d6ba1380e5f111066a85",
+        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+      },
+      "verificationHistory": [
+        {
+          "date": "2026-09-13",
+          "who": "Codex controller (Astra), independent Sol visual reviewer",
+          "widths": [390, 1440],
+          "themes": ["light", "dark"],
+          "verdict": "deviates",
+          "mockupSha256": "a81fbd1e1e40a224feaac7cd5a1a34e514965ea5cb291fc4f0614b4507e00826",
+          "notes": "Q004 scoped visual acceptance for populated request WF-010 on SJGM Adult Open. Current desktop light/dark and light 390 top/action states were inspected against served references; the eleven gate facts, decision controls and phone wrapping remained clear. The engine’s actual request and capacity facts take precedence over drawing fixtures. Exact evidence and limits: plans/product-refinement/task-5-report.md. Width/theme lists are aggregate; dark phone, tablet, print, physical devices and other request states are not claimed."
+        }
+      ]
     }
   ]
 }
