@@ -20,6 +20,11 @@ if [ "${GUARD_PUSH_DISABLE:-}" = "1" ]; then
   export SKIP_STATIC_GUARD=1
 fi
 
+# By default, do not block fast iterations/fixes on in-flight CI runs unless explicitly requested.
+if [ "${PREPUSH_CI_STRICT:-0}" != "1" ]; then
+  export SKIP_IN_FLIGHT_CI_GUARD="${SKIP_IN_FLIGHT_CI_GUARD:-1}"
+fi
+
 # Without Node, the destination cannot be checked, so block the push.
 if ! command -v node >/dev/null 2>&1; then
   echo "[pre-push] node not found on PATH — cannot verify Ward-Flow push destination" >&2
