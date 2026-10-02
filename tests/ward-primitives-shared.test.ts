@@ -392,6 +392,11 @@ describe("the breakpoint scale", () => {
     // The 1920 x 1080 Delays review confirms the radar remains legible with its 22rem cap.
     // Smaller layouts retain the uncapped diagram for labels and hit targets.
     "src/components/ward-management/delays/delays.module.css: 80",
+    // Existing main layout, retained at the fold: wide bed-map cards, the bounded side rail,
+    // and compact-table first-column sizing. Capacity was checked at 1920 x 1080 and 390 x 844.
+    "src/components/ward-management/capacity/bed-map.module.css: 85",
+    "src/components/ward-management/capacity/capacity.module.css: 68",
+    "src/components/ward-management/capacity/capacity.module.css: 45",
   ];
 
   it("introduces no breakpoint outside the known set", () => {

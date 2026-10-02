@@ -1781,7 +1781,7 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
             <table className={thirdEdition.govTable} id="restrictiveTable" aria-label="Restrictive practices register">
               <thead>
                 <tr>
-                  <th scope="col">Form</th>
+                  <th scope="col">Practice</th>
                   <th scope="col">Patient · UMRN</th>
                   <th scope="col">Ward · Location</th>
                   <th scope="col">Authorised By</th>
