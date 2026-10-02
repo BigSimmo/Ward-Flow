@@ -5,9 +5,9 @@ Coordinator: `codex/chat-polish-34-screens-6c8b` in
 `C:/Users/joshs/.codex/worktrees/6c8b/Ward-Flow`.
 Base: verified local main `981a4a8a52e0c235b888e4c9470c94c34808cf33`.
 Current integration candidate: `codex/polish-local-fold-20261002` in
-`D:/Temp/ward-polish-fold-20261002`, app HEAD `fcae12d019d6496b57506980dcb57acb32de4f8c`.
+`D:/Temp/ward-polish-fold-20261002`, app HEAD `c25ac73`.
 Candidate base and unchanged local main: `7eb199bd2e9824c1165896f821750973bb986b82`.
-Status: **Needs you** for three scoped decisions described in the latest resume checkpoint below.
+Status: **In progress**. All three scoped decisions were approved; final gates and the local fold remain in progress.
 Last verified: 2026-10-02T13:17:06.713Z. Local preview: **http://localhost:4266**.
 Local integration is authorised but pending required gates; publication and deployment are not authorised.
 Original polish is committed on its clean branch at `e7c22323a0e7265da63fe9813e0bb4afd2cca05a`.
@@ -221,3 +221,41 @@ run focused proof and required stable-input gates, review the affected1920 scree
 local main. Complete the Design System Showcase afterwards on an isolated main-derived branch.
 Keep concepts separate. The existing task receipt is exported locally; Notion reconciliation is unsynced.
 No measured token, credit or time savings are claimed.
+
+## Scoped approval and final validation assembly
+
+Josh said **"Yes I approve the three pending approvals"** in this chat on 2 October 2026.
+The exact takeovers were recorded in the append-only sign-out, including all paths in the two repair
+commits; unrelated work and the protected canonical token file remain intact. Original local-main
+fold authority is unchanged. No further approval is pending for these three decisions.
+
+Integrated `8f6ea7b` and `4f14a8f` as `005f2f5` and `32f3733`; the sole conflict was an append-only
+test-map section, whose history was retained. Minimum board/cohort repairs are committed as `3ce1323`.
+Independent review found the adjacent inherited legal assurance cards and header inferred legal
+authority from a bed request. Commits `0b2a89d` and `c25ac73` remove those unsupported assurances,
+retain the cards and truthful bed-request labels, and show consent/detention status and register
+checks as unrecorded. Two DOM cases verify both values of the bed-request flag through the real
+provider, including accepted creation, preserved absence and no fabricated status. No legal policy
+or placement calculation changed.
+
+Four unchanged fixed colours now resolve through aliases on the routed WardGround root. The
+date-format guard follows the extracted helper and actual cockpit; its global bare-clock scan is
+unchanged. `90a7132` isolates standalone hook-test repositories from the machine-wide sign-out file;
+their real secret/ownership checks still run. This removes an unrelated external fixture input,
+without widening a timeout or bypassing a guard.
+
+Fresh targeted proof: `approved-followup.json` **3 files / 23 tests passed**,
+`hook-fixture-final.json` **1 file / 20 tests passed**, `referral-header-final.json`
+**1 file / 2 tests passed**. The earlier 27-file run retains its three failures, each followed by the
+specific correction and fresh check. Independent source review found no introduced defect.
+Generated screen-map and screen-verification checks remain current; diff-integrity against main
+passed **25 changed test files, 318 to331 cases**. Desktop repair captures use1920x1080 only.
+`approved-browser-1920` passed four routes; its Referral failure selected a hidden table control,
+then the actual visible card selector passed in `referral-legal-final-1920`. The final header capture
+is in `referral-header-final-1920`. Phone geometry and affected dark layouts are also checked.
+Whole clean typecheck passed on `90a7132`; it is refreshed after the final header edit before fold.
+
+Next: hold app inputs stable for the required FULL/typecheck/journeysALL, preserve the latest
+independent review and affected UI evidence, verify main is still clean and unchanged, then fold
+locally. Showcase drafts may be prepared privately during gate time, but app implementation starts
+after the polish fold. Update the same local receipt at the result; canonical Notion remains unsynced.
