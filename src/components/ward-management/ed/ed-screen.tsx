@@ -20,7 +20,6 @@ import {
 import {
   clockState,
   formatElapsed,
-  formatInstant,
   formatInstantWithDay,
   minutesUntil,
   splitDuration,
@@ -2269,16 +2268,9 @@ export function EdScreen({ edId }: EdScreenProps) {
   timelineEvents.sort((a, b) => b.min - a.min);
 
   const arrivalEventsCount = timelineEvents.filter((e) => e.category === "arrivals").length;
-  const declineEventsCount = timelineEvents.filter((e) => e.badgeText === "Bed Declined").length;
-  const acceptEventsCount = timelineEvents.filter((e) => e.badgeText === "Bed Accepted").length;
   const clinicalEventsCount = timelineEvents.filter((e) => e.category === "clinical").length;
   const transportEventsCount = timelineEvents.filter((e) => e.category === "transport").length;
   const bedSearchEventsCount = timelineEvents.filter((e) => e.category === "bed_search").length;
-  const departedEventsCount = timelineEvents.filter((e) => e.badgeText === "Departed").length;
-  const inEdCount = movements.filter((m) => m.originEdId === thisEdId && isOpen(m)).length;
-  const pendingTriageCount = movements.filter(
-    (m) => m.originEdId === thisEdId && isOpen(m) && !movementMedicalClearance(m, referrals)?.cleared,
-  ).length;
 
   const filteredTimelineEvents = timelineEvents.filter((e) => {
     if (timelineCategoryFilter !== "all" && e.category !== timelineCategoryFilter) {
@@ -2373,10 +2365,6 @@ export function EdScreen({ edId }: EdScreenProps) {
     }
     selectedPatientJourneyEvents.sort((a, b) => b.min - a.min);
   }
-
-  const maxNetworkWait = movements
-    .filter((movement) => movement.closure === undefined)
-    .reduce((max, movement) => Math.max(max, now - movement.openedAt), 1);
 
   function submitReferral(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
