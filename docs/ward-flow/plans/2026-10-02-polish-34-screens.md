@@ -5,11 +5,11 @@ Coordinator: `codex/chat-polish-34-screens-6c8b` in
 `C:/Users/joshs/.codex/worktrees/6c8b/Ward-Flow`.
 Base: verified local main `981a4a8a52e0c235b888e4c9470c94c34808cf33`.
 Current integration candidate: `codex/polish-final-preserve-20261002` in
-`D:/Temp/ward-polish-fold-20261002`, app HEAD `770c006`.
-Candidate base and current local main: `a3e55d7b842de5cefdac4fb6a842b278f2c23481`.
-Status: **In progress**. All three scoped decisions were approved; final gates and the local fold remain in progress.
-Last verified: 2026-10-02T14:58:30.743Z. Local preview: **http://localhost:4266**.
-Local integration is authorised but pending required gates; publication and deployment are not authorised.
+`D:/Temp/ward-polish-fold-20261002`, polished app HEAD `6c12adb`.
+Showcase base and current local main: `6c12adba65d10e992a15a57b13e5cae38c1af344`.
+Status: **In progress**. The polish is folded locally; Showcase implementation and verification follow.
+Last verified: 2026-10-02T15:34:55.6306907Z. Local preview: **http://localhost:4266**.
+Local polish integration is complete; publication and deployment are not authorised.
 Original polish is committed on its clean branch at `e7c22323a0e7265da63fe9813e0bb4afd2cca05a`.
 Earlier sections retain the original preview evidence and historical blockers; the latest checkpoint supersedes their current-state statements.
 
@@ -351,3 +351,35 @@ exactly in the integration candidate. The coordinator's two-line alternative rem
 at `1706c6b` but is superseded. The only merge conflict was that same test file; all 11 assertions
 and both root-prefix checks remain unchanged. No application inputs changed. Refresh the focused
 fixture/safety proof on the adopted helper version, then run the final complete gate once.
+
+### Polish folded; complete the Showcase afterwards
+
+The corrected stable assembly `6c12adb` passed FULL: **843 files /9898 tests /zero failures**.
+Primary receipt: `full-gate-final-fixed-source/receipt-1790954999395-15100.json`.
+`final-gates.json` also records clean whole typecheck, exit0 in75s, with unchanged source.
+The corrected coordinator case passed in `journeys-coordinator-final.json`. The original
+96-case run supplies93 unchanged passing cases and two existing skips; the one corrected
+case is newly passing. `browser-input-reuse.diff` and `unchanged-journey-specs.diff` are empty:
+app, dependencies, runner/config and every other browser spec remain identical. The
+coordinator's other assertions/helpers are unchanged. This is explicitly reused coverage,
+not a claim of a second fresh ALL run. All34 desktop review receipts remain historical
+source-bound looks at1920x1080, supplemented by affected repair reviews.
+
+`local-polish-fold.json` confirms clean main fast-forward from `a3e55d7` to `6c12adb` at
+2026-10-02T15:34:55.6306907Z. The preceding main is retained in
+`backup/20261002-main-before-final-polish`. No push or deployment occurred.
+
+Only after that fold, adopt the independently reviewed Showcase draft on this isolated
+branch. It provides real shared type/token/chip/table/panel examples, four keyboard anchors,
+a nonclinical local form/table example with refused and accepted states, and five existing
+drawer triggers. It removes fabricated always-true Showcase check claims. The unavailable
+preset action remains focusable with an explicit reason. Route metadata now names the page
+honestly. Source ownership was rechecked before all four executable-file edits.
+
+Two meaningful Showcase journeys are appended to the existing collected role spec, so the
+normal selector can choose that file and the mandatory full patient journey without changing
+runner configuration. Screen-scoped related tests, clean typecheck,1920 desktop visual review,
+phone/dark geometry and real drawer/form/keyboard checks are still pending at this checkpoint.
+The inherited shell returns focus to its toolbar for some drawer triggers; this scope preserves
+that behaviour and verifies usable focus, without claiming universal return to the Showcase opener.
+The separate Role Selection and Comparison concepts remain unadopted and reserved for delivery.
