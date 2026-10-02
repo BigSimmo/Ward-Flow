@@ -30,3 +30,27 @@ Original objective: review the stale Antigravity rules audit and repair confirme
 Active guidance points to the accepted app, current dedicated-repository selectors work, the index includes the central decisions with source provenance, visual evidence states its checked revision/coverage, and route/ownership guards remain effective. Retain historical records and do not infer fresh visual verification from generated-file checks.
 
 Local receipts are reconciliation handoffs; canonical ledger sync, publication, integration and deployment require their separate authority.
+
+## Implementation continuation — 2 October 2026
+
+Original objective: WF-RULES-20261002. The 20-item approved plan is being implemented in separate owning sources. No provider calls, push, merge, deploy, live sending or clinical approval occurred.
+
+- Shared G01–G03: local master/tool corrections written, native managed adapters synced, exact-byte backups retained. Six hook boundaries passed. Local hashes/generation/managed equality pass; the overall freshness checker exits1 because the Library mirror remains stale. Native loading and reconciliation are pending.
+- PS01: five navigator links repaired; link check4589 and script references835 passed.
+- CC01–CC04: prototype/live wording, historical clinical provenance, inventory and standalone entry corrected. Changed-document relative links pass; draft/provisional status retained. No clinical/provider validation.
+- CM01–CM02: explicit launch command and non-destructive package guard repaired; seven fixture cases pass. Active dirty feature checkout untouched.
+- WF04/WF08: current acceptance and isolated-worktree upload guidance repaired. WF03/WF06/WF07/WF09 have partial written repairs; WF01/WF02/WF05/WF10 proposals remain pending.
+- Ward local evidence: six command-parser cases pass; document links, CI contracts, rules/rulings/screen-map/screen-verification structural checks pass. Command-reference check fails56/358 while protected sources await approval. No UI appearance claim follows from these structural checks.
+
+Current worktrees and commits:
+
+- D:/Temp/docs-repair-20261002/ward — codex/docs-rules-repair-20261002 at 0fbc30194972fbbb3a36b49d805dcdcb8f1ba967.
+- D:/Temp/docs-repair-20261002/psychsift — codex/docs-rules-repair-20261002 at 59f8e0e9d0440e087fab091b0d7b78dc60bd1aa7.
+- D:/Temp/docs-repair-20261002/caring — codex/docs-rules-repair-20261002 at 544530fc0425e4ccae20c3e74394fc5811eee92e.
+- D:/Temp/docs-repair-20261002/communication — codex/docs-rules-repair-20261002 at 6d55b30e041982e5477a07c913bc032eb6fc9f82.
+
+Ownership blocker: three pending exact-file approval requests cover eight initial files, thirteen historical-reference files and three additional files. The normal Ward commit hook found code-map README/STATUS claims and a dotfile-claim parser limitation; it was not bypassed. Proposed one-line parser fix passes a baseline regression and negative controls in a private fixture.
+
+Uncommitted owned files: .prettierignore, docs/ward-flow/code-map/README.md and docs/ward-flow/STATUS.md; retained in this isolated worktree and private proposals because ownership approval/parser repair is pending. Other blocked proposals were not applied.
+
+Primary local evidence and exact backups: D:/Temp/docs-repair-20261002. Continue by applying only approved, hash-matching proposals, checking claimed-source drift, running the remaining focused checks, committing, and updating this same receipt. Canonical Notion reconciliation remains pending.
