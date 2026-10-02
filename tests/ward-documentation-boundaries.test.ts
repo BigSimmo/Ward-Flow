@@ -1,4 +1,4 @@
-import test from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -65,7 +65,8 @@ test("ownership parser recognises exact root dotfiles and rejects malformed clai
     source.indexOf("function signOutEntriesForCheckout("),
   );
   const parse = vm.runInNewContext(body + "; signOutEntries");
-  const claim = (file) => `- 2026-10-02 | fixture | codex/fixture | D:/fixture | ${file}, repo=BigSimmo/Ward-Flow`;
+  const claim = (file: string) =>
+    `- 2026-10-02 | fixture | codex/fixture | D:/fixture | ${file}, repo=BigSimmo/Ward-Flow`;
   for (const file of [".prettierignore", "package.json", "docs/current.md", ".env.example"])
     assert.equal(parse(claim(file))[0].paths.includes(file), true, file);
   for (const file of ["..", ".", "bad space.md", "C:/outside/file.md"])
