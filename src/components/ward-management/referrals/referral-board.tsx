@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 
-import { formatInstant, formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { genderReviewNeeded, type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
@@ -1095,7 +1095,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                                   {isLegalOrder ? "Involuntary Order Statutory Detention Affirmation" : "Voluntary Admission Consent Affirmation"}
                                 </strong>
                                 <div style={{ fontSize: "var(--t-0, 12px)", color: "var(--muted)" }}>
-                                  Affirmed by treating medical officer at {formatInstant(selectedReferral.raisedAt)} AWST
+                                  Referral raised {formatInstantWithDay(selectedReferral.raisedAt, now)}
                                 </div>
                               </div>
                               <span style={{ fontSize: "11px", padding: "1px 6px", borderRadius: "10px", background: "var(--good-soft)", color: "var(--good)", fontWeight: 700 }}>

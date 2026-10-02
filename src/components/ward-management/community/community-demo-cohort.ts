@@ -969,7 +969,7 @@ export const KNOWN_TEAM_CONFIGS: Record<string, CommunityTeamConfig> = {
   },
   joondalup: {
     name: "Joondalup Adult CMHT (NMHS)",
-    campus: "Joondalup Health Campus",
+    campus: siteByCode("JHC")?.name ?? "Hospital not recorded",
     service: "North Metro (NMHS)",
     svcDot: "north",
     scope: "Joondalup / Wanneroo · 16 Suburbs",
