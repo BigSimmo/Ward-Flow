@@ -329,7 +329,7 @@ export function StatisticsEdScreen({
     <StatisticsSectionFrame
       section={section}
       title={department.name}
-      subtitle="Current placement waits and outcomes for this emergency department, with record limits stated in place."
+      subtitle=""
       testId="ward-statistics-ed-screen"
       design="third-edition"
     >

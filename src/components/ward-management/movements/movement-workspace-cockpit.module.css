@@ -5,6 +5,7 @@
  */
 
 .cockpitRoot {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-4, 1rem);
@@ -35,7 +36,9 @@
   border: 1px solid var(--ward-border, var(--border));
   background: var(--surface-raised, var(--surface));
   color: var(--ward-text, var(--text));
-  transition: background-color 150ms ease, border-color 150ms ease;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
   text-decoration: none;
 }
 
@@ -150,6 +153,7 @@
 
 .mastheadActions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2, 0.5rem);
 }
@@ -384,7 +388,7 @@
 
 .stepWhen {
   margin-top: auto;
-  font-size: 11px; /* minimum micro-text, bounded at 11-12px */
+  font-size: 12px;
   color: var(--ward-muted, var(--text-muted));
   white-space: nowrap;
   overflow: hidden;
@@ -464,12 +468,14 @@
 }
 
 .operationalColumn {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-4, 1rem);
 }
 
 .commandColumn {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-4, 1rem);
@@ -488,6 +494,8 @@
 
 .panelCardHeader {
   display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   align-items: center;
   justify-content: space-between;
   padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
@@ -496,6 +504,7 @@
 }
 
 .panelTitleGroup {
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: var(--space-2, 0.5rem);
@@ -700,7 +709,7 @@
 }
 
 .readinessCardWhere {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--ward-muted, var(--text-muted));
 }
 
@@ -720,7 +729,7 @@
 }
 
 .factLabel {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -767,7 +776,7 @@
 }
 
 .timelineWhen {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--ward-muted, var(--text-muted));
 }

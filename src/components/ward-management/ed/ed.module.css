@@ -4639,8 +4639,8 @@ tr.qRow:focus-visible {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r3, 12px);
-  padding: 1.25rem 1.5rem;
-  margin-bottom: 1.25rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
   box-shadow: var(--lift-sm);
 }
 

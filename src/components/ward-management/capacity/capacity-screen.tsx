@@ -277,7 +277,7 @@ export function CapacityScreen() {
         <header className={styles.pageHeader}>
           <div className={styles.pageTitleBlock}>
             <h1 className={styles.pageTitle}>Capacity</h1>
-            <span className={styles.pageSubtitle}>Statewide Inpatient Directory · Real-time census</span>
+            <span className={styles.pageSubtitle}>Statewide inpatient directory · synthetic current state</span>
           </div>
 
           <div className={styles.telemetryCapsule} aria-label="Statewide Bed Telemetry">
