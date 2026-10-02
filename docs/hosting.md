@@ -3,7 +3,7 @@
 Owner-approved setup record, 27 September 2026. Clarified 2 October 2026.
 
 > This is a dated configuration and evidence record. Hosted resources, credentials, settings,
-> deployment and CI enablement were not rechecked during the documentation repair. Verify the
+> deployment were not rechecked during the documentation repair. A read-only GitHub check on 2 October 2026 found Actions enabled and the Ward Flow CI workflow active; that does not establish a passing run or deployment. Verify the
 > exact Ward Flow target under the provider-confirmation boundary before acting.
 
 ## Boundaries
@@ -41,7 +41,7 @@ Railway service settings hold the build and start commands. Railpack installs th
 - Variables: `NODE_ENV=production`, `PORT=8080`, `NEXT_PUBLIC_MOCKUPS_ENABLED=true`, `NEXT_PUBLIC_SITE_URL=https://ward-flow-production.up.railway.app`, `RAILPACK_NODE_VERSION=24.19.0`.
 - The setup record reported no Supabase, Azure, OpenAI or other database/provider credentials for this service. Current settings were not inspected.
 - Code, assets, scripts and runtime/build configuration are included in deployment watch paths; documentation-only changes are excluded.
-- The setup record reported GitHub Actions disabled and Railway's GitHub integration as the deployment mechanism. A dedicated Ward Flow CI workflow now exists locally; hosted enablement and runs remain unverified.
+- The setup record reported GitHub Actions disabled and Railway's GitHub integration as the deployment mechanism. A read-only GitHub check on 2 October 2026 found Actions enabled and the dedicated Ward Flow CI workflow active. Current-head outcomes and deployment remain separate evidence.
 
 The dedicated healthcheck endpoint is `/api/health`, returning `{ status: "ok", appName: "Ward Flow", synthetic: true }` (HTTP 200). Check `/mockups/ward-flow` directly after deployments and distinguish build success from runtime verification.
 

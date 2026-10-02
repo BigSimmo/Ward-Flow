@@ -27,7 +27,7 @@ check results, limitations and delivery state.
 Inspect each script and its hooks before execution. Select checks for the actual
 diff using [public CI policy](../ward-flow/PUBLIC-CI.md) and the declared
 [workflow](../../.github/workflows/ward-flow.yml). The [hosting record](../hosting.md)
-records disabled Actions at setup on 27 September 2026; current hosted enablement and runs remain unverified. Its planner recognises only
+records disabled Actions at setup on 27 September 2026; a read-only GitHub check on 2 October 2026 found Actions enabled and Ward Flow CI active. Current-head results and deployment remain separate evidence. Its planner recognises only
 `README.md` and Markdown under `docs/ward-flow/` as documentation-only; other
 guidance paths retain conservative full CI selection. This page changes no gates.
 

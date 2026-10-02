@@ -72,3 +72,13 @@ Outstanding: shared Library mirror delivery/overall freshness; GUI/cloud native 
 Next action: use the prepared result for review or separately authorised integration. Update the existing local receipt against this completion commit; its canonical reconciliation remains pending. Last verified: 2026-10-02T13:35:25.225926+00:00.
 
 Final source review tightened malformed historical-marker rejection for inline, missing-space and trailing-text forms. Eleven boundary cases pass and maintained commands still resolve229; historical diagnostic remains176/706. Primary refreshed evidence: remaining-boundaries-final.txt and remaining-commands-final.txt in the same private evidence directory.
+
+## Publication and authorised local fold - 2 October 2026
+
+All 20 technical issues have owned commits and local folds. Scoped public-main candidates exclude unrelated unpublished app and feature work. PRs: Ward Flow #14, PsychSift #3202, Caring Contacts #6, Communication #50. PsychSift merged through independently armed auto-merge; this task did not enable it. Caring and Communication reported checks passed; Ward checks were running at this checkpoint. See D:/Temp/docs-repair-20261002/publication/*-hosted-snapshot.json for exact heads and outcomes.
+
+Ward candidate: 194 focused Vitest tests and 11 documentation-boundary tests passed; the navigation cleanup rerun passed 80 tests with normal commit lint/type hooks. Whole-repository formatting was blocked by an unchanged historical malformed HTML blob and pre-existing formatting. Only the permitted formatting publication guard override was used; the push static guard deferred to CI because another owner held the shared heavy slot. No whole-hook bypass or unrelated formatting cleanup. Communication guard tests passed all 7 cases, and its hosted lint correction was carried into local main.
+
+Read-only GitHub evidence now confirms Ward Actions enabled and Ward Flow CI active. No deployed runtime or Azure/Railway mutation was tested. Current accepted app and clinical/storage/API behaviour are preserved. The legacy hook explanation and ownership guide now correctly scope former Database history; executable permission decisions and preservation/deletion safeguards are unchanged, with 4 parity fixtures passing.
+
+Canonical task: https://app.notion.com/p/3ed7889e8a2281948826cbcf6c9da2b1 (stable WF-RULES-20261002). Codex fresh offline instruction rendering passed. Same-identity Library replacement is unavailable through this client; GUI loading, unavailable historical clinical evidence and specialist sign-offs remain external prerequisites. No competing ledger or substitute Library identity was created.

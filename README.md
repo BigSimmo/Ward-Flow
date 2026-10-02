@@ -37,7 +37,7 @@ Use the URL printed by the launcher and open `/mockups/ward-flow`. Ward Flow use
 
 This upload preserves the current project; it does not claim a fresh build or test pass. Existing scripts, historical documents and local workflow instructions may still refer to the original workstation, local-only development policy or retired PsychSift tooling. Those references do not connect this repository to the original deployment.
 
-The upload record reported GitHub Actions disabled on 27 September 2026. By the 2 October local inspection, this repository includes a dedicated Ward Flow CI workflow; hosted enablement and run status were not checked. Railway deployment was documented as a separate GitHub integration. Do not enable inherited automation without adapting and reviewing it for this repository.
+The upload record reported GitHub Actions disabled on 27 September 2026. By the 2 October local inspection, this repository includes a dedicated Ward Flow CI workflow; a read-only GitHub check on 2 October 2026 found Actions enabled and Ward Flow CI active. Passing runs and deployment require separate evidence. Railway deployment was documented as a separate GitHub integration. Do not enable inherited automation without adapting and reviewing it for this repository.
 
 The 27 September upload excluded Git history, uncommitted work from other sessions, local environment files, installed dependencies, build output and machine-specific agent/editor configuration. Later commits have changed the source snapshot; inspect this repository's history for the current revision. The original source README remains linked above.
 
