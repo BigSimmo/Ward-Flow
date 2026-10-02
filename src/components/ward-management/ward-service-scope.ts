@@ -59,6 +59,30 @@ export function edHealthService(edId: string): HealthService | undefined {
   return ed ? siteByCode(ed.siteCode)?.service : undefined;
 }
 
+/**
+ * Short health service acronym for space-constrained UI badges:
+ * EMHS, NMHS, SMHS, WACHS, CAHS, PRIV.
+ */
+export function healthServiceAcronym(service: HealthService | string | undefined): string {
+  if (!service) return "";
+  switch (service) {
+    case "East Metro":
+      return "EMHS";
+    case "North Metro":
+      return "NMHS";
+    case "South Metro":
+      return "SMHS";
+    case "WACHS":
+      return "WACHS";
+    case "CAHS":
+      return "CAHS";
+    case "Private":
+      return "PRIV";
+    default:
+      return service;
+  }
+}
+
 function unitServiceById(unitId: string, units: Unit[]): HealthService | undefined {
   const unit = units.find((candidate) => candidate.id === unitId);
   return unit ? unitHealthService(unit) : undefined;
