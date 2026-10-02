@@ -1324,6 +1324,9 @@ export function EdScreen({ edId }: EdScreenProps) {
     if (transportOpenFor === undefined) return;
     const dialog = transportDialogRef.current;
     if (!dialog) return;
+    if (document.activeElement instanceof HTMLElement) {
+      transportTriggerRef.current = document.activeElement;
+    }
     const firstField = dialog.querySelector<HTMLElement>("select, input, button");
     firstField?.focus();
   }, [transportOpenFor]);
@@ -2553,9 +2556,6 @@ export function EdScreen({ edId }: EdScreenProps) {
   }
 
   function toggleBookTransport(movementId: string) {
-    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
-      transportTriggerRef.current = document.activeElement;
-    }
     setTransportOpenFor((current) => (current === movementId ? undefined : movementId));
     // ⚠️ **BLANKED ON EVERY OPEN, NOT ONLY ON EVERY CLOSE.** Carrying the previous patient's
     // answers into the next panel would be a remembered value standing in for an unmade decision —

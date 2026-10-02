@@ -988,7 +988,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     >
                       <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1ZM2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1ZM7 21h10M12 3v18M3 7h18" />
                     </svg>
-                    <span>Statutory Governance (MHA 2014)</span>
+                    <span>Recorded legal forms</span>
                   </button>
                 </div>
 

@@ -630,8 +630,15 @@ function ServiceGroup({
     setVisibleWardEnd(end);
   }, [group.wards.length, activeWardIndex, layout]);
 
+  const attachTrack = useCallback(
+    (element: HTMLDivElement | null) => {
+      trackRef.current = element;
+      if (element) checkScrollState();
+    },
+    [checkScrollState],
+  );
+
   useEffect(() => {
-    checkScrollState();
     const handleResize = () => checkScrollState();
     window.addEventListener("resize", handleResize);
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(handleResize);
@@ -811,7 +818,7 @@ function ServiceGroup({
         )}
 
         <div
-          ref={trackRef}
+          ref={attachTrack}
           onScroll={handleScroll}
           className={styles.serviceWardTrack}
           role="region"

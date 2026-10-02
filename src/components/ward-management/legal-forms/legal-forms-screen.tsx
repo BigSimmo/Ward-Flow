@@ -344,7 +344,7 @@ export function LegalFormsScreen() {
             <div className={styles.statutoryNoticeCard}>
               <ShieldAlert size={18} className={styles.statutoryNoticeIcon} aria-hidden="true" />
               <div className={styles.statutoryNoticeContent}>
-                <span className={styles.statutoryNoticeTitle}>Mental Health Act 2014 — Statutory Limits Oversight</span>
+                <span className={styles.statutoryNoticeTitle}>Recorded forms and clinician-entered expiry times</span>
                 <LegalLimitsNotChecked variant="full" />
               </div>
             </div>

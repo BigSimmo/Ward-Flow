@@ -190,7 +190,7 @@ export function SovereignShowcaseScreen() {
                 <p>Empty input shows an error. A valid label updates the example table.</p>
               </div>
               <div className={styles.fieldGrid}>
-                <div className={styles.field}>
+                <div className={styles.showcaseField}>
                   <label htmlFor="showcase-example-label">Example row label</label>
                   <input
                     id="showcase-example-label"
@@ -210,7 +210,7 @@ export function SovereignShowcaseScreen() {
                     </p>
                   )}
                 </div>
-                <div className={styles.field}>
+                <div className={styles.showcaseField}>
                   <label htmlFor="showcase-density">Table density</label>
                   <select
                     id="showcase-density"
