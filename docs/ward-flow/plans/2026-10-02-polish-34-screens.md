@@ -4,15 +4,20 @@ Task/source identity: `BigSimmo/Ward-Flow:polish-34-screens-20261002`.
 Coordinator: `codex/chat-polish-34-screens-6c8b` in
 `C:/Users/joshs/.codex/worktrees/6c8b/Ward-Flow`.
 Base: verified local main `981a4a8a52e0c235b888e4c9470c94c34808cf33`.
-App HEAD: `530dc67`. Status: **Needs you** for one exact CSS ownership overlap.
-Last verified: 2026-10-01T23:12:01.856Z.
-Local Fast Preview only; no main integration, publication or deployment.
+Current integration candidate: `codex/polish-local-fold-20261002` in
+`D:/Temp/ward-polish-fold-20261002`, app HEAD `fcae12d019d6496b57506980dcb57acb32de4f8c`.
+Candidate base and unchanged local main: `7eb199bd2e9824c1165896f821750973bb986b82`.
+Status: **Needs you** for three scoped decisions described in the latest resume checkpoint below.
+Last verified: 2026-10-02T13:17:06.713Z. Local preview: **http://localhost:4266**.
+Local integration is authorised but pending required gates; publication and deployment are not authorised.
+Original polish is committed on its clean branch at `e7c22323a0e7265da63fe9813e0bb4afd2cca05a`.
+Earlier sections retain the original preview evidence and historical blockers; the latest checkpoint supersedes their current-state statements.
 
 ## Agreed outcome
 
 Polish all 34 application designs except Discharge Board, Referral Board and Community
 Directory. Include New Referral, Community Hub and Community Statistics. Exclude the
-optional showcase. Preserve identity, working features, calculations, clinical/legal
+optional showcase initially; Josh subsequently authorised completing it after the local-main fold. Preserve identity, working features, calculations, clinical/legal
 meaning, permissions, persistence and synthetic-data boundaries. Remove redundant prose;
 retain metric definitions, scope, provenance and essential notices.
 Replacement concepts stay separate, are presented together at the end, and are never
@@ -123,3 +128,96 @@ Paused at Josh's explicit request on 2 October 2026. No fold to main occurred: l
 The isolated integration checkout has a merge in progress with 73 staged/merged paths and two unresolved files: src/components/ward-management/statistics/statistics-compare-screen.tsx and statistics-ward-screen.tsx. Those files still contain conflict markers; the integration cannot be committed as a valid result yet. Generated SCREEN-VERIFICATION.md was reconciled from the merged JSON; checkpoint additions are staged/partly unstaged. All agents have been interrupted. No gate, validation browser, or candidate dev server is running; shared run slots are free. A private ZIP snapshot includes all candidate modified files and Git merge/index metadata for recovery.
 
 Resume: validate main/source HEADs and ownership against this checkpoint; resume bounded statistics resolution while preserving main tabs/KPI panels/capacity matrix/Community V2 and task range/null/hydration/readability changes. Correct inherited unsupported target/history presentations; retain current calculations and explicitly labelled unavailable-history treatment. Regenerate records, commit candidate with normal hooks, run selector-required local gates and affected1920x1080 checks, independent preservation review, then fast-forward local main only if its unchanged clean head still matches. Next complete /mockups/ward-flow/sovereign in an isolated main-derived task branch using existing components/tokens. Showcase has not been edited. Keep separate concepts unadopted and no push/provider/deployment action.
+
+## Resumed integration checkpoint: 2 October 2026
+
+The merge is resolved and committed as `5fb1121405ac273531169456ea2178c52f6a5975`.
+Subsequent coherent repairs are committed through app HEAD `fcae12d019d6496b57506980dcb57acb32de4f8c`.
+Main remains clean at `7eb199bd2e9824c1165896f821750973bb986b82`; it has not been folded or overwritten.
+Both candidate remote destinations were rechecked as `https://github.com/BigSimmo/Ward-Flow.git`.
+No source files are uncommitted. This checkpoint-only update is a separate owned commit.
+The task's requested mode is now local integration validation; no push, provider or deployment step is authorised.
+
+Two reused, disjoint agents completed the Statistics integration and independent preservation review.
+The candidate preserves main's newer KPI panels, summary/headroom information, hospital matrix,
+subnavigation and Community V2. It adds working Statistics section links, truthful availability
+qualifiers without changing the underlying counts, name-free ED feedback, synthetic status
+provenance, exact fixed colour tokens, shared table insets, a full-width Ward Statistics panel,
+Legal Forms viewport recovery and generic Governance practice labels without invented form codes.
+Scope, metric definitions, prototype disclosures and unavailable-history treatment remain.
+Independent review covered the integration, proposed reuse commits and subsequent source/CSS repairs.
+The original two concepts remain separate and unadopted. The showcase still awaits the polish fold.
+
+### Verification and input identity
+
+All evidence below is local, synthetic and provider-free. Exact-lock dependencies use Node 24 and
+Next 16.3.3; lock SHA256 is `0EE7F97317825DAA0BEDB9F7848225FE78B199721D72D1F5D7F531E7629A2058`.
+The installed Next client guide was read before source edits. Wide checks and browser runs were serialised.
+
+- Fresh `npm run ensure` printed **http://localhost:4266**. The identity endpoint confirms Ward Flow,
+  project `clinical-kb:41dae78e9f13`, candidate checkout, development PID42752. Historical port3302 is stale.
+- Full typecheck passed on the resolved integration input. Normal scoped commit hooks passed for
+  subsequent repairs. Whole-current-head typecheck is pending the final source assembly.
+- Required FULL at `7cd2259f062e42b67e4130f10f5ce43c39f9b8cd` ran **841 files / 9,874 tests** and
+  failed with **33 assertions plus collection failures**. The focused same-lock baseline at main
+  reproduced **27 assertions**. This is failed evidence, not a passing release gate.
+- Focused status contracts passed **2 files / 112 tests**; canonical table tests passed **1 file / 6 tests**;
+  final practice-label and breakpoint guards passed **2 files / 7 tests**. Other earlier focused runs
+  retain their partial failures. Remaining raw-colour/fallback, patient-link/cycle, renderer/runner and
+  cohort-name failures require the scoped decisions below. No allowlist or guard was weakened.
+- Source-bound browser receipts cover the affected reporting screens, Community Hub, Settings,
+  Movement Workspace, Delays and the three excluded regression routes at **1920 x1080**, plus affected
+  phone geometry and dark representatives. All eight section links reached, focused and revealed their
+  actual targets. The Comparison chart's 22 bars were within range. Capture and pixel-review coverage
+  are distinct; prior original 34-screen evidence is preserved rather than called fresh integration proof.
+- `style-label-qa/receipt.json` passed five targeted routes with unchanged source. Ward Statistics and
+  Community Directory passed the separate targeted receipt. An earlier Directory failure was an
+  incorrect harness assumption that it consumed the new palette; it does not, and the app was unchanged.
+- `table-practice-final/receipt.json` passed Governance but failed the Capacity automation scroll.
+  Follow-up `capacity-diagnostic.json` used live connected DOM reads and actual shell scrolling:
+  HTTP200, no console/page errors, visible table at 1920, real ward cells 6px/12px, group cells 4px/12px,
+  headers 10px/12px. The lower table screenshot was inspected. No reproduced app defect was found;
+  the failed locator run remains recorded rather than relabelled as passing.
+- Generated screen maps were checked after integration. Their checks, diff-integrity, whole typecheck,
+  required FULL and journeysALL must be refreshed once the final authorised inputs are stable.
+  Do not repeat the full suite while protected fixes remain pending.
+
+Primary evidence root: `D:/Temp/ward-polish-34-20261002/`. Selected SHA256 identities:
+
+| Evidence                                    | SHA256                                                             |
+| ------------------------------------------- | ------------------------------------------------------------------ |
+| `full-gate/receipt-1790943317604-2560.json` | `B6C37F2B4B652C0D911B8114854ED06DE5D8709F6B8B920959BF57AB9A542845` |
+| `baseline-failures.json`                    | `492078E312003B27C30CDC4122FE9A8534D92B7C8F3394607047CFE5CE91F6E7` |
+| `status-contract-final.json`                | `1E799DCAB3AEE757F425BFFD88684057FBCFD37792BD6A5C9D0A5BB910F68349` |
+| `practice-breakpoint-final.json`            | `00B2F86BF0BABA721AEBC03E165099ED1DBFF570E7098B1DE2EF14C366FAFB2F` |
+| `style-label-qa/receipt.json`               | `AAEAA875BE5C894893A8A27CD2E806D6F2623FA2CC65102076AD116690812E6F` |
+| `capacity-diagnostic.json`                  | `3D7D856F27FD71FFCD9BC8B1CF3C60BC599B09D1597CE4B214E2BF6880AA1A1D` |
+
+### Pending scoped decisions and next exact action
+
+Three asynchronous questions remain unanswered; elapsed time is not approval:
+
+1. Reuse already reviewed commits `8f6ea7b` and `4f14a8f` from
+   `codex/ward-validation-repair-20261002`, including takeover of the active exact-file claims on
+   `movements/movement-workspace-cockpit.tsx` and `ward-management-console.tsx`. Other commit paths
+   must also be checked before integration. This fixes runner visibility, the import cycle,
+   patient identifier feedback and guards that do not match the actual legal renderer.
+2. Permit minimum repairs on the excluded Referral/Discharge boards: unchanged colour values into
+   fixed tokens, declared fallback names and a truthful dated referral-raised label. Exact paths:
+   `discharges/discharges-third-edition.module.css`, `referrals/referrals.module.css`,
+   `referrals/referral-board.tsx`. All are under `src/components/ward-management/`.
+3. Permit the single protected Community cohort line to use `siteByCode("JHC")?.name ?? "Hospital not recorded"` rather than duplicating a hospital name. Exact file:
+   `src/components/ward-management/community/community-demo-cohort.ts`, owned by
+   `ward/ag-community-v2-elevation`. Private patch `community-name-proposal.patch` passes apply-check;
+   it has not been applied.
+
+These files remain untouched pending owner release or Josh's scoped approval under the active-overlap
+rule in AGENTS.md; the excluded-board scope also needs the requested explicit decision. Earlier
+Community CSS spacing approval does not extend to the cohort file. No generic reconfirmation of
+the already authorised local-main fold is needed.
+
+After the decisions: revalidate exact claims and main's clean head, apply only authorised repairs,
+run focused proof and required stable-input gates, review the affected1920 screens, then fast-forward
+local main. Complete the Design System Showcase afterwards on an isolated main-derived branch.
+Keep concepts separate. The existing task receipt is exported locally; Notion reconciliation is unsynced.
+No measured token, credit or time savings are claimed.
