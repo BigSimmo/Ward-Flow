@@ -480,7 +480,7 @@
   --ward-preview-sky-900: #0c4a6e;
   --ward-preview-slate-900: #0f172a;
   --ward-preview-dark-panel: #131b2e;
-  --ward-fixed-success-ink: #1b5f41;
+  --wf-fixed-success-ink: #1b5f41;
   --ward-preview-slate-800: #1e293b;
   --ward-preview-slate-700: #334155;
   --ward-preview-sky-400: #38bdf8;
@@ -491,15 +491,15 @@
   --ward-preview-sky-100: #e0f2fe;
   --ward-preview-slate-200: #e2e8f0;
   --ward-fixed-warning: #e3bc5e;
-  --ward-fixed-danger-border: #f1d5cf;
+  --wf-fixed-danger-border: #f1d5cf;
   --ward-preview-slate-100: #f1f5f9;
   --ward-preview-slate-50: #f8fafc;
-  --ward-fixed-white: #ffffff;
+  --wf-fixed-white: #ffffff;
   --ward-shadow-black-02: rgba(0, 0, 0, 0.02);
   --ward-shadow-black-03: rgba(0, 0, 0, 0.03);
   --ward-shadow-black-04: rgba(0, 0, 0, 0.04);
   --ward-shadow-black-05: rgba(0, 0, 0, 0.05);
-  --ward-shadow-black-06: rgba(0, 0, 0, 0.06);
+  --wf-shadow-black-06: rgba(0, 0, 0, 0.06);
   --ward-fixed-warning-transparent: rgba(130, 93, 16, 0);
   --ward-fixed-warning-outline: rgba(130, 93, 16, 0.7);
   --ward-preview-sky-halo: rgba(14, 165, 233, 0.2);
