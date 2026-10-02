@@ -861,7 +861,6 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                   </div>
 
                   {(() => {
-                    const clinicalInfo = getClinicalSummary(selectedReferral);
                     const wardAddressing = selectedReferral.destinations.find(
                       (d) => d.destination.kind === "psychiatric_ward",
                     );
@@ -869,7 +868,6 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       wardAddressing && wardAddressing.destination.kind === "psychiatric_ward"
                         ? wardAddressing.destination
                         : undefined;
-                    const isLegalOrder = wardDest?.involuntaryBedNeeded;
                     const isSecureBed = wardDest?.secureBedNeeded;
 
                     const sex = referralSexCell(selectedReferral);
@@ -886,7 +884,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     return (
                       <div className={styles.demographicRow}>
                         <span className={styles.demoItem}>
-                          <strong>{demographicLabel} · {isLegalOrder ? "Involuntary (MHA 2014)" : "Voluntary Status"}</strong>
+                          <strong>{demographicLabel} · Legal status not recorded</strong>
                         </span>
                         <span className={styles.demoDot}>·</span>
                         <span className={styles.demoItem}>
