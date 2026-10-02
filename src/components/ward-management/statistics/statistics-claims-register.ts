@@ -1498,6 +1498,10 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
   },
   {
     id: "statistics-compare-screen/chooser/one-dynamic-route-serves-every-ward",
+    retiredPageProse: {
+      date: "2026-10-02",
+      reason: "User authorised routing prose removal from the comparison page.",
+    },
     renderedIn: COMPARE_SCREEN,
     rendered: "Ward and department detail use one route per unit",
     claim: "Per-ward detail is one dynamic route, built by a single href helper.",
@@ -1518,6 +1522,10 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
   },
   {
     id: "statistics-compare-screen/chooser/another-serves-every-department",
+    retiredPageProse: {
+      date: "2026-10-02",
+      reason: "User authorised routing prose removal from the comparison page.",
+    },
     renderedIn: COMPARE_SCREEN,
     rendered: "Ward and department detail use one route per unit",
     claim: "Per-department detail is a second dynamic route, built by its own href helper.",

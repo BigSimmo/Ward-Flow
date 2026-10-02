@@ -107,9 +107,8 @@ export function buildHandoverHudProps(overrides?: {
         tone: specialling > 0 ? "warn" : "normal",
       },
     ],
-    actions: overrides?.hasTag !== false ? (
-      <span data-testid="legal-limits-tag">Legal Limits Not Checked</span>
-    ) : undefined,
+    actions:
+      overrides?.hasTag !== false ? <span data-testid="legal-limits-tag">Legal Limits Not Checked</span> : undefined,
   };
 }
 
@@ -287,9 +286,7 @@ export function buildSettingsHudProps(overrides?: {
     testId: "ward-settings-hud-island",
     title: "System Operations",
     status: hasUnsavedRules ? "warning" : "nominal",
-    statusText: hasUnsavedRules
-      ? "Unsaved configuration draft pending"
-      : "All coordination parameters synchronized",
+    statusText: hasUnsavedRules ? "Unsaved configuration draft pending" : "All coordination parameters synchronized",
     ariaLabel: "System operations status summary",
     metrics: [
       {
@@ -409,9 +406,7 @@ export function buildCapacityHudProps(overrides?: {
     testId: "ward-capacity-hud-island",
     title: "Statewide Capacity",
     status: isAlarm ? "alarm" : isWarn ? "warning" : "nominal",
-    statusText: isAlarm
-      ? `${shortfallsCount} specialty bed shortfalls`
-      : "Statewide capacity nominal",
+    statusText: isAlarm ? `${shortfallsCount} specialty bed shortfalls` : "Statewide capacity nominal",
     ariaLabel: "Statewide capacity indicators",
     metrics: [
       {
@@ -462,9 +457,7 @@ export function buildEdHudProps(overrides?: {
     testId: "ward-ed-hud-island",
     title: "ED Pressure",
     status: isAlarm ? "alarm" : isWarn ? "warning" : "nominal",
-    statusText: isAlarm
-      ? `${breachesCount} past access target`
-      : "Access target compliance nominal",
+    statusText: isAlarm ? `${breachesCount} past access target` : "Access target compliance nominal",
     ariaLabel: "Emergency department flow indicators",
     metrics: [
       {
@@ -573,9 +566,8 @@ export function buildTransportHudProps(overrides?: {
     testId: "ward-officer-hud-island",
     title: "Transport Dispatch",
     status: isWarn ? "warning" : "nominal",
-    statusText: escortRequired > 0
-      ? `${escortRequired} transfers require clinical escort`
-      : "Transport fleet dispatch nominal",
+    statusText:
+      escortRequired > 0 ? `${escortRequired} transfers require clinical escort` : "Transport fleet dispatch nominal",
     ariaLabel: "Transport dispatch indicators",
     metrics: [
       {
@@ -699,18 +691,19 @@ export function buildLegalFormsHudProps(overrides?: {
         ariaLabel: `Clockless and voluntary: ${clocklessCount}`,
       },
     ],
-    actions: passedCount > 0 ? (
-      <button
-        type="button"
-        data-testid="ward-legal-reauth-btn"
-        onClick={onReAuthorise}
-        aria-label="Re-Authorise Order"
-      >
-        Re-Authorise
-      </button>
-    ) : (
-      <span data-testid="ward-legal-limits-tag">Legal Limits Not Checked</span>
-    ),
+    actions:
+      passedCount > 0 ? (
+        <button
+          type="button"
+          data-testid="ward-legal-reauth-btn"
+          onClick={onReAuthorise}
+          aria-label="Re-Authorise Order"
+        >
+          Re-Authorise
+        </button>
+      ) : (
+        <span data-testid="ward-legal-limits-tag">Legal Limits Not Checked</span>
+      ),
   };
 }
 
@@ -854,7 +847,9 @@ describe("Tier 1: Feature Coverage Across All 10 Target Screens", () => {
     });
 
     it("renders 'Decided Today' metric with accepted and declined breakdown", () => {
-      render(<WardDynamicIsland {...buildReferralHudProps({ decidedTotal: 15, acceptedTotal: 12, declinedTotal: 3 })} />);
+      render(
+        <WardDynamicIsland {...buildReferralHudProps({ decidedTotal: 15, acceptedTotal: 12, declinedTotal: 3 })} />,
+      );
       expect(screen.getByText("Decided Today")).toBeDefined();
       expect(document.getElementById("kpi-decided")?.textContent).toBe("15");
       expect(screen.getByText("12 acc · 3 dec")).toBeDefined();
@@ -896,7 +891,7 @@ describe("Tier 1: Feature Coverage Across All 10 Target Screens", () => {
       render(
         <WardDynamicIsland
           {...buildSettingsHudProps({ edAccessTargetHours: 4, pullHoldMinutes: 45, parallelReferralCap: 3 })}
-        />
+        />,
       );
       expect(screen.getByText("ED Target")).toBeDefined();
       expect(screen.getByText("4h")).toBeDefined();
@@ -1182,7 +1177,7 @@ describe("Tier 2: Boundary & Corner Cases", () => {
           expiriesPassed: 0,
           specialling: 0,
         })}
-      />
+      />,
     );
     expect(screen.getByText("of 0 open")).toBeDefined();
     const pip = screen.getByRole("status");
@@ -1204,7 +1199,7 @@ describe("Tier 2: Boundary & Corner Cases", () => {
           expectedCount: 0,
           departedCount: 0,
         })}
-      />
+      />,
     );
     const pip = screen.getByRole("status");
     expect(pip.className).toMatch(/statusPipNominal/);
@@ -1247,7 +1242,7 @@ describe("Tier 2: Boundary & Corner Cases", () => {
     render(<WardDynamicIsland {...buildBedBoardHudProps({ ready: 0, blocked: 0 })} />);
     const pip = screen.getByRole("status");
     expect(pip.className).toMatch(/statusPipWarning/);
-    expect(pip.getAttribute("aria-label")).toBe("Zero ready capacity");
+    expect(pip.getAttribute("aria-label")).toBe("Synthetic status: Zero ready capacity");
   });
 
   it("Statewide Capacity: sets status to alarm when mismatches shortfalls > 0", () => {
@@ -1318,9 +1313,7 @@ describe("Tier 3: Interactions & Filters", () => {
   it("Discharges: clicking 'Blocked releases' toggles filter state and sets aria-pressed='true'", () => {
     const handleFilterChange = vi.fn();
     render(
-      <WardDynamicIsland
-        {...buildDischargesHudProps({ statusFilter: "all", onFilterChange: handleFilterChange })}
-      />
+      <WardDynamicIsland {...buildDischargesHudProps({ statusFilter: "all", onFilterChange: handleFilterChange })} />,
     );
     fireEvent.click(screen.getByTestId("ward-discharge-kpi-blocked"));
     expect(handleFilterChange).toHaveBeenCalledWith("blocked");
@@ -1331,7 +1324,7 @@ describe("Tier 3: Interactions & Filters", () => {
     render(
       <WardDynamicIsland
         {...buildDischargesHudProps({ statusFilter: "blocked", onFilterChange: handleFilterChange })}
-      />
+      />,
     );
     fireEvent.click(screen.getByTestId("ward-discharge-kpi-blocked"));
     expect(handleFilterChange).toHaveBeenCalledWith("all");
@@ -1340,9 +1333,7 @@ describe("Tier 3: Interactions & Filters", () => {
   it("Discharges: clicking 'Confirmed', 'Expected', and 'Departed' updates filter selection", () => {
     const handleFilterChange = vi.fn();
     const { rerender } = render(
-      <WardDynamicIsland
-        {...buildDischargesHudProps({ statusFilter: "all", onFilterChange: handleFilterChange })}
-      />
+      <WardDynamicIsland {...buildDischargesHudProps({ statusFilter: "all", onFilterChange: handleFilterChange })} />,
     );
 
     fireEvent.click(screen.getByTestId("ward-discharge-kpi-confirmed"));
@@ -1434,9 +1425,7 @@ describe("Tier 3: Interactions & Filters", () => {
   it("Keyboard accessibility: pressing Enter and Space activates interactive metric buttons", () => {
     const handleFilterChange = vi.fn();
     render(
-      <WardDynamicIsland
-        {...buildDischargesHudProps({ statusFilter: "all", onFilterChange: handleFilterChange })}
-      />
+      <WardDynamicIsland {...buildDischargesHudProps({ statusFilter: "all", onFilterChange: handleFilterChange })} />,
     );
     const btn = screen.getByTestId("ward-discharge-kpi-confirmed");
     btn.focus();
@@ -1464,7 +1453,7 @@ describe("Tier 4: Real-World Clinical Workflow Journeys", () => {
           expiriesPassed: 1,
           specialling: 2,
         })}
-      />
+      />,
     );
 
     // Verify clinical attention is demanded
@@ -1483,7 +1472,7 @@ describe("Tier 4: Real-World Clinical Workflow Journeys", () => {
           expiriesPassed: 0,
           specialling: 2,
         })}
-      />
+      />,
     );
 
     // Verify status returns to nominal and handover can proceed
@@ -1501,7 +1490,7 @@ describe("Tier 4: Real-World Clinical Workflow Journeys", () => {
           awaitingBedCount: 5,
           breachesCount: 3,
         })}
-      />
+      />,
     );
     expect(screen.getByRole("status").className).toMatch(/statusPipAlarm/);
 
@@ -1512,7 +1501,7 @@ describe("Tier 4: Real-World Clinical Workflow Journeys", () => {
           shortfallsCount: 2,
           unallocatedCount: 5,
         })}
-      />
+      />,
     );
     expect(screen.getByText("2 bed types short")).toBeDefined();
 
@@ -1523,7 +1512,7 @@ describe("Tier 4: Real-World Clinical Workflow Journeys", () => {
         {...buildOnCallHudProps({
           onEscalate: handleEscalate,
         })}
-      />
+      />,
     );
     fireEvent.click(screen.getByTestId("ward-tier-3-escalate-btn"));
     expect(handleEscalate).toHaveBeenCalledTimes(1);
@@ -1544,7 +1533,7 @@ describe("Tier 4: Real-World Clinical Workflow Journeys", () => {
           statusFilter: currentFilter,
           onFilterChange: setFilter,
         })}
-      />
+      />,
     );
     expect(screen.getByTestId("ward-discharge-kpi-blocked").getAttribute("aria-pressed")).toBe("false");
 
@@ -1560,7 +1549,7 @@ describe("Tier 4: Real-World Clinical Workflow Journeys", () => {
           statusFilter: currentFilter,
           onFilterChange: setFilter,
         })}
-      />
+      />,
     );
     expect(screen.getByTestId("ward-discharge-kpi-blocked").getAttribute("aria-pressed")).toBe("true");
 
@@ -1573,7 +1562,7 @@ describe("Tier 4: Real-World Clinical Workflow Journeys", () => {
           turnaround: 2,
           blocked: 0,
         })}
-      />
+      />,
     );
     expect(screen.getByText("2 cleaning")).toBeDefined();
     expect(screen.getByRole("status").className).toMatch(/statusPipNominal/);
@@ -1595,7 +1584,7 @@ describe("Tier 4: Real-World Clinical Workflow Journeys", () => {
           onFilterChange: handleFilter,
           onReAuthorise: handleReauth,
         })}
-      />
+      />,
     );
     expect(screen.getByRole("status").className).toMatch(/statusPipAlarm/);
     expect(screen.getByTestId("ward-legal-reauth-btn")).toBeDefined();
@@ -1616,7 +1605,7 @@ describe("Tier 4: Real-World Clinical Workflow Journeys", () => {
           upcomingCount: 4,
           urgencyFilter: "all",
         })}
-      />
+      />,
     );
     expect(screen.getByRole("status").className).toMatch(/statusPipWarning/); // 4 upcoming
     expect(screen.getByTestId("ward-legal-limits-tag")).toBeDefined();
@@ -1630,7 +1619,7 @@ describe("Tier 4: Real-World Clinical Workflow Journeys", () => {
           isSurgeMode: false,
           edAccessTargetHours: 4,
         })}
-      />
+      />,
     );
     expect(screen.getByText("Synced")).toBeDefined();
     expect(screen.getByRole("status").className).toMatch(/statusPipNominal/);
@@ -1643,7 +1632,7 @@ describe("Tier 4: Real-World Clinical Workflow Journeys", () => {
           isSurgeMode: true,
           edAccessTargetHours: 2,
         })}
-      />
+      />,
     );
     expect(screen.getByText("Draft (Unsaved)")).toBeDefined();
     expect(screen.getByText("Surge Mode")).toBeDefined();
@@ -1660,7 +1649,7 @@ describe("Tier 4: Real-World Clinical Workflow Journeys", () => {
           awaitingDeparture: 1,
           escortRequired: 0,
         })}
-      />
+      />,
     );
     expect(screen.getByRole("status").className).toMatch(/statusPipNominal/);
     expect(screen.getByText("Standard")).toBeDefined();
@@ -1674,7 +1663,7 @@ describe("Tier 4: Real-World Clinical Workflow Journeys", () => {
           awaitingDeparture: 2,
           escortRequired: 1,
         })}
-      />
+      />,
     );
     expect(screen.getByRole("status").className).toMatch(/statusPipWarning/);
     expect(screen.getByText("Mental Health Escort")).toBeDefined();
@@ -1693,7 +1682,7 @@ describe("Tier 4: Real-World Clinical Workflow Journeys", () => {
             selectedChip = c;
           },
         })}
-      />
+      />,
     );
     expect(screen.getByRole("status").className).toMatch(/statusPipAlarm/);
 
@@ -1710,7 +1699,7 @@ describe("Tier 4: Real-World Clinical Workflow Journeys", () => {
           decidedTotal: 13,
           activeChip: "all",
         })}
-      />
+      />,
     );
     expect(screen.getByRole("status").className).toMatch(/statusPipNominal/);
   });
@@ -1723,7 +1712,7 @@ describe("Tier 4: Real-World Clinical Workflow Journeys", () => {
           unallocatedCount: 4,
           offlineCount: 2,
         })}
-      />
+      />,
     );
     expect(screen.getByText("1 bed types short")).toBeDefined();
     expect(screen.getByRole("status").className).toMatch(/statusPipAlarm/);
@@ -1736,7 +1725,7 @@ describe("Tier 4: Real-World Clinical Workflow Journeys", () => {
           unallocatedCount: 0,
           offlineCount: 0,
         })}
-      />
+      />,
     );
     expect(screen.getByText("Balanced")).toBeDefined();
     expect(screen.getByRole("status").className).toMatch(/statusPipNominal/);
@@ -1751,7 +1740,7 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
   it("Integration Screen 1: Shift Handover component source preserves verbatim text strings", () => {
     const source = readFileSync(
       resolve(process.cwd(), "src/components/ward-management/handover/handover-page.tsx"),
-      "utf8"
+      "utf8",
     );
     expect(source).toContain("Caseload in Scope");
     expect(source).toContain("Allocatable Vacancies");
@@ -1763,7 +1752,7 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DischargeBoard />
-      </WardFlowProvider>
+      </WardFlowProvider>,
     );
 
     // Preserves required testIds for KPI strip and cards
@@ -1776,7 +1765,7 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
   it("Integration Screen 3: Referral Board component preserves ward-referral-kpis container contract", () => {
     const source = readFileSync(
       resolve(process.cwd(), "src/components/ward-management/referrals/referral-board.tsx"),
-      "utf8"
+      "utf8",
     );
     expect(source).toContain("ward-referral-kpis");
   });
@@ -1784,7 +1773,7 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
   it("Integration Screen 4: Settings component preserves operational settings contracts", () => {
     const source = readFileSync(
       resolve(process.cwd(), "src/components/ward-management/settings/settings-screen.tsx"),
-      "utf8"
+      "utf8",
     );
     expect(source).toContain("Save coordination rules");
     expect(source).toContain("edAccessTargetMinutes");
@@ -1794,7 +1783,7 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
   it("Integration Screen 5: Ward bed board preserves unit status telemetry", () => {
     const source = readFileSync(
       resolve(process.cwd(), "src/components/ward-management/ward/ward-answer-view.tsx"),
-      "utf8"
+      "utf8",
     );
     expect(source).toContain("ward-unit-screen");
   });
@@ -1803,7 +1792,7 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <CapacityScreen />
-      </WardFlowProvider>
+      </WardFlowProvider>,
     );
 
     // CRITICAL: Mismatch table must NEVER be removed or broken by HUD rollout
@@ -1813,17 +1802,14 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
   });
 
   it("Integration Screen 7: Emergency Department component preserves ED access target contracts", () => {
-    const source = readFileSync(
-      resolve(process.cwd(), "src/components/ward-management/ed/ed-screen.tsx"),
-      "utf8"
-    );
+    const source = readFileSync(resolve(process.cwd(), "src/components/ward-management/ed/ed-screen.tsx"), "utf8");
     expect(source).toContain("edAccessTargetMinutes");
   });
 
   it("Integration Screen 8: On-Call management preserves Tier 3 escalation action contract", () => {
     const source = readFileSync(
       resolve(process.cwd(), "src/components/ward-management/on-call/on-call-screen.tsx"),
-      "utf8"
+      "utf8",
     );
     expect(source).toContain("Tier 3");
   });
@@ -1831,7 +1817,7 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
   it("Integration Screen 9: Transport screen preserves transport dispatch contracts", () => {
     const source = readFileSync(
       resolve(process.cwd(), "src/components/ward-management/officer/officer-screen.tsx"),
-      "utf8"
+      "utf8",
     );
     expect(source).toContain("ward-officer-screen");
   });
@@ -1840,7 +1826,7 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <LegalFormsScreen />
-      </WardFlowProvider>
+      </WardFlowProvider>,
     );
 
     // CRITICAL: Assistive tech summary dl must NEVER be removed

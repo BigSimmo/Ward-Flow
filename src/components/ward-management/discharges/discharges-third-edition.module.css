@@ -1278,7 +1278,7 @@
   flex-direction: column;
   gap: 10px;
   position: relative;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px var(--ward-shadow-black-04);
 }
 
 .patientCardTop {
@@ -1420,7 +1420,7 @@
 /* ─── Barrier Mitigation Action Console ─── */
 .barrierActionBox {
   background: var(--warn-soft);
-  border: 1px solid var(--warn-border, var(--warn));
+  border: 1px solid var(--warn);
   border-radius: var(--r1);
   padding: 12px 14px;
   display: flex;
@@ -1447,7 +1447,7 @@
 
 .barrierUrgencyBadge {
   background: var(--warn);
-  color: #ffffff;
+  color: var(--ward-fixed-white);
   font-size: 10.5px;
   font-weight: 700;
   text-transform: uppercase;
@@ -1512,7 +1512,7 @@
 
 .deckButtonEscalate:hover {
   background: var(--warn);
-  color: #ffffff;
+  color: var(--ward-fixed-white);
 }
 
 /* ─── Transit & Destination Logistics Card ─── */
@@ -1625,21 +1625,21 @@
 .stepDone .stepBullet {
   background: var(--good);
   border-color: var(--good);
-  color: #ffffff;
+  color: var(--ward-fixed-white);
   box-shadow: 0 0 0 2px var(--good-soft);
 }
 
 .stepActive .stepBullet {
   background: var(--warn);
   border-color: var(--warn);
-  color: #ffffff;
+  color: var(--ward-fixed-white);
   box-shadow: 0 0 0 2px var(--warn-soft);
 }
 
 .stepBlocked .stepBullet {
   background: var(--danger);
   border-color: var(--danger);
-  color: #ffffff;
+  color: var(--ward-fixed-white);
   box-shadow: 0 0 0 2px var(--danger-soft);
 }
 
@@ -1773,18 +1773,18 @@
 
 .gateIndicatorComplete {
   background: var(--good);
-  color: #ffffff;
+  color: var(--ward-fixed-white);
 }
 
 .gateIndicatorActive {
   background: var(--warn);
-  color: #ffffff;
+  color: var(--ward-fixed-white);
   box-shadow: 0 0 0 3px var(--warn-soft);
 }
 
 .gateIndicatorBlocked {
   background: var(--danger);
-  color: #ffffff;
+  color: var(--ward-fixed-white);
   box-shadow: 0 0 0 3px var(--danger-soft);
 }
 
@@ -1934,7 +1934,7 @@
 
 :global([data-theme="dark"]) .barrierActionBox {
   background: var(--warn-soft);
-  border-color: var(--warn-border, var(--warn));
+  border-color: var(--warn);
 }
 
 :global([data-theme="dark"]) .transportCard,
@@ -2035,7 +2035,7 @@
 .waveIconBoxMidday {
   background: var(--warn-soft);
   color: var(--warn-ink, var(--warn));
-  border: 1px solid var(--warn-border, var(--warn));
+  border: 1px solid var(--warn);
 }
 
 .waveIconBoxEvening {
@@ -2122,7 +2122,7 @@
   letter-spacing: 0.04em;
   background: var(--warn-soft);
   color: var(--warn-ink, var(--warn));
-  border: 1px solid var(--warn-border, var(--warn));
+  border: 1px solid var(--warn);
 }
 
 .waveTagTracked {
@@ -2256,7 +2256,7 @@
   letter-spacing: 0.04em;
   background: var(--warn-soft);
   color: var(--warn-ink, var(--warn));
-  border: 1px solid var(--warn-border, var(--warn));
+  border: 1px solid var(--warn);
 }
 
 .badgeConfirmed {

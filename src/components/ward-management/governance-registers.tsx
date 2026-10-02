@@ -513,7 +513,8 @@ const SAMPLE_OVERRIDES: GovernanceOverrideItem[] = [
     service: "North Metro",
     route: "North Metro · Sir Charles Gairdner MHU",
     category: "Catchment Boundary Bypass",
-    reason: "Catchment boundary bypass authorised: patient resides in South Metro, urgent specialist stabilization needed.",
+    reason:
+      "Catchment boundary bypass authorised: patient resides in South Metro, urgent specialist stabilization needed.",
     by: "State Bed Coordinator",
     recordedAgoText: "Shift handover",
     status: "Pending Review",
@@ -652,7 +653,7 @@ const SAMPLE_DECISIONS: GovernanceDecisionItem[] = [
 const SAMPLE_RESTRICTIVE_PRACTICES: GovernanceRestrictiveItem[] = [
   {
     id: "RP-101",
-    form: "Form 10 (Bodily Restraint)",
+    form: "Bodily restraint",
     patient: "Harper, Chloe · UMRN UM100412",
     unit: "Bentley · Adult Secure Unit",
     authorisedBy: "Dr. S. Banner (Consultant)",
@@ -663,7 +664,7 @@ const SAMPLE_RESTRICTIVE_PRACTICES: GovernanceRestrictiveItem[] = [
   },
   {
     id: "RP-102",
-    form: "Form 11 (Seclusion)",
+    form: "Seclusion",
     patient: "Vance, Eleanor · UMRN UM100884",
     unit: "Bentley · Adult Secure Unit",
     authorisedBy: "Dr. C. Thorne (Duty Consultant)",
@@ -674,7 +675,7 @@ const SAMPLE_RESTRICTIVE_PRACTICES: GovernanceRestrictiveItem[] = [
   },
   {
     id: "RP-103",
-    form: "Form 10 (Bodily Restraint)",
+    form: "Bodily restraint",
     patient: "Gallagher, Liam · UMRN UM100721",
     unit: "Sir Charles Gairdner MHU",
     authorisedBy: "Dr. M. Reid (Psychiatrist)",
@@ -713,15 +714,7 @@ export function GovernanceWorkbench(props: WorkbenchProps) {
   return <GovernanceSession key={props.api?.worldGeneration ?? "unavailable"} {...props} />;
 }
 
-function GovernanceSession({
-  movements,
-  units,
-  now,
-  api,
-  legacyChanges,
-  effectiveness,
-  sampleData,
-}: WorkbenchProps) {
+function GovernanceSession({ movements, units, now, api, legacyChanges, effectiveness, sampleData }: WorkbenchProps) {
   const hasSampleData = sampleData !== undefined ? sampleData : Boolean(api);
   const patientOf = usePatientOf();
   const [tab, setTab] = useState<GovernanceRegisterTab>("overrides");
@@ -738,15 +731,9 @@ function GovernanceSession({
     decision: AuditReview["decision"];
   } | null>(null);
 
-  const [overrideList, setOverrideList] = useState<GovernanceOverrideItem[]>(
-    hasSampleData ? SAMPLE_OVERRIDES : [],
-  );
-  const [decisionList, setDecisionList] = useState<GovernanceDecisionItem[]>(
-    hasSampleData ? SAMPLE_DECISIONS : [],
-  );
-  const [selectedOverrideId, setSelectedOverrideId] = useState<string | null>(
-    hasSampleData ? "OVR-107" : null,
-  );
+  const [overrideList, setOverrideList] = useState<GovernanceOverrideItem[]>(hasSampleData ? SAMPLE_OVERRIDES : []);
+  const [decisionList, setDecisionList] = useState<GovernanceDecisionItem[]>(hasSampleData ? SAMPLE_DECISIONS : []);
+  const [selectedOverrideId, setSelectedOverrideId] = useState<string | null>(hasSampleData ? "OVR-107" : null);
 
   const [modalOpen, setModalOpen] = useState(false);
   // The endorse form starts empty. It used to arrive pre-filled with a verdict, a reviewing role and
@@ -868,8 +855,16 @@ function GovernanceSession({
     { id: "overrides", label: "Overrides Register", count: totalMonitored },
     { id: "decisions", label: "Decision Log", count: decisionList.length },
     { id: "access", label: "Session Access Record", count: 0 },
-    { id: "restrictive", label: "Restrictive Practices (Forms 10/11)", count: hasSampleData ? SAMPLE_RESTRICTIVE_PRACTICES.length : 0 },
-    { id: "search-seizure", label: "Search & Seizure (Form 8)", count: hasSampleData ? SAMPLE_SEARCH_SEIZURE.length : 0 },
+    {
+      id: "restrictive",
+      label: "Restrictive Practices (Forms 10/11)",
+      count: hasSampleData ? SAMPLE_RESTRICTIVE_PRACTICES.length : 0,
+    },
+    {
+      id: "search-seizure",
+      label: "Search & Seizure (Form 8)",
+      count: hasSampleData ? SAMPLE_SEARCH_SEIZURE.length : 0,
+    },
     { id: "legacy", label: "Legacy facts" },
     ...(effectiveness ? [{ id: "measures" as const, label: "Effectiveness" }] : []),
   ];
@@ -1076,11 +1071,12 @@ function GovernanceSession({
       <WardDynamicIsland
         title={
           <>
-            Governance HUD <span style={{ opacity: 0.75, fontWeight: 500, fontSize: "var(--t-0, 12px)" }}>· This session</span>
+            Governance{" "}
+            <span style={{ opacity: 0.75, fontWeight: 500, fontSize: "var(--t-0, 12px)" }}>· This session</span>
           </>
         }
         status={totalMonitored > 0 ? "warning" : "nominal"}
-        statusText={totalMonitored > 0 ? `${totalMonitored} overrides monitored` : "All clinical gates nominal"}
+        statusText={totalMonitored > 0 ? `${totalMonitored} overrides monitored` : "No overrides recorded this session"}
         ariaLabel="Clinical governance indicators"
         testId="ward-governance-hud-island"
         metrics={[
@@ -1124,7 +1120,9 @@ function GovernanceSession({
         <div className={thirdEdition.workspaceMeta}>
           <span className={thirdEdition.sessionDot} aria-hidden="true" />
           <p className={thirdEdition.workspaceNote}>Captured this session · resets with demo</p>
-          <span className={thirdEdition.metaDot} aria-hidden="true">·</span>
+          <span className={thirdEdition.metaDot} aria-hidden="true">
+            ·
+          </span>
           <div className={thirdEdition.summary}>
             <span className={thirdEdition.summaryPill}>
               <strong>{allowed ? events.length : "—"}</strong> captured
@@ -1783,7 +1781,7 @@ function GovernanceSession({
             <table className={thirdEdition.govTable} id="restrictiveTable" aria-label="Restrictive practices register">
               <thead>
                 <tr>
-                  <th scope="col">Form</th>
+                  <th scope="col">Practice</th>
                   <th scope="col">Patient · UMRN</th>
                   <th scope="col">Ward · Location</th>
                   <th scope="col">Authorised By</th>

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 
-import { formatInstant, formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { genderReviewNeeded, type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
@@ -861,7 +861,6 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                   </div>
 
                   {(() => {
-                    const clinicalInfo = getClinicalSummary(selectedReferral);
                     const wardAddressing = selectedReferral.destinations.find(
                       (d) => d.destination.kind === "psychiatric_ward",
                     );
@@ -869,7 +868,6 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       wardAddressing && wardAddressing.destination.kind === "psychiatric_ward"
                         ? wardAddressing.destination
                         : undefined;
-                    const isLegalOrder = wardDest?.involuntaryBedNeeded;
                     const isSecureBed = wardDest?.secureBedNeeded;
 
                     const sex = referralSexCell(selectedReferral);
@@ -886,7 +884,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     return (
                       <div className={styles.demographicRow}>
                         <span className={styles.demoItem}>
-                          <strong>{demographicLabel} · {isLegalOrder ? "Involuntary (MHA 2014)" : "Voluntary Status"}</strong>
+                          <strong>{demographicLabel} · Legal status not recorded</strong>
                         </span>
                         <span className={styles.demoDot}>·</span>
                         <span className={styles.demoItem}>
@@ -1070,21 +1068,13 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "14px 18px" }}>
                     {(() => {
                       const clinicalInfo = getClinicalSummary(selectedReferral);
-                      const wardAddressing = selectedReferral.destinations.find(
-                        (d) => d.destination.kind === "psychiatric_ward",
-                      );
-                      const wardDest =
-                        wardAddressing && wardAddressing.destination.kind === "psychiatric_ward"
-                          ? wardAddressing.destination
-                          : undefined;
-                      const isLegalOrder = wardDest?.involuntaryBedNeeded;
 
                       return (
                         <>
                           <div style={{ padding: "12px 14px", background: "var(--surface-2)", border: "1px solid var(--line)", borderRadius: "var(--r2, 6px)" }}>
-                            <span style={{ fontSize: "var(--t-0, 12px)", fontWeight: 700, textTransform: "uppercase", color: "var(--muted)" }}>Mental Health Act 2014 (Western Australia) Compliance</span>
+                            <span style={{ fontSize: "var(--t-0, 12px)", fontWeight: 700, textTransform: "uppercase", color: "var(--muted)" }}>Recorded legal information</span>
                             <p style={{ fontSize: "var(--t-1, 13px)", color: "var(--ink-soft)", marginTop: "4px" }}>
-                              Every inter-hospital transfer and bed allocation must comply with statutory referral rights under Part 3 of the Act.
+                              Referral details do not establish consent, detention authority or a register check.
                             </p>
                           </div>
 
@@ -1092,14 +1082,14 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                             <div style={{ padding: "10px 14px", borderRadius: "var(--r2, 6px)", border: "1px solid var(--line)", background: "var(--surface)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                               <div>
                                 <strong style={{ fontSize: "var(--t-1, 13px)", color: "var(--ink)" }}>
-                                  {isLegalOrder ? "Involuntary Order Statutory Detention Affirmation" : "Voluntary Admission Consent Affirmation"}
+                                  Consent or detention authority
                                 </strong>
                                 <div style={{ fontSize: "var(--t-0, 12px)", color: "var(--muted)" }}>
-                                  Affirmed by treating medical officer at {formatInstant(selectedReferral.raisedAt)} AWST
+                                  Referral raised {formatInstantWithDay(selectedReferral.raisedAt, now)}
                                 </div>
                               </div>
-                              <span style={{ fontSize: "11px", padding: "1px 6px", borderRadius: "10px", background: "var(--good-soft)", color: "var(--good)", fontWeight: 700 }}>
-                                ✓ Affirmed
+                              <span style={{ fontSize: "11px", padding: "1px 6px", borderRadius: "10px", background: "var(--surface-2)", color: "var(--muted)", fontWeight: 700 }}>
+                                Not recorded in this referral
                               </span>
                             </div>
 
@@ -1107,11 +1097,11 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                               <div>
                                 <strong style={{ fontSize: "var(--t-1, 13px)", color: "var(--ink)" }}>Chief Psychiatrist Statutory Register Check</strong>
                                 <div style={{ fontSize: "var(--t-0, 12px)", color: "var(--muted)" }}>
-                                  {isLegalOrder ? "Statutory Form 1A recorded on Chief Psychiatrist Register" : "No active community treatment order (Form 5A) on record"}
+                                  Register check not recorded on this referral.
                                 </div>
                               </div>
-                              <span style={{ fontSize: "11px", padding: "1px 6px", borderRadius: "10px", background: "var(--good-soft)", color: "var(--good)", fontWeight: 700 }}>
-                                ✓ Clear
+                              <span style={{ fontSize: "11px", padding: "1px 6px", borderRadius: "10px", background: "var(--surface-2)", color: "var(--muted)", fontWeight: 700 }}>
+                                Not recorded
                               </span>
                             </div>
                           </div>

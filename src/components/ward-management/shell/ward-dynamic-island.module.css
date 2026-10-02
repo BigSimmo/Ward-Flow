@@ -38,7 +38,10 @@
   max-width: 100%;
   overflow-x: auto;
   scrollbar-width: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .island::-webkit-scrollbar {
@@ -94,7 +97,7 @@
 }
 
 .statusPipAlarm {
-  background: var(--danger, var(--critical));
+  background: var(--danger, var(--ward-danger));
   animation: pulseAlarm 2s infinite ease-in-out;
 }
 
@@ -103,12 +106,13 @@
   position: absolute;
   inset: -3px;
   border-radius: var(--pill, 9999px);
-  border: 1px solid var(--danger, var(--critical));
+  border: 1px solid var(--danger, var(--ward-danger));
   opacity: 0.5;
 }
 
 @keyframes pulseAlarm {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     opacity: 1;
   }
@@ -152,7 +156,9 @@
   color: var(--muted);
   border-radius: var(--pill, 9999px);
   padding: 3px 8px;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .metricBtn {
@@ -169,11 +175,14 @@
   border-radius: var(--pill, 9999px);
   padding: 3px 8px;
   min-height: 28px;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .metricBtn:hover {
-  background: var(--surface-3, var(--surface-hover));
+  background: var(--surface-3, var(--surface-2));
   color: var(--text);
   border-color: var(--line, var(--border));
 }
@@ -184,7 +193,7 @@
 }
 
 .metricBtnActive {
-  background: var(--surface-3, var(--surface-hover));
+  background: var(--surface-3, var(--surface-2));
   border-color: var(--accent);
   color: var(--text);
   font-weight: 600;
@@ -236,7 +245,7 @@
 }
 
 .metricToneDanger {
-  color: var(--danger, var(--critical));
+  color: var(--danger, var(--ward-danger));
 }
 
 .metricToneMuted {
@@ -269,6 +278,15 @@
     width: 100%;
     justify-content: flex-start;
     padding: 6px 10px;
-    border-radius: var(--r-card, 12px);
+    border-radius: 12px;
+  }
+}
+
+@media print {
+  .island,
+  .island * {
+    color: CanvasText !important;
+    background-color: Canvas !important;
+    box-shadow: none !important;
   }
 }

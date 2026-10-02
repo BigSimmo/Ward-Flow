@@ -97,11 +97,12 @@ describe("no file under tests/ is invisible to every runner", () => {
   const NODE_LIVE_INCLUDE_GLOB = nodeIncludeMatch[1]!; // "tests/**/*.live.test.ts"
   const NODE_DEFAULT_INCLUDE_GLOB = nodeIncludeMatch[2]!; // "tests/**/*.test.ts"
 
-  const jsdomIncludeMatch = vitestSource.match(/name: "jsdom",[\s\S]*?include: \["([^"]+)"\],/);
+  const jsdomIncludeMatch = vitestSource.match(/name: "jsdom",[\s\S]*?include: \[([^\]]+)\],/);
   if (!jsdomIncludeMatch) {
     throw new Error("vitest.config.mts: could not read the jsdom project's include glob — update this extraction.");
   }
-  const JSDOM_INCLUDE_GLOB = jsdomIncludeMatch[1]!; // "tests/**/*.dom.test.tsx"
+  const JSDOM_INCLUDE_GLOBS = [...jsdomIncludeMatch[1]!.matchAll(/"([^"]+)"/g)].map((match) => match[1]!);
+  if (JSDOM_INCLUDE_GLOBS.length === 0) throw new Error("jsdom include patterns parsed as empty");
 
   // The caring-contacts-db project left with PsychSift (26 September 2026). If a conditional
   // project comes back, extract its files here and union them into isVisible below.
@@ -111,7 +112,7 @@ describe("no file under tests/ is invisible to every runner", () => {
 
   const nodeDefaultIncludeRe = globToRegExp(NODE_DEFAULT_INCLUDE_GLOB);
   const nodeLiveIncludeRe = globToRegExp(NODE_LIVE_INCLUDE_GLOB);
-  const jsdomIncludeRe = globToRegExp(JSDOM_INCLUDE_GLOB);
+  const jsdomIncludeRes = JSDOM_INCLUDE_GLOBS.map(globToRegExp);
 
   // ---- 2. Playwright: discover which projects exist and which named pattern each one uses ----
   //
@@ -147,7 +148,7 @@ describe("no file under tests/ is invisible to every runner", () => {
     const nodeDefaultVisible = nodeDefaultIncludeRe.test(relPath) && !nodeLiveIncludeRe.test(relPath);
     return (
       nodeDefaultVisible ||
-      jsdomIncludeRe.test(relPath) ||
+      jsdomIncludeRes.some((pattern) => pattern.test(relPath)) ||
       nodeLiveIncludeRe.test(relPath) || // visible under ALLOW_PROVIDER_TESTS=true
       playwrightMainPatterns.some((re) => re.test(relPath))
     );
@@ -156,7 +157,7 @@ describe("no file under tests/ is invisible to every runner", () => {
   it("reads the real patterns from every runner's config, not a remembered copy of two globs", () => {
     expect(NODE_DEFAULT_INCLUDE_GLOB).toBe("tests/**/*.test.ts");
     expect(NODE_LIVE_INCLUDE_GLOB).toBe("tests/**/*.live.test.ts");
-    expect(JSDOM_INCLUDE_GLOB).toBe("tests/**/*.dom.test.tsx");
+    expect(JSDOM_INCLUDE_GLOBS).toEqual(["tests/**/*.dom.test.tsx", "tests/**/*.contract.test.tsx"]);
     // Playwright: two distinct named patterns across the projects (production browsers, the
     // mockup projects).
     expect(mainPatternNames.sort()).toEqual(["mockupSpecPattern", "productionSpecPattern"]);
@@ -174,6 +175,7 @@ describe("no file under tests/ is invisible to every runner", () => {
 
     it("classifies the corresponding good names as visible", () => {
       expect(isVisible("tests/zz-example-widget.dom.test.tsx")).toBe(true);
+      expect(isVisible("tests/zz-example-widget.contract.test.tsx")).toBe(true);
       expect(isVisible("tests/zz-example.test.ts")).toBe(true);
     });
 

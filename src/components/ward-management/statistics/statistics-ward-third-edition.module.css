@@ -31,7 +31,7 @@
 }
 
 .pageGrid > :global([data-testid="ward-statistics-ward-beds-now"]) {
-  grid-column: 1;
+  grid-column: 1 / -1;
 }
 
 .pageGrid > :global([data-testid="ward-statistics-ward-occupancy"]) {

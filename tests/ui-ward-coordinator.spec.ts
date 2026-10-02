@@ -146,13 +146,14 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     const queue = page.getByRole("region", { name: "Priority queue" });
     const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
-    // ⚠️ **RETARGETED.** The shortlist `<aside>` is now conditionally mounted at all
-    // (`{hasPanelSubject ? ... : null}`, `coordinator-screen.tsx`) — with nothing selected it does
-    // not exist in the document yet, rather than existing with a "Select a movement" placeholder.
-    // The current placeholder ("Select a patient or referral to open shortlist") lives in the
-    // "Statewide flow" section's own header instead.
+    // Before selection, the diagram header reports the fixture's ward count and
+    // the shortlist is absent. Selecting a row mounts the matching shortlist.
     await expect(shortlist).toHaveCount(0);
-    await expect(page.getByText("Select a patient or referral to open shortlist")).toBeVisible();
+    await expect(
+      page
+        .getByRole("region", { name: "Statewide flow", exact: true })
+        .getByText(`${allUnits().length} inpatient wards`, { exact: true }),
+    ).toBeVisible();
 
     const rows = queue.locator('[data-testid^="ward-queue-row-"]');
     const firstRow = rows.first();

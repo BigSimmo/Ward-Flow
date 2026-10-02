@@ -6095,3 +6095,9 @@
   border: 1px dashed var(--line);
   border-radius: var(--r2, 6px);
 }
+
+@media (min-width: 80rem) {
+  .radarSvg {
+    max-height: 22rem;
+  }
+}

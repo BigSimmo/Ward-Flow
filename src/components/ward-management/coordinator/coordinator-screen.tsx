@@ -395,9 +395,7 @@ export function CoordinatorScreen() {
               >
                 <header className={styles.regionHeader}>
                   <h2>Statewide flow</h2>
-                  {!hasPanelSubject ? (
-                    <span className={styles.regionCount}>Select a patient or referral to open shortlist</span>
-                  ) : null}
+                  {!hasPanelSubject ? <span className={styles.regionCount}>{units.length} inpatient wards</span> : null}
                   {selectedUnitId ? (
                     <button
                       type="button"
