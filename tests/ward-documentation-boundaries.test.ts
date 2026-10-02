@@ -1,6 +1,7 @@
 import { test } from "vitest";
+import { removePathSync } from "../scripts/retryable-fs.mjs";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import vm from "node:vm";
@@ -54,7 +55,7 @@ test("nested native instructions included, dependencies excluded", () => {
     assert.deepEqual(collectInstructionDocs(root).sort(), ["GEMINI.md", "src/CLAUDE.md"]);
   } finally {
     assert.equal(root.startsWith(join(tmpdir(), "ward-doc-instructions-")), true);
-    rmSync(root, { recursive: true, maxRetries: 5, retryDelay: 100 });
+    removePathSync(root, { recursive: true });
   }
 });
 
@@ -97,6 +98,6 @@ test("retired lesson importer refuses ordinary and check runs without file acces
     }
   } finally {
     assert.equal(root.startsWith(join(tmpdir(), "ward-retired-importer-")), true);
-    rmSync(root, { recursive: true, maxRetries: 5, retryDelay: 100 });
+    removePathSync(root, { recursive: true });
   }
 });

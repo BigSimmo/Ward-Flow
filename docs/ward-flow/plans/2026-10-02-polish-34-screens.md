@@ -344,3 +344,10 @@ remain intact. App/browser inputs are unchanged. The generic safety guard reads 
 test files, so the existing bounded failing-file-only recheck cannot establish this
 correction; run one fresh complete FULL on the corrected stable tree, without weakening
 that gate or manufacturing a change to the failing safety test.
+
+The original fixture owner concurrently folded `a3e55d7` to main, solving the same cleanup
+finding through the existing `removePathSync` helper. This latest owner version is preserved
+exactly in the integration candidate. The coordinator's two-line alternative remains recoverable
+at `1706c6b` but is superseded. The only merge conflict was that same test file; all 11 assertions
+and both root-prefix checks remain unchanged. No application inputs changed. Refresh the focused
+fixture/safety proof on the adopted helper version, then run the final complete gate once.
