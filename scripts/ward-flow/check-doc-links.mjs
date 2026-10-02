@@ -185,9 +185,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const files = markdownFiles(scanRoot, [], isAll);
   const broken = files.flatMap((file) => brokenLinksIn(file, readFileSync(file, "utf8")));
 
-  const fileUrlHits = files.flatMap((file) =>
-    [...readFileSync(file, "utf8").matchAll(FILE_URL)].map(() => file)
-  );
+  const fileUrlHits = files.flatMap((file) => [...readFileSync(file, "utf8").matchAll(FILE_URL)].map(() => file));
 
   console.log(`Scanned ${files.length} markdown file(s) under ${isAll ? "repository root" : "docs/ward-flow"}.\n`);
 
@@ -209,7 +207,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
 
   console.log("🔴 Links pointing at files or anchors that are not there:\n");
   for (const item of broken) {
-    console.log(`  ${item.file.slice(PROJECT_ROOT.length).replaceAll("\\", "/")}:${item.line}  ->  ${item.target} (${item.reason})`);
+    console.log(
+      `  ${item.file.slice(PROJECT_ROOT.length).replaceAll("\\", "/")}:${item.line}  ->  ${item.target} (${item.reason})`,
+    );
   }
   console.log(`\n${broken.length} broken link(s) across ${new Set(broken.map((b) => b.file)).size} file(s).`);
   console.log("\nRepoint each one. Where the target is genuinely gone, say so in the text rather than");

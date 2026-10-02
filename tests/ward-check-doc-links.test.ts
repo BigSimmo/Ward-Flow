@@ -1,9 +1,5 @@
 import { test, describe, expect } from "vitest";
-import {
-  headingToSlug,
-  extractSlugs,
-  brokenLinksIn,
-} from "../scripts/ward-flow/check-doc-links.mjs";
+import { headingToSlug, extractSlugs, brokenLinksIn } from "../scripts/ward-flow/check-doc-links.mjs";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -16,14 +12,12 @@ describe("headingToSlug", () => {
 
   test("strips HTML tags and markdown formatting", () => {
     expect(headingToSlug("Heading with <code>tags</code> and [a link](https://example.com)")).toBe(
-      "heading-with-tags-and-a-link"
+      "heading-with-tags-and-a-link",
     );
   });
 
   test("strips backticks and special punctuation", () => {
-    expect(headingToSlug("Section 2 · For the owner: `get_data()`")).toBe(
-      "section-2-for-the-owner-get_data"
-    );
+    expect(headingToSlug("Section 2 · For the owner: `get_data()`")).toBe("section-2-for-the-owner-get_data");
   });
 
   test("collapses multiple spaces into single hyphen", () => {
@@ -33,12 +27,7 @@ describe("headingToSlug", () => {
 
 describe("extractSlugs", () => {
   test("extracts markdown headings with deduplication counts", () => {
-    const markdown = [
-      "# Overview",
-      "## Details",
-      "## Details",
-      "### Sub details",
-    ].join("\n");
+    const markdown = ["# Overview", "## Details", "## Details", "### Sub details"].join("\n");
     const slugs = extractSlugs(markdown);
     expect(slugs.has("overview")).toBe(true);
     expect(slugs.has("details")).toBe(true);
