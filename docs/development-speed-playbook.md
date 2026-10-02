@@ -7,9 +7,17 @@
 
 # Development speed playbook
 
-**Written 2026-08-27.** How to go faster in this repository **without weakening safety, quality,
-gates, or the product**. Every mechanism here already exists; nothing below asks you to skip a
-check, delete an assertion, loosen a test, or lower a tolerance.
+**Historical playbook, written 2026-08-27; scope revalidated 2026-10-01.** The examples,
+commands, CI lanes and measurements below describe the former Database/PsychSift Ward line.
+They are retained as historical evidence, not current Ward Flow execution instructions or
+measured savings for this repository.
+
+For current Ward Flow commands and selector limits, use the on-demand
+[task-efficiency guide](agents/task-efficiency.md) and the repository boundary in [AGENTS.md](../AGENTS.md).
+The current arbiter has no recognised Ward CI coverage; unknown coverage requires running the
+selected gate or reporting it blocked. Historical CI and browser-deferral examples below grant
+no authority to skip a Ward gate. Use observed, equivalent evidence for the actual inputs before
+claiming reuse; a declared workflow alone proves no run. Preserve every required gate and assertion.
 
 > **The one rule.** Speed here comes from **not buying the same verdict twice**, and from **not
 > starting work that is already done**. It never comes from checking less. If a suggestion below

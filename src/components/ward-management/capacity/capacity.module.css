@@ -2280,3 +2280,1511 @@
     min-width: 0;
   }
 }
+
+/* Capacity workspace: clear controls, legible census and an accessible expanded view. */
+.filters {
+  gap: var(--ward-space-12);
+  padding: var(--ward-space-16);
+  background: var(--surface);
+}
+.tableToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ward-space-12);
+  flex-basis: 100%;
+}
+.tableToolbar p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+}
+.fullscreenButton {
+  min-height: var(--ward-tap, 2.75rem);
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+  color: var(--accent-ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  flex: none;
+}
+.filters :global([data-ward-primitive="filters"]) {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  flex: 1 1 42rem;
+  gap: 0.5rem;
+}
+.filters :global([data-ward-primitive="filters"]) button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: var(--ward-tap, 2.75rem);
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--r2);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  text-align: start;
+  white-space: normal;
+}
+.filters :global([data-ward-primitive="filters"]) button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  box-shadow: inset 0 -2px 0 var(--accent);
+  font-weight: 700;
+}
+.filters :global([data-ward-primitive="filters"]) button span {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.networkTable {
+  --ward-table-cell-inset: 0.875rem 1rem;
+  --ward-table-min-width: 100rem;
+}
+.screen .networkTable th {
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ink-soft);
+  white-space: normal;
+  min-width: 5rem;
+  line-height: 1.4;
+}
+.screen .networkTable th:first-child,
+.screen .networkTable td:first-child {
+  min-width: 16rem;
+  inset-inline-start: 0;
+}
+.screen .networkTable td {
+  vertical-align: top;
+  line-height: 1.5;
+}
+.screen .networkTable .readyBadge,
+.screen .networkTable .lockedBadge,
+.screen .networkTable .blockedBadge,
+.screen .networkTable .groupWardBadge {
+  padding: 0;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: var(--t-1);
+  line-height: inherit;
+}
+.screen .networkTable .groupSummaryRow th,
+.screen .networkTable .groupSummaryRow td {
+  padding-block: 0.75rem;
+  border-block-start: 1px solid var(--line-strong);
+  background: var(--surface-2);
+}
+.groupFoldButton {
+  min-height: var(--ward-tap, 2.75rem);
+  border: 0;
+  padding-inline: 0.375rem;
+}
+.secondary {
+  align-self: start;
+}
+.readySummary {
+  padding: 1.25rem;
+  gap: 0.875rem;
+  background: var(--surface-2);
+}
+.readyValue strong {
+  font-size: 3rem;
+}
+.freeingItem {
+  align-items: start;
+  gap: 0.5rem;
+  padding-block: 0.75rem;
+}
+.freeingWardName {
+  white-space: normal;
+  overflow: visible;
+  line-height: 1.5;
+}
+.freeingBadge {
+  border: 0;
+  border-radius: var(--r1);
+  padding: 0.375rem 0.5rem;
+  white-space: normal;
+  max-width: 6rem;
+  text-align: center;
+}
+.sidebarFooter {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.tableFullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 1000);
+  height: 100dvh;
+  box-sizing: border-box;
+  padding: var(--ward-space-16);
+  background: var(--surface);
+  display: flex;
+}
+.tableFullscreen > :global([data-ward-primitive="panel"]) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: none;
+}
+.tableFullscreen .networkBody {
+  flex: 1;
+  min-height: 0;
+}
+.tableFullscreen .networkTableScroll {
+  max-height: none;
+}
+@media (max-width: 45rem) {
+  .filters :global([data-ward-primitive="filters"]) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex-basis: 100%;
+  }
+  .screen .networkTable th:first-child,
+  .screen .networkTable td:first-child {
+    min-width: 10rem;
+    max-width: 10rem;
+  }
+  .tableFullscreen {
+    padding: 0.5rem;
+  }
+  .tableToolbar {
+    align-items: start;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .filters button,
+  .freeingItem,
+  .sidebarTabs button {
+    transition: none;
+  }
+}
+@media (forced-colors: active) {
+  .filters :global([data-ward-primitive="filters"]) button[aria-pressed="true"] {
+    border: 2px solid Highlight;
+  }
+}
+@media print {
+  .networkTable {
+    --ward-table-min-width: 0;
+  }
+  .screen .networkTable th,
+  .screen .networkTable td:first-child,
+  .screen .networkTable th:first-child {
+    min-width: 0;
+    max-width: none;
+  }
+  .tableFullscreen {
+    position: static;
+    height: auto;
+    padding: 0;
+    display: block;
+  }
+}
+
+/* Key census first; secondary release forecasts and eligibility detail are opt-in. */
+.compactTable {
+  --ward-table-min-width: 52rem;
+  --ward-table-cell-inset: 0.5rem 0.75rem;
+}
+.screen .compactTable tr > :nth-child(2),
+.screen .compactTable tr > :nth-child(6),
+.screen .compactTable tr > :nth-child(7),
+.screen .compactTable tr > :nth-child(9),
+.screen .compactTable tr > :nth-child(10),
+.screen .compactTable tr > :nth-child(11),
+.screen .compactTable tr > :nth-child(13),
+.screen .compactTable tr > :nth-child(14),
+.screen .compactTable tr > :nth-child(15) {
+  display: none;
+}
+.screen .compactTable td,
+.screen .compactTable th {
+  vertical-align: middle;
+}
+.screen .compactTable th:first-child,
+.screen .compactTable td:first-child {
+  min-width: 13rem;
+  max-width: 16rem;
+}
+.compactTable .wardRowSelect {
+  min-height: 2rem;
+  padding: 0;
+  line-height: 1.35;
+}
+.compactTable .who {
+  margin-top: 0.125rem;
+  line-height: 1.35;
+}
+.compactTable .matchMark {
+  display: none;
+}
+.screen .compactTable .beingMadeReady {
+  min-width: 0;
+  max-width: 8rem;
+  font-style: normal;
+}
+.screen .compactTable .groupSummaryRow td,
+.screen .compactTable .groupSummaryRow th {
+  padding-block: 0.375rem;
+}
+.compactTable .groupFoldButton {
+  min-height: 2rem;
+}
+.filters {
+  padding: 0.75rem;
+  gap: 0.5rem 0.75rem;
+}
+.tableToolbar {
+  flex-basis: auto;
+  justify-content: flex-end;
+  order: 2;
+}
+.sortControl {
+  order: 3;
+}
+.filters :global([data-ward-primitive="filters"]) {
+  flex-basis: 32rem;
+}
+.filters :global([data-ward-primitive="filters"]) button {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.625rem;
+  font-size: var(--t-0);
+}
+.screen .fullscreenButton {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--r2);
+  font-size: var(--t-0);
+}
+@media (max-width: 45rem), (pointer: coarse) {
+  .compactTable .wardRowSelect,
+  .compactTable .groupFoldButton,
+  .screen .fullscreenButton,
+  .filters :global([data-ward-primitive="filters"]) button {
+    min-height: var(--ward-tap, 2.75rem);
+  }
+}
+@media (max-width: 45rem) {
+  .screen .compactTable td:first-child,
+  .screen .compactTable th:first-child {
+    min-width: 9rem;
+    max-width: 10rem;
+  }
+}
+@media print {
+  .compactTable {
+    --ward-table-min-width: 0;
+  }
+  .screen .compactTable th:first-child,
+  .screen .compactTable td:first-child {
+    min-width: 0;
+    max-width: none;
+  }
+}
+.detailTable {
+  --ward-table-min-width: 100rem;
+}
+@media print {
+  .detailTable {
+    --ward-table-min-width: 0;
+  }
+}
+.screen .compactTable td:nth-child(16) {
+  min-width: 9rem;
+  max-width: 12rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+.screen .compactTable th:nth-child(16) {
+  min-width: 9rem;
+}
+
+/* Capacity overview: restrained telemetry and clear shortage figures. */
+.telemetryCapsule {
+  border-radius: var(--r2);
+  box-shadow: none;
+  padding: 0.75rem 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+.telemetryPillGood,
+.telemetryPillDanger {
+  border: 0;
+  border-radius: var(--r1);
+}
+.gapTable tbody tr,
+.gapTable tfoot tr {
+  padding: 0.875rem 1rem;
+}
+.gapTable .gapNumber {
+  font-size: 1.75rem;
+  letter-spacing: -0.04em;
+}
+.gapTable :global([data-ward-primitive="chip"]) {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+.gapTable td:nth-child(4) {
+  flex-direction: row-reverse;
+  justify-content: start;
+  gap: 0.625rem;
+}
+.readySummary {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.freeingBadge {
+  background: transparent;
+  text-align: right;
+  padding: 0;
+}
+.sidebarFooter {
+  border-top: 1px solid var(--line);
+  padding-block: 0.875rem;
+}
+
+/* Useful actions replace empty sidebar space, without adding invented metrics. */
+.readySummary {
+  padding: 1rem;
+  gap: 0.5rem;
+}
+.freeingItem {
+  padding-block: 0.375rem;
+}
+.networkActions {
+  display: grid;
+  gap: 0;
+  padding: 0.5rem 0.875rem;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.networkActions button,
+.networkActions a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: var(--ward-tap);
+  padding: 0.375rem 0.5rem;
+  border: 0;
+  border-radius: var(--r1);
+  background: transparent;
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: var(--t-1);
+  text-align: start;
+  cursor: pointer;
+}
+.networkActions button[aria-pressed="true"] {
+  background: var(--accent-soft);
+}
+.networkActions button:hover,
+.networkActions a:hover {
+  background: var(--surface);
+}
+.networkActions button:focus-visible,
+.networkActions a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.networkActions strong {
+  font-family: var(--mono);
+}
+
+@media (max-width: 45rem) {
+  .telemetryCapsule {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0.625rem;
+    gap: 0.5rem;
+  }
+  .telemetryItem {
+    flex-wrap: wrap;
+    line-height: 1.4;
+  }
+}
+
+/* Capacity command surface: clear type, restrained contrast and purposeful density. */
+.screen .pageHeader {
+  align-items: center;
+  gap: 1.25rem;
+  margin: 0;
+  padding-block: 0.375rem;
+}
+.screen h1.pageTitle {
+  font-size: 2rem;
+  line-height: 1.1;
+  letter-spacing: -0.045em;
+  font-weight: 700;
+}
+.pageTitleBlock {
+  gap: 0.375rem;
+}
+.pageSubtitle {
+  color: var(--ink-soft);
+}
+.telemetryCapsule {
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--r2);
+  background: var(--surface);
+}
+.telemetryItem {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: start;
+  align-content: center;
+  gap: 0.375rem 0.625rem;
+  padding: 0.75rem 1rem;
+  min-height: 4.5rem;
+  box-sizing: border-box;
+  border-inline-start: 1px solid var(--line);
+}
+.telemetryItem:first-child {
+  border-inline-start: 0;
+}
+.telemetryLabel {
+  grid-column: 1 / -1;
+  letter-spacing: 0.07em;
+  font-size: var(--t-0);
+}
+.telemetryVal {
+  font-family: var(--display);
+  font-size: 1.375rem;
+  letter-spacing: -0.035em;
+}
+.telemetryPillGood,
+.telemetryPillDanger {
+  font-family: var(--display);
+  font-size: 1.125rem;
+  background: transparent;
+  padding: 0;
+}
+.microMeter {
+  display: none;
+}
+.telemetrySub {
+  align-self: center;
+}
+.screen :global([data-ward-primitive="panel"]) {
+  border-radius: var(--r2);
+  box-shadow: none;
+  border-color: var(--line);
+  overflow: hidden;
+}
+.screen :global([data-ward-primitive="panel-header"]) {
+  background: var(--surface);
+  padding-block: 0.75rem;
+}
+.screen :global([data-ward-primitive="panel-header"]) h2 {
+  font-size: var(--t-2);
+  letter-spacing: -0.015em;
+}
+.gapTable tbody tr {
+  background: var(--surface);
+  border-color: var(--line);
+}
+.gapTable tfoot tr {
+  background: var(--surface-2);
+  border-color: var(--line);
+}
+.gapTable .gapNumber {
+  font-family: var(--display);
+  font-size: 2rem;
+  font-weight: 650;
+}
+.gapTable td:first-child {
+  margin-bottom: 0.375rem;
+}
+.gapCardDeficit .gapNumber {
+  color: var(--danger);
+}
+.cohortIconWrap {
+  border: 0;
+  background: transparent;
+}
+.readySummary {
+  padding: 1.25rem;
+  background: var(--accent);
+  color: var(--on-accent);
+  gap: 0.625rem;
+}
+.readySummary h3,
+.readySummary p,
+.readySummary .readyValue,
+.readySummary .readyValue strong,
+.readySummary .readyValue span,
+.readySummary li {
+  color: var(--on-accent);
+}
+.readySummary h3 {
+  letter-spacing: 0.1em;
+  font-size: var(--t-0);
+}
+.readySummary .readyValue strong {
+  font-family: var(--display);
+  font-size: 4rem;
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+.readySummary .readyValue {
+  margin: 0;
+  align-items: baseline;
+}
+.secondary {
+  border-radius: var(--r2);
+  box-shadow: none;
+}
+.sidebarTabs {
+  padding: 0.375rem;
+  background: var(--surface-2);
+}
+.freeingItem {
+  border-radius: 0;
+  border-bottom: 1px solid var(--line);
+}
+.freeingBadge {
+  font-weight: 600;
+}
+.networkActions {
+  padding: 0.5rem;
+}
+.networkActions button,
+.networkActions a {
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
+.networkActions a {
+  border-bottom: 0;
+}
+.screen .networkTable th {
+  text-transform: none;
+  letter-spacing: normal;
+  font-family: var(--body);
+  font-weight: 600;
+}
+@media (max-width: 90rem) {
+  .telemetryCapsule {
+    width: 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 45rem) {
+  .screen h1.pageTitle {
+    font-size: 1.75rem;
+  }
+  .telemetryCapsule {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .telemetryItem {
+    padding: 0.625rem;
+  }
+}
+@media (forced-colors: active), print {
+  .readySummary {
+    background: var(--surface);
+    color: var(--ink);
+  }
+  .readySummary h3,
+  .readySummary p,
+  .readySummary .readyValue,
+  .readySummary .readyValue strong,
+  .readySummary .readyValue span,
+  .readySummary li {
+    color: var(--ink);
+  }
+}
+
+.readySummary :global([data-ward-primitive="bar"]) b {
+  color: var(--on-accent);
+}
+.readySummary :global([data-tone="accent"]) {
+  background: var(--on-accent);
+}
+.readySummary :global([data-tone="good"]) {
+  outline: 1px solid var(--on-accent);
+  outline-offset: -1px;
+}
+@media (forced-colors: active), print {
+  .readySummary :global([data-ward-primitive="bar"]) b {
+    color: var(--ink);
+  }
+  .readySummary :global([data-tone="accent"]) {
+    background: var(--accent);
+  }
+}
+
+/* Restore the shell's floating capsule, retaining readable headline figures. */
+.telemetryCapsule {
+  border-radius: 9999px;
+  padding: 0.25rem 0.5rem;
+  box-shadow: var(--lift);
+  overflow: visible;
+}
+.telemetryItem {
+  min-height: 3rem;
+  padding: 0.375rem 0.625rem;
+  gap: 0.25rem 0.5rem;
+}
+.telemetryItem.interactiveItem {
+  border-radius: 9999px;
+}
+.screen h1.pageTitle {
+  font-size: 1.75rem;
+}
+@media (max-width: 45rem) {
+  .telemetryCapsule {
+    border-radius: var(--r2);
+  }
+}
+
+/* Rounded application surfaces, with the Network column held alongside comparison. */
+.screen :global([data-ward-primitive="panel"]),
+.secondary {
+  border-radius: 1rem;
+}
+.readySummary {
+  border-radius: 0.875rem;
+  margin: 0.375rem;
+  padding: 1rem;
+}
+.sidebarTabs {
+  margin: 0.375rem;
+  border: 1px solid var(--line);
+  border-radius: 9999px;
+  padding: 0.1875rem;
+}
+.sidebarTabs button {
+  border-radius: 9999px;
+}
+.networkActions {
+  background: var(--surface);
+}
+.networkActions button,
+.networkActions a {
+  border-radius: 0.625rem;
+  border: 0;
+}
+.networkActions button:hover,
+.networkActions a:hover {
+  background: var(--surface-2);
+}
+.gapTable tbody tr {
+  padding: 0.875rem 1rem;
+}
+.gapTable tfoot .gapNumber {
+  font-size: 2.25rem;
+}
+.screen .networkTable tbody tr:hover td {
+  background: var(--surface-2);
+}
+.screen .networkTable .groupSummaryRow th,
+.screen .networkTable .groupSummaryRow td {
+  border-block-start: 1px solid var(--line);
+}
+.screen .filters :global([data-ward-primitive="filters"]) {
+  border-radius: 0.875rem;
+}
+.screen .filters button {
+  border-radius: 0.625rem;
+}
+@media (min-width: 68rem) {
+  .secondary {
+    position: sticky;
+    top: 4.5rem;
+    max-height: calc(100dvh - 5.5rem);
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+}
+@media print {
+  .secondary {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+/* One desktop capacity composition, retaining the application's navy and cool surfaces. */
+.screen {
+  gap: 1rem;
+}
+.screen .pageHeader {
+  padding-block: 0.5rem;
+}
+.screen h1.pageTitle {
+  font-size: 2rem;
+  letter-spacing: -0.055em;
+}
+.telemetryCapsule {
+  border-color: var(--line);
+  box-shadow: 0 4px 16px var(--sunk);
+}
+.screen :global([data-ward-primitive="panel"]) {
+  border-radius: 0.875rem;
+  box-shadow: 0 3px 12px var(--sunk);
+}
+.screen :global([data-ward-primitive="panel-header"]) {
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid var(--line);
+}
+.screen :global([data-ward-primitive="panel-header"]) h2 {
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--accent-ink);
+}
+.capacityGrid {
+  gap: 1rem;
+}
+.secondary {
+  border-radius: 0.875rem;
+  box-shadow: 0 4px 16px var(--sunk);
+}
+.networkHeaderRow {
+  padding: 1rem 1.125rem 0.25rem;
+  border: 0;
+  background: var(--accent);
+}
+.networkHeading,
+.networkHeaderTime {
+  color: var(--on-accent);
+}
+.networkHeading {
+  font-size: 1rem;
+  letter-spacing: -0.015em;
+}
+.readySummary {
+  margin: 0;
+  padding: 0.875rem 1.125rem 1.125rem;
+  border-radius: 0;
+  border: 0;
+  background: linear-gradient(145deg, var(--accent), var(--accent-ink));
+  gap: 0.75rem;
+}
+.readySummary .readyValue strong {
+  font-size: 3.25rem;
+  font-weight: 600;
+  letter-spacing: -0.07em;
+}
+.readySummary .readyValue span {
+  font-size: var(--t-1);
+}
+.readySummary h3 {
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+.readySummary p {
+  font-size: var(--t-0);
+  line-height: 1.5;
+}
+.sidebarTabs {
+  margin: 0.875rem 0.875rem 0;
+  padding: 0.25rem;
+  background: var(--surface-2);
+}
+.sidebarTabs button {
+  min-height: var(--ward-tap);
+  color: var(--ink-soft);
+}
+.sidebarTabs button[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--accent-ink);
+  box-shadow: 0 1px 4px var(--sunk);
+}
+.sidebarBody {
+  padding: 0.625rem 0.875rem;
+}
+.sidebarSectionTitle {
+  color: var(--ink-soft);
+  letter-spacing: 0.05em;
+}
+.freeingItem {
+  gap: 0.625rem;
+  padding-block: 0.5rem;
+  align-items: center;
+}
+.freeingBadge {
+  border-radius: 0.625rem;
+  padding: 0.375rem 0.5rem;
+  background: var(--good-soft);
+  color: var(--good);
+  font-size: var(--t-0);
+}
+.excluded {
+  padding-top: 0.625rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.networkActions {
+  padding: 0.5rem 0.75rem 0.75rem;
+  background: var(--surface-2);
+}
+.networkActions button,
+.networkActions a {
+  padding-inline: 0.75rem;
+  min-height: var(--ward-tap);
+  border-radius: 0.75rem;
+}
+.networkActions button strong {
+  font-size: var(--t-2);
+  font-family: var(--display);
+  letter-spacing: -0.025em;
+}
+.networkActions button[aria-pressed="true"] {
+  background: var(--surface);
+  box-shadow: 0 1px 4px var(--sunk);
+}
+.gapBandWrap {
+  background: var(--surface);
+}
+.screen .gapTable {
+  gap: 0;
+  background: var(--surface);
+}
+.screen .gapTable tbody tr,
+.screen .gapTable tfoot tr {
+  padding: 0.625rem 0.875rem;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.screen .gapTable tfoot tr {
+  background: var(--surface-2);
+}
+.screen .gapTable tbody tr:hover > td {
+  background: transparent;
+}
+.gapHeader {
+  min-height: 1.75rem;
+  margin-bottom: 0.375rem;
+  gap: 0.625rem;
+}
+.gapNeedText {
+  font-size: var(--t-1);
+  font-weight: 600;
+}
+.cohortIconWrap {
+  width: 1.75rem;
+  height: 1.75rem;
+  background: var(--surface-2);
+  border-radius: 0.625rem;
+}
+.gapValueContainer {
+  justify-content: space-between;
+  align-items: center;
+  min-height: 1.75rem;
+  gap: 0.5rem;
+}
+.screen .gapTable .gapNumber {
+  font-size: 1.875rem;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.06em;
+}
+.gapMicroGauge {
+  height: 3px;
+  margin-top: 0.5rem;
+  border: 0;
+  box-shadow: none;
+}
+.screen .gapTable :global([data-ward-primitive="chip"]) {
+  font-size: var(--t-0);
+  border-radius: 0.375rem;
+}
+.screen .networkTable {
+  --ward-table-cell-inset: 0.625rem 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+.screen .networkTable thead th {
+  padding-block: 0.625rem;
+  color: var(--ink-soft);
+  background: var(--surface-2);
+  font-size: var(--t-0);
+}
+.screen .networkTable tbody td {
+  border-bottom-color: var(--line);
+}
+.screen .networkTable tbody td:first-child {
+  font-weight: 600;
+}
+.screen .networkTable .groupSummaryRow th,
+.screen .networkTable .groupSummaryRow td {
+  background: var(--surface-2);
+  padding-block: 0.5rem;
+}
+.screen .networkTable tr[data-selected="true"] td {
+  background: var(--accent-soft);
+}
+@media screen and (min-width: 45rem) {
+  .screen .compactTable th:first-child,
+  .screen .compactTable td:first-child {
+    width: 22%;
+    min-width: 12rem;
+    max-width: 14rem;
+  }
+}
+.screen .compactTable {
+  --ward-table-cell-inset: 0.375rem 0.75rem;
+}
+.screen .compactTable th,
+.screen .compactTable td {
+  line-height: 1.35;
+}
+.screen .compactTable tr > :is(:nth-child(3), :nth-child(4), :nth-child(5), :nth-child(12)) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.screen .compactTable :is(th, td):nth-child(16) {
+  min-width: 10rem;
+  max-width: 12rem;
+}
+.screen .networkTable .confirmationCell {
+  font-size: var(--t-0);
+  font-weight: 400;
+}
+.screen .networkTable .groupSummaryRow :is(th, td) {
+  padding-block: 0.25rem;
+}
+.screen .compactTable .who {
+  margin-top: 0;
+  color: var(--muted);
+}
+.screen .filters :global([data-ward-primitive="filters"]) {
+  border: 0;
+  box-shadow: none;
+}
+.screen .filters button,
+.screen .fullscreenButton {
+  border-radius: 0.5rem;
+  font-size: var(--t-0);
+}
+.screen .filters {
+  padding: 0.625rem 0.875rem;
+  background: var(--surface);
+}
+.screen .filters :global([data-ward-primitive="filters"]) {
+  background: var(--surface-2);
+  padding: 0.25rem;
+  border-radius: 0.875rem;
+}
+.screen .filters button,
+.screen .fullscreenButton {
+  min-height: var(--ward-tap);
+}
+
+/* The census capsule leads; comparison surfaces remain crisp and quiet. */
+.screen :global([data-ward-primitive="panel"]) {
+  box-shadow: none;
+}
+.screen :global([data-ward-primitive="panel-header"]) h2 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.telemetryCapsule {
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 16px var(--sunk);
+}
+.secondary {
+  box-shadow: 0 4px 16px var(--sunk);
+}
+.screen .gapTable :global([data-ward-primitive="chip"]) {
+  border: 0;
+  background: transparent;
+  padding-inline: 0;
+  font-weight: 600;
+}
+.screen .gapTable tbody tr {
+  border-inline-end-color: var(--line);
+}
+.screen .gapTable tfoot .gapNeedText {
+  color: var(--accent-ink);
+}
+.screen .gapTable .cohortIconWrap {
+  background: transparent;
+}
+.screen .networkTable {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.screen .networkTable thead th {
+  border-bottom: 1px solid var(--line-strong);
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+.screen .networkTable :is(th, td):first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  border-inline-end: 1px solid var(--line);
+  background: var(--surface);
+}
+.screen .networkTable thead th:first-child {
+  z-index: 3;
+  background: var(--surface-2);
+}
+.screen .networkTable .groupSummaryRow :is(th, td) {
+  background: var(--surface-2);
+  font-weight: 600;
+}
+.screen .networkTable tr[data-selected="true"] td {
+  background: var(--accent-soft);
+}
+.screen .networkTable tbody tr:hover td {
+  background: var(--surface-2);
+}
+.screen .networkTable .refreshButton {
+  min-height: var(--ward-tap);
+  padding: 0.375rem 0.625rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--accent-ink);
+  border-radius: 0.5rem;
+  font-size: var(--t-0);
+  font-weight: 500;
+}
+.screen .networkTable .refreshButton:hover {
+  border-color: var(--line);
+  background: var(--surface);
+}
+.screen .networkTable .refreshButton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.screen .filters :global([data-ward-primitive="filters"]) {
+  border-radius: 0.625rem;
+}
+.screen .filters button[aria-pressed="true"] {
+  background: var(--surface);
+  border-color: var(--line-strong);
+  box-shadow: 0 1px 3px var(--sunk);
+}
+@media (forced-colors: active) {
+  .screen .networkTable .refreshButton {
+    border-color: ButtonText;
+    color: ButtonText;
+  }
+  .screen .networkTable tr[data-selected="true"] td {
+    outline: 1px solid Highlight;
+  }
+}
+@media print {
+  .screen .networkTable :is(th, td):first-child {
+    position: static;
+  }
+}
+@media (forced-colors: active), print {
+  .networkHeaderRow,
+  .readySummary {
+    background: var(--surface);
+  }
+  .networkHeading,
+  .networkHeaderTime {
+    color: var(--ink);
+  }
+  .screen :global([data-ward-primitive="panel"]),
+  .secondary,
+  .telemetryCapsule {
+    box-shadow: none;
+  }
+}
+
+/* Bright working surfaces with selective navy contrast and restored outer curves. */
+.screen :global([data-ward-primitive="panel"]),
+.secondary {
+  border-radius: 1rem;
+}
+.screen :global([data-ward-primitive="panel-header"]) {
+  background: var(--surface);
+}
+.capacityGrid {
+  align-items: start;
+  gap: 1rem;
+}
+.sidebarTabs {
+  border-radius: 9999px;
+  background: var(--surface-2);
+  border-color: var(--line);
+}
+.sidebarTabs button {
+  border-radius: 9999px;
+}
+.sidebarTabs button[aria-selected="true"] {
+  background: var(--surface);
+  box-shadow: 0 1px 4px var(--sunk);
+}
+.screen .gapTable tfoot tr {
+  background: var(--surface);
+  border-inline-start: 1px solid var(--line-strong);
+}
+.screen .gapTable tfoot .gapNeedText {
+  color: var(--accent-ink);
+  font-weight: 650;
+}
+.screen .networkTable thead th {
+  background: color-mix(in srgb, var(--accent-soft) 45%, var(--surface));
+  color: var(--accent-ink);
+}
+.screen .networkTable tbody td:first-child {
+  background: color-mix(in srgb, var(--surface-2) 45%, var(--surface));
+}
+.screen .networkTable .groupSummaryRow :is(th, td) {
+  background: var(--surface-2);
+  border-block-start: 1px solid var(--line-strong);
+  color: var(--accent-ink);
+}
+.screen .networkTable tr[data-selected="true"] td {
+  background: var(--accent-soft);
+}
+.screen .networkTable tbody tr:hover td {
+  background: var(--surface-2);
+}
+.screen .networkTable tr[data-selected="true"]:hover td {
+  background: var(--accent-soft);
+}
+.screen .filters :global([data-ward-primitive="filters"]) {
+  border-radius: 0.75rem;
+}
+.screen .filters button,
+.screen .fullscreenButton {
+  border-radius: 0.625rem;
+}
+.screen .filters button[aria-pressed="true"] {
+  color: var(--accent-ink);
+}
+@media (forced-colors: active) {
+  .screen .networkTable tr[data-selected="true"] td {
+    outline: 1px solid Highlight;
+  }
+}
+@media print {
+  .screen .gapTable tfoot tr,
+  .screen .networkTable :is(th, td) {
+    background: var(--surface);
+  }
+}
+
+/* Quiet white headers with balanced title and count alignment. */
+.screen
+  :global(
+    [data-ward-primitive="panel"]:is([aria-label="Bed map"], [aria-label="Wards"], [aria-label="Where the mismatch is"])
+  )
+  > :global([data-ward-primitive="panel-header"]) {
+  box-sizing: border-box;
+  min-height: 2.625rem;
+  padding: 0.625rem 1rem;
+  align-items: center;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.screen :global([data-ward-primitive="panel-header"]) h2 {
+  color: var(--accent-ink);
+  line-height: 1.25;
+}
+.screen :global([data-ward-primitive="panel-header"]) :global([data-ward-panel-count]) {
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+/* Approved previous design: compact census and quiet, outlined status badges. */
+.screen .telemetryCapsule {
+  padding: 0.125rem 0.375rem;
+  background: var(--surface);
+  box-shadow: 0 2px 8px var(--sunk);
+}
+.screen .telemetryItem {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: var(--ward-tap);
+  padding: 0.25rem 0.75rem;
+}
+.screen .telemetryLabel {
+  font-size: var(--t-0);
+  letter-spacing: 0.035em;
+}
+.screen .telemetryVal,
+.screen .telemetryPillGood,
+.screen .telemetryPillDanger {
+  font-size: 1rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+.screen .telemetrySub {
+  font-size: var(--t-0);
+  white-space: nowrap;
+}
+.screen .gapTable :global([data-ward-primitive="chip"]) {
+  padding: 0.125rem 0.5rem;
+  border: 1px solid currentColor;
+  border-radius: 9999px;
+  line-height: 1.35;
+  letter-spacing: 0.025em;
+  font-weight: 500;
+}
+.screen .gapTable :global([data-ward-primitive="chip"][data-level="urgent"]) {
+  background: var(--danger-soft);
+}
+.screen .freeingBadge {
+  padding: 0.25rem 0.625rem;
+  border: 1px solid var(--good);
+  border-radius: 9999px;
+  background: var(--good-soft);
+  color: var(--good);
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+@media (max-width: 90rem) {
+  .screen .telemetryItem {
+    flex-wrap: wrap;
+  }
+}
+@media (forced-colors: active) {
+  .screen .gapTable :global([data-ward-primitive="chip"]),
+  .screen .freeingBadge {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+}
+
+/* Final small polish: quieter badges, tighter metric tiles and a live clock cue. */
+.screen .telemetryCapsule {
+  grid-template-columns: auto repeat(4, auto);
+}
+.telemetryLive {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 0.625rem;
+}
+.screen .telemetryItem:nth-child(2) {
+  border-inline-start: 0;
+}
+.screen .gapTable tbody tr,
+.screen .gapTable tfoot tr {
+  padding: 0.5rem 0.875rem;
+}
+.screen .gapHeader {
+  min-height: 1.5rem;
+  margin-bottom: 0.25rem;
+  gap: 0.5rem;
+}
+.screen .gapNeedText {
+  font-size: var(--t-0);
+  line-height: 1.4;
+}
+.screen .gapValueContainer {
+  min-height: 1.5rem;
+  align-items: center;
+  gap: 0.5rem;
+}
+.screen .gapTable .gapNumber {
+  font-size: 1.625rem;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+}
+.screen .gapTable :global([data-ward-primitive="chip"]) {
+  padding: 0.1875rem 0.5rem;
+  border-color: color-mix(in srgb, currentColor 55%, var(--surface));
+  font-size: var(--t-0);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.015em;
+}
+.screen .gapTable :global([data-ward-primitive="chip"][data-level="urgent"]) {
+  background: color-mix(in srgb, var(--danger-soft) 55%, var(--surface));
+}
+.screen .gapTable :global([data-ward-primitive="chip"][data-level="routine"]) {
+  background: var(--surface-2);
+}
+.screen .gapMicroGauge {
+  height: 2px;
+  margin-top: 0.375rem;
+}
+.screen .freeingBadge {
+  border-color: color-mix(in srgb, var(--good) 55%, var(--surface));
+  background: color-mix(in srgb, var(--good-soft) 65%, var(--surface));
+  font-weight: 600;
+}
+@media (max-width: 90rem) {
+  .screen .telemetryCapsule {
+    grid-template-columns: auto repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 45rem) {
+  .screen .telemetryCapsule {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .telemetryLive {
+    grid-column: 1 / -1;
+    justify-content: start;
+    padding-block: 0.375rem;
+  }
+}
+@media (forced-colors: active) {
+  .screen .gapTable :global([data-ward-primitive="chip"]),
+  .screen .freeingBadge {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+}
+
+/* Let badge text define its width; align all metric rows within equal insets. */
+.screen .freeingBadge {
+  width: max-content;
+  max-width: none;
+  box-sizing: border-box;
+  justify-content: center;
+  text-align: center;
+  flex: 0 0 auto;
+}
+.screen .freeingItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: center;
+}
+.screen .gapTable tbody td:nth-child(4),
+.screen .gapTable tfoot td:nth-child(4) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.375rem;
+}
+.screen .gapValueContainer {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  justify-content: space-between;
+  align-items: center;
+}
+.screen .gapTable :global([data-ward-primitive="chip"]) {
+  box-sizing: border-box;
+  max-width: 100%;
+  flex: 0 0 auto;
+}
+.screen .gapMicroGauge {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  margin-top: 0;
+}
+.screen .gapTable tfoot th {
+  margin-bottom: 0.375rem;
+}
+
+/* Isolated visual mockup: deliberate metric groups and readable working tables. */
+.screen h1.pageTitle {
+  font-size: 1.75rem;
+  letter-spacing: -0.04em;
+}
+.screen .gapValueContainer {
+  display: grid;
+  grid-template-columns: 8.75rem auto;
+  justify-content: start;
+  column-gap: 0.625rem;
+}
+.screen .gapValueContainer :global([data-ward-primitive="chip"]) {
+  justify-self: start;
+}
+.screen .gapNumber {
+  text-align: end;
+}
+.screen .compactTable {
+  table-layout: fixed;
+  width: 100%;
+}
+.screen .compactTable :is(th, td):first-child {
+  width: 24%;
+  min-width: 0;
+  max-width: none;
+}
+.screen .compactTable :is(th, td):is(:nth-child(3), :nth-child(4)) {
+  width: 6%;
+}
+.screen .compactTable :is(th, td):is(:nth-child(5), :nth-child(12)) {
+  width: 7%;
+}
+.screen .compactTable :is(th, td):nth-child(8) {
+  width: 16%;
+}
+.screen .compactTable :is(th, td):nth-child(16) {
+  width: 22%;
+  min-width: 0;
+  max-width: none;
+}
+.screen .compactTable :is(th, td):nth-child(17) {
+  width: 12%;
+}
+.screen .networkTable .confirmationCell > span {
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+.screen .networkTable .groupSummaryRow :is(th, td) {
+  background: color-mix(in srgb, var(--accent-soft) 45%, var(--surface));
+  font-weight: 600;
+  border-block-start-color: var(--line);
+}
+.screen .networkTable tbody td {
+  border-bottom-color: color-mix(in srgb, var(--line) 70%, var(--surface));
+}
+.screen .networkTable .refreshButton {
+  justify-content: start;
+  padding-inline: 0.375rem;
+}
+.screen .sidebarTabs {
+  margin-inline: 1rem;
+}
+.screen .sidebarBody {
+  padding-inline: 1rem;
+}
+.screen .sidebarBody .freeingList {
+  padding-inline: 0;
+}
+.screen .freeingItem {
+  padding-inline: 0;
+}
+.screen .networkActions {
+  padding-inline: 1rem;
+}
+.screen .networkActions :is(button, a) {
+  padding-inline: 0;
+  border-bottom: 0;
+}
+.screen .networkActions button[aria-pressed="true"] {
+  padding-inline: 0.5rem;
+}
+@media (max-width: 90rem) {
+  .screen .gapValueContainer {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 0.375rem;
+  }
+}
+@media (forced-colors: active) {
+  .screen .networkTable .confirmationCell > span {
+    color: CanvasText;
+  }
+}

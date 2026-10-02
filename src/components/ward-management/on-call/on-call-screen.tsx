@@ -19,15 +19,15 @@ import {
   roleRecordCounts,
   SERVICE_ON_CALL_ROLES,
   servicesWithNoRoleRecorded,
-  type OnCallRole,
 } from "@/components/ward-management/on-call/on-call-roster";
 import { ESCALATION_CONTACTS, type EscalationContact } from "@/components/ward-management/ward-change-reasons";
-import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
+import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { WardFlowClockContext, WardFlowContext } from "@/components/ward-management/ward-flow-provider";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 
 import styles from "./on-call.module.css";
 
@@ -175,16 +175,11 @@ export function OnCallScreen() {
   const departments = allEmergencyDepartments();
   const counts = roleRecordCounts();
   const missing = servicesWithNoRoleRecorded();
+  const incompleteRoles = counts.recorded < counts.possible;
 
   const consultantCount = Object.values(SERVICE_ON_CALL_ROLES)
     .flat()
     .filter((role) => role.role === "Duty consultant").length;
-
-  const coordinatorCount =
-    NETWORK_ON_CALL_ROLES.filter((role) => role.role.toLowerCase().includes("coordinator")).length +
-    Object.values(SERVICE_ON_CALL_ROLES)
-      .flat()
-      .filter((role) => role.role.toLowerCase().includes("coordinator")).length;
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
@@ -204,7 +199,7 @@ export function OnCallScreen() {
         facility,
         holder,
         shift: role.shift,
-        statusText: "Active On-Call",
+        statusText: "Demonstration role",
         statusTone: "good",
       });
     }
@@ -216,7 +211,7 @@ export function OnCallScreen() {
         let facility = `${service} Base`;
         let holder = "Senior Coordinator";
         let statusTone: "good" | "warn" | "accent" = "good";
-        let statusText = "Active On-Call";
+        let statusText = "Demonstration role";
 
         if (service === "North Metro") {
           if (role.role === "Duty consultant") {
@@ -246,7 +241,7 @@ export function OnCallScreen() {
           facility = "Private Facilities Liaison";
           holder = "Liaison Coordinator";
           statusTone = "accent";
-          statusText = "Business Hours";
+          statusText = "Demonstration role";
         }
 
         items.push({
@@ -326,68 +321,61 @@ export function OnCallScreen() {
               </span>
             </div>
           </div>
-          <div className={styles.headerActions}>
+        </header>
+
+        {/* Dynamic HUD Island derived from roster facts */}
+        <WardDynamicIsland
+          testId="ward-on-call-hud-island"
+          title="On-Call Network"
+          status={incompleteRoles ? "warning" : "nominal"}
+          statusText={
+            incompleteRoles
+              ? `Incomplete recorded roles: ${counts.recorded} of ${counts.possible}`
+              : "Prototype roles recorded; live coverage not verified"
+          }
+          ariaLabel="On-call management indicators"
+          metrics={[
+            {
+              id: "kpi-bed-desk-lead",
+              label: "Bed Desk Lead",
+              value: "Role recorded",
+              subtext: "20:00–08:00",
+              tone: "accent",
+            },
+            {
+              id: "kpi-duty-consultants",
+              label: "Duty Consultants",
+              value: consultantCount,
+              subtext: "Prototype roles",
+              tone: consultantCount > 0 ? "good" : "danger",
+            },
+            {
+              id: "kpi-exec-escalation",
+              label: "Executive Escalation",
+              value: "Role recorded",
+              tone: "warn",
+            },
+            {
+              id: "kpi-ed-liaison",
+              label: "ED Liaison",
+              value: departments.length,
+              subtext: "Departments recorded",
+              tone: "good",
+            },
+          ]}
+          actions={
             <button
               ref={triggerButtonRef}
               type="button"
               className={`${styles.btn} ${styles.dangerBtn}`}
+              data-testid="ward-tier-3-escalate-btn"
               onClick={() => setEscalationOpen(true)}
+              aria-label="Trigger Tier 3 Escalation"
             >
               <ShieldAlert size={14} aria-hidden="true" className={styles.btnIcon} />! Trigger Tier 3 Escalation
             </button>
-          </div>
-        </header>
-
-        {/* 4-Card KPI Strip derived from roster facts */}
-        <div className={styles.kpiStrip} aria-label="On-call directory metrics">
-          <div className={styles.kpiCard} data-tone="accent">
-            <div className={styles.kpiCardTop}>
-              <span className={styles.kpiLabel}>State Bed Desk Lead</span>
-              <span className={`${styles.kpiPill} ${styles.kpiPillAccent}`}>Active on Duty</span>
-            </div>
-            <div className={styles.kpiValRow}>
-              <Layers size={18} aria-hidden="true" className={styles.kpiLeadIcon} />
-              <span className={styles.kpiVal}>Central Coordination</span>
-            </div>
-            <div className={styles.kpiSub}>Shift 20:00–08:00 &middot; Statewide Bed Desk</div>
-          </div>
-
-          <div className={styles.kpiCard} data-tone="good">
-            <div className={styles.kpiCardTop}>
-              <span className={styles.kpiLabel}>Duty Consultant Coverage</span>
-              <span className={`${styles.kpiPill} ${styles.kpiPillGood}`}>{consultantCount} Rostered</span>
-            </div>
-            <div className={styles.kpiValRow}>
-              <Building2 size={18} aria-hidden="true" className={styles.kpiLeadIcon} />
-              <span className={styles.kpiVal}>Adult &amp; Specialty</span>
-            </div>
-            <div className={styles.kpiSub}>Psychiatric Consultant Roster &middot; Statewide</div>
-          </div>
-
-          <div className={styles.kpiCard} data-tone="warn">
-            <div className={styles.kpiCardTop}>
-              <span className={styles.kpiLabel}>Executive Escalation</span>
-              <span className={`${styles.kpiPill} ${styles.kpiPillWarn}`}>On Standby</span>
-            </div>
-            <div className={styles.kpiValRow}>
-              <ShieldCheck size={18} aria-hidden="true" className={styles.kpiLeadIcon} />
-              <span className={styles.kpiVal}>Governance Lead</span>
-            </div>
-            <div className={styles.kpiSub}>Standing by for Tier 3 Overrides &middot; Home Roster</div>
-          </div>
-
-          <div className={styles.kpiCard} data-tone="good">
-            <div className={styles.kpiCardTop}>
-              <span className={styles.kpiLabel}>ED Liaison Coverage</span>
-              <span className={`${styles.kpiPill} ${styles.kpiPillGood}`}>{departments.length} Active</span>
-            </div>
-            <div className={styles.kpiValRow}>
-              <Radio size={18} aria-hidden="true" className={styles.kpiLeadIcon} />
-              <span className={styles.kpiVal}>Hospital Emergency</span>
-            </div>
-            <div className={styles.kpiSub}>Emergency Department Liaison Network</div>
-          </div>
-        </div>
+          }
+        />
 
         {/* Filter Bar & Fast Search */}
         <div className={styles.filterControlBar}>

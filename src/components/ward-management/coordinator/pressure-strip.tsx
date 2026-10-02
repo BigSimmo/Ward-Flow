@@ -8,8 +8,8 @@ import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-man
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import type { HealthService, Movement } from "@/components/ward-management/ward-model";
 import { edPressure } from "@/components/ward-management/ward-pressure";
-import { edHealthService } from "@/components/ward-management/ward-service-scope";
-import { siteByCode } from "@/components/ward-management/ward-sites";
+import { edHealthService, healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
+import { edShortName, siteByCode } from "@/components/ward-management/ward-sites";
 
 import styles from "./coordinator.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
@@ -98,7 +98,8 @@ export function PressureStrip({ now, selectedEdId, onSelectEd, movements, servic
   const scroll = (direction: "left" | "right") => {
     const el = scrollRef.current;
     if (!el) return;
-    const offset = direction === "left" ? -240 : 240;
+    const scrollAmount = Math.max(300, Math.floor(el.clientWidth * 0.75));
+    const offset = direction === "left" ? -scrollAmount : scrollAmount;
     el.scrollBy({ left: offset, behavior: "smooth" });
   };
 
@@ -139,12 +140,31 @@ export function PressureStrip({ now, selectedEdId, onSelectEd, movements, servic
       <ul className={styles.pressureList} ref={scrollRef}>
         {scopedPressure.map((row) => {
           const selected = row.ed.id === selectedEdId;
+          const shortName = edShortName(row.ed);
+          const rawService = siteByCode(row.ed.siteCode)?.service;
+          const serviceAcronym = healthServiceAcronym(rawService);
+
           const deadlines = (summaries.find((summary) => summary.ed.id === row.ed.id)?.open ?? [])
             .filter((movement) => movement.legalForm?.dueAt !== undefined)
             .map((movement) => clockState(movement.legalForm!.dueAt!, now));
           const critical = deadlines.filter((state) => state === "critical").length;
           const due = deadlines.filter((state) => state === "due").length;
+
+          // Streamlined label on card face avoids ugly ellipsis clipping in tight cards
           const deadlineLabel =
+            row.breaching > 0
+              ? `${row.breaching} overdue`
+              : critical > 0
+                ? `${critical} due < ${DUE_SOON_URGENT_MINUTES / 60}h`
+                : due > 0
+                  ? `${due} due < ${DUE_SOON_MINUTES / 60}h`
+                  : deadlines.length > 0
+                    ? `${deadlines.length} on track`
+                    : row.waiting > 0
+                      ? "No deadlines"
+                      : "No patients waiting";
+
+          const deadlineAccessible =
             row.breaching > 0
               ? `${row.breaching} overdue`
               : critical > 0
@@ -156,6 +176,7 @@ export function PressureStrip({ now, selectedEdId, onSelectEd, movements, servic
                     : row.waiting > 0
                       ? "No deadline recorded"
                       : "No patients waiting";
+
           const pressureTone =
             row.breaching > 0 || critical > 0
               ? "danger"
@@ -166,20 +187,14 @@ export function PressureStrip({ now, selectedEdId, onSelectEd, movements, servic
                   : row.waiting > 0
                     ? "waiting"
                     : "quiet";
-          // `aria-label` REPLACES an element's accessible name computed from its content, so
-          // setting it to just `ed.name` (Task 4 review Important 3) hid the waiting count,
-          // longest wait and breach count from assistive technology entirely. Compose the whole
-          // card into the name instead — the hospital name the ruling requires, plus every
-          // figure a sighted coordinator sees. `title` stays the bare hospital name for a hover
-          // tooltip, a different surface with a different length budget. The visible spans are
-          // `aria-hidden` so a screen reader isn't read the same figures twice.
-          const accessibleNameParts = [row.ed.name];
+
+          const accessibleNameParts = [`${shortName} (${serviceAcronym || rawService || "Department"})`];
           if (row.waiting === 0) {
             accessibleNameParts.push("no patients waiting");
           } else {
             accessibleNameParts.push(`${row.waiting} waiting`, `longest ${splitDuration(row.longestWaitMinutes)}`);
           }
-          accessibleNameParts.push(deadlineLabel);
+          accessibleNameParts.push(deadlineAccessible);
           const accessibleName = accessibleNameParts.join(", ");
 
           return (
@@ -188,21 +203,18 @@ export function PressureStrip({ now, selectedEdId, onSelectEd, movements, servic
                 type="button"
                 data-testid={`ward-ed-${row.ed.id}`}
                 className={selected ? styles.pressureCardSelected : styles.pressureCard}
-                // Always present and numeric — never a boolean flag — so a test can read these
-                // as the actual sort keys `edPressure` ranks by, not just "some truthy marker"
-                // (Task 4 review Important 1).
                 data-breaching={row.breaching}
                 data-longest-minutes={row.longestWaitMinutes}
                 data-waiting={row.waiting}
                 data-pressure-tone={pressureTone}
                 aria-pressed={selected}
                 aria-label={accessibleName}
-                title={row.ed.name}
+                title={`${row.ed.name}${rawService ? ` (${rawService})` : ""}`}
                 onClick={() => onSelectEd(selected ? undefined : row.ed.id)}
               >
                 <span className={styles.pressureIdentity} aria-hidden="true">
-                  <strong className={styles.pressureSiteCode}>{row.ed.siteCode}</strong>
-                  <span className={styles.pressureService}>{siteByCode(row.ed.siteCode)?.service}</span>
+                  <strong className={styles.pressureEdName}>{shortName}</strong>
+                  {serviceAcronym ? <span className={styles.pressureServiceBadge}>{serviceAcronym}</span> : null}
                 </span>
                 {row.waiting === 0 ? (
                   <span className={styles.pressureStats} aria-hidden="true">

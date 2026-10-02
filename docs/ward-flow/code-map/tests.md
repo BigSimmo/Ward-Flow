@@ -973,3 +973,13 @@ extras); and the full body of every file — each bullet's "what it protects" ph
 author's own `describe`/`test`/`it` title, read and lightly cleaned by script and spot-checked on
 about two dozen files that looked wrong, not independently re-derived from every file's actual
 assertions.
+
+## Validation repair, 2 October 2026
+
+The runner now configures both DOM and contract TSX include patterns. The runner-visibility and Ward design-language visibility guards read that configured list, continue rejecting unsupported TSX names, and explicitly exercise contract-test visibility. The capacity-observation test selects its own confirmation status instead of assuming the screen has only one status region. These changes preserve clinical, privacy and design assertions.
+
+The matching historical baseline and the rules candidate reproduced the same 27 saved failure records in focused comparison. This identifies inherited failures, not a green whole-suite result. The five other saved tooling records did not reproduce in those focused runs; their original FULL context remains relevant. Current-main discharge-access cases pass without a new repair. Final FULL reconciliation remains required; no expected-red manifest entries were added to suppress failures.
+
+The cross-checkout ownership regression test also runs with Git hook variables deliberately present. The identity probe clears Git-local variables only in its child process, so each target retains its own repository, index, remote and anchor checks. Explicit comma-separated branch releases are parsed individually; foreign claims remain separate and unreleased public claims still block. Secret-scanning assertions remain unchanged.
+
+The movement wrapper and cockpit no longer import each other: shared derivations live in movements/movement-workspace-derivations.ts, with compatibility exports retained at the former console entry point. The existing legal-readiness helper is used by the actual cockpit; its duplicate body was token-identical before consolidation. Legal guards now verify that live wiring and the shared full warning markup, including its exact notice and note semantics. The unapproved raw patient-link display was removed without widening the D14 allowlist. The global D14 and spoken-name gates remain red for the separately owned ED screen.

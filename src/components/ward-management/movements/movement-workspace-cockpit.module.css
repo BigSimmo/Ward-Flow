@@ -1,0 +1,991 @@
+/* src/components/ward-management/movements/movement-workspace-cockpit.module.css
+ *
+ * Dedicated elevated clinical styling for the Patient Movement Workspace Cockpit.
+ * Strictly tokenized: zero raw hex, zero raw rgb/rgba, 12px font floor, full dark/light mode support.
+ */
+
+.cockpitRoot {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: var(--space-4, 1rem) var(--space-5, 1.25rem) var(--space-8, 2rem);
+  color: var(--ward-text, var(--text));
+  font-family: inherit;
+}
+
+/* Header & Breadcrumb */
+.workspaceHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 0.75rem);
+  font-size: 0.8125rem;
+  color: var(--ward-muted, var(--text-muted));
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md, 0.375rem);
+  border: 1px solid var(--ward-border, var(--border));
+  background: var(--surface-raised, var(--surface));
+  color: var(--ward-text, var(--text));
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+  text-decoration: none;
+}
+
+.backLink:hover {
+  background: var(--surface-hover, var(--surface-subtle));
+  border-color: var(--ward-blue-border, var(--clinical-accent-border));
+}
+
+.backLink:focus-visible {
+  outline: 2px solid var(--ward-blue, var(--clinical-accent));
+  outline-offset: 2px;
+}
+
+.headerCrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  font-weight: 500;
+  color: var(--ward-heading, var(--text-heading));
+}
+
+.headerCrumb::before {
+  content: "/";
+  color: var(--ward-muted, var(--text-muted));
+}
+
+/* =========================================================================
+   1. EXECUTIVE CLINICAL MASTHEAD
+   ========================================================================= */
+.mastheadCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+  background: var(--surface-raised, var(--surface));
+  border: 1px solid var(--ward-border, var(--border));
+  border-radius: var(--radius-lg, 0.5rem);
+  padding: var(--space-5, 1.25rem);
+  box-shadow: var(--lift-sm, 0 1px 2px 0 var(--ward-shadow-black-05));
+  position: relative;
+  overflow: hidden;
+}
+
+.mastheadTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4, 1rem);
+}
+
+.patientIdentityGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4, 1rem);
+}
+
+.patientAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 9999px;
+  background: var(--ward-blue-soft, var(--clinical-accent-soft));
+  color: var(--ward-blue, var(--clinical-accent));
+  border: 1px solid var(--ward-blue-border, var(--clinical-accent-border));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+.identityText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.eyebrowRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: var(--ward-muted, var(--text-muted));
+}
+
+.mastheadTitle {
+  margin: 0;
+  font-size: clamp(1.25rem, 2vw, 1.625rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ward-heading, var(--text-heading));
+  letter-spacing: -0.02em;
+}
+
+.clinicalDemographicsPill {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  margin-top: var(--space-1, 0.25rem);
+  font-size: 0.8125rem;
+  color: var(--ward-text, var(--text));
+}
+
+.demographicSep {
+  color: var(--ward-muted, var(--text-muted));
+}
+
+.mastheadActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+}
+
+/* Route & Trajectory Subtitle */
+.trajectoryLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  background: var(--surface-subtle, var(--surface));
+  border-radius: var(--radius-md, 0.375rem);
+  border: 1px solid var(--ward-divider, var(--border));
+  font-size: 0.8125rem;
+  color: var(--ward-text, var(--text));
+}
+
+.trajectoryOrigin {
+  font-weight: 600;
+  color: var(--ward-heading, var(--text-heading));
+}
+
+.trajectoryArrow {
+  color: var(--ward-muted, var(--text-muted));
+}
+
+.trajectoryDest {
+  font-weight: 600;
+  color: var(--ward-blue, var(--clinical-accent));
+}
+
+.trajectoryTags {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  margin-left: auto;
+}
+
+/* Active Blocker Alert Banner */
+.blockerAlertBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3, 0.75rem);
+  padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+  background: var(--ward-warning-soft, var(--surface-subtle));
+  border: 1px solid var(--warning-border, var(--ward-border));
+  border-left: 4px solid var(--ward-warning);
+  border-radius: var(--radius-md, 0.375rem);
+  color: var(--ward-warning, var(--ward-text));
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.blockerAlertIcon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--ward-warning);
+}
+
+.blockerAlertBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.blockerAlertTitle {
+  font-weight: 600;
+  color: var(--ward-warning, var(--ward-heading));
+}
+
+/* Legal Notice */
+.legalNoticeBox {
+  margin: 0;
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  background: var(--surface-subtle, var(--surface));
+  border-left: 3px solid var(--ward-border-strong, var(--border));
+  font-size: 12px;
+  color: var(--ward-muted, var(--text-muted));
+  line-height: 1.4;
+}
+
+/* Closure Banner */
+.closureBanner {
+  background: var(--surface-subtle, var(--surface));
+  border: 1px solid var(--ward-border, var(--border));
+  border-radius: var(--radius-md, 0.375rem);
+  padding: var(--space-4, 1rem);
+}
+
+.closureTitle {
+  margin: 0 0 var(--space-1, 0.25rem);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--ward-heading, var(--text-heading));
+}
+
+.closureReason {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ward-text, var(--text));
+}
+
+.closureMeta {
+  margin-top: var(--space-1, 0.25rem);
+  font-size: 12px;
+  color: var(--ward-muted, var(--text-muted));
+}
+
+/* =========================================================================
+   2. HORIZONTAL 7-STAGE TRAJECTORY STEPPER
+   ========================================================================= */
+.stepperContainer {
+  background: var(--surface-raised, var(--surface));
+  border: 1px solid var(--ward-border, var(--border));
+  border-radius: var(--radius-lg, 0.5rem);
+  padding: var(--space-4, 1rem);
+  box-shadow: var(--lift-sm, 0 1px 2px 0 var(--ward-shadow-black-05));
+}
+
+.stepperHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3, 0.75rem);
+}
+
+.stepperTitle {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ward-muted, var(--text-muted));
+}
+
+.stepperCountBadge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px var(--space-2, 0.5rem);
+  border-radius: 9999px;
+  background: var(--ward-blue-soft, var(--surface-subtle));
+  color: var(--ward-blue, var(--clinical-accent));
+}
+
+.stepperTrack {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-2, 0.5rem);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (max-width: 900px) {
+  .stepperTrack {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .stepperTrack {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stepperStep {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  border-radius: var(--radius-md, 0.375rem);
+  border: 1px solid var(--ward-divider, var(--border));
+  background: var(--surface-subtle, var(--surface));
+  min-height: 64px;
+  position: relative;
+  transition: all 150ms ease;
+}
+
+.stepperStep[data-state="done"] {
+  border-color: var(--success-border, var(--ward-border));
+  background: var(--ward-success-soft, var(--surface));
+}
+
+.stepperStep[data-state="current"] {
+  border-color: var(--ward-blue, var(--clinical-accent));
+  background: var(--ward-blue-soft, var(--surface-raised));
+  box-shadow: 0 0 0 1px var(--ward-blue, var(--clinical-accent));
+}
+
+.stepperStep[data-state="ahead"] {
+  opacity: 0.65;
+}
+
+.stepIndicatorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.stepNumber {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ward-muted, var(--text-muted));
+}
+
+.stepperStep[data-state="current"] .stepNumber {
+  color: var(--ward-blue, var(--clinical-accent));
+}
+
+.stepIcon {
+  width: 14px;
+  height: 14px;
+  color: var(--ward-muted, var(--text-muted));
+}
+
+.stepperStep[data-state="done"] .stepIcon {
+  color: var(--ward-success);
+}
+
+.stepperStep[data-state="current"] .stepIcon {
+  color: var(--ward-blue, var(--clinical-accent));
+}
+
+.stepLabel {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ward-heading, var(--text-heading));
+}
+
+.stepWhen {
+  margin-top: auto;
+  font-size: 12px;
+  color: var(--ward-muted, var(--text-muted));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================================================================
+   3. TELEMETRY & FIGURE STRIP
+   ========================================================================= */
+.figureGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-3, 0.75rem);
+}
+
+.figureCard {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-raised, var(--surface));
+  border: 1px solid var(--ward-border, var(--border));
+  border-radius: var(--radius-md, 0.375rem);
+  padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+  box-shadow: var(--lift-sm, 0 1px 2px 0 var(--ward-shadow-black-05));
+  position: relative;
+}
+
+.figureCard[data-flagged="true"] {
+  border-color: var(--warning-border, var(--ward-warning));
+  background: var(--ward-warning-soft, var(--surface-raised));
+  border-left: 3px solid var(--ward-warning);
+}
+
+.figureLabel {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ward-muted, var(--text-muted));
+  margin-bottom: var(--space-1, 0.25rem);
+}
+
+.figureValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--ward-heading, var(--text-heading));
+  letter-spacing: -0.02em;
+}
+
+.figureSub {
+  font-size: 12px;
+  color: var(--ward-muted, var(--text-muted));
+  margin-top: var(--space-1, 0.25rem);
+  line-height: 1.3;
+}
+
+.withheldFlagNote {
+  font-size: 12px;
+  color: var(--ward-warning);
+  margin-top: var(--space-1, 0.25rem);
+}
+
+/* =========================================================================
+   4. TWO-COLUMN OPERATIONAL COCKPIT LAYOUT
+   ========================================================================= */
+.cockpitGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(320px, 1.2fr);
+  gap: var(--space-4, 1rem);
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .cockpitGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.operationalColumn {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+}
+
+.commandColumn {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+}
+
+/* =========================================================================
+   5. OPERATIONAL PANELS: DESTINATION & WARD MATCHING
+   ========================================================================= */
+.panelCard {
+  background: var(--surface-raised, var(--surface));
+  border: 1px solid var(--ward-border, var(--border));
+  border-radius: var(--radius-lg, 0.5rem);
+  box-shadow: var(--lift-sm, 0 1px 2px 0 var(--ward-shadow-black-05));
+  overflow: hidden;
+}
+
+.panelCardHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+  border-bottom: 1px solid var(--ward-divider, var(--border));
+  background: var(--surface-subtle, var(--surface));
+}
+
+.panelTitleGroup {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+}
+
+.panelCardTitle {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--ward-heading, var(--text-heading));
+}
+
+.panelCountBadge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 1px var(--space-2, 0.5rem);
+  border-radius: 9999px;
+  background: var(--surface, var(--surface-raised));
+  border: 1px solid var(--ward-border, var(--border));
+  color: var(--ward-text, var(--text));
+}
+
+.panelCardBody {
+  padding: var(--space-4, 1rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 0.75rem);
+}
+
+.panelBlurb {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ward-muted, var(--text-muted));
+  line-height: 1.4;
+}
+
+/* Destination Hero View */
+.destinationHero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+  background: var(--ward-blue-soft, var(--surface-subtle));
+  border: 1px solid var(--ward-blue-border, var(--clinical-accent-border));
+  border-radius: var(--radius-md, 0.375rem);
+  padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+}
+
+.destHeroTitle {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--ward-blue, var(--clinical-accent));
+}
+
+.destHeroLede {
+  font-size: 0.8125rem;
+  color: var(--ward-text, var(--text));
+  line-height: 1.4;
+}
+
+.gateList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-2, 0.5rem);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.gateItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2, 0.5rem);
+  font-size: 12px;
+  padding: var(--space-2, 0.5rem);
+  border-radius: var(--radius-sm, 0.25rem);
+  background: var(--surface, var(--surface-raised));
+  border: 1px solid var(--ward-divider, var(--border));
+}
+
+.gatePass {
+  color: var(--ward-success);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.gateFail {
+  color: var(--ward-danger);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Ranked Ward Candidates */
+.candidateTable {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ward-border, var(--border));
+  border-radius: var(--radius-md, 0.375rem);
+  overflow: hidden;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.candidateRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+  border-bottom: 1px solid var(--ward-divider, var(--border));
+  background: var(--surface-raised, var(--surface));
+  gap: var(--space-3, 0.75rem);
+}
+
+.candidateRow:last-child {
+  border-bottom: none;
+}
+
+.candidateRow:hover {
+  background: var(--surface-hover, var(--surface-subtle));
+}
+
+.candidateMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.candidateName {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ward-heading, var(--text-heading));
+}
+
+.candidateNote {
+  font-size: 12px;
+  color: var(--ward-muted, var(--text-muted));
+}
+
+.candidateRisk {
+  font-size: 12px;
+  color: var(--ward-warning);
+  font-weight: 500;
+}
+
+.candidateChips {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+}
+
+.candidateVerdict {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* =========================================================================
+   6. 4-PILLAR CLINICAL READINESS MATRIX
+   ========================================================================= */
+.readinessMatrix {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3, 0.75rem);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (max-width: 680px) {
+  .readinessMatrix {
+    grid-template-columns: 1fr;
+  }
+}
+
+.readinessCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+  background: var(--surface-subtle, var(--surface));
+  border: 1px solid var(--ward-border, var(--border));
+  border-radius: var(--radius-md, 0.375rem);
+  padding: var(--space-3, 0.75rem);
+}
+
+.readinessCardHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ward-heading, var(--text-heading));
+}
+
+.readinessCardIcon {
+  color: var(--ward-blue, var(--clinical-accent));
+}
+
+.readinessCardBody {
+  font-size: 12px;
+  color: var(--ward-text, var(--text));
+  line-height: 1.4;
+  flex: 1;
+}
+
+.readinessCardWhere {
+  font-size: 12px;
+  color: var(--ward-muted, var(--text-muted));
+}
+
+/* Definition Facts Grid */
+.factGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-2, 0.5rem) var(--space-4, 1rem);
+  margin: 0;
+  padding: 0;
+}
+
+.factRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.factLabel {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ward-muted, var(--text-muted));
+}
+
+.factValue {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ward-text, var(--text));
+  line-height: 1.3;
+}
+
+/* =========================================================================
+   7. CHRONOLOGICAL ACTIVITY & AUDIT TIMELINE
+   ========================================================================= */
+.timelineList {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 2px solid var(--ward-divider, var(--border));
+  margin-left: var(--space-2, 0.5rem);
+}
+
+.timelineItem {
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 var(--space-3, 0.75rem) var(--space-3, 0.75rem);
+  position: relative;
+}
+
+.timelineItem::before {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--ward-blue, var(--clinical-accent));
+  border: 2px solid var(--surface-raised, var(--surface));
+}
+
+.timelineWhen {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ward-muted, var(--text-muted));
+}
+
+.timelineWhat {
+  font-size: 0.8125rem;
+  color: var(--ward-text, var(--text));
+  line-height: 1.35;
+}
+
+.untimedBox {
+  margin-top: var(--space-3, 0.75rem);
+  padding: var(--space-3, 0.75rem);
+  background: var(--surface-subtle, var(--surface));
+  border-radius: var(--radius-md, 0.375rem);
+  border: 1px dashed var(--ward-border, var(--border));
+}
+
+.untimedTitle {
+  margin: 0 0 var(--space-1, 0.25rem);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ward-heading, var(--text-heading));
+}
+
+.untimedList {
+  margin: 0;
+  padding-left: var(--space-4, 1rem);
+  font-size: 12px;
+  color: var(--ward-muted, var(--text-muted));
+}
+
+/* =========================================================================
+   8. ACTION COMMAND CENTER (RIGHT COLUMN)
+   ========================================================================= */
+.actionStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 0.75rem);
+}
+
+.actionSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+  padding: var(--space-3, 0.75rem);
+  background: var(--surface-subtle, var(--surface));
+  border: 1px solid var(--ward-divider, var(--border));
+  border-radius: var(--radius-md, 0.375rem);
+}
+
+.actionSectionTitle {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ward-heading, var(--text-heading));
+}
+
+.actionSay {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ward-text, var(--text));
+  line-height: 1.35;
+}
+
+.controlRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  margin-top: var(--space-1, 0.25rem);
+}
+
+.controlSelect {
+  flex: 1;
+  min-width: 140px;
+  height: 34px;
+  padding: 0 var(--space-2, 0.5rem);
+  font-size: 12px;
+  border-radius: var(--radius-sm, 0.25rem);
+  border: 1px solid var(--ward-border, var(--border));
+  background: var(--surface-raised, var(--surface));
+  color: var(--ward-text, var(--text));
+}
+
+.controlSelect:focus-visible {
+  outline: 2px solid var(--ward-blue, var(--clinical-accent));
+  outline-offset: 1px;
+}
+
+.controlButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 var(--space-3, 0.75rem);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-sm, 0.25rem);
+  border: 1px solid var(--ward-border, var(--border));
+  background: var(--surface-raised, var(--surface));
+  color: var(--ward-heading, var(--text-heading));
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.controlButton:hover:not([disabled]):not([aria-disabled="true"]) {
+  background: var(--surface-hover, var(--surface-subtle));
+  border-color: var(--ward-blue-border, var(--clinical-accent-border));
+}
+
+.controlButton:focus-visible {
+  outline: 2px solid var(--ward-blue, var(--clinical-accent));
+  outline-offset: 2px;
+}
+
+.controlButtonPrimary {
+  background: var(--ward-blue, var(--clinical-accent));
+  color: var(--on-accent, var(--ward-fixed-white));
+  border-color: var(--ward-blue, var(--clinical-accent));
+}
+
+.controlButtonPrimary:hover:not([disabled]):not([aria-disabled="true"]) {
+  filter: brightness(1.08);
+}
+
+.controlButtonDanger {
+  background: var(--ward-danger-soft, var(--surface-raised));
+  color: var(--ward-danger);
+  border-color: var(--danger-border, var(--border));
+}
+
+.controlButton[disabled],
+.controlButton[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Blocker Form */
+.blockerInput {
+  flex: 1;
+  min-width: 160px;
+  height: 34px;
+  padding: 0 var(--space-2, 0.5rem);
+  font-size: 12px;
+  border-radius: var(--radius-sm, 0.25rem);
+  border: 1px solid var(--ward-border, var(--border));
+  background: var(--surface-raised, var(--surface));
+  color: var(--ward-text, var(--text));
+}
+
+.blockerInput:focus-visible {
+  outline: 2px solid var(--ward-blue, var(--clinical-accent));
+  outline-offset: 1px;
+}
+
+/* Attention List */
+.attentionList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.attentionItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  background: var(--surface-raised, var(--surface));
+  border: 1px solid var(--ward-border, var(--border));
+  border-radius: var(--radius-sm, 0.25rem);
+  font-size: 12px;
+}
+
+.attentionItem[data-level="stalled"] {
+  border-left: 3px solid var(--ward-warning);
+}
+
+.attentionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.attentionWho {
+  font-weight: 600;
+  color: var(--ward-heading, var(--text-heading));
+}
+
+.attentionSay {
+  color: var(--ward-text, var(--text));
+  line-height: 1.35;
+}
+
+/* Governance Footer Note */
+.governanceNote {
+  margin: var(--space-4, 1rem) 0 0;
+  font-size: 12px;
+  color: var(--ward-muted, var(--text-muted));
+  text-align: center;
+}
+
+@media print {
+  .cockpitRoot,
+  .cockpitRoot * {
+    color: CanvasText !important;
+  }
+}

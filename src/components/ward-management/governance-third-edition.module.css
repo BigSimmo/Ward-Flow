@@ -121,6 +121,7 @@
   box-shadow: var(--lift);
 }
 .panelHeader {
+  flex-wrap: wrap;
   padding: var(--ward-space-12) var(--ward-space-14);
   border-bottom: 0.0625rem solid var(--line);
   background: var(--surface-2);
@@ -552,7 +553,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--ward-space-12, 12px);
-  padding: 10px 16px;
+  padding: 8px 14px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r1, 10px);
@@ -834,7 +835,7 @@
 
 .govLayout {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(360px, 0.9fr);
+  grid-template-columns: minmax(0, 1.55fr) minmax(22.5rem, 0.9fr);
   gap: 16px;
   align-items: start;
 }

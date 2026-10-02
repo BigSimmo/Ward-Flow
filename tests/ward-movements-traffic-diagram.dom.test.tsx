@@ -211,9 +211,12 @@ describe("TrafficDiagram hover isolation and visual elevations", () => {
     const cssPath = path.resolve(__dirname, "../src/components/ward-management/movements/movement-horizon.module.css");
     const css = fs.readFileSync(cssPath, "utf-8");
 
-    // Check @media (max-width: 480px) clamping .ganttColWard to 130px
+    // Keep every ward column on the shared width and clamp that width on narrow screens.
     expect(css).toMatch(
-      /@media\s*\(max-width:\s*480px\)[\s\S]*?\.ganttColWard\s*\{[\s\S]*?width:\s*130px;[\s\S]*?min-width:\s*130px;/u,
+      /\.ganttColWard\s*\{[^}]*?width:\s*var\(--horizon-ward-width\);[^}]*?min-width:\s*var\(--horizon-ward-width\);/u,
+    );
+    expect(css).toMatch(
+      /@media\s*\(max-width:\s*480px\)\s*\{\s*\.horizonContainer\s*\{[^}]*?--horizon-ward-width:\s*160px;[^}]*?--horizon-row-min:\s*80px;/u,
     );
 
     // Check .ganttBar sheen box-shadow

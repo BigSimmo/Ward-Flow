@@ -519,3 +519,294 @@
   white-space: nowrap !important;
   flex-shrink: 0;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   1. HOSPITAL SITE CARDS (Inpatient Summary Grid)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.siteCardWrap {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.siteCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.375rem;
+  background: var(--surface-2);
+  border: 0.0625rem solid var(--line);
+  border-radius: var(--r1);
+  padding: 0.875rem 1rem;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.siteCard:hover {
+  border-color: var(--line-strong);
+}
+
+.siteCardHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.siteCardTitle {
+  font-family: var(--body);
+  font-size: var(--t-2);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.siteCardMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: var(--t-1);
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.siteCardNum {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.siteCardCode {
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.siteChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--pill, 9999px);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border: 0.0625rem solid var(--line);
+  background: var(--surface);
+  color: var(--ink-soft);
+  white-space: nowrap !important;
+}
+
+.siteChip[data-tone="good"] {
+  background: var(--good-soft);
+  color: var(--good);
+  border-color: var(--good);
+}
+
+.siteChip[data-tone="warn"] {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.siteChip[data-tone="danger"] {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   2. INTER-SERVICE REFERRAL FLOW MATRIX
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.flowMatrixWrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.flowMatrixTable {
+  composes: table from "../ward-table/ward-table.module.css";
+  --ward-table-cell-inset: 0.5rem 0.875rem;
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--body);
+  font-size: var(--t-2);
+  line-height: 1.4;
+  text-align: left;
+}
+
+.flowMatrixTable th {
+  font-size: var(--t-0);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+
+.flowMatrixTable th.flowMatrixColNum {
+  text-align: right;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.flowMatrixTable td {
+  color: var(--ink-soft);
+  vertical-align: middle;
+}
+
+.flowMatrixTable tbody tr:hover td {
+  background: var(--surface-2);
+}
+
+.flowMatrixTable tr[data-current="true"] td,
+.flowMatrixCurrentRow td {
+  background: var(--sunk) !important;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.flowMatrixCell {
+  text-align: right;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.flowMatrixNetChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 2.25rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--pill, 9999px);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border: 0.0625rem solid transparent;
+  white-space: nowrap !important;
+}
+
+.flowMatrixNetChip[data-tone="good"] {
+  background: var(--good-soft);
+  color: var(--good);
+  border-color: var(--good);
+}
+
+.flowMatrixNetChip[data-tone="warn"] {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.flowMatrixNetChip[data-tone="danger"] {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   3. TRAVEL DISTANCE BARS (Proportional SVG & List Breakdown)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.distChartBox {
+  position: relative;
+  width: 100%;
+  background: transparent;
+  padding: 0.75rem 0;
+  overflow: visible;
+}
+
+.distChartBox svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.distList {
+  display: grid;
+  gap: 0.4375rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.distRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(min(5rem, 100%), 8rem) 2.5rem 2.75rem;
+  align-items: center;
+  gap: 0.375rem 0.625rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.distName {
+  font-family: var(--body);
+  font-size: var(--t-2);
+  color: var(--ink-soft);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.distMeter {
+  width: 100%;
+  height: 0.25rem;
+  border-radius: var(--pill, 9999px);
+  background: var(--sunk);
+  overflow: hidden;
+}
+
+.distMeterFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.distMeterFill[data-tone="good"] {
+  background: var(--good);
+}
+
+.distMeterFill[data-tone="accent"] {
+  background: var(--accent);
+}
+
+.distMeterFill[data-tone="warn"] {
+  background: var(--warn);
+}
+
+.distMeterFill[data-tone="danger"] {
+  background: var(--danger);
+}
+
+.distCount {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-2);
+  font-weight: 600;
+  color: var(--ink);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.distPercent {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-2);
+  color: var(--muted);
+  text-align: right;
+  white-space: nowrap;
+}

@@ -298,11 +298,49 @@
  */
 .pressureIdentity {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   flex-wrap: nowrap;
-  gap: 0.25rem;
+  gap: var(--ward-space-4, 0.25rem);
   width: 100%;
+}
+
+.pressureEdName {
+  color: var(--ink);
+  font-size: var(--t-1, 0.8125rem);
+  font-weight: 700;
+  line-height: var(--co-leading-tight, 1.2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.pressureServiceBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--surface-2);
+  border: 0.0625rem solid var(--line);
+  color: var(--muted);
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pressureCard:hover .pressureServiceBadge {
+  border-color: var(--line-strong);
+}
+
+.pressureCardSelected .pressureServiceBadge {
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .pressureService {
@@ -372,21 +410,21 @@
 .pressureHeaderActions {
   display: flex;
   align-items: center;
-  gap: var(--ward-space-8);
+  gap: var(--ward-space-10, 0.625rem);
 }
 
 .pressureNavButtons {
   display: flex;
   align-items: center;
-  gap: var(--ward-space-4);
+  gap: var(--ward-space-6, 0.375rem);
 }
 
 .pressureScrollButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 1.875rem;
+  height: 1.875rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-pill, 9999px);
   background: var(--surface);
@@ -399,16 +437,22 @@
 .pressureScrollButton:hover:not(:disabled) {
   background: var(--surface-2);
   border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.pressureScrollButton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .pressureScrollButton:disabled {
-  opacity: 0.35;
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
 .pressureScrollButton svg {
-  width: 0.875rem;
-  height: 0.875rem;
+  width: 1rem;
+  height: 1rem;
 }
 
 .pressureCard .pressureTrack > span,
@@ -455,31 +499,19 @@
   overflow-y: hidden;
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
-  scrollbar-width: thin;
-  scrollbar-color: var(--line) transparent;
-  padding: 0.5rem 1rem 0.75rem 1rem;
+  /* Hide scrollbar completely — navigate using arrow buttons or touch/trackpad */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 0.375rem 0.25rem 0.5rem 0.25rem;
 }
 
 .pressureList::-webkit-scrollbar {
-  height: 4px;
-}
-
-.pressureList::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.pressureList::-webkit-scrollbar-thumb {
-  background: var(--line);
-  border-radius: var(--radius-pill, 9999px);
-}
-
-.pressureList::-webkit-scrollbar-thumb:hover {
-  background: var(--line-strong);
+  display: none;
 }
 
 .pressureList > li {
-  flex: 1 1 clamp(6.75rem, calc((100% - 7 * var(--ward-space-8)) / 8), 8.75rem);
-  min-width: clamp(6.75rem, calc((100% - 7 * var(--ward-space-8)) / 8), 8.75rem);
+  flex: 0 0 clamp(11.25rem, calc((100% - 7 * var(--ward-space-8)) / 8), 12.5rem);
+  min-width: clamp(11.25rem, calc((100% - 7 * var(--ward-space-8)) / 8), 12.5rem);
   display: flex;
   scroll-snap-align: start;
 }
@@ -496,7 +528,7 @@
   gap: 0.25rem;
   border: 0.0625rem solid var(--line);
   border-radius: var(--r2);
-  padding: var(--ward-space-8) var(--ward-space-10);
+  padding: var(--ward-space-8) var(--ward-space-8);
   background: var(--sunk);
   color: var(--ink);
   text-align: left;

@@ -1463,9 +1463,9 @@ Clinical Note: ${p.clinicalNote}`;
           </section>
 
           {/* Right Column: Perfected Clinical Dossier Inspector Panel */}
-          <section className={styles.inspectorPanel} role="region" aria-label="Clinical Dossier Inspector" tabIndex={0}>
+          <section className={styles.inspectorPanel} role="region" aria-label="Patient details" tabIndex={0}>
             <div className={styles.panelHead}>
-              <h2 className={styles.panelTitle}>Clinical Dossier</h2>
+              <h2 className={styles.panelTitle}>Patient details</h2>
               <span className={styles.dossierHint}>Active record</span>
             </div>
 

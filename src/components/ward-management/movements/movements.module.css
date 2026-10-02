@@ -2054,10 +2054,10 @@
 
 .worklistSubhead {
   padding: 0.65rem 1rem 0.25rem;
-  font-family: var(--display);
-  font-size: var(--t-3);
-  font-weight: 600;
-  letter-spacing: -0.015em;
+  font-family: var(--body);
+  font-size: var(--t-1);
+  font-weight: 500;
+  line-height: 1.45;
   color: var(--accent-ink);
   margin: 0;
 }

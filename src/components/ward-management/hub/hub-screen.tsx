@@ -308,7 +308,6 @@ export function HubScreen() {
             <div className={styles.panelHeader}>
               <div>
                 <h2>The network</h2>
-                <p>Wards by health service, emergency departments and community teams.</p>
               </div>
               <span className={styles.groupCount}>
                 {results.length} of {counts.all}

@@ -89,6 +89,9 @@ function walk(dir: string): string[] {
  * more time: a registry that looks exhaustive because every entry it has is correct.
  */
 const PINNED: Record<string, string | readonly string[] | null> = {
+  // Published Showcase table, added 2026-10-03. Pins its declared threshold;
+  // this source check does not establish the table's intrinsic browser width.
+  "sovereign/sovereign-showcase.module.css": "40rem",
   "discharges/discharges.module.css": "30rem",
   /* Q004 replaces the separate Unit column with a fluid three-column register. Its identity,
    * timing and stage cells return to table cells for print; that composition is guarded below

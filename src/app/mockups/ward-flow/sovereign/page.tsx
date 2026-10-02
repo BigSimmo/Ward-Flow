@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { SovereignShowcaseScreen } from "@/components/ward-management/sovereign/sovereign-showcase-screen";
 
 export const metadata: Metadata = {
-  title: "Sovereign Chrome & Drawers Suite - Ward Flow",
-  description: "Sovereign chrome, navigation rail, and drawers suite perfected third edition showcase.",
+  title: "Design System Showcase - Ward Flow",
+  description: "Synthetic examples of Ward Flow components, local interaction states and existing shell drawers.",
 };
 
 export default function SovereignShowcasePage() {

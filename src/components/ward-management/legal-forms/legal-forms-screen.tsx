@@ -1,16 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, Clock, Plus, ShieldAlert, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, ShieldAlert, X } from "lucide-react";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { formatInstantWithDay, type Instant, minutesUntil } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import {
-  LEGAL_LIMITS_NOT_CHECKED_NOTICE,
-  type LegalClockAgeBand,
-  type LegalClockRegion,
-} from "@/components/ward-management/ward-legal-clock";
+import { type LegalClockAgeBand, type LegalClockRegion } from "@/components/ward-management/ward-legal-clock";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -21,6 +17,7 @@ import { edById } from "@/components/ward-management/ward-sites";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 
@@ -347,164 +344,105 @@ export function LegalFormsScreen() {
             <div className={styles.statutoryNoticeCard}>
               <ShieldAlert size={18} className={styles.statutoryNoticeIcon} aria-hidden="true" />
               <div className={styles.statutoryNoticeContent}>
-                <span className={styles.statutoryNoticeTitle}>Recorded form dates</span>
-                <p data-testid="legal-limits-not-checked">{LEGAL_LIMITS_NOT_CHECKED_NOTICE}</p>
+                <span className={styles.statutoryNoticeTitle}>Recorded forms and clinician-entered expiry times</span>
+                <LegalLimitsNotChecked variant="full" />
               </div>
             </div>
             <div className={styles.headerActions}>
               <button type="button" className={styles.recordFormPrimaryBtn} onClick={handleOpenNewForm}>
-                <Plus size={16} aria-hidden="true" />+ Record a form
+                + Record a form
               </button>
             </div>
           </div>
         </header>
 
-        {/* Recorded due-time alert banner (Overhauled Image 2 Warning) */}
-        {passed > 0 && (
-          <div className={styles.formAlertBanner} role="alert">
-            <div className={styles.formAlertBannerContent}>
-              <div className={styles.alertIconBadge}>
-                <AlertTriangle size={20} aria-hidden="true" />
-              </div>
-              <div className={styles.alertTextStack}>
-                <div className={styles.alertTitleRow}>
-                  <span className={styles.formAlertBadge} data-tone="danger">
-                    Documentation Review Required
-                  </span>
-                  <span className={styles.alertTimeTag}>Statutory Due Time Passed</span>
-                </div>
-                <span className={styles.formAlertBannerText}>
-                  {passed} {passed === 1 ? "legal form has" : "legal forms have"} passed the recorded due time.
-                  Immediate clinical review required prior to custodial or movement action.
-                </span>
-              </div>
-            </div>
-            <button
-              type="button"
-              className={`${styles.btn} ${styles.btnDanger} ${styles.reauthoriseBtn}`}
-              onClick={() => handleOpenRenew()}
-              aria-label="Re-Authorise Order"
-            >
-              <Clock size={16} aria-hidden="true" />
-              <span>Re-Authorise Order</span>
-            </button>
-          </div>
-        )}
-
-        {/* Unified Clinical Urgency & Form Status Strip (Consolidating & Elevating Image 2 Boxes) */}
-        <div className={styles.formKpiStrip} aria-label="Legal forms metrics">
-          <div
-            className={`${styles.kpiCard} ${urgencyFilter === "urgent" ? styles.kpiCardActive : ""}`}
-            data-tone={passed > 0 ? "danger" : "good"}
-            onClick={() => setUrgencyFilter(urgencyFilter === "urgent" ? "all" : "urgent")}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setUrgencyFilter(urgencyFilter === "urgent" ? "all" : "urgent");
-              }
-            }}
-            aria-label={`Deadlines passed: ${passed}`}
-          >
-            <span className={styles.kpiLabel}>Deadlines passed</span>
-            <span className={styles.kpiVal}>{passed}</span>
-            <span className={styles.kpiSub}>
-              {passed > 0
-                ? "Immediate review required"
-                : noDeadline.length > 0
-                  ? `${noDeadline.length} with no due time recorded`
-                  : `0 of ${withDeadline.length} forms past their written due time`}
-            </span>
-          </div>
-
-          <div
-            className={styles.kpiCard}
-            data-tone={upcoming > 0 ? "warn" : "accent"}
-            onClick={() => setUrgencyFilter("urgent")}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setUrgencyFilter("urgent");
-              }
-            }}
-            aria-label={`Upcoming deadlines: ${upcoming}`}
-          >
-            <span className={styles.kpiLabel}>Upcoming deadlines</span>
-            <span className={styles.kpiVal}>{upcoming}</span>
-            <span className={styles.kpiSub}>Due within shift window</span>
-          </div>
-
-          <div
-            className={`${styles.kpiCard} ${authorityFilter === "1A" ? styles.kpiCardActive : ""}`}
-            data-tone="accent"
-            onClick={() => setAuthorityFilter(authorityFilter === "1A" ? "all" : "1A")}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setAuthorityFilter(authorityFilter === "1A" ? "all" : "1A");
-              }
-            }}
-            aria-label={`Form 1A Active referrals: ${rows.filter((m) => m.legalForm?.code === "1A").length}`}
-          >
-            <span className={styles.kpiLabel}>Form 1A</span>
-            <span className={styles.kpiVal}>{rows.filter((m) => m.legalForm?.code === "1A").length}</span>
-            <span className={styles.kpiSub}>Active referrals (Psychiatrist exam)</span>
-          </div>
-
-          <div
-            className={`${styles.kpiCard} ${authorityFilter === "3B_3D" || authorityFilter === "4A_4C" ? styles.kpiCardActive : ""}`}
-            data-tone="warn"
-            onClick={() => setAuthorityFilter(authorityFilter === "3B_3D" ? "all" : "3B_3D")}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setAuthorityFilter(authorityFilter === "3B_3D" ? "all" : "3B_3D");
-              }
-            }}
-            aria-label="Detention & Transport Orders"
-          >
-            <span className={styles.kpiLabel}>Form 3 &amp; Form 4</span>
-            <span className={styles.kpiVal}>
-              {rows.filter((m) => ["3A", "3B", "3C", "3D", "4A", "4C"].includes(m.legalForm?.code ?? "")).length}
-            </span>
-            <span className={styles.kpiSub}>
-              Detention ({rows.filter((m) => m.legalForm?.code?.startsWith("3")).length}) · Transport (
-              {rows.filter((m) => m.legalForm?.code?.startsWith("4")).length})
-            </span>
-          </div>
-
-          <div
-            className={`${styles.kpiCard} ${authorityFilter === "all" && urgencyFilter === "all" ? styles.kpiCardActive : ""}`}
-            data-tone="quiet"
-            onClick={() => {
-              setAuthorityFilter("all");
-              setUrgencyFilter("all");
-            }}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
+        {/* Dynamic HUD Island: MHA Statutory Status (Consolidating alert banner and 5 KPI cards) */}
+        <WardDynamicIsland
+          testId="ward-legal-hud-island"
+          title="Recorded legal form due times"
+          status={passed > 0 ? "alarm" : upcoming > 0 ? "warning" : "nominal"}
+          statusText={
+            passed > 0
+              ? `${passed} recorded due times passed`
+              : upcoming > 0
+                ? `${upcoming} upcoming recorded due times`
+                : "No recorded due times"
+          }
+          ariaLabel="Mental health legal forms status summary"
+          metrics={[
+            {
+              testId: "ward-legal-kpi-passed",
+              id: "kpi-deadlines-passed",
+              label: "Deadlines Passed",
+              value: passed,
+              tone: passed > 0 ? "danger" : "good",
+              active: urgencyFilter === "urgent",
+              onClick: () => setUrgencyFilter(urgencyFilter === "urgent" ? "all" : "urgent"),
+              ariaLabel: `Deadlines passed: ${passed}`,
+            },
+            {
+              testId: "ward-legal-kpi-upcoming",
+              id: "kpi-upcoming",
+              label: "Upcoming",
+              value: upcoming,
+              tone: upcoming > 0 ? "warn" : "accent",
+              active: urgencyFilter === "urgent",
+              onClick: () => setUrgencyFilter("urgent"),
+              ariaLabel: `Upcoming deadlines: ${upcoming}`,
+            },
+            {
+              testId: "ward-legal-kpi-1a",
+              id: "kpi-form-1a",
+              label: "Form 1A",
+              value: rows.filter((m) => m.legalForm?.code === "1A").length,
+              tone: "accent",
+              active: authorityFilter === "1A",
+              onClick: () => setAuthorityFilter(authorityFilter === "1A" ? "all" : "1A"),
+              ariaLabel: `Form 1A referrals: ${rows.filter((m) => m.legalForm?.code === "1A").length}`,
+            },
+            {
+              testId: "ward-legal-kpi-3-4",
+              id: "kpi-form-3-4",
+              label: "Form 3 & 4",
+              value: rows.filter((m) => ["3A", "3B", "3C", "3D", "4A", "4C"].includes(m.legalForm?.code ?? "")).length,
+              tone: "warn",
+              active: authorityFilter === "3B_3D",
+              onClick: () => setAuthorityFilter(authorityFilter === "3B_3D" ? "all" : "3B_3D"),
+              ariaLabel: `Form 3 and 4 orders: ${rows.filter((m) => ["3A", "3B", "3C", "3D", "4A", "4C"].includes(m.legalForm?.code ?? "")).length}`,
+            },
+            {
+              testId: "ward-legal-kpi-clockless",
+              id: "kpi-clockless",
+              label: "Clockless / Voluntary",
+              value: noDeadline.length + voluntary,
+              tone: "muted",
+              active: authorityFilter === "all" && urgencyFilter === "all",
+              onClick: () => {
                 setAuthorityFilter("all");
                 setUrgencyFilter("all");
-              }
-            }}
-            aria-label={`Voluntary & Clockless: ${noDeadline.length + voluntary}`}
-          >
-            <span className={styles.kpiLabel}>Clockless / Voluntary</span>
-            <span className={styles.kpiVal}>{noDeadline.length + voluntary}</span>
-            <span className={styles.kpiSub}>
-              {noDeadline.length} clockless · {voluntary} voluntary
-            </span>
-          </div>
-        </div>
+              },
+              ariaLabel: `Clockless and voluntary: ${noDeadline.length + voluntary}`,
+            },
+          ]}
+          actions={
+            passed > 0 ? (
+              <button
+                type="button"
+                className={`${styles.btn} ${styles.btnDanger} ${styles.reauthoriseBtn}`}
+                data-testid="ward-legal-reauth-btn"
+                onClick={() => handleOpenRenew()}
+                aria-label="Re-Authorise Order"
+              >
+                <Clock size={14} aria-hidden="true" />
+                <span>Re-Authorise</span>
+              </button>
+            ) : (
+              <span data-testid="ward-legal-limits-tag">
+                <LegalLimitsNotChecked variant="tag" />
+              </span>
+            )
+          }
+        />
 
         {/* Registry Workbench: Left Authority Catalogue + Right Orders Workbench */}
         <div className={styles.registryLayout}>

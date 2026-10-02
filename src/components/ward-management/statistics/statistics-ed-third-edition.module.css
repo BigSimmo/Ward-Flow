@@ -1,9 +1,17 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   WARD FLOW ED STATISTICS — THIRD EDITION (CSS MODULE)
+   Extracted from docs/ward-flow/mockups/statistics-emergency-department-third-edition.html
+   Discipline: 0 raw hex, >=12px font floor, canonical design system tokens
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── Page Grid & Layout ─── */
 .pageGrid {
   display: grid;
   min-width: 0;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-areas:
     "switcher switcher"
+    "sovereigntabs sovereigntabs"
     "identity identity"
     "urgency urgency"
     "diurnal diurnal"
@@ -21,7 +29,77 @@
 .pageGrid > :global([data-testid="ward-statistics-ed-identity"]) {
   grid-area: identity;
 }
+.pageGrid > :global([data-testid="ward-statistics-ed-measures"]) {
+  grid-area: measures;
+}
+.pageGrid > :global([data-testid="ward-statistics-ed-urgency"]) {
+  grid-area: urgency;
+}
+.pageGrid > :global([data-testid="ward-statistics-ed-diurnal"]) {
+  grid-area: diurnal;
+}
+.pageGrid > :global([data-testid="ward-statistics-ed-weat"]) {
+  grid-area: weat;
+}
+.pageGrid > :global([data-testid="ward-statistics-ed-wait"]) {
+  grid-area: waiting;
+}
+.pageGrid > :global([data-testid="ward-statistics-ed-bands"]) {
+  grid-area: bands;
+}
+.pageGrid > :global([data-testid="ward-statistics-ed-declines"]) {
+  grid-area: declines;
+}
+.pageGrid > :global([data-testid="ward-statistics-ed-not-built"]) {
+  grid-area: limits;
+}
+.pageGrid > :global([data-testid="ward-stat-ed-trend"]) {
+  grid-area: trend;
+}
+.pageGrid > :global([data-testid="ward-stat-ed-destinations"]) {
+  grid-area: destinations;
+}
+.pageGrid > :global([data-testid="ward-stat-ed-comparison"]) {
+  grid-area: comparison;
+}
+.pageGrid > :global([data-testid="ward-statistics-ed-about"]) {
+  grid-area: about;
+}
+.pageGrid > :global([data-testid="ward-statistics-ed-unresolved"]) {
+  grid-column: 1 / -1;
+}
 
+/* Tab filter switching */
+.pageGrid[data-active-tab="queue"]
+  > :not(:global([data-testid="ward-statistics-ed-identity"])):not(
+    :global([data-testid="ward-statistics-ed-wait"])
+  ):not(.departmentSwitcher):not(.sovereignTabs):not(:global([data-testid="ward-statistics-ed-about"])) {
+  display: none !important;
+}
+.pageGrid[data-active-tab="distribution"]
+  > :not(:global([data-testid="ward-statistics-ed-identity"])):not(
+    :global([data-testid="ward-statistics-ed-urgency"])
+  ):not(:global([data-testid="ward-statistics-ed-diurnal"])):not(:global([data-testid="ward-statistics-ed-bands"])):not(
+    .departmentSwitcher
+  ):not(.sovereignTabs):not(:global([data-testid="ward-statistics-ed-about"])) {
+  display: none !important;
+}
+.pageGrid[data-active-tab="weat"]
+  > :not(:global([data-testid="ward-statistics-ed-identity"])):not(
+    :global([data-testid="ward-statistics-ed-weat"])
+  ):not(:global([data-testid="ward-stat-ed-trend"])):not(.departmentSwitcher):not(.sovereignTabs):not(
+    :global([data-testid="ward-statistics-ed-about"])
+  ) {
+  display: none !important;
+}
+.pageGrid[data-active-tab="comparison"]
+  > :not(:global([data-testid="ward-statistics-ed-identity"])):not(
+    :global([data-testid="ward-stat-ed-comparison"])
+  ):not(.departmentSwitcher):not(.sovereignTabs):not(:global([data-testid="ward-statistics-ed-about"])) {
+  display: none !important;
+}
+
+/* ─── Department Switcher ─── */
 .departmentSwitcher {
   grid-area: switcher;
   display: flex;
@@ -60,278 +138,374 @@
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
   font-weight: 400;
+  font-size: var(--t-0);
 }
-.bandValue {
+
+/* ─── Sovereign Tab Strip ─── */
+.sovereignTabs {
+  grid-area: sovereigntabs;
   display: flex;
+  gap: 0.375rem;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.25rem 0 0;
+  margin-bottom: 0.5rem;
+  border-bottom: 0.0625rem solid var(--line);
+}
+
+.sovereignTab {
+  display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  background: transparent;
+  border: none;
+  border-bottom: 0.125rem solid transparent;
+  color: var(--muted);
+  font-family: var(--body);
+  font-size: var(--t-0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color 0.12s ease,
+    border-color 0.12s ease;
+  min-height: var(--spacing-tap, 2.75rem);
 }
-.bandValue > span:last-child {
-  min-width: 2.5rem;
-  text-align: right;
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
+
+.sovereignTab:hover {
+  color: var(--ink);
+  background: transparent;
 }
-.bandTrack {
-  flex: 1;
-  min-width: 5rem;
-  height: 0.25rem;
-  background: var(--sunk);
+
+.sovereignTab:focus-visible {
+  outline: 0.125rem solid var(--accent);
+  outline-offset: -0.125rem;
+}
+
+.sovereignTab.activeTab,
+.sovereignTab.active,
+.sovereignTab[aria-pressed="true"] {
+  color: var(--ink);
+  border-bottom-color: var(--gilt);
+  background: transparent;
+}
+
+.sovereignTab .tabBadge,
+.tabBadge {
+  display: inline-block;
+  padding: 0.125rem 0.4375rem;
   border-radius: var(--radius-pill);
-}
-.bandTrack > span {
-  display: block;
-  height: 100%;
-  background: var(--accent);
-  border-radius: inherit;
-}
-
-.pageGrid > :global([data-testid="ward-statistics-ed-measures"]) {
-  grid-area: measures;
-}
-
-.pageGrid > :global([data-testid="ward-statistics-ed-urgency"]) {
-  grid-area: urgency;
+  background: var(--sunk);
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap !important;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
 }
 
-.pageGrid > :global([data-testid="ward-statistics-ed-diurnal"]) {
-  grid-area: diurnal;
+.sovereignTab.activeTab .tabBadge,
+.sovereignTab[aria-pressed="true"] .tabBadge {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
 }
 
-.pageGrid > :global([data-testid="ward-statistics-ed-weat"]) {
-  grid-area: weat;
-}
-
-.pageGrid > :global([data-testid="ward-statistics-ed-wait"]) {
-  grid-area: waiting;
-}
-
-.pageGrid > :global([data-testid="ward-statistics-ed-bands"]) {
-  grid-area: bands;
-}
-
-.pageGrid > :global([data-testid="ward-statistics-ed-declines"]) {
-  grid-area: declines;
-}
-
-.pageGrid > :global([data-testid="ward-statistics-ed-not-built"]) {
-  grid-area: limits;
-}
-
-.pageGrid > :global([data-testid="ward-stat-ed-trend"]) {
-  grid-area: trend;
-}
-
-.pageGrid > :global([data-testid="ward-stat-ed-destinations"]) {
-  grid-area: destinations;
-}
-
-.pageGrid > :global([data-testid="ward-stat-ed-comparison"]) {
-  grid-area: comparison;
-}
-
-.pageGrid > :global([data-testid="ward-statistics-ed-about"]) {
-  grid-area: about;
-}
-
-.pageGrid > :global([data-testid="ward-statistics-ed-unresolved"]) {
-  grid-column: 1 / -1;
-}
-
+/* ─── 5-Column Metric Band & Figure Band ─── */
+.band,
+.metricBand,
 .kpiBand {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   margin: 0;
   background: var(--surface-2);
-  border: none;
+  border: 1px solid var(--line);
   border-radius: var(--r2);
   overflow: hidden;
 }
 
+.band > .kpi,
+.metricBand > div,
 .kpiBand > div {
   min-width: 0;
   padding: 0.875rem 1rem;
   border-right: 1px solid var(--line);
+  display: grid;
+  gap: 3px;
+  align-content: start;
 }
+.band > .kpi:last-child,
+.metricBand > div:last-child,
 .kpiBand > div:last-child {
   border-right: 0;
 }
+
+.kpi {
+  display: grid;
+  gap: 3px;
+  min-width: 4.75rem;
+}
+.kpi dt,
 .kpiBand dt {
   font-size: var(--t-0);
   color: var(--muted);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 600;
+  white-space: nowrap;
 }
+.kpi dd,
 .kpiBand dd {
-  margin: 0.375rem 0;
+  margin: 0.375rem 0 0;
   font-family: var(--mono);
   font-size: var(--t-5);
   font-variant-numeric: tabular-nums;
   font-weight: 500;
   line-height: 1.2;
   color: var(--ink);
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  flex-wrap: wrap;
 }
-.kpiBand .kpiCaption {
+.kpi dd i {
+  font-family: var(--body);
+  font-style: italic;
+  font-weight: 400;
+  font-size: var(--t-2);
+  color: var(--muted);
+  line-height: 1.2;
+}
+.kpi[data-tone="danger"] dd,
+.kpiBand div[data-tone="danger"] dd {
+  color: var(--danger);
+}
+.kpi[data-tone="warn"] dd,
+.kpiBand div[data-tone="warn"] dd {
+  color: var(--warn);
+}
+.kpi[data-tone="good"] dd,
+.kpiBand div[data-tone="good"] dd {
+  color: var(--good);
+}
+.kpi .cap,
+.kpiCaption {
   margin: 0;
   font-family: var(--body);
   font-size: var(--t-1);
   font-weight: 400;
   line-height: 1.5;
   color: var(--muted);
-}
-.measurementDetails > summary {
-  padding: 0.625rem 0.875rem;
-  min-height: 3rem;
-  align-content: center;
-  cursor: pointer;
-  color: var(--ink-soft);
-  font-size: var(--t-1);
-}
-.measurementDetails > summary:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -3px;
+  text-wrap: pretty;
 }
 
-@media (max-width: 62.5rem) {
-  .pageGrid {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      "switcher"
-      "identity"
-      "urgency"
-      "diurnal"
-      "bands"
-      "waiting"
-      "weat"
-      "trend"
-      "destinations"
-      "declines"
-      "limits"
-      "comparison"
-      "measures"
-      "about";
-  }
-  .kpiBand {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .kpiBand > div {
-    border-bottom: 1px solid var(--line);
-  }
-}
-
-@media (min-width: 62.5625rem) {
-  .pageGrid {
-    align-items: start;
-  }
-
-  .pageGrid > :global([data-ward-primitive="panel"]) {
-    display: flex;
-    height: auto;
-    max-height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
-    min-height: 0;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .pageGrid > :global([data-testid="ward-statistics-ed-identity"]),
-  .pageGrid > :global([data-testid="ward-statistics-ed-measures"]),
-  .pageGrid > :global([data-testid="ward-statistics-ed-about"]),
-  .pageGrid > :global([data-testid="ward-statistics-ed-urgency"]),
-  .pageGrid > :global([data-testid="ward-statistics-ed-diurnal"]),
-  .pageGrid > :global([data-testid="ward-statistics-ed-weat"]) {
-    display: block;
-    height: auto;
-    max-height: none;
-  }
-
-  .pageGrid > :global([data-testid="ward-stat-ed-comparison"]) {
-    max-height: var(--ward-section-height, clamp(32rem, calc(100dvh - 10rem), 52rem));
-  }
-}
-
-@media print {
-  .pageGrid {
-    display: block;
-  }
-
-  .pageGrid > * {
-    margin-bottom: 0.75rem;
-  }
-
-  .pageGrid > :global([data-ward-primitive="panel"]) {
-    height: auto;
-    max-height: none;
-    overflow: visible;
-  }
-}
-
-/* ─── Floating Clinical Tooltip Card ─── */
-.chartTooltipCard {
-  position: absolute;
-  pointer-events: none;
-  background: var(--surface);
-  color: var(--ink);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r2);
-  padding: 10px 14px;
-  font-size: 12px;
-  font-family: var(--body);
-  box-shadow: var(--lift);
-  z-index: 100;
-  min-width: 180px;
-  max-width: 280px;
-  transition:
-    transform 0.04s ease-out,
-    opacity 0.15s ease;
-  line-height: 1.45;
-}
-:global([data-theme="dark"]) .chartTooltipCard {
-  background: var(--surface-2);
-  border-color: var(--line-strong);
-  box-shadow: var(--lift);
-}
-.tipHeader {
-  font-weight: 600;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 4px;
-  margin-bottom: 6px;
-  color: var(--ink);
-  font-family: var(--mono);
-  font-size: 12px;
-}
-.tipRow {
+/* ─── Table Filter Bar & Search ─── */
+.tableFilterBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin: 3px 0;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
+  padding: 10px 16px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
 }
-.tipDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
-  margin-right: 6px;
+.tableSearchInput {
+  font-family: var(--body);
+  font-size: var(--t-0);
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 10px;
+  min-width: 260px;
 }
-.tipDelta {
-  margin-top: 6px;
-  padding-top: 4px;
-  border-top: 1px dashed var(--line);
-  font-weight: 600;
-  font-family: var(--mono);
-  font-size: 12px;
-}
-.tipSurge {
-  color: var(--warn);
-}
-.tipRelief {
-  color: var(--good);
+.tableSearchInput:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
-/* ─── ATS 1-5 High-Contrast Clinical Cards ─── */
+.tableWrap {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-top: 1px solid var(--line);
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+.tableWrap[data-ovx="true"] {
+  box-shadow: inset -18px 0 16px -16px var(--edge-shade);
+}
+
+.dataTable {
+  composes: table from "../ward-table/ward-table.module.css";
+  --ward-table-cell-inset: 8px 14px;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-2);
+}
+.dataTable th {
+  text-align: left;
+  font-size: var(--t-0);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+.dataTable td {
+  color: var(--ink-soft);
+  vertical-align: top;
+  line-height: 1.45;
+}
+.dataTable td:first-child {
+  color: var(--ink);
+  font-weight: 600;
+}
+.dataTable .n,
+.dataTable th.n {
+  text-align: right;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.dataTable td.n {
+  color: var(--ink);
+}
+.dataTable tbody tr:hover td {
+  background: var(--sunk);
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+.sortable:hover {
+  background: var(--sunk);
+}
+
+.qTableRow {
+  transition: background 0.12s ease;
+}
+.qTableRow:hover td {
+  background: var(--sunk);
+}
+.qTableRow strong {
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ─── Urgency Pills & Badges ─── */
+.urgencyPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  background: var(--sunk);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  white-space: nowrap !important;
+}
+.urgencyPill[data-urg="1"] {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border-color: var(--danger);
+}
+.urgencyPill[data-urg="2"] {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+:global([data-theme="dark"]) .urgencyPill[data-urg="2"] {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border-color: var(--danger);
+}
+.urgencyPill[data-urg="3"] {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-color: var(--warn);
+}
+.urgencyPill[data-urg="4"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+.urgencyPill[data-urg="5"] {
+  background: var(--good-soft);
+  color: var(--good);
+  border-color: var(--good);
+}
+
+.stageTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-family: var(--body);
+  font-weight: 500;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  white-space: nowrap !important;
+  line-height: 1.4;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-family: var(--mono);
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  white-space: nowrap !important;
+}
+.chip[data-tone="good"] {
+  background: var(--good-soft);
+  color: var(--good);
+  border-color: var(--good);
+}
+.chip[data-tone="warn"] {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-color: var(--warn);
+}
+.chip[data-tone="danger"] {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.linkBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent-ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* ─── ATS Category Timeline (Wait Time Distribution) ─── */
 .timelineCardGrid {
   display: grid;
   gap: 12px;
@@ -364,43 +538,6 @@
   gap: 10px;
   flex-wrap: wrap;
 }
-.urgencyPill {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
-  font-size: 12px;
-  font-weight: 600;
-  font-family: var(--mono);
-  background: var(--sunk);
-  color: var(--ink);
-  border: 1px solid var(--line);
-}
-.urgencyPill[data-urg="1"] {
-  background: var(--danger-soft);
-  color: var(--danger-ink);
-  border-color: var(--danger);
-}
-.urgencyPill[data-urg="2"] {
-  background: var(--danger-soft);
-  color: var(--danger);
-  border-color: var(--danger);
-}
-.urgencyPill[data-urg="3"] {
-  background: var(--warn-soft);
-  color: var(--warn);
-  border-color: var(--warn);
-}
-.urgencyPill[data-urg="4"] {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  border-color: var(--accent);
-}
-.urgencyPill[data-urg="5"] {
-  background: var(--good-soft);
-  color: var(--good);
-  border-color: var(--good);
-}
 .timelineCatName {
   font-size: var(--t-2);
   font-weight: 600;
@@ -412,27 +549,6 @@
   gap: 8px;
   flex-wrap: wrap;
 }
-.chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
-  font-size: 12px;
-  font-family: var(--mono);
-  background: var(--sunk);
-  border: 1px solid var(--line);
-  color: var(--ink-soft);
-}
-.chip[data-tone="good"] {
-  background: var(--good-soft);
-  color: var(--good);
-  border-color: var(--good);
-}
-.chip[data-tone="warn"] {
-  background: var(--warn-soft);
-  color: var(--warn);
-  border-color: var(--warn);
-}
 .timelineMetricsRow {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -440,7 +556,6 @@
   padding: 8px 12px;
   background: var(--surface-2);
   border-radius: var(--r2);
-  border: none;
 }
 :global([data-theme="dark"]) .timelineMetricsRow {
   background: var(--sunk);
@@ -535,17 +650,27 @@
   padding: 0 2px;
 }
 
-/* ─── Chart containers and legends ─── */
-.chartContainer {
+/* ─── Chart Containers, Legends & SVG ─── */
+.chartContainer,
+.chartWrap {
   position: relative;
   width: 100%;
   padding: 14px 16px;
   overflow: hidden;
+  background: var(--surface);
+  box-sizing: border-box;
 }
-.chartSvg {
+.chartSvg,
+.chartWrap svg {
   width: 100%;
   height: auto;
   display: block;
+  max-width: 100%;
+  user-select: none;
+}
+.chartWrap svg text,
+.chartSvg text {
+  font-size: max(12px, 1em);
 }
 .chartLegend {
   display: flex;
@@ -570,7 +695,69 @@
   border-radius: 2px;
 }
 
-/* ─── Rule D4 Floating Toast Notification ─── */
+/* ─── Floating Tooltip Card ─── */
+.chartTooltipCard {
+  position: absolute;
+  pointer-events: none;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r2);
+  padding: 10px 14px;
+  font-size: 12px;
+  font-family: var(--body);
+  box-shadow: var(--lift);
+  z-index: 100;
+  min-width: 180px;
+  max-width: 280px;
+  line-height: 1.45;
+}
+:global([data-theme="dark"]) .chartTooltipCard {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+  box-shadow: var(--lift);
+}
+.tipHeader {
+  font-weight: 600;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.tipRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 3px 0;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.tipDelta {
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--line);
+  font-weight: 600;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+/* ─── Measurement details and action toast ─── */
+.measurementDetails > summary {
+  padding: 0.625rem 0.875rem;
+  min-height: 3rem;
+  align-content: center;
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+}
+.measurementDetails > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+
 .actionToast {
   position: fixed;
   bottom: 24px;
@@ -587,6 +774,17 @@
   border-left: 4px solid var(--gilt);
 }
 
+/* Responsive */
+@media (max-width: 62.5rem) {
+  .pageGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .band,
+  .metricBand,
+  .kpiBand {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 @media (max-width: 768px) {
   .timelineMetricsRow {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -599,5 +797,10 @@
   .timelineCardHeader {
     flex-direction: column;
     align-items: flex-start;
+  }
+  .band,
+  .metricBand,
+  .kpiBand {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

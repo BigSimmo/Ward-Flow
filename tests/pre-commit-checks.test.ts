@@ -247,7 +247,12 @@ describe("the hook script end to end", () => {
     writeFileSync(join(root, file), content);
     execFileSync("git", ["add", file], { cwd: root });
     const script = join(process.cwd(), "scripts", "pre-commit-checks.mjs");
-    return spawnSync(process.execPath, [script], { cwd: root, encoding: "utf8", env: { ...process.env, ...env } });
+    return spawnSync(process.execPath, [script], {
+      cwd: root,
+      encoding: "utf8",
+      // A standalone fixture owns its sign-out input; other chats' worktrees are not test data.
+      env: { ...process.env, WARD_SIGNOUT_FILE: join(root, "sign-out.md"), ...env },
+    });
   }
 
   it("fails on a staged secret and passes on clean content", () => {

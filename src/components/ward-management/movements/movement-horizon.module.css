@@ -4,10 +4,38 @@
  */
 
 .horizonContainer {
+  --horizon-ward-width: 220px;
+  --horizon-row-min: 64px;
   display: flex;
   flex-direction: column;
   min-width: 0;
   width: 100%;
+}
+
+.fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 1000);
+  height: 100dvh;
+  background: var(--surface);
+  overflow: hidden;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  box-sizing: border-box;
+}
+
+.diagramArea {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.fullscreen .diagramArea {
+  flex: 1;
+}
+
+.fullscreen .diagSplit {
+  height: auto;
+  flex: 1;
 }
 
 .panelSubHeader {
@@ -334,17 +362,13 @@
   display: grid;
   min-width: 0;
   grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
-  align-items: start;
+  align-items: stretch;
   position: relative;
-  height: auto;
+  height: clamp(18rem, 42dvh, 30rem);
 }
 
 .diagSplit.enlarged {
-  grid-template-columns: 1fr;
-  /* Invariant 24: no viewport floor that subtracts a chrome estimate. Grow in the shell instead. */
-  min-height: 28rem;
-  height: 100%;
-  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .diagMain {
@@ -395,12 +419,15 @@
   background: var(--surface-2);
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 40;
 }
 
 .ganttColWard {
-  width: 220px;
-  min-width: 220px;
+  width: var(--horizon-ward-width);
+  min-width: var(--horizon-ward-width);
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 30;
   padding: 10px 14px;
   font-family: var(--mono);
   font-size: var(--t-0);
@@ -458,8 +485,11 @@
 }
 
 .ganttFillerWard {
-  width: 220px;
-  min-width: 220px;
+  width: var(--horizon-ward-width);
+  min-width: var(--horizon-ward-width);
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 30;
   border-right: 1px solid var(--line);
   background: var(--surface);
 }
@@ -515,6 +545,8 @@
 
 /* Lane Rows */
 .ganttLaneRow {
+  flex-shrink: 0;
+  min-height: var(--horizon-row-min);
   display: flex;
   border-bottom: 1px solid var(--line);
   position: relative;
@@ -526,8 +558,10 @@
 }
 
 .ganttLaneLabel {
-  width: 220px;
-  min-width: 220px;
+  width: var(--horizon-ward-width);
+  min-width: var(--horizon-ward-width);
+  position: sticky;
+  inset-inline-start: 0;
   padding: 8px 14px;
   display: flex;
   flex-direction: column;
@@ -536,11 +570,11 @@
   font-size: var(--t-1);
   font-weight: 600;
   color: var(--ink);
-  background: inherit;
-  z-index: 5;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  background: var(--surface);
+  z-index: 30;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
 }
 
 .ganttSvcTag {
@@ -781,11 +815,9 @@
   background: var(--surface);
   display: flex;
   flex-direction: column;
-  height: auto;
-  max-height: 24rem;
+  height: 100%;
   min-height: 0;
-  position: sticky;
-  top: 1rem;
+  overflow: hidden;
 }
 
 .corridorRailHeader {
@@ -900,14 +932,37 @@
 }
 
 @media (max-width: 480px) {
-  .ganttColWard {
-    width: 130px;
-    min-width: 130px;
+  .horizonContainer {
+    --horizon-ward-width: 160px;
+    --horizon-row-min: 80px;
+  }
+}
+
+@media (max-width: 760px) {
+  .diagSplit {
+    grid-template-columns: minmax(0, 1fr);
+    height: 26rem;
+    grid-template-rows: minmax(0, 1fr) 9rem;
   }
 
-  .ganttLaneLabel,
-  .ganttFillerWard {
-    width: 130px;
-    min-width: 130px;
+  .corridorRail {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .fullscreen .diagSplit {
+    grid-template-rows: minmax(0, 1fr) 9rem;
+  }
+
+  .ganttScrubberWrap {
+    min-width: 0;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .horizonContainer * {
+    transition: none;
   }
 }
