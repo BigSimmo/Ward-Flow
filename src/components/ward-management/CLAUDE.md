@@ -16,9 +16,12 @@ they differ, they win.
 - **Privacy wording.** Never say something is not stored, private or anonymised unless a test proves
   it. No patient names or typed text in URLs, logs, screenshots, commit messages or memory.
 - **Design tokens only, no hex.** Tap targets 48px via `var(--ward-tap)` or `var(--spacing-tap, 3rem)`.
-  No coloured edge bars or top highlights on cards, rows or panels.
-- **Design comes from the drawings** in `docs/ward-flow/mockups/` (serve them, never open as a bare
-  file). **Behaviour comes from this engine** and its tests. Record screen checks in
-  `docs/ward-flow/SCREEN-VERIFICATION.md`.
-- **Before each commit:** the affected tests (`node scripts/run-vitest.mjs <files>`) and the type check.
-- **Never push, never open a pull request.** "Main" means the local ward line.
+  Preserve the current accepted app's appearance. Historical accent and typography prescriptions
+  do not authorise restyling it. Keep status understandable and controls accessible.
+- **Design comes from the latest accepted Ward Flow app**, not the drawings in
+  `docs/ward-flow/mockups/`. **Behaviour comes from this engine** and its tests. Record the actual
+  checked revision, widths, themes and evidence in `docs/ward-flow/screen-verification.json`.
+- **Checks follow the changed scope:** affected tests, typecheck only when selected, and the
+  dedicated-repository gate. Documentation-only changes do not trigger browser checks.
+- **Main means this dedicated repository's main branch.** The former Database ward line is retired.
+  Pushes, PRs, merges, deployment and providers require their separately applicable authority.

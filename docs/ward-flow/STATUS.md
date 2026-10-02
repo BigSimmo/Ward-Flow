@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../../AGENTS.md) and [Ward entry point](README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Ward Flow — status
 
 **Historical status of the former Database ward line.** Last substantively measured
@@ -286,3 +293,5 @@ repository-wide `docs/outstanding-issues.md` is not used for Ward Flow (owner ru
   settings screen; banned-phrase test correctly keeps historical phrases).
 - ED "No transport needed" already shipped (A2) — Deferred row removed earlier; What-is-built already
   notes the ED state.
+
+<!-- docs-script-refs:historical-end -->

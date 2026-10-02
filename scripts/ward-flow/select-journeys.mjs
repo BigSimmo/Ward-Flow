@@ -3,7 +3,8 @@
 //
 //   node scripts/ward-flow/select-journeys.mjs [--base <ref>] [--head <ref>] [--json]
 //
-// Default base is the ward line, head is HEAD; the diff is base...head (your branch's own changes).
+// Default base is origin/main in the dedicated Ward-Flow repository, head is HEAD.
+// The diff is base...head (your branch's own changes); no remote fetch is performed.
 // Prints one spec file per line, "ALL", or "NONE", then the reasons (on stderr, or in --json).
 //
 // Rules (Josh, 25 September 2026: screen-only changes run only their specs; anything else, or when
@@ -22,7 +23,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
-const LINE = "codex/task-ward-flow-live-state-20260831";
+const LINE = "origin/main";
 const WARD_APP = "src/app/mockups/ward-flow/";
 const ALWAYS_WITH_SCREENS = "tests/ui-ward-full-journey.spec.ts";
 const MAX_ROUTES = 6;
@@ -50,7 +51,20 @@ const base = opt("--base", LINE);
 const head = opt("--head", "HEAD");
 const asJson = args.includes("--json");
 const root = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
-const changed = execFileSync("git", ["diff", "--name-only", `${base}...${head}`], { cwd: root, encoding: "utf8" })
+let diff;
+try {
+  diff = execFileSync("git", ["diff", "--name-only", `${base}...${head}`], {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+} catch {
+  console.error(
+    `Cannot compare Ward Flow refs ${base}...${head}. Verify the local refs or supply --base <ref> and --head <ref>. No journeys selected.`,
+  );
+  process.exit(1);
+}
+const changed = diff
   .split("\n")
   .map((line) => line.trim())
   .filter(Boolean);

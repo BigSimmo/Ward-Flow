@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../AGENTS.md) and [Ward entry point](ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Deployment Architecture
 
 > [!NOTE]
@@ -484,3 +491,5 @@ commented entry so `npm run check:env-parity` knows the name.
   `railway metrics`) cover CPU/memory/HTTP; the app additionally emits
   `Server-Timing` and `latencyTimings` (including `supabase_rpc_latency_ms`,
   the cross-region signal from §2.1) on the answer path.
+
+<!-- docs-script-refs:historical-end -->

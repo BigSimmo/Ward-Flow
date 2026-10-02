@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../../AGENTS.md) and [Ward entry point](../ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Task 10 report — the coordinator's live tracker
 
 Commit: `b2e0a92aa` on `codex/ward-management-design`. Worktree:
@@ -250,3 +257,5 @@ class logic in `live-tracker.tsx`, not by this screenshot.
 - Exact numbers pinned in the new tests (`8` rows, `"33 of 41"` banner text, `139` total node
   tests) are fixture-dependent, consistent with this phase's existing testing style (Task 9 pins
   `8` officer jobs the same way) — they will need updating if `ward-movements.ts` changes again.
+
+<!-- docs-script-refs:historical-end -->

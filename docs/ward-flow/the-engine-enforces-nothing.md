@@ -1,5 +1,12 @@
 # The bed rules live on the screens, not in the engine
 
+> **HISTORICAL FINDING — corrected 2 October 2026.** The measurements below belong to the named
+> 2 September tree and are not a description of the current engine. At the rules-review baseline
+> `981a4a8`, `ward-flow-reducer.ts` contains `eligibilityRefusal` and physical-capacity refusals,
+> with dedicated assertions in `tests/ward-physical-facts-are-not-overridable.test.ts`.
+> This source inspection does not prove every movement path safe. Preserve this earlier evidence;
+> use current reducer callers and focused tests for current claims.
+
 **Established 2026-09-02 by driving the real reducer over real seeded data. It worked on the first
 attempt. This corrects a reassurance Ward Lead gave the owner twice, and the correction is the point
 of the document.**

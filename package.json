@@ -65,7 +65,7 @@
     "clean:worktree": "npm run worktrees:report",
     "verify:preflight": "npm run check:installed-lock-parity && npm run typecheck && npm run verify:cheap && npm run worktrees:report -- --self-test",
     "verify:cheap": "npm run verify:cheap:internal",
-    "verify:cheap:internal": "npm run check:installed-lock-parity && npm run check:ci-scope && npm run check:verification-plan && npm run check:diff-integrity && npm run sitemap:check && npm run check:mockups && npm run docs:check-index && npm run docs:check-inventory && npm run check:knip && npm run lint && npm run typecheck && npm run test",
+    "verify:cheap:internal": "npm run docs:check-scripts && npm run check:installed-lock-parity && npm run check:ci-scope && npm run check:verification-plan && npm run check:diff-integrity && npm run sitemap:check && npm run check:mockups && npm run docs:check-index && npm run docs:check-inventory && npm run check:knip && npm run lint && npm run typecheck && npm run test",
     "verify:pr-local": "node scripts/verify-pr-local.mjs",
     "audit:final-merge": "node scripts/final-merge-audit.mjs",
     "audit:merge-loss": "node scripts/audit-merge-loss.mjs --self-test && node scripts/audit-merge-loss.mjs",

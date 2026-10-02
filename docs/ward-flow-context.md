@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../AGENTS.md) and [Ward entry point](ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Ward Flow — complete context
 
 > [!NOTE]
@@ -554,3 +561,5 @@ model work but would cost more than it returns on screens.
 | `docs/ward-management-decisions.md`                                         | Four ADRs, including the corrected authorisation rule                                       |
 | `docs/ward-management-mode-map.md`                                          | The route model as currently built. Carries a superseded banner                             |
 | `docs/ward-flow-phase-2-kickoff.md`                                         | The session-start brief                                                                     |
+
+<!-- docs-script-refs:historical-end -->

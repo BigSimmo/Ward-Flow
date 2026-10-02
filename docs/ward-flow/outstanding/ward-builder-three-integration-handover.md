@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../../../AGENTS.md) and [Ward entry point](../README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Ward Builder Three → Ward Lead: integration handover, 2026-09-02
 
 **Written to a file because traffic to Ward Lead has never been observed to arrive.** Ward Verifier's
@@ -207,3 +214,5 @@ rescues (mine, `cfee6c5d9`, `38f90d138`) are verified real.**
 4. **Decide the suburb question** — a bed coordinator seeing a patient's suburb is in **neither
    projection's type**, so **no gate can catch it either way.** Ward Builder Two and Ward Verifier
    both carry it independently; **three of us are waiting on one answer.**
+
+<!-- docs-script-refs:historical-end -->

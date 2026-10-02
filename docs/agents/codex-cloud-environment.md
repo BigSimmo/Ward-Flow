@@ -1,5 +1,12 @@
 # Codex Cloud Environment
 
+> **Ward Flow scope — 1 October 2026.** This file contains inherited PsychSift guidance. The current [Ward Flow repository boundary](../../AGENTS.md) governs. References to PsychSift, Database, Supabase, OpenAI, foreign Railway targets or their credentials are historical and must not be followed here. Ward Flow stays synthetic; it must not reuse PsychSift resources. Read the [current hosting decisions](../hosting.md) before any separately authorised provider action.
+
+No Ward Flow Cloud setup is established by the copied commands below. Do not run their setup, maintenance, live-mode, login or provider procedures for this repository. Verify a Ward Flow-specific setup contract first.
+
+> The inherited source block below is historical. Current Ward guidance above and the repository boundary govern.
+
+<!-- docs-script-refs:historical-start -->
 <!-- BEGIN:codex-cloud-environment -->
 
 ## Codex Cloud environment
@@ -122,3 +129,4 @@ Codex Cloud uses an isolated Linux container and does not inherit desktop creden
 - Branch deletion helper `bash scripts/delete-codex-cloud-branch-with-pat.sh` is operator-only outside Cloud.
 
 <!-- END:codex-cloud-environment -->
+<!-- docs-script-refs:historical-end -->

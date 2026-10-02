@@ -5,7 +5,9 @@
  *     node scripts/ward-flow/mockup-manifest.mjs           # write docs/ward-flow/mockups/MANIFEST.json
  *     node scripts/ward-flow/mockup-manifest.mjs --check   # exit 1 if the committed manifest disagrees with disk
  *
- * The mockups in `docs/ward-flow/mockups/` are now AUTHORITATIVE on design. Until this manifest
+ * The mockups in `docs/ward-flow/mockups/` are historical design records; the accepted app governs
+ * current appearance. This manifest tracks changes to HTML drawings, not implementation fidelity.
+ * Until this manifest
  * existed, a drawing could be edited — accidentally or by an agent that thought it was helping —
  * and nothing would notice. `--check` makes that as loud as a failing test.
  *
@@ -72,9 +74,8 @@ if (process.argv.includes("--check")) {
     process.exit(1);
   }
 
-  const recordedMockups = recorded && typeof recorded.mockups === "object" && recorded.mockups !== null
-    ? recorded.mockups
-    : {};
+  const recordedMockups =
+    recorded && typeof recorded.mockups === "object" && recorded.mockups !== null ? recorded.mockups : {};
   const recordedFiles = new Set(Object.keys(recordedMockups));
   const diskFiles = new Set(mockups);
 

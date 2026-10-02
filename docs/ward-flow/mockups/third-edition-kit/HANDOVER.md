@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../../../../AGENTS.md) and [Ward entry point](../../README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Ward Flow third edition: handover
 
 > **Status on 8 September 2026, 15:40 AWST.** The work this document describes is finished. The Command
@@ -253,3 +260,5 @@ edition too, it is one shared string in the shell script, changed in one pass.
 
 **Prettier:** every changed file was formatted per file with `npx prettier --write` (real run times, files
 changed). No whole-tree reflow was run on this branch; all its commits sit under `docs/`.
+
+<!-- docs-script-refs:historical-end -->

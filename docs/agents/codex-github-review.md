@@ -1,3 +1,23 @@
+# Ward Flow review handling
+
+## Current contract — 2 October 2026
+
+Review requires an explicit task naming Ward and its exact branch/head. Keep findings
+concrete and repairs scoped; preserve clinical, privacy, ownership and provider boundaries.
+Local source inspection is separate from hosted PR evidence.
+
+The inherited automatic repair workflow and enforcing checker are absent here.
+No marker automatically closes a thread. If separately authorised to reply/resolve,
+use supported tools, verify the actual result, and leave unresolved or product-sensitive
+questions open with a blocker. No unattended repair or publication authority is created.
+
+## Historical PsychSift review contract
+
+The following source is retained for provenance only. Its repository, bot, workflow,
+provider and publication assumptions are not active Ward instructions.
+
+<!-- docs-script-refs:historical-start -->
+
 # Codex GitHub Review Behavior & Auto-Fixer
 
 <!-- BEGIN:codex-github-review -->
@@ -106,3 +126,5 @@ Automatic Codex review is review-only by default. This repository includes `.git
 `@codex resolve actionable Codex review findings for this pull request and current head using the repository instructions. This is the pull request's single automatic repair pass: do not perform a fresh review, create new standalone findings, or request another review. Work only the existing unresolved Codex threads on the current head. The workflow will provide the only allowed repository, pull-request head branch, and starting commit. Publish every approved fix to that exact head branch through the authenticated GitHub connector; never use a detached or synthetic work branch and never create a stacked pull request. Verify the pull-request head contains the pushed commit before reporting success. Always fix P0 and P1 findings. For P2 and lower findings, fix only clear, scoped, low-risk issues; otherwise disposition them with a concise reason. For a fixed thread, reply with <!-- codex-thread-disposition:resolved --> followed by <!-- codex-thread-result:fixed-head:<40-character pushed commit SHA> -->. For a no-code disposition, use <!-- codex-thread-disposition:resolved --> followed by <!-- codex-thread-result:no-change -->. A local-only commit is not a fix. If publication or verification fails, use neither result marker, do not claim success, and leave the thread open with the blocker. Finish only after every actionable thread is fixed or dispositioned and closed, or explicitly left open for a human decision. Do not update the branch from main, address unrelated reviews, broaden scope, or create more than one scoped fix commit. Do not use external APIs, paid services, credentials, dependency changes, or broad refactors unless explicitly authorized. Add targeted tests where behavior changes and run the narrowest relevant validation.`
 
 <!-- END:codex-github-review -->
+
+<!-- docs-script-refs:historical-end -->

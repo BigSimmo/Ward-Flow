@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../AGENTS.md) and [Ward entry point](ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Ward Flow Phase 5 — session handover
 
 > **STATUS: Phase 5 is COMPLETE and MERGED. This file is a historical record, not a resume
@@ -480,3 +487,5 @@ what existed rather than recreating it blindly.
   unit tests are pre-existing and to start the bundle comparison in §6.
 
 Never assume `localhost:3000`. Use `npm run ensure` and the URL it prints.
+
+<!-- docs-script-refs:historical-end -->

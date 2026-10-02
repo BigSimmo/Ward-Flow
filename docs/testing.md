@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../AGENTS.md) and [Ward entry point](ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Testing and verification
 
 > [!NOTE]
@@ -483,3 +490,5 @@ Before opening a UI PR, confirm:
 - **Unlayered CSS.** If the change adds a class rule outside `@layer` that sets a border, background, colour, shadow or outline, `tests/style-contract-registry.test.ts` will fail until it is registered. Add a rendered-effect contract rather than an exemption where the rule matters visually — see "Visual regression and style contracts".
 - **Verify** ([design-system](./design-system/README.md) and GATES): follow the risk tiers in root `AGENTS.md`. Prove changed component behaviour with the focused DOM test first; run `npm run ensure` before browser work and use the narrowest affected journey. Select one appropriate broad handoff gate when the diff crosses owners, cannot be bounded, or applicable PR/handoff policy requires it; do not routinely stack `verify:cheap`, `verify:pr-local`, and `verify:ui`. Add a manual dark-mode + forced-colors spot check when those rendered states can plausibly change.
 - Architecture and state-ownership conventions: [`docs/frontend-architecture.md`](./frontend-architecture.md).
+
+<!-- docs-script-refs:historical-end -->

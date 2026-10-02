@@ -37,6 +37,8 @@ jobs:
         run: node scripts/ward-ci-public/plan.mjs
       - name: Check CI contracts
         run: node scripts/ward-ci-public/check-contracts.mjs
+      - name: Check maintained document commands
+        run: npm run docs:check-scripts
       - name: Check Ward document links
         run: npm run check:ward-doc-links
       - name: Check Ward screen verification record

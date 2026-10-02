@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../AGENTS.md) and [Ward entry point](ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Productivity workflows
 
 The repository exposes a validated catalog of 35 canonical Database skills. Run `npm run skills` to list them by category. `npm run check:skills` validates the 35 canonical skills, 8 compatibility aliases, and every Claude, Cursor, and PsychSift plugin `SKILL.md` for metadata, local links, npm commands, frozen-ledger discipline, provider approval boundaries, and destructive-action safeguards.
@@ -38,4 +45,7 @@ The repository exposes seven offline-first workflow planners. Each planner inspe
 
 The existing shared `workflow:run`, `workflow:status`, `workflow:verify`, `workflow:deps`, `workflow:clean-state`, `workflow:export`, and `workflow:handoff` commands now resolve their shared implementation through the repository's Git common directory. This keeps them portable in linked and detached Codex worktrees. Set `CODEX_LOCAL_WORKFLOW_ROOT` only when the shared tools live somewhere non-standard.
 
-The matching agent skills live in `.agents/skills/`. Skills provide judgment and repair loops; scripts provide deterministic selection, safety enforcement, and evidence.
+The matching agent skills lived in that repository's `.agents/skills/`; their historical presence
+does not establish availability in this checkout or the current agent environment.
+
+<!-- docs-script-refs:historical-end -->

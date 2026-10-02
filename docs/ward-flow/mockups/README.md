@@ -5,19 +5,21 @@
 The drawings of Ward Flow, and the standard they are drawn to. **The standard is 224 KB and is not
 a landing page; this is.**
 
-🔴 **Ward Flow is never pushed.** Both ward branches exist on this disk only. No push, no PR, no
-remote. Never delete or move anything under `docs/ward-flow/` without asking the owner and saying
+**Current scope — 2 October 2026.** These drawings record historical designs. The
+accepted current app is appearance authority under the dedicated repository's
+[AGENTS.md](../../../AGENTS.md). The former local-only/no-PR procedure is historical;
+publication requires separate authority. Never delete or move anything under `docs/ward-flow/` without asking the owner and saying
 exactly what would be lost.
 
 ---
 
 ## The standard, in three mirrors that must agree
 
-| Read this                                                              | When                                                         |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------ |
-| [`WARD-FLOW-DESIGN-SYSTEM.md`](WARD-FLOW-DESIGN-SYSTEM.md)             | **The source of truth.** When the mirrors differ, this wins. |
-| [`design-system-third-edition.html`](design-system-third-edition.html) | The same thing as a page, with live components.              |
-| [`ward-flow-digest.html`](ward-flow-digest.html)                       | The reader's brief — the same rulings in fewer words.        |
+| Read this                                                              | When                                                                  |
+| ---------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| [`WARD-FLOW-DESIGN-SYSTEM.md`](WARD-FLOW-DESIGN-SYSTEM.md)             | Historical drawing standard; current approved app governs appearance. |
+| [`design-system-third-edition.html`](design-system-third-edition.html) | The same thing as a page, with live components.                       |
+| [`ward-flow-digest.html`](ward-flow-digest.html)                       | The reader's brief — the same rulings in fewer words.                 |
 
 **The sections worth knowing by number:** §5.6 the shell · §6 the components · §8 wording and
 honesty about data · §9 the accessibility floor · §10 the definition of done · §11 the recipe and
@@ -222,7 +224,7 @@ Give one agent one page, on
 touches it. **The only reader is a person.** So a defect fixed in the built screens can be redrawn
 and approved back in, and nothing anywhere goes red. That has happened here.
 
-- **No coloured bar along any edge** of a row, candidate or card, brass included, and **no highlight
+- **Historical drawing rule, superseded where the accepted app differs: no coloured bar along any edge** of a row, candidate or card, brass included, and **no highlight
   along the top** of a panel or control. Owner, 9 September 2026.
 - **An invented figure carries its own provenance.** Owner, 9 September 2026: _"the number should
   always carry that it's invented"_. **A sentence must be true READ ALONE** — quoted, screen-read,

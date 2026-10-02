@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../../../AGENTS.md) and [Ward entry point](../README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Front-door boards — the build plan
 
 **Builds:** the design locked in [`FRONT-DOOR-BOARDS-DECISION.md`](FRONT-DOOR-BOARDS-DECISION.md),
@@ -248,3 +255,5 @@ run is not evidence these screens work. **Look at the screen.**
 3. Does this design govern only these three boards, or every Ward Flow screen? The plan assumes
    the three.
 4. Arrows (`←` / `→`) or up-down (`↓` / `↑`) for direction? Two languages currently disagree.
+
+<!-- docs-script-refs:historical-end -->

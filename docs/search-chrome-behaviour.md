@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../AGENTS.md) and [Ward entry point](ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Search chrome behaviour contract
 
 This repo uses one shared search experience across the global shell, dashboard result pages, and document-detail/source routes. Keep the behaviour page-aware but predictable.
@@ -948,3 +955,5 @@ Before changing search bar behaviour:
 - Complete [the physical iPhone checklist](phone-chrome-physical-acceptance.md) for shared safe-area/ownership changes; local Chromium cannot certify Safari or cold-launch PWA physical paint.
 - For hide-on-scroll changes, re-read "Scroll hide/reveal" and prove the reveal at tablet and desktop, not just the hide.
 - If a new route has a page-owned composer, document it here and add it to the route/search coverage rather than relying on comments in a component.
+
+<!-- docs-script-refs:historical-end -->

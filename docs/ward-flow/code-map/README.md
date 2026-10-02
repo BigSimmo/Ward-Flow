@@ -109,8 +109,7 @@ apply the former Database ward-line fold procedure to this repository.
    editing, and never delete them without the owner (protected paths).
 7. **Double-clicking a drawing.** Serve it for historical comparison; opened as a bare file it renders
    differently. The rendered app is the current design authority.
-8. **Hex colours, small tap targets, coloured edge bars.** Design tokens only, 48px taps, no edge bars
-   or top highlights (owner rulings; tests enforce most of this).
+8. **Appearance and accessible controls.** Preserve the accepted app and understandable status. Historical token/edge-bar prescriptions do not authorise restyling; retain accessible tap targets. Older edge-bar and top-highlight restrictions describe drawings; inspect current scoped tests before changing controls.
 9. **Mental Health Act wording.** No section numbers and no computed legal time limits; unconnected
    controls say exactly "Not wired in this prototype."
 10. **Trusting a document's number or SHA.** Quote a figure with the tree it came from, and check

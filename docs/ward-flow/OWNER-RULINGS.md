@@ -4,12 +4,12 @@
 > `node scripts/ward-flow/owner-rulings-index.mjs` regenerates it; `--check` fails when it is out
 > of date. Edit a ruling in its own source file under `docs/ward-flow/`, never here.
 
-Scanned `docs/ward-flow/owner-*.md` and `docs/ward-flow/archive/dated-notes/owner-*.md` — **34 files**. The brief also asked about
+Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/ward-flow/archive/dated-notes/owner-*.md` — **35 files**. The brief also asked about
 `docs/ward-flow/*owner*ruling*.md`: that pattern matched **zero files beyond the first set** — every file it catches already starts with `owner-`.
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**481 rulings/items extracted, across 29 of 34 files.**
+**509 rulings/items extracted, across 30 of 35 files.**
 **5 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -24,13 +24,13 @@ specifically so that distinction survives. A file's own title (also quoted) is u
 tell: `owner-question-*` and `owner-*-to-settle-*` files are frequently still open.
 
 ⚠️ **IDs are NOT globally unique across this corpus.** The same token has been issued
-independently in more than one file 18 time(s) below (e.g. `D-1`).
+independently in more than one file 34 time(s) below (e.g. `D-1`).
 Where that happens every occurrence is listed, in the order discovered — confirm which file's
 instance is the one you mean before citing it.
 
 ---
 
-## ID index — 299 distinct IDs
+## ID index — 300 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -67,58 +67,102 @@ safe global key across 30 files.
 | `B-11` | `archive/dated-notes/owner-questions-queued-2026-09-10.md`:53 | 🔴 **WITHDRAWN AND REPLACED — my ruling rested on a false premise.** I wrote that "59 of 62 screens have nothing to switch to" and ruled a theme switcher out of the shell on it. **The 3-of-62 count was TRUE and the conclusion was FALSE:** dark is carried by a CLASS that redefines the tokens (`@custom-variant dark`,… [truncated — full text at line 53] |
 | `B-12` | `archive/dated-notes/owner-questions-queued-2026-09-10.md`:55 | **A statistics link on Search hub rows that the drawing does not draw.** Built because the plan asked and Ward Lead approved it; §3.3 says nothing beyond what a mockup draws is built. — **Keep it** — it resolves and is tested — but it is his to veto, and it is logged as a plan addition rather than carried as the… [truncated — full text at line 55] |
 | `B-13` | `archive/dated-notes/owner-questions-queued-2026-09-10.md`:54 | 🔴 **What does Ward Flow do for a person whose gender the two-value field cannot hold?** You ruled two genders **for beds** — _"Only two genders as it is for beds"_ — and that is built. **PT-007 in the seeded data has recorded sex "Non-binary" and no gender**, deliberately: the field cannot represent her and inventing… [truncated — full text at line 54] |
-| `D-1` ⚠️ **2 occurrences — not unique** | | |
+| `D-1` ⚠️ **3 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-12-four-answers.md`:16 | D-1 · Legal forms: split the list in two |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:85 | D-1 — 🔴 The screen is called **Patient**, not "Patient Now" |
-| `D-2` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `decisions.md`:14 | D-1. Ward Flow is local only, with no linked repository (Replaced by D-27) |
+| `D-2` ⚠️ **3 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-12-four-answers.md`:57 | D-2 · Raise the three unbindable table thresholds |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:108 | D-2 — 🔴 Communication: BUILD IT. The system must be able to tell someone something. |
-| `D-3` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:215 | D-3 — 🔴 The 12px floor is ADOPTED. Screen by screen, not as a sweep. |
+| ↳ | `decisions.md`:24 | D-2. Railway is disconnected |
+| `D-3` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:215 | D-3 — 🔴 The 12px floor is ADOPTED. Screen by screen, not as a sweep. |
+| ↳ | `decisions.md`:32 | D-3. The PsychSift and Database code is being retired from Ward Flow |
 | `D-3b` | `archive/dated-notes/owner-decisions-2026-09-12-four-answers.md`:77 | D-3b · The data-conditional absence sweep is DEFERRED |
-| `D-4` ⚠️ **3 occurrences — not unique** | | |
+| `D-4` ⚠️ **4 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-12-four-answers.md`:97 | D-4 · The deliberate sub-12px exception stands if its reasoning is sound |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:263 | D-4 · WARD LEAD RULING, not the owner's — the Access record's false assurance |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:390 | D-4 ADDENDUM, 2026-09-11 — 🔴 the OTHER half of that sentence, found by Lane C after the fix |
-| `D-5` ⚠️ **3 occurrences — not unique** | | |
+| ↳ | `decisions.md`:40 | D-4. Synthetic patients only |
+| `D-5` ⚠️ **4 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-12-routing-and-nine-flags.md`:15 | D-5 · 🔴 A NEW STANDING RULE: PROTECTED-WORK DELETIONS COME TO WARD VERIFIER FIRST |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:340 | D-5 · WARD LEAD RULING, not the owner's — gender reaches BOTH bed gates or neither |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:431 | D-5 MEASUREMENT, 2026-09-11 — the wiring task handed back, and the arithmetic is starker than I expected |
-| `D-6` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `decisions.md`:48 | D-5. Parallel threads in separate worktrees, folded one at a time |
+| `D-6` ⚠️ **3 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-12-routing-and-nine-flags.md`:52 | D-6 · 🟢 THE `--t-0` COLLISION — amend the brief in the same change |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:472 | D-6 · WARD LEAD RULING — "Not recorded" and "Not yet recorded" are BOTH used, deliberately |
-| `D-7` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `decisions.md`:59 | D-6. Aboriginal cultural safety review deferred |
+| `D-7` ⚠️ **3 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-12-routing-and-nine-flags.md`:72 | D-7 · 🟢 THE REMAINING SEVEN ARE FLAGGED TO WARD LEAD |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:499 | D-7 · WARD LEAD RULING — the Patient screen SHOWS gender, and the addition is logged as an addition |
-| `D-8` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `decisions.md`:67 | D-7. The first four milestones, in this order |
+| `D-8` ⚠️ **3 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-12-fold-and-authorisation.md`:9 | D-8 · 🔴 "FOLD INTO MAIN" ALWAYS MEANS THE LOCAL WARD FLOW LINE |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:545 | D-8 · WARD LEAD RULING — the announced marker says "invented NAMES", never "invented people" |
-| `D-9` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `decisions.md`:79 | D-8. Josh's standing rulings, numbered R1 to R16, for every session and tool |
+| `D-9` ⚠️ **3 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-12-fold-and-authorisation.md`:51 | D-9 · 🟢 THE MENTAL HEALTH ACT AUTHORISATION GATE IS OVERRIDABLE — with the owner's clinical reason |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:589 | D-9 · WARD LEAD RULING — the referral board's table MAY scroll sideways; the missing thing is the affordance |
-| `D-10` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `decisions.md`:110 | D-9. Josh's rulings of 25 September, 11:43 to 12:00 (R17 to R21) |
+| `D-10` ⚠️ **3 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-12-fold-and-authorisation.md`:91 | D-10 · ⏸️ THE SMALL-TEXT RAISE IS DEFERRED — with the triggers written down, because a deferral without one is a drop |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:618 | D-10 · WARD LEAD RULING — the overflow affordance is a SENTENCE first and a measured border second, not the standard's shade |
-| `D-11` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `decisions.md`:124 | D-10. Gate build type check (R22) |
+| `D-11` ⚠️ **3 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-12-fold-and-authorisation.md`:129 | D-11 · 🔴 TWO LEDGERS IS CORRECT AND INTENDED — WARD FLOW TASKS GO ON THE WARD FLOW LEDGER, AND THE MAIN PROJECT'S IS DISREGARDED FOR THIS PROJECT |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:685 | D-11 · A-1 — the half-written referral history WARNS, and is never stored |
-| `D-12` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:704 | D-12 · A-2 — the referrer is the RECORDED SOURCE, and a person only if the record carries one |
-| `D-13` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:720 | D-13 · A-3 and A-4 — both resolve FOR THE CODE; the drawings change |
-| `D-14` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:739 | D-14 · A-6 and A-8 — ADD THE LINK, AND MAKE THE GUARD ENFORCE IN THE SAME CHANGE. Never one without the other. |
-| `D-15` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:778 | D-15 · A-7 — the figure NAMES ITS OWN CLOCK, or it does not ship |
-| `D-16` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:799 | D-16 · WARD LEAD RULING — the unwired primary actions use §8.6's EXISTING sentence; nothing new is invented |
-| `D-17` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:843 | D-17 · WARD LEAD RULING — A-8: FD-23 wins. The Patient screen never shows where else a patient has been. |
-| `D-18` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:878 | D-18 · WARD LEAD RULING — the referral query contract carries MODEL values; and `gp` is a question for the owner, not a mapping for me |
-| `D-19` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:922 | D-19 · WARD LEAD RULING — "something is already open for this person" is PERMITTED; "where" never is |
-| `D-20` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `decisions.md`:133 | D-11. Rulings of 25 September, 12:41 (R23 to R25) |
+| `D-12` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:704 | D-12 · A-2 — the referrer is the RECORDED SOURCE, and a person only if the record carries one |
+| ↳ | `decisions.md`:148 | D-12. Rulings of 25 September, 12:43 (R26 to R31) |
+| `D-13` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:720 | D-13 · A-3 and A-4 — both resolve FOR THE CODE; the drawings change |
+| ↳ | `decisions.md`:166 | D-13. Tooling tests in batch gates (R32) |
+| `D-14` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:739 | D-14 · A-6 and A-8 — ADD THE LINK, AND MAKE THE GUARD ENFORCE IN THE SAME CHANGE. Never one without the other. |
+| ↳ | `decisions.md`:176 | D-14. Standing defaults: decide small things without asking |
+| `D-15` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:778 | D-15 · A-7 — the figure NAMES ITS OWN CLOCK, or it does not ship |
+| ↳ | `decisions.md`:187 | D-15. Rulings of 25 September, 13:26 (R33 to R35) |
+| `D-16` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:799 | D-16 · WARD LEAD RULING — the unwired primary actions use §8.6's EXISTING sentence; nothing new is invented |
+| ↳ | `decisions.md`:200 | D-16. Legal overrides and form receipts, 25 September 13:51 UTC |
+| `D-17` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:843 | D-17 · WARD LEAD RULING — A-8: FD-23 wins. The Patient screen never shows where else a patient has been. |
+| ↳ | `decisions.md`:213 | D-17. Morning roll-up time is Josh's own default (25 September) |
+| `D-18` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:878 | D-18 · WARD LEAD RULING — the referral query contract carries MODEL values; and `gp` is a question for the owner, not a mapping for me |
+| ↳ | `decisions.md`:224 | D-18. The privacy lock stops saving only for typed text (25 September) |
+| `D-19` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:922 | D-19 · WARD LEAD RULING — "something is already open for this person" is PERMITTED; "where" never is |
+| ↳ | `decisions.md`:234 | D-19. Rulings of 25 September, evening (walkthrough, leave beds, PsychSift, gender display) |
+| `D-20` ⚠️ **3 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:967 | D-20 · WARD LEAD RULING — the drawing wins; the vocabulary anchor was never the heading |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1010 | D-20-REVISED · the drawing renames BOTH, so neither side is taken whole |
-| `D-21` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1058 | D-21 · WARD LEAD RULING — tasks 10 and 12 are CLOSED, not deferred, and not built as callerless modules |
-| `D-22` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1084 | D-22 · SHAPE 2 — the landmark label and the heading stop being two strings |
-| `D-23` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1121 | D-23 · The bed board passes an empty leave-bed list into three capacity figures, and says nothing |
-| `D-24` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1142 | D-24 · The raw `1.2` line-height — token it, and accept that community no longer matches |
-| `D-25` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1161 | D-25 · Command's `deadlineLine` sentence is not built — and this DEFERS the R-5 question rather than answering it |
-| `D-26` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1184 | D-26 · `edPressure` becomes a projection of `edHomeSummaries` — the two screens stop being able to disagree |
-| `D-27` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1213 | D-27 · The word for a free bed is READY — and the ruling is about the WORD, not the identifier |
+| ↳ | `decisions.md`:257 | D-20. One high-contrast colour check retired (26 September) |
+| `D-21` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1058 | D-21 · WARD LEAD RULING — tasks 10 and 12 are CLOSED, not deferred, and not built as callerless modules |
+| ↳ | `decisions.md`:268 | D-21. Coordinator bed board: all nine recommended answers (26 September) |
+| `D-22` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1084 | D-22 · SHAPE 2 — the landmark label and the heading stop being two strings |
+| ↳ | `decisions.md`:280 | D-22. No legal limits in hour rules; the rest are labelled defaults (26 September) |
+| `D-23` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1121 | D-23 · The bed board passes an empty leave-bed list into three capacity figures, and says nothing |
+| ↳ | `decisions.md`:296 | D-23. Leave-bed fields kept; patient search stops matching by ward (26 September) |
+| `D-24` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1142 | D-24 · The raw `1.2` line-height — token it, and accept that community no longer matches |
+| ↳ | `decisions.md`:310 | D-24. Hour-rules morning list: all A (26 September) |
+| `D-25` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1161 | D-25 · Command's `deadlineLine` sentence is not built — and this DEFERS the R-5 question rather than answering it |
+| ↳ | `decisions.md`:334 | D-25. The lone-patient check counts free beds on both matching paths (26 September) |
+| `D-26` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1184 | D-26 · `edPressure` becomes a projection of `edHomeSummaries` — the two screens stop being able to disagree |
+| ↳ | `decisions.md`:342 | D-26. Select fold checks by changed risk (27 September) |
+| `D-27` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1213 | D-27 · The word for a free bed is READY — and the ruling is about the WORD, not the identifier |
+| ↳ | `decisions.md`:358 | D-27. Ward Flow uses its dedicated repository (28 September) |
+| `D-28` | `decisions.md`:371 | D-28. Design Modernization & Anti-Box Architecture (30 September 2026) |
 | `D-30` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1238 | D-30 · `Unit.forensic` is a WARD flag, and every rendered string says so |
 | `D-31` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1367 | D-31 · The plan's disposition — delete one half, re-derive the other |
 | `D-32` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1289 | D-32 · D-6 is restated: ONE WORDING PER STATE, and the states are named |
@@ -402,7 +446,44 @@ safe global key across 30 files.
 
 ---
 
-## By file, newest first — 29 files
+## By file, newest first — 30 files
+
+### `decisions.md` (2026-09-25 – 2026-09-26 (mixed, see file))
+
+**Recorded decision log.** Read the source for supersession and current scope; indexing does not grant authority.
+
+**Title:** Ward Flow — decision log
+
+28 item(s):
+
+- `D-1` — line 14, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
+- `D-2` — line 24, heading: "D-2. Railway is disconnected"
+- `D-3` — line 32, heading: "D-3. The PsychSift and Database code is being retired from Ward Flow"
+- `D-4` — line 40, heading: "D-4. Synthetic patients only"
+- `D-5` — line 48, heading: "D-5. Parallel threads in separate worktrees, folded one at a time"
+- `D-6` — line 59, heading: "D-6. Aboriginal cultural safety review deferred"
+- `D-7` — line 67, heading: "D-7. The first four milestones, in this order"
+- `D-8` — line 79, heading: "D-8. Josh's standing rulings, numbered R1 to R16, for every session and tool"
+- `D-9` — line 110, heading: "D-9. Josh's rulings of 25 September, 11:43 to 12:00 (R17 to R21)"
+- `D-10` — line 124, heading: "D-10. Gate build type check (R22)"
+- `D-11` — line 133, heading: "D-11. Rulings of 25 September, 12:41 (R23 to R25)"
+- `D-12` — line 148, heading: "D-12. Rulings of 25 September, 12:43 (R26 to R31)"
+- `D-13` — line 166, heading: "D-13. Tooling tests in batch gates (R32)"
+- `D-14` — line 176, heading: "D-14. Standing defaults: decide small things without asking"
+- `D-15` — line 187, heading: "D-15. Rulings of 25 September, 13:26 (R33 to R35)"
+- `D-16` — line 200, heading: "D-16. Legal overrides and form receipts, 25 September 13:51 UTC"
+- `D-17` — line 213, heading: "D-17. Morning roll-up time is Josh's own default (25 September)"
+- `D-18` — line 224, heading: "D-18. The privacy lock stops saving only for typed text (25 September)"
+- `D-19` — line 234, heading: "D-19. Rulings of 25 September, evening (walkthrough, leave beds, PsychSift, gender display)"
+- `D-20` — line 257, heading: "D-20. One high-contrast colour check retired (26 September)"
+- `D-21` — line 268, heading: "D-21. Coordinator bed board: all nine recommended answers (26 September)"
+- `D-22` — line 280, heading: "D-22. No legal limits in hour rules; the rest are labelled defaults (26 September)"
+- `D-23` — line 296, heading: "D-23. Leave-bed fields kept; patient search stops matching by ward (26 September)"
+- `D-24` — line 310, heading: "D-24. Hour-rules morning list: all A (26 September)"
+- `D-25` — line 334, heading: "D-25. The lone-patient check counts free beds on both matching paths (26 September)"
+- `D-26` — line 342, heading: "D-26. Select fold checks by changed risk (27 September)"
+- `D-27` — line 358, heading: "D-27. Ward Flow uses its dedicated repository (28 September)"
+- `D-28` — line 371, heading: "D-28. Design Modernization & Anti-Box Architecture (30 September 2026)"
 
 ### `archive/dated-notes/owner-answers-2026-09-18.md` (2026-09-18)
 
@@ -759,6 +840,8 @@ safe global key across 30 files.
 
 ### `archive/dated-notes/owner-question-2026-09-11-who-sent-the-referral.md` (2026-09-11)
 
+**Question/proposal source.** An indexed item is not an approved decision; read the source for an explicit owner answer.
+
 **Title:** Owner question, 2026-09-11 — Ward Flow does not record who sent a referral
 
 4 item(s):
@@ -769,6 +852,8 @@ safe global key across 30 files.
 - #4 (no owner-issued ID, this file's own numbering) — line 68, heading: "4 · A link can carry a team, and the form has nowhere to put it"
 
 ### `archive/dated-notes/owner-question-2026-09-11-gp-referrals.md` (2026-09-11)
+
+**Question/proposal source.** An indexed item is not an approved decision; read the source for an explicit owner answer.
 
 **Title:** Owner question, 2026-09-11 — is a GP referral its own thing?
 
@@ -782,6 +867,8 @@ safe global key across 30 files.
 - #6 (no owner-issued ID, this file's own numbering) — line 167, heading: "6 · The question, restated with the new fact"
 
 ### `archive/dated-notes/owner-questions-queued-2026-09-10.md` (2026-09-10)
+
+**Question/proposal source.** An indexed item is not an approved decision; read the source for an explicit owner answer.
 
 **Title:** Questions queued for the owner — the third-edition build
 
@@ -913,6 +1000,8 @@ safe global key across 30 files.
 - `R-B-18` — line 226, heading: "R-B-18 — The whole state"
 
 ### `archive/dated-notes/owner-decisions-to-settle-2026-09-04.md` (2026-09-04)
+
+**Question/proposal source.** An indexed item is not an approved decision; read the source for an explicit owner answer.
 
 **Title:** Ward Flow: everything waiting on you
 
