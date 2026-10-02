@@ -41,6 +41,7 @@ import { usePrintableDisclosures } from "@/components/ward-management/use-printa
 
 import styles from "./statistics.module.css";
 import pageStyles from "./statistics-landing-third-edition.module.css";
+import { StatisticsSubNav } from "./statistics-sub-nav";
 
 /**
  * THE COORDINATOR STATISTICS SCREEN — Third Edition Platinum Raised Cool Hub.
@@ -91,22 +92,6 @@ function words(n: number): string {
   ];
   return W[n] || String(n);
 }
-
-const FLOW_HISTORY_DEFAULT = [
-  { adm: 12, dis: 12 },
-  { adm: 13, dis: 13 },
-  { adm: 14, dis: 12 },
-  { adm: 15, dis: 12 },
-  { adm: 14, dis: 11 },
-  { adm: 13, dis: 10 },
-  { adm: 12, dis: 9 },
-  { adm: 12, dis: 9 },
-  { adm: 12, dis: 10 },
-  { adm: 12, dis: 11 },
-  { adm: 14, dis: 12 },
-  { adm: 15, dis: 12 },
-  { adm: 16, dis: 13 },
-];
 
 const COMMUNITY_TEAMS_STATISTICS = [
   { id: "midland", name: "Midland", suburbs: 70 },
@@ -181,21 +166,6 @@ export function StatisticsScreen({
 
   const reportDayCaption = `${formatReportDay(now, dayZero)}, midnight to midnight, across all wards`;
 
-  // Flow over time data
-  const flowDays = useMemo(() => {
-    return [...FLOW_HISTORY_DEFAULT, { adm: admissionsCount, dis: dischargesCount }];
-  }, [admissionsCount, dischargesCount]);
-
-  const admTotal = flowDays.reduce((s, d) => s + d.adm, 0);
-  const disTotal = flowDays.reduce((s, d) => s + d.dis, 0);
-  const admMean = Math.round(admTotal / flowDays.length);
-  const disMean = Math.round(disTotal / flowDays.length);
-  const maxMvmt = Math.max(16, Math.ceil(Math.max(...flowDays.map((d) => Math.max(d.adm, d.dis))) / 4) * 4);
-  const minAdm = Math.min(...flowDays.map((d) => d.adm));
-  const maxAdm = Math.max(...flowDays.map((d) => d.adm));
-  const minDis = Math.min(...flowDays.map((d) => d.dis));
-  const maxDis = Math.max(...flowDays.map((d) => d.dis));
-
   // Emergency departments
   const emergencyDepts = useMemo(() => {
     const allEds = allEmergencyDepartments();
@@ -247,7 +217,6 @@ export function StatisticsScreen({
   const [teamSortAsc, setTeamSortAsc] = useState(false);
 
   // Flow chart interactive hover state
-  const [hoveredDayIdx, setHoveredDayIdx] = useState<number | null>(null);
 
   const handleWardSort = (col: "name" | "hosp" | "beds" | "ready" | "occ" | "ref") => {
     if (wardSortCol === col) {
@@ -453,37 +422,6 @@ export function StatisticsScreen({
 
   usePrintableDisclosures();
 
-  // SVG chart coordinate mapping
-  const CH_LEFT = 40;
-  const CH_RIGHT = 120;
-  const CH_TOP = 18;
-  const CH_BASE = 172;
-  const CH_WIDTH = 760;
-  const CH_HEIGHT = 214;
-
-  const px = (i: number) => CH_LEFT + (i * (CH_WIDTH - CH_RIGHT - CH_LEFT)) / (flowDays.length - 1);
-  const py = (v: number) => CH_BASE - (v * (CH_BASE - CH_TOP)) / maxMvmt;
-
-  const admPoints = flowDays.map((d, i) => `${px(i).toFixed(1)},${py(d.adm).toFixed(1)}`).join(" ");
-  const disPoints = flowDays.map((d, i) => `${px(i).toFixed(1)},${py(d.dis).toFixed(1)}`).join(" ");
-
-  const lastIndex = flowDays.length - 1;
-  const endX = px(lastIndex);
-  const endYAdm = py(admissionsCount);
-  const endYDis = py(dischargesCount);
-
-  const admAreaD =
-    `M ${px(0).toFixed(1)} ${CH_BASE} L ` +
-    flowDays.map((d, i) => `${px(i).toFixed(1)} ${py(d.adm).toFixed(1)}`).join(" L ") +
-    ` L ${px(lastIndex).toFixed(1)} ${CH_BASE} Z`;
-
-  const disAreaD =
-    `M ${px(0).toFixed(1)} ${CH_BASE} L ` +
-    flowDays.map((d, i) => `${px(i).toFixed(1)} ${py(d.dis).toFixed(1)}`).join(" L ") +
-    ` L ${px(lastIndex).toFixed(1)} ${CH_BASE} Z`;
-
-  const yAvgAdm = py(admMean);
-
   return (
     <div
       className={`${styles.screen} ${pageStyles.screen}`}
@@ -497,7 +435,7 @@ export function StatisticsScreen({
         </header>
 
         {/* ══════════ REPORTING PERIOD STRIP (Test contract preserved, styled cleanly) ══════════ */}
-        <div data-testid="ward-statistics-reporting-period" style={{ display: "none" }} aria-hidden="true">
+        <div data-testid="ward-statistics-reporting-period" className={pageStyles.reportingContext}>
           <span>Current state</span>
           <span>7-day and 30-day history is not recorded.</span>
           <span>No target recorded</span>
@@ -518,15 +456,18 @@ export function StatisticsScreen({
             </p>
           )}
 
-          <div className={pageStyles.pb}>
-            <p className={pageStyles.lede}>
-              Every ward, emergency department and community mental health team the service runs, in one screen.{" "}
-              <b>{units.length}</b> wards across <b>{hospitalsCount}</b> hospitals, <b>{emergencyDepts.length}</b>{" "}
-              emergency departments and <b>{communityTeams.length}</b> community teams, spanning the Perth metropolitan
-              area, the South West and remote Western Australia. This page is read only. Every figure below belongs to a
-              service that answers for it on its own screen, where the decisions are actually made.
-            </p>
+          <StatisticsSubNav
+            activeTab="overview"
+            isRouteNav={true}
+            counts={{
+              wards: units.length,
+              emergency: emergencyDepts.length,
+              community: communityTeams.length,
+              referrals: refOpen,
+            }}
+          />
 
+          <div className={pageStyles.pb}>
             <div className={pageStyles.facts}>
               <span className={pageStyles.chip}>
                 <b>{totalBeds}</b>
@@ -547,13 +488,7 @@ export function StatisticsScreen({
                 <span>community teams</span>
               </span>
               <span className={pageStyles.chip}>
-                <span>Confirmed</span>
-                <b>10:42</b>
-                <span>by</span>
-                <b>{hospitalsCount}</b>
-                <span>of</span>
-                <b>{hospitalsCount}</b>
-                <span>hospitals</span>
+                <span>Freshness not recorded</span>
               </span>
             </div>
 
@@ -601,9 +536,6 @@ export function StatisticsScreen({
               <dd>
                 {occupiedBeds}
                 <small>{occupiedPct}% of all beds</small>
-                <span className={pageStyles.delta}>
-                  up <b>6</b> on yesterday
-                </span>
               </dd>
             </div>
             <div className={pageStyles.kpi}>
@@ -620,9 +552,6 @@ export function StatisticsScreen({
               <dd>
                 {waitingCount}
                 <small>in an emergency department, by department below</small>
-                <span className={pageStyles.delta}>
-                  up <b>3</b> on yesterday
-                </span>
               </dd>
             </div>
             <div className={pageStyles.kpi}>
@@ -655,7 +584,6 @@ export function StatisticsScreen({
             <h2 id="ward-statistics-index-heading" className={styles.indexHeading}>
               Where to look
             </h2>
-            <p className={styles.indexIntro}>Choose a section for its current measures and definitions.</p>
             <ul className={styles.indexList}>
               {STATISTICS_SECTIONS.map((sec) => (
                 <li key={sec.id} className={styles.indexItem}>
@@ -665,7 +593,6 @@ export function StatisticsScreen({
                     data-testid={`ward-statistics-index-entry-${sec.id}`}
                   >
                     <span className={styles.indexLabel}>{sec.label}</span>
-                    <span className={styles.indexDescription}>{sec.description}</span>
                   </Link>
                 </li>
               ))}
@@ -711,335 +638,22 @@ export function StatisticsScreen({
         </WardPanel>
 
         {/* ══════════ PANEL 2: FLOW OVER TIME ══════════ */}
-        <WardPanel title="Flow over time" count={`Last ${flowDays.length} days`} testId="ward-statistics-patients">
-          <div className={pageStyles.pb}>
-            <p className={pageStyles.scopeNote}>
-              Admissions and discharges recorded across every ward, each day for the last fourteen days. The scale runs
-              from none to sixteen movements a day and every day in the period is drawn, so a quiet day reads as a low
-              point rather than a gap. The right end of each line is today, and it matches the two figures above.
-            </p>
-          </div>
-
-          <p className={pageStyles.chartKey}>
-            <span data-series="admissions">
-              <span className={pageStyles.keySw} aria-hidden="true" />
-              Admissions
-            </span>
-            <span data-series="discharges">
-              <span className={pageStyles.keySw} aria-hidden="true" />
-              Discharges
-            </span>
-          </p>
-
-          <figure className={pageStyles.chart}>
-            <div className={pageStyles.chartBox} id="chartBox">
-              <svg
-                id="flowChart"
-                role="img"
-                aria-label={`Admissions and discharges recorded across every ward, each day for the last 14 days, on a scale from none to ${maxMvmt} a day. Today: ${admissionsCount} admissions and ${dischargesCount} discharges.`}
-                viewBox={`0 0 ${CH_WIDTH} ${CH_HEIGHT}`}
-                width="100%"
-                height="auto"
-                onMouseMove={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const mouseX = e.clientX - rect.left;
-                  const relX = (mouseX / rect.width) * CH_WIDTH;
-                  if (relX < CH_LEFT || relX > CH_WIDTH - CH_RIGHT) {
-                    setHoveredDayIdx(null);
-                    return;
-                  }
-                  const ratio = (relX - CH_LEFT) / (CH_WIDTH - CH_RIGHT - CH_LEFT);
-                  const idx = Math.max(0, Math.min(flowDays.length - 1, Math.round(ratio * (flowDays.length - 1))));
-                  setHoveredDayIdx(idx);
-                }}
-                onMouseLeave={() => setHoveredDayIdx(null)}
-              >
-                <defs>
-                  <linearGradient id="flowAdmGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.22" />
-                    <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.01" />
-                  </linearGradient>
-                  <linearGradient id="flowDisGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--warn)" stopOpacity="0.18" />
-                    <stop offset="100%" stopColor="var(--warn)" stopOpacity="0.01" />
-                  </linearGradient>
-                </defs>
-
-                {/* Horizontal Grid lines */}
-                {[0, 4, 8, 12, 16].map((v) => {
-                  const y = py(v);
-                  return (
-                    <g key={v}>
-                      <line
-                        className={v === 0 ? "axis" : "grid"}
-                        x1={CH_LEFT}
-                        y1={y}
-                        x2={CH_WIDTH - CH_RIGHT + 10}
-                        y2={y}
-                      />
-                      <text
-                        x={CH_LEFT - 10}
-                        y={y + 4}
-                        textAnchor="end"
-                        fontSize="12"
-                        fontFamily="var(--mono)"
-                        fill="var(--muted)"
-                      >
-                        {v}
-                      </text>
-                    </g>
-                  );
-                })}
-
-                {/* Benchmark dashed reference line (Average admissions across the window) */}
-                <line
-                  className={pageStyles.chartRefLine}
-                  x1={CH_LEFT}
-                  y1={yAvgAdm}
-                  x2={CH_WIDTH - CH_RIGHT + 10}
-                  y2={yAvgAdm}
-                />
-                <text
-                  x={CH_WIDTH - CH_RIGHT + 12}
-                  y={yAvgAdm + 4}
-                  fontFamily="var(--mono)"
-                  fontSize="12"
-                  fill="var(--muted)"
-                  fontWeight="500"
-                >
-                  avg {admMean}
-                </text>
-
-                {/* X-axis tick labels */}
-                {[0, 3, 6, 9, 13].map((idx) => {
-                  const xVal = px(idx);
-                  const back = flowDays.length - 1 - idx;
-                  return (
-                    <text
-                      key={idx}
-                      x={xVal}
-                      y={CH_BASE + 22}
-                      textAnchor={idx === flowDays.length - 1 ? "end" : "middle"}
-                      fontSize="12"
-                      fontFamily="var(--mono)"
-                      fill="var(--muted)"
-                    >
-                      {back === 0 ? "Today" : back}
-                    </text>
-                  );
-                })}
-
-                {/* Translucent area fills under curves */}
-                <path className={pageStyles.chartAreaAdm} fill="url(#flowAdmGrad)" d={admAreaD} />
-                <path className={pageStyles.chartAreaDis} fill="url(#flowDisGrad)" d={disAreaD} />
-
-                {/* Series Lines */}
-                <polyline
-                  className="series"
-                  data-series="admissions"
-                  points={admPoints}
-                  stroke="var(--accent)"
-                  strokeWidth="2.2"
-                  fill="none"
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                />
-                <polyline
-                  className="series"
-                  data-series="discharges"
-                  points={disPoints}
-                  stroke="var(--warn)"
-                  strokeWidth="2.2"
-                  fill="none"
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                />
-
-                {/* Interactive day dots */}
-                {flowDays.map((d, i) => (
-                  <g key={i}>
-                    <circle
-                      className={pageStyles.chartDotInteractive}
-                      cx={px(i)}
-                      cy={py(d.adm)}
-                      r={hoveredDayIdx === i ? 6 : 4}
-                      fill="var(--accent)"
-                      stroke="var(--surface)"
-                      strokeWidth="1.8"
-                    />
-                    <circle
-                      className={pageStyles.chartDotInteractive}
-                      cx={px(i)}
-                      cy={py(d.dis)}
-                      r={hoveredDayIdx === i ? 6 : 4}
-                      fill="var(--warn)"
-                      stroke="var(--surface)"
-                      strokeWidth="1.8"
-                    />
-                  </g>
-                ))}
-
-                {/* Scrubber crosshair */}
-                {hoveredDayIdx !== null ? (
-                  <line
-                    className={pageStyles.chartCrosshair}
-                    x1={px(hoveredDayIdx)}
-                    y1={CH_TOP}
-                    x2={px(hoveredDayIdx)}
-                    y2={CH_BASE}
-                  />
-                ) : null}
-
-                {/* End points */}
-                <circle
-                  className="end"
-                  data-series="admissions"
-                  cx={endX}
-                  cy={endYAdm}
-                  r="4.5"
-                  fill="var(--accent)"
-                  stroke="var(--surface)"
-                  strokeWidth="2"
-                />
-                <circle
-                  className="end"
-                  data-series="discharges"
-                  cx={endX}
-                  cy={endYDis}
-                  r="4.5"
-                  fill="var(--warn)"
-                  stroke="var(--surface)"
-                  strokeWidth="2"
-                />
-
-                {/* End labels */}
-                <text
-                  className="endLabel"
-                  data-series="admissions"
-                  x={endX + 10}
-                  y={endYAdm + 4}
-                  fontFamily="var(--mono)"
-                  fontSize="12"
-                  fontWeight="600"
-                  fill="var(--accent)"
-                >
-                  {admissionsCount} adm
-                </text>
-                <text
-                  className="endLabel"
-                  data-series="discharges"
-                  x={endX + 10}
-                  y={endYDis + 4}
-                  fontFamily="var(--mono)"
-                  fontSize="12"
-                  fontWeight="600"
-                  fill="var(--warn)"
-                >
-                  {dischargesCount} dis
-                </text>
-              </svg>
-
-              {/* Scrubber Tooltip */}
-              {hoveredDayIdx !== null ? (
-                <div
-                  className={pageStyles.chartTooltip}
-                  style={{
-                    display: "block",
-                    left: `${(px(hoveredDayIdx) / CH_WIDTH) * 100}%`,
-                    top: "12px",
-                    transform: hoveredDayIdx > flowDays.length / 2 ? "translateX(-105%)" : "translateX(12px)",
-                  }}
-                >
-                  <div className={pageStyles.ttDate}>
-                    {hoveredDayIdx === flowDays.length - 1
-                      ? "Today"
-                      : hoveredDayIdx === flowDays.length - 2
-                        ? "Yesterday"
-                        : `${flowDays.length - 1 - hoveredDayIdx} days ago`}
-                  </div>
-                  <div className={pageStyles.ttRow}>
-                    <span className={pageStyles.ttLabel}>
-                      <span className={pageStyles.ttDot} style={{ background: "var(--accent)" }} /> Admissions
-                    </span>
-                    <b>{flowDays[hoveredDayIdx].adm}</b>
-                  </div>
-                  <div className={pageStyles.ttRow}>
-                    <span className={pageStyles.ttLabel}>
-                      <span className={pageStyles.ttDot} style={{ background: "var(--warn)" }} /> Discharges
-                    </span>
-                    <b>{flowDays[hoveredDayIdx].dis}</b>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-
-            <figcaption>
-              Two lines on one scale, from none to {maxMvmt} movements a day. The numbers along the bottom count days
-              before today. Admissions run from {minAdm} to {maxAdm} a day and discharges from {minDis} to {maxDis}.
-              Today the two lines end at {admissionsCount} admissions and {dischargesCount} discharges.
-            </figcaption>
-          </figure>
-
-          {/* 14 Days Table Disclosure */}
-          <details className={pageStyles.reveal} id="flowReveal">
-            <summary>
-              <span>The fourteen days as a table</span>
-              <span className={pageStyles.count}>{flowDays.length} days</span>
-            </summary>
-            <div className={pageStyles.revealBody}>
-              <div
-                className={pageStyles.tableWrap}
-                data-wrap
-                tabIndex={0}
-                role="group"
-                aria-label="The fourteen days as a table, scrolls sideways when the panel is narrow"
-              >
-                <table className={pageStyles.dataTable}>
-                  <caption className="srOnly">
-                    Admissions and discharges recorded across every ward, by day, for the last fourteen days
-                  </caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Day</th>
-                      <th scope="col" className={pageStyles.n}>
-                        Admissions
-                      </th>
-                      <th scope="col" className={pageStyles.n}>
-                        Discharges
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {flowDays.map((d, i) => {
-                      const back = flowDays.length - 1 - i;
-                      const label = back === 0 ? "Today" : back === 1 ? "Yesterday" : `${back} days ago`;
-                      return (
-                        <tr key={i}>
-                          <th scope="row">{label}</th>
-                          <td className={pageStyles.n}>{d.adm}</td>
-                          <td className={pageStyles.n}>{d.dis}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                  <tfoot>
-                    <tr className="total">
-                      <th scope="row">All {flowDays.length} days</th>
-                      <td className={pageStyles.n}>{admTotal}</td>
-                      <td className={pageStyles.n}>{disTotal}</td>
-                    </tr>
-                  </tfoot>
-                </table>
+        <WardPanel title="Flow over time" count="Current state" testId="ward-statistics-patients">
+          <div className={pageStyles.historyUnavailable} data-testid="ward-statistics-flow-history">
+            <strong>Not recorded</strong>
+            <p>Daily admissions and discharges before today are not recorded in Ward Flow, so no trend is shown.</p>
+            <dl>
+              <div>
+                <dt>Admissions today</dt>
+                <dd>{admissionsCount}</dd>
               </div>
-            </div>
-          </details>
-
-          <p className={pageStyles.panelFoot}>
-            Over the {flowDays.length} days shown: <b>{admTotal}</b> admissions and <b>{disTotal}</b> discharges across
-            the network, an average of <b>{admMean}</b> admissions and <b>{disMean}</b> discharges a day. The most
-            admissions on one day was <b>{maxAdm}</b>. <strong>No day in the period is missing.</strong> A low point is
-            a quiet day that was counted, never a day that was not.
-          </p>
+              <div>
+                <dt>Discharges today</dt>
+                <dd>{dischargesCount}</dd>
+              </div>
+            </dl>
+            <p>{reportDayCaption} · synthetic records</p>
+          </div>
 
           {/* Patients audience contract and pull-to-arrival article */}
           <details className={`${pageStyles.measurementDetails} source-print`}>
@@ -1048,16 +662,6 @@ export function StatisticsScreen({
               <p className={styles.sectionAudience} data-testid="ward-statistics-patients-audience">
                 Waiting-time measures from admission records; no ward score.
               </p>
-
-              <div
-                data-testid="ward-statistics-flow-history"
-                style={{ padding: "0.5rem 0", color: "var(--muted)", fontSize: "var(--t-1)" }}
-              >
-                <p>
-                  Daily admissions and discharges before today are not recorded in Ward Flow, so no trend is shown.
-                  Today so far: {admissionsCount} admissions and {dischargesCount} discharges. Not recorded.
-                </p>
-              </div>
 
               <article className={styles.figure} data-testid="ward-statistics-pull-to-arrival">
                 <h3 className={styles.figureHeading}>From a bed being given away to the person arriving in it</h3>
@@ -1279,7 +883,7 @@ export function StatisticsScreen({
               <b>{heldBeds}</b> held and <b>{blockedBeds}</b> out of service.{" "}
               <strong>A ward marked Full has no bed ready, no bed held and none out of service</strong>, so every one of
               its beds has somebody in it. The ward by ward figures are on{" "}
-              <Link href="/mockups/ward-flow/statistics/ward/scgh-mental-health">Ward statistics</Link>.
+              <Link href="/mockups/ward-flow/statistics/ward/scgh-adult-open">Ward statistics</Link>.
             </p>
 
             {/* Pressure articles (preserved for test suite) */}
@@ -1904,9 +1508,7 @@ export function StatisticsScreen({
                 is invented. Only the {totalBeds} bed ceiling is real.
               </li>
               <li>
-                <b>Every wait, admission, discharge, referral and caseload figure:</b> the {flowDays.length} day flow
-                and its <span className={pageStyles.num}>{admTotal}</span> admissions and{" "}
-                <span className={pageStyles.num}>{disTotal}</span> discharges, today&apos;s{" "}
+                <b>Every wait, admission, discharge, referral and caseload figure:</b> today&apos;s{" "}
                 <span className={pageStyles.num}>{admissionsCount}</span> admissions and{" "}
                 <span className={pageStyles.num}>{dischargesCount}</span> discharges, all{" "}
                 <span className={pageStyles.num}>{totalEdWaiting}</span> people waiting in an emergency department and
@@ -1927,11 +1529,6 @@ export function StatisticsScreen({
                 <b>The referred, awaiting an answer counts</b> in Where the pressure is are a separate invented figure
                 from the emergency department waits opposite. The two are different populations, said so in the
                 panel&apos;s own words, precisely so a reader does not add them together.
-              </li>
-              <li>
-                <b>The confirmed 10:38 marker</b>, and yesterday&apos;s <span className={pageStyles.num}>261</span>{" "}
-                occupied beds and <span className={pageStyles.num}>31</span> people waiting, from which the two deltas
-                in the band are counted.
               </li>
               <li>
                 <b>The rail, the bar and their drawers</b> carry Command&apos;s own invented movements, referrals and
@@ -2007,10 +1604,6 @@ export function StatisticsScreen({
           <div id={STATISTICS_SERVICE_CHOOSER_ID}>
             <WardPanel title="Choose a health service" testId="ward-statistics-service-chooser">
               <div className={styles.panelBody}>
-                <p className={styles.figureNote} data-testid="ward-statistics-service-chooser-rationale">
-                  Select a health service for its capacity, referral flow and distance measures. All services are listed
-                  in recorded order, without ranking.
-                </p>
                 <ul className={styles.indexList} data-testid="ward-statistics-service-list">
                   {HEALTH_SERVICES.map((svc) => (
                     <li key={svc} className={styles.indexItem}>

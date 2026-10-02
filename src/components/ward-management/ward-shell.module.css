@@ -18,6 +18,12 @@
  */
 .shell {
   composes: wardTokens from "./ward-tokens.module.css";
+  composes: wardFixedPalette from "../../app/ward-flow-shell-tokens.module.css";
+  /* Fixed effects inherit from this routed root, including the referral token consumers. */
+  --ward-fixed-success-ink: var(--wf-fixed-success-ink);
+  --ward-fixed-danger-border: var(--wf-fixed-danger-border);
+  --ward-fixed-white: var(--wf-fixed-white);
+  --ward-shadow-black-06: var(--wf-shadow-black-06);
   /* Page owners choose the appropriate size; short windows keep a readable minimum
      and let the document scroll rather than clipping controls or compressing records. */
   --ward-workspace-height: clamp(36rem, calc(100dvh - 9rem), 64rem);

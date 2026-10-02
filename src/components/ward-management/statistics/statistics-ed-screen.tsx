@@ -120,6 +120,15 @@ export function StatisticsEdScreen({
   const movements = movementsOverride ?? liveMovements;
   const department = edById(edId);
 
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("all");
+
+  const triggerToast = useCallback((msg: string = "Not wired in this prototype.") => {
+    setToastMessage(msg);
+    const timer = setTimeout(() => setToastMessage(null), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const section = statisticsSectionById("units");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'units' section");
 
@@ -316,23 +325,15 @@ export function StatisticsEdScreen({
         `positioned by elapsed time since their movement opened. ${over24h} past 24 hours, ${over48h} past 48. ` +
         `Longest wait: ${longestWait ? splitDuration(longestWait.waitMinutes) : "none"}.`;
 
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const triggerToast = useCallback((msg: string = "Not wired in this prototype.") => {
-    setToastMessage(msg);
-    const timer = setTimeout(() => setToastMessage(null), 3000);
-    return () => clearTimeout(timer);
-  }, []);
-
   return (
     <StatisticsSectionFrame
       section={section}
       title={department.name}
-      subtitle="Current placement waits and outcomes for this emergency department, with record limits stated in place."
+      subtitle=""
       testId="ward-statistics-ed-screen"
       design="third-edition"
     >
-      <div className={pageStyles.pageGrid}>
+      <div className={pageStyles.pageGrid} data-active-tab={activeTab}>
         <nav className={pageStyles.departmentSwitcher} aria-label="Emergency department statistics">
           {comparison.map(({ department: each, figures }) => (
             <Link
@@ -345,6 +346,27 @@ export function StatisticsEdScreen({
               {each.siteCode}
               <span>{figures.onTheList}</span>
             </Link>
+          ))}
+        </nav>
+
+        <nav className={pageStyles.sovereignTabs} aria-label="ED View Navigation">
+          {[
+            { id: "all", label: "All Measures", badge: "All" },
+            { id: "queue", label: "Live Queue", badge: `${onTheList} waiting` },
+            { id: "distribution", label: "Wait Distribution", badge: `${urgent} urgent` },
+            { id: "weat", label: "WEAT Performance", badge: "Trend" },
+            { id: "comparison", label: "Cross-ED Comparison", badge: `${allEmergencyDepartments().length} EDs` },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              className={`${pageStyles.sovereignTab}${activeTab === tab.id ? ` ${pageStyles.activeTab}` : ""}`}
+              onClick={() => setActiveTab(tab.id)}
+              aria-pressed={activeTab === tab.id}
+            >
+              <span>{tab.label}</span>
+              <span className={pageStyles.tabBadge}>{tab.badge}</span>
+            </button>
           ))}
         </nav>
         <WardPanel
@@ -378,7 +400,9 @@ export function StatisticsEdScreen({
               <dd>{longestWait ? splitDuration(longestWait.waitMinutes) : "none"}</dd>
               {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
               <dd className={pageStyles.kpiCaption}>
-                {longestWait ? resolveSubjectPatient(longestWait.movement, { patients, referrals }).formalName : "no open placement"}
+                {longestWait
+                  ? resolveSubjectPatient(longestWait.movement, { patients, referrals }).formalName
+                  : "no open placement"}
               </dd>
             </div>
             <div>
@@ -405,10 +429,13 @@ export function StatisticsEdScreen({
           testId="ward-statistics-ed-urgency"
         >
           <div className={styles.panelBody} role="group" aria-label="Urgency category wait times content" tabIndex={0}>
-            <p className={styles.notBuilt} data-testid="ward-statistics-ed-urgency-not-recorded">
-              Urgency category wait times against benchmark: not recorded in Ward Flow. This prototype does not track
-              which Australasian Triage Scale category a movement was assigned or how long each category waited.
-            </p>
+            <details className={`${pageStyles.measurementDetails} source-print`}>
+              <summary>View urgency category & benchmark scope</summary>
+              <p className={styles.notBuilt} data-testid="ward-statistics-ed-urgency-not-recorded">
+                Urgency category wait times against benchmark: not recorded in Ward Flow. This prototype does not track
+                which Australasian Triage Scale category a movement was assigned or how long each category waited.
+              </p>
+            </details>
           </div>
         </WardPanel>
 
@@ -418,10 +445,13 @@ export function StatisticsEdScreen({
           testId="ward-statistics-ed-diurnal"
         >
           <div className={styles.panelBody} role="group" aria-label="Hourly arrival pattern content" tabIndex={0}>
-            <p className={styles.notBuilt} data-testid="ward-statistics-ed-diurnal-not-recorded">
-              Hourly arrival pattern: not recorded in Ward Flow. This prototype keeps no history of when movements
-              opened or closed across the day, only the current state of each one.
-            </p>
+            <details className={`${pageStyles.measurementDetails} source-print`}>
+              <summary>View arrival curve scope</summary>
+              <p className={styles.notBuilt} data-testid="ward-statistics-ed-diurnal-not-recorded">
+                Hourly arrival pattern: not recorded in Ward Flow. This prototype keeps no history of when movements
+                opened or closed across the day, only the current state of each one.
+              </p>
+            </details>
           </div>
         </WardPanel>
 
@@ -477,12 +507,14 @@ export function StatisticsEdScreen({
               <>
                 <h3 className={styles.subHeading}>Past {LONG_WAIT_MINUTES / 60} hours</h3>
                 <p className={styles.body} data-testid="ward-stat-ed-over-24h">
-                  {over24h} of the {onTheList} above {over24h === 1 ? "has" : "have"} been waiting more than {LONG_WAIT_MINUTES / 60} hours ({OPERATIONAL_DEFAULT_LABEL}).
+                  {over24h} of the {onTheList} above {over24h === 1 ? "has" : "have"} been waiting more than{" "}
+                  {LONG_WAIT_MINUTES / 60} hours ({OPERATIONAL_DEFAULT_LABEL}).
                 </p>
 
                 <h3 className={styles.subHeading}>Past {VERY_LONG_WAIT_MINUTES / 60} hours</h3>
                 <p className={styles.body} data-testid="ward-stat-ed-over-48h">
-                  {over48h} of the {onTheList} above {over48h === 1 ? "has" : "have"} been waiting more than {VERY_LONG_WAIT_MINUTES / 60} hours ({OPERATIONAL_DEFAULT_LABEL}).
+                  {over48h} of the {onTheList} above {over48h === 1 ? "has" : "have"} been waiting more than{" "}
+                  {VERY_LONG_WAIT_MINUTES / 60} hours ({OPERATIONAL_DEFAULT_LABEL}).
                 </p>
 
                 <h3 className={styles.subHeading}>Longest wait</h3>
@@ -874,28 +906,37 @@ export function StatisticsEdScreen({
           </dl>
 
           <div className={styles.panelBody} role="group" aria-label="WEAT history content" tabIndex={0}>
-            <p className={styles.notBuilt} data-testid="ward-statistics-ed-weat-not-recorded">
-              30-day WEAT performance history: not recorded in Ward Flow. This prototype keeps no history at all — only
-              the current state of each movement — so no day-by-day or trend figure can be formed from it.
-            </p>
+            <details className={`${pageStyles.measurementDetails} source-print`}>
+              <summary>View WEAT performance history scope</summary>
+              <p className={styles.notBuilt} data-testid="ward-statistics-ed-weat-not-recorded">
+                30-day WEAT performance history: not recorded in Ward Flow. This prototype keeps no history at all —
+                only the current state of each movement — so no day-by-day or trend figure can be formed from it.
+              </p>
+            </details>
           </div>
         </WardPanel>
 
         <WardPanel title="Wait time over the last 30 days" testId="ward-stat-ed-trend">
           <div className={styles.panelBody} role="group" aria-label="Thirty day wait trend content" tabIndex={0}>
-            <p className={styles.notBuilt} data-testid="ward-stat-ed-trend-not-built">
-              <strong>Nothing is missing from the record; this prototype stores no history.</strong> Nothing has been
-              drawn.
-            </p>
+            <details className={`${pageStyles.measurementDetails} source-print`}>
+              <summary>View historical wait record scope</summary>
+              <p className={styles.notBuilt} data-testid="ward-stat-ed-trend-not-built">
+                <strong>Nothing is missing from the record; this prototype stores no history.</strong> Nothing has been
+                drawn.
+              </p>
+            </details>
           </div>
         </WardPanel>
 
         <WardPanel title="Where they went, last 7 days" testId="ward-stat-ed-destinations">
           <div className={styles.panelBody} role="group" aria-label="Recent destinations content" tabIndex={0}>
-            <p className={styles.notBuilt} data-testid="ward-stat-ed-destinations-not-built">
-              <strong>Nothing is missing from the record; this prototype stores no history.</strong> Nothing has been
-              drawn.
-            </p>
+            <details className={`${pageStyles.measurementDetails} source-print`}>
+              <summary>View recent destinations record scope</summary>
+              <p className={styles.notBuilt} data-testid="ward-stat-ed-destinations-not-built">
+                <strong>Nothing is missing from the record; this prototype stores no history.</strong> Nothing has been
+                drawn.
+              </p>
+            </details>
           </div>
         </WardPanel>
 
@@ -935,9 +976,9 @@ export function StatisticsEdScreen({
             </WardTable>
 
             <p className={styles.note}>
-              Due times passed counts only an overdue transport or transfer order. Neither an examination form nor a detention
-              form carries a due-by time in this model at all, so this column can never report a missed Mental Health
-              Act deadline — only a transport or transfer order that has run past when it was due.
+              Due times passed counts only an overdue transport or transfer order. Neither an examination form nor a
+              detention form carries a due-by time in this model at all, so this column can never report a missed Mental
+              Health Act deadline — only a transport or transfer order that has run past when it was due.
             </p>
             <LegalLimitsNotChecked />
 
@@ -953,85 +994,88 @@ export function StatisticsEdScreen({
         </WardPanel>
 
         <WardPanel title="Data provenance and limits" testId="ward-statistics-ed-about">
-          <div
-            className={styles.panelBody}
-            role="group"
-            aria-label="Department data provenance and limits content"
-            tabIndex={0}
-          >
-            <h3 className={styles.subHeading}>Every figure here is invented</h3>
-            {/*
-             * 🔴 **THE DRAWING'S OWN SENTENCES FAIL AN OWNER RULING, SO THEY COULD NOT BE REPRODUCED
-             * VERBATIM — and finding that out cost a red on a guard I did not know existed.**
-             *
-             * `tests/ward-provenance-sentences-carry-their-own-marker.test.ts` enforces the owner's ruling of
-             * 2026-09-09 §2: **the SENTENCE carries the marker, never the heading above it.** ⚠️ Read alone
-             * — quoted, screen-read, or once the heading has scrolled away — *"Nothing here has been measured
-             * against a real department"* states an invented figure as fact.
-             *
-             * ⚠️ **AND THE BINDING MATTERS, NOT THE WORD.** My first draft said the counts are *"derived from
-             * this prototype's own invented movement records"*. **The word "invented" was there and the guard
-             * still fired, correctly: it modified the RECORDS, not the counts.** 🔴 A disclosing word loose in
-             * the clause discloses nothing — bind it to the verb or the noun it is about.
-             */}
-            <p className={styles.body} data-testid="ward-statistics-ed-about-invented">
-              Every count and every wait above is invented, derived from this prototype&apos;s own invented movement
-              records — who is on this department&apos;s list, when each movement opened, whether a ward has accepted
-              them, and every decline recorded against them. These invented figures have never been measured against a
-              real department or a real patient. Nothing on this screen is real, and no identifier above belongs to
-              anybody.
-            </p>
+          <details className={`${pageStyles.measureDetails} source-print`}>
+            <summary>Data provenance, categories & disclaimer details</summary>
+            <div
+              className={styles.panelBody}
+              role="group"
+              aria-label="Department data provenance and limits content"
+              tabIndex={0}
+            >
+              <h3 className={styles.subHeading}>Every figure here is invented</h3>
+              {/*
+               * 🔴 **THE DRAWING'S OWN SENTENCES FAIL AN OWNER RULING, SO THEY COULD NOT BE REPRODUCED
+               * VERBATIM — and finding that out cost a red on a guard I did not know existed.**
+               *
+               * `tests/ward-provenance-sentences-carry-their-own-marker.test.ts` enforces the owner's ruling of
+               * 2026-09-09 §2: **the SENTENCE carries the marker, never the heading above it.** ⚠️ Read alone
+               * — quoted, screen-read, or once the heading has scrolled away — *"Nothing here has been measured
+               * against a real department"* states an invented figure as fact.
+               *
+               * ⚠️ **AND THE BINDING MATTERS, NOT THE WORD.** My first draft said the counts are *"derived from
+               * this prototype's own invented movement records"*. **The word "invented" was there and the guard
+               * still fired, correctly: it modified the RECORDS, not the counts.** 🔴 A disclosing word loose in
+               * the clause discloses nothing — bind it to the verb or the noun it is about.
+               */}
+              <p className={styles.body} data-testid="ward-statistics-ed-about-invented">
+                Every count and every wait above is invented, derived from this prototype&apos;s own invented movement
+                records — who is on this department&apos;s list, when each movement opened, whether a ward has accepted
+                them, and every decline recorded against them. These invented figures have never been measured against a
+                real department or a real patient. Nothing on this screen is real, and no identifier above belongs to
+                anybody.
+              </p>
 
-            {/*
-             * ⚠️ **THE DRAWING SAYS THE PEOPLE ARE INVENTED "FAMILY NAME FIRST". THIS SCREEN SHOWS NO
-             * NAMES AT ALL** — it identifies everybody by movement id. Reproducing the drawing's sentence
-             * would disclose the invention of something this page does not display, which reads as a
-             * reassurance about a risk that is not present here and quietly implies names ARE shown.
-             */}
+              {/*
+               * ⚠️ **THE DRAWING SAYS THE PEOPLE ARE INVENTED "FAMILY NAME FIRST". THIS SCREEN SHOWS NO
+               * NAMES AT ALL** — it identifies everybody by movement id. Reproducing the drawing's sentence
+               * would disclose the invention of something this page does not display, which reads as a
+               * reassurance about a risk that is not present here and quietly implies names ARE shown.
+               */}
 
-            <h3 className={styles.subHeading}>What is real</h3>
-            <p className={styles.body} data-testid="ward-statistics-ed-about-real">
-              The department named at the top of this page is a real Western Australian emergency department, and so is
-              the health service it belongs to. Both are read from this prototype&apos;s own site list, and this page
-              cannot show a department that is not on it. Neither is a measurement, so unlike every figure above,
-              neither can be wrong in the way a count can be wrong.
-            </p>
+              <h3 className={styles.subHeading}>What is real</h3>
+              <p className={styles.body} data-testid="ward-statistics-ed-about-real">
+                The department named at the top of this page is a real Western Australian emergency department, and so
+                is the health service it belongs to. Both are read from this prototype&apos;s own site list, and this
+                page cannot show a department that is not on it. Neither is a measurement, so unlike every figure above,
+                neither can be wrong in the way a count can be wrong.
+              </p>
 
-            <h3 className={styles.subHeading}>A department is not a ward</h3>
-            {/*
-             * 🔴 **THIS CLAIM ALREADY EXISTED TWICE IN THIS FILE AND A READER HAS NEVER SEEN EITHER
-             * COPY** — both sit inside JSDoc comment blocks a reader never sees. ⚠️ **Naming that comment
-             * syntax literally here closed THIS comment early and broke the parse** — writing about the
-             * thing reproduced it, for the third time in this lane today. **The drawing puts it on the page as a heading,
-             * and the drawing is right: a claim whose whole job is to prevent a category error belongs
-             * where the category error would be made.** Quoted verbatim from the drawing.
-             */}
-            <p className={styles.body} data-testid="ward-statistics-ed-about-not-a-ward">
-              This screen only ever describes people standing in a department: how many, how long, and where they went
-              next. It never shows a bed count, an occupancy figure or a length of stay for a department, because a
-              department has none of its own. Those belong to Capacity and to the ward screens.
-            </p>
+              <h3 className={styles.subHeading}>A department is not a ward</h3>
+              {/*
+               * 🔴 **THIS CLAIM ALREADY EXISTED TWICE IN THIS FILE AND A READER HAS NEVER SEEN EITHER
+               * COPY** — both sit inside JSDoc comment blocks a reader never sees. ⚠️ **Naming that comment
+               * syntax literally here closed THIS comment early and broke the parse** — writing about the
+               * thing reproduced it, for the third time in this lane today. **The drawing puts it on the page as a heading,
+               * and the drawing is right: a claim whose whole job is to prevent a category error belongs
+               * where the category error would be made.** Quoted verbatim from the drawing.
+               */}
+              <p className={styles.body} data-testid="ward-statistics-ed-about-not-a-ward">
+                This screen only ever describes people standing in a department: how many, how long, and where they went
+                next. It never shows a bed count, an occupancy figure or a length of stay for a department, because a
+                department has none of its own. Those belong to Capacity and to the ward screens.
+              </p>
 
-            <h3 className={styles.subHeading}>What a nought means, and what a stated absence means</h3>
-            {/*
-             * ⚠️ **THE DRAWING'S TWO EXAMPLES OF A STATED ABSENCE ARE NOT ON THIS SCREEN** — it offers
-             * *"too few for a median"* and *"not drawn in this prototype"*, and this page computes no median
-             * and draws no trend. **The distinction is the drawing's and is kept verbatim; the EXAMPLE is
-             * this screen's own real one**, because an example a reader cannot find on the page teaches
-             * them the rule is decorative.
-             */}
-            <p className={styles.body} data-testid="ward-statistics-ed-about-nought">
-              A nought here is a measured answer: nobody flagged urgent, nobody without a ward, nobody past twenty-four
-              hours — every movement was checked and none matched. A stated absence is a different thing, and this page
-              carries one: where the count of declines for any reason other than no free bed cannot be formed, this page
-              says so in words instead of showing a number. The two are never the same thing, and neither is ever left
-              blank.
-            </p>
-            <p className={styles.body} data-testid="ward-statistics-ed-about-zero">
-              Every zero on this page is a real, measured zero unless the words beside it say the figure could not be
-              taken. None of them means not tracked.
-            </p>
-          </div>
+              <h3 className={styles.subHeading}>What a nought means, and what a stated absence means</h3>
+              {/*
+               * ⚠️ **THE DRAWING'S TWO EXAMPLES OF A STATED ABSENCE ARE NOT ON THIS SCREEN** — it offers
+               * *"too few for a median"* and *"not drawn in this prototype"*, and this page computes no median
+               * and draws no trend. **The distinction is the drawing's and is kept verbatim; the EXAMPLE is
+               * this screen's own real one**, because an example a reader cannot find on the page teaches
+               * them the rule is decorative.
+               */}
+              <p className={styles.body} data-testid="ward-statistics-ed-about-nought">
+                A nought here is a measured answer: nobody flagged urgent, nobody without a ward, nobody past
+                twenty-four hours — every movement was checked and none matched. A stated absence is a different thing,
+                and this page carries one: where the count of declines for any reason other than no free bed cannot be
+                formed, this page says so in words instead of showing a number. The two are never the same thing, and
+                neither is ever left blank.
+              </p>
+              <p className={styles.body} data-testid="ward-statistics-ed-about-zero">
+                Every zero on this page is a real, measured zero unless the words beside it say the figure could not be
+                taken. None of them means not tracked.
+              </p>
+            </div>
+          </details>
         </WardPanel>
         {toastMessage && (
           <div className={pageStyles.actionToast} role="status" aria-live="polite">

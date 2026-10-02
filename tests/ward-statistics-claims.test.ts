@@ -66,6 +66,8 @@ const RETIRED_PAGE_CLAIM_IDS = new Set([
   "statistics-screen/refused-so-far/a-decline-removes-the-ward-and-leaves-the-stage",
   "statistics-screen/refused-so-far/that-stage-can-be-referred-from-again",
   "statistics-compare-screen/double-count/the-parallel-referral-cap-exists",
+  "statistics-compare-screen/chooser/one-dynamic-route-serves-every-ward",
+  "statistics-compare-screen/chooser/another-serves-every-department",
 ]);
 
 /**
@@ -334,10 +336,15 @@ describe("the model-claims register", () => {
     ).toBe(EXPECTED_MODEL_CLAIMS);
     const retired = MODEL_CLAIMS.filter((claim) => claim.retiredPageProse !== undefined);
     expect(retired.map((claim) => claim.id).sort()).toEqual([...RETIRED_PAGE_CLAIM_IDS].sort());
-    expect(retired).toHaveLength(17);
-    expect(MODEL_CLAIMS.filter((claim) => claim.retiredPageProse === undefined)).toHaveLength(64);
+    expect(retired).toHaveLength(19);
+    expect(MODEL_CLAIMS.filter((claim) => claim.retiredPageProse === undefined)).toHaveLength(62);
     for (const claim of retired) {
-      expect(claim.retiredPageProse?.date).toBe("2026-09-13");
+      expect(claim.retiredPageProse?.date).toBe(
+        claim.id === "statistics-compare-screen/chooser/one-dynamic-route-serves-every-ward" ||
+          claim.id === "statistics-compare-screen/chooser/another-serves-every-department"
+          ? "2026-10-02"
+          : "2026-09-13",
+      );
       expect(claim.retiredPageProse?.reason.trim()).not.toBe("");
       expect(
         countOccurrences(readRepoFile(claim.renderedIn), collapseWhitespace(claim.rendered)),

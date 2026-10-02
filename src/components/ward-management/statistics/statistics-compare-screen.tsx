@@ -11,7 +11,8 @@ import {
 import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { isOpen } from "@/components/ward-management/ward-derivations";
+import { isOpen, unitCapacity } from "@/components/ward-management/ward-derivations";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import type { EmergencyDepartment, Movement, Unit } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { WardPanel } from "@/components/ward-management/ward-panel";
@@ -19,6 +20,10 @@ import { allWardStatistics, type WardStatistics } from "@/components/ward-manage
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 
 import styles from "./statistics-third-edition.module.css";
+
+function focusComparisonSection(id: string) {
+  queueMicrotask(() => document.getElementById(id)?.focus({ preventScroll: true }));
+}
 
 /**
  * WARD AND ED COMPARISONS — and the chooser that is the only way into the per-unit detail pages.
@@ -81,11 +86,35 @@ export function StatisticsCompareScreen({
    */
   admissions?: Admission[];
 } = {}) {
-  const { units: liveUnits, admissions: liveAdmissions, movements} = useWardFlow();
+  const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases = [] } = useWardFlow();
   const now = useWardFlowClock();
   const admissions = admissionsOverride ?? liveAdmissions;
   const units = unitsOverride ?? liveUnits;
   const emergencyDepartments = edsOverride ?? allEmergencyDepartments();
+
+  // 1. Inpatient Network KPI figures
+  const totalBeds = units.reduce((sum, u) => sum + u.beds, 0);
+  const readyBeds = units.reduce((sum, u) => sum + unitCapacity(u, bedReleases).available, 0);
+  const pendingPreparationBeds = units.reduce((sum, u) => sum + bedsPendingPreparation(u.id, bedReleases), 0);
+  const readyPct = totalBeds > 0 ? ((readyBeds / totalBeds) * 100).toFixed(1) : "0.0";
+
+  // 2. Average Length of Stay KPI figures
+  const wardStats = allWardStatistics(units, admissions, now);
+  const validStays = wardStats.filter(({ statistics }) => statistics.averageLengthOfStayDays !== null);
+  const networkAvgStay =
+    validStays.length > 0
+      ? (
+          validStays.reduce((s, { statistics }) => s + (statistics.averageLengthOfStayDays ?? 0), 0) / validStays.length
+        ).toFixed(1)
+      : "—";
+  const totalBlockers = wardStats.reduce((s, { statistics }) => s + statistics.readyToLeaveCannot, 0);
+  const totalLongStays = wardStats.reduce((s, { statistics }) => s + statistics.longStays, 0);
+
+  // 3. ED Placement Demand figures
+  const openMovements = movements.filter(isOpen);
+  const edWaitingCount = openMovements.length;
+  const urgentCount = openMovements.filter((m) => m.flaggedUrgent).length;
+  const unplacedCount = openMovements.filter((m) => m.acceptedUnitId === undefined).length;
 
   const section = statisticsSectionById("compare");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'compare' section");
@@ -94,49 +123,168 @@ export function StatisticsCompareScreen({
     <StatisticsSectionFrame
       section={section}
       title="Ward and ED comparisons"
-      subtitle="Comparable measures for wards and emergency departments, kept in separate tables."
+      subtitle=""
       testId="ward-statistics-compare-screen"
       design="third-edition"
     >
-      <WardPanel
-        title="Ward and emergency department tables"
-        count={`${units.length} wards · ${emergencyDepartments.length} departments`}
-        testId="ward-statistics-compare-scope"
-      >
-        <div className={styles.panelBody}>
-          <p className={styles.note} data-testid="ward-statistics-compare-order-note">
-            Fixed record order carries no meaning: this is not a ranking, score or result sort, and nothing is hidden.
-          </p>
-          <details className={`${styles.reveal} source-print`} data-testid="ward-statistics-compare-why-two">
-            <summary>Method and attribution limits</summary>
-            <div className={styles.revealBody}>
-              <p data-testid="ward-statistics-compare-attributability-rule">
-                <strong>
-                  A measure belongs to a named ward only when its source record carries a required unit id.
-                </strong>{" "}
-                An admission always carries its ward, with no exceptions, so admission measures attribute cleanly. An
-                optional unit id covers only the records where it happens to be present, not the whole population.
-              </p>
-              <p data-testid="ward-statistics-compare-declines-example">
-                <strong>Declines show the attribution limit.</strong> A referral names its ward only when a ward
-                accepts. An acceptance is attributable to a named ward and a decline is not.
-              </p>
-              <p data-testid="ward-statistics-compare-double-count-example">
-                <strong>Referrals received fail differently.</strong> Referred wards are stored as a LIST, not a single
-                ward, because one referral can be live at several wards. A per-ward total would therefore sum to more
-                than the number of referrals that exist.
-              </p>
-            </div>
-          </details>
+      {/* ══════════ KPI SUMMARY CARDS ══════════ */}
+      <div className={styles.kpiGrid} id="compareKpiGrid">
+        <div className={styles.kpiCard} data-tone="accent">
+          <div className={styles.kpiTop}>
+            <span className={styles.kpiLabel}>Inpatient Network</span>
+            <span className={styles.monoBadge}>All Services</span>
+          </div>
+          <div className={styles.kpiValRow}>
+            <span className={styles.kpiVal}>{units.length}</span>
+            <span className={styles.kpiSub}>wards / {totalBeds} beds</span>
+          </div>
+          <span className={styles.kpiSub}>
+            <strong>{readyBeds}</strong> beds available ({readyPct}%)
+          </span>
+          {pendingPreparationBeds > 0 ? (
+            <span className={styles.kpiSub}>{pendingPreparationBeds} being made ready (not deducted)</span>
+          ) : null}
         </div>
-      </WardPanel>
 
-      <div className={styles.compareRegion}>
+        <div className={styles.kpiCard} data-tone="warn">
+          <div className={styles.kpiTop}>
+            <span className={styles.kpiLabel}>Average Length of Stay</span>
+            <span className={styles.monoBadge}>Recorded wards</span>
+          </div>
+          <div className={styles.kpiValRow}>
+            <span className={styles.kpiVal}>{networkAvgStay === "—" ? "Not recorded" : `${networkAvgStay}d`}</span>
+            <span className={styles.kpiSub}>Mean of recorded ward averages</span>
+          </div>
+          <span className={styles.kpiSub}>
+            <strong>{totalBlockers}</strong> blockers &middot; <strong>{totalLongStays}</strong> &gt;3mo
+          </span>
+        </div>
+
+        <div className={styles.kpiCard} data-tone="danger">
+          <div className={styles.kpiTop}>
+            <span className={styles.kpiLabel}>Open movements</span>
+            <span className={styles.monoBadge}>Recorded states</span>
+          </div>
+          <div className={styles.kpiValRow}>
+            <span className={styles.kpiVal}>{edWaitingCount}</span>
+            <span className={styles.kpiSub}>not closed or arrived</span>
+          </div>
+          <span className={styles.kpiSub}>
+            <strong>{urgentCount}</strong> urgent &middot; <strong>{unplacedCount}</strong> awaiting ward
+          </span>
+        </div>
+
+        <div className={styles.kpiCard} data-tone="accent">
+          <div className={styles.kpiTop}>
+            <span className={styles.kpiLabel}>Placement matching</span>
+            <span className={styles.monoBadge}>Not measured</span>
+          </div>
+          <div className={styles.kpiValRow}>
+            <span className={styles.kpiVal}>Not calculated</span>
+            <span className={styles.kpiSub}>Eligibility not matched</span>
+          </div>
+          <span className={styles.kpiSub}>Bed eligibility is not matched to these movements</span>
+        </div>
+      </div>
+
+      {/* ══════════ FLOW BALANCE BANNER ══════════ */}
+      <div className={styles.flowBalanceCard}>
+        <div className={styles.balanceInfo}>
+          <h3 className={styles.balanceTitle}>Current network records</h3>
+          <p className={styles.balanceSubtitle}>
+            Separate counts of available beds and open movements; these do not establish compatible placements.
+          </p>
+        </div>
+        <div className={styles.balanceMetrics}>
+          <div className={styles.balanceItem}>
+            <span className={styles.bVal}>{readyBeds}</span>
+            <span className={styles.bLbl}>Available beds</span>
+            {pendingPreparationBeds > 0 ? (
+              <span className={styles.bLbl}>{pendingPreparationBeds} being made ready (not deducted)</span>
+            ) : null}
+          </div>
+          <div className={styles.balanceItem}>
+            <span className={styles.bVal}>{edWaitingCount}</span>
+            <span className={styles.bLbl}>Open movements</span>
+          </div>
+          <div className={styles.balanceItem}>
+            <span className={styles.bVal}>{unplacedCount}</span>
+            <span className={styles.bLbl}>Awaiting ward</span>
+          </div>
+        </div>
+      </div>
+
+      <nav className={styles.sovereignTabs} aria-label="Comparison sections">
+        <a
+          className={styles.sovereignTab}
+          href="#compare-ward-measures"
+          onClick={() => focusComparisonSection("compare-ward-measures")}
+          style={{ textDecoration: "none" }}
+        >
+          Ward measures
+          <span className={styles.tabBadge}>{units.length}</span>
+        </a>
+        <a
+          className={styles.sovereignTab}
+          href="#compare-ed-measures"
+          onClick={() => focusComparisonSection("compare-ed-measures")}
+          style={{ textDecoration: "none" }}
+        >
+          ED measures
+          <span className={styles.tabBadge}>{emergencyDepartments.length}</span>
+        </a>
+        <a
+          className={styles.sovereignTab}
+          href={`#${STATISTICS_UNIT_CHOOSER_ID}`}
+          onClick={() => focusComparisonSection(STATISTICS_UNIT_CHOOSER_ID)}
+          style={{ textDecoration: "none" }}
+        >
+          Unit Directory
+        </a>
+      </nav>
+
+      <details className={`${styles.measureDetails} source-print`}>
+        <summary>Scope &amp; attribution limits</summary>
+        <WardPanel
+          title="Ward and emergency department tables"
+          count={`${units.length} wards · ${emergencyDepartments.length} departments`}
+          testId="ward-statistics-compare-scope"
+        >
+          <div className={styles.panelBody}>
+            <p className={styles.note} data-testid="ward-statistics-compare-order-note">
+              Fixed record order carries no meaning: this is not a ranking, score or result sort, and nothing is hidden.
+            </p>
+            <details className={`${styles.reveal} source-print`} data-testid="ward-statistics-compare-why-two">
+              <summary>Method and attribution limits</summary>
+              <div className={styles.revealBody}>
+                <p data-testid="ward-statistics-compare-attributability-rule">
+                  <strong>
+                    A measure belongs to a named ward only when its source record carries a required unit id.
+                  </strong>{" "}
+                  An admission always carries its ward, with no exceptions, so admission measures attribute cleanly. An
+                  optional unit id covers only the records where it happens to be present, not the whole population.
+                </p>
+                <p data-testid="ward-statistics-compare-declines-example">
+                  <strong>Declines show the attribution limit.</strong> A referral names its ward only when a ward
+                  accepts. An acceptance is attributable to a named ward and a decline is not.
+                </p>
+                <p data-testid="ward-statistics-compare-double-count-example">
+                  <strong>Referrals received fail differently.</strong> Referred wards are stored as a LIST, not a
+                  single ward, because one referral can be live at several wards. A per-ward total would therefore sum
+                  to more than the number of referrals that exist.
+                </p>
+              </div>
+            </details>
+          </div>
+        </WardPanel>
+      </details>
+
+      <div id="compare-ward-measures" className={styles.compareRegion} tabIndex={-1}>
         <WardPanel title="Wards" count={`${units.length} wards`}>
           <div className={styles.panelBody}>
             <div className={styles.chartCard}>
               <div className={styles.chartHeader}>
-                <h3 className={styles.chartTitle}>Average Length of Stay by Ward vs 6.5-Day Target</h3>
+                <h3 className={styles.chartTitle}>Average length of stay by ward</h3>
                 <span className={styles.chartCount}>{units.length} Wards</span>
               </div>
               {units.length === 0 ? (
@@ -162,7 +310,7 @@ export function StatisticsCompareScreen({
         </WardPanel>
       </div>
 
-      <div className={styles.compareRegion}>
+      <div id="compare-ed-measures" className={styles.compareRegion} tabIndex={-1}>
         <WardPanel title="Emergency departments" count={`${emergencyDepartments.length} departments`}>
           <div className={styles.panelBody}>
             <div className={styles.chartCard}>
@@ -200,17 +348,13 @@ export function StatisticsCompareScreen({
         </WardPanel>
       </div>
 
-      <div id={STATISTICS_UNIT_CHOOSER_ID} className={styles.compareRegion}>
+      <div id={STATISTICS_UNIT_CHOOSER_ID} className={styles.compareRegion} tabIndex={-1}>
         <WardPanel
           title="Choose a ward or emergency department"
           count={`${units.length + emergencyDepartments.length} units`}
           testId="ward-statistics-compare-chooser"
         >
           <div className={styles.panelBody}>
-            <p className={styles.note} data-testid="ward-statistics-compare-chooser-rationale">
-              Ward and department detail use one route per unit, so this comparison is their shared index.
-            </p>
-
             <h3 className={styles.subHeading}>Wards</h3>
             {units.length === 0 ? (
               <p className={styles.emptyNote} data-testid="ward-statistics-compare-no-wards">
@@ -287,38 +431,41 @@ export function StatisticsCompareScreen({
        * hospital, and department NAMES are real, read from the network's own tables rather than
        * typed here.
        */}
-      <WardPanel title="Data provenance" count="Scope" testId="ward-statistics-compare-provenance">
-        <div className={styles.panelBody}>
-          {/*
-           * ⚠️ EVERY SENTENCE HERE CARRIES ITS OWN DISCLOSURE, AND THAT IS WHY THE WORDING IS
-           * SHAPED AS IT IS — owner ruling 2026-09-09 §2, enforced by
-           * `tests/ward-provenance-sentences-carry-their-own-marker.test.ts`. The heading above
-           * does NOT do this work: a sentence gets quoted, screen-read, or read after the heading
-           * has scrolled away, and alone it must still say the figures are not real.
-           *
-           * 🔴 DO NOT "TIDY" THESE INTO SHORTER SENTENCES. Two of them were red on the first full
-           * suite run over this screen: "None of it describes a real person…" and a second
-           * paragraph that said only what IS real. Both were honest and both failed, because the
-           * disclosing words were not bound to a verb or a noun inside their own sentence.
-           *
-           * 🔴 AND NEVER SPLIT ONE OF THESE WITH A SEMICOLON. The guard treats a semicolon as a
-           * sentence boundary, so a marker before it does not vouch for the clause after it —
-           * which is the exact hole its own header records ("The ward names are invented; there
-           * were 28 referrals this period."). A comma or an "and" is safe here; a semicolon is not.
-           */}
-          <p className={styles.body}>
-            Every figure in the two tables above is invented: {joinNames(WARD_COLUMNS.map((column) => column.header))}{" "}
-            for every ward, and {joinNames(ED_COLUMNS.map((column) => column.header))} for every department. Nothing on
-            this screen is a real person, a real bed or a real referral.
-          </p>
-          <p className={styles.note}>
-            <strong>What is real</strong> is only the naming: the wards, the hospitals that hold them, and the emergency
-            departments — above and in the chooser below — are read from the network&apos;s own tables at render time
-            rather than typed here, in the fixed order the prototype records them, and every figure set beside those
-            names is invented.
-          </p>
-        </div>
-      </WardPanel>
+      <details className={`${styles.measureDetails} source-print`}>
+        <summary>Data provenance &amp; attribution limits</summary>
+        <WardPanel title="Data provenance" count="Scope" testId="ward-statistics-compare-provenance">
+          <div className={styles.panelBody}>
+            {/*
+             * ⚠️ EVERY SENTENCE HERE CARRIES ITS OWN DISCLOSURE, AND THAT IS WHY THE WORDING IS
+             * SHAPED AS IT IS — owner ruling 2026-09-09 §2, enforced by
+             * `tests/ward-provenance-sentences-carry-their-own-marker.test.ts`. The heading above
+             * does NOT do this work: a sentence gets quoted, screen-read, or read after the heading
+             * has scrolled away, and alone it must still say the figures are not real.
+             *
+             * 🔴 DO NOT "TIDY" THESE INTO SHORTER SENTENCES. Two of them were red on the first full
+             * suite run over this screen: "None of it describes a real person…" and a second
+             * paragraph that said only what IS real. Both were honest and both failed, because the
+             * disclosing words were not bound to a verb or a noun inside their own sentence.
+             *
+             * 🔴 AND NEVER SPLIT ONE OF THESE WITH A SEMICOLON. The guard treats a semicolon as a
+             * sentence boundary, so a marker before it does not vouch for the clause after it —
+             * which is the exact hole its own header records ("The ward names are invented; there
+             * were 28 referrals this period."). A comma or an "and" is safe here; a semicolon is not.
+             */}
+            <p className={styles.body}>
+              Every figure in the two tables above is invented: {joinNames(WARD_COLUMNS.map((column) => column.header))}{" "}
+              for every ward, and {joinNames(ED_COLUMNS.map((column) => column.header))} for every department. Nothing
+              on this screen is a real person, a real bed or a real referral.
+            </p>
+            <p className={styles.note}>
+              <strong>What is real</strong> is only the naming: the wards, the hospitals that hold them, and the
+              emergency departments — above and in the chooser below — are read from the network&apos;s own tables at
+              render time rather than typed here, in the fixed order the prototype records them, and every figure set
+              beside those names is invented.
+            </p>
+          </div>
+        </WardPanel>
+      </details>
     </StatisticsSectionFrame>
   );
 }
@@ -546,21 +693,20 @@ function CompareTable<Row>({
         </thead>
         <tbody>
           {rows.map(({ id, name, row }) => {
-            const href = rowHeader.toLowerCase() === "ward" ? wardStatisticsHref(id) : edStatisticsHref(id);
             return (
               <tr key={id}>
                 <th scope="row">{name}</th>
                 {columns.map((column) => {
-                const cell = column.cell(row);
-                return (
-                  <td key={column.header} className={styles.num}>
-                    {cell.unmeasured ? <span className={styles.unmeasured}>{cell.text}</span> : cell.text}
-                  </td>
-                );
-              })}
-            </tr>
-          );
-        })}
+                  const cell = column.cell(row);
+                  return (
+                    <td key={column.header} className={styles.num}>
+                      {cell.unmeasured ? <span className={styles.unmeasured}>{cell.text}</span> : cell.text}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
         </tbody>
       </WardTable>
       {uniform.length > 0 && (
@@ -582,37 +728,31 @@ interface HoveredWardState {
   idx: number;
   bx: number;
   by: number;
-  stay: number;
+  stay: number | null;
   unit: Unit;
+  tooltipLeft: number;
 }
 
-function WardAlosBarChart({
-  units,
-  admissions,
-  now,
-}: {
-  units: Unit[];
-  admissions: Admission[];
-  now: number;
-}) {
+function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admissions: Admission[]; now: number }) {
   const [hoveredWard, setHoveredWard] = useState<HoveredWardState | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   if (units.length === 0) return null;
 
   const stats = allWardStatistics(units, admissions, now);
-  const W = 920;
-  const H = 300;
-  const padLeft = 45;
-  const padRight = 90;
-  const padTop = 30;
-  const padBottom = 80;
+  const W = 1120;
+  const H = 360;
+  const padLeft = 100;
+  const padRight = 25;
+  const padTop = 32;
+  const padBottom = 108;
   const plotW = W - padLeft - padRight;
   const plotH = H - padTop - padBottom;
-  const maxStay = 11;
+  const maximum = Math.max(0, ...stats.map(({ statistics }) => statistics.averageLengthOfStayDays ?? 0));
+  const tickStep = Math.max(1, Math.ceil(maximum / 5));
+  const maxStay = tickStep * 5;
 
   const py = (v: number) => padTop + plotH * (1 - v / maxStay);
-  const yTarget = py(6.5);
 
   const n = Math.max(stats.length, 1);
   const colW = plotW / n;
@@ -620,26 +760,20 @@ function WardAlosBarChart({
 
   return (
     <div ref={containerRef} className={styles.barChartBox}>
+      <p className={styles.emptyNote}>Average among arrived admissions on each ward, in days. No target recorded.</p>
       <svg
         width="100%"
-        height="300"
+        height={H}
         viewBox={`0 0 ${W} ${H}`}
-        aria-label="Ward average length of stay bar chart with 6.5-day target line"
-        style={{ display: "block", width: "100%", height: "auto" }}
+        aria-label="Ward average length of stay bar chart"
+        style={{ display: "block", width: "100%", maxWidth: `${W}px`, height: "auto" }}
       >
-        {/* Y Grid lines at 2, 4, 6, 8, 10 days with strict 12px font floor */}
-        {[2, 4, 6, 8, 10].map((v) => {
+        {/* Scale from recorded stays, with a12px label floor. */}
+        {Array.from({ length: 6 }, (_, i) => i * tickStep).map((v) => {
           const y = py(v);
           return (
             <g key={v}>
-              <line
-                x1={padLeft}
-                y1={y}
-                x2={W - padRight}
-                y2={y}
-                stroke="var(--line)"
-                strokeWidth="1"
-              />
+              <line x1={padLeft} y1={y} x2={W - padRight} y2={y} stroke="var(--line)" strokeWidth="1" />
               <text
                 x={padLeft - 10}
                 y={y + 4}
@@ -654,38 +788,6 @@ function WardAlosBarChart({
           );
         })}
 
-        {/* 6.5d Target line (behind values!) */}
-        <line
-          x1={padLeft}
-          y1={yTarget}
-          x2={W - padRight}
-          y2={yTarget}
-          stroke="var(--gilt)"
-          strokeWidth="1.8"
-          strokeDasharray="4 4"
-        />
-        <rect
-          x={W - padRight + 6}
-          y={yTarget - 11}
-          width={78}
-          height={20}
-          rx={3}
-          fill="var(--gilt-soft)"
-          stroke="var(--gilt)"
-          strokeWidth="1"
-        />
-        <text
-          x={W - padRight + 45}
-          y={yTarget + 3}
-          textAnchor="middle"
-          fontSize="12"
-          fontWeight="600"
-          fontFamily="var(--mono)"
-          fill="var(--gilt)"
-        >
-          6.5d Target
-        </text>
-
         {/* Base axis line */}
         <line
           x1={padLeft}
@@ -699,17 +801,16 @@ function WardAlosBarChart({
         {/* Wards Bars */}
         {stats.map(({ unit, statistics }, i) => {
           const bx = padLeft + i * colW + (colW - barW) / 2;
-          const stay = statistics.averageLengthOfStayDays ?? 0;
-          const by = py(stay);
+          const stay = statistics.averageLengthOfStayDays;
+          const by = py(stay ?? 0);
           const bh = padTop + plotH - by;
-          const isOver = stay > 6.5;
-          const color = stay === 0 ? "var(--sunk)" : isOver ? "var(--warn)" : "var(--accent)";
+          const color = stay === null ? "transparent" : "var(--accent)";
 
-          const shortName = unit.name.replace(/ Adult Open| Adult Secure| Older Adult| Hospital| Unit/, "");
+          const shortName = unit.name.length > 14 ? `${unit.name.slice(0, 13)}…` : unit.name;
           const lx = (bx + barW / 2).toFixed(1);
           const ly = (padTop + plotH + 14).toFixed(1);
 
-          const numW = 28;
+          const numW = 42;
           const numH = 16;
           const numX = bx + barW / 2;
           const numY = by - 5;
@@ -722,20 +823,44 @@ function WardAlosBarChart({
                 x={bx}
                 y={by}
                 width={barW}
-                height={bh}
+                height={stay === null ? 1 : bh}
                 fill={color}
                 rx={3}
-                onMouseEnter={() => setHoveredWard({ idx: i, bx, by, stay, unit })}
+                onMouseEnter={() => {
+                  const width = Math.min(W, containerRef.current?.clientWidth ?? W);
+                  setHoveredWard({
+                    idx: i,
+                    bx,
+                    by,
+                    stay,
+                    unit,
+                    tooltipLeft: Math.max(10, Math.min((bx / W) * width, width - 170)),
+                  });
+                }}
                 onMouseLeave={() => setHoveredWard(null)}
                 tabIndex={0}
                 role="graphics-symbol"
-                aria-label={`${unit.name}: ${stay > 0 ? `${stay.toFixed(1)} days ALOS` : "none arrived"}`}
-                onFocus={() => setHoveredWard({ idx: i, bx, by, stay, unit })}
+                aria-label={`${unit.name}: ${stay === null ? "Not recorded" : `${stay.toFixed(1)} days average stay`}`}
+                onFocus={() => {
+                  const width = Math.min(W, containerRef.current?.clientWidth ?? W);
+                  setHoveredWard({
+                    idx: i,
+                    bx,
+                    by,
+                    stay,
+                    unit,
+                    tooltipLeft: Math.max(10, Math.min((bx / W) * width, width - 170)),
+                  });
+                }}
                 onBlur={() => setHoveredWard(null)}
-              />
+              >
+                <title>
+                  {`${unit.name}: ${stay === null ? "Not recorded" : `${stay.toFixed(1)} days average stay`}`}
+                </title>
+              </rect>
 
-              {/* Background pill badge so number never collides with target line */}
-              {stay > 0 && (
+              {/* Printed values stay visible; missing averages are not zero. */}
+              {
                 <g>
                   <rect
                     x={numX - numW / 2}
@@ -754,12 +879,12 @@ function WardAlosBarChart({
                     fontSize="12"
                     fontFamily="var(--mono)"
                     fontWeight="600"
-                    fill={isOver ? "var(--warn)" : "var(--ink)"}
+                    fill="var(--ink)"
                   >
-                    {stay.toFixed(1)}
+                    {stay === null ? "—" : stay.toFixed(1)}
                   </text>
                 </g>
-              )}
+              }
 
               {/* Rotated X-axis label with 12px font floor */}
               <text
@@ -772,6 +897,7 @@ function WardAlosBarChart({
                 fill="var(--ink-soft)"
               >
                 {shortName}
+                <title>{unit.name}</title>
               </text>
             </g>
           );
@@ -783,10 +909,7 @@ function WardAlosBarChart({
         <div
           className={styles.compareTooltip}
           style={{
-            left: `${Math.min(
-              Math.max(10, (hoveredWard.bx / W) * (containerRef.current?.clientWidth ?? W)),
-              (containerRef.current?.clientWidth ?? W) - 170,
-            )}px`,
+            left: `${hoveredWard.tooltipLeft}px`,
             top: "20px",
             display: "block",
           }}
@@ -817,19 +940,7 @@ function WardAlosBarChart({
             }}
           >
             <span>ALOS:</span>
-            <b>{hoveredWard.stay.toFixed(1)} days</b>
-          </div>
-          <div
-            style={{
-              fontSize: "12px",
-              fontWeight: 600,
-              color: hoveredWard.stay > 6.5 ? "var(--warn)" : "var(--good)",
-              marginTop: "2px",
-            }}
-          >
-            {hoveredWard.stay > 6.5
-              ? `+${(hoveredWard.stay - 6.5).toFixed(1)}d over target`
-              : `${(hoveredWard.stay - 6.5).toFixed(1)}d under target`}
+            <b>{hoveredWard.stay === null ? "Not recorded" : `${hoveredWard.stay.toFixed(1)} days`}</b>
           </div>
         </div>
       )}
@@ -855,7 +966,6 @@ function EdWaitingBarChart({
   movements: Movement[];
 }) {
   const [hoveredEd, setHoveredEd] = useState<HoveredEdState | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   if (emergencyDepartments.length === 0) return null;
 
@@ -885,7 +995,7 @@ function EdWaitingBarChart({
   const barW = Math.min(colW - 24, 52);
 
   return (
-    <div ref={containerRef} className={styles.barChartBox}>
+    <div className={styles.barChartBox}>
       <svg
         width="100%"
         height="240"
@@ -898,14 +1008,7 @@ function EdWaitingBarChart({
           const y = py(v);
           return (
             <g key={v}>
-              <line
-                x1={padLeft}
-                y1={y}
-                x2={W - padRight}
-                y2={y}
-                stroke="var(--line)"
-                strokeWidth="1"
-              />
+              <line x1={padLeft} y1={y} x2={W - padRight} y2={y} stroke="var(--line)" strokeWidth="1" />
               <text
                 x={padLeft - 10}
                 y={y + 4}
@@ -939,7 +1042,10 @@ function EdWaitingBarChart({
 
           const site = siteByCode(department.siteCode);
           const shortName = site
-            ? site.name.replace(/ Emergency Department$| Hospital$| Health Service$| Health Campus$| Public Hospital$/, "")
+            ? site.name.replace(
+                / Emergency Department$| Hospital$| Health Service$| Health Campus$| Public Hospital$/,
+                "",
+              )
             : department.name;
 
           const urgentH = (urgent / maxVal) * plotH;
@@ -1047,10 +1153,7 @@ function EdWaitingBarChart({
         <div
           className={styles.compareTooltip}
           style={{
-            left: `${Math.min(
-              Math.max(10, (hoveredEd.bx / W) * (containerRef.current?.clientWidth ?? W)),
-              (containerRef.current?.clientWidth ?? W) - 170,
-            )}px`,
+            left: `clamp(10px, ${(hoveredEd.bx / W) * 100}%, max(10px, calc(100% - 170px)))`,
             top: "20px",
             display: "block",
           }}

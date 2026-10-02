@@ -267,8 +267,8 @@ export function WardFlowSignInScreen() {
                     never be somewhere a real password is typed.
                   </p>
                   <p>
-                    What Ward Flow settles is the role, and the role is a set of permissions. Ward Flow signs a role in
-                    and never a person.
+                    Role selection previews the drawing&apos;s workspace and actions. It does not sign anyone in or
+                    grant permissions.
                   </p>
                 </section>
               </div>
@@ -280,15 +280,13 @@ export function WardFlowSignInScreen() {
             <div>
               <h2 id="sec-role" className={styles.sectionTitle}>
                 <span>Your role</span>
-                <span className={styles.subtleDash}> · </span>
-                <span>Select Operational Shift Role</span>
               </h2>
               <div className={styles.sectionSub}>
                 Choose a role to preview its workspace. This does not verify identity or grant access.
               </div>
             </div>
             <span className={styles.sectionMeta} id="roleGridTally">
-              {SIGN_IN_ROLES.length} Roles Registered · 1 Selected
+              {SIGN_IN_ROLES.length} role previews · 1 selected
             </span>
           </section>
 
@@ -318,7 +316,7 @@ export function WardFlowSignInScreen() {
                     >
                       {n} of {SIGN_IN_ACTIONS.length}
                     </span>
-                    <span className={styles.roleTargetChip}>{candidate.targetChip}</span>
+                    <span className={styles.roleTargetChip}>{candidate.opens}</span>
                   </div>
                 </button>
               );

@@ -1389,13 +1389,43 @@ table.snapSheet {
 .panelHead h3 {
   margin: 0;
   font-family: var(--display);
-  font-size: var(--t-2);
+  font-size: var(--t-4);
   font-weight: 600;
   color: var(--ink);
 }
 
 .panelBody {
   padding: 14px;
+}
+
+.briefingNotice {
+  max-width: 62rem;
+  margin: 0 0 var(--ward-space-16);
+  font-size: var(--t-2);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.exampleSummary {
+  padding: 14px;
+  cursor: pointer;
+  color: var(--ink);
+  background: var(--surface-2);
+  font-size: var(--t-4);
+  font-weight: 600;
+}
+
+.exampleSummary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.exampleSummary::marker {
+  color: var(--accent);
+}
+
+.exampleSummary + .panelBody {
+  border-top: 1px solid var(--line);
 }
 
 /* Breaches Grid */

@@ -17,6 +17,7 @@ import {
 } from "../src/components/ward-management/ward-model";
 import { wardMovements } from "../src/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
+import { legalFormReadinessLine } from "../src/components/ward-management/movements/movement-workspace-derivations";
 import { literalsIn } from "./helpers/ast-string-literals";
 import {
   KNOWN_DUE_AT_VALUES,
@@ -928,7 +929,20 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
    * is a real limit and Playwright remains the only thing that closes it.
    */
   it("renders absence as 'no deadline recorded', never as a claim about the Act", () => {
-    const renderers = [`${WARD_DIR}/ward-management-console.tsx`, `${WARD_DIR}/coordinator/shortlist-panel.tsx`];
+    const renderers = [
+      `${WARD_DIR}/movements/movement-workspace-derivations.ts`,
+      `${WARD_DIR}/coordinator/shortlist-panel.tsx`,
+    ];
+    const cockpit = readFileSync(`${WARD_DIR}/movements/movement-workspace-cockpit.tsx`, "utf8");
+    expect(cockpit).toContain('from "@/components/ward-management/movements/movement-workspace-derivations"');
+    expect(cockpit).toContain("legalFormReadinessLine(patient.legalForm, now)");
+    const recordedWithoutDeadline = wardMovements
+      .flatMap((movement) => (movement.legalForm ? [movement.legalForm] : []))
+      .find((form) => form.dueAt === undefined);
+    expect(recordedWithoutDeadline, "the legal absence fixture must exist").toBeDefined();
+    if (!recordedWithoutDeadline) throw new Error("No legal absence fixture");
+    expect(legalFormReadinessLine(recordedWithoutDeadline, NOW_ANCHOR)).toContain("no deadline recorded");
+    expect(legalFormReadinessLine(recordedWithoutDeadline, NOW_ANCHOR)).not.toContain("no statutory deadline");
 
     for (const path of renderers) {
       const literals = literalsIn(path);
@@ -992,7 +1006,7 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
     // measured on the day, and they are the surfaces a coordinator actually reads.** Four anchors
     // hold the non-vacuity argument as well as five did.
     for (const expected of [
-      `${WARD_DIR}/ward-management-console.tsx`,
+      `${WARD_DIR}/movements/movement-workspace-cockpit.tsx`,
       `${WARD_DIR}/ward-management-network.tsx`,
       `${WARD_DIR}/coordinator/shortlist-panel.tsx`,
       `${WARD_DIR}/ed/ed-screen.tsx`,

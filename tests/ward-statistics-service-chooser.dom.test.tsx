@@ -121,10 +121,12 @@ describe("Health-service chooser — the links a person can actually reach", () 
     }
   });
 
-  it("puts no numeral in the chooser's own rationale — it is prose about a fixed vocabulary, not a count", () => {
+  it("keeps service selection free of redundant explanatory prose", () => {
     const main = renderHubMain();
     const rationale = main.querySelector('[data-testid="ward-statistics-service-chooser-rationale"]');
-    expect(rationale, "the chooser rendered no rationale paragraph").not.toBeNull();
-    expect(rationale?.textContent).not.toMatch(/[0-9]/);
+    expect(rationale).toBeNull();
+    expect(main.querySelectorAll('[data-testid^="ward-statistics-service-link-"]')).toHaveLength(
+      HEALTH_SERVICES.length,
+    );
   });
 });

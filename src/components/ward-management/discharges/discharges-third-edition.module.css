@@ -549,8 +549,8 @@
 }
 @media (min-width: 62.5625rem) {
   .workspace {
-    grid-template-columns: minmax(0, 1fr) minmax(17rem, 20rem);
-    height: max(30rem, calc(100dvh - 16rem));
+    grid-template-columns: minmax(0, 1.32fr) minmax(28rem, 31rem);
+    height: max(32rem, calc(100dvh - 15rem));
   }
   .register,
   .detail {
@@ -1266,4 +1266,1025 @@
 :global([data-theme="dark"]) .viewPatientRecordBtn:hover {
   background: var(--accent-soft);
   border-color: var(--accent);
+}
+
+/* ─── Executive Patient Banner & Identity ─── */
+.executivePatientCard {
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r1);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  box-shadow: 0 1px 3px var(--ward-shadow-black-04);
+}
+
+.patientCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.patientIdentity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.patientAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: var(--t-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--accent);
+  flex-shrink: 0;
+}
+
+.patientAvatarSmall {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: var(--t-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--accent);
+  flex-shrink: 0;
+}
+
+.patientText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.patientFullName {
+  font-size: var(--t-4);
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.patientIdentifiers {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.umrnTag {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 1px 7px;
+  border-radius: var(--pill);
+}
+
+.unitTag {
+  font-size: var(--t-0);
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* ─── Status & Target Departure Ribbon ─── */
+.statusRibbon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 8px 12px;
+  margin-top: 0.5rem;
+}
+
+.statusRibbonGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ─── Departure Metrics Grid ─── */
+.metricsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0.75rem 0;
+}
+
+.metricTile {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.metricLabel {
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.metricValue {
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.metricSub {
+  font-size: var(--t-0);
+  font-family: var(--mono);
+  color: var(--muted);
+}
+
+/* ─── Barrier Mitigation Action Console ─── */
+.barrierActionBox {
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  border-radius: var(--r1);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 0.75rem;
+}
+
+.barrierTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.barrierCause {
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--warn-ink, var(--warn));
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.barrierUrgencyBadge {
+  background: var(--warn);
+  color: var(--ward-fixed-white);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: var(--pill);
+}
+
+.barrierDesc {
+  font-size: var(--t-1);
+  color: var(--ink-soft);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.actionDeck {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.deckButton {
+  flex: 1;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--r2);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.12s ease;
+}
+
+.deckButton:hover {
+  background: var(--sunk);
+  border-color: var(--accent);
+}
+
+.deckButtonEscalate {
+  flex: 1;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--r2);
+  border: 1px solid var(--warn);
+  background: var(--warn-soft);
+  color: var(--warn-ink, var(--warn));
+  font-size: var(--t-1);
+  font-weight: 650;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.12s ease;
+}
+
+.deckButtonEscalate:hover {
+  background: var(--warn);
+  color: var(--ward-fixed-white);
+}
+
+/* ─── Transit & Destination Logistics Card ─── */
+.transportCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 0.75rem;
+}
+
+.transportHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sectionTitle {
+  font-size: var(--t-1);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.transportStatusBadge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--good);
+  background: var(--good-soft);
+  padding: 2px 7px;
+  border-radius: var(--pill);
+}
+
+.transportInfoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--t-1);
+}
+
+.transportLabel {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.transportValue {
+  font-weight: 650;
+  color: var(--ink);
+}
+
+/* ─── Clinical Discharge Stepper ─── */
+.stepperCard {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 0.75rem;
+}
+
+.stepperTitle {
+  font-size: var(--t-1);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.stepper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.stepItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stepBullet {
+  position: absolute;
+  left: -24px;
+  top: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.stepDone .stepBullet {
+  background: var(--good);
+  border-color: var(--good);
+  color: var(--ward-fixed-white);
+  box-shadow: 0 0 0 2px var(--good-soft);
+}
+
+.stepActive .stepBullet {
+  background: var(--warn);
+  border-color: var(--warn);
+  color: var(--ward-fixed-white);
+  box-shadow: 0 0 0 2px var(--warn-soft);
+}
+
+.stepBlocked .stepBullet {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--ward-fixed-white);
+  box-shadow: 0 0 0 2px var(--danger-soft);
+}
+
+.stepPending .stepBullet {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+.stepName {
+  font-size: var(--t-1);
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.stepMeta {
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+/* ─── OPTION 2 DRAWER: TABBED TRAJECTORY & LOGISTICS ─── */
+.drawerTopBar {
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.drawerTopTitle {
+  font-size: var(--t-2);
+  font-weight: 700;
+  color: var(--accent-ink, var(--ink));
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drawerTabs {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  padding: 0 8px;
+  gap: 2px;
+  overflow-x: auto;
+}
+
+.drawerTab {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 8px 10px;
+  font-size: var(--t-1);
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.12s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.drawerTab:hover {
+  color: var(--ink);
+}
+
+.drawerTabActive {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 700;
+}
+
+.tabBadgeAlert {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: var(--pill);
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  line-height: 1;
+}
+
+.tabPane {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tabPaneHidden {
+  display: none !important;
+}
+
+/* ─── 4-Gate Linear Stepper (Option 2) ─── */
+.stepperGate {
+  display: flex;
+  gap: 12px;
+  position: relative;
+}
+
+.stepperGate::after {
+  content: "";
+  position: absolute;
+  top: 24px;
+  bottom: -12px;
+  left: 11px;
+  width: 2px;
+  background: var(--line);
+}
+
+.stepperGate:last-child::after {
+  display: none;
+}
+
+.gateIndicator {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.gateIndicatorComplete {
+  background: var(--good);
+  color: var(--ward-fixed-white);
+}
+
+.gateIndicatorActive {
+  background: var(--warn);
+  color: var(--ward-fixed-white);
+  box-shadow: 0 0 0 3px var(--warn-soft);
+}
+
+.gateIndicatorBlocked {
+  background: var(--danger);
+  color: var(--ward-fixed-white);
+  box-shadow: 0 0 0 3px var(--danger-soft);
+}
+
+.gateIndicatorPending {
+  background: var(--surface);
+  border: 2px solid var(--line-strong);
+  color: var(--muted);
+}
+
+.gateDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gateTitle {
+  font-size: var(--t-1);
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.gateActor {
+  font-size: var(--t-0);
+  color: var(--muted);
+}
+
+/* ─── Dispatch Logistics Box (Option 2) ─── */
+.dispatchBox {
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r1);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dispatchRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--t-1);
+  gap: 8px;
+}
+
+.dispatchLabel {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.dispatchValue {
+  font-weight: 650;
+  color: var(--ink);
+  text-align: right;
+}
+
+.btnDeck {
+  flex: 1;
+  height: 32px;
+  border-radius: var(--r2);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-1);
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.12s;
+  padding: 0 10px;
+}
+
+.btnDeck:hover {
+  background: var(--sunk);
+  border-color: var(--accent);
+}
+
+.btnDeckPrimary {
+  flex: 1;
+  height: 32px;
+  border-radius: var(--r2);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--t-1);
+  font-weight: 650;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.12s;
+  padding: 0 10px;
+}
+
+.btnDeckPrimary:hover {
+  filter: brightness(1.08);
+}
+
+.waveIndicatorBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: var(--pill);
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+/* ─── Main Worklist Table Column Proportions & Row Active State ─── */
+.workTable th:nth-child(1),
+.workTable td:nth-child(1) {
+  width: 32%;
+}
+
+.workTable th:nth-child(2),
+.workTable td:nth-child(2) {
+  width: 34%;
+}
+
+.workTable th:nth-child(3),
+.workTable td:nth-child(3) {
+  width: 34%;
+}
+
+.workTable td:first-child {
+  box-shadow: inset 4px 0 0 transparent;
+  transition: box-shadow 0.12s ease;
+}
+
+.workTable tr[data-selected="true"] td:first-child {
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+
+/* ─── Dark Mode Adaptations ─── */
+:global([data-theme="dark"]) .executivePatientCard {
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
+  border-color: var(--line-strong);
+}
+
+:global([data-theme="dark"]) .barrierActionBox {
+  background: var(--warn-soft);
+  border-color: var(--warn);
+}
+
+:global([data-theme="dark"]) .transportCard,
+:global([data-theme="dark"]) .stepperCard,
+:global([data-theme="dark"]) .metricTile,
+:global([data-theme="dark"]) .statusRibbon {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+}
+
+/* ─── Perfected Option 2 Layout Extensions ─── */
+.boardHeaderBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.boardHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.boardMainTitle {
+  font-size: var(--t-4);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.contextBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: var(--pill);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: var(--t-0);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* Wave Cards in KPI Strip */
+.waveCardUrgent {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+
+.waveCardMidday {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+
+.waveCardEvening {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+
+.waveCardCleared {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+
+.waveIconBoxUrgent,
+.waveIconBoxMidday,
+.waveIconBoxEvening,
+.waveIconBoxCleared {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.waveIconBoxUrgent {
+  background: var(--danger-soft);
+  color: var(--danger-ink, var(--danger));
+  border: 1px solid var(--danger-border, var(--danger));
+}
+
+.waveIconBoxMidday {
+  background: var(--warn-soft);
+  color: var(--warn-ink, var(--warn));
+  border: 1px solid var(--warn);
+}
+
+.waveIconBoxEvening {
+  background: var(--accent-soft);
+  color: var(--accent-ink, var(--accent));
+  border: 1px solid var(--accent);
+}
+
+.waveIconBoxCleared {
+  background: var(--good-soft);
+  color: var(--good-ink, var(--good));
+  border: 1px solid var(--good);
+}
+
+.waveText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.waveTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.kpiTargetNote {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin-top: 1px;
+}
+
+/* Wave Section Table Headers */
+.waveSectionHeaderBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.25rem 0;
+}
+
+.waveSectionLeft {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.waveSectionSubtitle {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.waveTagDanger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: var(--pill);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--danger-soft);
+  color: var(--danger-ink, var(--danger));
+  border: 1px solid var(--danger-border, var(--danger));
+}
+
+.waveTagTarget {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: var(--pill);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--warn-soft);
+  color: var(--warn-ink, var(--warn));
+  border: 1px solid var(--warn);
+}
+
+.waveTagTracked {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: var(--pill);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.waveTagCleared {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: var(--pill);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--good-soft);
+  color: var(--good-ink, var(--good));
+  border: 1px solid var(--good);
+}
+
+/* Patient Header Box in Drawer */
+.patientHeaderBox {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r1);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.patientHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.avatarSquare {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r2);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--accent);
+  flex-shrink: 0;
+}
+
+.patientMeta {
+  font-size: var(--t-0);
+  color: var(--muted);
+  font-family: var(--mono);
+  display: block;
+}
+
+.closeBtn {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--r2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    color 0.12s,
+    background 0.12s;
+}
+
+.closeBtn:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+/* Clinical & Drawer Status Badges (Option 2) */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: var(--pill);
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badgeBlocked {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: var(--pill);
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--danger-soft);
+  color: var(--danger-ink, var(--danger));
+  border: 1px solid var(--danger-border, var(--danger));
+}
+
+.badgeExpected {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: var(--pill);
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--warn-soft);
+  color: var(--warn-ink, var(--warn));
+  border: 1px solid var(--warn);
+}
+
+.badgeConfirmed {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: var(--pill);
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--good-soft);
+  color: var(--good-ink, var(--good));
+  border: 1px solid var(--good);
+}
+
+.badgeCleared {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: var(--pill);
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--line);
 }
