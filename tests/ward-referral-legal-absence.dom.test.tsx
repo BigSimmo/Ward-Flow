@@ -73,7 +73,7 @@ describe("Referral legal information does not infer authority from a bed request
     fireEvent.click(within(row).getByRole("button", { name: id }));
     expect(screen.getByText(/Legal status not recorded/)).toBeVisible();
     expect(screen.queryByText(/Voluntary Status|Involuntary \(MHA 2014\)/)).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("tab", { name: "Statutory Governance (MHA 2014)" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Recorded legal forms" }));
     expect(screen.getByText("Consent or detention authority")).toBeVisible();
     expect(screen.getByText("Not recorded in this referral")).toBeVisible();
     expect(screen.getByText("Register check not recorded on this referral.")).toBeVisible();
