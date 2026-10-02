@@ -4,6 +4,9 @@
 
 No Ward Flow Cloud setup is established by the copied commands below. Do not run their setup, maintenance, live-mode, login or provider procedures for this repository. Verify a Ward Flow-specific setup contract first.
 
+> The inherited source block below is historical. Current Ward guidance above and the repository boundary govern.
+
+<!-- docs-script-refs:historical-start -->
 <!-- BEGIN:cursor-cloud-instructions -->
 
 ## Cursor Cloud specific instructions (not Codex Cloud)
@@ -20,3 +23,4 @@ Durable notes for Cloud Agents. Standard commands live in `README.md` and `packa
 - For GitHub-related work authorised in this session, prefer the connected GitHub connector/MCP tools first for PR, issue, comment, review-thread, and Actions tasks they support (including run/job/log/artifact inspection and review-thread replies/resolution). A missing `gh` CLI is not a blocker for connector-supported work; never add a PAT as a workaround. The intended connection is `BigSimmo` with repository write access. Reserve administrator access for separately approved operations. Verify the exact target and connector result before any write. Ordinary authorised shell `git` branch publication remains allowed; use shell `gh` only for a genuine connector gap and only when the task permits it.
 
 <!-- END:cursor-cloud-instructions -->
+<!-- docs-script-refs:historical-end -->

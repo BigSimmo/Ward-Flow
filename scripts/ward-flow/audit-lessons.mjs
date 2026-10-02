@@ -4,7 +4,7 @@
  * STATEMENTS.** That is the store's own first theme.
  *
  * This script is the mechanical audit for the lesson store. It systematically checks every lesson in
- * `~/.claude/projects/D--Repos-Database/memory/` (or the repo mirror at `docs/ward-flow/lessons/`)
+ * the Ward-owned historical copy at `docs/ward-flow/lessons/`
  * across four failure modes:
  *
  *   1. DECAY: Broken file paths, retired scripts, or obsolete gate lists cited as active.
@@ -19,25 +19,18 @@
  *
  * ⚠️ **THE `--check` MODE IS THE POINT.**
  * Without `--check`, any audit document is just another snapshot that rots the following week.
- * Running this alongside `rules-index.mjs --check` and `sync-lessons.mjs --check` guarantees the
- * lesson store cannot silently degrade.
+ * The private lesson importer is retired. This audit reads only the repository copy;
+ * it cannot establish that historical lessons are current or clinically approved.
  */
 
 import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const REPO_ROOT = resolve(process.cwd());
-const STORE_DIR = join(
-  process.env.USERPROFILE ?? process.env.HOME ?? "",
-  ".claude",
-  "projects",
-  "D--Repos-Database",
-  "memory"
-);
 const REPO_LESSONS_DIR = join(REPO_ROOT, "docs", "ward-flow", "lessons");
 const REPORT_OUT = join(REPO_ROOT, "docs", "ward-flow", "LESSON-AUDIT-REPORT.md");
 
-const ACTIVE_DIR = existsSync(STORE_DIR) ? STORE_DIR : REPO_LESSONS_DIR;
+const ACTIVE_DIR = REPO_LESSONS_DIR; // Ward-owned tracked history only; never inspect another project's private store.
 
 // Ignored files (not lesson notes)
 const IGNORED_FILES = new Set(["README.md", "MEMORY.md"]);
@@ -56,7 +49,7 @@ const KNOWN_HISTORICAL_PATHS = new Set([
   ".ts/.tsx/.css",
   "wards/ward-overview.module.css",
   "wards/ward-index.tsx",
-  "shell/ward-facade.ts"
+  "shell/ward-facade.ts",
 ]);
 
 // ---------------------------------------------------------------------------------------------
@@ -66,7 +59,7 @@ const KNOWN_HISTORICAL_PATHS = new Set([
 function parseFrontmatter(rawText) {
   const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(rawText);
   if (!match) return { frontmatter: {}, body: rawText, hasFrontmatter: false };
-  
+
   const frontmatter = {};
   for (const line of match[1].split(/\r?\n/)) {
     const kv = /^(\w+):\s*(.*)$/.exec(line.trim());
@@ -92,7 +85,7 @@ function loadLessons() {
     const rawBuffer = readFileSync(join(ACTIVE_DIR, file));
     const rawText = rawBuffer.toString("utf8");
     const { frontmatter, body, hasFrontmatter } = parseFrontmatter(rawText);
-    
+
     // Check NUL bytes
     let hasNul = false;
     for (let i = 0; i < rawBuffer.length; i++) {
@@ -110,7 +103,7 @@ function loadLessons() {
       frontmatter,
       body,
       hasFrontmatter,
-      hasNul
+      hasNul,
     };
   });
 }
@@ -156,18 +149,18 @@ function checkDecay(lessons) {
     while ((match = pathRegex.exec(body)) !== null) {
       const cited = match[1];
       if (!cited.includes("/") || cited.startsWith("http")) continue;
-      
+
       const fullRepoPath = join(REPO_ROOT, cited);
       const fullSrcPath = join(REPO_ROOT, "src", "components", "ward-management", cited);
-      
+
       const exists = existsSync(fullRepoPath) || existsSync(fullSrcPath);
-      
+
       if (!exists) {
         const matchPos = match.index;
         const windowStart = Math.max(0, matchPos - 250);
         const windowEnd = Math.min(body.length, matchPos + 250);
         const context = body.slice(windowStart, windowEnd).toLowerCase();
-        
+
         const isAnnotatedHistorical =
           KNOWN_HISTORICAL_PATHS.has(cited) ||
           /no longer exist|formerly|old|retired|was|not exist|archived|stale|resolved|dated|earlier/.test(context);
@@ -177,7 +170,7 @@ function checkDecay(lessons) {
             file: l.file,
             cited,
             type: "unannotated_missing_path",
-            message: `Cited file '${cited}' does not exist on disk and is not marked as historical.`
+            message: `Cited file '${cited}' does not exist on disk and is not marked as historical.`,
           });
         }
       }
@@ -197,7 +190,7 @@ function tokenize(text) {
       .toLowerCase()
       .replace(/[^a-z0-9_]/g, " ")
       .split(/\s+/)
-      .filter((w) => w.length > 3)
+      .filter((w) => w.length > 3),
   );
 }
 
@@ -205,7 +198,7 @@ function checkRedundancy(lessons) {
   const tokenized = lessons.map((l) => ({
     file: l.file,
     tokens: tokenize(l.body),
-    body: l.body
+    body: l.body,
   }));
 
   const duplicates = [];
@@ -225,17 +218,14 @@ function checkRedundancy(lessons) {
       const stemA = a.file.replace(/\.md$/, "");
       const stemB = b.file.replace(/\.md$/, "");
       const crossRef =
-        a.body.includes(b.file) ||
-        a.body.includes(stemB) ||
-        b.body.includes(a.file) ||
-        b.body.includes(stemA);
+        a.body.includes(b.file) || a.body.includes(stemB) || b.body.includes(a.file) || b.body.includes(stemA);
 
       if (sim >= 0.35) {
         duplicates.push({
           fileA: a.file,
           fileB: b.file,
           similarity: Number(sim.toFixed(3)),
-          isCrossReferenced: crossRef
+          isCrossReferenced: crossRef,
         });
       }
     }
@@ -256,29 +246,29 @@ function checkContradictions(lessons) {
       name: "Allowlists vs. No-Exemptions",
       filesA: ["ward-flow-ledger-system.md", "self-invalidating-pins.md"],
       filesB: ["wrong-on-purpose-and-load-bearing.md", "a-clinical-word-that-means-two-things.md"],
-      requiredScopeMarker: /test scanner|checker exemption|ledger allowlist|boundary distinction|evidentiary/i
+      requiredScopeMarker: /test scanner|checker exemption|ledger allowlist|boundary distinction|evidentiary/i,
     },
     {
       id: "ban_scopes",
       name: "Ban Everywhere vs Scope to False States",
       filesA: ["a-guards-condition-is-not-its-population.md"],
       filesB: ["a-guard-that-blocks-its-own-purpose.md"],
-      requiredScopeMarker: /scan region|trigger condition|state where it is false|anywhere|scope/i
+      requiredScopeMarker: /scan region|trigger condition|state where it is false|anywhere|scope/i,
     },
     {
       id: "handover_vs_owner_prose",
       name: "File Pointers vs Plain Brief Prose",
       filesA: ["a-retraction-does-not-travel.md"],
       filesB: ["communication-style-plain-and-brief.md"],
-      requiredScopeMarker: /handover|owner|agent-to-agent|technical contract|executive/i
+      requiredScopeMarker: /handover|owner|agent-to-agent|technical contract|executive/i,
     },
     {
       id: "sha_pinning",
       name: "Pin SHA vs Never Pin SHA",
       filesA: ["observations-expire.md"],
       filesB: [],
-      requiredScopeMarker: /observation|pointer|sha|branch/i
-    }
+      requiredScopeMarker: /observation|pointer|sha|branch/i,
+    },
   ];
 
   const lessonMap = new Map(lessons.map((l) => [l.file, l]));
@@ -302,7 +292,7 @@ function checkContradictions(lessons) {
       name: axis.name,
       files: allFiles,
       resolved,
-      missingScopeFiles
+      missingScopeFiles,
     });
   }
 
@@ -323,11 +313,14 @@ function generateMarkdownReport(lessons, integrityIssues, decayIssues, redundanc
     "---",
     "",
     "## 1. Integrity & Frontmatter Health",
-    ""
+    "",
   ];
 
   if (integrityIssues.length === 0) {
-    lines.push("✅ **All 160 lessons possess valid YAML frontmatter, valid titles/descriptions, and clean byte encodings.**", "");
+    lines.push(
+      "✅ **All 160 lessons possess valid YAML frontmatter, valid titles/descriptions, and clean byte encodings.**",
+      "",
+    );
   } else {
     lines.push(`🔴 **Found ${integrityIssues.length} integrity issue(s):**`, "");
     for (const issue of integrityIssues) {
@@ -338,7 +331,10 @@ function generateMarkdownReport(lessons, integrityIssues, decayIssues, redundanc
 
   lines.push("## 2. Decay & Path Verification", "");
   if (decayIssues.length === 0) {
-    lines.push("✅ **Zero unannotated decayed path citations found.** All missing paths are accompanied by historical or retrospective context.", "");
+    lines.push(
+      "✅ **Zero unannotated decayed path citations found.** All missing paths are accompanied by historical or retrospective context.",
+      "",
+    );
   } else {
     lines.push(`⚠️ **Found ${decayIssues.length} unannotated missing path(s):**`, "");
     for (const d of decayIssues) {
@@ -363,7 +359,9 @@ function generateMarkdownReport(lessons, integrityIssues, decayIssues, redundanc
     if (c.resolved) {
       lines.push(`- ✅ **${c.name}**: Domain boundaries explicitly declared across involved files.`);
     } else {
-      lines.push(`- 🔴 **${c.name}**: Missing scope clarification in: ${c.missingScopeFiles.map((f) => `\`${f}\``).join(", ")}`);
+      lines.push(
+        `- 🔴 **${c.name}**: Missing scope clarification in: ${c.missingScopeFiles.map((f) => `\`${f}\``).join(", ")}`,
+      );
     }
   }
   lines.push("");
@@ -386,7 +384,7 @@ function main() {
     integrityIssues,
     decayIssues,
     redundancyPairs,
-    contradictionResults
+    contradictionResults,
   };
 
   if (isJson) {
@@ -394,16 +392,11 @@ function main() {
     process.exit(integrityIssues.length > 0 || decayIssues.length > 0 ? 1 : 0);
   }
 
-  const markdown = generateMarkdownReport(
-    lessons,
-    integrityIssues,
-    decayIssues,
-    redundancyPairs,
-    contradictionResults
-  );
+  const markdown = generateMarkdownReport(lessons, integrityIssues, decayIssues, redundancyPairs, contradictionResults);
 
   if (isCheck) {
-    const hasFatal = integrityIssues.length > 0 || decayIssues.length > 0 || contradictionResults.some((c) => !c.resolved);
+    const hasFatal =
+      integrityIssues.length > 0 || decayIssues.length > 0 || contradictionResults.some((c) => !c.resolved);
     if (hasFatal) {
       console.error("🔴 LESSON AUDIT FAILED (`--check`):");
       if (integrityIssues.length) console.error(`  - ${integrityIssues.length} integrity issues`);

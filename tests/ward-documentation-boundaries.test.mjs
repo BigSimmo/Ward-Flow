@@ -1,8 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import vm from "node:vm";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import {
   stripHistoricalSections,
   extractScriptRefs,
@@ -48,6 +51,48 @@ test("nested native instructions included, dependencies excluded", () => {
     assert.deepEqual(collectInstructionDocs(root).sort(), ["GEMINI.md", "src/CLAUDE.md"]);
   } finally {
     assert.equal(root.startsWith(join(tmpdir(), "ward-doc-instructions-")), true);
+    rmSync(root, { recursive: true });
+  }
+});
+
+test("ownership parser recognises exact root dotfiles and rejects malformed claims", () => {
+  const source = readFileSync(new URL("../scripts/pre-commit-checks.mjs", import.meta.url), "utf8");
+  const body = source.slice(
+    source.indexOf("function signOutEntries("),
+    source.indexOf("function signOutEntriesForCheckout("),
+  );
+  const parse = vm.runInNewContext(body + "; signOutEntries");
+  const claim = (file) => `- 2026-10-02 | fixture | codex/fixture | D:/fixture | ${file}, repo=BigSimmo/Ward-Flow`;
+  for (const file of [".prettierignore", "package.json", "docs/current.md", ".env.example"])
+    assert.equal(parse(claim(file))[0].paths.includes(file), true, file);
+  for (const file of ["..", ".", "bad space.md", "C:/outside/file.md"])
+    assert.equal(parse(claim(file))[0].paths.includes(file), false, file);
+});
+
+test("retired lesson importer refuses ordinary and check runs without file access", () => {
+  const importer = fileURLToPath(new URL("../scripts/ward-flow/sync-lessons.mjs", import.meta.url));
+  // With no imports or require, the retirement stub cannot load a private store.
+  assert.doesNotMatch(readFileSync(importer, "utf8"), /^\s*import\b|\brequire\s*\(|\bimport\s*\(/m);
+  const root = mkdtempSync(join(tmpdir(), "ward-retired-importer-"));
+  try {
+    const store = join(root, ".claude", "projects", "D--Repos-Database", "memory");
+    mkdirSync(store, { recursive: true });
+    const sentinel = join(store, "fixture.md");
+    writeFileSync(sentinel, "synthetic sentinel");
+    for (const args of [[], ["--check"]]) {
+      const result = spawnSync(process.execPath, [importer, ...args], {
+        cwd: root,
+        env: { ...process.env, HOME: root, USERPROFILE: root },
+        encoding: "utf8",
+        timeout: 5000,
+      });
+      assert.equal(result.status, 1);
+      assert.match(result.stderr, /import is retired/);
+      assert.equal(readFileSync(sentinel, "utf8"), "synthetic sentinel");
+      assert.equal(existsSync(join(root, "docs")), false);
+    }
+  } finally {
+    assert.equal(root.startsWith(join(tmpdir(), "ward-retired-importer-")), true);
     rmSync(root, { recursive: true });
   }
 });

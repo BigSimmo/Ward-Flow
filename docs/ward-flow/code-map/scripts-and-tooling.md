@@ -98,7 +98,7 @@ run individually per file; nothing here was executed. Back to [the code map inde
   `ward:check-docs`. Fails if a relative markdown link under `docs/ward-flow/**` points at a file
   that is not there. Does not check absolute URLs, in-file anchors, or links inside fenced code
   blocks. ⚠️ Similarly named to, and a **different file from**, the repo-wide
-  `scripts/check-docs-links.mjs` (`npm run docs:check-links`) — see Pitfalls.
+  `scripts/check-docs-links.mjs` (`npm run check:ward-doc-links`) — see Pitfalls.
 - **`scripts/ward-flow/check-drawing-rules.mjs`** (223 lines) — Usage:
   `node scripts/ward-flow/check-drawing-rules.mjs <drawing.html> [...]`. Static, read-only check of
   a drawing's rendered copy (text, title/aria-label/placeholder/alt/value attributes, and string
@@ -645,7 +645,7 @@ generator `--check`s only when their own source changed.
 ## Pitfalls in this area
 
 1. **Two different, similarly-named doc-link checkers.** `scripts/check-docs-links.mjs`
-   (`npm run docs:check-links`, repo-wide) and `scripts/ward-flow/check-doc-links.mjs`
+   (`npm run check:ward-doc-links`, repo-wide) and `scripts/ward-flow/check-doc-links.mjs`
    (`npm run check:ward-doc-links`, Ward-only) are separate files with separate scope. Running the
    wrong one gives a false sense that Ward Flow's links were checked, or floods you with unrelated
    repo-wide link findings.

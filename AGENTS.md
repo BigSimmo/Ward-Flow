@@ -339,12 +339,9 @@ For the repo-local skill catalogue and the foundational orchestration skills, se
 
 ## Codex GitHub review behavior
 
-For Codex's automated GitHub pull request review and auto-resolve behavior — severity
-calibration, PR risk detection, cost controls, the review comment lifecycle, the automatic
-resolve trigger, and the primary PR command — see
-[`docs/agents/codex-github-review.md`](docs/agents/codex-github-review.md). That file is the
-exact text `scripts/check-codex-autofix-workflow.mjs` enforces against the live workflow; do not
-let a copy in this file drift from it.
+For separately authorised Ward review handling and historical review provenance, see
+[`docs/agents/codex-github-review.md`](docs/agents/codex-github-review.md). The inherited
+auto-fix workflow and enforcing checker are absent here; reply markers do not prove closure.
 
 ## Codex Cloud environment
 

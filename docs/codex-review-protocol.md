@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../AGENTS.md) and [Ward entry point](ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Codex Review Protocol
 
 > [!NOTE]
@@ -101,3 +108,5 @@ If `gh pr checks` or the check-runs endpoint returns `Resource not accessible by
 4. For the "CI" workflow run, query its jobs (`GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs`) and require the `PR required` job. Explicitly report whether that job is missing or has a non-success conclusion. That job is this repository's single required aggregate gate; a run that completed without it does not prove required CI passed.
 5. If neither Checks nor Actions can be read, report CI as unobserved due to credential capability — never as passing, absent, or failed.
 6. An empty `GET /commits/{sha}/status` response does not prove that Actions workflows did not run.
+
+<!-- docs-script-refs:historical-end -->

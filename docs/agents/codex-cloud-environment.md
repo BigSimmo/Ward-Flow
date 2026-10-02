@@ -4,6 +4,9 @@
 
 No Ward Flow Cloud setup is established by the copied commands below. Do not run their setup, maintenance, live-mode, login or provider procedures for this repository. Verify a Ward Flow-specific setup contract first.
 
+> The inherited source block below is historical. Current Ward guidance above and the repository boundary govern.
+
+<!-- docs-script-refs:historical-start -->
 <!-- BEGIN:codex-cloud-environment -->
 
 ## Codex Cloud environment
@@ -126,3 +129,4 @@ Codex Cloud uses an isolated Linux container and does not inherit desktop creden
 - Branch deletion helper `bash scripts/delete-codex-cloud-branch-with-pat.sh` is operator-only outside Cloud.
 
 <!-- END:codex-cloud-environment -->
+<!-- docs-script-refs:historical-end -->

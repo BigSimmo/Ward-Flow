@@ -2926,6 +2926,10 @@ All 28 request JSON files have been relocated to `docs/outstanding-issues-inbox/
 
 ---
 
+> Historical task evidence from the former Database Ward workflow; retained commands are not current instructions.
+
+<!-- docs-script-refs:historical-start -->
+
 ## 7. STATUS REFRESH — 16 SEPTEMBER 2026
 
 **This is the current state of every Ward Flow task.** It replaces the 13 September
@@ -3192,6 +3196,8 @@ fix (Answer 13), housekeeping (control bytes, cultural-review deferral record), 
 cannot itself confirm as folded: the referrer-withdraws-only-the-community-arm fix (R2-11) and the
 transport-booking phone-call-log redesign (owner's third ruling, `089d316934`), the latter's own
 community-team screen control still not built pending an `Admission`-to-`Movement` linking decision.
+
+<!-- docs-script-refs:historical-end -->
 
 ## §7.6 · Emergency Department Screen Third-Edition Alignment (17 Sept 2026)
 
@@ -3491,6 +3497,10 @@ _All 232 tests across the affected test suites pass locally._
 
 ---
 
+> Historical task evidence from the former Database Ward workflow; retained commands are not current instructions.
+
+<!-- docs-script-refs:historical-start -->
+
 ## §7.14 · Full Estate Defect Resolution, Gate Clearance, and Next Session Roadmap (17 Sept 2026 Closeout)
 
 **Recorded 17 September 2026 (Final Session Closeout & Archive Preparation).**  
@@ -3589,6 +3599,8 @@ _All 232 tests across the affected test suites pass locally._
     - Capture Playwright visual snapshots for `/mockups/ward-flow/ed/arm-ed` at 1440px desktop breakpoint now that the board table and dual-column layout have achieved parity with `docs/ward-flow/mockups/emergency-department-third-edition.html`.
 
 ---
+
+<!-- docs-script-refs:historical-end -->
 
 ## §7.15 · Patient Screen Overhaul, Visual Defect Resolution (Images 1–5), and Interaction Perfection (17 Sept 2026 Closeout)
 
@@ -3703,6 +3715,10 @@ _All 232 tests across the affected test suites pass locally._
 
 ---
 
+> Historical task evidence from the former Database Ward workflow; retained commands are not current instructions.
+
+<!-- docs-script-refs:historical-start -->
+
 ## §7.17 · Emergency Department Screen Parity, Layout Streamlining, and Visual Defect Resolution (Images 1 & 2 Closeout)
 
 **Recorded 17 September 2026 (Emergency Department Rebuild & Layout Streamlining Closeout).**  
@@ -3765,6 +3781,8 @@ _All 232 tests across the affected test suites pass locally._
    - _Recommendation_: Run `npm run test:visual` to record new golden snapshots for Peel ED and Armadale ED.
 
 ---
+
+<!-- docs-script-refs:historical-end -->
 
 ## §7.18 · Audit Closure and the Real WA Reference Data (18 September 2026)
 
@@ -4254,6 +4272,10 @@ the `Q-12` citation into the test whatever the answer.
 
 ---
 
+> Historical task evidence from the former Database Ward workflow; retained commands are not current instructions.
+
+<!-- docs-script-refs:historical-start -->
+
 ## §7.19 · Owner Rulings, Clinical Queue Prioritisation, and Operational Task Re-baseline (18 September 2026)
 
 **Recorded 18 September 2026.**  
@@ -4432,6 +4454,8 @@ strings on the board, eight regions each saying no team is recorded.**
 THAT. It is a model change, not a name swap. Raised, not started.
 
 ---
+
+<!-- docs-script-refs:historical-end -->
 
 ## §7.19 — A RULING ENFORCED IN FOUR PLACES OUT OF FIVE (2026-09-18)
 
