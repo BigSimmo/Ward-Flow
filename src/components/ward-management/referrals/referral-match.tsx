@@ -1015,7 +1015,8 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections, 
         <div>
           <strong className={styles.alt2BannerTitle}>Alternative 2: 3-Tier Clinical Status Matrix</strong>
           <div className={styles.alt2BannerSubtitle}>
-            Units are clustered by placement feasibility. Click any unit&apos;s criteria gate dropdown to inspect all clinical and statutory verification points.
+            Units are clustered by placement feasibility. Click any unit&apos;s criteria gate dropdown to inspect all
+            clinical and statutory verification points.
           </div>
         </div>
         <span className={styles.bandAvailableBadge} style={{ fontWeight: 700 }}>
@@ -1062,24 +1063,29 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections, 
                       </span>
                     </div>
                     <div className={styles.unitSub}>
-                      {hospitalName} · {c.unit.cohort} · Contact: Ext 4192 / (08) 9347 6600
+                      {hospitalName} · {c.unit.cohort} · Contact: Not recorded
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    className={styles.btnGood}
-                    onClick={() => handleAccept(c.unit.id)}
-                  >
+                  <button type="button" className={styles.btnGood} onClick={() => handleAccept(c.unit.id)}>
                     ✓ Accept Bed at {shortName}
                   </button>
                 </div>
 
                 <div className={styles.unitIntelRow}>
-                  <span>Bed Allocation: <strong>Bed Available (Staffed Ensuite)</strong></span>
+                  <span>
+                    Bed Allocation: <strong>Allocatable bed recorded</strong>
+                  </span>
                   <span className={styles.demoDot}>·</span>
-                  <span>Transit: <strong>WA Health Network</strong></span>
+                  <span>
+                    Transit: <strong>Not recorded</strong>
+                  </span>
                   <span className={styles.demoDot}>·</span>
-                  <span>Census: <strong>{c.unit.beds - c.unit.empty.value}/{c.unit.beds} ({occPct}% Occ)</strong></span>
+                  <span>
+                    Census:{" "}
+                    <strong>
+                      {c.unit.beds - c.unit.empty.value}/{c.unit.beds} ({occPct}% Occ)
+                    </strong>
+                  </span>
                 </div>
 
                 <div className={styles.gateSummary}>
@@ -1090,7 +1096,9 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections, 
                     aria-expanded={isGatesExpanded}
                     aria-controls={`gate-grid-${gateKey}`}
                   >
-                    <span>✓ {passedGates.length}/{totalGates} Statutory & Clinical Criteria Met</span>
+                    <span>
+                      ✓ {passedGates.length}/{totalGates} Statutory & Clinical Criteria Met
+                    </span>
                     <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
                       {isGatesExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
                     </span>
@@ -1111,21 +1119,21 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections, 
         )}
       </div>
 
-      {/* TIER 2: SUITABLE COHORT · AWAITING DISCHARGE TURNAROUND */}
+      {/* TIER 2: CAPACITY CHECKS OUTSTANDING */}
       <div style={{ marginBottom: "14px" }}>
         <div className={`${styles.secHeader} ${styles.secHeaderWarn}`}>
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             <span className={`${styles.pulseDot} ${styles.pulseDotWarn}`} aria-hidden="true" />
-            <span>TIER 2: SUITABLE COHORT · AWAITING DISCHARGE TURNAROUND</span>
+            <span>TIER 2: CAPACITY CHECKS OUTSTANDING</span>
           </div>
           <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
-            {tier2Candidates.length} {tier2Candidates.length === 1 ? "Unit Full" : "Units Full"}
+            {tier2Candidates.length} {tier2Candidates.length === 1 ? "Unit" : "Units"}
           </span>
         </div>
 
         {tier2Candidates.length === 0 ? (
           <p className={styles.emptyNote} style={{ padding: "8px 18px" }}>
-            No units in this cohort are currently pending turnaround.
+            No candidates have capacity checks outstanding.
           </p>
         ) : (
           tier2Candidates.map((c) => {
@@ -1139,25 +1147,52 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections, 
                   <div>
                     <div className={styles.unitName}>
                       <span>{c.unit.name}</span>
-                      <span style={{ fontSize: "11px", padding: "1px 6px", borderRadius: "10px", background: "var(--warn-soft)", color: "var(--warn)", fontWeight: 700 }}>
-                        Turnaround Pending
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          padding: "1px 6px",
+                          borderRadius: "10px",
+                          background: "var(--warn-soft)",
+                          color: "var(--warn)",
+                          fontWeight: 700,
+                        }}
+                      >
+                        Capacity unresolved
                       </span>
                     </div>
                     <div className={styles.unitSub}>
-                      {hospitalName} · {c.unit.cohort} · Contact: NUM Bed Coordination
+                      {hospitalName} · {c.unit.cohort}
                     </div>
                   </div>
                   <button
                     type="button"
                     className={styles.btnSubtle}
-                    onClick={() => {}}
+                    aria-disabled="true"
+                    aria-describedby={`turnaround-unavailable-${c.unit.id}`}
+                    title="Turnaround prioritisation is unavailable: no supported scheduling workflow is recorded here."
+                    onClick={ignoreUnavailableActivation}
                   >
                     Flag Turnaround Priority
                   </button>
                 </div>
+                <span
+                  id={`turnaround-unavailable-${c.unit.id}`}
+                  className={styles.emptyNote}
+                  style={{ display: "block" }}
+                >
+                  Turnaround prioritisation is unavailable: no supported scheduling workflow is recorded here.
+                </span>
 
                 <div className={styles.unitIntelRow}>
-                  <span>Turnaround Intel: <strong>Planned discharge today · Sanitisation buffer ~60m</strong></span>
+                  <span>
+                    Recorded capacity checks:{" "}
+                    <strong>
+                      {c.verdict.gates
+                        .filter((gate) => !gate.pass)
+                        .map((gate) => `${GATE_LABELS[gate.gate] ?? gate.gate}: ${gate.detail}`)
+                        .join(" · ")}
+                    </strong>
+                  </span>
                 </div>
 
                 <div className={styles.gateSummary}>
@@ -1168,7 +1203,7 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections, 
                     aria-expanded={isGatesExpanded}
                     aria-controls={`gate-grid-${gateKey}`}
                   >
-                    <span>✓ Clinical Criteria Met · Bed Turnaround in Progress</span>
+                    <span>Capacity checks outstanding · other recorded gates passed</span>
                     <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
                       {isGatesExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
                     </span>
@@ -1224,7 +1259,16 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections, 
                   <div>
                     <div className={styles.unitName}>
                       <span>{c.unit.name}</span>
-                      <span style={{ fontSize: "11px", padding: "1px 6px", borderRadius: "10px", background: "var(--danger-soft)", color: "var(--danger)", fontWeight: 700 }}>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          padding: "1px 6px",
+                          borderRadius: "10px",
+                          background: "var(--danger-soft)",
+                          color: "var(--danger)",
+                          fontWeight: 700,
+                        }}
+                      >
                         Statutory Exclusion
                       </span>
                     </div>
@@ -1235,11 +1279,22 @@ export function ReferralMatchView({ referral, units, now, dispatch, rejections, 
                   <button
                     type="button"
                     className={styles.btnSubtle}
-                    onClick={() => {}}
+                    aria-disabled="true"
+                    aria-describedby={`clinical-override-unavailable-${c.unit.id}`}
+                    title="This clinical override is unavailable. Existing authorised, reason-gated exceptions remain in the ward request workflow."
+                    onClick={ignoreUnavailableActivation}
                   >
                     Clinical Override
                   </button>
                 </div>
+                <span
+                  id={`clinical-override-unavailable-${c.unit.id}`}
+                  className={styles.emptyNote}
+                  style={{ display: "block" }}
+                >
+                  This clinical override is unavailable. Existing authorised, reason-gated exceptions remain in the ward
+                  request workflow.
+                </span>
 
                 <div className={styles.unitIntelRow}>
                   <span>

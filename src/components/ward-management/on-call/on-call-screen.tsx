@@ -19,10 +19,9 @@ import {
   roleRecordCounts,
   SERVICE_ON_CALL_ROLES,
   servicesWithNoRoleRecorded,
-  type OnCallRole,
 } from "@/components/ward-management/on-call/on-call-roster";
 import { ESCALATION_CONTACTS, type EscalationContact } from "@/components/ward-management/ward-change-reasons";
-import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
+import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { WardFlowClockContext, WardFlowContext } from "@/components/ward-management/ward-flow-provider";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
@@ -176,16 +175,11 @@ export function OnCallScreen() {
   const departments = allEmergencyDepartments();
   const counts = roleRecordCounts();
   const missing = servicesWithNoRoleRecorded();
+  const incompleteRoles = counts.recorded < counts.possible;
 
   const consultantCount = Object.values(SERVICE_ON_CALL_ROLES)
     .flat()
     .filter((role) => role.role === "Duty consultant").length;
-
-  const coordinatorCount =
-    NETWORK_ON_CALL_ROLES.filter((role) => role.role.toLowerCase().includes("coordinator")).length +
-    Object.values(SERVICE_ON_CALL_ROLES)
-      .flat()
-      .filter((role) => role.role.toLowerCase().includes("coordinator")).length;
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
@@ -195,8 +189,7 @@ export function OnCallScreen() {
 
     // 1. Network-wide roles
     for (const role of NETWORK_ON_CALL_ROLES) {
-      const facility =
-        role.id === "bed-coordinator" ? "Central Bed Desk" : "Clinical Governance & Statewide Tier 3";
+      const facility = role.id === "bed-coordinator" ? "Central Bed Desk" : "Clinical Governance & Statewide Tier 3";
       const holder = role.id === "bed-coordinator" ? "Operations Lead" : "Executive Duty Lead";
 
       items.push({
@@ -206,7 +199,7 @@ export function OnCallScreen() {
         facility,
         holder,
         shift: role.shift,
-        statusText: "Active On-Call",
+        statusText: "Demonstration role",
         statusTone: "good",
       });
     }
@@ -218,7 +211,7 @@ export function OnCallScreen() {
         let facility = `${service} Base`;
         let holder = "Senior Coordinator";
         let statusTone: "good" | "warn" | "accent" = "good";
-        let statusText = "Active On-Call";
+        let statusText = "Demonstration role";
 
         if (service === "North Metro") {
           if (role.role === "Duty consultant") {
@@ -248,7 +241,7 @@ export function OnCallScreen() {
           facility = "Private Facilities Liaison";
           holder = "Liaison Coordinator";
           statusTone = "accent";
-          statusText = "Business Hours";
+          statusText = "Demonstration role";
         }
 
         items.push({
@@ -334,18 +327,18 @@ export function OnCallScreen() {
         <WardDynamicIsland
           testId="ward-on-call-hud-island"
           title="On-Call Network"
-          status={consultantCount === 0 ? "warning" : "nominal"}
+          status={incompleteRoles ? "warning" : "nominal"}
           statusText={
-            consultantCount === 0
-              ? "Consultant coverage gap"
-              : "All statewide on-call networks active"
+            incompleteRoles
+              ? `Incomplete recorded roles: ${counts.recorded} of ${counts.possible}`
+              : "Prototype roles recorded; live coverage not verified"
           }
           ariaLabel="On-call management indicators"
           metrics={[
             {
               id: "kpi-bed-desk-lead",
               label: "Bed Desk Lead",
-              value: "Active",
+              value: "Role recorded",
               subtext: "20:00–08:00",
               tone: "accent",
             },
@@ -353,20 +346,20 @@ export function OnCallScreen() {
               id: "kpi-duty-consultants",
               label: "Duty Consultants",
               value: consultantCount,
-              subtext: "Rostered",
+              subtext: "Prototype roles",
               tone: consultantCount > 0 ? "good" : "danger",
             },
             {
               id: "kpi-exec-escalation",
               label: "Executive Escalation",
-              value: "On Standby",
+              value: "Role recorded",
               tone: "warn",
             },
             {
               id: "kpi-ed-liaison",
               label: "ED Liaison",
               value: departments.length,
-              subtext: "EDs active",
+              subtext: "Departments recorded",
               tone: "good",
             },
           ]}
@@ -459,7 +452,9 @@ export function OnCallScreen() {
                       <th scope="col">Level</th>
                       <th scope="col">Shift</th>
                       <th scope="col">Status</th>
-                      <th scope="col" className={styles.actionColHeader}>Action</th>
+                      <th scope="col" className={styles.actionColHeader}>
+                        Action
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -557,7 +552,9 @@ export function OnCallScreen() {
                       <th scope="col">Health Service</th>
                       <th scope="col">Liaison Role</th>
                       <th scope="col">Handover</th>
-                      <th scope="col" className={styles.actionColHeader}>Action</th>
+                      <th scope="col" className={styles.actionColHeader}>
+                        Action
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -574,9 +571,7 @@ export function OnCallScreen() {
                             </td>
                             <td className={styles.siteCell}>{site?.name ?? "Regional Directory"}</td>
                             <td>
-                              <span className={styles.serviceChip}>
-                                {site?.service ?? "Regional"}
-                              </span>
+                              <span className={styles.serviceChip}>{site?.service ?? "Regional"}</span>
                             </td>
                             <td>
                               <span className={styles.coordinatorRole}>{coordinatorTitle}</span>

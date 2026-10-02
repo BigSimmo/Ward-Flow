@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   Bell,
   Check,
-  CheckCircle2,
   ChevronDown,
   Database,
   Download,
@@ -19,7 +18,6 @@ import {
   Sliders,
   Trash2,
   Upload,
-  Volume2,
   X,
 } from "lucide-react";
 
@@ -54,7 +52,6 @@ import {
 import {
   ED_ACCESS_TARGET_RANGE_MINUTES,
   MORNING_ROLLUP_TIME_MINUTES,
-  MORNING_ROLLUP_TIME_RANGE_MINUTES,
   PARALLEL_REFERRAL_CAP_RANGE,
   PULL_HOLD_RANGE_MINUTES,
 } from "@/components/ward-management/ward-model";
@@ -62,45 +59,12 @@ import { useAudioBuzzPreference, setAudioBuzzPreference } from "@/components/war
 import {
   useWallboardRefreshPreference,
   setWallboardRefreshPreference,
-  type WallboardRefreshInterval,
 } from "@/components/ward-management/shell/ward-wallboard-store";
 import { OperatorSwitcherModal } from "./operator-switcher-modal";
 import { ResetBaselineModal } from "./reset-baseline-modal";
 import { SETTINGS_SEARCH_ENTRIES } from "./settings-search-index";
 
 import styles from "./settings.module.css";
-
-function playSyntheticUrgentChime() {
-  if (typeof window === "undefined" || !("AudioContext" in window || "webkitAudioContext" in window)) return;
-  try {
-    const AudioCtx =
-      window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    const ctx = new AudioCtx();
-    const now = ctx.currentTime;
-    const osc1 = ctx.createOscillator();
-    const osc2 = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    gain.gain.setValueAtTime(0.08, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-
-    osc1.type = "sine";
-    osc1.frequency.setValueAtTime(520, now);
-    osc2.type = "sine";
-    osc2.frequency.setValueAtTime(660, now + 0.12);
-
-    osc1.connect(gain);
-    osc2.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc1.start(now);
-    osc1.stop(now + 0.12);
-    osc2.start(now + 0.12);
-    osc2.stop(now + 0.4);
-  } catch {
-    // Ignore audio context errors in restricted environments
-  }
-}
 
 function formatMinutesToTime(minutesFromMidnight: number): string {
   const hours24 = Math.floor(minutesFromMidnight / 60);
@@ -265,7 +229,7 @@ function getDomainIcon(domainId: SettingsDomainId) {
 export function SettingsScreen() {
   const appearance = useAppearanceStore();
   const railOpen = useRailOpenStore();
-  const { movements, dispatch, rejections, configuration } = useWardFlow();
+  const { movements, dispatch, rejections, configuration, eventLog = [] } = useWardFlow();
   const now = useWardFlowClock();
   const thresholds = publishedThresholds(movements, now, configuration);
 
@@ -2886,9 +2850,11 @@ export function SettingsScreen() {
                               <span className={styles.metricSub}>Inpatient bed tracking</span>
                             </div>
                             <div className={styles.cacheMetricItem}>
-                              <span className={styles.metricLabel}>Audited Actions</span>
-                              <strong className={styles.metricVal}>{rejections.length}</strong>
-                              <span className={styles.metricSub}>Recorded governance actions</span>
+                              <span className={styles.metricLabel}>Events recorded this session</span>
+                              <strong className={styles.metricVal}>{eventLog.length}</strong>
+                              <span className={styles.metricSub}>
+                                Accepted and rejected events; resets with the session
+                              </span>
                             </div>
                             <div className={styles.cacheMetricItem}>
                               <span className={styles.metricLabel}>Last State Sync</span>

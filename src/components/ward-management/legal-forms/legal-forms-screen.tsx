@@ -1,16 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, Clock, ShieldAlert, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, ShieldAlert, X } from "lucide-react";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { formatInstantWithDay, type Instant, minutesUntil } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import {
-  LEGAL_LIMITS_NOT_CHECKED_NOTICE,
-  type LegalClockAgeBand,
-  type LegalClockRegion,
-} from "@/components/ward-management/ward-legal-clock";
+import { type LegalClockAgeBand, type LegalClockRegion } from "@/components/ward-management/ward-legal-clock";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -363,14 +359,14 @@ export function LegalFormsScreen() {
         {/* Dynamic HUD Island: MHA Statutory Status (Consolidating alert banner and 5 KPI cards) */}
         <WardDynamicIsland
           testId="ward-legal-hud-island"
-          title="MHA Statutory Status"
+          title="Recorded legal form due times"
           status={passed > 0 ? "alarm" : upcoming > 0 ? "warning" : "nominal"}
           statusText={
             passed > 0
-              ? `${passed} statutory deadlines passed`
+              ? `${passed} recorded due times passed`
               : upcoming > 0
-                ? `${upcoming} upcoming deadlines`
-                : "No recorded deadlines"
+                ? `${upcoming} upcoming recorded due times`
+                : "No recorded due times"
           }
           ariaLabel="Mental health legal forms status summary"
           metrics={[

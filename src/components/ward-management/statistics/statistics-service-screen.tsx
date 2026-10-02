@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 
-import { generateDemonstrationSeries } from "@/components/ward-management/statistics/statistics-demonstration";
-import { DemonstrationChart } from "@/components/ward-management/statistics/statistics-demonstration-chart";
 import { StatFootnote } from "@/components/ward-management/statistics/statistics-primitives";
 import { StatisticsSectionFrame } from "@/components/ward-management/statistics/statistics-section-frame";
 import {
@@ -345,7 +343,7 @@ function DistanceBandsBar({
 }
 
 export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
-  const { units: liveUnits, admissions, referrals, bedReleases, scenario } = useWardFlow();
+  const { units: liveUnits, admissions, referrals, bedReleases } = useWardFlow();
   const now = useWardFlowClock();
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -472,29 +470,6 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
   for (const entry of outOfAreaEntries) {
     bandCounts.set(entry.band, (bandCounts.get(entry.band) ?? 0) + 1);
   }
-
-  // Demonstration only — see the file header. Two series, sent and taken in, seeded from the
-  // service's own name so two services never draw the same wobble.
-  const sentSeries = generateDemonstrationSeries(
-    scenario,
-    now,
-    {
-      label: `${service} — patients sent to another service`,
-      whatItWouldMeasure: "daily referrals this service sent to another service over the last 30 days",
-      whyItIsNotReal: "only current placement state is retained; no daily history exists",
-    },
-    { baseline: 2, volatility: 1.4, minValue: 0 },
-  );
-  const takenInSeries = generateDemonstrationSeries(
-    scenario,
-    now,
-    {
-      label: `${service} — patients taken in from another service`,
-      whatItWouldMeasure: "daily referrals this service took from another service over the last 30 days",
-      whyItIsNotReal: "only current placement state is retained; no daily history exists",
-    },
-    { baseline: 1, volatility: 1.1, minValue: 0 },
-  );
 
   return (
     <StatisticsSectionFrame
@@ -832,8 +807,6 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                 <p className={styles.body}>
                   <strong>Not recorded.</strong> No daily history is recorded, so neither 30-day series is shown.
                 </p>
-                <DemonstrationChart series={sentSeries} testId="ward-statistics-service-sent-chart" />
-                <DemonstrationChart series={takenInSeries} testId="ward-statistics-service-taken-in-chart" />
               </details>
             </div>
           </WardPanel>

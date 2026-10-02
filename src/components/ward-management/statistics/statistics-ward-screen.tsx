@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
 
 import { StatisticsSectionFrame } from "@/components/ward-management/statistics/statistics-section-frame";
@@ -70,15 +70,7 @@ export function StatisticsWardScreen({
   const unit = units.find((candidate) => candidate.id === unitId);
 
   const [activeTab, setActiveTab] = useState<string>("all");
-  const [d4Notice, setD4Notice] = useState<string | null>(null);
-  const [politeNotice, setPoliteNotice] = useState<string | null>(null);
   const [bedSearchQuery, setBedSearchQuery] = useState<string>("");
-
-  const triggerD4 = useCallback((actionName?: string) => {
-    const msg = actionName ? `${actionName}: Not wired in this prototype.` : "Not wired in this prototype.";
-    setD4Notice(msg);
-    setPoliteNotice(msg);
-  }, []);
 
   const section = statisticsSectionById("units");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'units' section");
@@ -241,69 +233,36 @@ export function StatisticsWardScreen({
     { baseline: capacity.available, volatility: 1, minValue: 0, maxValue: unit.beds },
   );
 
-  const bedMatrixList = (() => {
-    const occupiedCount = capacity.occupied;
-    const availableCount = capacity.available;
-    const pendingCount = pendingPreparation;
-    const list = [];
-    const wardAdms = admissions.filter((a) => a.unitId === unit.id && a.state !== "departed");
-
-    for (let i = 1; i <= unit.beds; i++) {
-      const bedName = `Bed ${i < 10 ? `0${i}` : i}`;
-      // Rows come from this ward's admission records. Until 25 Sept 2026 each row carried a made-up
-      // "P-18x" person, beds beyond the records got typed stays and plans, and stays were divided by
-      // 86,400 although Ward Flow's clock counts minutes.
-      if (i <= wardAdms.length) {
-        const adm = wardAdms[i - 1];
-        const stayDays = adm.arrivedAt === null ? 0 : Math.max(1, Math.round((now - adm.arrivedAt) / MINUTES_PER_DAY));
-        list.push({
-          bed: bedName,
-          state: "Occupied",
-          pt: `${adm.id} (${adm.sex === "Female" ? "F" : adm.sex === "Male" ? "M" : adm.sex.toLowerCase()})`,
-          admitted: adm.arrivedAt === null ? "Not arrived yet" : `${stayDays}d ago`,
-          days: stayDays,
-          target: adm.expectedDischargeAt === null ? "No discharge date set" : "Discharge date set",
-        });
-      } else if (i <= occupiedCount) {
-        list.push({
-          bed: bedName,
-          state: "Occupied",
-          pt: "Not recorded",
-          admitted: "Not recorded",
-          days: 0,
-          target: "Not recorded",
-        });
-      } else if (i <= occupiedCount + availableCount) {
-        list.push({
-          bed: bedName,
-          state: "Available",
-          pt: "-",
-          admitted: "-",
-          days: 0,
-          target: "Ready to admit",
-        });
-      } else if (i <= occupiedCount + availableCount + pendingCount) {
-        list.push({
-          bed: bedName,
-          state: "Pending",
-          pt: "-",
-          admitted: "-",
-          days: 0,
-          target: "Being made ready",
-        });
-      } else {
-        list.push({
-          bed: bedName,
-          state: "Out of Service",
-          pt: "-",
-          admitted: "-",
-          days: 0,
-          target: "Reason not recorded",
-        });
-      }
-    }
-    return list;
-  })();
+  // The admission model records a ward, not a numbered bed assignment.
+  // Preserve each recorded lifecycle state rather than inferring occupancy from roster order.
+  const admissionStateLabels: Record<Admission["state"], string> = {
+    waitlisted: "Waitlisted",
+    pulled: "Pulled",
+    occupied: "Occupied",
+    departed: "Departed",
+  };
+  const bedMatrixList = admissions
+    .filter((admission) => admission.unitId === unit.id && admission.state !== "departed")
+    .map((admission) => {
+      const stayDays =
+        admission.arrivedAt === null || admission.arrivedAt > now
+          ? null
+          : Math.floor((now - admission.arrivedAt) / MINUTES_PER_DAY);
+      return {
+        id: admission.id,
+        bed: "Not recorded",
+        state: admissionStateLabels[admission.state],
+        pt: `${admission.id} (${admission.sex === "Female" ? "F" : admission.sex === "Male" ? "M" : admission.sex.toLowerCase()})`,
+        admitted:
+          admission.arrivedAt === null
+            ? "Not arrived yet"
+            : stayDays === null
+              ? "Inconsistent arrival time"
+              : `${stayDays}d ago`,
+        days: stayDays,
+        target: admission.expectedDischargeAt === null ? "No discharge date set" : "Discharge date set",
+      };
+    });
 
   const filteredBedMatrix = (() => {
     if (!bedSearchQuery.trim()) return bedMatrixList;
@@ -341,26 +300,6 @@ export function StatisticsWardScreen({
       testId="ward-statistics-ward-screen"
       design="third-edition"
     >
-      {politeNotice ? (
-        <div className={pageStyles.srOnly} role="status" aria-live="polite">
-          {politeNotice}
-        </div>
-      ) : null}
-
-      {d4Notice ? (
-        <div className={pageStyles.d4NoticeBanner} role="status">
-          <span>{d4Notice}</span>
-          <button
-            type="button"
-            className={pageStyles.d4NoticeDismiss}
-            onClick={() => setD4Notice(null)}
-            aria-label="Dismiss notice"
-          >
-            Dismiss
-          </button>
-        </div>
-      ) : null}
-
       <nav className={pageStyles.sovereignTabs} aria-label="Ward Statistics Navigation">
         {TABS.map((tab) => (
           <button
@@ -472,58 +411,59 @@ export function StatisticsWardScreen({
               </tbody>
             </WardTable>
 
+            <p className={styles.note}>
+              This roster records admission states. Numbered bed assignments are not recorded.
+            </p>
             <div className={pageStyles.tableTools}>
               <label htmlFor="bedMatrixSearch" className={pageStyles.srOnly}>
-                Search beds by patient, status, or number
+                Search admissions by ID or recorded state
               </label>
               <input
                 id="bedMatrixSearch"
                 type="search"
                 className={pageStyles.tableSearch}
-                placeholder="Search bed, status, or patient ID..."
+                placeholder="Search admission ID or state..."
                 value={bedSearchQuery}
                 onChange={(e) => setBedSearchQuery(e.target.value)}
-                aria-label="Filter bed status matrix"
+                aria-label="Filter recorded admission roster"
               />
               <span className={styles.note}>
-                Showing {filteredBedMatrix.length} of {bedMatrixList.length} beds
+                Showing {filteredBedMatrix.length} of {bedMatrixList.length} admissions
               </span>
             </div>
             <div className={pageStyles.tableWrap}>
               <table className={pageStyles.dataTable}>
-                <caption className={pageStyles.srOnly}>Operational bed inventory and current allocation status</caption>
+                <caption className={pageStyles.srOnly}>
+                  Recorded admission roster; numbered bed assignments are not recorded
+                </caption>
                 <thead>
                   <tr>
-                    <th scope="col" className={pageStyles.sortable}>
-                      <button
-                        type="button"
-                        className={pageStyles.sortBtn}
-                        onClick={() => {
-                          setPoliteNotice("Beds displayed in default order.");
-                        }}
-                      >
-                        Bed
-                      </button>
-                    </th>
+                    <th scope="col">Assigned bed</th>
                     <th scope="col">Status</th>
-                    <th scope="col">Patient</th>
+                    <th scope="col">Admission / recorded sex</th>
                     <th scope="col">Admitted</th>
                     <th scope="col" className={pageStyles.n}>
                       Length of stay
                     </th>
                     <th scope="col">Discharge Target</th>
-                    <th scope="col">Action</th>
                   </tr>
                 </thead>
                 <tbody>
+                  {filteredBedMatrix.length === 0 ? (
+                    <tr>
+                      <td colSpan={6}>
+                        {bedMatrixList.length === 0
+                          ? "No current admissions recorded"
+                          : "No admissions match this search"}
+                      </td>
+                    </tr>
+                  ) : null}
                   {filteredBedMatrix.map((b) => {
                     let chipClass = pageStyles.chipMark;
                     if (b.state === "Occupied") chipClass = pageStyles.chipOccupied;
-                    else if (b.state === "Available") chipClass = pageStyles.chipReady;
-                    else if (b.state === "Out of Service") chipClass = pageStyles.chipAlert;
 
                     return (
-                      <tr key={b.bed}>
+                      <tr key={b.id}>
                         <td>
                           <strong>{b.bed}</strong>
                         </td>
@@ -534,18 +474,8 @@ export function StatisticsWardScreen({
                           <strong>{b.pt}</strong>
                         </td>
                         <td>{b.admitted}</td>
-                        <td className={pageStyles.n}>{b.days > 0 ? `${b.days} d` : "-"}</td>
+                        <td className={pageStyles.n}>{b.days === null ? "Not recorded" : `${b.days} d`}</td>
                         <td>{b.target}</td>
-                        <td>
-                          <button
-                            type="button"
-                            className={pageStyles.d4Btn}
-                            onClick={() => triggerD4(`Bed details for ${b.bed}`)}
-                            aria-label={`Details for ${b.bed}`}
-                          >
-                            Details
-                          </button>
-                        </td>
                       </tr>
                     );
                   })}

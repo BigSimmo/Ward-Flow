@@ -798,14 +798,23 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                         <span style={{ fontSize: "var(--t-0, 12px)", color: "var(--muted)" }}>Elapsed Wait:</span>
-                        <span style={{ fontFamily: "var(--mono)", fontWeight: 700, fontSize: "var(--t-2, 13.5px)", color: "var(--warn)" }}>
+                        <span
+                          style={{
+                            fontFamily: "var(--mono)",
+                            fontWeight: 700,
+                            fontSize: "var(--t-2, 13.5px)",
+                            color: "var(--warn)",
+                          }}
+                        >
                           {referralWaitLine(selectedReferral, now)}
                         </span>
                       </div>
 
                       {(() => {
                         const accepted = acceptedAddressing(selectedReferral);
-                        const linkedMovement = movements.find((m) => m.referralId === selectedReferral.id && !m.closure);
+                        const linkedMovement = movements.find(
+                          (m) => m.referralId === selectedReferral.id && !m.closure,
+                        );
                         const targetWardUnitId = accepted?.acceptedUnitId ?? linkedMovement?.acceptedUnitId;
                         const targetWard = targetWardUnitId ? units.find((u) => u.id === targetWardUnitId) : undefined;
                         if (!targetWardUnitId) return null;
@@ -888,11 +897,17 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                         </span>
                         <span className={styles.demoDot}>·</span>
                         <span className={styles.demoItem}>
-                          Origin: <strong>{originHospital} ({selectedReferral.homeRegion})</strong>
+                          Origin:{" "}
+                          <strong>
+                            {originHospital} ({selectedReferral.homeRegion})
+                          </strong>
                         </span>
                         <span className={styles.demoDot}>·</span>
                         <span className={styles.demoItem}>
-                          Cohort Sought: <strong>{selectedReferral.ageBand} Acute {isSecureBed ? "Secure" : "Open"} Bed</strong>
+                          Cohort Sought:{" "}
+                          <strong>
+                            {selectedReferral.ageBand} Acute {isSecureBed ? "Secure" : "Open"} Bed
+                          </strong>
                         </span>
                       </div>
                     );
@@ -909,7 +924,18 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     className={inspectorTab === "placement" ? `${styles.tabBtn} ${styles.tabBtnActive}` : styles.tabBtn}
                     onClick={() => setInspectorTab("placement")}
                   >
-                    <svg className={styles.tabIcon} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <svg
+                      className={styles.tabIcon}
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
                       <path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9" />
                     </svg>
                     <span>Bed Placement & Network Triage</span>
@@ -922,7 +948,18 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     className={inspectorTab === "dossier" ? `${styles.tabBtn} ${styles.tabBtnActive}` : styles.tabBtn}
                     onClick={() => setInspectorTab("dossier")}
                   >
-                    <svg className={styles.tabIcon} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <svg
+                      className={styles.tabIcon}
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
                       <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
                       <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
                       <path d="M9 12h6M9 16h6" />
@@ -937,7 +974,18 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     className={inspectorTab === "mha" ? `${styles.tabBtn} ${styles.tabBtnActive}` : styles.tabBtn}
                     onClick={() => setInspectorTab("mha")}
                   >
-                    <svg className={styles.tabIcon} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <svg
+                      className={styles.tabIcon}
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
                       <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1ZM2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1ZM7 21h10M12 3v18M3 7h18" />
                     </svg>
                     <span>Statutory Governance (MHA 2014)</span>
@@ -972,42 +1020,95 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       const isHighAcuity = wardDest?.highAcuityNursingNeeded;
                       const isLegalOrder = wardDest?.involuntaryBedNeeded;
                       const isSecureBed = wardDest?.secureBedNeeded;
-                      const originHospital = siteByCode(selectedReferral.originSiteCode)?.name ?? selectedReferral.originSiteCode;
+                      const originHospital =
+                        siteByCode(selectedReferral.originSiteCode)?.name ?? selectedReferral.originSiteCode;
 
                       return (
                         <>
-                          <div style={{ padding: "12px 14px", background: "var(--surface-2)", border: "1px solid var(--line)", borderRadius: "var(--r2, 6px)" }}>
-                            <div style={{ fontSize: "var(--t-0, 12px)", fontWeight: 700, textTransform: "uppercase", color: "var(--muted)" }}>Originating Practitioner & ED</div>
-                            <div style={{ fontSize: "var(--t-2, 13.5px)", fontWeight: 600, color: "var(--ink)", marginTop: "2px" }}>
-                              {clinicalInfo.clinician !== "Not recorded" ? clinicalInfo.clinician : "Dr. M. Lawson (Emergency Physician)"} · {originHospital} ED
+                          <div
+                            style={{
+                              padding: "12px 14px",
+                              background: "var(--surface-2)",
+                              border: "1px solid var(--line)",
+                              borderRadius: "var(--r2, 6px)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontSize: "var(--t-0, 12px)",
+                                fontWeight: 700,
+                                textTransform: "uppercase",
+                                color: "var(--muted)",
+                              }}
+                            >
+                              Originating practitioner and facility
+                            </div>
+                            <div
+                              style={{
+                                fontSize: "var(--t-2, 13.5px)",
+                                fontWeight: 600,
+                                color: "var(--ink)",
+                                marginTop: "2px",
+                              }}
+                            >
+                              {clinicalInfo.clinician} · {originHospital}
                             </div>
                             <div style={{ fontSize: "var(--t-0, 12px)", color: "var(--muted)", marginTop: "2px" }}>
-                              Direct Contact: (08) 9956 2200 · Electronic Triage Receipt: {formatInstantWithDay(selectedReferral.raisedAt, now)}
+                              Direct contact: Not recorded · Referral raised:{" "}
+                              {formatInstantWithDay(selectedReferral.raisedAt, now)}
                             </div>
                           </div>
 
                           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                            <span style={{ fontSize: "var(--t-0, 12px)", fontWeight: 700, textTransform: "uppercase", color: "var(--muted)" }}>Written Clinical Referral Note</span>
-                            <div style={{ padding: "12px 14px", background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "var(--r2, 6px)", fontSize: "var(--t-1, 13px)", lineHeight: 1.6, color: "var(--ink-soft)" }}>
+                            <span
+                              style={{
+                                fontSize: "var(--t-0, 12px)",
+                                fontWeight: 700,
+                                textTransform: "uppercase",
+                                color: "var(--muted)",
+                              }}
+                            >
+                              Written Clinical Referral Note
+                            </span>
+                            <div
+                              style={{
+                                padding: "12px 14px",
+                                background: "var(--surface)",
+                                border: "1px solid var(--line)",
+                                borderRadius: "var(--r2, 6px)",
+                                fontSize: "var(--t-1, 13px)",
+                                lineHeight: 1.6,
+                                color: "var(--ink-soft)",
+                              }}
+                            >
                               <p>{clinicalInfo.synopsis}</p>
                             </div>
                           </div>
 
                           <div className={styles.clinicalBadges}>
-                            {isHighAcuity ? <span className={styles.acuityBadge}>High-acuity nursing requested</span> : null}
+                            {isHighAcuity ? (
+                              <span className={styles.acuityBadge}>High-acuity nursing requested</span>
+                            ) : null}
                             {isLegalOrder ? <span className={styles.legalBadge}>Involuntary bed requested</span> : null}
                             {isSecureBed ? <span className={styles.secureBadge}>Secure bed requested</span> : null}
-                            {selectedReferral.transportNeeded ? <span className={styles.transportBadge}>Transport requested</span> : null}
+                            {selectedReferral.transportNeeded ? (
+                              <span className={styles.transportBadge}>Transport requested</span>
+                            ) : null}
                           </div>
 
                           <div className={styles.timelineCard}>
                             <div className={styles.timelineHeaderRow}>
                               <h3 className={styles.timelineHeading}>Referral Timeline & Milestones</h3>
-                              <span className={styles.timelineSummaryClock}>{referralWaitLine(selectedReferral, now)}</span>
+                              <span className={styles.timelineSummaryClock}>
+                                {referralWaitLine(selectedReferral, now)}
+                              </span>
                             </div>
                             <ol className={styles.timelineList}>
                               <li className={styles.timelineItem}>
-                                <span className={`${styles.timelineDot} ${styles.timelineDotComplete}`} aria-hidden="true">
+                                <span
+                                  className={`${styles.timelineDot} ${styles.timelineDotComplete}`}
+                                  aria-hidden="true"
+                                >
                                   <span className={styles.timelineGlyph}>✓</span>
                                 </span>
                                 <span className="sr-only">Milestone complete: </span>
@@ -1024,14 +1125,19 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                                 </div>
                               </li>
                               <li className={styles.timelineItem}>
-                                <span className={`${styles.timelineDot} ${styles.timelineDotActive}`} aria-hidden="true">
+                                <span
+                                  className={`${styles.timelineDot} ${styles.timelineDotActive}`}
+                                  aria-hidden="true"
+                                >
                                   <span className={styles.timelineGlyph}>●</span>
                                 </span>
                                 <span className="sr-only">Milestone active: </span>
                                 <div className={styles.timelineContent}>
                                   <div className={styles.timelineTop}>
                                     <span className={styles.timelineEvent}>Elapsed referral clock</span>
-                                    <span className={styles.timelineTime}>{referralWaitLine(selectedReferral, now)}</span>
+                                    <span className={styles.timelineTime}>
+                                      {referralWaitLine(selectedReferral, now)}
+                                    </span>
                                   </div>
                                   <span className={styles.timelineMeta}>
                                     Urgency: {urgencyTierLabel(selectedReferral.urgency)}
@@ -1039,7 +1145,10 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                                 </div>
                               </li>
                               <li className={styles.timelineItem}>
-                                <span className={`${styles.timelineDot} ${styles.timelineDotNeutral}`} aria-hidden="true">
+                                <span
+                                  className={`${styles.timelineDot} ${styles.timelineDotNeutral}`}
+                                  aria-hidden="true"
+                                >
                                   <span className={styles.timelineGlyph}>○</span>
                                 </span>
                                 <span className="sr-only">Milestone pending: </span>
@@ -1071,15 +1180,41 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
 
                       return (
                         <>
-                          <div style={{ padding: "12px 14px", background: "var(--surface-2)", border: "1px solid var(--line)", borderRadius: "var(--r2, 6px)" }}>
-                            <span style={{ fontSize: "var(--t-0, 12px)", fontWeight: 700, textTransform: "uppercase", color: "var(--muted)" }}>Recorded legal information</span>
+                          <div
+                            style={{
+                              padding: "12px 14px",
+                              background: "var(--surface-2)",
+                              border: "1px solid var(--line)",
+                              borderRadius: "var(--r2, 6px)",
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: "var(--t-0, 12px)",
+                                fontWeight: 700,
+                                textTransform: "uppercase",
+                                color: "var(--muted)",
+                              }}
+                            >
+                              Recorded legal information
+                            </span>
                             <p style={{ fontSize: "var(--t-1, 13px)", color: "var(--ink-soft)", marginTop: "4px" }}>
                               Referral details do not establish consent, detention authority or a register check.
                             </p>
                           </div>
 
                           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                            <div style={{ padding: "10px 14px", borderRadius: "var(--r2, 6px)", border: "1px solid var(--line)", background: "var(--surface)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <div
+                              style={{
+                                padding: "10px 14px",
+                                borderRadius: "var(--r2, 6px)",
+                                border: "1px solid var(--line)",
+                                background: "var(--surface)",
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                              }}
+                            >
                               <div>
                                 <strong style={{ fontSize: "var(--t-1, 13px)", color: "var(--ink)" }}>
                                   Consent or detention authority
@@ -1088,19 +1223,49 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                                   Referral raised {formatInstantWithDay(selectedReferral.raisedAt, now)}
                                 </div>
                               </div>
-                              <span style={{ fontSize: "11px", padding: "1px 6px", borderRadius: "10px", background: "var(--surface-2)", color: "var(--muted)", fontWeight: 700 }}>
+                              <span
+                                style={{
+                                  fontSize: "11px",
+                                  padding: "1px 6px",
+                                  borderRadius: "10px",
+                                  background: "var(--surface-2)",
+                                  color: "var(--muted)",
+                                  fontWeight: 700,
+                                }}
+                              >
                                 Not recorded in this referral
                               </span>
                             </div>
 
-                            <div style={{ padding: "10px 14px", borderRadius: "var(--r2, 6px)", border: "1px solid var(--line)", background: "var(--surface)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <div
+                              style={{
+                                padding: "10px 14px",
+                                borderRadius: "var(--r2, 6px)",
+                                border: "1px solid var(--line)",
+                                background: "var(--surface)",
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                              }}
+                            >
                               <div>
-                                <strong style={{ fontSize: "var(--t-1, 13px)", color: "var(--ink)" }}>Chief Psychiatrist Statutory Register Check</strong>
+                                <strong style={{ fontSize: "var(--t-1, 13px)", color: "var(--ink)" }}>
+                                  Chief Psychiatrist Statutory Register Check
+                                </strong>
                                 <div style={{ fontSize: "var(--t-0, 12px)", color: "var(--muted)" }}>
                                   Register check not recorded on this referral.
                                 </div>
                               </div>
-                              <span style={{ fontSize: "11px", padding: "1px 6px", borderRadius: "10px", background: "var(--surface-2)", color: "var(--muted)", fontWeight: 700 }}>
+                              <span
+                                style={{
+                                  fontSize: "11px",
+                                  padding: "1px 6px",
+                                  borderRadius: "10px",
+                                  background: "var(--surface-2)",
+                                  color: "var(--muted)",
+                                  fontWeight: 700,
+                                }}
+                              >
                                 Not recorded
                               </span>
                             </div>
@@ -1575,36 +1740,24 @@ function DecidedSection({
                         <span className={styles.patientCardName}>{patientInfo.displayName}</span>
                       </span>
                       <span className={styles.cardTierGroup}>
-                        <span
-                          className={styles.priorityBadge}
-                          data-priority={getReferralPriority(referral, now)}
-                        >
+                        <span className={styles.priorityBadge} data-priority={getReferralPriority(referral, now)}>
                           <PriorityGlyph priority={getReferralPriority(referral, now)} />
                           <span className={styles.priorityText}>
                             {referralPriorityLabel(getReferralPriority(referral, now))}
                           </span>
                         </span>
-                        <span
-                          className={styles.cardTier}
-                          data-tier={referral.urgency}
-                        >
+                        <span className={styles.cardTier} data-tier={referral.urgency}>
                           {urgencyTierLabel(referral.urgency)}
                         </span>
-                        <span className={styles.waitBadge}>
-                          {decidedWaitLabel(referral)}
-                        </span>
+                        <span className={styles.waitBadge}>{decidedWaitLabel(referral)}</span>
                       </span>
                     </span>
 
                     <span className={styles.cardContextRow}>
-                      <span className={styles.cardService}>
-                        {referralPersonFactsStatingSex(referral).join(" · ")}
-                      </span>
+                      <span className={styles.cardService}>{referralPersonFactsStatingSex(referral).join(" · ")}</span>
                       <span
                         className={
-                          referralState(referral) === "accepted"
-                            ? styles.bedAssignedBadge
-                            : styles.bedDeclinedBadge
+                          referralState(referral) === "accepted" ? styles.bedAssignedBadge : styles.bedDeclinedBadge
                         }
                       >
                         {outcomeLabel(referral)}
@@ -1628,7 +1781,8 @@ function DecidedSection({
                         />
                       </span>
                       <span className={styles.cardDecidedTime}>
-                        · {referralDecidedAt(referral) !== undefined
+                        ·{" "}
+                        {referralDecidedAt(referral) !== undefined
                           ? `Decided ${formatInstantWithDay(referralDecidedAt(referral)!, now)}`
                           : "Not recorded"}
                       </span>

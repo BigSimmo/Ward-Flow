@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import {
   admissionsWithNoCommunityTeam,
@@ -70,6 +71,7 @@ function openAndFocusCommunitySection(id: string) {
  * publish a confident zero over a broken join.
  */
 export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
+  const router = useRouter();
   const { admissions, referrals } = useWardFlow();
 
   const section = statisticsSectionById("community");
@@ -222,7 +224,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
             value={team.id}
             onChange={(e) => {
               const nextId = e.target.value;
-              if (nextId) window.location.href = communityStatisticsHref(nextId);
+              if (nextId) router.push(communityStatisticsHref(nextId));
             }}
           >
             {COMMUNITY_TEAM_PAGES.map((t) => (

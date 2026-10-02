@@ -177,29 +177,33 @@ describe("Health-service statistics — a real service", () => {
   // Josh, 25 Sept 2026: a made-up trend shows "Not recorded" and is not drawn.
   it("says the 30-day trends are not recorded, on the page, not only in a comment", () => {
     renderInProvider(<StatisticsServiceScreen serviceId="North Metro" />);
-    expect(screen.getByTestId("ward-statistics-service-sent-chart")).toBeTruthy();
-    expect(screen.getByTestId("ward-statistics-service-taken-in-chart")).toBeTruthy();
-    // `DemonstrationChart` renders this exact badge text — checked here rather than re-derived, so
-    // a screen that quietly stopped using the wrapper (and started plotting a series by hand) would
-    // still have to explain where the badge went.
-    expect(screen.getAllByText("Not recorded").length).toBe(2);
+    const history = screen.getByText("View historical referral flow records").closest("details")!;
+    expect(history).toHaveTextContent("Not recorded.");
+    expect(history).toHaveTextContent("No daily history is recorded, so neither 30-day series is shown.");
+    expect(screen.queryByTestId("ward-statistics-service-sent-chart")).toBeNull();
+    expect(screen.queryByTestId("ward-statistics-service-taken-in-chart")).toBeNull();
     expect(screen.queryByText("Demonstration data")).toBeNull();
   });
 
-  it("names two health services differently in their own demonstration series, so reloading a different service does not repeat the same wobble label", () => {
+  it("keeps absent history explicit when changing health services", () => {
     const { unmount } = renderInProvider(<StatisticsServiceScreen serviceId="North Metro" />);
-    const northLabel = screen.getAllByText(/patients sent to another service/i)[0]?.textContent;
+    const northHistory = screen.getByText("View historical referral flow records").closest("details")!;
+    expect(northHistory).toHaveTextContent("No daily history is recorded");
+    expect(northHistory.querySelector("svg, img")).toBeNull();
     unmount();
 
     renderInProvider(<StatisticsServiceScreen serviceId="South Metro" />);
-    const southLabel = screen.getAllByText(/patients sent to another service/i)[0]?.textContent;
-
-    expect(northLabel).toContain("North Metro");
-    expect(southLabel).toContain("South Metro");
-    expect(northLabel).not.toBe(southLabel);
+    expect(within(mainOf("ward-statistics-service-screen")).getByRole("heading", { level: 1 })).toHaveTextContent(
+      "South Metro",
+    );
+    const southHistory = screen.getByText("View historical referral flow records").closest("details")!;
+    expect(southHistory).toHaveTextContent("No daily history is recorded");
+    expect(southHistory.querySelector("svg, img")).toBeNull();
+    expect(screen.queryByTestId("ward-statistics-service-sent-chart")).toBeNull();
+    expect(screen.queryByTestId("ward-statistics-service-taken-in-chart")).toBeNull();
   });
 
-  /** Each series carries its own synthetic marker in both the panel copy and chart label. */
+  /** The history panel explains why no measured series can be drawn. */
   it("draws neither 30-day series, and says why in its own readable content", () => {
     renderInProvider(<StatisticsServiceScreen serviceId="North Metro" />);
 

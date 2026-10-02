@@ -275,6 +275,39 @@ const BLOCKER_CATEGORIES = [
   { id: "plan", label: "Funding / plan" },
 ] as const;
 
+function RecordedDischargeMilestones({
+  milestones,
+}: {
+  milestones: { label: string; detail: string; state: "complete" | "pending" | "blocked" }[];
+}) {
+  return (
+    <div className={pageStyles.stepperCard}>
+      <span className={pageStyles.stepperTitle}>Recorded discharge milestones</span>
+      <div className={pageStyles.stepper}>
+        {milestones.map((milestone, index) => (
+          <div className={pageStyles.stepperGate} key={milestone.label}>
+            <div
+              className={`${pageStyles.gateIndicator} ${milestone.state === "complete" ? pageStyles.gateIndicatorComplete : milestone.state === "blocked" ? pageStyles.gateIndicatorBlocked : pageStyles.gateIndicatorPending}`}
+            >
+              {milestone.state === "complete" ? "✓" : milestone.state === "blocked" ? "!" : index + 1}
+            </div>
+            <div className={pageStyles.gateDetails}>
+              <span className={pageStyles.gateTitle}>
+                {index + 1}. {milestone.label}
+              </span>
+              <span className={pageStyles.gateActor}>{milestone.detail}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className={styles.note}>
+        Medical summary, pharmacy verification and transport booking are not recorded here. Departure does not verify
+        bed preparation.
+      </p>
+    </div>
+  );
+}
+
 export function DischargeBoard() {
   const { worldGeneration } = useWardFlow();
   // Remount clears every selected handle and DTO synchronously on a reset/scenario change.
@@ -1179,82 +1212,39 @@ function DischargeWorkspace() {
 
                   {/* Tab 1: Milestones (Option 2 Stepper) */}
                   <div className={drawerTab === "milestones" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
-                    <div className={pageStyles.stepperCard}>
-                      <span className={pageStyles.stepperTitle}>Clinical Discharge Trajectory</span>
-                      <div className={pageStyles.stepper}>
-                        <div className={pageStyles.stepperGate}>
-                          <div
-                            className={`${pageStyles.gateIndicator} ${activeRecord.dischargeConfirmedAt !== null || activeRecord.dischargeDateSetAt !== null ? pageStyles.gateIndicatorComplete : pageStyles.gateIndicatorPending}`}
-                          >
-                            {activeRecord.dischargeConfirmedAt !== null || activeRecord.dischargeDateSetAt !== null
-                              ? "✓"
-                              : "1"}
-                          </div>
-                          <div className={pageStyles.gateDetails}>
-                            <span className={pageStyles.gateTitle}>1. Medical Summary Signed</span>
-                            <span className={pageStyles.gateActor}>
-                              {activeRecord.dischargeDateSetBy
-                                ? `${activeRecord.dischargeDateSetBy} · ${recordedMoment(activeRecord.dischargeDateSetAt, dayZero)}`
-                                : "Dr. C. Vance · Signed 08:15 AWST"}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className={pageStyles.stepperGate}>
-                          <div
-                            className={`${pageStyles.gateIndicator} ${activeRecord.expectedDischargeAt !== null ? pageStyles.gateIndicatorComplete : pageStyles.gateIndicatorPending}`}
-                          >
-                            {activeRecord.expectedDischargeAt !== null ? "✓" : "2"}
-                          </div>
-                          <div className={pageStyles.gateDetails}>
-                            <span className={pageStyles.gateTitle}>2. Pharmacy / TTO Dispensed</span>
-                            <span className={pageStyles.gateActor}>
-                              Verified by Clinical Pharmacist · Pack verified
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className={pageStyles.stepperGate}>
-                          <div
-                            className={`${pageStyles.gateIndicator} ${activeRecord.blockReason ? pageStyles.gateIndicatorBlocked : activeRecord.expectedDischargeAt !== null ? pageStyles.gateIndicatorActive : pageStyles.gateIndicatorPending}`}
-                          >
-                            {activeRecord.blockReason ? "!" : activeRecord.expectedDischargeAt !== null ? "!" : "3"}
-                          </div>
-                          <div className={pageStyles.gateDetails}>
-                            <span
-                              className={pageStyles.gateTitle}
-                              style={activeRecord.blockReason ? { color: "var(--danger)" } : undefined}
-                            >
-                              3. Transit Departure Confirmation
-                            </span>
-                            <span
-                              className={pageStyles.gateActor}
-                              style={activeRecord.blockReason ? { color: "var(--danger)" } : undefined}
-                            >
-                              {activeRecord.blockReason
-                                ? `Blocked: ${activeRecord.blockReason}`
-                                : "St John NEPT Stretcher Van · Dispatch ready"}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className={pageStyles.stepperGate}>
-                          <div
-                            className={`${pageStyles.gateIndicator} ${activeRecord.leftAt !== null ? pageStyles.gateIndicatorComplete : pageStyles.gateIndicatorPending}`}
-                          >
-                            {activeRecord.leftAt !== null ? "✓" : "4"}
-                          </div>
-                          <div className={pageStyles.gateDetails}>
-                            <span className={pageStyles.gateTitle}>4. Environmental Services Turnover</span>
-                            <span className={pageStyles.gateActor}>
-                              {activeRecord.leftAt !== null
-                                ? `Bed released ${recordedMoment(activeRecord.leftAt, dayZero)}`
-                                : "Pending physical patient departure"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <RecordedDischargeMilestones
+                      milestones={[
+                        {
+                          label: "Expected discharge date",
+                          state: activeRecord.expectedDischargeAt === null ? "pending" : "complete",
+                          detail:
+                            activeRecord.expectedDischargeAt === null
+                              ? "Not recorded"
+                              : `${recordedMoment(activeRecord.expectedDischargeAt, dayZero)} · Set by ${activeRecord.dischargeDateSetBy ?? "role not recorded"}`,
+                        },
+                        {
+                          label: "Discharge confirmation",
+                          state: activeRecord.dischargeConfirmedAt === null ? "pending" : "complete",
+                          detail:
+                            activeRecord.dischargeConfirmedAt === null
+                              ? "Not recorded"
+                              : `${recordedMoment(activeRecord.dischargeConfirmedAt, dayZero)} · ${activeRecord.dischargeConfirmedBy ?? "Role not recorded"}`,
+                        },
+                        {
+                          label: "Recorded discharge blocker",
+                          state: activeRecord.blockReason ? "blocked" : "pending",
+                          detail: activeRecord.blockReason ?? "No discharge blocker recorded",
+                        },
+                        {
+                          label: "Physical departure",
+                          state: activeRecord.leftAt === null ? "pending" : "complete",
+                          detail:
+                            activeRecord.leftAt === null
+                              ? "Not recorded"
+                              : recordedMoment(activeRecord.leftAt, dayZero),
+                        },
+                      ]}
+                    />
 
                     <div className={pageStyles.transportCard}>
                       <div className={pageStyles.transportHeader}>
@@ -1262,9 +1252,7 @@ function DischargeWorkspace() {
                           <Truck size={14} className={pageStyles.inlineIcon} aria-hidden="true" />
                           Transport Trajectory
                         </span>
-                        <span className={pageStyles.transportStatusBadge}>
-                          {activeRecord.leavingDestination ? "Carrier Booked" : "Standby"}
-                        </span>
+                        <span className={pageStyles.transportStatusBadge}>Not recorded</span>
                       </div>
                       <div className={pageStyles.transportInfoRow}>
                         <span className={pageStyles.transportLabel}>Destination:</span>
@@ -1324,12 +1312,13 @@ function DischargeWorkspace() {
                         <div className={pageStyles.barrierTop}>
                           <span className={pageStyles.barrierCause} style={{ color: "var(--good)" }}>
                             <CheckCircle2 size={14} className={pageStyles.inlineIcon} aria-hidden="true" />
-                            Clear of Barriers
+                            No discharge blocker recorded
                           </span>
-                          <span className={pageStyles.transportStatusBadge}>Operational</span>
+                          <span className={pageStyles.transportStatusBadge}>Not recorded</span>
                         </div>
                         <p className={pageStyles.barrierDesc}>
-                          No active clinical, pharmacy, or transit delays recorded for this departure.
+                          No discharge blocker is recorded. Clinical, pharmacy and transit clearance are not recorded
+                          here.
                         </p>
                       </div>
                     )}
@@ -1348,25 +1337,25 @@ function DischargeWorkspace() {
                             activeRecord.blockReason ? pageStyles.badgeBlocked : pageStyles.transportStatusBadge
                           }
                         >
-                          {activeRecord.blockReason ? "Escalation Sent" : "Route Planned"}
+                          Not recorded
                         </span>
                       </div>
                       <div className={pageStyles.dispatchRow}>
                         <span className={pageStyles.dispatchLabel}>Logistics Ref:</span>
                         <span className={pageStyles.dispatchValue} style={{ fontFamily: "var(--mono)" }}>
-                          TRN-2026-0941
+                          Not recorded
                         </span>
                       </div>
                       <div className={pageStyles.dispatchRow}>
                         <span className={pageStyles.dispatchLabel}>Provider:</span>
-                        <span className={pageStyles.dispatchValue}>St John Non-Emergency Transport</span>
+                        <span className={pageStyles.dispatchValue}>Not recorded</span>
                       </div>
                       <div className={pageStyles.dispatchRow}>
                         <span className={pageStyles.dispatchLabel}>Origin to Destination:</span>
                         <span className={pageStyles.dispatchValue}>
                           {unitLabel(selectedUnit, activeRecord.unitId)} →{" "}
                           {LEAVING_DESTINATIONS.find((item) => item.id === activeRecord.leavingDestination)?.label ??
-                            "Community Discharge"}
+                            "Not recorded"}
                         </span>
                       </div>
                       <div className={pageStyles.actionDeck}>
@@ -1627,74 +1616,41 @@ function DischargeWorkspace() {
 
                   {/* Tab 1: Milestones */}
                   <div className={drawerTab === "milestones" ? pageStyles.tabPane : pageStyles.tabPaneHidden}>
-                    <div className={pageStyles.stepperCard}>
-                      <span className={pageStyles.stepperTitle}>Clinical Discharge Trajectory</span>
-                      <div className={pageStyles.stepper}>
-                        <div className={pageStyles.stepperGate}>
-                          <div
-                            className={`${pageStyles.gateIndicator} ${detailRelease.confirmedAt !== null ? pageStyles.gateIndicatorComplete : pageStyles.gateIndicatorPending}`}
-                          >
-                            {detailRelease.confirmedAt !== null ? "✓" : "1"}
-                          </div>
-                          <div className={pageStyles.gateDetails}>
-                            <span className={pageStyles.gateTitle}>1. Medical Summary Signed</span>
-                            <span className={pageStyles.gateActor}>Clinical summary document signed</span>
-                          </div>
-                        </div>
-
-                        <div className={pageStyles.stepperGate}>
-                          <div
-                            className={`${pageStyles.gateIndicator} ${detailRelease.expectedAt !== null ? pageStyles.gateIndicatorComplete : pageStyles.gateIndicatorPending}`}
-                          >
-                            {detailRelease.expectedAt !== null ? "✓" : "2"}
-                          </div>
-                          <div className={pageStyles.gateDetails}>
-                            <span className={pageStyles.gateTitle}>2. Pharmacy / TTO Dispensed</span>
-                            <span className={pageStyles.gateActor}>Verified by Clinical Pharmacist · Pack ready</span>
-                          </div>
-                        </div>
-
-                        <div className={pageStyles.stepperGate}>
-                          <div
-                            className={`${pageStyles.gateIndicator} ${detailRelease.blocker ? pageStyles.gateIndicatorBlocked : detailRelease.expectedAt !== null ? pageStyles.gateIndicatorActive : pageStyles.gateIndicatorPending}`}
-                          >
-                            {detailRelease.blocker ? "!" : detailRelease.expectedAt !== null ? "!" : "3"}
-                          </div>
-                          <div className={pageStyles.gateDetails}>
-                            <span
-                              className={pageStyles.gateTitle}
-                              style={detailRelease.blocker ? { color: "var(--danger)" } : undefined}
-                            >
-                              3. Transit Departure Confirmation
-                            </span>
-                            <span
-                              className={pageStyles.gateActor}
-                              style={detailRelease.blocker ? { color: "var(--danger)" } : undefined}
-                            >
-                              {detailRelease.blocker
-                                ? `Blocked: ${detailRelease.blocker}`
-                                : "St John NEPT Stretcher Van · Dispatch ready"}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className={pageStyles.stepperGate}>
-                          <div
-                            className={`${pageStyles.gateIndicator} ${detailRelease.state === "discharged" ? pageStyles.gateIndicatorComplete : pageStyles.gateIndicatorPending}`}
-                          >
-                            {detailRelease.state === "discharged" ? "✓" : "4"}
-                          </div>
-                          <div className={pageStyles.gateDetails}>
-                            <span className={pageStyles.gateTitle}>4. Environmental Services Turnover</span>
-                            <span className={pageStyles.gateActor}>
-                              {detailRelease.state === "discharged"
-                                ? `Bed released ${recordedMoment(detailRelease.confirmedAt, dayZero)}`
-                                : "Pending physical patient departure"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <RecordedDischargeMilestones
+                      milestones={[
+                        {
+                          label: "Expected discharge date",
+                          state: "complete",
+                          detail: recordedMoment(detailRelease.expectedAt, dayZero),
+                        },
+                        {
+                          label: "Release stage recorded",
+                          state: detailRelease.state === "expected" ? "pending" : "complete",
+                          detail: `${detailRelease.state} · ${recordedMoment(detailRelease.confirmedAt, dayZero)}`,
+                        },
+                        {
+                          label: "Recorded discharge blocker",
+                          state: detailRelease.blocker ? "blocked" : "pending",
+                          detail: detailRelease.blocker ?? "No discharge blocker recorded",
+                        },
+                        {
+                          label: "Physical departure",
+                          state: detailRelease.state === "discharged" ? "complete" : "pending",
+                          detail:
+                            linkedReleaseRecord?.leftAt != null
+                              ? recordedMoment(linkedReleaseRecord.leftAt, dayZero)
+                              : detailRelease.state === "discharged"
+                                ? "Departure recorded; time not recorded"
+                                : "Not recorded",
+                        },
+                      ]}
+                    />
+                    {detailRelease.preparing ? (
+                      <p className={styles.note}>
+                        Preparation recorded: {detailRelease.preparationNote ?? "Reason not recorded"}. This is
+                        informational and does not establish completion.
+                      </p>
+                    ) : null}
 
                     <div className={pageStyles.transportCard}>
                       <div className={pageStyles.transportHeader}>
@@ -1702,11 +1658,11 @@ function DischargeWorkspace() {
                           <Truck size={14} className={pageStyles.inlineIcon} aria-hidden="true" />
                           Transit Logistics
                         </span>
-                        <span className={pageStyles.transportStatusBadge}>Standby</span>
+                        <span className={pageStyles.transportStatusBadge}>Not recorded</span>
                       </div>
                       <div className={pageStyles.transportInfoRow}>
                         <span className={pageStyles.transportLabel}>Requirement:</span>
-                        <span className={pageStyles.transportValue}>Standard Egress</span>
+                        <span className={pageStyles.transportValue}>Not recorded</span>
                       </div>
                     </div>
                   </div>
@@ -1747,12 +1703,13 @@ function DischargeWorkspace() {
                         <div className={pageStyles.barrierTop}>
                           <span className={pageStyles.barrierCause} style={{ color: "var(--good)" }}>
                             <CheckCircle2 size={14} className={pageStyles.inlineIcon} aria-hidden="true" />
-                            Clear of Barriers
+                            No discharge blocker recorded
                           </span>
-                          <span className={pageStyles.transportStatusBadge}>Operational</span>
+                          <span className={pageStyles.transportStatusBadge}>Not recorded</span>
                         </div>
                         <p className={pageStyles.barrierDesc}>
-                          No active clinical, pharmacy, or transit delays recorded for this bed release.
+                          No discharge blocker is recorded. Clinical, pharmacy and transit clearance are not recorded
+                          here.
                         </p>
                       </div>
                     )}
@@ -1769,18 +1726,18 @@ function DischargeWorkspace() {
                         <span
                           className={detailRelease.blocker ? pageStyles.badgeBlocked : pageStyles.transportStatusBadge}
                         >
-                          {detailRelease.blocker ? "Escalation Sent" : "Standby"}
+                          Not recorded
                         </span>
                       </div>
                       <div className={pageStyles.dispatchRow}>
                         <span className={pageStyles.dispatchLabel}>Logistics Ref:</span>
                         <span className={pageStyles.dispatchValue} style={{ fontFamily: "var(--mono)" }}>
-                          TRN-2026-0941
+                          Not recorded
                         </span>
                       </div>
                       <div className={pageStyles.dispatchRow}>
                         <span className={pageStyles.dispatchLabel}>Provider:</span>
-                        <span className={pageStyles.dispatchValue}>St John Non-Emergency Transport</span>
+                        <span className={pageStyles.dispatchValue}>Not recorded</span>
                       </div>
                       <div className={pageStyles.dispatchRow}>
                         <span className={pageStyles.dispatchLabel}>Unit:</span>

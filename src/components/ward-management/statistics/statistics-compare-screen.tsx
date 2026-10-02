@@ -116,10 +116,6 @@ export function StatisticsCompareScreen({
   const urgentCount = openMovements.filter((m) => m.flaggedUrgent).length;
   const unplacedCount = openMovements.filter((m) => m.acceptedUnitId === undefined).length;
 
-  // 4. Placement Buffer figures
-  const netCapacity = readyBeds - edWaitingCount;
-  const placementRatio = edWaitingCount > 0 ? (readyBeds / edWaitingCount).toFixed(2) : "—";
-
   const section = statisticsSectionById("compare");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'compare' section");
 
@@ -166,39 +162,37 @@ export function StatisticsCompareScreen({
 
         <div className={styles.kpiCard} data-tone="danger">
           <div className={styles.kpiTop}>
-            <span className={styles.kpiLabel}>ED Placement Demand</span>
-            <span className={styles.monoBadge}>Active Requests</span>
+            <span className={styles.kpiLabel}>Open movements</span>
+            <span className={styles.monoBadge}>Recorded states</span>
           </div>
           <div className={styles.kpiValRow}>
             <span className={styles.kpiVal}>{edWaitingCount}</span>
-            <span className={styles.kpiSub}>waiting now</span>
+            <span className={styles.kpiSub}>not closed or arrived</span>
           </div>
           <span className={styles.kpiSub}>
             <strong>{urgentCount}</strong> urgent &middot; <strong>{unplacedCount}</strong> awaiting ward
           </span>
         </div>
 
-        <div className={styles.kpiCard} data-tone="good">
+        <div className={styles.kpiCard} data-tone="accent">
           <div className={styles.kpiTop}>
-            <span className={styles.kpiLabel}>Placement Buffer</span>
-            <span className={styles.monoBadge}>Demand Ratio</span>
+            <span className={styles.kpiLabel}>Placement matching</span>
+            <span className={styles.monoBadge}>Not measured</span>
           </div>
           <div className={styles.kpiValRow}>
-            <span className={styles.kpiVal}>{placementRatio}x</span>
-            <span className={styles.kpiSub}>available vs ED demand</span>
+            <span className={styles.kpiVal}>Not calculated</span>
+            <span className={styles.kpiSub}>Eligibility not matched</span>
           </div>
-          <span className={styles.kpiSub}>
-            <strong>{netCapacity >= 0 ? `+${netCapacity}` : netCapacity}</strong> net bed buffer
-          </span>
+          <span className={styles.kpiSub}>Bed eligibility is not matched to these movements</span>
         </div>
       </div>
 
       {/* ══════════ FLOW BALANCE BANNER ══════════ */}
       <div className={styles.flowBalanceCard}>
         <div className={styles.balanceInfo}>
-          <h3 className={styles.balanceTitle}>Statewide Patient Flow Balance</h3>
+          <h3 className={styles.balanceTitle}>Current network records</h3>
           <p className={styles.balanceSubtitle}>
-            Current comparison between emergency department demand and inpatient bed availability.
+            Separate counts of available beds and open movements; these do not establish compatible placements.
           </p>
         </div>
         <div className={styles.balanceMetrics}>
@@ -211,13 +205,11 @@ export function StatisticsCompareScreen({
           </div>
           <div className={styles.balanceItem}>
             <span className={styles.bVal}>{edWaitingCount}</span>
-            <span className={styles.bLbl}>ED Patients</span>
+            <span className={styles.bLbl}>Open movements</span>
           </div>
           <div className={styles.balanceItem}>
-            <span className={styles.bVal} style={{ color: netCapacity >= 0 ? "var(--good)" : "var(--danger)" }}>
-              {netCapacity >= 0 ? `+${netCapacity}` : netCapacity}
-            </span>
-            <span className={styles.bLbl}>Net Capacity</span>
+            <span className={styles.bVal}>{unplacedCount}</span>
+            <span className={styles.bLbl}>Awaiting ward</span>
           </div>
         </div>
       </div>
@@ -701,7 +693,6 @@ function CompareTable<Row>({
         </thead>
         <tbody>
           {rows.map(({ id, name, row }) => {
-            const href = rowHeader.toLowerCase() === "ward" ? wardStatisticsHref(id) : edStatisticsHref(id);
             return (
               <tr key={id}>
                 <th scope="row">{name}</th>
@@ -975,7 +966,6 @@ function EdWaitingBarChart({
   movements: Movement[];
 }) {
   const [hoveredEd, setHoveredEd] = useState<HoveredEdState | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   if (emergencyDepartments.length === 0) return null;
 
@@ -1005,7 +995,7 @@ function EdWaitingBarChart({
   const barW = Math.min(colW - 24, 52);
 
   return (
-    <div ref={containerRef} className={styles.barChartBox}>
+    <div className={styles.barChartBox}>
       <svg
         width="100%"
         height="240"
@@ -1163,10 +1153,7 @@ function EdWaitingBarChart({
         <div
           className={styles.compareTooltip}
           style={{
-            left: `${Math.min(
-              Math.max(10, (hoveredEd.bx / W) * (containerRef.current?.clientWidth ?? W)),
-              (containerRef.current?.clientWidth ?? W) - 170,
-            )}px`,
+            left: `clamp(10px, ${(hoveredEd.bx / W) * 100}%, max(10px, calc(100% - 170px)))`,
             top: "20px",
             display: "block",
           }}

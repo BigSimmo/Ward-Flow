@@ -25,7 +25,7 @@ interface UnitCapacityRow {
   ready: number;
   pendingPreparation: number;
   held: number;
-  statusLabel: "At Capacity" | "Near Limit" | "Open Intake";
+  statusLabel: "No ready beds" | "Near Limit" | "Ready beds recorded";
   statusTone: "danger" | "warn" | "good";
 }
 
@@ -46,11 +46,11 @@ export function HospitalCapacityMatrix({ units, bedReleases }: { units: Unit[]; 
       const pendingPreparation = bedsPendingPreparation(u.id, bedReleases);
       const held = cap.held;
 
-      let statusLabel: "At Capacity" | "Near Limit" | "Open Intake" = "Open Intake";
+      let statusLabel: "No ready beds" | "Near Limit" | "Ready beds recorded" = "Ready beds recorded";
       let statusTone: "danger" | "warn" | "good" = "good";
 
-      if (occRate >= 95) {
-        statusLabel = "At Capacity";
+      if (ready <= 0) {
+        statusLabel = "No ready beds";
         statusTone = "danger";
       } else if (occRate >= 85) {
         statusLabel = "Near Limit";
