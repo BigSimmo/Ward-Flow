@@ -1084,7 +1084,7 @@
   border: 1px solid var(--line-strong);
   border-radius: var(--r2);
   padding: 0.25rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 2px var(--ward-shadow-black-04);
   align-self: flex-start;
 }
 
@@ -1571,95 +1571,95 @@
 
 /* Light Theme Mini Swatch */
 .themeMini_light {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  background: var(--ward-preview-slate-50);
+  border-color: var(--ward-preview-slate-300);
 }
 .themeMini_light .miniHeader {
-  background: #e2e8f0;
-  border-bottom: 1px solid #cbd5e1;
+  background: var(--ward-preview-slate-200);
+  border-bottom: 1px solid var(--ward-preview-slate-300);
 }
 .themeMini_light .miniBrandDot {
-  background: #0284c7;
+  background: var(--ward-preview-sky-600);
 }
 .themeMini_light .miniHeaderBar {
-  background: #94a3b8;
+  background: var(--ward-preview-slate-400);
 }
 .themeMini_light .miniSidebar {
-  background: #f1f5f9;
-  border-right: 1px solid #cbd5e1;
+  background: var(--ward-preview-slate-100);
+  border-right: 1px solid var(--ward-preview-slate-300);
 }
 .themeMini_light .miniNavDot {
-  background: #64748b;
+  background: var(--ward-preview-slate-500);
 }
 .themeMini_light .miniCard {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--ward-fixed-white);
+  border: 1px solid var(--ward-preview-slate-200);
 }
 .themeMini_light .miniCardActive {
-  background: #e0f2fe;
-  border: 1px solid #38bdf8;
+  background: var(--ward-preview-sky-100);
+  border: 1px solid var(--ward-preview-sky-400);
 }
 
 /* Dark Theme Mini Swatch */
 .themeMini_dark {
-  background: #090d16;
-  border-color: #1e293b;
+  background: var(--ward-preview-dark-canvas);
+  border-color: var(--ward-preview-slate-800);
 }
 .themeMini_dark .miniHeader {
-  background: #131b2e;
-  border-bottom: 1px solid #1e293b;
+  background: var(--ward-preview-dark-panel);
+  border-bottom: 1px solid var(--ward-preview-slate-800);
 }
 .themeMini_dark .miniBrandDot {
-  background: #38bdf8;
+  background: var(--ward-preview-sky-400);
 }
 .themeMini_dark .miniHeaderBar {
-  background: #475569;
+  background: var(--ward-preview-slate-600);
 }
 .themeMini_dark .miniSidebar {
-  background: #0f172a;
-  border-right: 1px solid #1e293b;
+  background: var(--ward-preview-slate-900);
+  border-right: 1px solid var(--ward-preview-slate-800);
 }
 .themeMini_dark .miniNavDot {
-  background: #94a3b8;
+  background: var(--ward-preview-slate-400);
 }
 .themeMini_dark .miniCard {
-  background: #1e293b;
-  border: 1px solid #334155;
+  background: var(--ward-preview-slate-800);
+  border: 1px solid var(--ward-preview-slate-700);
 }
 .themeMini_dark .miniCardActive {
-  background: #0c4a6e;
-  border: 1px solid #0284c7;
+  background: var(--ward-preview-sky-900);
+  border: 1px solid var(--ward-preview-sky-600);
 }
 
 /* Auto Theme Mini Swatch (Day/Night Split) */
 .themeMini_auto {
-  background: linear-gradient(135deg, #f8fafc 50%, #090d16 50%);
-  border-color: #94a3b8;
+  background: linear-gradient(135deg, var(--ward-preview-slate-50) 50%, var(--ward-preview-dark-canvas) 50%);
+  border-color: var(--ward-preview-slate-400);
 }
 .themeMini_auto .miniHeader {
-  background: linear-gradient(135deg, #e2e8f0 50%, #131b2e 50%);
-  border-bottom: 1px solid #64748b;
+  background: linear-gradient(135deg, var(--ward-preview-slate-200) 50%, var(--ward-preview-dark-panel) 50%);
+  border-bottom: 1px solid var(--ward-preview-slate-500);
 }
 .themeMini_auto .miniBrandDot {
-  background: #0284c7;
+  background: var(--ward-preview-sky-600);
 }
 .themeMini_auto .miniHeaderBar {
-  background: linear-gradient(135deg, #94a3b8 50%, #475569 50%);
+  background: linear-gradient(135deg, var(--ward-preview-slate-400) 50%, var(--ward-preview-slate-600) 50%);
 }
 .themeMini_auto .miniSidebar {
-  background: linear-gradient(135deg, #f1f5f9 50%, #0f172a 50%);
-  border-right: 1px solid #64748b;
+  background: linear-gradient(135deg, var(--ward-preview-slate-100) 50%, var(--ward-preview-slate-900) 50%);
+  border-right: 1px solid var(--ward-preview-slate-500);
 }
 .themeMini_auto .miniNavDot {
-  background: #38bdf8;
+  background: var(--ward-preview-sky-400);
 }
 .themeMini_auto .miniCard {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid #cbd5e1;
+  background: var(--ward-fixed-white-strong);
+  border: 1px solid var(--ward-preview-slate-300);
 }
 .themeMini_auto .miniCardActive {
-  background: rgba(14, 165, 233, 0.2);
-  border: 1px solid #0284c7;
+  background: var(--ward-preview-sky-halo);
+  border: 1px solid var(--ward-preview-sky-600);
 }
 
 .miniHeader {
@@ -1874,7 +1874,7 @@
   border: 1px solid var(--line);
   border-radius: var(--r2);
   padding: 0.75rem 0.875rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 1px 2px var(--ward-shadow-black-03);
 }
 
 .a11yCardHeader {
@@ -2823,7 +2823,7 @@
 }
 
 .searchFeedbackZero {
-  color: var(--warn, #e3bc5e);
+  color: var(--warn, var(--ward-fixed-warning));
   font-weight: 500;
 }
 
@@ -3514,7 +3514,7 @@
   flex-wrap: wrap;
   gap: 1rem;
   box-shadow:
-    0 10px 30px -5px rgba(22, 30, 40, 0.25),
+    0 10px 30px -5px var(--ward-fixed-ink-translucent),
     0 0 0 1px var(--accent);
 }
 
@@ -3549,19 +3549,19 @@
   height: 7px;
   border-radius: var(--pill);
   background: var(--warn);
-  box-shadow: 0 0 0 0 rgba(130, 93, 16, 0.7);
+  box-shadow: 0 0 0 0 var(--ward-fixed-warning-outline);
   animation: pulseWarning 1.8s infinite;
 }
 
 @keyframes pulseWarning {
   0% {
-    box-shadow: 0 0 0 0 rgba(130, 93, 16, 0.7);
+    box-shadow: 0 0 0 0 var(--ward-fixed-warning-outline);
   }
   70% {
-    box-shadow: 0 0 0 8px rgba(130, 93, 16, 0);
+    box-shadow: 0 0 0 8px var(--ward-fixed-warning-transparent);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(130, 93, 16, 0);
+    box-shadow: 0 0 0 0 var(--ward-fixed-warning-transparent);
   }
 }
 

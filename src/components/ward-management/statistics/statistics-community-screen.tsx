@@ -242,9 +242,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
           </span>
         </div>
         <div className={pageStyles.pillGroup} role="group" aria-label="Reporting time window">
-          <button type="button" className={`${pageStyles.pillBtn} ${pageStyles.pillBtnActive}`} aria-pressed={true}>
-            Current snapshot
-          </button>
+          <span className={`${pageStyles.pillBtn} ${pageStyles.pillBtnActive}`}>Current snapshot</span>
           <button
             type="button"
             className={pageStyles.pillBtn}

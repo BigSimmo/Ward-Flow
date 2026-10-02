@@ -18,6 +18,7 @@
  */
 .shell {
   composes: wardTokens from "./ward-tokens.module.css";
+  composes: wardFixedPalette from "../../app/ward-flow-shell-tokens.module.css";
   /* Page owners choose the appropriate size; short windows keep a readable minimum
      and let the document scroll rather than clipping controls or compressing records. */
   --ward-workspace-height: clamp(36rem, calc(100dvh - 9rem), 64rem);

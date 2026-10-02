@@ -1939,7 +1939,6 @@ export function EdScreen({ edId }: EdScreenProps) {
     category?: TimelineEventCategory;
     categoryLabel?: string;
     patientName?: string;
-    patientId?: string;
     movementId?: string;
     referralId?: string;
     badgeText?: string;
@@ -2013,7 +2012,6 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "arrivals",
         categoryLabel: "Arrivals & Departures",
         patientName: patientInfo.displayName,
-        patientId: m.patientId,
         movementId: m.id,
         badgeText: "Arrived",
         badgeTone: isLongWait ? "warn" : "quiet",
@@ -2043,7 +2041,6 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "clinical",
         categoryLabel: "Clinical & Legal",
         patientName: patientInfo.displayName,
-        patientId: m.patientId,
         movementId: m.id,
         badgeText: "Medically Cleared",
         badgeTone: "good",
@@ -2066,7 +2063,6 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "clinical",
         categoryLabel: "Clinical & Legal",
         patientName: patientInfo.displayName,
-        patientId: m.patientId,
         movementId: m.id,
         badgeText: "Examined",
         badgeTone: "info",
@@ -2091,7 +2087,6 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "clinical",
         categoryLabel: "Clinical & Legal",
         patientName: patientInfo.displayName,
-        patientId: m.patientId,
         movementId: m.id,
         badgeText: formCode,
         badgeTone: "purple",
@@ -2119,7 +2114,6 @@ export function EdScreen({ edId }: EdScreenProps) {
             category: "bed_search",
             categoryLabel: "Bed searches",
             patientName: patientInfo.displayName,
-            patientId: m.patientId,
             movementId: m.id,
             badgeText: "Bed Declined",
             badgeTone: "warn",
@@ -2147,7 +2141,6 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "bed_search",
         categoryLabel: "Bed searches",
         patientName: patientInfo.displayName,
-        patientId: m.patientId,
         movementId: m.id,
         badgeText: "Bed Accepted",
         badgeTone: "good",
@@ -2176,7 +2169,6 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "transport",
         categoryLabel: "Transport",
         patientName: patientInfo.displayName,
-        patientId: m.patientId,
         movementId: m.id,
         badgeText: "Transport Booked",
         badgeTone: "good",
@@ -2203,7 +2195,6 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "arrivals",
         categoryLabel: "Arrivals & Departures",
         patientName: patientInfo.displayName,
-        patientId: m.patientId,
         movementId: m.id,
         badgeText: "Departed",
         badgeTone: "quiet",
@@ -2238,7 +2229,6 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "bed_search",
         categoryLabel: "Bed searches",
         patientName: patientDisplayName,
-        patientId: r.patientId,
         referralId: r.id,
         badgeText: "Referral Raised",
         badgeTone: "quiet",
@@ -2259,7 +2249,6 @@ export function EdScreen({ edId }: EdScreenProps) {
         category: "arrivals",
         categoryLabel: "Arrivals & Departures",
         patientName: patientDisplayName,
-        patientId: r.patientId,
         referralId: r.id,
         badgeText: "Triaged",
         badgeTone: "quiet",
@@ -4377,9 +4366,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                               e.stopPropagation();
                                               setReviewStatusOverrides((prev) => ({ ...prev, [movement.id]: opt }));
                                               setReviewDropdownOpenFor(undefined);
-                                              announceToWardShell(
-                                                `Review status set to ${opt} for ${patientInfo.displayName}.`,
-                                              );
+                                              announceToWardShell(`Review status set to ${opt} for this patient.`);
                                             }}
                                           >
                                             {opt}
@@ -4484,9 +4471,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                               e.stopPropagation();
                                               setClearanceOverrides((prev) => ({ ...prev, [movement.id]: "yes" }));
                                               setClearanceDropdownOpenFor(undefined);
-                                              announceToWardShell(
-                                                `Medical clearance set to Yes for ${patientInfo.displayName}.`,
-                                              );
+                                              announceToWardShell(`Medical clearance set to Yes for this patient.`);
                                             }}
                                           >
                                             Yes — Medically cleared
@@ -4500,9 +4485,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                               e.stopPropagation();
                                               setClearanceOverrides((prev) => ({ ...prev, [movement.id]: "no" }));
                                               setClearanceDropdownOpenFor(undefined);
-                                              announceToWardShell(
-                                                `Medical clearance set to No for ${patientInfo.displayName}.`,
-                                              );
+                                              announceToWardShell(`Medical clearance set to No for this patient.`);
                                             }}
                                           >
                                             No — Not cleared
@@ -4520,9 +4503,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                                               e.stopPropagation();
                                               setClearanceOverrides((prev) => ({ ...prev, [movement.id]: null }));
                                               setClearanceDropdownOpenFor(undefined);
-                                              announceToWardShell(
-                                                `Medical clearance reset for ${patientInfo.displayName}.`,
-                                              );
+                                              announceToWardShell(`Medical clearance reset for this patient.`);
                                             }}
                                           >
                                             • Pending / Not recorded

@@ -12,6 +12,7 @@ import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-manageme
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { isOpen, unitCapacity } from "@/components/ward-management/ward-derivations";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import type { EmergencyDepartment, Movement, Unit } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { WardPanel } from "@/components/ward-management/ward-panel";
@@ -94,6 +95,7 @@ export function StatisticsCompareScreen({
   // 1. Inpatient Network KPI figures
   const totalBeds = units.reduce((sum, u) => sum + u.beds, 0);
   const readyBeds = units.reduce((sum, u) => sum + unitCapacity(u, bedReleases).available, 0);
+  const pendingPreparationBeds = units.reduce((sum, u) => sum + bedsPendingPreparation(u.id, bedReleases), 0);
   const readyPct = totalBeds > 0 ? ((readyBeds / totalBeds) * 100).toFixed(1) : "0.0";
 
   // 2. Average Length of Stay KPI figures
@@ -143,6 +145,9 @@ export function StatisticsCompareScreen({
           <span className={styles.kpiSub}>
             <strong>{readyBeds}</strong> beds available ({readyPct}%)
           </span>
+          {pendingPreparationBeds > 0 ? (
+            <span className={styles.kpiSub}>{pendingPreparationBeds} being made ready (not deducted)</span>
+          ) : null}
         </div>
 
         <div className={styles.kpiCard} data-tone="warn">
@@ -180,7 +185,7 @@ export function StatisticsCompareScreen({
           </div>
           <div className={styles.kpiValRow}>
             <span className={styles.kpiVal}>{placementRatio}x</span>
-            <span className={styles.kpiSub}>ready vs ED demand</span>
+            <span className={styles.kpiSub}>available vs ED demand</span>
           </div>
           <span className={styles.kpiSub}>
             <strong>{netCapacity >= 0 ? `+${netCapacity}` : netCapacity}</strong> net bed buffer
@@ -193,13 +198,16 @@ export function StatisticsCompareScreen({
         <div className={styles.balanceInfo}>
           <h3 className={styles.balanceTitle}>Statewide Patient Flow Balance</h3>
           <p className={styles.balanceSubtitle}>
-            Instant comparison between emergency department demand and inpatient bed readiness.
+            Current comparison between emergency department demand and inpatient bed availability.
           </p>
         </div>
         <div className={styles.balanceMetrics}>
           <div className={styles.balanceItem}>
             <span className={styles.bVal}>{readyBeds}</span>
-            <span className={styles.bLbl}>Ready Beds</span>
+            <span className={styles.bLbl}>Available beds</span>
+            {pendingPreparationBeds > 0 ? (
+              <span className={styles.bLbl}>{pendingPreparationBeds} being made ready (not deducted)</span>
+            ) : null}
           </div>
           <div className={styles.balanceItem}>
             <span className={styles.bVal}>{edWaitingCount}</span>

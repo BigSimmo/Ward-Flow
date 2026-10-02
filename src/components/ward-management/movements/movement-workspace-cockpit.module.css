@@ -76,7 +76,7 @@
   border: 1px solid var(--ward-border, var(--border));
   border-radius: var(--radius-lg, 0.5rem);
   padding: var(--space-5, 1.25rem);
-  box-shadow: var(--lift-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+  box-shadow: var(--lift-sm, 0 1px 2px 0 var(--ward-shadow-black-05));
   position: relative;
   overflow: hidden;
 }
@@ -199,11 +199,11 @@
   align-items: flex-start;
   gap: var(--space-3, 0.75rem);
   padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
-  background: var(--warning-bg, var(--surface-subtle));
+  background: var(--ward-warning-soft, var(--surface-subtle));
   border: 1px solid var(--warning-border, var(--ward-border));
-  border-left: 4px solid var(--warning-text, var(--ward-warning));
+  border-left: 4px solid var(--ward-warning, var(--ward-warning));
   border-radius: var(--radius-md, 0.375rem);
-  color: var(--warning-text, var(--ward-text));
+  color: var(--ward-warning, var(--ward-text));
   font-size: var(--ward-font-sm, 0.8125rem);
   line-height: 1.4;
 }
@@ -211,7 +211,7 @@
 .blockerAlertIcon {
   flex-shrink: 0;
   margin-top: 2px;
-  color: var(--warning-text, var(--ward-warning));
+  color: var(--ward-warning, var(--ward-warning));
 }
 
 .blockerAlertBody {
@@ -223,7 +223,7 @@
 
 .blockerAlertTitle {
   font-weight: 600;
-  color: var(--warning-text, var(--ward-heading));
+  color: var(--ward-warning, var(--ward-heading));
 }
 
 /* Legal Notice */
@@ -272,7 +272,7 @@
   border: 1px solid var(--ward-border, var(--border));
   border-radius: var(--radius-lg, 0.5rem);
   padding: var(--space-4, 1rem);
-  box-shadow: var(--lift-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+  box-shadow: var(--lift-sm, 0 1px 2px 0 var(--ward-shadow-black-05));
 }
 
 .stepperHeader {
@@ -335,7 +335,7 @@
 
 .stepperStep[data-state="done"] {
   border-color: var(--success-border, var(--ward-border));
-  background: var(--success-bg, var(--surface));
+  background: var(--ward-success-soft, var(--surface));
 }
 
 .stepperStep[data-state="current"] {
@@ -372,7 +372,7 @@
 }
 
 .stepperStep[data-state="done"] .stepIcon {
-  color: var(--success-text, var(--ward-success));
+  color: var(--ward-success, var(--ward-success));
 }
 
 .stepperStep[data-state="current"] .stepIcon {
@@ -411,14 +411,14 @@
   border: 1px solid var(--ward-border, var(--border));
   border-radius: var(--radius-md, 0.375rem);
   padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
-  box-shadow: var(--lift-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+  box-shadow: var(--lift-sm, 0 1px 2px 0 var(--ward-shadow-black-05));
   position: relative;
 }
 
 .figureCard[data-flagged="true"] {
   border-color: var(--warning-border, var(--ward-warning));
-  background: var(--warning-bg, var(--surface-raised));
-  border-left: 3px solid var(--warning-text, var(--ward-warning));
+  background: var(--ward-warning-soft, var(--surface-raised));
+  border-left: 3px solid var(--ward-warning, var(--ward-warning));
 }
 
 .figureLabel {
@@ -447,7 +447,7 @@
 
 .withheldFlagNote {
   font-size: 12px;
-  color: var(--warning-text, var(--ward-warning));
+  color: var(--ward-warning, var(--ward-warning));
   margin-top: var(--space-1, 0.25rem);
 }
 
@@ -488,7 +488,7 @@
   background: var(--surface-raised, var(--surface));
   border: 1px solid var(--ward-border, var(--border));
   border-radius: var(--radius-lg, 0.5rem);
-  box-shadow: var(--lift-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+  box-shadow: var(--lift-sm, 0 1px 2px 0 var(--ward-shadow-black-05));
   overflow: hidden;
 }
 
@@ -585,13 +585,13 @@
 }
 
 .gatePass {
-  color: var(--success-text, var(--ward-success));
+  color: var(--ward-success, var(--ward-success));
   flex-shrink: 0;
   margin-top: 1px;
 }
 
 .gateFail {
-  color: var(--danger-text, var(--ward-danger));
+  color: var(--ward-danger, var(--ward-danger));
   flex-shrink: 0;
   margin-top: 1px;
 }
@@ -645,7 +645,7 @@
 
 .candidateRisk {
   font-size: 12px;
-  color: var(--warning-text, var(--ward-warning));
+  color: var(--ward-warning, var(--ward-warning));
   font-weight: 500;
 }
 
@@ -896,7 +896,7 @@
 
 .controlButtonPrimary {
   background: var(--ward-blue, var(--clinical-accent));
-  color: var(--on-accent, #ffffff);
+  color: var(--on-accent, var(--ward-fixed-white));
   border-color: var(--ward-blue, var(--clinical-accent));
 }
 
@@ -905,8 +905,8 @@
 }
 
 .controlButtonDanger {
-  background: var(--danger-bg, var(--surface-raised));
-  color: var(--danger-text, var(--ward-danger));
+  background: var(--ward-danger-soft, var(--surface-raised));
+  color: var(--ward-danger, var(--ward-danger));
   border-color: var(--danger-border, var(--border));
 }
 
@@ -956,7 +956,7 @@
 }
 
 .attentionItem[data-level="stalled"] {
-  border-left: 3px solid var(--warning-text, var(--ward-warning));
+  border-left: 3px solid var(--ward-warning, var(--ward-warning));
 }
 
 .attentionHead {

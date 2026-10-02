@@ -967,7 +967,7 @@ export function SettingsScreen() {
                   <div className={styles.searchFeedback} role="status" aria-live="polite">
                     {totalMatches > 0 ? (
                       <span className={styles.searchFeedbackText}>
-                        Showing <strong>{totalMatches}</strong> of {SETTINGS_SEARCH_ENTRIES.length} settings
+                        Showing <strong>{totalMatches}</strong> of {SETTINGS_SEARCH_ENTRIES.length} prototype entries
                       </span>
                     ) : (
                       <div className={styles.searchFeedbackZeroWrap}>

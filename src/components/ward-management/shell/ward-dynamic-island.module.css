@@ -97,7 +97,7 @@
 }
 
 .statusPipAlarm {
-  background: var(--danger, var(--critical));
+  background: var(--danger, var(--ward-danger));
   animation: pulseAlarm 2s infinite ease-in-out;
 }
 
@@ -106,7 +106,7 @@
   position: absolute;
   inset: -3px;
   border-radius: var(--pill, 9999px);
-  border: 1px solid var(--danger, var(--critical));
+  border: 1px solid var(--danger, var(--ward-danger));
   opacity: 0.5;
 }
 
@@ -182,7 +182,7 @@
 }
 
 .metricBtn:hover {
-  background: var(--surface-3, var(--surface-hover));
+  background: var(--surface-3, var(--surface-2));
   color: var(--text);
   border-color: var(--line, var(--border));
 }
@@ -193,7 +193,7 @@
 }
 
 .metricBtnActive {
-  background: var(--surface-3, var(--surface-hover));
+  background: var(--surface-3, var(--surface-2));
   border-color: var(--accent);
   color: var(--text);
   font-weight: 600;
@@ -245,7 +245,7 @@
 }
 
 .metricToneDanger {
-  color: var(--danger, var(--critical));
+  color: var(--danger, var(--ward-danger));
 }
 
 .metricToneMuted {
