@@ -52,6 +52,9 @@ catchment data). They are listed in [`STATUS.md`](STATUS.md).
   [`mockups/`](mockups/) and [`mockups/WARD-FLOW-DESIGN-SYSTEM.md`](mockups/WARD-FLOW-DESIGN-SYSTEM.md)
   are background only. Where a drawing and the current app differ in look, ask the owner before
   changing the app to match the drawing.
+  Reconfirmed by the owner on 2 October 2026 for the stale-rules review: use the current design on
+  local `main` as the baseline. Neither historical mockup specifications nor D-28 commission a
+  new redesign. Preserve understandable status, synthetic-data disclosure and accessible controls.
 - **Behaviour: the working engine** under `src/components/ward-management/` and its tests. Where a
   drawing and the engine disagree on behaviour, the engine wins and the difference is written down.
 - **Decisions: the owner's words.** The newest are in
@@ -72,7 +75,7 @@ node scripts/ward-flow/gate-tsc.mjs               # when changed source or types
 **Fold checks (selected for the changed files, by the steward):**
 
 ```bash
-node scripts/ward-flow/select-fold-gate.mjs --head <batch>  # STATIC, FOCUSED or FULL
+node scripts/ward-flow/select-fold-gate.mjs --head <batch>  # origin/main by default; STATIC, FOCUSED or FULL
 ```
 
 Read the selector's result on the exact integration candidate before acceptance. Existing chats must
@@ -158,7 +161,7 @@ Current plans are listed in [`plans/README.md`](plans/README.md).
    like one that ran and failed. For the ward suite, files handed in must equal files that ran.
 3. **Quote a number or SHA with the tree it came from.** This line moves several times a day.
    `git log -1` is the current commit; documents are not.
-4. **No test can see that a screen does not look like its drawing.** Looking in a real browser is the
+4. **Static checks do not prove fidelity to the accepted app.** Looking in a real browser is the
    only check, and it is recorded in [`SCREEN-VERIFICATION.md`](SCREEN-VERIFICATION.md).
 5. **Verify the repository before any Git write, and get the owner's yes for protected deletions.**
    Ward Flow belongs in `BigSimmo/Ward-Flow`; `BigSimmo/Database` is a separate project. A push,

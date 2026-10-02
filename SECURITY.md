@@ -1,56 +1,37 @@
-# Security Policy
+# Ward Flow security policy
 
-PsychSift (`psychiatry.tools`) is a private, single-maintainer clinical reference
-application that handles private guideline documents and grounded answer generation.
-Security reports are taken seriously and handled privately.
+Ward Flow is the standalone `BigSimmo/Ward-Flow` synthetic prototype. Its Next.js
+UI and separate Ward backend are distinct from PsychSift. It is not approved for
+real patient information or clinical deployment.
 
 ## Reporting a vulnerability
 
-**Please do not open a public issue, pull request, or discussion for a security
-problem, and do not disclose it publicly before it is resolved.**
+Do not open a public issue, pull request or discussion containing a security
+finding. Use GitHub Private Vulnerability Reporting if available under this
+repository's Security tab. If unavailable, contact the maintainer (`@BigSimmo`)
+privately through an available private channel; do not post sensitive details publicly.
+Channel availability and response times have not been verified here.
 
-Report privately using **GitHub Private Vulnerability Reporting** — the
-**"Report a vulnerability"** button under this repository's **Security** tab
-(`Security → Advisories → Report a vulnerability`). If that channel is unavailable to
-you, contact the maintainer (`@BigSimmo`) directly through GitHub.
+Include impact, affected paths, synthetic reproduction steps and suggested repair.
+Never include credentials, tokens, patient information or private service contents.
 
-When reporting, please include:
+## Scope and versions
 
-- A description of the issue and its impact.
-- Steps to reproduce (a minimal proof of concept is ideal).
-- Affected paths, routes, or components if known.
-- Any suggested remediation.
+Reports may concern the current repository's UI, local API routes, authentication,
+persistence and separate Azure/PostgreSQL backend code. Name the affected revision.
+Third-party service vulnerabilities belong with their vendor; integration defects
+in Ward remain in scope. Do not use PsychSift's Supabase or Railway resources.
 
-You can expect an initial acknowledgement within a few days. Because this is a
-single-maintainer project, timelines are best-effort; please allow a reasonable
-period for a fix before any disclosure.
+## Safe investigation
 
-## Supported versions
+Prefer local, mocked, offline checks with synthetic data. Live service testing,
+provider calls, credential changes and deployment require explicit authority and
+verification of the exact Ward resource. A documentation repair grants none.
 
-The application is continuously deployed from `main`. Only the current `main` /
-production deployment is supported — there are no maintained release branches or
-backports. Fixes land on `main` and roll out via the standard deployment path
-(`docs/deployment-architecture.md`).
+## Evidence and related documentation
 
-## Scope
-
-In scope: the Next.js app tier, API routes, the ingestion worker, Supabase
-schema/RLS/RPCs, and the retrieval/answer pipeline in this repository.
-
-Out of scope: third-party managed services themselves (Supabase, OpenAI, Railway,
-GitHub) — report those to the respective vendor. Note this is a clinical **prototype**,
-not validated clinical decision support (see `README.md` → "Clinical Safety Status").
-
-## Handling sensitive findings
-
-- Never include real secrets, credentials, tokens, or patient-identifiable data in a
-  report. Reference the affected file/location and the class of exposure instead.
-- Do not run intrusive tests against the live `psychiatry.tools` deployment or the live
-  Supabase project. Prefer local/demo mode (`README.md` → Setup).
-
-## Related security documentation
-
-The documents previously listed here were retired with PsychSift on 26 September 2026.
-
-Automated controls in CI: secret scanning (Gitleaks, `.github/workflows/secret-scan.yml`)
-and static analysis (Semgrep, `.github/workflows/sast.yml`).
+See [repository boundaries](AGENTS.md), [hosting records](docs/hosting.md) and
+[Ward's workflow source](.github/workflows/ward-flow.yml). Local workflow source
+is not evidence that hosted checks or deployment ran. As reviewed on 2 October
+2026, no Ward Gitleaks/Semgrep workflow establishes the inherited scanning claims;
+current hosted security controls and deployment state remain unverified.

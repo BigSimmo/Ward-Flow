@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../../AGENTS.md) and [Ward entry point](../ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Decision: restoring automated review coverage (`#CCZ4HB`)
 
 - **Status:** decided 2026-08-22 (accept intermittent CodeRabbit review; no cap change) and
@@ -587,3 +594,5 @@ the pull request, then stop"); `CLAUDE.md`; `.coderabbit.yaml`; `.github/workflo
 names and defaults confirmed against CodeRabbit's public configuration reference.
 Quantitative figures derived from `git log origin/main --first-parent` over 2026-07-11 to
 2026-08-22; method and limits in §2.1.
+
+<!-- docs-script-refs:historical-end -->

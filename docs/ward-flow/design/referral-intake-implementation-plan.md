@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../../../AGENTS.md) and [Ward entry point](../README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Raise a referral — locked design, and the plan to build it
 
 **Design of record:** [`prototypes/mockup-referral-intake-v5.html`](prototypes/mockup-referral-intake-v5.html)
@@ -443,3 +450,5 @@ And two reds for one edit is not a stronger signal; it hides which site moved.
 - Any new field on `Patient`. Widening that model needs its own ruling.
 - The two sensitive identity fields, until the review reports.
 - Person profile and person search, beyond linking to them.
+
+<!-- docs-script-refs:historical-end -->

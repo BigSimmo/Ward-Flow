@@ -1,5 +1,18 @@
 # Verification Gates and the Gate Arbiter
 
+> **Ward Flow scope — 1 October 2026.** This file contains inherited PsychSift guidance. The current [Ward Flow repository boundary](../../AGENTS.md) governs. References to PsychSift, Database, Supabase, OpenAI, foreign Railway targets or their credentials are historical and must not be followed here. Ward Flow stays synthetic; it must not reuse PsychSift resources. Read the [current hosting decisions](../hosting.md) before any separately authorised provider action.
+
+The tier table remains useful for selecting local checks, but copied claims about GitHub required checks, Production UI jobs, hosted receipts and CI coverage are historical. Disabled GitHub Actions was reported at setup on 27 September 2026; a read-only GitHub check on 2 October 2026 found Actions enabled and Ward Flow CI active. Current-head results remain separate evidence, and an arbiter deferral is not proof that CI will run. Inspect this repository's actual scripts and workflow state, preserve all applicable local, security and clinical gates, and report missing evidence.
+
+**Current Ward Flow commands.** The copied `plan:browser`, `verify:phone-chrome`, `check:production-readiness` and `check:gate-manifest` commands below are absent from this repository's package scripts and are historical examples only. Use `node scripts/ward-flow/select-journeys.mjs --base <task-base> --head HEAD --json` with the actual task base to preview committed browser scope; pending edits are not included. Inspect the selected journeys and shared-foundation requirements before running the applicable Ward gate. Use the on-demand [task guide](task-efficiency.md) for current verification entry points, continuation and evidence conventions.
+
+The inherited arbiter reads an absent `.github/workflows/ci.yml` and establishes no Ward CI coverage. Unknown coverage requires running the selected gate or reporting a precise blocker. Neither the declared Ward workflow nor a historical Production UI example authorises gate deferral. A preview, skipped check or deferred check is never passing evidence. Preserve all applicable security, privacy and clinical acceptance requirements.
+
+For task lifecycle, evidence-backed completion and local receipt handoff, read [task receipt guidance](../task-receipts.md).
+
+> The inherited source block below is historical. Current Ward guidance above and the repository boundary govern.
+
+<!-- docs-script-refs:historical-start -->
 <!-- BEGIN:verification-gates -->
 
 ## Gate selection
@@ -168,3 +181,5 @@ Non-negotiable, and the reason the saving is allowed at all:
 Cloud sessions are told this at SessionStart by `.claude/hooks/testing-policy.sh`, which
 is read-only, exits 0 on every path, and states the reporting rules alongside the
 commands.
+
+<!-- docs-script-refs:historical-end -->

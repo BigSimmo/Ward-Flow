@@ -1,5 +1,14 @@
 # Scripts, generators, hooks and tooling
 
+> Updated tooling contracts, 2 October 2026: both selectors default to the local `origin/main`
+> ref, retain explicit `--base`, never fetch and fail when refs cannot be compared. Owner-rulings
+> indexing includes `decisions.md` with source-qualified IDs and distinguishes decisions from
+> questions/proposals. The rules index reads only the versioned historical lessons copy; foreign
+> branch/provider/model instructions remain historical. Screen verification records optional full
+> checked revisions and bounded folder/page hashes, excluding shared shell, globals and transitive
+> imports. Neither drawing freshness nor structural checks prove current app appearance.
+> The detailed line counts below are the original 25 September snapshot, not fresh measurements.
+
 Covers every tracked file under `scripts/ward-flow/` (including `scripts/ward-flow/audit/`), every
 other `scripts/` file whose name or content genuinely mentions Ward Flow (found via
 `grep -il ward scripts/`, excluding `scripts/ward-flow/`, then checked line by line — most raw hits
@@ -41,7 +50,7 @@ run individually per file; nothing here was executed. Back to [the code map inde
   is stale. Deliberately excludes `how-to-write-to-the-owner.md` (instructions _to_ the owner, not
   a record of what he ruled).
 - **`scripts/ward-flow/rules-index.mjs`** (130 lines) — Reads every lesson's frontmatter from the
-  lesson store (`~/.claude/projects/D--Repos-Database/memory/`, or the repo mirror) and generates
+  versioned historical copy (`docs/ward-flow/lessons/`) and generates
   `docs/ward-flow/RULES.md`, grouped by keyword-matched theme; anything unmatched is listed under
   "Unfiled" rather than silently dropped. `--check` is the gate mode.
 - **`scripts/ward-flow/screen-map.mjs`** (176 lines) — Generates `docs/ward-flow/SCREEN-MAP.md`
@@ -72,11 +81,10 @@ run individually per file; nothing here was executed. Back to [the code map inde
   `<iframe>` (never a screenshot — these drawings build their own navigation with JavaScript, so a
   static capture renders a different, wrong design). Excludes the two superseded
   patient-search drawings by name.
-- **`scripts/ward-flow/sync-lessons.mjs`** (152 lines) — Copies the lesson store (working source)
-  into `docs/ward-flow/lessons/` (versioned backup), byte-for-byte, comparing content not mtime.
-  Never deletes from the repo copy — a file present in the repo but gone from the store is reported
-  under "only in repo" and left alone, because that is exactly the moment the backup exists for.
-  Exits 0 and does nothing if the store does not exist on this machine. `--check` mode for gates.
+- **`scripts/ward-flow/sync-lessons.mjs`** - Retired importer. Ordinary and `--check` runs
+  deliberately exit 1 without reading a private lesson store or writing files. The tracked
+  `docs/ward-flow/lessons/` files are the authoritative Ward Flow lesson source; maintain them
+  directly and use the in-repository lesson audit below. This stub is not a freshness gate.
 
 ## `scripts/ward-flow/` — checks, ratchets and gates
 
@@ -89,7 +97,7 @@ run individually per file; nothing here was executed. Back to [the code map inde
   `ward:check-docs`. Fails if a relative markdown link under `docs/ward-flow/**` points at a file
   that is not there. Does not check absolute URLs, in-file anchors, or links inside fenced code
   blocks. ⚠️ Similarly named to, and a **different file from**, the repo-wide
-  `scripts/check-docs-links.mjs` (`npm run docs:check-links`) — see Pitfalls.
+  `scripts/check-docs-links.mjs` (`npm run check:ward-doc-links`) — see Pitfalls.
 - **`scripts/ward-flow/check-drawing-rules.mjs`** (223 lines) — Usage:
   `node scripts/ward-flow/check-drawing-rules.mjs <drawing.html> [...]`. Static, read-only check of
   a drawing's rendered copy (text, title/aria-label/placeholder/alt/value attributes, and string
@@ -590,7 +598,6 @@ file in the repository against (`schemaVersion: 1`, `product: "ward-flow"`). Top
 | `docs/ward-flow/SCREEN-MAP.md`                                         | `screen-map.mjs`                                 | `node scripts/ward-flow/screen-map.mjs --check`                                                                                 |
 | `docs/ward-flow/SCREEN-VERIFICATION.md`                                | `screen-verification.mjs`                        | `node scripts/ward-flow/screen-verification.mjs --check`                                                                        |
 | `docs/ward-flow/mockups/CONTACT-SHEET.html`                            | `contact-sheet.mjs`                              | none (visual reference page, not a gate)                                                                                        |
-| `docs/ward-flow/lessons/*.md` (repo mirror of the lesson store)        | `sync-lessons.mjs`                               | `node scripts/ward-flow/sync-lessons.mjs --check`                                                                               |
 | `docs/ward-flow/LESSON-AUDIT-REPORT.md`                                | `audit-lessons.mjs`                              | `node scripts/ward-flow/audit-lessons.mjs --check`                                                                              |
 | `docs/ward-flow/journey/ward-journey-explorer.html`                    | `build-explorer.mjs` (via `ward:journey`)        | `npm run ward:journey` (build refuses rather than emitting a wrong page)                                                        |
 | `docs/ward-flow/journey/ward-journey.bpmn`                             | `build-bpmn.mjs` (via `ward:journey`)            | part of `npm run ward:journey`                                                                                                  |
@@ -636,7 +643,7 @@ generator `--check`s only when their own source changed.
 ## Pitfalls in this area
 
 1. **Two different, similarly-named doc-link checkers.** `scripts/check-docs-links.mjs`
-   (`npm run docs:check-links`, repo-wide) and `scripts/ward-flow/check-doc-links.mjs`
+   (`npm run check:ward-doc-links`, repo-wide) and `scripts/ward-flow/check-doc-links.mjs`
    (`npm run check:ward-doc-links`, Ward-only) are separate files with separate scope. Running the
    wrong one gives a false sense that Ward Flow's links were checked, or floods you with unrelated
    repo-wide link findings.

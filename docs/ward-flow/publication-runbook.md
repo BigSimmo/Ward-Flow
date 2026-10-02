@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../../AGENTS.md) and [Ward entry point](README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Publishing Ward Flow — the runbook, written after eight pushes to land one pull request
 
 **Written 2026-09-06, immediately after PR #2654 merged.** Eight pushes, roughly two hours,
@@ -390,3 +397,5 @@ Failure 9 — the referral board's decided count crossing its display cap — is
 and would still have taken its own push, which is the correct cost for a real defect.
 
 **Eight pushes becomes two: one to publish, one for the real finding.**
+
+<!-- docs-script-refs:historical-end -->

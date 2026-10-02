@@ -2926,6 +2926,10 @@ All 28 request JSON files have been relocated to `docs/outstanding-issues-inbox/
 
 ---
 
+> Historical task evidence from the former Database Ward workflow; retained commands are not current instructions.
+
+<!-- docs-script-refs:historical-start -->
+
 ## 7. STATUS REFRESH — 16 SEPTEMBER 2026
 
 **This is the current state of every Ward Flow task.** It replaces the 13 September
@@ -3192,6 +3196,8 @@ fix (Answer 13), housekeeping (control bytes, cultural-review deferral record), 
 cannot itself confirm as folded: the referrer-withdraws-only-the-community-arm fix (R2-11) and the
 transport-booking phone-call-log redesign (owner's third ruling, `089d316934`), the latter's own
 community-team screen control still not built pending an `Admission`-to-`Movement` linking decision.
+
+<!-- docs-script-refs:historical-end -->
 
 ## §7.6 · Emergency Department Screen Third-Edition Alignment (17 Sept 2026)
 
@@ -3491,6 +3497,10 @@ _All 232 tests across the affected test suites pass locally._
 
 ---
 
+> Historical task evidence from the former Database Ward workflow; retained commands are not current instructions.
+
+<!-- docs-script-refs:historical-start -->
+
 ## §7.14 · Full Estate Defect Resolution, Gate Clearance, and Next Session Roadmap (17 Sept 2026 Closeout)
 
 **Recorded 17 September 2026 (Final Session Closeout & Archive Preparation).**  
@@ -3589,6 +3599,8 @@ _All 232 tests across the affected test suites pass locally._
     - Capture Playwright visual snapshots for `/mockups/ward-flow/ed/arm-ed` at 1440px desktop breakpoint now that the board table and dual-column layout have achieved parity with `docs/ward-flow/mockups/emergency-department-third-edition.html`.
 
 ---
+
+<!-- docs-script-refs:historical-end -->
 
 ## §7.15 · Patient Screen Overhaul, Visual Defect Resolution (Images 1–5), and Interaction Perfection (17 Sept 2026 Closeout)
 
@@ -3703,6 +3715,10 @@ _All 232 tests across the affected test suites pass locally._
 
 ---
 
+> Historical task evidence from the former Database Ward workflow; retained commands are not current instructions.
+
+<!-- docs-script-refs:historical-start -->
+
 ## §7.17 · Emergency Department Screen Parity, Layout Streamlining, and Visual Defect Resolution (Images 1 & 2 Closeout)
 
 **Recorded 17 September 2026 (Emergency Department Rebuild & Layout Streamlining Closeout).**  
@@ -3765,6 +3781,8 @@ _All 232 tests across the affected test suites pass locally._
    - _Recommendation_: Run `npm run test:visual` to record new golden snapshots for Peel ED and Armadale ED.
 
 ---
+
+<!-- docs-script-refs:historical-end -->
 
 ## §7.18 · Audit Closure and the Real WA Reference Data (18 September 2026)
 
@@ -4254,6 +4272,10 @@ the `Q-12` citation into the test whatever the answer.
 
 ---
 
+> Historical task evidence from the former Database Ward workflow; retained commands are not current instructions.
+
+<!-- docs-script-refs:historical-start -->
+
 ## §7.19 · Owner Rulings, Clinical Queue Prioritisation, and Operational Task Re-baseline (18 September 2026)
 
 **Recorded 18 September 2026.**  
@@ -4432,6 +4454,8 @@ strings on the board, eight regions each saying no team is recorded.**
 THAT. It is a model change, not a name swap. Raised, not started.
 
 ---
+
+<!-- docs-script-refs:historical-end -->
 
 ## §7.19 — A RULING ENFORCED IN FOUR PLACES OUT OF FIVE (2026-09-18)
 
@@ -7864,3 +7888,15 @@ Perform an exhaustive, meticulous audit of all 41 routes and every interactive c
 - `tests/ward-alerts-screen.dom.test.tsx` & `tests/ward-statistics-community-provenance.dom.test.tsx` (10/10 passed)
 - `npm run typecheck` (zero TypeScript errors across the repository)
 - Zero uncommitted code drift, working tree clean, local ward line only.
+
+## WF-RULES-20261002 — stale rules review and repair, 2 October 2026
+
+Owning project: Ward Flow; repository `BigSimmo/Ward-Flow`. Branch `codex/chat-ward-rules-repair-7a69`, accepted local-main base `981a4a8a52e0c235b888e4c9470c94c34808cf33`.
+
+Status: Completed locally; implementation commits `3008ff9` and `461e6fa`. The current accepted app design is preserved. No application API, engine, clinical, storage, scheduling or visual changes. Integration and publication remain separate.
+
+Implemented: current appearance authority in active guidance; historical-spec and engine-audit notices; origin/main selector defaults with missing-ref failure; central decisions indexed with provenance; bounded screen hashes and optional checked revision; route coverage and parsed SSR safeguards; isolated ownership tests; repository-only historical lesson indexing; dated hosting/CI claims. Josh approved both exact-file documentation/tooling takeovers; other owners' work is preserved.
+
+Evidence: [canonical checkpoint](ward-flow/plans/2026-10-02-rules-repair.md). Focused batches passed 12, 181, 83 and 6 tests (some rerun affected contracts). Five generated-record checks, relative links, diff integrity, staged organisation and normal lint/scoped-typecheck/inventory hooks passed. Repaired stale screen-map formatting and two drawing hashes without changing drawings. Full-suite, browser and hosted state are unverified. Unsubstantiated scroll-mask performance and timestamp-collision allegations are deferred.
+
+Receipt handoff: stable identity `BigSimmo/Ward-Flow:WF-RULES-20261002`, local export under `D:/Temp/ward-rules-repair-7a69/ward-flow/`; canonical reconciliation pending. Next action: review the prepared branch for separately authorised integration. No main integration, push, PR, deployment, provider action or Notion delivery is authorised by this task. Last verified: 2 October 2026, offline evidence only.

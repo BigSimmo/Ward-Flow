@@ -178,7 +178,11 @@ function signOutEntries(signOutText) {
         .trim()
         .replace(/^(\S+\.[A-Za-z0-9]+)\.\s+.*$/, "$1");
       if (
-        !(file.includes("/") || /^[\w.-]+\.[A-Za-z0-9]+$/.test(file)) ||
+        !(
+          file.includes("/") ||
+          /^[\w.-]+\.[A-Za-z0-9]+$/.test(file) ||
+          /^\.[A-Za-z0-9_-][A-Za-z0-9_.-]*$/.test(file)
+        ) ||
         /^[A-Za-z]:[\\/]/.test(file) ||
         /\s/.test(file)
       )

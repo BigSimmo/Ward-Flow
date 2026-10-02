@@ -60,3 +60,8 @@ docs/ward-flow/journey/refusal-coverage.json
 
 # Generated screen verification table (prevent flip-flop with scripts/ward-flow/screen-verification.mjs)
 docs/ward-flow/SCREEN-VERIFICATION.md
+
+# Exact generated records: generation/freshness owns their bytes; source docs stay formatted.
+docs/ward-flow/OWNER-RULINGS.md
+docs/ward-flow/RULES.md
+docs/ward-flow/SCREEN-MAP.md

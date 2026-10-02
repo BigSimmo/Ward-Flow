@@ -16,14 +16,15 @@ The goal is to leave useful completed work safely committed and, where safe, pus
 
 Treat `main`, `master`, `develop`, and `release/*` as protected/base branches for this workflow.
 
-If `upload` is run while on `main`, automatically create or use a branch named exactly `temporary` before staging, committing, or pushing, then continue the upload workflow from `temporary`:
+Before writes, verify fetch and push targets are `BigSimmo/Ward-Flow` and inspect
+worktree ownership. Reuse a suitable owned task branch/worktree, or create an isolated
+`codex/*` task worktree from verified Ward main. Do not switch the main checkout to
+`temporary`, carry unrelated dirty work, or overwrite an ambiguous branch. Transfer
+only explicitly owned changes after recoverable backup and diff review.
 
-- If neither local `temporary` nor `origin/temporary` exists, run `git switch -c temporary`.
-- If local `temporary` exists and is not checked out in another worktree, switch to it only when it is clearly safe.
-- If `origin/temporary` exists, use it only when it is clearly the matching intended branch.
-- If any `temporary` branch state is ambiguous, diverged, checked out elsewhere, or unsafe, stop and ask instead of overwriting.
-
-If already on a non-protected feature branch, continue using that branch.
+Publication remains subject to the repository's API/provider confirmation boundary.
+A valid upstream or this shortcut alone does not authorise provider calls.
+Stage named files only; never `git add -A`.
 
 ## Required inspection
 
@@ -48,9 +49,9 @@ When the repository state makes it clearly safe, you may:
 
 - Stage coherent completed changes that clearly belong together
 - Create one or more logical commits with clear messages based on the diff
-- Fast-forward pull only when there are no local commits or conflict risks
-- Push the current non-protected feature branch if it has a valid upstream
-- Set an upstream for the current feature branch only when the correct remote and branch name are obvious
+- Prepare local handoff evidence without changing shared branch history
+- Push only after separate explicit authority names the correct Ward target
+- Set an upstream only as part of that explicitly authorised publication
 - Leave the worktree clean by committing safe completed changes
 
 ## Actions requiring explicit confirmation
@@ -94,7 +95,7 @@ Update repo-tracked references to a renamed or replacement branch only when the 
 
 ## Syncing and verification
 
-Do not rebase, merge, or resolve remote divergence automatically. Fast-forward pulls are allowed only when clearly safe. Push only the current non-protected feature branch when clearly safe.
+Do not rebase, merge, or resolve remote divergence automatically. Pulls and pushes require separately applicable explicit provider authority, exact-target verification and repository safeguards.
 
 Run the smallest relevant checks that are available and appropriate, such as tests, lint, type check, or build checks. Do not claim checks passed unless they were actually run. If checks cannot be run, explain why and state the command that would normally be used.
 

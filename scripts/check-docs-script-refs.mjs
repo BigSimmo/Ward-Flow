@@ -12,10 +12,12 @@
  * scanned, so prose like "npm run the build" is never misread. Placeholder tokens
  * (containing <…>) and an explicit allowlist are skipped.
  *
- * Scans README.md, AGENTS.md, and docs/**\/*.md excluding docs/archive, docs/audit,
+ * Scans root entrypoints, nested client instructions, and docs/**\/*.md excluding docs/archive, docs/audit,
  * and dated point-in-time filenames (historical records). Pass --all to include them.
  *
- * Blocking for maintained docs: runs in verify:cheap and CI. Historical directories
+ * Paired docs-script-refs historical markers exclude only preserved source sections.
+ * Markers must be balanced even in --all mode. Runs in verify:cheap and Ward static CI.
+ * Historical directories
  * and dated point-in-time records stay excluded unless --all is requested.
  */
 import { readdirSync, readFileSync } from "node:fs";
@@ -46,6 +48,35 @@ const ALLOWLIST = new Set([
   "your-script",
   "test:e2e:advisory", // renamed to test:e2e:regression (2026-07); kept for historical ledger accuracy
 ]);
+
+/** Preserve historical evidence while checking all current surrounding guidance. */
+export function stripHistoricalSections(markdown, includeHistorical = false) {
+  let inside = false;
+  const result = [];
+  for (const line of markdown.split("\n")) {
+    const trimmed = line.trim();
+    if (/<!--\s*docs-script-refs:historical-/.test(line)) {
+      if (trimmed === "<!-- docs-script-refs:historical-start -->" && !inside) inside = true;
+      else if (trimmed === "<!-- docs-script-refs:historical-end -->" && inside) inside = false;
+      else throw new Error("Malformed, nested or reversed historical command markers");
+      result.push("");
+    } else result.push(inside && !includeHistorical ? "" : line);
+  }
+  if (inside) throw new Error("Unclosed historical command section");
+  return result.join("\n");
+}
+
+/** Find nested native instructions without traversing dependencies or other worktrees. */
+export function collectInstructionDocs(dir, root = dir, targets = []) {
+  const excluded = new Set(["node_modules", ".git", ".next", ".worktrees", "worktrees", "archive", "audit"]);
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory() && !excluded.has(entry.name))
+      collectInstructionDocs(path.join(dir, entry.name), root, targets);
+    else if (entry.isFile() && ["AGENTS.md", "CLAUDE.md", "GEMINI.md"].includes(entry.name))
+      targets.push(path.relative(root, path.join(dir, entry.name)).split(path.sep).join("/"));
+  }
+  return targets;
+}
 
 /** Script names defined in package.json. */
 export function parsePackageScripts(pkgJsonText) {
@@ -93,19 +124,27 @@ function collectDocs(dirRelative, targets) {
 
 function main() {
   const validScripts = parsePackageScripts(readFileSync(path.join(repoRoot, "package.json"), "utf8"));
-  const targets = ["README.md", "AGENTS.md"];
+  const targets = ["README.md", "SECURITY.md", ...collectInstructionDocs(repoRoot)];
   collectDocs("docs", targets);
 
   let stale = 0;
   let checked = 0;
-  for (const target of targets) {
+  for (const target of new Set(targets)) {
     let markdown;
     try {
       markdown = readFileSync(path.join(repoRoot, target), "utf8");
     } catch {
       continue;
     }
-    const refs = extractScriptRefs(markdown);
+    let current;
+    try {
+      current = stripHistoricalSections(markdown, scanAll);
+    } catch (error) {
+      stale++;
+      console.error(`${target}: ${error.message}`);
+      continue;
+    }
+    const refs = extractScriptRefs(current);
     checked += refs.length;
     const bad = findStaleRefs(refs, validScripts);
     if (bad.length > 0) {

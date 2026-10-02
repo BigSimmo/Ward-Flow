@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../AGENTS.md) and [Ward entry point](ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Process Hardening Plan
 
 > [!NOTE]
@@ -838,3 +845,5 @@ the durable index for the tooling; `docs/operator-backlog.md` tracks the human-o
 - **CI guards (warn/advisory):** `check:bundle-budget` (warn-only client-JS size gate after Build until a
   baseline is captured in `bundle-budget.json` and `enforce:true` is set) and `docs:check-scripts`
   (advisory — validates `npm run` refs in docs against `package.json`).
+
+<!-- docs-script-refs:historical-end -->

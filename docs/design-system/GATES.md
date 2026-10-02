@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../../AGENTS.md) and [Ward entry point](../ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # PsychSift design system — GATES
 
 **Every rule paired with the check that enforces it.** Labels: **implemented-blocking**
@@ -495,3 +502,5 @@ why). The fix is offline-typechecked and lint-clean only; the hosted `visual-bas
 `ubuntu-24.04` is the first real proof it works, and a human reviewing that job's candidate
 images is still required before any of these five targets can move to `committed` — see the
 adoption workflow above.
+
+<!-- docs-script-refs:historical-end -->

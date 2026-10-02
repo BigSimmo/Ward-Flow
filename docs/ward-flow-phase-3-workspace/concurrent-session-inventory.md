@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../../AGENTS.md) and [Ward entry point](../ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Concurrent session inventory — ward-management-design worktree
 
 Read-only diagnostic. No file in the investigated worktree was modified, no process was
@@ -177,3 +184,5 @@ likely be followed by a commit. If you are not expecting any of your sessions to
 running a test right now, you may want to check your own Codex/Claude session list yourself
 and decide whether to let it finish or stop it — I have not stopped, and would not stop,
 anything, since the evidence here cannot rule out that it is legitimate in-progress work.
+
+<!-- docs-script-refs:historical-end -->

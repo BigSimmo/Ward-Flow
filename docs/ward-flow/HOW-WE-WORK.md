@@ -2,8 +2,8 @@
 
 **How any AI builder (Claude, Codex, Gemini, Antigravity or another) picks up, builds, tests, commits and
 hands back Ward Flow work.** Written 17 September 2026; repository and integration directions
-updated 28 September 2026. Where an older process document disagrees, this
-file wins. Start at [`README.md`](README.md).
+updated 2 October 2026. The current repository's `AGENTS.md` governs operational safeguards;
+this guide supersedes older process notes within that boundary. Start at [`README.md`](README.md).
 
 > **The current rules are in this `BigSimmo/Ward-Flow` repository's `AGENTS.md`**, and Josh's
 > standing rulings are in [`decisions.md`](decisions.md). Where this file differs from `AGENTS.md`,
@@ -16,8 +16,8 @@ file wins. Start at [`README.md`](README.md).
    [`../ward-flow-task-ledger.md`](../ward-flow-task-ledger.md), then the plan for your task in
    [`plans/`](plans/README.md).
 2. Check your folder: `git -C <worktree> status` and `git -C <worktree> log -5`. If files you did not
-   touch are modified or staged, stop and hand back. In Claude Code, also read
-   `bash ~/.claude/hooks/ward-fold-debt.sh --report`.
+   touch are modified or staged, preserve them and resolve ownership before writes. Former
+   Database fold-debt hooks are historical and are not part of this repository's startup.
 3. **Prove the task is still outstanding.** Another tool may already have built part of it. Grep for
    the event names, strings and tests the plan names. If it is done, check it against the plan and fix
    gaps instead of rebuilding.
@@ -41,8 +41,8 @@ file wins. Start at [`README.md`](README.md).
   one copy for every tool). An overlap needs the other owner's release or Josh's explicit scoped
   takeover approval. For a takeover, record each exact file as
   `path/to/file (approved takeover by Josh: <scope>)` on your own line, preserve the other session's
-  edits and reconcile both branches at fold. A folder-wide marker does not grant a takeover.
-  Once folded or abandoned, append `RELEASED <date> | <owner> | <branch> | <reason>` to the shared
+  edits and reconcile them through the authorised integration process. A folder-wide marker does not grant a takeover.
+  Once the exact task ownership is handed back or integrated, append `RELEASED <date> | <owner> | <branch> | <reason>; repo=BigSimmo/Ward-Flow` to the shared
   append-only log. The current full rulebook is `AGENTS.md`.
 - Reuse dependencies only from a trusted checkout of the same Ward Flow commit and lockfile.
   Never link to the old Database checkout; follow the current repository setup instructions.
@@ -60,10 +60,11 @@ file wins. Start at [`README.md`](README.md).
 - Never merge or rebase other branches into your branch.
 - If the pre-commit hook refuses because another agent's files are unstaged, say so and name the files.
   Do not work around it.
-- A test deletion or a drop in test-case count is recorded in `diff-integrity.json`, and
-  `node scripts/check-diff-integrity.mjs --base <fold base>` must pass.
+- Retain the test-deletion/truncation guard. An intentionally reduced test count uses the existing
+  exact reduction approval in `diff-integrity.json`; ordinary refactors that preserve coverage
+  remain subject to its aggregate and per-file limits. Use `--base <reviewed base>`.
 
-## 4. Folding
+## 4. Integration in the dedicated repository
 
 - Before integrating, verify the target is `BigSimmo/Ward-Flow`, inspect the exact branch and diff,
   and run the selected checks on the candidate tree (§5). Reuse valid checks on identical inputs.
@@ -91,7 +92,7 @@ file wins. Start at [`README.md`](README.md).
   type check. It requires verified Ward Flow fetch and push destinations and the worktree’s own
   locked dependencies. Retired fold-lock and fold-preflight commands remain unavailable in linked
   repositories. Remote-less scratch tests require `WARD_FOLD_TEST_FIXTURE=1`.
-  Reuse still-valid results at the fold.
+  Reuse still-valid results at integration.
 - No mutation proofs unless your brief names one. This overrides the per-task mutation lines in the
   16 and 17 September plans.
 - "focused-test capacity is full" is a shared lock held by someone else. Wait and retry. It is never a
@@ -103,7 +104,7 @@ file wins. Start at [`README.md`](README.md).
   - Check mobile (390px) and dark mode only once at the very end, and only if responsive layout rules were actually modified.
   - Batch browser tool calls; avoid repeated back-and-forth element probing.
 
-**At the fold (the folding thread, once, in its own worktree after merging the line in).**
+**At an authorised integration (once, against the actual candidate tree).**
 
 - Run `npm run ward:organise:check -- --source index` for staged-content acceptance, or
   `--source working-tree` for a working-tree check, when the selector identifies organisation inputs.
@@ -121,7 +122,9 @@ file wins. Start at [`README.md`](README.md).
   locations may remain registered for future work. Keep representative system mappings and checkpoint
   regressions in `tests/ward-organisation-core.test.ts` when changing organisation behaviour.
 - Select STATIC, FOCUSED or FULL with `node scripts/ward-flow/select-fold-gate.mjs --head <batch>`.
-  The full offline suite runs only for FULL and the daily night-shift line check. Read its summary: files
+  The default comparison base is the local `origin/main` ref; `--base <ref>` chooses an explicit
+  reviewed base. The selector never fetches a remote. Missing refs fail without selecting a gate.
+  The full offline suite runs when FULL is selected or a separately authorised full check is required. Read its summary: files
   handed in must equal files that ran. FOCUSED uses related tests and selected journeys. Reuse an
   identical passing ready-check verdict; do not pay for a second type check on the same tree.
 - For FULL, follow [`full-gate-recheck.md`](full-gate-recheck.md). Keep its per-chunk findings and
@@ -146,17 +149,18 @@ file wins. Start at [`README.md`](README.md).
 - **Privacy wording.** Never write that something is not stored, private or anonymised unless a test
   proves it. No patient names or typed text in URLs, logs, screenshots, commit messages or memory.
 - **Design tokens only, no hex.** Tap targets 48px via `var(--ward-tap)` or `var(--spacing-tap, 3rem)`.
-- **No coloured edge bars or top highlights** on cards, rows or panels.
+- **Preserve the accepted app design.** Historical edge-bar, typography, card, masthead, punctuation
+  and mockup prescriptions do not authorise reverting it or starting a redesign. Keep synthetic
+  disclosure and understandable status. Compact badges still need meaningful accessible labels.
 - New events go in EVENT_ROLE (`ward-flow-events.ts`) and `tests/ward-event-permissions.test.ts`.
 
 ## 7. Model tiers for helpers and reviews
 
-The global rule governs (`~/.claude/development-system.md` §1). **Sonnet is the default** for anything
-whose result can be checked by looking: a test passes, a file exists, a count matches. **Opus needs a
-written veto:** the output is a clinical, legal or privacy judgement; it is the last review before a fold
-nobody else reads; it designs a check; it debugs an unknown cause; it writes a plan or decision record; or
-it combines several agents' findings. State the tier in every brief and report. Older role and tier
-rules in `control/README.md` (gone — deleted with WLQ-33) and the 10 to 13 September plans are retired.
+Use the active host's supported model and delegation controls, applicable shared instructions and
+project-required review floors. This document grants no delegation or model-selection authority.
+The former Claude-specific Sonnet/Opus prescription and the 10 to 13 September role plans are
+historical; they do not govern Codex, Gemini or other hosts. Prefer direct work where delegation
+would add overhead, and distinguish requested routing from observed execution.
 
 ## 8. Asking and recording owner questions
 

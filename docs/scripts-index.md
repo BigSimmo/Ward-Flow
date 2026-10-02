@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../AGENTS.md) and [Ward entry point](ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Scripts index
 
 Curated map of `scripts/` (139 files) and the `package.json` script surface (113 entries),
@@ -256,3 +263,5 @@ if their live classification is deliberately revisited.
 `external-workflow.mjs` (`workflow:run/status/verify/deps/clean-state/export/handoff`) and
 `productivity-workflow.mjs` (`workflow:flightplan/triage/clinical-proof/design-sweep/rag-lab/
 operator-closeout/lifecycle`) — see `docs/productivity-workflows.md`.
+
+<!-- docs-script-refs:historical-end -->

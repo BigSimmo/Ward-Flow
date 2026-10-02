@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../AGENTS.md) and [Ward entry point](ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Physical iPhone phone-chrome acceptance
 
 Run this labelled checklist after `npm run verify:phone-chrome` passes and before merging a change that affects shared phone chrome, viewport ownership, safe areas, composer reserves, or hide/reveal motion. Chromium geometry is necessary but cannot prove pixels owned by iOS WebKit.
@@ -43,3 +50,5 @@ Complete every row in both light and dark theme. Portrait is required for every 
 - Light/dark, portrait/landscape, keyboard open/closed, down/up scroll, and visible/hidden states all pass for both Safari and a cold-launch PWA.
 
 If any row fails, retain the commit label and evidence, add the exact route/state to the focused Playwright coverage where emulation is meaningful, and rerun the entire affected container column after the fix.
+
+<!-- docs-script-refs:historical-end -->

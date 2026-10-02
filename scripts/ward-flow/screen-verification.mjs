@@ -38,7 +38,12 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { PAIRS } from "./screen-pairs.mjs";
-import { drawingStatus, implementationFiles, implementationSha256, implementationStatus } from "./screen-verification-lib.mjs";
+import {
+  drawingStatus,
+  implementationFiles,
+  implementationSha256,
+  implementationStatus,
+} from "./screen-verification-lib.mjs";
 
 const ROOT = process.cwd();
 const JSON_PATH = join(ROOT, "docs", "ward-flow", "screen-verification.json");
@@ -47,7 +52,11 @@ const OUT = join(ROOT, "docs", "ward-flow", "SCREEN-VERIFICATION.md");
 const REMEDIATION = "Run: node scripts/ward-flow/screen-verification.mjs";
 
 /** The roster: every mockup that actually has a build contract, in the order screen-map.mjs lists them. */
-const ROSTER = PAIRS.filter(([, , , contract]) => contract).map(([mockup, route, folder]) => ({ mockup, route, folder }));
+const ROSTER = PAIRS.filter(([, , , contract]) => contract).map(([mockup, route, folder]) => ({
+  mockup,
+  route,
+  folder,
+}));
 const ROSTER_MOCKUPS = new Set(ROSTER.map((r) => r.mockup));
 
 const VERDICTS = new Set(["matches", "deviates", "blocked"]);
@@ -125,12 +134,21 @@ for (const [i, entry] of record.screens.entries()) {
     if (typeof v.verdict !== "string" || !VERDICTS.has(v.verdict)) {
       problems.push([`${entry.mockup}: "verdict" must be one of matches / deviates / blocked`, [entry.mockup]]);
     }
+    if (
+      v.checkedRevision !== undefined &&
+      (typeof v.checkedRevision !== "string" || !/^[a-f0-9]{40}$/i.test(v.checkedRevision))
+    ) {
+      problems.push([`${entry.mockup}: "checkedRevision" must be a full 40-character commit SHA`, [entry.mockup]]);
+    }
   }
 }
 
 const missingFromRecord = ROSTER.filter((r) => !byMockup.has(r.mockup)).map((r) => r.mockup);
 if (missingFromRecord.length) {
-  problems.push([`build-contract screen(s) with no entry in the record: ${missingFromRecord.join(", ")}`, missingFromRecord]);
+  problems.push([
+    `build-contract screen(s) with no entry in the record: ${missingFromRecord.join(", ")}`,
+    missingFromRecord,
+  ]);
 }
 
 // The mockup hash manifest is a SEPARATE, concurrently-built file. Its absence is not a defect
@@ -204,24 +222,30 @@ const lines = [
   "> 🔴 **GENERATED. DO NOT EDIT BY HAND.** Edit `docs/ward-flow/screen-verification.json` instead,",
   "> then run `node scripts/ward-flow/screen-verification.mjs`. `--check` fails on a stale page or a",
   "> broken record — never on an unverified or stale screen. See the script header for why.",
+  "> Historical verdicts are retained. Current appearance is judged against the accepted app, not old drawings.",
+  "> Checked revision identifies the reviewed commit; missing revisions remain unrecorded. Dirty inputs belong in notes.",
+  "> Implementation hashes cover mapped screen folders/pages only, excluding shared shell, global CSS and transitive imports.",
   "",
   `**${looked} of ${rows.length} screens have been looked at.**`,
   "",
-  "| Screen (mockup) | Route | Verified on | By | Widths | Themes | Verdict | Drawing | Implementation hash at look |",
-  "|---|---|---|---|---|---|---|---|---|",
+  "| Screen (mockup) | Route | Verified on | By | Widths | Themes | Verdict | Historical drawing | Local implementation hash at look | Checked revision |",
+  "|---|---|---|---|---|---|---|---|---|---|",
   ...rows.map((r) => {
     const v = r.verified;
-    const date = v ? v.date ?? "—" : "—";
-    const who = v ? v.who ?? "—" : "—";
+    const date = v ? (v.date ?? "—") : "—";
+    const who = v ? (v.who ?? "—") : "—";
     const widths = v && Array.isArray(v.widths) ? v.widths.join(", ") : "—";
     const themes = v && Array.isArray(v.themes) ? v.themes.join(", ") : "—";
-    const verdict = v ? v.verdict ?? "—" : "—";
+    const verdict = v ? (v.verdict ?? "—") : "—";
     // Recorded only — never recomputed from current source here. Computing it live would make
     // this generated page go stale on every component edit, which is exactly what WF-35's fix
     // must not reintroduce. Use `--report` or `--hash <mockup>` for the live figure.
     const implementationHash =
-      v && typeof v.implementationSha256 === "string" && v.implementationSha256 ? v.implementationSha256.slice(0, 12) : "not recorded";
-    return `| \`${r.mockup}\` | \`${r.route}\` | ${date} | ${who} | ${widths} | ${themes} | ${verdict} | ${r.status} | ${implementationHash} |`;
+      v && typeof v.implementationSha256 === "string" && v.implementationSha256
+        ? v.implementationSha256.slice(0, 12)
+        : "not recorded";
+    const checkedRevision = v?.checkedRevision ?? "not recorded";
+    return `| \`${r.mockup}\` | \`${r.route}\` | ${date} | ${who} | ${widths} | ${themes} | ${verdict} | ${r.status} | ${implementationHash} | ${checkedRevision} |`;
   }),
   "",
   "## Deviations",
@@ -254,7 +278,9 @@ if (process.argv.includes("--check")) {
   if (stale) problems.unshift([`SCREEN-VERIFICATION.md is STALE`, []]);
 
   if (!problems.length) {
-    console.log(`screen verification record is current — ${looked} of ${rows.length} screens looked at, no structural problems.`);
+    console.log(
+      `screen verification record is current — ${looked} of ${rows.length} screens looked at, no structural problems.`,
+    );
     process.exit(0);
   }
   for (const [message] of problems) console.error(message);

@@ -5,6 +5,9 @@
 > This document records the PR procedures and `Run PR` sweep used in the separate PsychSift repository (`BigSimmo/Database`).
 > **In `BigSimmo/Ward-Flow`**, the inherited `Run PR` shortcut and PsychSift PR sweeps are **disabled**. Follow the repository boundary rules in [`AGENTS.md`](../../AGENTS.md) for Ward Flow PR publication and integration.
 
+> The inherited source block below is historical. Current Ward guidance above and the repository boundary govern.
+
+<!-- docs-script-refs:historical-start -->
 <!-- BEGIN:pull-request-workflow -->
 
 ## Open PR branch sync (anti-churn)
@@ -167,6 +170,7 @@ Bundle only when every item being combined is:
 Bundling saves PR/CI-invocation count, not verification rigor — every bundled item still gets the smallest correct gate run against it before joining the PR.
 
 <!-- END:pull-request-workflow -->
+<!-- docs-script-refs:historical-end -->
 
 ## Ledger PRs: keep them off the snapshot, and what the governance gate really catches
 

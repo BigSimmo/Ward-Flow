@@ -4,24 +4,19 @@
 
 ## Repository productivity skills
 
-Automatically apply repo-local skills under `.agents/skills/` when their descriptions match the user's request. Run `npm run skills` for the validated catalog of 35 canonical skills. `npm run check:skills` verifies those skills, their compatibility aliases, and the Claude, Cursor, and PsychSift plugin skill surfaces. The older long names remain compatibility aliases and must not be counted as unique skills.
+The former Database/PsychSift catalogue of 35 skills and its npm catalogue checks are unavailable
+in this dedicated Ward Flow repository. The planner descriptions in
+[`docs/productivity-workflows.md`](../productivity-workflows.md) are historical background.
 
-The foundational orchestration skills are:
-
-- `plan`: plan risk-scoped verification before non-trivial changes.
-- `fix`: diagnose and repair local verification failures with the smallest reproducer.
-- `clinical`: assemble clinical, privacy, source, and rollback evidence.
-- `ui`: inspect the running app across routes, breakpoints, and accessibility modes.
-- `rag`: validate retrieval and answer changes offline first, then prepare live-eval approval gates.
-- `operations`: turn pending operator debt into a deduplicated, approval-gated batch.
-- `task`: manage safe start, handoff, merge proof, and cleanup transitions.
-
-Run the matching planner command in `docs/productivity-workflows.md` without side effects by default. Add `-- --run` only to execute its local/offline checks. The workflow engine must never execute commands listed under `approvalRequired`.
+For current Ward work, use the on-demand [task brief and continuation convention](task-efficiency.md)
+and the root repository boundary. Apply a skill only when it is available in the current environment
+and relevant to the task; read its actual instructions first. A historical skill name does not
+establish an installed skill, a runnable planner or authority for provider actions.
 
 ## Outstanding-work memory (`/issues`)
 
 Retired on the Ward Flow line on 26 September 2026 at Josh's request. The PsychSift version of
-this ledger and its `/issues` skill remain on `origin/main`. Ward Flow's own work is tracked in
+this ledger and its `/issues` skill belong to that separate repository. Ward Flow's own work is tracked in
 `docs/ward-flow-task-ledger.md`, and Ward Flow's records from the old system are archived in
 `docs/ward-flow/archive/psychsift-era-records/`.
 

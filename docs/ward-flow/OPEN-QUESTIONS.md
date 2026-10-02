@@ -160,7 +160,7 @@ on it without re-deriving against current git and `docs/ward-flow-task-ledger.md
   (1) diversions T4a/T4b (destination change/diversion in transit); (2) the officer-screen print
   loss; (3) the Command "Statewide flow" panel showing every real ward from the data; (4)
   re-checking the ward and handover screens against Antigravity's new drawings, and redoing the
-  ward panel order (F2); (5) the ~59 broken document links `npm run docs:check-links` reports; (6)
+  ward panel order (F2); (5) the ~59 broken document links `npm run check:ward-doc-links` reports; (6)
   the lesson-note control bytes — **already fixed and committed** (`685a730d82`) before the defer
   instruction reached the session, kept here only because the owner's list named it; (7) the
   print-only ward panel, which waits until printing is tested. Trigger: whenever this sweep, or a

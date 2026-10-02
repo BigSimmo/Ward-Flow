@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -67,6 +67,55 @@ function runFullHook(root: string, env: Record<string, string | undefined> = {})
 // win32 here rather than blanket-skipping it. If a differently configured Windows
 // machine's `bash` resolves elsewhere, these would need the same skip as that file.
 describe("Ward Flow local main fold guard (.githooks/pre-commit)", () => {
+  it.each(["package.json", "backend/fixture.txt", ".github/workflows/fixture.yml", "src/lib/fixture.ts"])(
+    "blocks every dedicated-repository path on main: %s",
+    { timeout: 90_000 },
+    (file) => {
+      const root = repoFixture("main");
+      mkdirSync(join(root, file, ".."), { recursive: true });
+      writeFileSync(join(root, file), "synthetic fixture\n");
+      git(root, "add", file);
+      const result = runFullHook(root, { SKIP_DOCS_SYNC_HOOK: "1" });
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain("COMMITTING WARD FLOW TO LOCAL MAIN IS BLOCKED");
+      expect(result.stderr).toContain(file);
+    },
+  );
+
+  it("blocks a root deletion on master and accepts explicit confirmation", { timeout: 90_000 }, () => {
+    const root = repoFixture("master");
+    git(root, "rm", "README.md");
+    const blocked = runFullHook(root, { SKIP_DOCS_SYNC_HOOK: "1" });
+    expect(blocked.status).not.toBe(0);
+    expect(blocked.stderr).toContain("README.md");
+    const confirmed = runFullHook(root, {
+      SKIP_DOCS_SYNC_HOOK: "1",
+      CONFIRM_WARD_FLOW_FOLD_TO_MAIN: "I_CONFIRM_FOLD_TO_MAIN",
+    });
+    expect(confirmed.status).toBe(0);
+  });
+
+  it("checks the real rulings index after decisions.md alone changes", { timeout: 90_000 }, () => {
+    const root = repoFixture("codex/decisions-fixture");
+    const script = "scripts/ward-flow/owner-rulings-index.mjs";
+    mkdirSync(join(root, "scripts/ward-flow"), { recursive: true });
+    mkdirSync(join(root, "docs/ward-flow"), { recursive: true });
+    copyFileSync(join(process.cwd(), script), join(root, script));
+    const decisions = join(root, "docs/ward-flow/decisions.md");
+    writeFileSync(decisions, "# Synthetic decisions\n\n## D-1 Initial fixture ruling\n");
+    execFileSync(process.execPath, [script], { cwd: root });
+    git(root, "add", "docs/ward-flow");
+    git(root, "commit", "--quiet", "-m", "initial generated fixture");
+    writeFileSync(decisions, "# Synthetic decisions\n\n## D-1 Updated fixture ruling\n");
+    git(root, "add", "docs/ward-flow/decisions.md");
+    const stale = runFullHook(root, { SKIP_DOCS_SYNC_HOOK: "1" });
+    expect(stale.status).not.toBe(0);
+    expect(stale.stderr).toContain("owner-rulings-index.mjs --check FAILED");
+    execFileSync(process.execPath, [script], { cwd: root });
+    git(root, "add", "docs/ward-flow/OWNER-RULINGS.md");
+    expect(runFullHook(root, { SKIP_DOCS_SYNC_HOOK: "1" }).status).toBe(0);
+  });
+
   // Load-sized timeout (25 Sept 2026): this test drives real git in a fixture repo, which took up to
   // 18s even on an idle suite and overran the 30s default when the PC was at 100% CPU. It matches the
   // 90s its sibling fixture tests already carry; no assertion changed.

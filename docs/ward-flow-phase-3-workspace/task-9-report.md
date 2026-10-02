@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../../AGENTS.md) and [Ward entry point](../ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Task 9 report — the transport officer's phone
 
 Worktree: `C:\Users\joshs\.codex\worktrees\ward-management-design\Database`, branch
@@ -303,3 +310,5 @@ collision with the existing "Transport" nav link) — both confirmed via red-the
 not assumed. One assertion (`ui-ward-roles.spec.ts`'s horizontal-overflow check) I could not
 prove would fail on a plausible local regression, diagnosed and reported above rather than
 silently claimed as proven.
+
+<!-- docs-script-refs:historical-end -->

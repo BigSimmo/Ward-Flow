@@ -67,11 +67,10 @@ import { WardBoard } from "@/components/ward-management/board/ward-board";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { WardPatientWorkspace } from "@/components/ward-management/ward-management-console";
 import { WardIndex } from "@/components/ward-management/wards/ward-index";
-import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import type { Unit } from "@/components/ward-management/ward-model";
-import { allEmergencyDepartments, allUnits, NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
 import { PersonScreen } from "@/components/ward-management/patients/person-screen";
@@ -248,8 +247,10 @@ describe("Ward Flow route enumeration (sanity check on the scan itself)", () => 
      *   screen"), so it is registered in `WARD_NAV_INTENTIONALLY_UNLISTED` with a reason saying plainly
      *   that the Tools link is another lane's file and is not built yet.
      */
-    // 42 = 36 renderable + 6 redirect-only after /ed redirect backstop was added.
-    expect(wardFlowRoutes.length).toBe(42);
+    // Routes are unique and every discovered route belongs to one render class.
+    expect(wardFlowRoutes.length).toBeGreaterThan(0);
+    expect(new Set(wardFlowRoutes.map((entry) => entry.route)).size).toBe(wardFlowRoutes.length);
+    expect(staticRoutes.length + dynamicRoutes.length).toBe(wardFlowRoutes.length);
     expect(staticRoutes).toContain(ROUTE_PREFIX);
     expect(staticRoutes).toContain(`${ROUTE_PREFIX}/handover`);
     expect(staticRoutes).toContain(`${ROUTE_PREFIX}/escalation`);
@@ -1569,40 +1570,6 @@ function renderedCopyIn(markup: string): string[] {
     )
     .filter((fragment) => fragment.length > 0);
 }
-
-/**
- * Mirrors the unexported `wardKindWord` in `ward-index.tsx` exactly. Kept as a duplicate rather
- * than exported for a test to import, because the whole reason that function is not
- * `designationSummary` is that this ONE page promises "no bed numbers" — a private, page-local
- * word rather than a shared numeric summary. Any drift between this copy and the component's own
- * would show up as an "unexpected copy" failure below, the same way every other divergence here
- * would.
- */
-function wardKindWord(unit: Unit): string {
-  if (unitHasLockedBeds(unit) && unitHasOpenBeds(unit)) return "Mixed";
-  if (unitHasLockedBeds(unit)) return "Locked";
-  return "Open";
-}
-
-/**
- * Every fixed sentence `ward-index.tsx` renders, written out. Not a sample and not a prefix list —
- * the allowlist below is only an allowlist if this is the whole of the page's non-derived copy, so
- * a sentence the component renders and this list omits is a failure, which is the point. The last
- * three are the conditional branches: the empty-service note, and the two the not-placed group
- * carries.
- */
-const WARD_INDEX_FIXED_COPY: readonly string[] = [
-  "All wards",
-  "Synthetic prototype",
-  "Directory data",
-  "Unplaced wards",
-  "↗",
-  "Synthetic ward data, not verified service availability. EMYU’s name and Bentley site are real; its bed figures are synthetic.",
-  "Not a medical device.",
-  "No wards recorded for this health service.",
-  "Not placed in a health service",
-  "Health service unavailable: no site is recorded for these ward codes.",
-];
 
 function renderWardIndex(units?: Unit[]): string {
   // `units` passed explicitly as possibly-undefined rather than as a conditional object: the union

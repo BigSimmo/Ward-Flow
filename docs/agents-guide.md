@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../AGENTS.md) and [Ward entry point](ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Agents Guide
 
 > [!NOTE]
@@ -118,3 +125,5 @@ To prevent dual competing responders from answering the same PR review comment (
    - For every fixed or fully dispositioned thread, start the thread reply with `<!-- codex-thread-disposition:resolved -->`.
    - On the next line, include `<!-- codex-thread-result:fixed-head:<40-character commit SHA> -->` for code fixes or `<!-- codex-thread-result:no-change -->` for no-code dispositions.
    - Threads requiring human judgment, architectural decisions, or touching clinical holds must be left open with an explanatory reply instead of using the resolved marker.
+
+<!-- docs-script-refs:historical-end -->
