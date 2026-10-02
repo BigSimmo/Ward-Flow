@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../AGENTS.md) and [Ward entry point](ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Development speed playbook
 
 **Historical playbook, written 2026-08-27; scope revalidated 2026-10-01.** The examples,
@@ -358,3 +365,5 @@ Non-negotiable, and none of the above touches them:
 6. **CI stays the authority.** Receipts and the arbiter are disabled outright when `CI` is set, and
    `check:gate-manifest` enforces that CI never runs less of the local static set than the local
    chain does. Nothing local can weaken a required check, and nothing here tries to.
+
+<!-- docs-script-refs:historical-end -->

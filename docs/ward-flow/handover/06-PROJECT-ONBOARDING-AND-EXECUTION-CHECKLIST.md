@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../../../AGENTS.md) and [Ward entry point](../README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # 06 — Cross-Project Onboarding & Execution Runbook
 
 > **SUPERSEDED on 17–21 Sept 2026 by `docs/ward-flow/README.md` and `docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md`.**
@@ -153,3 +160,5 @@ Include this sign-off block in your final Pull Request description:
 - [x] Tier 4 Browser Inspection: 1440px, 820px, 390px in Light & Dark (0 console errors)
 - [x] Provenance Recorded: Added to `docs/ward-flow/screen-verification.json`
 ```
+
+<!-- docs-script-refs:historical-end -->

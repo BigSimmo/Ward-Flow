@@ -1,6 +1,6 @@
-# FULL fold gate: checkpoints and bounded rechecks
+# FULL Ward gate: checkpoints and bounded rechecks
 
-Use this only when `select-fold-gate.mjs` selects **FULL**. Keep the normal fold lock, preflight backup, diff review, type check and selected journeys. The check below must run through the wide gate slot.
+Use this only when `select-fold-gate.mjs` selects **FULL**. Use the dedicated repository boundary, exact-file ownership and current gate/run-slot process. Preserve recoverable work, diff review, type check and selected journeys; the retired Database fold lock is not a prerequisite. The check below must run through the wide gate slot.
 
 ## First FULL run
 
@@ -8,7 +8,7 @@ Run `npm run check:ward-expected-reds` on the committed batch. It writes one val
 
 If the process crashes, run the same command on the **same commit and in the same checkout**. It validates the saved population and each completed group, then runs only missing groups. A changed commit or checkout gets a different checkpoint. An invalid saved group stops with a clear error rather than being counted as passing.
 
-The default checkpoint directory is under the machine's temporary directory. Set `WARD_FULL_GATE_STATE_DIR` to an owned persistent directory before the first run if that directory may be cleared. Keep the directory and the printed receipt until the batch is folded. No automatic cleanup deletes this evidence.
+The default checkpoint directory is under the machine's temporary directory. Set `WARD_FULL_GATE_STATE_DIR` to an owned persistent directory before the first run if that directory may be cleared. Keep the directory and the printed receipt until the authorised integration handoff. No automatic cleanup deletes this evidence.
 
 ## After a small red
 

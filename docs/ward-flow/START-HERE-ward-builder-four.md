@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../../AGENTS.md) and [Ward entry point](README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # START HERE — Ward Builder Four's folder
 
 > **SUPERSEDED on 17 Sept 2026 by `docs/ward-flow/README.md`.** Kept for history; do not follow.
@@ -33,3 +40,5 @@
 
 **Ward Flow is never pushed. Ward Lead is the only chat that merges. Route owner questions through
 Ward Lead.** Full index of every ward document: `document-index-2026-09-10.md`.
+
+<!-- docs-script-refs:historical-end -->

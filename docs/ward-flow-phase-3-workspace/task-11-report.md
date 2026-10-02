@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../../AGENTS.md) and [Ward entry point](../ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Task 11 report — the emergency department screen
 
 Branch `codex/ward-management-design`, committed at `66c4f7b80` (parent `dc5daffa0`, itself on top
@@ -285,3 +292,5 @@ after the dev server had been warmed with `curl`.
   own `next/dist/server/lib/start-server.js`, not another project's), and restarted cleanly via
   `npm run ensure`. No product code was implicated — dev-server.log showed no compile error, and
   the route worked immediately once the process was replaced.
+
+<!-- docs-script-refs:historical-end -->

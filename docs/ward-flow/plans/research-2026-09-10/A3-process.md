@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../../../../AGENTS.md) and [Ward entry point](../../README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Ward Flow process reconnaissance — read from documents, 2026-09-10
 
 Source worktree: `D:/Worktrees/Database/readonly-plan-20260910`, detached at ward master tip `20eb850792` (verified: `git log -1` matches). All paths below are `docs/ward-flow/...` unless stated otherwise. Every claim is "read from a document," not independently reproduced, except where I explicitly ran a read-only `git` command (noted inline).
@@ -125,3 +132,5 @@ Three **distinct** efforts exist and must not be conflated:
 **NOT CHECKED:** `docs/ward-flow/control/register/*` (four files, 500KB+, all dated 2026-09-02) and `docs/ward-flow/outstanding/*`, `docs/ward-flow/handovers/*` were sampled, not read in full, given their size and age relative to today — I judged them superseded by later fold records for process purposes, but did not verify every row. `builder-prompts-2026-09-08.md`, `NEW-CHAT-PROMPTS-2026-09-08.md`, `ward-builder-two-complete-record-2026-09-10.md`, and `ward-builder-three-handover-2026-09-07.md` were not read in this pass. FD-23's current wording was located but not read in depth. Whether `ward/mockups-20260910` (Defect 1) is a live, currently-running session was not checked — I only compared documents. I did not check GitHub, CI, or any provider-backed state (out of scope and disallowed for this task).
 
 **QUESTIONS:** (1) Is `ward/mockups-20260910` at `D:/Worktrees/Database/ward-mockups` a real, separate, currently-active chat, or a stale/abandoned claim — and if real, does it conflict with this task's own worktree (`claude/wardflow-design-review-43df97`)? This must be resolved before delegating five new chats onto the same paths. (2) Does building the sixteen mockups into `src/` belong to Ward Lead's existing Builder roster (Two/Three/Four pattern) or does it need a new, differently-scoped role — no document assigns it yet. (3) For the sex/gender tension (Defect 6): is the "gate still unstarted" wording about a regulatory/clinical review distinct from the code-model change, or is `WARD-LEAD-HANDOVER-2026-09-10.md:101` itself stale? I did not choose an answer.
+
+<!-- docs-script-refs:historical-end -->

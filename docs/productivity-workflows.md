@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../AGENTS.md) and [Ward entry point](ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Productivity workflows
 
 For current Ward Flow work, use the on-demand [task brief, verification and continuation convention](agents/task-efficiency.md).
@@ -43,3 +50,5 @@ The former shared `workflow:run`, `workflow:status`, `workflow:verify`, `workflo
 
 The matching agent skills lived in that repository's `.agents/skills/`; their historical presence
 does not establish availability in this checkout or the current agent environment.
+
+<!-- docs-script-refs:historical-end -->

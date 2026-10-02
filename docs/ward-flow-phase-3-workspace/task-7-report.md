@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../../AGENTS.md) and [Ward entry point](../ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Task 7 report — the coordinator's phone pins Confirm
 
 ## What was built
@@ -407,3 +414,5 @@ narrative`) between my round-0 commit and this one — so no cross-contamination
 `3b4bf4152b434ccd37336f56224db353060c0b42` — "fix(ward-flow): assert the real scroll container, not
 window.scrollY". Two files: `coordinator-screen.tsx` (+2/-1 net, the `data-testid` addition),
 `tests/ui-ward-coordinator.spec.ts` (+19/-7, the assertion and comment rewrite).
+
+<!-- docs-script-refs:historical-end -->

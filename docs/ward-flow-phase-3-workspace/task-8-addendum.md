@@ -1,3 +1,10 @@
+> **Historical source boundary — 2 October 2026.** The preserved material below
+> describes the former Database/PsychSift workflow or a completed task. Its commands,
+> hosting and appearance claims are not current Ward instructions. Use the
+> [repository boundary](../../AGENTS.md) and [Ward entry point](../ward-flow/README.md) for current work.
+
+<!-- docs-script-refs:historical-start -->
+
 # Task 8 — controller addendum (read this WITH the brief; where they differ, this wins)
 
 Written in session 3 after scanning `task-8-brief.md` against the branch as it stands at
@@ -232,3 +239,5 @@ being blanket text on every row.
 level. Your new test must pin one of WF-301, WF-308, WF-322 or WF-329 by id and assert the diagram
 now carries the `voluntary_on_locked` wording for a Secure candidate — the case that renders nothing
 today.
+
+<!-- docs-script-refs:historical-end -->
