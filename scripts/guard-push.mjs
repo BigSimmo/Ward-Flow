@@ -428,9 +428,9 @@ export function wardFlowPushVerdict({
         `================================================================================\n` +
         `🔴 CRITICAL SAFETY GUARD: WARD FLOW CANNOT BE FOLDED OR PUSHED TO ORIGIN/MAIN\n` +
         `================================================================================\n` +
-        `Ward Flow is a local bed-coordination prototype that exists on THIS DISK ONLY.\n` +
-        `Pushing or merging to origin/main auto-deploys to production and applies migrations\n` +
-        `to the live clinical database within seconds with no deploy step in between!\n\n` +
+        `Direct push or merge of Ward Flow changes to origin/main is restricted.\n` +
+        `In BigSimmo/Ward-Flow, origin/main is the primary repository branch.\n` +
+        `Changes must be submitted via pull request and verified before integration.\n\n` +
         `"Fold into main" in any Ward Flow context means the LOCAL ward line, NEVER origin/main.\n\n` +
         (touchesWardFlow
           ? `Ward Flow files detected in push (${wardFiles.length} files):\n  ` +
@@ -469,8 +469,8 @@ export function wardFlowPushVerdict({
         `================================================================================\n` +
         `🔴 CRITICAL SAFETY GUARD: DIRECT PUSH TO ORIGIN/MAIN IS BLOCKED\n` +
         `================================================================================\n` +
-        `Direct pushes to origin/main bypass pull request validation and auto-deploy\n` +
-        `to the live clinical database and production environment.\n\n` +
+        `Direct pushes to origin/main bypass pull request validation.\n` +
+        `In BigSimmo/Ward-Flow, changes must be reviewed and pass CI via pull request.\n\n` +
         `Push your changes to a feature branch and open a pull request instead.\n\n` +
         `To bypass this safety boundary for an intentional direct push to main, supply:\n` +
         `  CONFIRM_PUSH_TO_MAIN="I_CONFIRM_PUSH_TO_MAIN" git push ...\n` +
