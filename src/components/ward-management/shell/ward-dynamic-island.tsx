@@ -67,11 +67,7 @@ export function WardDynamicIsland({
           : styles.statusPipNominal;
 
   const wrapperAlignClass =
-    align === "center"
-      ? styles.islandWrapperCenter
-      : align === "end"
-        ? styles.islandWrapperEnd
-        : "";
+    align === "center" ? styles.islandWrapperCenter : align === "end" ? styles.islandWrapperEnd : "";
 
   const effectiveStatusText =
     statusText ??
@@ -95,9 +91,9 @@ export function WardDynamicIsland({
           <span
             className={`${styles.statusPip} ${pipClass}`}
             role="status"
-            aria-label={effectiveStatusText}
+            aria-label={`Synthetic status: ${effectiveStatusText}`}
             title={effectiveStatusText}
-          />
+          ></span>
           <span className={styles.stageTitle}>
             {icon && <span aria-hidden="true">{icon}</span>}
             {title}
@@ -122,9 +118,7 @@ export function WardDynamicIsland({
             const trimmedLabel = metric.label?.trim() ?? "";
             const cleanLabel = trimmedLabel.replace(/:+$/, "");
             const formattedLabel = cleanLabel ? `${cleanLabel}:` : "";
-            const defaultAriaLabel = cleanLabel
-              ? `${cleanLabel}: ${metric.value}`
-              : String(metric.value ?? "");
+            const defaultAriaLabel = cleanLabel ? `${cleanLabel}: ${metric.value}` : String(metric.value ?? "");
 
             const metricContent = (
               <>

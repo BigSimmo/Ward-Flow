@@ -1972,6 +1972,14 @@
     box-sizing: border-box;
   }
 
+  .primary:not(:has(.primaryMain)) {
+    width: 4rem;
+    max-width: 4rem;
+    white-space: normal;
+    font-size: var(--t-0);
+    line-height: 1.15;
+  }
+
   .demoTime {
     display: none;
   }

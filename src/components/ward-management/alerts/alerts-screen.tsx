@@ -442,6 +442,11 @@ function AlertRows({
 }
 
 export function AlertsScreen() {
+  const { worldGeneration } = useWardFlow();
+  return <AlertsWorkspace key={worldGeneration} />;
+}
+
+function AlertsWorkspace() {
   usePrintableDisclosures();
 
   const state = useWardFlow();
@@ -470,6 +475,34 @@ export function AlertsScreen() {
   const [broadcastScope, setBroadcastScope] = useState<BroadcastTargetScope>(defaultTmpl?.targetScope ?? "all");
   const [broadcastDurationMinutes, setBroadcastDurationMinutes] = useState(defaultTmpl?.defaultDurationMinutes ?? 240);
   const [broadcastSuccessNotice, setBroadcastSuccessNotice] = useState<string | null>(null);
+  const [broadcastRequest, setBroadcastRequest] = useState<{
+    type: "DISPATCH_BROADCAST_ALERT" | "STAND_DOWN_BROADCAST_ALERT";
+    logOffset: number;
+    title: string;
+    scope: BroadcastTargetScope;
+    scopeLabel: string;
+  } | null>(null);
+  const broadcastResult = broadcastRequest
+    ? state.eventLog?.slice(broadcastRequest.logOffset).find((entry) => entry.type === broadcastRequest.type)
+    : undefined;
+  const broadcastAccepted = broadcastResult?.accepted === true;
+  const broadcastRefused = broadcastResult?.accepted === false;
+  const isBroadcastModalOpen =
+    broadcastModalOpen && !(broadcastAccepted && broadcastRequest?.type === "DISPATCH_BROADCAST_ALERT");
+  const broadcastFeedback =
+    broadcastRequest && broadcastResult
+      ? broadcastRefused
+        ? broadcastRequest.type === "DISPATCH_BROADCAST_ALERT"
+          ? "Broadcast was not accepted. Your draft has been kept."
+          : "Stand-down was not accepted. Review the directive."
+        : broadcastRequest.type === "STAND_DOWN_BROADCAST_ALERT"
+          ? broadcastRequest.scope === "all"
+            ? "Statewide broadcast directive stood down."
+            : `Broadcast directive stood down for ${broadcastRequest.scopeLabel}.`
+          : broadcastRequest.scope === "all"
+            ? `Broadcast Directive "${broadcastRequest.title}" dispatched statewide. Target: ${broadcastRequest.scopeLabel}.`
+            : `Broadcast Directive "${broadcastRequest.title}" dispatched to ${broadcastRequest.scopeLabel}.`
+      : broadcastSuccessNotice;
 
   const activeBroadcast = getActiveBroadcastAlert(broadcastAlerts ?? [], now);
 
@@ -563,6 +596,8 @@ export function AlertsScreen() {
 
   const handleQuickAction = useCallback(
     (item: InboxItem, action: "snooze" | "escalate" | "acknowledge", patientName: string) => {
+      setBroadcastRequest(null);
+      setBroadcastModalOpen(false);
       if (action === "snooze") {
         setSnoozedAlertIds((prev) => [...prev, item.id]);
         setBroadcastSuccessNotice(`Alert for ${patientName} snoozed for 30 minutes.`);
@@ -615,20 +650,20 @@ export function AlertsScreen() {
 
   // Escape key handler for drawer and modal
   useEffect(() => {
-    if (!selectedAlert && !broadcastModalOpen) return;
+    if (!selectedAlert && !isBroadcastModalOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         if (selectedAlert) {
           handleCloseDrawer();
         }
-        if (broadcastModalOpen) {
+        if (isBroadcastModalOpen) {
           handleCloseBroadcastModal();
         }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedAlert, broadcastModalOpen, handleCloseDrawer, handleCloseBroadcastModal]);
+  }, [selectedAlert, isBroadcastModalOpen, handleCloseDrawer, handleCloseBroadcastModal]);
 
   // Focus on open
   useEffect(() => {
@@ -638,10 +673,16 @@ export function AlertsScreen() {
   }, [selectedAlert]);
 
   useEffect(() => {
-    if (broadcastModalOpen) {
+    if (isBroadcastModalOpen) {
       modalCloseRef.current?.focus();
     }
-  }, [broadcastModalOpen]);
+  }, [isBroadcastModalOpen]);
+
+  useEffect(() => {
+    if (broadcastAccepted && broadcastRequest?.type === "DISPATCH_BROADCAST_ALERT") {
+      broadcastTriggerRef.current?.focus();
+    }
+  }, [broadcastAccepted, broadcastRequest]);
 
   const handleOpenAction = (item: InboxItem, triggerEl: HTMLElement) => {
     lastFocusRef.current = triggerEl;
@@ -682,6 +723,7 @@ export function AlertsScreen() {
 
   const handleDispatchBroadcast = () => {
     if (!broadcastConfirmed || !broadcastTitle.trim() || !broadcastMessage.trim()) return;
+    if (broadcastRequest && !broadcastResult) return;
     const targetScopeLabel =
       broadcastScope === "all"
         ? "All Inpatient Units & ED Liaison Desks"
@@ -697,6 +739,14 @@ export function AlertsScreen() {
                   ? "Psychogeriatric & Older Adult Units"
                   : "WACHS Regional Mental Health Network";
 
+    setBroadcastSuccessNotice(null);
+    setBroadcastRequest({
+      type: "DISPATCH_BROADCAST_ALERT",
+      logOffset: state.eventLog?.length ?? 0,
+      title: broadcastTitle.trim(),
+      scope: broadcastScope,
+      scopeLabel: targetScopeLabel,
+    });
     dispatch({
       type: "DISPATCH_BROADCAST_ALERT",
       role: "coordinator",
@@ -710,13 +760,18 @@ export function AlertsScreen() {
       durationMinutes: broadcastDurationMinutes,
       dispatchedByName: "State Mental Health Bed Desk Coordinator",
     });
-
-    setBroadcastSuccessNotice(`Broadcast Directive "${broadcastTitle}" dispatched statewide.`);
-    setBroadcastModalOpen(false);
-    setBroadcastConfirmed(false);
   };
 
   const handleStandDown = (alertId: string) => {
+    const alert = broadcastAlerts?.find((entry) => entry.id === alertId);
+    setBroadcastSuccessNotice(null);
+    setBroadcastRequest({
+      type: "STAND_DOWN_BROADCAST_ALERT",
+      logOffset: state.eventLog?.length ?? 0,
+      title: alert?.title ?? "Directive",
+      scope: alert?.targetScope ?? "all",
+      scopeLabel: alert?.targetScopeLabel ?? "the selected scope",
+    });
     dispatch({
       type: "STAND_DOWN_BROADCAST_ALERT",
       role: "coordinator",
@@ -724,7 +779,6 @@ export function AlertsScreen() {
       alertId,
       stoodDownByRole: "coordinator",
     });
-    setBroadcastSuccessNotice("Statewide broadcast directive stood down.");
   };
 
   return (
@@ -733,7 +787,7 @@ export function AlertsScreen() {
         {/* Clinical Page Header — Action & Status Deck */}
         <header className={styles.pageHeader}>
           <div className={styles.headerLeftDeck}>
-            <h1 className="sr-only">Alerts and Operational Notices</h1>
+            <h1 aria-label="Alerts and Operational Notices">Alerts</h1>
             <div className={styles.liveStreamBadge}>
               <span className={styles.liveDot} aria-hidden="true" />
               <span className={styles.liveStreamLabel}>Live Action Stream</span>
@@ -760,6 +814,9 @@ export function AlertsScreen() {
               className={`${styles.btn} ${styles.btnPrimary} ${styles.btnBroadcast}`}
               onClick={(e) => {
                 broadcastTriggerRef.current = e.currentTarget;
+                setBroadcastRequest(null);
+                setBroadcastSuccessNotice(null);
+                setBroadcastConfirmed(false);
                 setBroadcastModalOpen(true);
               }}
             >
@@ -770,15 +827,27 @@ export function AlertsScreen() {
         </header>
 
         {/* Broadcast Toast Notification */}
-        {broadcastSuccessNotice && (
-          <div className={styles.toastSuccess} role="status">
-            <Check className={styles.btnIcon} aria-hidden="true" />
-            <span>{broadcastSuccessNotice}</span>
+        {broadcastFeedback && (!broadcastRefused || !isBroadcastModalOpen) && (
+          <div
+            className={`${styles.toastSuccess}${broadcastRefused ? ` ${styles.toastRefused}` : ""}`}
+            role={broadcastRefused ? "alert" : "status"}
+            aria-label="Broadcast feedback"
+          >
+            {broadcastRefused ? (
+              <AlertTriangle className={styles.btnIcon} aria-hidden="true" />
+            ) : (
+              <Check className={styles.btnIcon} aria-hidden="true" />
+            )}
+            <span>{broadcastFeedback}</span>
             <button
               type="button"
               className={`${styles.btn} ${styles.btnSm}`}
               style={{ marginLeft: "auto", background: "transparent", border: "none", cursor: "pointer" }}
-              onClick={() => setBroadcastSuccessNotice(null)}
+              onClick={() => {
+                if (broadcastAccepted) setBroadcastModalOpen(false);
+                setBroadcastRequest(null);
+                setBroadcastSuccessNotice(null);
+              }}
               aria-label="Dismiss notice"
             >
               <X className={styles.tabIcon} aria-hidden="true" />
@@ -879,9 +948,7 @@ export function AlertsScreen() {
               value: declined.length,
               tone: declined.length > 0 ? "danger" : "good",
               subtext:
-                declined.length > 0
-                  ? "≥3 Parallel Declines"
-                  : `0 of ${declineCandidates} declined by every ward asked`,
+                declined.length > 0 ? "≥3 Parallel Declines" : `0 of ${declineCandidates} declined by every ward asked`,
             },
             {
               id: "kpi-ed-wait",
@@ -1394,7 +1461,7 @@ export function AlertsScreen() {
         )}
 
         {/* Broadcast Statewide Network Alert Modal */}
-        {broadcastModalOpen && (
+        {isBroadcastModalOpen && (
           <div
             ref={modalRef}
             className={`${styles.modal} ${styles.modalOverlay}`}
@@ -1429,9 +1496,18 @@ export function AlertsScreen() {
               </div>
               <div className={styles.modalBody}>
                 <p id="broadcast-desc" className={styles.modalIntro}>
-                  Dispatch a high-priority operational directive or clinical advisory across all connected inpatient
-                  wards and emergency liaison desks.
+                  Record a synthetic directive for the selected scope. No external alerts are sent.
                 </p>
+                {broadcastRefused && (
+                  <div
+                    className={`${styles.toastSuccess} ${styles.toastRefused}`}
+                    role="alert"
+                    aria-label="Broadcast feedback"
+                  >
+                    <AlertTriangle className={styles.btnIcon} aria-hidden="true" />
+                    <span>{broadcastFeedback}</span>
+                  </div>
+                )}
 
                 {/* Clinical Protocol & Bed Flow Template */}
                 <div className={styles.formGroup}>
@@ -1619,7 +1695,12 @@ export function AlertsScreen() {
                   type="button"
                   data-testid="ward-alerts-broadcast-confirm"
                   className={`${styles.btn} ${styles.btnPrimary}`}
-                  disabled={!broadcastConfirmed || !broadcastTitle.trim() || !broadcastMessage.trim()}
+                  disabled={
+                    !broadcastConfirmed ||
+                    !broadcastTitle.trim() ||
+                    !broadcastMessage.trim() ||
+                    (!!broadcastRequest && !broadcastResult)
+                  }
                   onClick={handleDispatchBroadcast}
                 >
                   <Radio className={styles.btnIcon} aria-hidden="true" />

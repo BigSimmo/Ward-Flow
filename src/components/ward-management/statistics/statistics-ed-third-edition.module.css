@@ -344,6 +344,8 @@
 }
 
 .dataTable {
+  composes: table from "../ward-table/ward-table.module.css";
+  --ward-table-cell-inset: 8px 14px;
   width: 100%;
   border-collapse: collapse;
   font-size: var(--t-2);
@@ -355,14 +357,10 @@
   text-transform: uppercase;
   color: var(--muted);
   font-weight: 600;
-  padding: 8px 14px;
-  border-bottom: 1px solid var(--line-strong);
   background: var(--surface-2);
   white-space: nowrap;
 }
 .dataTable td {
-  padding: 8px 14px;
-  border-bottom: 1px solid var(--line);
   color: var(--ink-soft);
   vertical-align: top;
   line-height: 1.45;

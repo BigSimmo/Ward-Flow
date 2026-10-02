@@ -1,10 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import {
-  WardDynamicIsland,
-  type DynamicIslandMetric,
-} from "@/components/ward-management/shell/ward-dynamic-island";
+import { WardDynamicIsland, type DynamicIslandMetric } from "@/components/ward-management/shell/ward-dynamic-island";
 
 describe("WardDynamicIsland", () => {
   it("renders stage title, status pip, and all metrics", () => {
@@ -15,13 +12,7 @@ describe("WardDynamicIsland", () => {
       { id: "metric-upheld", label: "Upheld", value: 4, tone: "good" },
     ];
 
-    render(
-      <WardDynamicIsland
-        title="Governance HUD"
-        status="warning"
-        metrics={metrics}
-      />
-    );
+    render(<WardDynamicIsland title="Governance HUD" status="warning" metrics={metrics} />);
 
     const region = screen.getByRole("region", { name: "Governance HUD HUD" });
     expect(region).toBeDefined();
@@ -56,13 +47,7 @@ describe("WardDynamicIsland", () => {
       },
     ];
 
-    render(
-      <WardDynamicIsland
-        title="Unit Status"
-        status="nominal"
-        metrics={metrics}
-      />
-    );
+    render(<WardDynamicIsland title="Unit Status" status="nominal" metrics={metrics} />);
 
     const occupiedBtn = screen.getByRole("button", { name: "Occupied: 19" });
     expect(occupiedBtn.getAttribute("aria-pressed")).toBe("true");
@@ -79,14 +64,15 @@ describe("WardDynamicIsland", () => {
       <WardDynamicIsland
         title="ED Pressure"
         status="alarm"
-        statusText="Severe Gridlock"
+        statusText="2 past access target"
         metrics={[{ label: "Breaches", value: 2, tone: "danger" }]}
         actions={<button type="button">Escalate</button>}
-      />
+      />,
     );
 
     const statusPip = screen.getByRole("status");
-    expect(statusPip.getAttribute("aria-label")).toBe("Severe Gridlock");
+    expect(statusPip.getAttribute("aria-label")).toBe("Synthetic status: 2 past access target");
+    expect(statusPip.getAttribute("title")).toBe("2 past access target");
     expect(screen.getByText("Escalate")).toBeDefined();
   });
 
@@ -100,12 +86,7 @@ describe("WardDynamicIsland", () => {
       },
     ];
 
-    render(
-      <WardDynamicIsland
-        title="Transport Dispatch"
-        metrics={metrics}
-      />
-    );
+    render(<WardDynamicIsland title="Transport Dispatch" metrics={metrics} />);
 
     const label = screen.getByText(/Active Transit Runs/);
     const value = label.nextElementSibling;
@@ -126,12 +107,7 @@ describe("WardDynamicIsland", () => {
       },
     ];
 
-    render(
-      <WardDynamicIsland
-        title="Handover HUD"
-        metrics={metrics}
-      />
-    );
+    render(<WardDynamicIsland title="Handover HUD" metrics={metrics} />);
 
     expect(screen.getByText(/Caseload in Scope/)).toBeDefined();
     expect(screen.queryByText(/Caseload in Scope::/)).toBeNull();
@@ -152,22 +128,16 @@ describe("WardDynamicIsland", () => {
           { label: "Critical", value: 1, tone: "critical" },
           { label: "Muted", value: 0, tone: "neutral" },
         ]}
-      />
+      />,
     );
 
     const section = container.querySelector("section");
     expect(section?.className).toMatch(/islandWrapperCenter/);
 
     const neutralPip = screen.getByRole("status");
-    expect(neutralPip.getAttribute("aria-label")).toBe("Monitoring");
+    expect(neutralPip.getAttribute("aria-label")).toBe("Synthetic status: Monitoring");
 
-    rerender(
-      <WardDynamicIsland
-        title="Capacity End"
-        align="end"
-        metrics={[]}
-      />
-    );
+    rerender(<WardDynamicIsland title="Capacity End" align="end" metrics={[]} />);
     expect(section?.className).toMatch(/islandWrapperEnd/);
   });
 });

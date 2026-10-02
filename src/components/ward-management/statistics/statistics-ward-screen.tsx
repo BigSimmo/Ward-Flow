@@ -328,7 +328,7 @@ export function StatisticsWardScreen({
           ? "Not recorded"
           : `${statistics.averageLengthOfStayDays.toFixed(0)}d`,
     },
-    { id: "flow", label: "Admissions & Discharges", badge: "7d Flow" },
+    { id: "flow", label: "Admissions & Discharges", badge: "No 7d history" },
     { id: "ready", label: "Discharge Readiness", badge: `${headlineTotal} delayed` },
     { id: "longStay", label: "Long Stays", badge: `${statistics.longStays}` },
   ] as const;
@@ -337,7 +337,7 @@ export function StatisticsWardScreen({
     <StatisticsSectionFrame
       section={section}
       title={unit.name}
-      subtitle="Current capacity, flow and discharge measures for this ward, with record limits stated in place."
+      subtitle=""
       testId="ward-statistics-ward-screen"
       design="third-edition"
     >
@@ -633,135 +633,12 @@ export function StatisticsWardScreen({
           </div>
         </WardPanel>
 
-        {/* 30-Day Occupancy Area Chart matching third-edition mockup */}
-        <WardPanel
-          title="30-Day Inpatient Occupancy Trajectory"
-          count="Operational Benchmark Line"
-          testId="ward-statistics-ward-occupancy-trajectory"
-          dataTabSection="occ"
-        >
-          <div className={styles.panelBody} role="group" aria-label="30-day occupancy trajectory content" tabIndex={0}>
-            <div className={pageStyles.areaChartSvgWrap}>
-              <svg
-                viewBox="0 0 860 220"
-                role="img"
-                aria-label="30-day occupancy trajectory with operational benchmark line"
-                style={{ width: "100%", height: "auto", display: "block" }}
-              >
-                <defs>
-                  <linearGradient id="wardOccAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.32" />
-                    <stop offset="60%" stopColor="var(--accent)" stopOpacity="0.10" />
-                    <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.01" />
-                  </linearGradient>
-                </defs>
-                {/* Horizontal grid lines */}
-                {[12, 16, 20, 24].map((tick) => {
-                  const y = 30 + 150 - ((tick - 10) / (Math.max(unit.beds, 28) - 10)) * 150;
-                  return (
-                    <g key={tick}>
-                      <line x1={55} y1={y} x2={835} y2={y} stroke="var(--line)" strokeWidth="1" />
-                      <text
-                        x={45}
-                        y={y + 4}
-                        textAnchor="end"
-                        fill="var(--muted)"
-                        fontSize="var(--t-0)"
-                        fontFamily="var(--mono)"
-                      >
-                        {tick}
-                      </text>
-                    </g>
-                  );
-                })}
-                {/* Benchmark line */}
-                {(() => {
-                  const benchVal = unit.beds * 0.85;
-                  const benchY = 30 + 150 - ((benchVal - 10) / (Math.max(unit.beds, 28) - 10)) * 150;
-                  return (
-                    <g>
-                      <line
-                        x1={55}
-                        y1={benchY}
-                        x2={835}
-                        y2={benchY}
-                        stroke="var(--warn)"
-                        strokeWidth="1.5"
-                        strokeDasharray="4 3"
-                      />
-                      <text
-                        x={830}
-                        y={benchY - 6}
-                        textAnchor="end"
-                        fill="var(--warn)"
-                        fontSize="var(--t-0)"
-                        fontWeight="600"
-                      >
-                        Operational benchmark ({benchVal.toFixed(1)} beds)
-                      </text>
-                    </g>
-                  );
-                })()}
-                {/* Baseline */}
-                <line x1={55} y1={180} x2={835} y2={180} stroke="var(--line-strong)" strokeWidth="1" />
-                {/* Smooth Catmull-Rom Bezier Spline Path from demonstration series */}
-                {(() => {
-                  const maxVal = Math.max(unit.beds, 28);
-                  const minVal = 10;
-                  const plotW = 780;
-                  const plotH = 150;
-                  const pts = occupancySeries.points.map((p, i) => {
-                    const x = 55 + (i / Math.max(1, occupancySeries.points.length - 1)) * plotW;
-                    const y = 30 + plotH - ((p.value - minVal) / (maxVal - minVal)) * plotH;
-                    return { x, y };
-                  });
-                  if (pts.length < 2) return null;
-                  let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
-                  for (let i = 0; i < pts.length - 1; i++) {
-                    const p0 = i > 0 ? pts[i - 1] : pts[i];
-                    const p1 = pts[i];
-                    const p2 = pts[i + 1];
-                    const p3 = i < pts.length - 2 ? pts[i + 2] : p2;
-                    const cp1x = p1.x + (p2.x - p0.x) / 6;
-                    const cp1y = p1.y + (p2.y - p0.y) / 6;
-                    const cp2x = p2.x - (p3.x - p1.x) / 6;
-                    const cp2y = p2.y - (p3.y - p1.y) / 6;
-                    d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
-                  }
-                  const areaD = `${d} L ${pts[pts.length - 1].x.toFixed(1)} 180 L ${pts[0].x.toFixed(1)} 180 Z`;
-                  return (
-                    <>
-                      <path d={areaD} fill="url(#wardOccAreaGrad)" />
-                      <path d={d} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" />
-                      <circle
-                        cx={pts[pts.length - 1].x}
-                        cy={pts[pts.length - 1].y}
-                        r="4.5"
-                        fill="var(--surface)"
-                        stroke="var(--accent)"
-                        strokeWidth="2"
-                      />
-                    </>
-                  );
-                })()}
-                {/* Date axis labels */}
-                <text x={55} y={202} fill="var(--muted)" fontSize="var(--t-0)">
-                  30d ago
-                </text>
-                <text x={250} y={202} fill="var(--muted)" fontSize="var(--t-0)">
-                  23d ago
-                </text>
-                <text x={445} y={202} fill="var(--muted)" fontSize="var(--t-0)">
-                  15d ago
-                </text>
-                <text x={640} y={202} fill="var(--muted)" fontSize="var(--t-0)">
-                  8d ago
-                </text>
-                <text x={835} y={202} fill="var(--muted)" textAnchor="end" fontSize="var(--t-0)" fontWeight="600">
-                  Today
-                </text>
-              </svg>
-            </div>
+        <WardPanel title="Occupancy history" testId="ward-statistics-ward-occupancy-trajectory" dataTabSection="occ">
+          <div className={styles.panelBody} role="group" aria-label="Occupancy history content" tabIndex={0}>
+            <p className={styles.note}>
+              Not recorded. This prototype retains the ward&apos;s current bed state, but no daily occupancy history or
+              operational benchmark.
+            </p>
           </div>
         </WardPanel>
 
@@ -1248,11 +1125,9 @@ export function StatisticsWardScreen({
             tabIndex={0}
           >
             <p className={styles.body}>
-              <strong>Another ward:</strong>{" "}
               <Link href={STATISTICS_UNIT_CHOOSER_HREF} data-testid="ward-statistics-ward-chooser-link">
                 Choose a different ward from the comparisons page
-              </Link>{" "}
-              to see the same measures for another.
+              </Link>
             </p>
 
             <details className={`${pageStyles.measureDetails} source-print`}>

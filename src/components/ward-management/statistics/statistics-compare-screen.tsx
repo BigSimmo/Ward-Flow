@@ -12,6 +12,7 @@ import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-manageme
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { isOpen, unitCapacity } from "@/components/ward-management/ward-derivations";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import type { EmergencyDepartment, Movement, Unit } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { WardPanel } from "@/components/ward-management/ward-panel";
@@ -19,6 +20,10 @@ import { allWardStatistics, type WardStatistics } from "@/components/ward-manage
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 
 import styles from "./statistics-third-edition.module.css";
+
+function focusComparisonSection(id: string) {
+  queueMicrotask(() => document.getElementById(id)?.focus({ preventScroll: true }));
+}
 
 /**
  * WARD AND ED COMPARISONS — and the chooser that is the only way into the per-unit detail pages.
@@ -87,11 +92,10 @@ export function StatisticsCompareScreen({
   const units = unitsOverride ?? liveUnits;
   const emergencyDepartments = edsOverride ?? allEmergencyDepartments();
 
-  const [activeTab, setActiveTab] = useState<"split" | "matrix" | "chooser">("split");
-
   // 1. Inpatient Network KPI figures
   const totalBeds = units.reduce((sum, u) => sum + u.beds, 0);
   const readyBeds = units.reduce((sum, u) => sum + unitCapacity(u, bedReleases).available, 0);
+  const pendingPreparationBeds = units.reduce((sum, u) => sum + bedsPendingPreparation(u.id, bedReleases), 0);
   const readyPct = totalBeds > 0 ? ((readyBeds / totalBeds) * 100).toFixed(1) : "0.0";
 
   // 2. Average Length of Stay KPI figures
@@ -123,7 +127,7 @@ export function StatisticsCompareScreen({
     <StatisticsSectionFrame
       section={section}
       title="Ward and ED comparisons"
-      subtitle="Comparable measures for wards and emergency departments, kept in separate tables."
+      subtitle=""
       testId="ward-statistics-compare-screen"
       design="third-edition"
     >
@@ -141,26 +145,23 @@ export function StatisticsCompareScreen({
           <span className={styles.kpiSub}>
             <strong>{readyBeds}</strong> beds available ({readyPct}%)
           </span>
-          <svg className={styles.kpiSpark} viewBox="0 0 100 20" preserveAspectRatio="none">
-            <path d="M0,10 Q25,8 50,11 T100,9" fill="none" stroke="var(--accent)" strokeWidth="2" />
-          </svg>
+          {pendingPreparationBeds > 0 ? (
+            <span className={styles.kpiSub}>{pendingPreparationBeds} being made ready (not deducted)</span>
+          ) : null}
         </div>
 
         <div className={styles.kpiCard} data-tone="warn">
           <div className={styles.kpiTop}>
             <span className={styles.kpiLabel}>Average Length of Stay</span>
-            <span className={styles.monoBadge}>Network-wide</span>
+            <span className={styles.monoBadge}>Recorded wards</span>
           </div>
           <div className={styles.kpiValRow}>
-            <span className={styles.kpiVal}>{networkAvgStay}d</span>
-            <span className={styles.kpiSub}>vs 6.5d target</span>
+            <span className={styles.kpiVal}>{networkAvgStay === "—" ? "Not recorded" : `${networkAvgStay}d`}</span>
+            <span className={styles.kpiSub}>Mean of recorded ward averages</span>
           </div>
           <span className={styles.kpiSub}>
             <strong>{totalBlockers}</strong> blockers &middot; <strong>{totalLongStays}</strong> &gt;3mo
           </span>
-          <svg className={styles.kpiSpark} viewBox="0 0 100 20" preserveAspectRatio="none">
-            <path d="M0,12 Q30,6 60,14 T100,10" fill="none" stroke="var(--warn)" strokeWidth="2" />
-          </svg>
         </div>
 
         <div className={styles.kpiCard} data-tone="danger">
@@ -175,9 +176,6 @@ export function StatisticsCompareScreen({
           <span className={styles.kpiSub}>
             <strong>{urgentCount}</strong> urgent &middot; <strong>{unplacedCount}</strong> awaiting ward
           </span>
-          <svg className={styles.kpiSpark} viewBox="0 0 100 20" preserveAspectRatio="none">
-            <path d="M0,8 Q20,15 50,7 T100,13" fill="none" stroke="var(--danger)" strokeWidth="2" />
-          </svg>
         </div>
 
         <div className={styles.kpiCard} data-tone="good">
@@ -187,14 +185,11 @@ export function StatisticsCompareScreen({
           </div>
           <div className={styles.kpiValRow}>
             <span className={styles.kpiVal}>{placementRatio}x</span>
-            <span className={styles.kpiSub}>ready vs ED demand</span>
+            <span className={styles.kpiSub}>available vs ED demand</span>
           </div>
           <span className={styles.kpiSub}>
             <strong>{netCapacity >= 0 ? `+${netCapacity}` : netCapacity}</strong> net bed buffer
           </span>
-          <svg className={styles.kpiSpark} viewBox="0 0 100 20" preserveAspectRatio="none">
-            <path d="M0,14 Q40,6 70,12 T100,8" fill="none" stroke="var(--good)" strokeWidth="2" />
-          </svg>
         </div>
       </div>
 
@@ -203,13 +198,16 @@ export function StatisticsCompareScreen({
         <div className={styles.balanceInfo}>
           <h3 className={styles.balanceTitle}>Statewide Patient Flow Balance</h3>
           <p className={styles.balanceSubtitle}>
-            Instant comparison between emergency department demand and inpatient bed readiness.
+            Current comparison between emergency department demand and inpatient bed availability.
           </p>
         </div>
         <div className={styles.balanceMetrics}>
           <div className={styles.balanceItem}>
             <span className={styles.bVal}>{readyBeds}</span>
-            <span className={styles.bLbl}>Ready Beds</span>
+            <span className={styles.bLbl}>Available beds</span>
+            {pendingPreparationBeds > 0 ? (
+              <span className={styles.bLbl}>{pendingPreparationBeds} being made ready (not deducted)</span>
+            ) : null}
           </div>
           <div className={styles.balanceItem}>
             <span className={styles.bVal}>{edWaitingCount}</span>
@@ -224,37 +222,34 @@ export function StatisticsCompareScreen({
         </div>
       </div>
 
-      {/* ══════════ SOVEREIGN TABS ══════════ */}
-      <div className={styles.sovereignTabs} role="tablist" aria-label="Comparison views">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "split"}
-          className={`${styles.sovereignTab} ${activeTab === "split" ? styles.activeTab : ""}`}
-          onClick={() => setActiveTab("split")}
+      <nav className={styles.sovereignTabs} aria-label="Comparison sections">
+        <a
+          className={styles.sovereignTab}
+          href="#compare-ward-measures"
+          onClick={() => focusComparisonSection("compare-ward-measures")}
+          style={{ textDecoration: "none" }}
         >
-          Split Comparison
-          <span className={styles.tabBadge}>{units.length + emergencyDepartments.length}</span>
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "matrix"}
-          className={`${styles.sovereignTab} ${activeTab === "matrix" ? styles.activeTab : ""}`}
-          onClick={() => setActiveTab("matrix")}
+          Ward measures
+          <span className={styles.tabBadge}>{units.length}</span>
+        </a>
+        <a
+          className={styles.sovereignTab}
+          href="#compare-ed-measures"
+          onClick={() => focusComparisonSection("compare-ed-measures")}
+          style={{ textDecoration: "none" }}
         >
-          Correlation Matrix
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "chooser"}
-          className={`${styles.sovereignTab} ${activeTab === "chooser" ? styles.activeTab : ""}`}
-          onClick={() => setActiveTab("chooser")}
+          ED measures
+          <span className={styles.tabBadge}>{emergencyDepartments.length}</span>
+        </a>
+        <a
+          className={styles.sovereignTab}
+          href={`#${STATISTICS_UNIT_CHOOSER_ID}`}
+          onClick={() => focusComparisonSection(STATISTICS_UNIT_CHOOSER_ID)}
+          style={{ textDecoration: "none" }}
         >
           Unit Directory
-        </button>
-      </div>
+        </a>
+      </nav>
 
       <details className={`${styles.measureDetails} source-print`}>
         <summary>Scope &amp; attribution limits</summary>
@@ -292,12 +287,12 @@ export function StatisticsCompareScreen({
         </WardPanel>
       </details>
 
-      <div className={styles.compareRegion}>
+      <div id="compare-ward-measures" className={styles.compareRegion} tabIndex={-1}>
         <WardPanel title="Wards" count={`${units.length} wards`}>
           <div className={styles.panelBody}>
             <div className={styles.chartCard}>
               <div className={styles.chartHeader}>
-                <h3 className={styles.chartTitle}>Average Length of Stay by Ward vs 6.5-Day Target</h3>
+                <h3 className={styles.chartTitle}>Average length of stay by ward</h3>
                 <span className={styles.chartCount}>{units.length} Wards</span>
               </div>
               {units.length === 0 ? (
@@ -323,7 +318,7 @@ export function StatisticsCompareScreen({
         </WardPanel>
       </div>
 
-      <div className={styles.compareRegion}>
+      <div id="compare-ed-measures" className={styles.compareRegion} tabIndex={-1}>
         <WardPanel title="Emergency departments" count={`${emergencyDepartments.length} departments`}>
           <div className={styles.panelBody}>
             <div className={styles.chartCard}>
@@ -361,17 +356,13 @@ export function StatisticsCompareScreen({
         </WardPanel>
       </div>
 
-      <div id={STATISTICS_UNIT_CHOOSER_ID} className={styles.compareRegion}>
+      <div id={STATISTICS_UNIT_CHOOSER_ID} className={styles.compareRegion} tabIndex={-1}>
         <WardPanel
           title="Choose a ward or emergency department"
           count={`${units.length + emergencyDepartments.length} units`}
           testId="ward-statistics-compare-chooser"
         >
           <div className={styles.panelBody}>
-            <p className={styles.note} data-testid="ward-statistics-compare-chooser-rationale">
-              Ward and department detail use one route per unit, so this comparison is their shared index.
-            </p>
-
             <h3 className={styles.subHeading}>Wards</h3>
             {units.length === 0 ? (
               <p className={styles.emptyNote} data-testid="ward-statistics-compare-no-wards">
@@ -746,8 +737,9 @@ interface HoveredWardState {
   idx: number;
   bx: number;
   by: number;
-  stay: number;
+  stay: number | null;
   unit: Unit;
+  tooltipLeft: number;
 }
 
 function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admissions: Admission[]; now: number }) {
@@ -757,18 +749,19 @@ function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admission
   if (units.length === 0) return null;
 
   const stats = allWardStatistics(units, admissions, now);
-  const W = 920;
-  const H = 300;
-  const padLeft = 45;
-  const padRight = 90;
-  const padTop = 30;
-  const padBottom = 80;
+  const W = 1120;
+  const H = 360;
+  const padLeft = 100;
+  const padRight = 25;
+  const padTop = 32;
+  const padBottom = 108;
   const plotW = W - padLeft - padRight;
   const plotH = H - padTop - padBottom;
-  const maxStay = 11;
+  const maximum = Math.max(0, ...stats.map(({ statistics }) => statistics.averageLengthOfStayDays ?? 0));
+  const tickStep = Math.max(1, Math.ceil(maximum / 5));
+  const maxStay = tickStep * 5;
 
   const py = (v: number) => padTop + plotH * (1 - v / maxStay);
-  const yTarget = py(6.5);
 
   const n = Math.max(stats.length, 1);
   const colW = plotW / n;
@@ -776,15 +769,16 @@ function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admission
 
   return (
     <div ref={containerRef} className={styles.barChartBox}>
+      <p className={styles.emptyNote}>Average among arrived admissions on each ward, in days. No target recorded.</p>
       <svg
         width="100%"
-        height="300"
+        height={H}
         viewBox={`0 0 ${W} ${H}`}
-        aria-label="Ward average length of stay bar chart with 6.5-day target line"
-        style={{ display: "block", width: "100%", height: "auto" }}
+        aria-label="Ward average length of stay bar chart"
+        style={{ display: "block", width: "100%", maxWidth: `${W}px`, height: "auto" }}
       >
-        {/* Y Grid lines at 2, 4, 6, 8, 10 days with strict 12px font floor */}
-        {[2, 4, 6, 8, 10].map((v) => {
+        {/* Scale from recorded stays, with a12px label floor. */}
+        {Array.from({ length: 6 }, (_, i) => i * tickStep).map((v) => {
           const y = py(v);
           return (
             <g key={v}>
@@ -803,38 +797,6 @@ function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admission
           );
         })}
 
-        {/* 6.5d Target line (behind values!) */}
-        <line
-          x1={padLeft}
-          y1={yTarget}
-          x2={W - padRight}
-          y2={yTarget}
-          stroke="var(--gilt)"
-          strokeWidth="1.8"
-          strokeDasharray="4 4"
-        />
-        <rect
-          x={W - padRight + 6}
-          y={yTarget - 11}
-          width={78}
-          height={20}
-          rx={3}
-          fill="var(--gilt-soft)"
-          stroke="var(--gilt)"
-          strokeWidth="1"
-        />
-        <text
-          x={W - padRight + 45}
-          y={yTarget + 3}
-          textAnchor="middle"
-          fontSize="12"
-          fontWeight="600"
-          fontFamily="var(--mono)"
-          fill="var(--gilt)"
-        >
-          6.5d Target
-        </text>
-
         {/* Base axis line */}
         <line
           x1={padLeft}
@@ -848,17 +810,16 @@ function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admission
         {/* Wards Bars */}
         {stats.map(({ unit, statistics }, i) => {
           const bx = padLeft + i * colW + (colW - barW) / 2;
-          const stay = statistics.averageLengthOfStayDays ?? 0;
-          const by = py(stay);
+          const stay = statistics.averageLengthOfStayDays;
+          const by = py(stay ?? 0);
           const bh = padTop + plotH - by;
-          const isOver = stay > 6.5;
-          const color = stay === 0 ? "var(--sunk)" : isOver ? "var(--warn)" : "var(--accent)";
+          const color = stay === null ? "transparent" : "var(--accent)";
 
-          const shortName = unit.name.replace(/ Adult Open| Adult Secure| Older Adult| Hospital| Unit/, "");
+          const shortName = unit.name.length > 14 ? `${unit.name.slice(0, 13)}…` : unit.name;
           const lx = (bx + barW / 2).toFixed(1);
           const ly = (padTop + plotH + 14).toFixed(1);
 
-          const numW = 28;
+          const numW = 42;
           const numH = 16;
           const numX = bx + barW / 2;
           const numY = by - 5;
@@ -871,20 +832,44 @@ function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admission
                 x={bx}
                 y={by}
                 width={barW}
-                height={bh}
+                height={stay === null ? 1 : bh}
                 fill={color}
                 rx={3}
-                onMouseEnter={() => setHoveredWard({ idx: i, bx, by, stay, unit })}
+                onMouseEnter={() => {
+                  const width = Math.min(W, containerRef.current?.clientWidth ?? W);
+                  setHoveredWard({
+                    idx: i,
+                    bx,
+                    by,
+                    stay,
+                    unit,
+                    tooltipLeft: Math.max(10, Math.min((bx / W) * width, width - 170)),
+                  });
+                }}
                 onMouseLeave={() => setHoveredWard(null)}
                 tabIndex={0}
                 role="graphics-symbol"
-                aria-label={`${unit.name}: ${stay > 0 ? `${stay.toFixed(1)} days ALOS` : "none arrived"}`}
-                onFocus={() => setHoveredWard({ idx: i, bx, by, stay, unit })}
+                aria-label={`${unit.name}: ${stay === null ? "Not recorded" : `${stay.toFixed(1)} days average stay`}`}
+                onFocus={() => {
+                  const width = Math.min(W, containerRef.current?.clientWidth ?? W);
+                  setHoveredWard({
+                    idx: i,
+                    bx,
+                    by,
+                    stay,
+                    unit,
+                    tooltipLeft: Math.max(10, Math.min((bx / W) * width, width - 170)),
+                  });
+                }}
                 onBlur={() => setHoveredWard(null)}
-              />
+              >
+                <title>
+                  {`${unit.name}: ${stay === null ? "Not recorded" : `${stay.toFixed(1)} days average stay`}`}
+                </title>
+              </rect>
 
-              {/* Background pill badge so number never collides with target line */}
-              {stay > 0 && (
+              {/* Printed values stay visible; missing averages are not zero. */}
+              {
                 <g>
                   <rect
                     x={numX - numW / 2}
@@ -903,12 +888,12 @@ function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admission
                     fontSize="12"
                     fontFamily="var(--mono)"
                     fontWeight="600"
-                    fill={isOver ? "var(--warn)" : "var(--ink)"}
+                    fill="var(--ink)"
                   >
-                    {stay.toFixed(1)}
+                    {stay === null ? "—" : stay.toFixed(1)}
                   </text>
                 </g>
-              )}
+              }
 
               {/* Rotated X-axis label with 12px font floor */}
               <text
@@ -921,6 +906,7 @@ function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admission
                 fill="var(--ink-soft)"
               >
                 {shortName}
+                <title>{unit.name}</title>
               </text>
             </g>
           );
@@ -932,10 +918,7 @@ function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admission
         <div
           className={styles.compareTooltip}
           style={{
-            left: `${Math.min(
-              Math.max(10, (hoveredWard.bx / W) * (containerRef.current?.clientWidth ?? W)),
-              (containerRef.current?.clientWidth ?? W) - 170,
-            )}px`,
+            left: `${hoveredWard.tooltipLeft}px`,
             top: "20px",
             display: "block",
           }}
@@ -966,19 +949,7 @@ function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admission
             }}
           >
             <span>ALOS:</span>
-            <b>{hoveredWard.stay.toFixed(1)} days</b>
-          </div>
-          <div
-            style={{
-              fontSize: "12px",
-              fontWeight: 600,
-              color: hoveredWard.stay > 6.5 ? "var(--warn)" : "var(--good)",
-              marginTop: "2px",
-            }}
-          >
-            {hoveredWard.stay > 6.5
-              ? `+${(hoveredWard.stay - 6.5).toFixed(1)}d over target`
-              : `${(hoveredWard.stay - 6.5).toFixed(1)}d under target`}
+            <b>{hoveredWard.stay === null ? "Not recorded" : `${hoveredWard.stay.toFixed(1)} days`}</b>
           </div>
         </div>
       )}

@@ -66,10 +66,7 @@ import {
   type TransportWhereabouts,
   type UrgentMarkReason,
 } from "@/components/ward-management/ward-change-reasons";
-import {
-  allEmergencyDepartments,
-  siteByCode,
-} from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import {
   candidateReason,
   eligibility,
@@ -94,6 +91,7 @@ import { communityTeamById } from "@/components/ward-management/community/commun
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import {
   attentionItems,
+  legalFormReadinessLine,
   declineReasonLabels,
   stageChangeReasonLabel,
   stageReachedAt,
@@ -102,7 +100,7 @@ import {
   urgentFigureFlags,
   type Attention,
   type StepState,
-} from "@/components/ward-management/ward-management-console";
+} from "@/components/ward-management/movements/movement-workspace-derivations";
 
 import styles from "./movement-workspace-cockpit.module.css";
 
@@ -502,7 +500,9 @@ export function MovementWorkspaceCockpit({ movementId }: { movementId: MovementI
                   </div>
                   <div className={styles.candidateChips}>
                     {declined ? <WardChip level="routine">Already declined</WardChip> : null}
-                    <b className={styles.candidateVerdict}>{candidate.verdict.eligible ? "Eligible" : "Not eligible"}</b>
+                    <b className={styles.candidateVerdict}>
+                      {candidate.verdict.eligible ? "Eligible" : "Not eligible"}
+                    </b>
                   </div>
                 </li>
               );
@@ -517,7 +517,11 @@ export function MovementWorkspaceCockpit({ movementId }: { movementId: MovementI
     <div className={styles.cockpitRoot} data-testid="ward-patient-workspace">
       {/* 0. Header Breadcrumb */}
       <header className={styles.workspaceHeader}>
-        <ContextualBackLink fallbackHref="/mockups/ward-flow" aria-label="Back to Ward Flow" className={styles.backLink}>
+        <ContextualBackLink
+          fallbackHref="/mockups/ward-flow"
+          aria-label="Back to Ward Flow"
+          className={styles.backLink}
+        >
           <ArrowLeft size={16} aria-hidden="true" />
         </ContextualBackLink>
         <div>
@@ -542,12 +546,6 @@ export function MovementWorkspaceCockpit({ movementId }: { movementId: MovementI
                   <span>Movement Workspace</span>
                   <span>·</span>
                   <span>{patient.id}</span>
-                  {patient.patientId ? (
-                    <>
-                      <span>·</span>
-                      <span>{patient.patientId}</span>
-                    </>
-                  ) : null}
                 </div>
                 {/* Single <h1> Landmark for this route */}
                 <h1 id="movement-masthead-title" className={styles.mastheadTitle}>
@@ -851,8 +849,8 @@ export function MovementWorkspaceCockpit({ movementId }: { movementId: MovementI
               </div>
               <div className={styles.panelCardBody}>
                 <p className={styles.panelBlurb}>
-                  What this record holds about this patient&apos;s status and the form beside it. It is not a statement of what
-                  the Mental Health Act requires.
+                  What this record holds about this patient&apos;s status and the form beside it. It is not a statement
+                  of what the Mental Health Act requires.
                 </p>
                 <dl className={styles.factGrid}>
                   <div className={styles.factRow}>
@@ -908,7 +906,9 @@ export function MovementWorkspaceCockpit({ movementId }: { movementId: MovementI
                   <div className={styles.factRow}>
                     <dt className={styles.factLabel}>Provider</dt>
                     <dd className={styles.factValue}>
-                      {patient.transport ? patient.transport.provider : "No provider is recorded, because no job exists."}
+                      {patient.transport
+                        ? patient.transport.provider
+                        : "No provider is recorded, because no job exists."}
                     </dd>
                   </div>
                   <div className={styles.factRow}>
@@ -1011,9 +1011,7 @@ export function MovementWorkspaceCockpit({ movementId }: { movementId: MovementI
             <div data-testid="ward-patient-changes" className={styles.panelCard}>
               <div className={styles.panelCardHeader}>
                 <h2 className={styles.panelCardTitle}>Status and urgency changes</h2>
-                {changeEvents.length > 0 ? (
-                  <span className={styles.panelCountBadge}>{changeEvents.length}</span>
-                ) : null}
+                {changeEvents.length > 0 ? <span className={styles.panelCountBadge}>{changeEvents.length}</span> : null}
               </div>
               <div className={styles.panelCardBody}>
                 {changeEvents.length > 0 ? (
@@ -1142,14 +1140,12 @@ export function MovementWorkspaceCockpit({ movementId }: { movementId: MovementI
           </div>
 
           {/* RIGHT: Action Command Center (Controls, Immediate Actions) */}
-          <div className={styles.commandColumn}>
-            {open ? renderActions(patient) : null}
-          </div>
+          <div className={styles.commandColumn}>{open ? renderActions(patient) : null}</div>
         </div>
 
         <p className={styles.governanceNote}>
-          Synthetic prototype only. Eligibility is checked automatically; an authorised human confirms every destination.
-          This is not clinical severity.
+          Synthetic prototype only. Eligibility is checked automatically; an authorised human confirms every
+          destination. This is not clinical severity.
         </p>
         <span id="ward-console-confirm-unavailable" className="sr-only">
           Confirming a destination is not built yet. Nothing is recorded when this control is activated.
@@ -1286,8 +1282,8 @@ export function MovementWorkspaceCockpit({ movementId }: { movementId: MovementI
               ) : null}
               {!open ? (
                 <p className={styles.actionSay}>
-                  This movement is no longer running — the panel at the top of the page says why. The note above is
-                  what was recorded before it stopped; nothing new can be recorded against it now.
+                  This movement is no longer running — the panel at the top of the page says why. The note above is what
+                  was recorded before it stopped; nothing new can be recorded against it now.
                 </p>
               ) : (
                 <form
@@ -1345,8 +1341,8 @@ export function MovementWorkspaceCockpit({ movementId }: { movementId: MovementI
             <section className={styles.actionSection}>
               <h3 className={styles.actionSectionTitle}>Confirm a destination</h3>
               <p className={styles.actionSay}>
-                Not built yet. Which record a confirmation writes, and in whose name, is a decision the owner still holds
-                — so this control is deliberately inert and says so rather than being hidden.
+                Not built yet. Which record a confirmation writes, and in whose name, is a decision the owner still
+                holds — so this control is deliberately inert and says so rather than being hidden.
               </p>
               <button
                 type="button"
@@ -1591,9 +1587,7 @@ export function MovementWorkspaceCockpit({ movementId }: { movementId: MovementI
                     onChange={(chosen) => {
                       const value = chosen.target.value;
                       setDiversionReason(
-                        DIVERSION_REASONS.includes(value as DiversionReason)
-                          ? (value as DiversionReason)
-                          : undefined,
+                        DIVERSION_REASONS.includes(value as DiversionReason) ? (value as DiversionReason) : undefined,
                       );
                     }}
                   >
@@ -1712,8 +1706,8 @@ export function MovementWorkspaceCockpit({ movementId }: { movementId: MovementI
                 </p>
               ) : acceptedStageIndex < MOVEMENT_STAGES.indexOf("accepted_awaiting_bed") ? (
                 <p className={styles.actionSay}>
-                  {destination ? destination.name : "A ward"} accepted this patient and this page still says so, but
-                  the recorded stage has been corrected back to {stageCopy[movement.stage].label}. Withdrawing is only
+                  {destination ? destination.name : "A ward"} accepted this patient and this page still says so, but the
+                  recorded stage has been corrected back to {stageCopy[movement.stage].label}. Withdrawing is only
                   offered while the record says Accepted, awaiting bed — put the stage back to that first, or ring the
                   ward.
                 </p>
@@ -1868,9 +1862,7 @@ export function MovementWorkspaceCockpit({ movementId }: { movementId: MovementI
                           ? "ward-console-step-back-blocked"
                           : undefined
                       }
-                      title={
-                        stepBackTo === undefined || stepBackReason === undefined ? STEP_BACK_UNCHOSEN : undefined
-                      }
+                      title={stepBackTo === undefined || stepBackReason === undefined ? STEP_BACK_UNCHOSEN : undefined}
                       onClick={
                         stepBackTo === undefined || stepBackReason === undefined
                           ? ignoreUnavailableActivation
@@ -1954,16 +1946,6 @@ function blockerReadinessState(movement: Movement, open: boolean, blockerIsActiv
     return "Nothing is holding this up: the movement did not proceed.";
   }
   return "Nobody has recorded anything as holding this up.";
-}
-
-function legalFormReadinessLine(legalForm: LegalForm, now: Instant): string {
-  const named = legalFormNameLabelFirst(legalForm);
-  if (legalForm.dueAt === undefined) return `${named} · no deadline recorded`;
-  const when = formatInstantWithDay(legalForm.dueAt, now);
-  if (clockState(legalForm.dueAt, now) === "breached") {
-    return `${named} · due ${when} — ${formatRemaining(minutesUntil(legalForm.dueAt, now))}`;
-  }
-  return `${named} · due ${when}`;
 }
 
 function transportNeedSentence(movement: Movement, now: Instant): string {

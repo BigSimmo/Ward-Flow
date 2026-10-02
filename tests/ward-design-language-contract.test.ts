@@ -8,7 +8,7 @@
 // and then vouched for it twice. One declaration (ward-tokens.module.css) is the source; every
 // other file must contain no declaration at all, which is a comparison that can fail.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, matchesGlob } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const ROOT = "src/components/ward-management";
@@ -789,6 +789,14 @@ describe("the ground is not merely painted — it has to be visible", () => {
 });
 
 describe("no Ward Flow test file is invisible to the runner", () => {
+  const include = readFileSync("vitest.config.mts", "utf8").match(/name: "jsdom",[\s\S]*?include: \[([^\]]+)\],/);
+  if (!include) throw new Error("Cannot read jsdom include patterns; update the extraction");
+  const jsdomIncludes = [...include[1]!.matchAll(/"([^"]+)"/g)].map((match) => match[1]!);
+  it("uses the actual DOM and contract include patterns without admitting arbitrary TSX tests", () => {
+    expect(jsdomIncludes).toEqual(["tests/**/*.dom.test.tsx", "tests/**/*.contract.test.tsx"]);
+    expect(jsdomIncludes.some((pattern) => matchesGlob("tests/ward-example.contract.test.tsx", pattern))).toBe(true);
+    expect(jsdomIncludes.some((pattern) => matchesGlob("tests/ward-example.test.tsx", pattern))).toBe(false);
+  });
   /**
    * ⚠️ A TEST FILE THAT MATCHES NO INCLUDE GLOB RUNS NOTHING AND SAYS NOTHING. Measured
    * 2026-09-04 from `vitest.config.mts`: the two project globs are `tests/**\/*.test.ts` and
@@ -805,7 +813,8 @@ describe("no Ward Flow test file is invisible to the runner", () => {
   it("names every ward test file the runner can actually see", () => {
     const invisible = readdirSync("tests")
       .filter((f) => f.startsWith("ward-"))
-      .filter((f) => f.endsWith(".test.tsx") && !f.endsWith(".dom.test.tsx"));
+      .filter((f) => f.endsWith(".test.tsx"))
+      .filter((f) => !jsdomIncludes.some((pattern) => matchesGlob(`tests/${f}`, pattern)));
     expect(invisible, `these match no vitest include glob and will never run: ${invisible.join(", ")}`).toEqual([]);
   });
 

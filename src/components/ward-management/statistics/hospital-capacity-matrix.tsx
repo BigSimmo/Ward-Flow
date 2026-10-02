@@ -3,6 +3,7 @@
 import { useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
@@ -22,6 +23,7 @@ interface UnitCapacityRow {
   occupied: number;
   occRate: number;
   ready: number;
+  pendingPreparation: number;
   held: number;
   statusLabel: "At Capacity" | "Near Limit" | "Open Intake";
   statusTone: "danger" | "warn" | "good";
@@ -41,6 +43,7 @@ export function HospitalCapacityMatrix({ units, bedReleases }: { units: Unit[]; 
       const occupied = cap.occupied;
       const occRate = beds > 0 ? Math.round((occupied / beds) * 100) : 0;
       const ready = cap.available;
+      const pendingPreparation = bedsPendingPreparation(u.id, bedReleases);
       const held = cap.held;
 
       let statusLabel: "At Capacity" | "Near Limit" | "Open Intake" = "Open Intake";
@@ -64,6 +67,7 @@ export function HospitalCapacityMatrix({ units, bedReleases }: { units: Unit[]; 
         occupied,
         occRate,
         ready,
+        pendingPreparation,
         held,
         statusLabel,
         statusTone,
@@ -163,7 +167,7 @@ export function HospitalCapacityMatrix({ units, bedReleases }: { units: Unit[]; 
         />
         <div className={styles.toolsAction}>
           <span className={styles.note} aria-live="polite">
-            Showing {filteredRows.length} of {units.length} units
+            Showing {filteredRows.length} of {units.length} synthetic units
           </span>
         </div>
       </div>
@@ -210,7 +214,7 @@ export function HospitalCapacityMatrix({ units, bedReleases }: { units: Unit[]; 
                 className={`${styles.tableSortBtn} ${styles.n}`}
                 onClick={() => handleSort("ready")}
               >
-                Ready
+                Available
                 <span aria-hidden="true">{getSortIndicator("ready")}</span>
               </button>
             </th>
@@ -257,6 +261,9 @@ export function HospitalCapacityMatrix({ units, bedReleases }: { units: Unit[]; 
                 </td>
                 <td className={styles.n}>
                   {r.ready > 0 ? <strong>{r.ready}</strong> : <span className={styles.zero}>none</span>}
+                  {r.pendingPreparation > 0 ? (
+                    <span className={styles.note}> · {r.pendingPreparation} being made ready (not deducted)</span>
+                  ) : null}
                 </td>
                 <td className={styles.n}>{r.held > 0 ? r.held : <span className={styles.zero}>none</span>}</td>
                 <td>
