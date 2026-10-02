@@ -35,6 +35,9 @@ for (const [label, body] of [
   ["reversed", "<!-- docs-script-refs:historical-end -->"],
   ["nested", "<!-- docs-script-refs:historical-start -->\n<!-- docs-script-refs:historical-start -->"],
   ["unknown", "<!-- docs-script-refs:historical-other -->"],
+  ["inline", "text <!-- docs-script-refs:historical-start -->"],
+  ["spacing", "<!--docs-script-refs:historical-start -->"],
+  ["trailing", "<!-- docs-script-refs:historical-start --> text"],
 ])
   test(`${label} markers fail in normal and all modes`, () => {
     assert.throws(() => stripHistoricalSections(body));

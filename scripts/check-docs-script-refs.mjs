@@ -55,7 +55,7 @@ export function stripHistoricalSections(markdown, includeHistorical = false) {
   const result = [];
   for (const line of markdown.split("\n")) {
     const trimmed = line.trim();
-    if (trimmed.startsWith("<!-- docs-script-refs:historical-")) {
+    if (/<!--\s*docs-script-refs:historical-/.test(line)) {
       if (trimmed === "<!-- docs-script-refs:historical-start -->" && !inside) inside = true;
       else if (trimmed === "<!-- docs-script-refs:historical-end -->" && inside) inside = false;
       else throw new Error("Malformed, nested or reversed historical command markers");
