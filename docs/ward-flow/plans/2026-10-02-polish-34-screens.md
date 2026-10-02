@@ -328,3 +328,19 @@ revisions remain historical; structural generation does not substitute for visua
 The earlier stopped combined-main FULL remains partial, not a pass. Run one final FULL and
 clean typecheck on the stable newest-main assembly, then the authorised local fast-forward.
 Showcase source and focused browser tests remain private until that fold.
+
+### Bound the newly collected documentation fixtures
+
+The stable run at `f133ea7` exposed one real new-main test-fixture defect:
+`test-runner-safety.test.ts` found two recursive removals in the newly registered
+`ward-documentation-boundaries.test.ts` without required bounded retries. Batch 1
+completed 100 files /1541 cases with that failure; batch 2 completed 100 files /
+1148 cases without failures. The owned run was stopped and its partial records
+remain in `full-gate-final-source`. It is not a complete FULL result.
+
+The released exact test file is signed out and both removals now use the established
+`maxRetries: 5, retryDelay: 100` options. Both root-prefix checks and all 11 assertions
+remain intact. App/browser inputs are unchanged. The generic safety guard reads other
+test files, so the existing bounded failing-file-only recheck cannot establish this
+correction; run one fresh complete FULL on the corrected stable tree, without weakening
+that gate or manufacturing a change to the failing safety test.
