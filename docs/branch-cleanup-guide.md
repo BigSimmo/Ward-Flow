@@ -60,7 +60,7 @@ trusting them.
 **Never delete a branch, or report one as unmerged, from a shallow clone.**
 
 For broad multi-worktree reconciliation, then run `node scripts/reconciliation-preflight.mjs` and follow
-[`docs/reconciliation-playbook.md`](reconciliation-playbook.md). The preflight is report-only and
+the reconciliation playbook (`docs/reconciliation-playbook.md`, retired historical PsychSift doc). The preflight is report-only and
 does not replace the fetch/approval and per-branch content proof below.
 
 1. Fetch and prune:

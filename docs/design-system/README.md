@@ -1,5 +1,10 @@
 # PsychSift design system — document set
 
+> [!NOTE]
+> **Ward Flow Baseline Status (Owner Decisions: 25 Sep & 2 Oct 2026):**
+> This document set describes the historical PsychSift design system and token migration layer.
+> For Ward Flow (`BigSimmo/Ward-Flow`), the owner reconfirmed the current local `main` rendered UI as the authoritative visual and behavioral baseline. Historical drawings and token prescriptions do not authorise restyling it; preserve understandable status and accessible controls.
+
 The system of record for the v2 design system. **Rules and roles live here; values live
 only in the token files.** Source-of-truth ranking: `AGENTS.md` → `ckb-v2-tokens.css` →
 committed tests → `.design-sync/conventions.md` → this set. Where this set contradicts a
@@ -34,7 +39,7 @@ Reading order:
 
 Canonical code: `src/app/ckb-v2-tokens.css` is the **v2 target layer** and `globals.css` remains
 the compatibility layer. The source now mounts `.ckb-v2` literally on the global `<html>`, so every
-production surface is observed under v2. The generated [adoption manifest](adoption-manifest.json)
+production surface is observed under v2. The historical adoption manifest (`adoption-manifest.json`)
 records that observation. Declared v2 surfaces may keep `baseline.status: "not-committed"` with
 empty `files` so `check:design-system-adoption` / `check:design-system-contract` stay green during
 draft; human-approved Linux screenshots and exact hosted provenance remain the draft→ready gate,

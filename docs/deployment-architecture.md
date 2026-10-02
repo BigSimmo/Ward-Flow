@@ -309,8 +309,8 @@ alternatives. The worker service selects its Dockerfile via the
 `railway.worker.json`).
 
 > **Operator run recipe:** the copy-pasteable build/run/verify steps, the
-> required env + secrets, and the pre-deploy migration gate live in
-> [`worker-deploy-runbook.md`](worker-deploy-runbook.md). This section is the
+> required env + secrets, and the pre-deploy migration gate were historically documented in
+> `worker-deploy-runbook.md` (retired historical PsychSift runbook). This section is the
 > decision record; that runbook is how to ship it.
 
 Reasoning:
