@@ -147,20 +147,20 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
     it("renders empty metrics list and default status text without throwing", () => {
       const { container, rerender } = render(<WardDynamicIsland title="Empty Metrics HUD" metrics={[]} />);
 
-      expect(screen.getByRole("status").getAttribute("aria-label")).toBe("Nominal status");
+      expect(screen.getByRole("status").getAttribute("aria-label")).toBe("Synthetic status: Nominal status");
       expect(container.querySelectorAll("li")).toHaveLength(0);
 
       // Warning default status text
       rerender(<WardDynamicIsland title="Empty Metrics HUD" status="warning" metrics={[]} />);
-      expect(screen.getByRole("status").getAttribute("aria-label")).toBe("Attention required");
+      expect(screen.getByRole("status").getAttribute("aria-label")).toBe("Synthetic status: Attention required");
 
       // Alarm default status text
       rerender(<WardDynamicIsland title="Empty Metrics HUD" status="alarm" metrics={[]} />);
-      expect(screen.getByRole("status").getAttribute("aria-label")).toBe("Critical pressure");
+      expect(screen.getByRole("status").getAttribute("aria-label")).toBe("Synthetic status: Critical pressure");
 
       // Neutral default status text
       rerender(<WardDynamicIsland title="Empty Metrics HUD" status="neutral" metrics={[]} />);
-      expect(screen.getByRole("status").getAttribute("aria-label")).toBe("Monitoring");
+      expect(screen.getByRole("status").getAttribute("aria-label")).toBe("Synthetic status: Monitoring");
     });
   });
 
