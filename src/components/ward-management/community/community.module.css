@@ -3744,10 +3744,10 @@ button.searchBox:hover {
 
 /* ── Sovereign Tab Workspace & Governance Accordion ── */
 .contentWorkspace {
-  padding: 18px 24px 48px;
+  padding: 16px clamp(12px, 2vw, 24px) 40px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
   max-width: 1540px;
   width: 100%;
   margin: 0 auto;
@@ -3768,7 +3768,7 @@ button.searchBox:hover {
   border: 1px solid var(--line);
   border-radius: var(--r2);
   overflow: hidden;
-  margin-top: 1.5rem;
+  margin-top: 0.5rem;
 }
 
 .governanceSummary {
