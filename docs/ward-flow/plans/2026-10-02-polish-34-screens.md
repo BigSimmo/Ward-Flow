@@ -5,7 +5,7 @@ Coordinator: `codex/chat-polish-34-screens-6c8b` in
 `C:/Users/joshs/.codex/worktrees/6c8b/Ward-Flow`.
 Base: verified local main `981a4a8a52e0c235b888e4c9470c94c34808cf33`.
 Current integration candidate: `codex/polish-local-fold-20261002` in
-`D:/Temp/ward-polish-fold-20261002`, app HEAD `c25ac73`.
+`D:/Temp/ward-polish-fold-20261002`, app HEAD `770c006`.
 Candidate base and unchanged local main: `7eb199bd2e9824c1165896f821750973bb986b82`.
 Status: **In progress**. All three scoped decisions were approved; final gates and the local fold remain in progress.
 Last verified: 2026-10-02T13:17:06.713Z. Local preview: **http://localhost:4266**.
@@ -259,3 +259,24 @@ Next: hold app inputs stable for the required FULL/typecheck/journeysALL, preser
 independent review and affected UI evidence, verify main is still clean and unchanged, then fold
 locally. Showcase drafts may be prepared privately during gate time, but app implementation starts
 after the polish fold. Update the same local receipt at the result; canonical Notion remains unsynced.
+
+### Complete approved FULL findings and corrections
+
+The approved stable run at `df7a780` completed **842 files / 9887 tests**. Its receipt is
+`D:/Temp/ward-polish-34-20261002/full-gate-approved/receipt-1790950166412-53532.json`.
+Two files failed: the adversarial HUD test retained four pre-provenance status expectations,
+and the print guard found seven themed Movement Workspace selectors without winning print ink.
+No manifest entry, test timeout, population or guard was weakened.
+
+`770c006` retains exact synthetic status expectations and adds a print-only CanvasText reset
+to the existing cockpit root. `final-corrections.json` passed **2 files /137 tests**. The first
+browser attempt selected two cockpit roots and failed strict locator matching; the actual workspace
+test ID then passed in `movement-print-final-corrected-1920/receipt.json`, including ordinary desktop,
+phone geometry, dark layout and a1920x1080 print-media capture. The inspected print crop has readable
+ink; complete printed pagination and physical printing remain unverified. Source remained unchanged.
+
+Organisation acceptance passed on working-tree input, fingerprint
+`ed3a08e2df496bdcf77442394084ee4801df462236dfffe4b60ff1eaff533aba`; existing restricted/unresolved
+registry items remain visible. Screen-map and verification generators passed their structural checks.
+Because a stylesheet source changed, bounded test-only FULL reuse is ineligible. Run a fresh FULL
+on this corrected clean assembly, then clean typecheck and selected journeysALL before the local fold.
