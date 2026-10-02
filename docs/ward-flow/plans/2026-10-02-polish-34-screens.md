@@ -6,7 +6,7 @@ Coordinator: `codex/chat-polish-34-screens-6c8b` in
 Base: verified local main `981a4a8a52e0c235b888e4c9470c94c34808cf33`.
 Current integration candidate: `codex/polish-final-preserve-20261002` in
 `D:/Temp/ward-polish-fold-20261002`, app HEAD `770c006`.
-Candidate base and current local main: `81bdd870bc387635629550c994e3042e8ec0affc`.
+Candidate base and current local main: `a3e55d7b842de5cefdac4fb6a842b278f2c23481`.
 Status: **In progress**. All three scoped decisions were approved; final gates and the local fold remain in progress.
 Last verified: 2026-10-02T14:58:30.743Z. Local preview: **http://localhost:4266**.
 Local integration is authorised but pending required gates; publication and deployment are not authorised.
