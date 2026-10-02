@@ -78,7 +78,7 @@ const config = {
                 // `*.test.ts` files (and vice versa).
                 name: "jsdom",
                 environment: "jsdom",
-                include: ["tests/**/*.dom.test.tsx"],
+                include: ["tests/**/*.dom.test.tsx", "tests/**/*.contract.test.tsx"],
                 ...(gateExcludedFiles.length > 0 ? { exclude: gateExcludedFiles } : {}),
                 setupFiles: ["tests/setup/jsdom.setup.ts"],
               },

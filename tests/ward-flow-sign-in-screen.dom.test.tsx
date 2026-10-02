@@ -80,7 +80,7 @@ describe("Ward Flow sign-in screen renders", () => {
     expect(
       screen.getByText(/This screen holds no password field, because a drawing of a tool must never/),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Ward Flow signs a role in and never a person/)).toBeInTheDocument();
+    expect(screen.getByText(/It does not sign anyone in or grant permissions/)).toBeInTheDocument();
     expect(screen.getByText(/The live product's permissions are set outside Ward Flow/)).toBeInTheDocument();
 
     // The role group carries all seven roles, each an aria-pressed toggle button.

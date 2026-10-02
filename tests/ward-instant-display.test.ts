@@ -95,7 +95,8 @@ describe("nothing renders a bare clock face unless it is entitled to assert toda
      * nothing here would go red from rendered output if a helpful edit put `formatInstant` back.
      */
     const swept = [
-      "ward-management-console.tsx",
+      "movements/movement-workspace-derivations.ts",
+      "movements/movement-workspace-cockpit.tsx",
       "ward-management-modes.tsx",
       "coordinator/shortlist-panel.tsx",
       "escalation/escalation-board.tsx",

@@ -25,6 +25,9 @@ import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 
+import { StatewideAllocationHeadroom } from "./statewide-allocation-headroom";
+import { HospitalCapacityMatrix } from "./hospital-capacity-matrix";
+
 import styles from "./statistics-third-edition.module.css";
 
 /**
@@ -171,7 +174,7 @@ export function StatisticsOverviewScreen() {
     const badgeTone = "var(--accent)";
     const badgeBg = "var(--accent-soft)";
     const badgeText = "No target recorded";
-    const strokeColor = "var(--accent)";
+    const strokeColor = hs.color;
 
     const totalArc = 157.08;
     const frac = Math.min(Math.max(occPct / 100, 0), 1);
@@ -281,7 +284,7 @@ export function StatisticsOverviewScreen() {
   return (
     <StatisticsSectionFrame
       section={section}
-      subtitle="Network-wide measures, their populations and the limits of the current record."
+      subtitle=""
       testId="ward-statistics-overview-screen"
       design="third-edition"
     >
@@ -299,6 +302,9 @@ export function StatisticsOverviewScreen() {
           </Link>
         </p>
       )}
+
+      {/* ══════════ STATEWIDE ALLOCATION HEADROOM ══════════ */}
+      <StatewideAllocationHeadroom units={units} bedReleases={bedReleases} capacityReady={capacity.ready} />
 
       {/* ══════════ HEALTH SERVICE CAPACITY & UTILIZATION GAUGES ══════════ */}
       <section className={styles.chartCard} aria-labelledby="gaugesH">
@@ -375,6 +381,9 @@ export function StatisticsOverviewScreen() {
         </div>
       </section>
 
+      {/* ══════════ HOSPITAL & INPATIENT UNIT CAPACITY MATRIX ══════════ */}
+      <HospitalCapacityMatrix units={units} bedReleases={bedReleases} />
+
       <div className={styles.overviewGrid}>
         <div className={styles.overviewColumn}>
           <WardPanel
@@ -388,7 +397,7 @@ export function StatisticsOverviewScreen() {
               aria-label="What this section will hold content"
               tabIndex={0}
             >
-              <p className={styles.body}>{section.description}</p>
+              <span>Network-wide current state</span>
             </div>
           </WardPanel>
 

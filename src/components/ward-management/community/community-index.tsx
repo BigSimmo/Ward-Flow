@@ -357,6 +357,9 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
         </div>
 
         <h1 className="sr-only">All community teams</h1>
+        <p className="sr-only">
+          These are recorded <strong>names</strong>, not verified services; possible aliases remain separate.
+        </p>
 
         <div className={styles.glanceStrip} role="region" aria-label="Directory statistics summary">
           <div className={styles.glanceCard}>

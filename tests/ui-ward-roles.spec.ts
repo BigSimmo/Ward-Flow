@@ -1218,3 +1218,154 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     await expect(allocatableGate).toContainText("0 allocatable");
   });
 });
+
+const SHOWCASE_ROUTE = "/mockups/ward-flow/sovereign";
+const SHOWCASE_TABLE_NAME = "Synthetic rows showing shared table, kind and status components";
+const SHOWCASE_DRAWERS = [
+  { label: "Referral", testId: "ward-bar-referral-sheet", role: "dialog" },
+  { label: "Tasks", testId: "ward-bar-tasks-sheet", role: "dialog" },
+  { label: "Activity", testId: "ward-bar-activity-sheet", role: "dialog" },
+  { label: "Tools", testId: "ward-bar-tools-sheet", role: "dialog" },
+  { label: "Service selector", testId: "ward-bar-service-panel", role: "group" },
+] as const;
+
+async function openDesignShowcase(page: Page) {
+  await page.goto(SHOWCASE_ROUTE, { waitUntil: "domcontentloaded" });
+  // Streamed content may briefly leave a hidden duplicate of the screen in the tree.
+  await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
+  await expect(page.getByRole("heading", { level: 1, name: "Design system showcase" })).toBeVisible();
+  await page.waitForLoadState("networkidle");
+}
+
+async function showcaseTableState(page: Page) {
+  return page.getByRole("table", { name: SHOWCASE_TABLE_NAME }).evaluate((table) => {
+    const rows = [...(table as HTMLTableElement).tBodies[0]!.rows];
+    return {
+      firstLabel: rows[0]!.querySelector("th")?.textContent?.trim(),
+      firstPadding: getComputedStyle(rows[0]!.cells[0]!).paddingTop,
+      secondPadding: getComputedStyle(rows[1]!.cells[0]!).paddingTop,
+      density: getComputedStyle(table).getPropertyValue("--ward-table-cell-inset").trim(),
+    };
+  });
+}
+
+async function expectShowcaseNoPageOverflow(page: Page) {
+  const amount = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+  expect(amount, "the document must fit the viewport without horizontal page scrolling").toBeLessThanOrEqual(1);
+}
+
+test.describe("@mockup Ward Flow design system showcase", () => {
+  test.describe.configure({ timeout: 60_000 });
+
+  test("desktop anchors, local example states, and existing drawers are usable", async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await openDesignShowcase(page);
+    await expectShowcaseNoPageOverflow(page);
+    await expect(page.getByText("Synthetic examples", { exact: true })).toBeVisible();
+
+    const links = page.getByRole("navigation", { name: "Showcase sections" }).locator('a[href^="#"]');
+    await expect(links).toHaveCount(4);
+    for (let index = 0; index < 4; index++) {
+      const link = links.nth(index);
+      const href = await link.getAttribute("href");
+      expect(href).toMatch(/^#[a-z-]+$/);
+      await link.focus();
+      await page.keyboard.press("Enter");
+      const target = page.locator(href!);
+      await expect(target).toBeFocused();
+      const top = await target.evaluate((element) => element.getBoundingClientRect().top);
+      expect(top, `${href} must clear the fixed 56px WardBar`).toBeGreaterThanOrEqual(55);
+      expect(top, `${href} must land in the viewport`).toBeLessThan(1080);
+    }
+
+    const input = page.getByRole("textbox", { name: "Example row label" });
+    const density = page.getByRole("combobox", { name: "Table density" });
+    const before = await showcaseTableState(page);
+    await input.fill("");
+    await density.selectOption("compact");
+    await page.getByRole("button", { name: "Apply example" }).click();
+    await expect(input).toHaveAttribute("aria-invalid", "true");
+    await expect(input).toHaveValue("");
+    await expect(density).toHaveValue("compact");
+    await expect(page.getByText("Enter a label to apply the example.", { exact: true })).toBeVisible();
+    expect(await showcaseTableState(page), "invalid input must preserve the last accepted label and density").toEqual(
+      before,
+    );
+
+    await input.fill("QA example row");
+    await page.getByRole("button", { name: "Apply example" }).click();
+    await expect(page.getByText(/Example applied locally\. The first row label and table density/)).toBeVisible();
+    const applied = await showcaseTableState(page);
+    expect(applied.firstLabel).toBe("QA example row");
+    expect(applied.density).not.toBe(before.density);
+    expect(applied.firstPadding).not.toBe(before.firstPadding);
+    expect(applied.secondPadding).not.toBe(before.secondPadding);
+    expect(applied.firstPadding).toBe(applied.secondPadding);
+
+    const unavailable = page.getByRole("button", { name: "Save preset" });
+    await expect(unavailable).toHaveAttribute("aria-disabled", "true");
+    await expect(unavailable).toHaveAttribute("aria-describedby", "showcase-disabled-reason");
+    await expect(page.locator("#showcase-disabled-reason")).toContainText("unavailable");
+    await unavailable.focus();
+    await expect(unavailable).toBeFocused();
+    await page.keyboard.press("Enter");
+    // Bypass Playwright's aria-disabled actionability gate to check pointer activation stays inert.
+    await unavailable.click({ force: true });
+    expect(await showcaseTableState(page), "unavailable Save preset must not change the local example").toEqual(
+      applied,
+    );
+
+    for (const { label, testId, role } of SHOWCASE_DRAWERS) {
+      await test.step(`${label} opens and Escape closes`, async () => {
+        await page.getByRole("button", { name: `Open ${label}` }).click();
+        const overlay = page.getByTestId(testId);
+        await expect(overlay).toBeVisible();
+        await expect(overlay).toHaveAttribute("role", role);
+        await page.keyboard.press("Escape");
+        await expect(overlay).toBeHidden();
+        // Sheet restores focus on the next animation frame, after the overlay hides.
+        await expect
+          .poll(
+            async () =>
+              page.evaluate(() => {
+                const element = document.activeElement;
+                const box = element?.getBoundingClientRect();
+                const style = element && getComputedStyle(element);
+                return (
+                  !!element?.isConnected &&
+                  element.tagName !== "BODY" &&
+                  !!box &&
+                  box.width > 0 &&
+                  box.height > 0 &&
+                  style?.display !== "none" &&
+                  style?.visibility !== "hidden"
+                );
+              }),
+            { message: `${label} must return usable focus` },
+          )
+          .toBe(true);
+      });
+    }
+  });
+
+  test("phone and dark desktop retain the showcase layout", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openDesignShowcase(page);
+    await expectShowcaseNoPageOverflow(page);
+    await expect(page.getByRole("button", { name: "Apply example" })).toBeVisible();
+
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.emulateMedia({ colorScheme: "light" });
+    await openDesignShowcase(page);
+    const lightSurface = await page
+      .locator("main")
+      .evaluate((element) => getComputedStyle(element).getPropertyValue("--surface").trim());
+    await page.emulateMedia({ colorScheme: "dark" });
+    await openDesignShowcase(page);
+    await expectShowcaseNoPageOverflow(page);
+    const darkSurface = await page
+      .locator("main")
+      .evaluate((element) => getComputedStyle(element).getPropertyValue("--surface").trim());
+    expect(darkSurface, "dark mode must resolve a different surface token").not.toBe(lightSurface);
+  });
+});

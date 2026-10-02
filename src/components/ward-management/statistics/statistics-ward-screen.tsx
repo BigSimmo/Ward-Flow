@@ -328,7 +328,7 @@ export function StatisticsWardScreen({
           ? "Not recorded"
           : `${statistics.averageLengthOfStayDays.toFixed(0)}d`,
     },
-    { id: "flow", label: "Admissions & Discharges", badge: "7d Flow" },
+    { id: "flow", label: "Admissions & Discharges", badge: "No 7d history" },
     { id: "ready", label: "Discharge Readiness", badge: `${headlineTotal} delayed` },
     { id: "longStay", label: "Long Stays", badge: `${statistics.longStays}` },
   ] as const;
@@ -337,7 +337,7 @@ export function StatisticsWardScreen({
     <StatisticsSectionFrame
       section={section}
       title={unit.name}
-      subtitle="Current capacity, flow and discharge measures for this ward, with record limits stated in place."
+      subtitle=""
       testId="ward-statistics-ward-screen"
       design="third-edition"
     >
@@ -419,6 +419,10 @@ export function StatisticsWardScreen({
                 <dd>{capacity.occupied}</dd>
               </div>
               <div>
+                <dt>Occupancy</dt>
+                <dd>{unit.beds > 0 ? ((capacity.occupied / unit.beds) * 100).toFixed(1) : "0.0"}%</dd>
+              </div>
+              <div>
                 <dt>Ready</dt>
                 <dd>{capacity.available}</dd>
               </div>
@@ -481,7 +485,7 @@ export function StatisticsWardScreen({
                 onChange={(e) => setBedSearchQuery(e.target.value)}
                 aria-label="Filter bed status matrix"
               />
-              <span className={styles.note} style={{ fontSize: "12px" }}>
+              <span className={styles.note}>
                 Showing {filteredBedMatrix.length} of {bedMatrixList.length} beds
               </span>
             </div>
@@ -490,7 +494,17 @@ export function StatisticsWardScreen({
                 <caption className={pageStyles.srOnly}>Operational bed inventory and current allocation status</caption>
                 <thead>
                   <tr>
-                    <th scope="col">Bed</th>
+                    <th scope="col" className={pageStyles.sortable}>
+                      <button
+                        type="button"
+                        className={pageStyles.sortBtn}
+                        onClick={() => {
+                          setPoliteNotice("Beds displayed in default order.");
+                        }}
+                      >
+                        Bed
+                      </button>
+                    </th>
                     <th scope="col">Status</th>
                     <th scope="col">Patient</th>
                     <th scope="col">Admitted</th>
@@ -619,6 +633,15 @@ export function StatisticsWardScreen({
           </div>
         </WardPanel>
 
+        <WardPanel title="Occupancy history" testId="ward-statistics-ward-occupancy-trajectory" dataTabSection="occ">
+          <div className={styles.panelBody} role="group" aria-label="Occupancy history content" tabIndex={0}>
+            <p className={styles.note}>
+              Not recorded. This prototype retains the ward&apos;s current bed state, but no daily occupancy history or
+              operational benchmark.
+            </p>
+          </div>
+        </WardPanel>
+
         <WardPanel title="Occupancy over the window" testId="ward-statistics-ward-occupancy" dataTabSection="occ">
           <div
             className={`${styles.panelBody} ${pageStyles.trendStack}`}
@@ -626,11 +649,14 @@ export function StatisticsWardScreen({
             aria-label="Occupancy over the window content"
             tabIndex={0}
           >
-            <p className={styles.note} data-testid="ward-stat-trends-disclaimer">
-              Neither trend below is recorded — both charts below are demonstration data, not a measurement of this
-              ward. This prototype keeps only the ward&apos;s current state, never a day-by-day history, so neither
-              trend was ever recorded — see each chart&apos;s own caption for what it stands in for.
-            </p>
+            <details className={`${pageStyles.measureDetails} source-print`}>
+              <summary>Technical trend disclosure</summary>
+              <p className={styles.note} data-testid="ward-stat-trends-disclaimer">
+                Neither trend below is recorded — both charts below are demonstration data, not a measurement of this
+                ward. This prototype keeps only the ward&apos;s current state, never a day-by-day history, so neither
+                trend was ever recorded — see each chart&apos;s own caption for what it stands in for.
+              </p>
+            </details>
             <DemonstrationChart series={occupancySeries} testId="ward-stat-occupancy-trend" />
             <DemonstrationChart series={readySeries} testId="ward-stat-ready-trend" />
           </div>
@@ -652,10 +678,13 @@ export function StatisticsWardScreen({
                   )}
                 </p>
 
-                <p className={styles.note} data-testid="ward-stat-los-bands-not-shown">
-                  Stays grouped by length are not shown. The average above is this page&apos;s only length-of-stay
-                  figure.
-                </p>
+                <details className={`${pageStyles.measureDetails} source-print`}>
+                  <summary>Length of stay grouping disclosure</summary>
+                  <p className={styles.note} data-testid="ward-stat-los-bands-not-shown">
+                    Stays grouped by length are not shown. The average above is this page&apos;s only length-of-stay
+                    figure.
+                  </p>
+                </details>
               </div>
             </WardPanel>
             <WardPanel
@@ -669,9 +698,13 @@ export function StatisticsWardScreen({
                 aria-label="Admissions and discharges content"
                 tabIndex={0}
               >
-                <p className={styles.note} data-testid="ward-stat-flow-history-not-recorded">
-                  Day-by-day admissions and discharges are not recorded in Ward Flow, so the last 7 days are not shown.
-                </p>
+                <details className={`${pageStyles.measureDetails} source-print`}>
+                  <summary>Admissions and discharges telemetry disclosure</summary>
+                  <p className={styles.note} data-testid="ward-stat-flow-history-not-recorded">
+                    Day-by-day admissions and discharges are not recorded in Ward Flow, so the last 7 days are not
+                    shown.
+                  </p>
+                </details>
 
                 <h3 className={styles.subHeading}>Average time a bed stood empty</h3>
                 {/*
@@ -994,10 +1027,13 @@ export function StatisticsWardScreen({
                   <p className={styles.note}>Clinically ready: description, not a target.</p>
                 </section>
 
-                <p className={styles.note} data-testid="ward-stat-delayed-people-not-shown">
-                  A list of the people delayed, with their barriers and review times, is not recorded in Ward Flow. The
-                  counts by reason above are what the records hold.
-                </p>
+                <details className={`${pageStyles.measureDetails} source-print`}>
+                  <summary>Delayed people disclosure</summary>
+                  <p className={styles.note} data-testid="ward-stat-delayed-people-not-shown">
+                    A list of the people delayed, with their barriers and review times, is not recorded in Ward Flow.
+                    The counts by reason above are what the records hold.
+                  </p>
+                </details>
               </div>
             </WardPanel>
             <WardPanel
@@ -1089,20 +1125,21 @@ export function StatisticsWardScreen({
             tabIndex={0}
           >
             <p className={styles.body}>
-              <strong>Another ward:</strong>{" "}
               <Link href={STATISTICS_UNIT_CHOOSER_HREF} data-testid="ward-statistics-ward-chooser-link">
                 Choose a different ward from the comparisons page
-              </Link>{" "}
-              to see the same measures for another.
+              </Link>
             </p>
 
-            <p className={styles.note}>
-              Every figure here is invented and computed from this prototype&apos;s own state as the page renders.
-            </p>
-            <p className={styles.note}>
-              <strong>Unsupported measures</strong>: a measure the record cannot support says so in words rather than
-              showing a nought, because a nought that was never measured reads exactly like a nought that was.
-            </p>
+            <details className={`${pageStyles.measureDetails} source-print`}>
+              <summary>Record and provenance limits</summary>
+              <p className={styles.note}>
+                Every figure here is invented and computed from this prototype&apos;s own state as the page renders.
+              </p>
+              <p className={styles.note}>
+                <strong>Unsupported measures</strong>: a measure the record cannot support says so in words rather than
+                showing a nought, because a nought that was never measured reads exactly like a nought that was.
+              </p>
+            </details>
           </div>
         </WardPanel>
       </div>

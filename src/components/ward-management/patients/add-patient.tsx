@@ -362,8 +362,7 @@ export function AddPatientForm() {
             </div>
           </div>
           <p className={styles.pageSubtitle}>
-            Front-door patient intake for acute mental health bed coordination. Complete the multi-panel intake form and
-            verify duplicate records.
+            Record the patient’s identity and check for an existing record before adding them.
           </p>
         </header>
 
@@ -433,8 +432,7 @@ export function AddPatientForm() {
                     Identity &amp; Demographics
                   </h2>
                   <p className={styles.panelSubhead}>
-                    Patient identity details. Adding the patient saves record number, name, date of birth, gender when
-                    recorded, and suburb when entered.
+                    Saves record number, name and date of birth, plus gender and suburb when recorded.
                   </p>
                 </div>
                 <div className={styles.panelBody}>

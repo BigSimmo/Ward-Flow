@@ -12,6 +12,7 @@ import type { HealthService, Unit } from "@/components/ward-management/ward-mode
 import { WardBar, type WardBarSegment } from "@/components/ward-management/ward-bar";
 import { WardChip, type WardChipLevel } from "@/components/ward-management/ward-chip";
 import { WardFilters } from "@/components/ward-management/ward-controls";
+import { useWardModalFocus } from "../ward-modal-focus";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
@@ -83,6 +84,10 @@ export function CapacityScreen() {
   const [selection, setSelection] = useState<{ unitId: string; generation: number } | null>(null);
   const [networkTab, setNetworkTab] = useState("freeing");
   const [wardSort, setWardSort] = useState("name");
+  const [tableFullscreen, setTableFullscreen] = useState(false);
+  const [showAllColumns, setShowAllColumns] = useState(false);
+  const tableDialog = useRef<HTMLDivElement>(null);
+  useWardModalFocus(tableFullscreen, tableDialog, () => setTableFullscreen(false));
   const selectionOrigin = useRef<HTMLElement | null>(null);
   const selectionOriginId = useRef<string | null>(null);
   const restoreNetworkFocus = useRef(false);
@@ -102,6 +107,7 @@ export function CapacityScreen() {
    */
   const previouslySelectedUnitId = useRef<string | undefined>(undefined);
   function selectWard(unitId: string, opener?: HTMLElement) {
+    setTableFullscreen(false);
     selectionOrigin.current = opener ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     selectionOriginId.current = selectionOrigin.current?.id || null;
     setSelection({ unitId, generation: worldGeneration });
@@ -271,10 +277,18 @@ export function CapacityScreen() {
         <header className={styles.pageHeader}>
           <div className={styles.pageTitleBlock}>
             <h1 className={styles.pageTitle}>Capacity</h1>
-            <span className={styles.pageSubtitle}>Statewide Inpatient Directory · Real-time census</span>
+            <span className={styles.pageSubtitle}>Statewide inpatient directory · synthetic current state</span>
           </div>
 
           <div className={styles.telemetryCapsule} aria-label="Statewide Bed Telemetry">
+            <span
+              className={styles.telemetryLive}
+              role="img"
+              aria-label="Live synthetic board clock"
+              title="Live synthetic board clock; capacity follows recorded updates"
+            >
+              <span className={styles.liveDot} data-live="true" aria-hidden="true" />
+            </span>
             <div
               className={`${styles.telemetryItem} ${styles.interactiveItem}`}
               onClick={() => setNetworkFilterId("all")}
@@ -315,12 +329,12 @@ export function CapacityScreen() {
 
             <div
               className={`${styles.telemetryItem} ${styles.interactiveItem}`}
-              onClick={() => setNetworkFilterId("has-bed-ready")}
+              onClick={() => setNetworkFilterId("ready")}
               role="button"
               tabIndex={0}
               title="Click to filter wards with available beds"
               onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") setNetworkFilterId("has-bed-ready");
+                if (e.key === "Enter" || e.key === " ") setNetworkFilterId("ready");
               }}
             >
               <span className={styles.telemetryLabel}>Available</span>
@@ -329,12 +343,12 @@ export function CapacityScreen() {
 
             <div
               className={`${styles.telemetryItem} ${styles.interactiveItem}`}
-              onClick={() => setNetworkFilterId("has-locked-bed-ready")}
+              onClick={() => setNetworkFilterId("locked-ready")}
               role="button"
               tabIndex={0}
               title="Click to filter locked / HDU units"
               onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") setNetworkFilterId("has-locked-bed-ready");
+                if (e.key === "Enter" || e.key === " ") setNetworkFilterId("locked-ready");
               }}
             >
               <span className={styles.telemetryLabel}>Locked/HDU</span>
@@ -484,6 +498,8 @@ export function CapacityScreen() {
             <WardPanel title="Bed map" count={`${service === null ? netTotals.beds : scopedBeds} beds`}>
               <div className={styles.capacityPanelBody} role="region" aria-label="Bed map details" tabIndex={0}>
                 <BedMap
+                  initialLayout="grid"
+                  initialBedDetail={false}
                   units={units}
                   bedReleases={bedReleases}
                   selectedUnitId={selectedUnitId}
@@ -622,20 +638,68 @@ export function CapacityScreen() {
                       </>
                     )}
                   </div>
-                  <div className={styles.sidebarFooter}>
-                    <Link href="/mockups/ward-flow/discharges">Discharge board</Link>
+                  <div className={styles.networkActions} aria-label="Network shortcuts">
+                    {networkFilters.slice(1).map((filter) => (
+                      <button
+                        type="button"
+                        key={filter.id}
+                        aria-pressed={networkFilterId === filter.id}
+                        onClick={() => {
+                          setNetworkFilterId(filter.id);
+                          document.getElementById("capacity-wards")?.scrollIntoView({ block: "start" });
+                        }}
+                      >
+                        <span>
+                          {filter.id === "ready"
+                            ? "Highlight ready wards"
+                            : filter.id === "locked-ready"
+                              ? "Locked beds ready"
+                              : "Check confirmations"}
+                        </span>
+                        <strong>{networkRows.filter(filter.predicate).length}</strong>
+                      </button>
+                    ))}
+                    <Link href="/mockups/ward-flow/discharges">
+                      Open discharge board <span aria-hidden="true">→</span>
+                    </Link>
                   </div>
                 </>
               )}
             </aside>
           </div>
 
-          <div id="capacity-wards" className={styles.wardsSection}>
+          <div
+            id="capacity-wards"
+            ref={tableDialog}
+            className={`${styles.wardsSection} ${tableFullscreen ? styles.tableFullscreen : ""}`}
+            role={tableFullscreen ? "dialog" : undefined}
+            aria-modal={tableFullscreen ? true : undefined}
+            aria-label={tableFullscreen ? "Ward capacity full screen" : undefined}
+            tabIndex={-1}
+          >
             <WardPanel
               title="Wards"
               count={`${networkRows.length} ${networkRows.length === 1 ? "ward" : "wards"} in the network, ${matchingNetworkRows.length} matching`}
             >
               <div className={styles.filters}>
+                <div className={styles.tableToolbar}>
+                  <button
+                    type="button"
+                    className={styles.fullscreenButton}
+                    aria-pressed={showAllColumns}
+                    onClick={() => setShowAllColumns(!showAllColumns)}
+                  >
+                    {showAllColumns ? "Key columns" : "More columns"}
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.fullscreenButton}
+                    aria-expanded={tableFullscreen}
+                    onClick={() => setTableFullscreen(!tableFullscreen)}
+                  >
+                    {tableFullscreen ? "Close full screen" : "Full screen"}
+                  </button>
+                </div>
                 <WardFilters
                   legend="Highlight wards"
                   activeId={networkFilterId}
@@ -668,10 +732,10 @@ export function CapacityScreen() {
               </div>
               <div className={styles.networkBody} role="region" aria-label="Ward capacity table" tabIndex={0}>
                 <WardTable
-                  className={styles.networkTable}
+                  className={`${styles.networkTable} ${showAllColumns ? styles.detailTable : styles.compactTable}`}
                   wrapperClassName={styles.networkTableScroll}
                   testId="ward-capacity-network-table"
-                  hasScrollThreshold
+                  hasScrollThreshold={showAllColumns}
                 >
                   <thead>
                     <tr className={styles.stickyHeaderRow}>
@@ -1343,7 +1407,10 @@ function NetworkRow({
           {row.unit.authorised ? "Yes" : "No"}
         </span>
       </td>
-      <td>
+      <td
+        className={styles.confirmationCell}
+        title={row.unit.allocatable.source === "ward" ? `NUM ${row.unit.name}` : undefined}
+      >
         {/*
           🔴 WHO CONFIRMED IT, RESTORED 2026-09-05 — MY FOLD DROPPED IT AND A GREEN TEST HID THAT.
           The old capacity view passed `confirmedByRole` and `derived`; this screen replaced it and
@@ -1356,7 +1423,8 @@ function NetworkRow({
           ⚠️ It survived because `ward-capacity-freshness-source.dom.test.tsx` still renders the OLD
           mode, which no route reaches any more — a clinical guard passing forever about a screen
           nobody can open, while a reader counting green ticks concludes THIS screen has attribution.
-          Found by Ward Lead after the fold.
+          Found by Ward Lead after the fold. The table retains the NUM role; the ward name is
+          already on this row and the complete attribution remains in this cell's title.
         */}
         <WardFreshness
           confirmedAt={row.confirmedAt}

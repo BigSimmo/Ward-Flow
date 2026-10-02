@@ -7,6 +7,7 @@ import Link from "next/link";
 import { COMMUNITY_TEAM_PAGES, communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import {
   clockState,
   formatSheetMoment,
@@ -61,6 +62,7 @@ import {
 import styles from "./handover.module.css";
 import pageStyles from "./handover-third-edition.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
+import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 
 /**
  * THE FILTER — owner ruling 2026-09-09 (`docs/ward-flow/owner-decisions-2026-09-09.md` §1).
@@ -313,6 +315,7 @@ export function resolveAdmissionPatient(
  * Sovereign Clinical Console Standard (Platinum Raised Cool palette, 100/100 Rubric).
  */
 export function HandoverPage() {
+  usePrintableDisclosures();
   const { movements, units, referrals, patients, dayZero, admissions, dispatch } = useWardFlow();
   const now = useWardFlowClock();
   const [signOffRecord, setSignOffRecord] = useState<{ role: WardFlowRole; at: Instant } | null>(null);
@@ -1362,64 +1365,62 @@ export function HandoverPage() {
           role="tabpanel"
           aria-labelledby="tabBtn-snapshot"
         >
-          {/* Compact KPI strip — handover-perfected drawing order; legal wording keeps Form expiries */}
-          <div className={pageStyles.summaryStrip} data-testid="ward-handover-kpi-strip">
-            <div className={`${pageStyles.summaryTile} ${pageStyles.summaryTileCaseload}`}>
-              <div className={pageStyles.tileMeta}>
-                <span className={pageStyles.tileLabel}>Caseload in Scope</span>
-                <span className={pageStyles.tileSub}>
-                  {scopeLabel} · {includedOpenCount} of {totalOpenCount} open
-                </span>
-              </div>
-              <span className={pageStyles.tileValue}>{includedOpenCount}</span>
-            </div>
-
-            <div className={`${pageStyles.summaryTile} ${pageStyles.summaryTileReferrals}`}>
-              <div className={pageStyles.tileMeta}>
-                <span className={pageStyles.tileLabel}>Current Referrals</span>
-                <span className={pageStyles.tileSub}>Seeking bed placement</span>
-              </div>
-              <span className={`${pageStyles.tileValue} ${currentReferralsCount > 0 ? pageStyles.warn : ""}`}>
-                {currentReferralsCount}
-              </span>
-            </div>
-
-            <div className={`${pageStyles.summaryTile} ${pageStyles.summaryTileVacancies}`}>
-              <div className={pageStyles.tileMeta}>
-                <span className={pageStyles.tileLabel}>Allocatable Vacancies</span>
-                <span className={pageStyles.tileSub}>Confirmed ward capacity in scope</span>
-              </div>
-              <span className={pageStyles.tileValue}>{allocatableVacancies}</span>
-            </div>
-
-            <div
-              className={`${pageStyles.summaryTile} ${
-                breachedOnSheetCount + urgentOutsideFilter.length > 0
-                  ? pageStyles.summaryTileExpiries
-                  : pageStyles.summaryTileExpiriesClean
-              }`}
-            >
-              <div className={pageStyles.tileMeta}>
-                <span className={pageStyles.tileLabel}>Form expiries passed</span>
-                <span className={pageStyles.tileSub}>
-                  On sheet & urgent <LegalLimitsNotChecked variant="tag" />
-                </span>
-              </div>
-              <span
-                className={`${pageStyles.tileValue} ${breachedOnSheetCount + urgentOutsideFilter.length > 0 ? pageStyles.danger : pageStyles.good}`}
-              >
-                {breachedOnSheetCount + urgentOutsideFilter.length}
-              </span>
-            </div>
-
-            <div className={`${pageStyles.summaryTile} ${pageStyles.summaryTileSpecialling}`}>
-              <div className={pageStyles.tileMeta}>
-                <span className={pageStyles.tileLabel}>1:1 Specialling Roster</span>
-                <span className={pageStyles.tileSub}>Specialling or flagged urgent in scope</span>
-              </div>
-              <span className={pageStyles.tileValue}>{speciallingInScopeCount}</span>
-            </div>
-          </div>
+          {/* Contextual Dynamic HUD Island — replaces bulky 140px summary tiles */}
+          <WardDynamicIsland
+            title="Handover HUD"
+            status={
+              breachedOnSheetCount + urgentOutsideFilter.length > 0
+                ? "alarm"
+                : currentReferralsCount > allocatableVacancies
+                  ? "warning"
+                  : "nominal"
+            }
+            statusText={
+              breachedOnSheetCount + urgentOutsideFilter.length > 0
+                ? `${breachedOnSheetCount + urgentOutsideFilter.length} form expiries passed`
+                : `${includedOpenCount} caseload in scope · ${allocatableVacancies} vacancies`
+            }
+            ariaLabel="Handover summary indicators"
+            testId="ward-handover-kpi-strip"
+            metrics={[
+              {
+                id: "kpi-caseload",
+                label: "Caseload in Scope",
+                value: includedOpenCount,
+                tone: "accent",
+                subtext: `${scopeLabel} · ${includedOpenCount} of ${totalOpenCount} open`,
+              },
+              {
+                id: "kpi-referrals",
+                label: "Current Referrals",
+                value: currentReferralsCount,
+                tone: currentReferralsCount > 0 ? "warn" : "normal",
+                subtext: "Seeking bed placement",
+              },
+              {
+                id: "kpi-vacancies",
+                label: "Allocatable Vacancies",
+                value: allocatableVacancies,
+                tone: allocatableVacancies > 0 ? "good" : "muted",
+                subtext: "Confirmed ward capacity in scope",
+              },
+              {
+                id: "kpi-expiries",
+                label: "Form expiries passed",
+                value: breachedOnSheetCount + urgentOutsideFilter.length,
+                tone: breachedOnSheetCount + urgentOutsideFilter.length > 0 ? "danger" : "good",
+                subtext: "On sheet & urgent",
+              },
+              {
+                id: "kpi-specialling",
+                label: "1:1 Specialling Roster",
+                value: speciallingInScopeCount,
+                tone: speciallingInScopeCount > 0 ? "warn" : "normal",
+                subtext: "Specialling or flagged urgent in scope",
+              },
+            ]}
+            actions={<LegalLimitsNotChecked variant="tag" />}
+          />
 
           {/* THE CROWN JEWEL: RAPID PRINTABLE SNAPSHOT CARD */}
           <article className={pageStyles.snapshotCard} id="printableSnapshotCard" data-testid="ward-handover-sheet">
@@ -2355,23 +2356,21 @@ export function HandoverPage() {
           role="tabpanel"
           aria-labelledby="tabBtn-briefing"
         >
-          <p>
-            Illustrative briefing and tasks. These examples do not follow the selected scope or update movement records.
-            Checkboxes apply to this preview only.
+          <p className={pageStyles.briefingNotice}>
+            These examples do not follow the selected scope or update movement records. Checkboxes apply to this preview
+            only.
           </p>
           <div
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))",
               gap: "12px",
+              alignItems: "start",
             }}
           >
             {/* ISBAR Briefing Notes */}
-            <div className={pageStyles.panel}>
-              <div className={pageStyles.panelHead}>
-                <h3>Example ISBAR briefing</h3>
-                <span style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>Dr S. Chen</span>
-              </div>
+            <details className={`source-print ${pageStyles.panel}`} data-testid="ward-handover-example-briefing">
+              <summary className={pageStyles.exampleSummary}>Example ISBAR briefing</summary>
               <div className={pageStyles.panelBody} style={{ fontSize: "var(--t-1)", lineHeight: 1.5 }}>
                 <p style={{ margin: "0 0 8px" }}>
                   <b>Identify:</b> Dr Sophia Chen (Outgoing Consultant) handing over to Dr Marcus Vance (Incoming
@@ -2394,7 +2393,7 @@ export function HandoverPage() {
                   RPH 2K.
                 </p>
               </div>
-            </div>
+            </details>
 
             {/* Actionable Shift Checklist */}
             <div className={pageStyles.panel}>
@@ -3143,7 +3142,7 @@ export function HandoverPage() {
         </div>
 
         <p className={styles.crossLink}>
-          See the <Link href="/mockups/ward-flow/capacity">capacity board</Link> for current network capacity.
+          <Link href="/mockups/ward-flow/capacity">View capacity board</Link>
         </p>
         <WardPrototypeFooter
           testId="ward-handover-governance"
