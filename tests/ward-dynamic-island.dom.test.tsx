@@ -135,7 +135,7 @@ describe("WardDynamicIsland", () => {
     expect(section?.className).toMatch(/islandWrapperCenter/);
 
     const neutralPip = screen.getByRole("status");
-    expect(neutralPip.getAttribute("aria-label")).toBe("Monitoring");
+    expect(neutralPip.getAttribute("aria-label")).toBe("Synthetic status: Monitoring");
 
     rerender(<WardDynamicIsland title="Capacity End" align="end" metrics={[]} />);
     expect(section?.className).toMatch(/islandWrapperEnd/);
