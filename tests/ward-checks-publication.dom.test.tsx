@@ -41,12 +41,23 @@ function renderRailBelowScreen() {
 }
 
 describe("a ward screen publishes its checks upward to the shell", () => {
-  it("says nothing has been published when no screen is mounted", () => {
+  it("keeps the rail quiet when no screen has published checks", () => {
     renderRailAlone();
     expect(
-      screen.getByTestId("ward-reconciliation-line"),
+      screen.queryByTestId("ward-reconciliation-line"),
       "the rail claims something about reconciliation with no screen on the page at all",
-    ).toHaveTextContent("No reconciliation is available for this page yet.");
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("No reconciliation is available for this page yet.")).not.toBeInTheDocument();
+  });
+
+  it("also keeps the collapsed rail quiet when no screen has published checks", () => {
+    window.localStorage.setItem("ward-flow-rail", "closed");
+    try {
+      renderRailAlone();
+      expect(screen.queryByTestId("ward-reconciliation-line")).not.toBeInTheDocument();
+    } finally {
+      window.localStorage.removeItem("ward-flow-rail");
+    }
   });
 
   /**
@@ -84,8 +95,8 @@ describe("a ward screen publishes its checks upward to the shell", () => {
 
     renderRailAlone();
     expect(
-      screen.getByTestId("ward-reconciliation-line"),
+      screen.queryByTestId("ward-reconciliation-line"),
       "the previous screen's claim survived its own unmount and is now being made about a different page",
-    ).toHaveTextContent("No reconciliation is available for this page yet.");
+    ).not.toBeInTheDocument();
   });
 });
