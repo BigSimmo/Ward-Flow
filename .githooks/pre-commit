@@ -59,7 +59,7 @@ ward_flow_index_check() {
 
 ward_flow_index_check "scripts/ward-flow/screen-map.mjs"   '^(docs/ward-flow/mockups/|src/app/mockups/ward-flow/|docs/ward-flow/SCREEN-MAP\.md$|scripts/ward-flow/screen-pairs\.mjs$)'
 ward_flow_index_check "scripts/ward-flow/rules-index.mjs"   '^docs/ward-flow/RULES\.md$'
-ward_flow_index_check "scripts/ward-flow/owner-rulings-index.mjs"   '^(docs/ward-flow/(archive/dated-notes/)?owner-.*\.md$|docs/ward-flow/OWNER-RULINGS\.md$)'
+ward_flow_index_check "scripts/ward-flow/owner-rulings-index.mjs"   '^(docs/ward-flow/(archive/dated-notes/)?owner-.*\.md$|docs/ward-flow/(decisions|OWNER-RULINGS)\.md$)'
 # Historical drawings do not govern current appearance. Keep their hash manifest accurate so
 # drawing changes remain visible, and retain verification records without treating hash freshness
 # as evidence of implementation fidelity. The current accepted app governs appearance.
@@ -72,7 +72,7 @@ ward_flow_index_check "scripts/ward-flow/screen-verification.mjs"   '^(docs/ward
 # publication, integration and deployment still need their separately applicable authority.
 current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
 if [ "$current_branch" = "main" ] || [ "$current_branch" = "master" ]; then
-  ward_files_staged=$(printf '%s\n' "$staged_files" | grep -E '^(src/components/ward-management/|src/app/mockups/ward-flow/|docs/ward-flow/|scripts/ward-flow/|scripts/run-ward-tests\.mjs|tests/(helpers/|ui-)?ward-)' || true)
+  ward_files_staged="$staged_files"
   if [ -n "$ward_files_staged" ]; then
     if [ "${CONFIRM_WARD_FLOW_FOLD_TO_MAIN:-}" != "I_CONFIRM_FOLD_TO_MAIN" ]; then
       echo "================================================================================" >&2
