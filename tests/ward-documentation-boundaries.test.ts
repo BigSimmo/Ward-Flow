@@ -54,7 +54,7 @@ test("nested native instructions included, dependencies excluded", () => {
     assert.deepEqual(collectInstructionDocs(root).sort(), ["GEMINI.md", "src/CLAUDE.md"]);
   } finally {
     assert.equal(root.startsWith(join(tmpdir(), "ward-doc-instructions-")), true);
-    rmSync(root, { recursive: true });
+    rmSync(root, { recursive: true, maxRetries: 5, retryDelay: 100 });
   }
 });
 
@@ -97,6 +97,6 @@ test("retired lesson importer refuses ordinary and check runs without file acces
     }
   } finally {
     assert.equal(root.startsWith(join(tmpdir(), "ward-retired-importer-")), true);
-    rmSync(root, { recursive: true });
+    rmSync(root, { recursive: true, maxRetries: 5, retryDelay: 100 });
   }
 });
