@@ -50,7 +50,7 @@
 .panelTitle {
   margin: 0;
   font-family: var(--display);
-  font-size: var(--t-3);
+  font-size: var(--t-4);
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--ink);
@@ -132,7 +132,7 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  height: 28px;
+  min-height: var(--ward-tap, 3rem);
   padding: 0 10px 0 8px;
   border-radius: var(--r2);
   border: 1px solid var(--line);
@@ -187,7 +187,7 @@
 .nameWho {
   margin: 0;
   font-family: var(--display);
-  font-size: var(--t-4);
+  font-size: var(--t-5);
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--ink);

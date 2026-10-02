@@ -705,15 +705,21 @@ describe("the Capacity network filter chips highlight the matching wards and nev
  * the third-edition mismatch band wraps into columns and no longer needs horizontal scrolling.
  */
 describe("Capacity's tables declare the scroll affordance they have earned", () => {
-  it("renders the scroll hint only on the horizontally scrolling network table", () => {
+  it("declares horizontal scrolling only when additional columns are requested", () => {
     renderScreen();
+    expect(screen.getByTestId("ward-capacity-network-table")).not.toHaveAttribute("data-ward-scroll-hint");
+    fireEvent.click(screen.getByRole("button", { name: "More columns" }));
     expect(screen.getByTestId("ward-capacity-network-table")).toHaveAttribute("data-ward-scroll-hint", "true");
     expect(screen.getByTestId("ward-capacity-gap-table")).not.toHaveAttribute("data-ward-scroll-hint", "true");
   });
 
-  it("puts the 'scrolls sideways' sentence in the accessibility tree once per table that declared the hint", () => {
+  it("shows one scroll notice in the expanded view and removes it when returning to compact", () => {
     renderScreen();
+    expect(screen.queryByText("This table scrolls sideways on narrow screens.")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "More columns" }));
     // The responsive mismatch band must not falsely advertise horizontal scrolling.
     expect(screen.getAllByText("This table scrolls sideways on narrow screens.")).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Key columns" }));
+    expect(screen.queryByText("This table scrolls sideways on narrow screens.")).not.toBeInTheDocument();
   });
 });

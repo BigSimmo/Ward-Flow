@@ -137,19 +137,21 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
       "operational defaults late arrival grace referral overdue after hours occupancy ed pressure shift pattern read only not a legal limit",
   },
 
-  // Domain 3: Bed Allocation Weights
+  // Domain 2 / Clinical Thresholds & Operational Levers
   {
     id: "setting-hold-duration",
-    domainId: "cat-allocation",
+    domainId: "cat-thresholds",
     label: "Pulled Bed Reservation Hold Duration",
     keywords: "bed hold duration reservation timer release pull expires accepting unit",
   },
   {
     id: "setting-parallel-cap",
-    domainId: "cat-allocation",
+    domainId: "cat-thresholds",
     label: "Parallel Referral Enquiry Cap",
     keywords: "parallel referral cap units concurrent enquiry shortlist intake statistics",
   },
+
+  // Domain 3: Bed Allocation Weights
   {
     id: "setting-gender-mix",
     domainId: "cat-allocation",

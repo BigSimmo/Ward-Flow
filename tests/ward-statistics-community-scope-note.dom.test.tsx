@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 
 // Same reason as every sibling dom suite: `ClinicalRail` renders next/link anchors, and jsdom
 // cannot provide an App Router context.
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
+
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
     <a href={href} {...rest}>

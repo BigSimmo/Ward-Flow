@@ -74,8 +74,9 @@ if (process.argv.includes("--check")) {
     process.exit(1);
   }
 
-  const recordedMockups =
-    recorded && typeof recorded.mockups === "object" && recorded.mockups !== null ? recorded.mockups : {};
+  const recordedMockups = recorded && typeof recorded.mockups === "object" && recorded.mockups !== null
+    ? recorded.mockups
+    : {};
   const recordedFiles = new Set(Object.keys(recordedMockups));
   const diskFiles = new Set(mockups);
 

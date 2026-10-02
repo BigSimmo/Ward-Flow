@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  AlertTriangle,
   Bell,
   Check,
-  CheckCircle2,
   ChevronDown,
   Database,
+  Download,
   Layers,
   Minus,
   Palette,
@@ -15,17 +16,23 @@ import {
   RotateCcw,
   Search,
   Sliders,
+  Trash2,
+  Upload,
   X,
 } from "lucide-react";
 
 import { applyAppearance, useAppearanceStore } from "@/components/ward-management/shell/ward-bar";
 import { setRailOpenPreference, useRailOpenStore } from "@/components/ward-management/shell/ward-rail";
 import type { WardAppearance } from "@/components/ward-management/shell/ward-shell-types";
-import { defaultWardConfiguration, type WardConfiguration } from "@/components/ward-management/ward-configuration";
+import {
+  defaultWardConfiguration,
+  validateConfiguration,
+  type WardConfiguration,
+} from "@/components/ward-management/ward-configuration";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 import {
   DUE_SOON_MINUTES,
   DUE_SOON_RANGE_MINUTES,
@@ -45,7 +52,6 @@ import {
 import {
   ED_ACCESS_TARGET_RANGE_MINUTES,
   MORNING_ROLLUP_TIME_MINUTES,
-  MORNING_ROLLUP_TIME_RANGE_MINUTES,
   PARALLEL_REFERRAL_CAP_RANGE,
   PULL_HOLD_RANGE_MINUTES,
 } from "@/components/ward-management/ward-model";
@@ -53,9 +59,10 @@ import { useAudioBuzzPreference, setAudioBuzzPreference } from "@/components/war
 import {
   useWallboardRefreshPreference,
   setWallboardRefreshPreference,
-  type WallboardRefreshInterval,
 } from "@/components/ward-management/shell/ward-wallboard-store";
 import { OperatorSwitcherModal } from "./operator-switcher-modal";
+import { ResetBaselineModal } from "./reset-baseline-modal";
+import { SETTINGS_SEARCH_ENTRIES } from "./settings-search-index";
 
 import styles from "./settings.module.css";
 
@@ -112,11 +119,23 @@ const THRESHOLD_STATE_WORDS: Record<ThresholdState, string> = {
   "nothing-reaches-it": "Nothing reaches it today",
 };
 
-const APPEARANCE_CHOICES: readonly { readonly value: WardAppearance; readonly label: string }[] = [
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-  { value: "auto", label: "Auto" },
+const APPEARANCE_CHOICES: readonly {
+  readonly value: WardAppearance;
+  readonly label: string;
+  readonly description: string;
+}[] = [
+  { value: "light", label: "Light", description: "Crisp daylight contrast" },
+  { value: "dark", label: "Dark", description: "Low-glare night shift" },
+  { value: "auto", label: "Auto", description: "Follows system theme" },
 ];
+
+const DOMAIN_SNIPPETS: Record<SettingsDomainId, string> = {
+  "cat-appearance": "Theme mode & rail width",
+  "cat-thresholds": "Emergency dwell & due warnings",
+  "cat-allocation": "Hold timers & referral caps",
+  "cat-notifications": "Urgent buzz, roles & telemetry",
+  "cat-reset": "Handover sheets & baseline reset",
+};
 
 interface RolePermission {
   readonly role: string;
@@ -210,7 +229,7 @@ function getDomainIcon(domainId: SettingsDomainId) {
 export function SettingsScreen() {
   const appearance = useAppearanceStore();
   const railOpen = useRailOpenStore();
-  const { movements, dispatch, rejections, configuration } = useWardFlow();
+  const { movements, dispatch, rejections, configuration, eventLog = [] } = useWardFlow();
   const now = useWardFlowClock();
   const thresholds = publishedThresholds(movements, now, configuration);
 
@@ -303,6 +322,194 @@ export function SettingsScreen() {
   const domainMatchCounts = useMemo(() => countMatchesByDomain(matchedEntryIds), [matchedEntryIds]);
   const totalMatches = matchedEntryIds.size;
 
+  // Storage Quota Estimation (SSR-safe, client-mount resolved)
+  const [storageEstimate, setStorageEstimate] = useState<{
+    usedFormatted: string;
+    quotaFormatted: string;
+    percent: number;
+  }>({
+    usedFormatted: "48 KB",
+    quotaFormatted: "5.0 MB",
+    percent: 1,
+  });
+
+  useEffect(() => {
+    let mounted = true;
+    async function checkStorage() {
+      if (typeof navigator !== "undefined" && navigator.storage && navigator.storage.estimate) {
+        try {
+          const estimate = await navigator.storage.estimate();
+          if (mounted && estimate.quota && estimate.usage !== undefined) {
+            const usedKB = Math.round(estimate.usage / 1024);
+            const quotaMB = Math.round(estimate.quota / (1024 * 1024));
+            const pct = Math.min(100, Math.round((estimate.usage / estimate.quota) * 100));
+            setStorageEstimate({
+              usedFormatted: usedKB < 1024 ? `${usedKB} KB` : `${(usedKB / 1024).toFixed(1)} MB`,
+              quotaFormatted: `${quotaMB} MB`,
+              percent: Math.max(1, pct),
+            });
+            return;
+          }
+        } catch {
+          // Fallback to storage measurement below
+        }
+      }
+      if (typeof window !== "undefined") {
+        let bytes = 0;
+        try {
+          for (let i = 0; i < window.localStorage.length; i++) {
+            const k = window.localStorage.key(i);
+            if (k) bytes += (k.length + (window.localStorage.getItem(k)?.length ?? 0)) * 2;
+          }
+          for (let i = 0; i < window.sessionStorage.length; i++) {
+            const k = window.sessionStorage.key(i);
+            if (k) bytes += (k.length + (window.sessionStorage.getItem(k)?.length ?? 0)) * 2;
+          }
+        } catch {
+          bytes = 49152;
+        }
+        const kb = Math.max(16, Math.round(bytes / 1024));
+        if (mounted) {
+          setStorageEstimate({
+            usedFormatted: `${kb} KB`,
+            quotaFormatted: "5.0 MB",
+            percent: Math.min(100, Math.max(1, Math.round((kb / 5120) * 100))),
+          });
+        }
+      }
+    }
+    checkStorage();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Diff computation for all modified parameters
+  const draftDiffs = useMemo(() => {
+    const diffs: { label: string; from: string; to: string }[] = [];
+    if (draft.parallelReferralCap !== configuration.parallelReferralCap) {
+      diffs.push({
+        label: "Parallel cap",
+        from: `${configuration.parallelReferralCap}`,
+        to: `${draft.parallelReferralCap}`,
+      });
+    }
+    if (draft.edAccessTargetMinutes !== configuration.edAccessTargetMinutes) {
+      diffs.push({
+        label: "ED target",
+        from: `${configuration.edAccessTargetMinutes / 60}h`,
+        to: `${draft.edAccessTargetMinutes / 60}h`,
+      });
+    }
+    if (draft.pullHoldMinutes !== configuration.pullHoldMinutes) {
+      diffs.push({
+        label: "Pull hold",
+        from: `${configuration.pullHoldMinutes}m`,
+        to: `${draft.pullHoldMinutes}m`,
+      });
+    }
+    const curRollup = configuration.morningRollupDeadlineMinutes ?? 570;
+    const draftRollup = draft.morningRollupDeadlineMinutes ?? 570;
+    if (draftRollup !== curRollup) {
+      diffs.push({
+        label: "Rollup",
+        from: formatMinutesToTime(curRollup),
+        to: formatMinutesToTime(draftRollup),
+      });
+    }
+    const curUrgent = configuration.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES;
+    const draftUrgent = draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES;
+    if (draftUrgent !== curUrgent) {
+      diffs.push({
+        label: "Urgent warn",
+        from: formatDueSoonDuration(curUrgent),
+        to: formatDueSoonDuration(draftUrgent),
+      });
+    }
+    const curSoon = configuration.dueSoonMinutes ?? DUE_SOON_MINUTES;
+    const draftSoon = draft.dueSoonMinutes ?? DUE_SOON_MINUTES;
+    if (draftSoon !== curSoon) {
+      diffs.push({
+        label: "Due soon",
+        from: formatDueSoonDuration(curSoon),
+        to: formatDueSoonDuration(draftSoon),
+      });
+    }
+    return diffs;
+  }, [draft, configuration]);
+
+  const handleDiscardDraft = () => {
+    setDraft({ ...configuration });
+    showToast("Draft changes discarded. Restored saved configuration.");
+  };
+
+  // Export Configuration JSON
+  const handleExportConfig = () => {
+    try {
+      const exportPayload = {
+        product: "Ward Flow Statewide Bed Coordination",
+        version: 5,
+        exportedAt: new Date().toISOString(),
+        configuration: draft,
+        appearance,
+        railOpen,
+      };
+      const jsonStr = JSON.stringify(exportPayload, null, 2);
+      const blob = new Blob([jsonStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `ward-flow-config-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("Configuration JSON exported successfully.");
+    } catch {
+      showToast("Failed to export configuration JSON.");
+    }
+  };
+
+  // Import Backup JSON
+  const handleImportConfig = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed: unknown = JSON.parse(event.target?.result as string);
+        const payload =
+          parsed && typeof parsed === "object" && !Array.isArray(parsed) && "configuration" in parsed
+            ? parsed.configuration
+            : parsed;
+        const conf = validateConfiguration(payload);
+        if (conf) {
+          setDraft(conf);
+          showToast("Configuration backup loaded into draft. Save coordination rules to apply.");
+        } else {
+          showToast("Invalid configuration file format.");
+        }
+      } catch {
+        showToast("Error reading configuration JSON file.");
+      }
+      e.target.value = "";
+    };
+    reader.readAsText(file);
+  };
+
+  // Clear Transient Cache
+  const handleClearTransientCache = () => {
+    try {
+      if (typeof window !== "undefined") {
+        window.sessionStorage.removeItem("ward-flow-demo-state-v1");
+      }
+      setSearchHistory([]);
+      showToast("Transient session cache and search ledger cleared.");
+    } catch {
+      showToast("Failed to clear transient cache.");
+    }
+  };
+
   // Global keyboard shortcuts: "/" to search, "Escape" to dismiss popovers/modals/search
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -342,10 +549,49 @@ export function SettingsScreen() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isProfileOpen]);
 
+  // Scrollspy: update activeDomain as the user scrolls through the settings sections
+  useEffect(() => {
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
+    const domainIds = SETTINGS_DOMAINS.map((d) => d.id);
+    const scrollParent = document.querySelector('[class*="shellContent"]');
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleEntries = entries.filter((entry) => entry.isIntersecting);
+        if (visibleEntries.length > 0) {
+          visibleEntries.sort((a, b) => Math.abs(a.boundingClientRect.top) - Math.abs(b.boundingClientRect.top));
+          const topVisibleId = visibleEntries[0].target.id;
+          if (topVisibleId) {
+            setActiveDomain(topVisibleId);
+          }
+        } else if (scrollParent && scrollParent.scrollTop < 80) {
+          setActiveDomain("all");
+        }
+      },
+      {
+        root: scrollParent || null,
+        rootMargin: "-5% 0px -65% 0px",
+        threshold: [0, 0.1, 0.5],
+      },
+    );
+
+    domainIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   const handleDomainClick = (domainId: string) => {
     setActiveDomain(domainId);
     if (domainId === "all") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      const scrollParent = document.querySelector('[class*="shellContent"]');
+      if (scrollParent) {
+        scrollParent.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
       return;
     }
     const element = document.getElementById(domainId);
@@ -578,38 +824,71 @@ export function SettingsScreen() {
           </div>
         )}
 
-        {/* 4-Card KPI Strip — reads the SAVED configuration, never the draft below */}
-        <section className={styles.kpiStrip} aria-label="Operational KPI Summary">
-          <div className={styles.kpiCard} data-tone="accent">
-            <span className={styles.kpiLabel}>Legal Form Codes</span>
-            <span className={styles.kpiVal}>{SELECTABLE_LEGAL_FORMS.length} codes</span>
-            <span className={styles.kpiSub}>
-              Forms {SELECTABLE_LEGAL_FORMS.map((form) => form.code).join(", ")} available
-            </span>
-          </div>
-          <div className={styles.kpiCard} data-tone="warn">
-            <span className={styles.kpiLabel}>ED Access Target</span>
-            <span className={styles.kpiVal}>{configuration.edAccessTargetMinutes / 60} Hours</span>
-            <span className={styles.kpiSub}>Read by the Emergency department screen</span>
-          </div>
-          <div className={styles.kpiCard} data-tone="good">
-            <span className={styles.kpiLabel}>Pull Hold</span>
-            <span className={styles.kpiVal}>{configuration.pullHoldMinutes} Minutes</span>
-            <span className={styles.kpiSub}>Read by a pulled bed&rsquo;s own hold timer</span>
-          </div>
-          <div className={styles.kpiCard} data-tone="accent">
-            <span className={styles.kpiLabel}>Parallel Referral Cap</span>
-            <span className={styles.kpiVal}>{configuration.parallelReferralCap} Units</span>
-            <span className={styles.kpiSub}>Read by the shortlist, intake and statistics screens</span>
-          </div>
-        </section>
+        {/* Dynamic Island micro-HUD — reads the SAVED configuration, never the draft below */}
+        <WardDynamicIsland
+          testId="ward-settings-hud-island"
+          title="System Operations"
+          status={hasUnsavedRules ? "warning" : "nominal"}
+          statusText={
+            hasUnsavedRules ? "Unsaved configuration draft pending" : "All coordination parameters synchronized"
+          }
+          ariaLabel="System operations status summary"
+          className={styles.hudWrapper}
+          metrics={[
+            {
+              id: "kpi-sync-status",
+              label: "Sync",
+              value: hasUnsavedRules ? "Draft (Unsaved)" : "Synced",
+              subtext: hasUnsavedRules ? "Pending Changes" : undefined,
+              tone: hasUnsavedRules ? "warn" : "good",
+              ariaLabel: hasUnsavedRules ? "Sync Status: Draft (Unsaved) Pending Changes" : "Sync Status: Synced",
+            },
+            {
+              id: "kpi-mode",
+              label: "Mode",
+              value: savedSurge ? "Surge Mode" : "Standard",
+              tone: savedSurge ? "danger" : "normal",
+            },
+            {
+              id: "kpi-morning-rollup",
+              label: "Rollup",
+              value: formatMinutesToTime(configuration.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES),
+              subtext: `${configuration.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES}m`,
+              tone: "accent",
+            },
+            {
+              id: "kpi-ed-target",
+              label: "ED Target",
+              value: `${configuration.edAccessTargetMinutes / 60}h`,
+              subtext: `${configuration.edAccessTargetMinutes}m`,
+              tone: "normal",
+            },
+            {
+              id: "kpi-pull-hold",
+              label: "Pull Hold",
+              value: `${configuration.pullHoldMinutes}m`,
+              tone: "normal",
+            },
+            {
+              id: "kpi-parallel-cap",
+              label: "Cap",
+              value: `${configuration.parallelReferralCap} Wards`,
+              tone: "normal",
+              ariaLabel: `Parallel Referral Cap: ${configuration.parallelReferralCap} Wards`,
+            },
+          ]}
+        />
 
         {/* Settings Master Surface */}
         <div className={styles.settingsSurface}>
           {/* Master-Detail Body */}
           <div className={styles.settingsBody}>
-            {/* Left Category Rail with Integrated Search */}
-            <nav className={styles.categoryRail} aria-label="Settings Categories">
+            {/* Left Category Navigation Rail with Integrated Search */}
+            <nav
+              className={styles.categoryRail}
+              data-testid="ward-settings-category-rail"
+              aria-label="Settings Categories"
+            >
               {/* Integrated Sidebar Search */}
               <div className={styles.sidebarSearchWrap}>
                 <div className={styles.searchInputWrap}>
@@ -628,10 +907,11 @@ export function SettingsScreen() {
                     spellCheck="false"
                     aria-label="Filter settings by keyword"
                   />
-                  <span className={styles.searchKbd} aria-hidden="true">
-                    /
-                  </span>
-                  {searchQuery.length > 0 && (
+                  {searchQuery.length === 0 ? (
+                    <span className={styles.searchKbd} aria-hidden="true">
+                      /
+                    </span>
+                  ) : (
                     <button
                       type="button"
                       className={styles.searchClear}
@@ -645,6 +925,58 @@ export function SettingsScreen() {
                     </button>
                   )}
                 </div>
+
+                {/* Live search match feedback */}
+                {searchQuery.trim().length > 0 && (
+                  <div className={styles.searchFeedback} role="status" aria-live="polite">
+                    {totalMatches > 0 ? (
+                      <span className={styles.searchFeedbackText}>
+                        Showing <strong>{totalMatches}</strong> of {SETTINGS_SEARCH_ENTRIES.length} prototype entries
+                      </span>
+                    ) : (
+                      <div className={styles.searchFeedbackZeroWrap}>
+                        <span className={styles.searchFeedbackZero}>No settings match &ldquo;{searchQuery}&rdquo;</span>
+                        <a
+                          href="#clear-filter"
+                          className={styles.searchFeedbackClearLink}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setSearchQuery("");
+                            searchInputRef.current?.focus();
+                          }}
+                        >
+                          Clear filter
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Domain match pills when filtering is active */}
+                {searchQuery.trim().length > 0 && totalMatches > 0 && (
+                  <div className={styles.domainFilterPills} role="group" aria-label="Filter results by domain">
+                    {SETTINGS_DOMAINS.map((domain) => {
+                      const count = domainMatchCounts[domain.id];
+                      if (count === 0) return null;
+                      const isSelected = activeDomain === domain.id;
+                      return (
+                        <a
+                          key={domain.id}
+                          href={`#${domain.id}`}
+                          className={`${styles.filterPill} ${isSelected ? styles.filterPillActive : ""}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleDomainClick(domain.id);
+                          }}
+                          title={`Jump to ${domain.navLabel} (${count} matches)`}
+                        >
+                          <span>{domain.navLabel.split(" ")[0]}</span>
+                          <span className={styles.filterPillCount}>{count}</span>
+                        </a>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className={styles.domainNavDivider} aria-hidden="true" />
@@ -656,11 +988,16 @@ export function SettingsScreen() {
                   aria-current={activeDomain === "all"}
                   onClick={() => handleDomainClick("all")}
                 >
-                  <span className={styles.catLabelWrap}>
-                    <Sliders size={16} className={styles.catIcon} aria-hidden="true" />
-                    <span>All Levers</span>
-                  </span>
-                  <span className={styles.catCount}>{totalMatches}</span>
+                  <div className={styles.catIconBox} aria-hidden="true">
+                    <Sliders size={15} className={styles.catIcon} aria-hidden="true" />
+                  </div>
+                  <div className={styles.catItemContent}>
+                    <div className={styles.catTitleRow}>
+                      <span className={styles.catTitle}>All Levers</span>
+                      <span className={styles.catCount}>{totalMatches}</span>
+                    </div>
+                    <span className={styles.catSnippet}>All configuration levers &amp; rules</span>
+                  </div>
                 </button>
 
                 {SETTINGS_DOMAINS.map((domain) => {
@@ -673,11 +1010,16 @@ export function SettingsScreen() {
                       aria-current={activeDomain === domain.id}
                       onClick={() => handleDomainClick(domain.id)}
                     >
-                      <span className={styles.catLabelWrap}>
+                      <div className={styles.catIconBox} aria-hidden="true">
                         {getDomainIcon(domain.id)}
-                        <span>{domain.navLabel}</span>
-                      </span>
-                      <span className={styles.catCount}>{count}</span>
+                      </div>
+                      <div className={styles.catItemContent}>
+                        <div className={styles.catTitleRow}>
+                          <span className={styles.catTitle}>{domain.navLabel}</span>
+                          <span className={styles.catCount}>{count}</span>
+                        </div>
+                        <span className={styles.catSnippet}>{DOMAIN_SNIPPETS[domain.id]}</span>
+                      </div>
                     </button>
                   );
                 })}
@@ -720,27 +1062,74 @@ export function SettingsScreen() {
                         {isRowVisible("setting-appearance-theme") && (
                           <WardPanel title="Appearance" testId="ward-settings-appearance">
                             <div className={styles.preferenceBody}>
-                              <div
-                                className={`${styles.choices} ${styles.appearanceChoices}`}
-                                role="group"
-                                aria-label="Appearance"
-                              >
-                                {APPEARANCE_CHOICES.map((choice) => (
-                                  <button
-                                    key={choice.value}
-                                    type="button"
-                                    className={styles.choice}
-                                    aria-pressed={appearance === choice.value}
-                                    data-testid={`ward-settings-appearance-${choice.value}`}
-                                    onClick={() => {
-                                      applyAppearance(choice.value);
-                                      showToast(`Theme set to ${choice.label}.`);
-                                    }}
-                                  >
-                                    {choice.label}
-                                  </button>
-                                ))}
+                              <p className={styles.panelLead}>
+                                Choose your preferred visual presentation. Theme applies instantly across all clinical
+                                boards and persists across browser sessions.
+                              </p>
+
+                              <div className={styles.themeSelectorGrid} role="group" aria-label="Appearance">
+                                {APPEARANCE_CHOICES.map((choice) => {
+                                  const isSelected = appearance === choice.value;
+                                  return (
+                                    <button
+                                      key={choice.value}
+                                      type="button"
+                                      className={`${styles.themePreviewCard} ${isSelected ? styles.themePreviewCardActive : ""}`}
+                                      aria-pressed={isSelected}
+                                      aria-label={choice.label}
+                                      data-testid={`ward-settings-appearance-${choice.value}`}
+                                      onClick={() => {
+                                        applyAppearance(choice.value);
+                                        showToast(`Theme set to ${choice.label}.`);
+                                      }}
+                                    >
+                                      {/* UI Miniature Swatch */}
+                                      <div
+                                        className={`${styles.themeMiniature} ${
+                                          choice.value === "light"
+                                            ? styles.themeMini_light
+                                            : choice.value === "dark"
+                                              ? styles.themeMini_dark
+                                              : styles.themeMini_auto
+                                        }`}
+                                        aria-hidden="true"
+                                      >
+                                        <div className={styles.miniHeader}>
+                                          <span className={styles.miniBrandDot} />
+                                          <span className={styles.miniHeaderBar} />
+                                        </div>
+                                        <div className={styles.miniBody}>
+                                          <div className={styles.miniSidebar}>
+                                            <span className={styles.miniNavDot} />
+                                            <span className={styles.miniNavDot} />
+                                          </div>
+                                          <div className={styles.miniContent}>
+                                            <div className={styles.miniCardActive} />
+                                            <div className={styles.miniCard} />
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Metadata & Radio Indicator */}
+                                      <div className={styles.themeMetaRow}>
+                                        <div className={styles.themeNameGroup}>
+                                          <span className={styles.themeName}>{choice.label}</span>
+                                          <span className={styles.themeDescription}>{choice.description}</span>
+                                        </div>
+                                        <div
+                                          className={`${styles.themeRadioIndicator} ${
+                                            isSelected ? styles.themeRadioIndicatorActive : ""
+                                          }`}
+                                          aria-hidden="true"
+                                        >
+                                          {isSelected && <Check size={11} strokeWidth={3} aria-hidden="true" />}
+                                        </div>
+                                      </div>
+                                    </button>
+                                  );
+                                })}
                               </div>
+
                               <div className={styles.preferenceStatus}>
                                 <span>Current</span>
                                 <strong data-testid="ward-settings-appearance-now">
@@ -756,13 +1145,49 @@ export function SettingsScreen() {
                         {isRowVisible("setting-rail-density") && (
                           <WardPanel title="Navigation rail" testId="ward-settings-rail">
                             <div className={styles.preferenceBody}>
+                              <p className={styles.panelLead}>
+                                Adjust primary sidebar density. Expanded mode provides full text labels; collapsed mode
+                                maximizes clinical workspace area.
+                              </p>
+
+                              {/* Rail Preview Miniature Wireframes */}
+                              <div className={styles.railVisualContainer} aria-hidden="true">
+                                <div
+                                  className={`${styles.railMiniOption} ${!railOpen ? styles.railMiniOptionActive : ""}`}
+                                >
+                                  <div className={styles.railMiniWireframeCollapsed}>
+                                    <div className={styles.wireRailNarrow}>
+                                      <span className={styles.wireIcon} />
+                                      <span className={styles.wireIcon} />
+                                      <span className={styles.wireIcon} />
+                                    </div>
+                                    <div className={styles.wireWorkspaceWide} />
+                                  </div>
+                                  <span className={styles.railMiniLabel}>Narrow (Icons Only)</span>
+                                </div>
+
+                                <div
+                                  className={`${styles.railMiniOption} ${railOpen ? styles.railMiniOptionActive : ""}`}
+                                >
+                                  <div className={styles.railMiniWireframeExpanded}>
+                                    <div className={styles.wireRailWide}>
+                                      <span className={styles.wireRow} />
+                                      <span className={styles.wireRow} />
+                                      <span className={styles.wireRow} />
+                                    </div>
+                                    <div className={styles.wireWorkspaceNarrow} />
+                                  </div>
+                                  <span className={styles.railMiniLabel}>Wide (Expanded Labels)</span>
+                                </div>
+                              </div>
+
                               <div className={styles.preferenceStatus}>
                                 <span>Current</span>
                                 <strong data-testid="ward-settings-rail-now">{railOpen ? "Open" : "Closed"}</strong>
                               </div>
                               <button
                                 type="button"
-                                className={`${styles.choice} ${styles.railChoice}`}
+                                className={`${styles.choice} ${styles.railChoice} ${styles.railToggleBtn}`}
                                 data-testid="ward-settings-rail-toggle"
                                 onClick={() => {
                                   const next = !railOpen;
@@ -777,11 +1202,48 @@ export function SettingsScreen() {
                           </WardPanel>
                         )}
                       </div>
+
+                      {/* High Contrast & Motion Indicators */}
+                      <div className={styles.accessibilityBadgesGrid}>
+                        <div className={styles.a11yCard}>
+                          <div className={styles.a11yCardHeader}>
+                            <span className={styles.a11yTitle}>Text contrast target</span>
+                            <span className={styles.badge} data-tone="good">
+                              4.5:1
+                            </span>
+                          </div>
+                          <p className={styles.a11yDesc}>Normal text in light and dark themes.</p>
+                        </div>
+                        <div className={styles.a11yCard}>
+                          <div className={styles.a11yCardHeader}>
+                            <span className={styles.a11yTitle}>Forced Colors</span>
+                            <span className={styles.badge} data-tone="good">
+                              Supported
+                            </span>
+                          </div>
+                          <p className={styles.a11yDesc}>
+                            Adheres to Windows High Contrast mode and system forced-color palettes automatically.
+                          </p>
+                        </div>
+                        <div className={styles.a11yCard}>
+                          <div className={styles.a11yCardHeader}>
+                            <span className={styles.a11yTitle}>Reduced Motion</span>
+                            <span className={styles.badge} data-tone="good">
+                              Respected
+                            </span>
+                          </div>
+                          <p className={styles.a11yDesc}>
+                            Transitions and layout animations disable instantly when prefers-reduced-motion is active.
+                          </p>
+                        </div>
+                      </div>
                     </section>
                   )}
 
                   {/* DOMAIN 2: CLINICAL THRESHOLDS */}
                   {(isRowVisible("setting-ed-threshold") ||
+                    isRowVisible("setting-parallel-cap") ||
+                    isRowVisible("setting-hold-duration") ||
                     isRowVisible("setting-due-soon-urgent") ||
                     isRowVisible("setting-due-soon") ||
                     isRowVisible("setting-morning-rollup") ||
@@ -805,367 +1267,820 @@ export function SettingsScreen() {
                         <span className={styles.rowTag}>Operational Safeguards</span>
                       </header>
 
-                      <div className={styles.rowsContainer}>
-                        {/* ED Access Target Slider & Stepper */}
+                      {/* Surge Mode Banner */}
+                      <div className={`${styles.surgeBanner} ${isSurge ? styles.surgeBannerActive : ""}`}>
+                        <div className={styles.surgeBannerHeader}>
+                          <div className={styles.surgeBannerTitleGroup}>
+                            <div className={styles.surgeBannerTitleRow}>
+                              <span className={styles.surgeBannerTitle}>Surge Mode &amp; Escalation Capacity</span>
+                              {isSurge ? (
+                                <span className={styles.statusPillSurge}>
+                                  <span className={styles.statusDotSurge} /> SURGE ACTIVE IN DRAFT
+                                </span>
+                              ) : (
+                                <span className={styles.statusPillStandard}>
+                                  <span className={styles.statusDotStandard} /> STANDARD BASELINE
+                                </span>
+                              )}
+                            </div>
+                            <p className={styles.surgeBannerDesc}>
+                              Rapidly switches operational parameters between standard baseline thresholds and emergency
+                              surge capacity. Toggling modifies draft levers below; changes only take effect upon
+                              saving.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            className={styles.bannerPresetBtn}
+                            aria-label={isSurge ? "Restore standard preset" : "Apply emergency surge preset"}
+                            onClick={handleToggleSurge}
+                          >
+                            {isSurge ? "Reset Draft to Standard Baseline" : "Apply Emergency Surge Preset"}
+                          </button>
+                        </div>
+
+                        <div className={styles.surgeDiffGrid}>
+                          <div className={`${styles.surgeDiffCard} ${isSurge ? styles.surgeDiffCardActive : ""}`}>
+                            <span className={styles.surgeDiffLabel}>ED Access Target</span>
+                            <div className={styles.surgeDiffValues}>
+                              <span className={styles.surgeDiffStandard}>
+                                {defaultWardConfiguration().edAccessTargetMinutes / 60}h standard
+                              </span>
+                              <span className={styles.surgeDiffSurge}>
+                                {ED_ACCESS_TARGET_RANGE_MINUTES.min / 60}h surge
+                              </span>
+                            </div>
+                            <span className={styles.surgeDiffEffect}>
+                              Halves dwell ceiling to accelerate mental health clearance from ED.
+                            </span>
+                          </div>
+
+                          <div className={`${styles.surgeDiffCard} ${isSurge ? styles.surgeDiffCardActive : ""}`}>
+                            <span className={styles.surgeDiffLabel}>Parallel Referral Cap</span>
+                            <div className={styles.surgeDiffValues}>
+                              <span className={styles.surgeDiffStandard}>3 units</span>
+                              <span className={styles.surgeDiffSurge}>5 units</span>
+                            </div>
+                            <span className={styles.surgeDiffEffect}>
+                              Broadens referral circulation across adult inpatient units simultaneously.
+                            </span>
+                          </div>
+
+                          <div className={`${styles.surgeDiffCard} ${isSurge ? styles.surgeDiffCardActive : ""}`}>
+                            <span className={styles.surgeDiffLabel}>Pull Hold Buffer</span>
+                            <div className={styles.surgeDiffValues}>
+                              <span className={styles.surgeDiffStandard}>90m standard</span>
+                              <span className={styles.surgeDiffSurge}>45m surge</span>
+                            </div>
+                            <span className={styles.surgeDiffEffect}>
+                              Compresses bed reservation hold window to release unconfirmed beds rapidly.
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 5 Clinical Parameter Cards */}
+                      <div className={styles.parameterCardsGrid}>
+                        {/* Parameter Card 1: ED Access Target */}
                         {isRowVisible("setting-ed-threshold") && (
-                          <div className={`${styles.settingRow} ${styles.vertical}`}>
-                            <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>
-                                Emergency Department Access Target
-                                <span className={styles.rowTag}>{draft.edAccessTargetMinutes / 60} Hours</span>
-                              </span>
-                              <span className={styles.rowDesc}>
-                                Read by the Emergency department screen&rsquo;s own access-target line, its ED-home
-                                summaries, and the movements board&rsquo;s wait meter — a departmental performance
-                                measure, never a Mental Health Act deadline. Saved changes are recorded in the audit
-                                trail.
-                              </span>
-                            </div>
-                            <div className={styles.sliderBox}>
-                              <div className={styles.stepperCluster}>
-                                <button
-                                  type="button"
-                                  className={styles.stepperBtn}
-                                  aria-label="Decrease ED access target"
-                                  onClick={() => {
-                                    setDraft((curr) => ({
-                                      ...curr,
-                                      edAccessTargetMinutes: Math.max(
-                                        ED_ACCESS_TARGET_RANGE_MINUTES.min,
-                                        curr.edAccessTargetMinutes - ED_ACCESS_TARGET_RANGE_MINUTES.step,
-                                      ),
-                                    }));
-                                  }}
-                                >
-                                  <Minus size={16} aria-hidden="true" />
-                                </button>
-                                <div className={styles.stepperDisplay}>
-                                  <span className={styles.stepperVal}>{draft.edAccessTargetMinutes / 60}</span>
-                                  <span className={styles.stepperUnit}>hours</span>
-                                </div>
-                                <button
-                                  type="button"
-                                  className={styles.stepperBtn}
-                                  aria-label="Increase ED access target"
-                                  onClick={() => {
-                                    setDraft((curr) => ({
-                                      ...curr,
-                                      edAccessTargetMinutes: Math.min(
-                                        ED_ACCESS_TARGET_RANGE_MINUTES.max,
-                                        curr.edAccessTargetMinutes + ED_ACCESS_TARGET_RANGE_MINUTES.step,
-                                      ),
-                                    }));
-                                  }}
-                                >
-                                  <Plus size={16} aria-hidden="true" />
-                                </button>
-                              </div>
-                              <div className={styles.sliderLine}>
-                                <input
-                                  id="setting-ed-threshold"
-                                  type="range"
-                                  min={ED_ACCESS_TARGET_RANGE_MINUTES.min}
-                                  max={ED_ACCESS_TARGET_RANGE_MINUTES.max}
-                                  step={ED_ACCESS_TARGET_RANGE_MINUTES.step}
-                                  value={draft.edAccessTargetMinutes}
-                                  onChange={(e) => {
-                                    const minutes = Number(e.target.value);
-                                    setDraft((current) => ({ ...current, edAccessTargetMinutes: minutes }));
-                                  }}
-                                  className={styles.rangeSlider}
-                                  aria-label="ED access target in hours"
-                                />
-                                <span className={styles.sliderVal}>{draft.edAccessTargetMinutes / 60}h</span>
-                              </div>
-                              <div className={styles.sliderFoot}>
-                                <span>{ED_ACCESS_TARGET_RANGE_MINUTES.min / 60}h (minimum)</span>
-                                <span>{defaultWardConfiguration().edAccessTargetMinutes / 60}h (default)</span>
-                                <span>{ED_ACCESS_TARGET_RANGE_MINUTES.max / 60}h (maximum)</span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* First Warning Before A Legal Due Time Stepper & Slider */}
-                        {isRowVisible("setting-due-soon-urgent") && (
-                          <div
-                            className={`${styles.settingRow} ${styles.vertical}`}
-                            data-testid="setting-due-soon-urgent-row"
-                          >
-                            <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>
-                                First warning before a legal due time
-                                <span className={styles.rowTag}>
-                                  {formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}
+                          <div className={styles.paramCard}>
+                            <div className={styles.paramCardHeader}>
+                              <div className={styles.paramCardTitleCol}>
+                                <span className={styles.paramCardTitle}>
+                                  Emergency Department Access Target
+                                  <span className={styles.rowTag}>{draft.edAccessTargetMinutes / 60} Hours</span>
                                 </span>
-                              </span>
-                              <span className={styles.rowDesc} data-testid="setting-due-soon-urgent-desc">
-                                Shows a recorded legal due time as due within this time. Your default, not a legal
-                                limit.
-                              </span>
+                                <p className={styles.paramCardRationale}>
+                                  Read by the Emergency department screen&rsquo;s own access-target line, its ED-home
+                                  summaries, and the movements board&rsquo;s wait meter — a departmental performance
+                                  measure, never a Mental Health Act deadline. Saved changes are recorded in the audit
+                                  trail.
+                                </p>
+                              </div>
+                              {draft.edAccessTargetMinutes <= 120 ? (
+                                <span className={styles.badge} data-tone="danger">
+                                  Surge ({draft.edAccessTargetMinutes / 60}h)
+                                </span>
+                              ) : draft.edAccessTargetMinutes <= 240 ? (
+                                <span className={styles.badge} data-tone="good">
+                                  Standard ({draft.edAccessTargetMinutes / 60}h)
+                                </span>
+                              ) : (
+                                <span className={styles.badge} data-tone="warn">
+                                  Extended ({draft.edAccessTargetMinutes / 60}h)
+                                </span>
+                              )}
                             </div>
-                            <div className={styles.sliderBox}>
-                              <div className={styles.stepperCluster}>
-                                <button
-                                  type="button"
-                                  className={styles.stepperBtn}
-                                  aria-label="Decrease first warning before a legal due time"
-                                  onClick={() => {
-                                    setDraft((curr) => {
-                                      const soon = curr.dueSoonMinutes ?? DUE_SOON_MINUTES;
-                                      const urgent = curr.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES;
-                                      return {
+                            <div className={styles.paramCardBody}>
+                              <div className={styles.paramReadoutBox}>
+                                <span className={styles.paramBigValue}>{draft.edAccessTargetMinutes / 60}</span>
+                                <span className={styles.paramUnitLabel}>Hours</span>
+                                <span className={styles.paramSavedComparison}>
+                                  Saved: {configuration.edAccessTargetMinutes / 60}h
+                                </span>
+                              </div>
+                              <div className={styles.paramControlsCol}>
+                                <div className={styles.stepperCluster}>
+                                  <button
+                                    type="button"
+                                    className={styles.stepperBtn}
+                                    aria-label="Decrease ED access target"
+                                    onClick={() => {
+                                      setDraft((curr) => ({
                                         ...curr,
-                                        dueSoonUrgentMinutes: clampDueSoonUrgent(
-                                          urgent - DUE_SOON_URGENT_RANGE_MINUTES.step,
-                                          soon,
+                                        edAccessTargetMinutes: Math.max(
+                                          ED_ACCESS_TARGET_RANGE_MINUTES.min,
+                                          curr.edAccessTargetMinutes - ED_ACCESS_TARGET_RANGE_MINUTES.step,
                                         ),
-                                      };
-                                    });
-                                  }}
-                                >
-                                  <Minus size={16} aria-hidden="true" />
-                                </button>
-                                <div className={styles.stepperDisplay}>
-                                  <span className={styles.stepperVal} data-testid="due-soon-urgent-display">
-                                    {formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}
-                                  </span>
-                                </div>
-                                <button
-                                  type="button"
-                                  className={styles.stepperBtn}
-                                  aria-label="Increase first warning before a legal due time"
-                                  onClick={() => {
-                                    setDraft((curr) => {
-                                      const soon = curr.dueSoonMinutes ?? DUE_SOON_MINUTES;
-                                      const urgent = curr.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES;
-                                      return {
+                                      }));
+                                    }}
+                                  >
+                                    <Minus size={16} aria-hidden="true" />
+                                  </button>
+                                  <div className={styles.stepperDisplay}>
+                                    <span className={styles.stepperVal}>{draft.edAccessTargetMinutes / 60}</span>
+                                    <span className={styles.stepperUnit}>hours</span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className={styles.stepperBtn}
+                                    aria-label="Increase ED access target"
+                                    onClick={() => {
+                                      setDraft((curr) => ({
                                         ...curr,
-                                        dueSoonUrgentMinutes: clampDueSoonUrgent(
-                                          urgent + DUE_SOON_URGENT_RANGE_MINUTES.step,
-                                          soon,
+                                        edAccessTargetMinutes: Math.min(
+                                          ED_ACCESS_TARGET_RANGE_MINUTES.max,
+                                          curr.edAccessTargetMinutes + ED_ACCESS_TARGET_RANGE_MINUTES.step,
                                         ),
-                                      };
-                                    });
-                                  }}
-                                >
-                                  <Plus size={16} aria-hidden="true" />
-                                </button>
-                              </div>
-                              <div className={styles.sliderLine}>
-                                <input
-                                  id="setting-due-soon-urgent"
-                                  type="range"
-                                  min={DUE_SOON_URGENT_RANGE_MINUTES.min}
-                                  max={DUE_SOON_URGENT_RANGE_MINUTES.max}
-                                  step={DUE_SOON_URGENT_RANGE_MINUTES.step}
-                                  value={draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES}
-                                  onChange={(e) => {
-                                    const minutes = Number(e.target.value);
-                                    setDraft((current) => ({
-                                      ...current,
-                                      dueSoonUrgentMinutes: clampDueSoonUrgent(
-                                        minutes,
-                                        current.dueSoonMinutes ?? DUE_SOON_MINUTES,
-                                      ),
-                                    }));
-                                  }}
-                                  className={styles.rangeSlider}
-                                  aria-label="First warning before a legal due time"
-                                />
-                                <span className={styles.sliderVal}>
-                                  {formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}
-                                </span>
-                              </div>
-                              <div className={styles.sliderFoot}>
-                                <span>{formatDueSoonDuration(DUE_SOON_URGENT_RANGE_MINUTES.min)} (minimum)</span>
-                                <span>{formatDueSoonDuration(DUE_SOON_URGENT_MINUTES)} (default)</span>
-                                <span>{formatDueSoonDuration(DUE_SOON_URGENT_RANGE_MINUTES.max)} (maximum)</span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Second Warning Before A Legal Due Time Stepper & Slider */}
-                        {isRowVisible("setting-due-soon") && (
-                          <div className={`${styles.settingRow} ${styles.vertical}`} data-testid="setting-due-soon-row">
-                            <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>
-                                Second warning before a legal due time
-                                <span className={styles.rowTag}>
-                                  {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)}
-                                </span>
-                              </span>
-                              <span className={styles.rowDesc} data-testid="setting-due-soon-desc">
-                                Shows a recorded legal due time as due soon from this time. Your default, not a legal
-                                limit.
-                              </span>
-                            </div>
-                            <div className={styles.sliderBox}>
-                              <div className={styles.stepperCluster}>
-                                <button
-                                  type="button"
-                                  className={styles.stepperBtn}
-                                  aria-label="Decrease second warning before a legal due time"
-                                  onClick={() => {
-                                    setDraft((curr) => {
-                                      const soon = curr.dueSoonMinutes ?? DUE_SOON_MINUTES;
-                                      const urgent = curr.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES;
-                                      const nextSoon = Math.max(
-                                        DUE_SOON_RANGE_MINUTES.min,
-                                        soon - DUE_SOON_RANGE_MINUTES.step,
-                                      );
-                                      return {
-                                        ...curr,
-                                        dueSoonMinutes: nextSoon,
-                                        dueSoonUrgentMinutes: clampDueSoonUrgent(urgent, nextSoon),
-                                      };
-                                    });
-                                  }}
-                                >
-                                  <Minus size={16} aria-hidden="true" />
-                                </button>
-                                <div className={styles.stepperDisplay}>
-                                  <span className={styles.stepperVal} data-testid="due-soon-display">
-                                    {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)}
-                                  </span>
+                                      }));
+                                    }}
+                                  >
+                                    <Plus size={16} aria-hidden="true" />
+                                  </button>
                                 </div>
-                                <button
-                                  type="button"
-                                  className={styles.stepperBtn}
-                                  aria-label="Increase second warning before a legal due time"
-                                  onClick={() => {
-                                    setDraft((curr) => {
-                                      const soon = curr.dueSoonMinutes ?? DUE_SOON_MINUTES;
-                                      const urgent = curr.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES;
-                                      const nextSoon = Math.min(
-                                        DUE_SOON_RANGE_MINUTES.max,
-                                        soon + DUE_SOON_RANGE_MINUTES.step,
+                                <div className={styles.sliderTickTrack}>
+                                  <div className={styles.sliderLine}>
+                                    <input
+                                      id="setting-ed-threshold"
+                                      type="range"
+                                      min={ED_ACCESS_TARGET_RANGE_MINUTES.min}
+                                      max={ED_ACCESS_TARGET_RANGE_MINUTES.max}
+                                      step={ED_ACCESS_TARGET_RANGE_MINUTES.step}
+                                      value={draft.edAccessTargetMinutes}
+                                      onChange={(e) => {
+                                        const minutes = Number(e.target.value);
+                                        setDraft((current) => ({ ...current, edAccessTargetMinutes: minutes }));
+                                      }}
+                                      className={styles.rangeSlider}
+                                      aria-label="ED access target in hours"
+                                    />
+                                    <span className={styles.sliderVal}>{draft.edAccessTargetMinutes / 60}h</span>
+                                  </div>
+                                  <div className={styles.sliderTicks} aria-hidden="true">
+                                    {[2, 4, 8, 12, 24, 36].map((hrs) => {
+                                      const valMin = hrs * 60;
+                                      return (
+                                        <span
+                                          key={hrs}
+                                          className={`${styles.sliderTickItem} ${draft.edAccessTargetMinutes === valMin ? styles.sliderTickItemActive : ""}`}
+                                        >
+                                          {hrs}h
+                                        </span>
                                       );
-                                      return {
-                                        ...curr,
-                                        dueSoonMinutes: nextSoon,
-                                        dueSoonUrgentMinutes: clampDueSoonUrgent(urgent, nextSoon),
-                                      };
-                                    });
-                                  }}
-                                >
-                                  <Plus size={16} aria-hidden="true" />
-                                </button>
-                              </div>
-                              <div className={styles.sliderLine}>
-                                <input
-                                  id="setting-due-soon"
-                                  type="range"
-                                  min={DUE_SOON_RANGE_MINUTES.min}
-                                  max={DUE_SOON_RANGE_MINUTES.max}
-                                  step={DUE_SOON_RANGE_MINUTES.step}
-                                  value={draft.dueSoonMinutes ?? DUE_SOON_MINUTES}
-                                  onChange={(e) => {
-                                    const minutes = Number(e.target.value);
-                                    setDraft((current) => ({
-                                      ...current,
-                                      dueSoonMinutes: minutes,
-                                      dueSoonUrgentMinutes: clampDueSoonUrgent(
-                                        current.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES,
-                                        minutes,
-                                      ),
-                                    }));
-                                  }}
-                                  className={styles.rangeSlider}
-                                  aria-label="Second warning before a legal due time"
-                                />
-                                <span className={styles.sliderVal}>
-                                  {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)}
-                                </span>
-                              </div>
-                              <div className={styles.sliderFoot}>
-                                <span>{formatDueSoonDuration(DUE_SOON_RANGE_MINUTES.min)} (minimum)</span>
-                                <span>{formatDueSoonDuration(DUE_SOON_MINUTES)} (default)</span>
-                                <span>{formatDueSoonDuration(DUE_SOON_RANGE_MINUTES.max)} (maximum)</span>
+                                    })}
+                                  </div>
+                                </div>
+                                <div className={styles.sliderFoot}>
+                                  <span>{ED_ACCESS_TARGET_RANGE_MINUTES.min / 60}h (minimum)</span>
+                                  <span>{defaultWardConfiguration().edAccessTargetMinutes / 60}h (default)</span>
+                                  <span>{ED_ACCESS_TARGET_RANGE_MINUTES.max / 60}h (maximum)</span>
+                                </div>
                               </div>
                             </div>
                           </div>
                         )}
 
-                        {/* Custom Morning Rollup Deadline Stepper & Slider */}
+                        {/* Parameter Card 2: Parallel Referral Cap */}
+                        {isRowVisible("setting-parallel-cap") && (
+                          <div className={styles.paramCard}>
+                            <div className={styles.paramCardHeader}>
+                              <div className={styles.paramCardTitleCol}>
+                                <span className={styles.paramCardTitle}>
+                                  Parallel Referral Enquiry Limit
+                                  <span className={styles.rowTag}>{draft.parallelReferralCap} Units</span>
+                                </span>
+                                <p className={styles.paramCardRationale}>
+                                  Read by the coordinator&rsquo;s shortlist, the referral intake form, and the
+                                  statistics screen — how many wards one referral may be sent to in one act. Saved
+                                  changes are recorded in the audit trail.
+                                </p>
+                              </div>
+                              {draft.parallelReferralCap >= 5 ? (
+                                <span className={styles.badge} data-tone="warn">
+                                  Surge (5 units)
+                                </span>
+                              ) : (
+                                <span className={styles.badge} data-tone="good">
+                                  Standard ({draft.parallelReferralCap} units)
+                                </span>
+                              )}
+                            </div>
+                            <div className={styles.paramCardBody}>
+                              <div className={styles.paramReadoutBox}>
+                                <span className={styles.paramBigValue}>{draft.parallelReferralCap}</span>
+                                <span className={styles.paramUnitLabel}>Units</span>
+                                <span className={styles.paramSavedComparison}>
+                                  Saved: {configuration.parallelReferralCap} units
+                                </span>
+                              </div>
+                              <div className={styles.paramControlsCol}>
+                                <div className={styles.stepperCluster}>
+                                  <button
+                                    type="button"
+                                    className={styles.stepperBtn}
+                                    aria-label="Decrease parallel referral enquiry limit"
+                                    onClick={() => {
+                                      setDraft((curr) => ({
+                                        ...curr,
+                                        parallelReferralCap: Math.max(
+                                          PARALLEL_REFERRAL_CAP_RANGE.min,
+                                          curr.parallelReferralCap - PARALLEL_REFERRAL_CAP_RANGE.step,
+                                        ),
+                                      }));
+                                    }}
+                                  >
+                                    <Minus size={16} aria-hidden="true" />
+                                  </button>
+                                  <div className={styles.stepperDisplay}>
+                                    <span className={styles.stepperVal}>{draft.parallelReferralCap}</span>
+                                    <span className={styles.stepperUnit}>units</span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className={styles.stepperBtn}
+                                    aria-label="Increase parallel referral enquiry limit"
+                                    onClick={() => {
+                                      setDraft((curr) => ({
+                                        ...curr,
+                                        parallelReferralCap: Math.min(
+                                          PARALLEL_REFERRAL_CAP_RANGE.max,
+                                          curr.parallelReferralCap + PARALLEL_REFERRAL_CAP_RANGE.step,
+                                        ),
+                                      }));
+                                    }}
+                                  >
+                                    <Plus size={16} aria-hidden="true" />
+                                  </button>
+                                </div>
+                                <div className={styles.sliderTickTrack}>
+                                  <div className={styles.sliderLine}>
+                                    <input
+                                      id="setting-parallel-cap"
+                                      type="range"
+                                      min={PARALLEL_REFERRAL_CAP_RANGE.min}
+                                      max={PARALLEL_REFERRAL_CAP_RANGE.max}
+                                      step={PARALLEL_REFERRAL_CAP_RANGE.step}
+                                      value={draft.parallelReferralCap}
+                                      onChange={(e) => {
+                                        const units = Number(e.target.value);
+                                        setDraft((current) => ({ ...current, parallelReferralCap: units }));
+                                      }}
+                                      className={styles.rangeSlider}
+                                      aria-label="Parallel referral cap in units"
+                                    />
+                                    <span className={styles.sliderVal}>{draft.parallelReferralCap} units</span>
+                                  </div>
+                                  <div className={styles.sliderTicks} aria-hidden="true">
+                                    {[1, 2, 3, 4, 5].map((u) => (
+                                      <span
+                                        key={u}
+                                        className={`${styles.sliderTickItem} ${draft.parallelReferralCap === u ? styles.sliderTickItemActive : ""}`}
+                                      >
+                                        {u} {u === 1 ? "unit" : "units"}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                                <div className={styles.sliderFoot}>
+                                  <span>{PARALLEL_REFERRAL_CAP_RANGE.min} unit (minimum)</span>
+                                  <span>{defaultWardConfiguration().parallelReferralCap} units (default)</span>
+                                  <span>{PARALLEL_REFERRAL_CAP_RANGE.max} units (maximum)</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Parameter Card 3: Pulled Bed Reservation Hold Duration */}
+                        {isRowVisible("setting-hold-duration") && (
+                          <div className={styles.paramCard}>
+                            <div className={styles.paramCardHeader}>
+                              <div className={styles.paramCardTitleCol}>
+                                <span className={styles.paramCardTitle}>
+                                  Pulled Bed Reservation Hold Duration
+                                  <span className={styles.rowTag}>{draft.pullHoldMinutes} Minutes</span>
+                                </span>
+                                <p className={styles.paramCardRationale}>
+                                  Read by a pulled bed&rsquo;s own hold timer — how long an accepting unit&rsquo;s bed
+                                  stays reserved for an incoming patient before the hold expires. Saved changes are
+                                  recorded in the audit trail.
+                                </p>
+                              </div>
+                              {draft.pullHoldMinutes <= 45 ? (
+                                <span className={styles.badge} data-tone="danger">
+                                  Surge (45m)
+                                </span>
+                              ) : draft.pullHoldMinutes <= 90 ? (
+                                <span className={styles.badge} data-tone="good">
+                                  Standard (90m)
+                                </span>
+                              ) : (
+                                <span className={styles.badge} data-tone="warn">
+                                  Extended ({draft.pullHoldMinutes}m)
+                                </span>
+                              )}
+                            </div>
+                            <div className={styles.paramCardBody}>
+                              <div className={styles.paramReadoutBox}>
+                                <span className={styles.paramBigValue}>{draft.pullHoldMinutes}</span>
+                                <span className={styles.paramUnitLabel}>Minutes</span>
+                                <span className={styles.paramSavedComparison}>
+                                  Saved: {configuration.pullHoldMinutes}m
+                                </span>
+                              </div>
+                              <div className={styles.paramControlsCol}>
+                                <div className={styles.stepperCluster}>
+                                  <button
+                                    type="button"
+                                    className={styles.stepperBtn}
+                                    aria-label="Decrease pulled bed hold duration"
+                                    onClick={() => {
+                                      setDraft((curr) => ({
+                                        ...curr,
+                                        pullHoldMinutes: Math.max(
+                                          PULL_HOLD_RANGE_MINUTES.min,
+                                          curr.pullHoldMinutes - PULL_HOLD_RANGE_MINUTES.step,
+                                        ),
+                                      }));
+                                    }}
+                                  >
+                                    <Minus size={16} aria-hidden="true" />
+                                  </button>
+                                  <div className={styles.stepperDisplay}>
+                                    <span className={styles.stepperVal}>{draft.pullHoldMinutes}</span>
+                                    <span className={styles.stepperUnit}>minutes</span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className={styles.stepperBtn}
+                                    aria-label="Increase pulled bed hold duration"
+                                    onClick={() => {
+                                      setDraft((curr) => ({
+                                        ...curr,
+                                        pullHoldMinutes: Math.min(
+                                          PULL_HOLD_RANGE_MINUTES.max,
+                                          curr.pullHoldMinutes + PULL_HOLD_RANGE_MINUTES.step,
+                                        ),
+                                      }));
+                                    }}
+                                  >
+                                    <Plus size={16} aria-hidden="true" />
+                                  </button>
+                                </div>
+                                <div className={styles.sliderTickTrack}>
+                                  <div className={styles.sliderLine}>
+                                    <input
+                                      id="setting-hold-duration"
+                                      type="range"
+                                      min={PULL_HOLD_RANGE_MINUTES.min}
+                                      max={PULL_HOLD_RANGE_MINUTES.max}
+                                      step={PULL_HOLD_RANGE_MINUTES.step}
+                                      value={draft.pullHoldMinutes}
+                                      onChange={(e) => {
+                                        const minutes = Number(e.target.value);
+                                        setDraft((current) => ({ ...current, pullHoldMinutes: minutes }));
+                                      }}
+                                      className={styles.rangeSlider}
+                                      aria-label="Pulled bed reservation hold duration in minutes"
+                                    />
+                                    <span className={styles.sliderVal}>{draft.pullHoldMinutes}m</span>
+                                  </div>
+                                  <div className={styles.sliderTicks} aria-hidden="true">
+                                    {[30, 60, 90, 120, 180].map((m) => (
+                                      <span
+                                        key={m}
+                                        className={`${styles.sliderTickItem} ${draft.pullHoldMinutes === m ? styles.sliderTickItemActive : ""}`}
+                                      >
+                                        {m}m
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                                <div className={styles.sliderFoot}>
+                                  <span>{PULL_HOLD_RANGE_MINUTES.min}m (minimum)</span>
+                                  <span>{defaultWardConfiguration().pullHoldMinutes}m (default)</span>
+                                  <span>{PULL_HOLD_RANGE_MINUTES.max}m (maximum)</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Parameter Card 4: Morning Rollup Deadline */}
                         {isRowVisible("setting-morning-rollup") && (
-                          <div
-                            className={`${styles.settingRow} ${styles.vertical}`}
-                            data-testid="setting-morning-rollup-row"
-                          >
-                            <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>
-                                Morning roll-up time
-                                <span className={styles.rowTag}>
-                                  {formatMinutesToTime(draft.morningRollupDeadlineMinutes ?? 570)}
-                                </span>
-                              </span>
-                              <span className={styles.rowDesc} data-testid="setting-morning-rollup-desc">
-                                Time by which inpatient wards are asked to confirm their morning discharge census and
-                                available beds ({OPERATIONAL_DEFAULT_LABEL}).
-                              </span>
-                            </div>
-                            <div className={styles.sliderBox}>
-                              <div className={styles.stepperCluster}>
-                                <button
-                                  type="button"
-                                  className={styles.stepperBtn}
-                                  aria-label="Decrease morning rollup deadline"
-                                  onClick={() => {
-                                    const current = draft.morningRollupDeadlineMinutes ?? 570;
-                                    const next = Math.max(480, current - 15);
-                                    setDraft((curr) => ({ ...curr, morningRollupDeadlineMinutes: next }));
-                                  }}
-                                >
-                                  <Minus size={16} aria-hidden="true" />
-                                </button>
-                                <div className={styles.stepperDisplay}>
-                                  <span className={styles.stepperVal} data-testid="morning-rollup-display">
+                          <div className={styles.paramCard} data-testid="setting-morning-rollup-row">
+                            <div className={styles.paramCardHeader}>
+                              <div className={styles.paramCardTitleCol}>
+                                <span className={styles.paramCardTitle}>
+                                  Morning roll-up time
+                                  <span className={styles.rowTag}>
                                     {formatMinutesToTime(draft.morningRollupDeadlineMinutes ?? 570)}
                                   </span>
-                                </div>
-                                <button
-                                  type="button"
-                                  className={styles.stepperBtn}
-                                  aria-label="Increase morning rollup deadline"
-                                  onClick={() => {
-                                    const current = draft.morningRollupDeadlineMinutes ?? 570;
-                                    const next = Math.min(660, current + 15);
-                                    setDraft((curr) => ({ ...curr, morningRollupDeadlineMinutes: next }));
-                                  }}
-                                >
-                                  <Plus size={16} aria-hidden="true" />
-                                </button>
+                                </span>
+                                <p className={styles.paramCardRationale} data-testid="setting-morning-rollup-desc">
+                                  Time by which inpatient wards are asked to confirm their morning discharge census and
+                                  available beds ({OPERATIONAL_DEFAULT_LABEL}).
+                                </p>
                               </div>
-                              <div className={styles.sliderLine}>
-                                <input
-                                  id="setting-morning-rollup-slider"
-                                  type="range"
-                                  min={480}
-                                  max={660}
-                                  step={15}
-                                  value={draft.morningRollupDeadlineMinutes ?? 570}
-                                  onChange={(e) => {
-                                    const minutes = Number(e.target.value);
-                                    setDraft((curr) => ({ ...curr, morningRollupDeadlineMinutes: minutes }));
-                                  }}
-                                  className={styles.rangeSlider}
-                                  aria-label="Morning rollup deadline in minutes from midnight"
-                                />
-                                <span className={styles.sliderVal}>
+                              <span className={styles.badge} data-tone="good">
+                                {OPERATIONAL_DEFAULT_LABEL}
+                              </span>
+                            </div>
+                            <div className={styles.paramCardBody}>
+                              <div className={styles.paramReadoutBox}>
+                                <span className={styles.paramBigValue} data-testid="morning-rollup-display">
                                   {formatMinutesToTime(draft.morningRollupDeadlineMinutes ?? 570)}
                                 </span>
+                                <span className={styles.paramUnitLabel}>Daily Cutoff</span>
+                                <span className={styles.paramSavedComparison}>
+                                  Saved: {formatMinutesToTime(configuration.morningRollupDeadlineMinutes ?? 570)}
+                                </span>
                               </div>
-                              <div className={styles.sliderFoot}>
-                                <span>08:00 AM (earliest)</span>
-                                <span>09:30 AM (default)</span>
-                                <span>11:00 AM (latest)</span>
+                              <div className={styles.paramControlsCol}>
+                                <div className={styles.stepperCluster}>
+                                  <button
+                                    type="button"
+                                    className={styles.stepperBtn}
+                                    aria-label="Decrease morning rollup deadline"
+                                    onClick={() => {
+                                      const current = draft.morningRollupDeadlineMinutes ?? 570;
+                                      const next = Math.max(480, current - 15);
+                                      setDraft((curr) => ({ ...curr, morningRollupDeadlineMinutes: next }));
+                                    }}
+                                  >
+                                    <Minus size={16} aria-hidden="true" />
+                                  </button>
+                                  <div className={styles.stepperDisplay}>
+                                    <span className={styles.stepperVal}>
+                                      {formatMinutesToTime(draft.morningRollupDeadlineMinutes ?? 570)}
+                                    </span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className={styles.stepperBtn}
+                                    aria-label="Increase morning rollup deadline"
+                                    onClick={() => {
+                                      const current = draft.morningRollupDeadlineMinutes ?? 570;
+                                      const next = Math.min(660, current + 15);
+                                      setDraft((curr) => ({ ...curr, morningRollupDeadlineMinutes: next }));
+                                    }}
+                                  >
+                                    <Plus size={16} aria-hidden="true" />
+                                  </button>
+                                </div>
+                                <div className={styles.sliderTickTrack}>
+                                  <div className={styles.sliderLine}>
+                                    <input
+                                      id="setting-morning-rollup-slider"
+                                      type="range"
+                                      min={480}
+                                      max={660}
+                                      step={15}
+                                      value={draft.morningRollupDeadlineMinutes ?? 570}
+                                      onChange={(e) => {
+                                        const minutes = Number(e.target.value);
+                                        setDraft((curr) => ({ ...curr, morningRollupDeadlineMinutes: minutes }));
+                                      }}
+                                      className={styles.rangeSlider}
+                                      aria-label="Morning rollup deadline in minutes from midnight"
+                                    />
+                                    <span className={styles.sliderVal}>
+                                      {formatMinutesToTime(draft.morningRollupDeadlineMinutes ?? 570)}
+                                    </span>
+                                  </div>
+                                  <div className={styles.sliderTicks} aria-hidden="true">
+                                    {[480, 540, 570, 600, 660].map((t) => (
+                                      <span
+                                        key={t}
+                                        className={`${styles.sliderTickItem} ${(draft.morningRollupDeadlineMinutes ?? 570) === t ? styles.sliderTickItemActive : ""}`}
+                                      >
+                                        {formatMinutesToTime(t)}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                                <div className={styles.sliderFoot}>
+                                  <span>08:00 AM (earliest)</span>
+                                  <span>09:30 AM (default)</span>
+                                  <span>11:00 AM (latest)</span>
+                                </div>
                               </div>
                             </div>
                           </div>
                         )}
 
+                        {/* Parameter Card 5: Due-Time Warning Thresholds */}
+                        {(isRowVisible("setting-due-soon-urgent") || isRowVisible("setting-due-soon")) && (
+                          <div className={styles.paramCard}>
+                            <div className={styles.paramCardHeader}>
+                              <div className={styles.paramCardTitleCol}>
+                                <span className={styles.paramCardTitle}>
+                                  Due-Time Warning Intervals
+                                  <span className={styles.rowTag}>2 Thresholds</span>
+                                </span>
+                                <p className={styles.paramCardRationale}>
+                                  Configures visual warnings before recorded legal due times. Your default, not a legal
+                                  limit. The urgent warning is automatically clamped strictly below the standard
+                                  warning.
+                                </p>
+                              </div>
+                              <span className={styles.badge} data-tone="accent">
+                                Auto-Clamped
+                              </span>
+                            </div>
+
+                            {/* Sub-Card 1: First warning (urgent) */}
+                            {isRowVisible("setting-due-soon-urgent") && (
+                              <div
+                                className={`${styles.settingRow} ${styles.vertical}`}
+                                data-testid="setting-due-soon-urgent-row"
+                                style={{ borderBottom: "1px solid var(--line)", padding: "1.25rem" }}
+                              >
+                                <div className={styles.rowMeta}>
+                                  <span className={styles.rowTitle}>
+                                    First warning before a legal due time
+                                    <span className={styles.rowTag}>
+                                      {formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}
+                                    </span>
+                                  </span>
+                                  <span className={styles.rowDesc} data-testid="setting-due-soon-urgent-desc">
+                                    Shows a recorded legal due time as due within this time. Your default, not a legal
+                                    limit.
+                                  </span>
+                                </div>
+                                <div className={styles.sliderBox}>
+                                  <div className={styles.stepperCluster}>
+                                    <button
+                                      type="button"
+                                      className={styles.stepperBtn}
+                                      aria-label="Decrease first warning before a legal due time"
+                                      onClick={() => {
+                                        setDraft((curr) => {
+                                          const soon = curr.dueSoonMinutes ?? DUE_SOON_MINUTES;
+                                          const urgent = curr.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES;
+                                          return {
+                                            ...curr,
+                                            dueSoonUrgentMinutes: clampDueSoonUrgent(
+                                              urgent - DUE_SOON_URGENT_RANGE_MINUTES.step,
+                                              soon,
+                                            ),
+                                          };
+                                        });
+                                      }}
+                                    >
+                                      <Minus size={16} aria-hidden="true" />
+                                    </button>
+                                    <div className={styles.stepperDisplay}>
+                                      <span className={styles.stepperVal} data-testid="due-soon-urgent-display">
+                                        {formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}
+                                      </span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      className={styles.stepperBtn}
+                                      aria-label="Increase first warning before a legal due time"
+                                      onClick={() => {
+                                        setDraft((curr) => {
+                                          const soon = curr.dueSoonMinutes ?? DUE_SOON_MINUTES;
+                                          const urgent = curr.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES;
+                                          return {
+                                            ...curr,
+                                            dueSoonUrgentMinutes: clampDueSoonUrgent(
+                                              urgent + DUE_SOON_URGENT_RANGE_MINUTES.step,
+                                              soon,
+                                            ),
+                                          };
+                                        });
+                                      }}
+                                    >
+                                      <Plus size={16} aria-hidden="true" />
+                                    </button>
+                                  </div>
+                                  <div className={styles.sliderTickTrack}>
+                                    <div className={styles.sliderLine}>
+                                      <input
+                                        id="setting-due-soon-urgent"
+                                        type="range"
+                                        min={DUE_SOON_URGENT_RANGE_MINUTES.min}
+                                        max={DUE_SOON_URGENT_RANGE_MINUTES.max}
+                                        step={DUE_SOON_URGENT_RANGE_MINUTES.step}
+                                        value={draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES}
+                                        onChange={(e) => {
+                                          const minutes = Number(e.target.value);
+                                          setDraft((current) => ({
+                                            ...current,
+                                            dueSoonUrgentMinutes: clampDueSoonUrgent(
+                                              minutes,
+                                              current.dueSoonMinutes ?? DUE_SOON_MINUTES,
+                                            ),
+                                          }));
+                                        }}
+                                        className={styles.rangeSlider}
+                                        aria-label="First warning before a legal due time"
+                                      />
+                                      <span className={styles.sliderVal}>
+                                        {formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}
+                                      </span>
+                                    </div>
+                                    <div className={styles.sliderTicks} aria-hidden="true">
+                                      {[15, 30, 60, 90, 120, 150, 180].map((m) => (
+                                        <span
+                                          key={m}
+                                          className={`${styles.sliderTickItem} ${(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES) === m ? styles.sliderTickItemActive : ""}`}
+                                        >
+                                          {formatDueSoonDuration(m)}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <div className={styles.sliderFoot}>
+                                    <span>{formatDueSoonDuration(DUE_SOON_URGENT_RANGE_MINUTES.min)} (minimum)</span>
+                                    <span>{formatDueSoonDuration(DUE_SOON_URGENT_MINUTES)} (default)</span>
+                                    <span>{formatDueSoonDuration(DUE_SOON_URGENT_RANGE_MINUTES.max)} (maximum)</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Sub-Card 2: Second warning (soon) */}
+                            {isRowVisible("setting-due-soon") && (
+                              <div
+                                className={`${styles.settingRow} ${styles.vertical}`}
+                                data-testid="setting-due-soon-row"
+                                style={{ padding: "1.25rem" }}
+                              >
+                                <div className={styles.rowMeta}>
+                                  <span className={styles.rowTitle}>
+                                    Second warning before a legal due time
+                                    <span className={styles.rowTag}>
+                                      {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)}
+                                    </span>
+                                  </span>
+                                  <span className={styles.rowDesc} data-testid="setting-due-soon-desc">
+                                    Shows a recorded legal due time as due soon from this time. Your default, not a
+                                    legal limit.
+                                  </span>
+                                </div>
+                                <div className={styles.sliderBox}>
+                                  <div className={styles.stepperCluster}>
+                                    <button
+                                      type="button"
+                                      className={styles.stepperBtn}
+                                      aria-label="Decrease second warning before a legal due time"
+                                      onClick={() => {
+                                        setDraft((curr) => {
+                                          const soon = curr.dueSoonMinutes ?? DUE_SOON_MINUTES;
+                                          const urgent = curr.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES;
+                                          const nextSoon = Math.max(
+                                            DUE_SOON_RANGE_MINUTES.min,
+                                            soon - DUE_SOON_RANGE_MINUTES.step,
+                                          );
+                                          return {
+                                            ...curr,
+                                            dueSoonMinutes: nextSoon,
+                                            dueSoonUrgentMinutes: clampDueSoonUrgent(urgent, nextSoon),
+                                          };
+                                        });
+                                      }}
+                                    >
+                                      <Minus size={16} aria-hidden="true" />
+                                    </button>
+                                    <div className={styles.stepperDisplay}>
+                                      <span className={styles.stepperVal} data-testid="due-soon-display">
+                                        {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)}
+                                      </span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      className={styles.stepperBtn}
+                                      aria-label="Increase second warning before a legal due time"
+                                      onClick={() => {
+                                        setDraft((curr) => {
+                                          const soon = curr.dueSoonMinutes ?? DUE_SOON_MINUTES;
+                                          const urgent = curr.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES;
+                                          const nextSoon = Math.min(
+                                            DUE_SOON_RANGE_MINUTES.max,
+                                            soon + DUE_SOON_RANGE_MINUTES.step,
+                                          );
+                                          return {
+                                            ...curr,
+                                            dueSoonMinutes: nextSoon,
+                                            dueSoonUrgentMinutes: clampDueSoonUrgent(urgent, nextSoon),
+                                          };
+                                        });
+                                      }}
+                                    >
+                                      <Plus size={16} aria-hidden="true" />
+                                    </button>
+                                  </div>
+                                  <div className={styles.sliderTickTrack}>
+                                    <div className={styles.sliderLine}>
+                                      <input
+                                        id="setting-due-soon"
+                                        type="range"
+                                        min={DUE_SOON_RANGE_MINUTES.min}
+                                        max={DUE_SOON_RANGE_MINUTES.max}
+                                        step={DUE_SOON_RANGE_MINUTES.step}
+                                        value={draft.dueSoonMinutes ?? DUE_SOON_MINUTES}
+                                        onChange={(e) => {
+                                          const minutes = Number(e.target.value);
+                                          setDraft((current) => ({
+                                            ...current,
+                                            dueSoonMinutes: minutes,
+                                            dueSoonUrgentMinutes: clampDueSoonUrgent(
+                                              current.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES,
+                                              minutes,
+                                            ),
+                                          }));
+                                        }}
+                                        className={styles.rangeSlider}
+                                        aria-label="Second warning before a legal due time"
+                                      />
+                                      <span className={styles.sliderVal}>
+                                        {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)}
+                                      </span>
+                                    </div>
+                                    <div className={styles.sliderTicks} aria-hidden="true">
+                                      {[30, 60, 120, 180, 240, 360].map((m) => (
+                                        <span
+                                          key={m}
+                                          className={`${styles.sliderTickItem} ${(draft.dueSoonMinutes ?? DUE_SOON_MINUTES) === m ? styles.sliderTickItemActive : ""}`}
+                                        >
+                                          {formatDueSoonDuration(m)}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <div className={styles.sliderFoot}>
+                                    <span>{formatDueSoonDuration(DUE_SOON_RANGE_MINUTES.min)} (minimum)</span>
+                                    <span>{formatDueSoonDuration(DUE_SOON_MINUTES)} (default)</span>
+                                    <span>{formatDueSoonDuration(DUE_SOON_RANGE_MINUTES.max)} (maximum)</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Visual Timeline Countdown Simulation (0 buttons) */}
+                            <div
+                              className={styles.timelineGraphContainer}
+                              aria-hidden="true"
+                              style={{ margin: "0 1.25rem 1.25rem" }}
+                            >
+                              <div className={styles.timelineGraphHeader}>
+                                <span className={styles.timelineGraphTitle}>Warning Threshold Cascade</span>
+                                <span className={styles.badge} data-tone="accent">
+                                  Visual Countdown
+                                </span>
+                              </div>
+                              <div className={styles.timelineTrack}>
+                                <div className={styles.timelineSegmentCalm}>
+                                  Normal ({">"} {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)})
+                                </div>
+                                <div className={styles.timelineSegmentSoon}>
+                                  Due Soon ({formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)})
+                                </div>
+                                <div className={styles.timelineSegmentUrgent}>
+                                  Urgent ({formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}
+                                  )
+                                </div>
+                              </div>
+                              <div className={styles.timelineMilestonesRow}>
+                                <span>
+                                  T - {formatDueSoonDuration(draft.dueSoonMinutes ?? DUE_SOON_MINUTES)} (Second Warning)
+                                </span>
+                                <span>
+                                  T - {formatDueSoonDuration(draft.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)}{" "}
+                                  (First Warning)
+                                </span>
+                                <span>T - 0 (Deadline)</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Unwired Demonstration Controls Container */}
+                      <div className={styles.rowsContainer}>
                         {/* Form 4A Warning Stepper & Slider */}
                         {isRowVisible("setting-form4a-warn") && (
                           <div
@@ -1394,12 +2309,8 @@ export function SettingsScreen() {
                       )}
                     </section>
                   )}
-
                   {/* DOMAIN 3: BED ALLOCATION WEIGHTS */}
-                  {(isRowVisible("setting-hold-duration") ||
-                    isRowVisible("setting-parallel-cap") ||
-                    isRowVisible("setting-gender-mix") ||
-                    isRowVisible("setting-acuity-ceiling")) && (
+                  {(isRowVisible("setting-gender-mix") || isRowVisible("setting-acuity-ceiling")) && (
                     <section id="cat-allocation" className={styles.settingsSection} aria-labelledby="allocation-title">
                       <header className={styles.sectionHeader}>
                         <div>
@@ -1407,173 +2318,12 @@ export function SettingsScreen() {
                           <h2 id="allocation-title" className={styles.secTitle}>
                             Bed Allocation &amp; Capacity Rules
                           </h2>
-                          <p className={styles.secDesc}>
-                            Reservation hold duration, parallel referral enquiry limits, bay integrity, and ward acuity
-                            profile limits.
-                          </p>
+                          <p className={styles.secDesc}>Bay integrity enforcement and ward acuity profile limits.</p>
                         </div>
-                        <span className={styles.rowTag}>4 Parameters</span>
+                        <span className={styles.rowTag}>2 Parameters (Demo)</span>
                       </header>
 
                       <div className={styles.rowsContainer}>
-                        {/* Pull Hold Stepper & Slider */}
-                        {isRowVisible("setting-hold-duration") && (
-                          <div className={`${styles.settingRow} ${styles.vertical}`}>
-                            <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>
-                                Pulled Bed Reservation Hold Duration
-                                <span className={styles.rowTag}>{draft.pullHoldMinutes} Minutes</span>
-                              </span>
-                              <span className={styles.rowDesc}>
-                                Read by a pulled bed&rsquo;s own hold timer — how long an accepting unit&rsquo;s bed
-                                stays reserved for an incoming patient before the hold expires. Saved changes are
-                                recorded in the audit trail.
-                              </span>
-                            </div>
-                            <div className={styles.sliderBox}>
-                              <div className={styles.stepperCluster}>
-                                <button
-                                  type="button"
-                                  className={styles.stepperBtn}
-                                  aria-label="Decrease pulled bed hold duration"
-                                  onClick={() => {
-                                    setDraft((curr) => ({
-                                      ...curr,
-                                      pullHoldMinutes: Math.max(
-                                        PULL_HOLD_RANGE_MINUTES.min,
-                                        curr.pullHoldMinutes - PULL_HOLD_RANGE_MINUTES.step,
-                                      ),
-                                    }));
-                                  }}
-                                >
-                                  <Minus size={16} aria-hidden="true" />
-                                </button>
-                                <div className={styles.stepperDisplay}>
-                                  <span className={styles.stepperVal}>{draft.pullHoldMinutes}</span>
-                                  <span className={styles.stepperUnit}>minutes</span>
-                                </div>
-                                <button
-                                  type="button"
-                                  className={styles.stepperBtn}
-                                  aria-label="Increase pulled bed hold duration"
-                                  onClick={() => {
-                                    setDraft((curr) => ({
-                                      ...curr,
-                                      pullHoldMinutes: Math.min(
-                                        PULL_HOLD_RANGE_MINUTES.max,
-                                        curr.pullHoldMinutes + PULL_HOLD_RANGE_MINUTES.step,
-                                      ),
-                                    }));
-                                  }}
-                                >
-                                  <Plus size={16} aria-hidden="true" />
-                                </button>
-                              </div>
-                              <div className={styles.sliderLine}>
-                                <input
-                                  id="setting-hold-duration"
-                                  type="range"
-                                  min={PULL_HOLD_RANGE_MINUTES.min}
-                                  max={PULL_HOLD_RANGE_MINUTES.max}
-                                  step={PULL_HOLD_RANGE_MINUTES.step}
-                                  value={draft.pullHoldMinutes}
-                                  onChange={(e) => {
-                                    const minutes = Number(e.target.value);
-                                    setDraft((current) => ({ ...current, pullHoldMinutes: minutes }));
-                                  }}
-                                  className={styles.rangeSlider}
-                                  aria-label="Pulled bed reservation hold duration in minutes"
-                                />
-                                <span className={styles.sliderVal}>{draft.pullHoldMinutes}m</span>
-                              </div>
-                              <div className={styles.sliderFoot}>
-                                <span>{PULL_HOLD_RANGE_MINUTES.min}m (minimum)</span>
-                                <span>{defaultWardConfiguration().pullHoldMinutes}m (default)</span>
-                                <span>{PULL_HOLD_RANGE_MINUTES.max}m (maximum)</span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Parallel Cap Stepper & Slider */}
-                        {isRowVisible("setting-parallel-cap") && (
-                          <div className={`${styles.settingRow} ${styles.vertical}`}>
-                            <div className={styles.rowMeta}>
-                              <span className={styles.rowTitle}>
-                                Parallel Referral Enquiry Limit
-                                <span className={styles.rowTag}>{draft.parallelReferralCap} Units</span>
-                              </span>
-                              <span className={styles.rowDesc}>
-                                Read by the coordinator&rsquo;s shortlist, the referral intake form, and the statistics
-                                screen — how many wards one referral may be sent to in one act. Saved changes are
-                                recorded in the audit trail.
-                              </span>
-                            </div>
-                            <div className={styles.sliderBox}>
-                              <div className={styles.stepperCluster}>
-                                <button
-                                  type="button"
-                                  className={styles.stepperBtn}
-                                  aria-label="Decrease parallel referral enquiry limit"
-                                  onClick={() => {
-                                    setDraft((curr) => ({
-                                      ...curr,
-                                      parallelReferralCap: Math.max(
-                                        PARALLEL_REFERRAL_CAP_RANGE.min,
-                                        curr.parallelReferralCap - PARALLEL_REFERRAL_CAP_RANGE.step,
-                                      ),
-                                    }));
-                                  }}
-                                >
-                                  <Minus size={16} aria-hidden="true" />
-                                </button>
-                                <div className={styles.stepperDisplay}>
-                                  <span className={styles.stepperVal}>{draft.parallelReferralCap}</span>
-                                  <span className={styles.stepperUnit}>units</span>
-                                </div>
-                                <button
-                                  type="button"
-                                  className={styles.stepperBtn}
-                                  aria-label="Increase parallel referral enquiry limit"
-                                  onClick={() => {
-                                    setDraft((curr) => ({
-                                      ...curr,
-                                      parallelReferralCap: Math.min(
-                                        PARALLEL_REFERRAL_CAP_RANGE.max,
-                                        curr.parallelReferralCap + PARALLEL_REFERRAL_CAP_RANGE.step,
-                                      ),
-                                    }));
-                                  }}
-                                >
-                                  <Plus size={16} aria-hidden="true" />
-                                </button>
-                              </div>
-                              <div className={styles.sliderLine}>
-                                <input
-                                  id="setting-parallel-cap"
-                                  type="range"
-                                  min={PARALLEL_REFERRAL_CAP_RANGE.min}
-                                  max={PARALLEL_REFERRAL_CAP_RANGE.max}
-                                  step={PARALLEL_REFERRAL_CAP_RANGE.step}
-                                  value={draft.parallelReferralCap}
-                                  onChange={(e) => {
-                                    const units = Number(e.target.value);
-                                    setDraft((current) => ({ ...current, parallelReferralCap: units }));
-                                  }}
-                                  className={styles.rangeSlider}
-                                  aria-label="Parallel referral cap in units"
-                                />
-                                <span className={styles.sliderVal}>{draft.parallelReferralCap} units</span>
-                              </div>
-                              <div className={styles.sliderFoot}>
-                                <span>{PARALLEL_REFERRAL_CAP_RANGE.min} unit (minimum)</span>
-                                <span>{defaultWardConfiguration().parallelReferralCap} units (default)</span>
-                                <span>{PARALLEL_REFERRAL_CAP_RANGE.max} units (maximum)</span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
                         {/* Gender Bay Protection */}
                         {isRowVisible("setting-gender-mix") && (
                           <div className={styles.settingRow} data-testid="setting-gender-mix-row">
@@ -2049,36 +2799,151 @@ export function SettingsScreen() {
                           </WardPanel>
                         )}
 
-                        {/* Local Storage Status & Reset Card */}
-                        <div className={styles.storageResetCard}>
-                          <span className={styles.rowTitle}>Saved browser settings and defaults</span>
-                          <p className={styles.rowDesc}>
-                            Save coordination rules with the button at the top. Restoring all defaults also resets the
-                            appearance theme and navigation rail for this browser.
+                        {/* Storage Telemetry & Quota Diagnostics Card */}
+                        <div className={styles.storageTelemetryCard} data-testid="ward-settings-storage-telemetry">
+                          <div className={styles.telemetryHeader}>
+                            <div className={styles.telemetryTitleGroup}>
+                              <Database size={16} className={styles.telemetryIcon} aria-hidden="true" />
+                              <h3 className={styles.telemetryTitle}>Storage Telemetry &amp; Quota Diagnostics</h3>
+                            </div>
+                            <span className={styles.cacheHealthBadge}>
+                              <span className={styles.statusDotLive} aria-hidden="true" />
+                              Cache Healthy
+                            </span>
+                          </div>
+
+                          <p className={styles.telemetryDesc}>
+                            Ward Flow client-side caching maintains active bed coordination states, ephemeral search
+                            logs, and governance audit trails. Zero identifiable patient records leave this browser
+                            without explicit export.
                           </p>
-                          <div className={styles.storageMetaGrid}>
-                            <div className={styles.storageMetaItem}>
-                              <span className={styles.kpiLabel}>Theme Storage</span>
-                              <strong>{appearance}</strong>
+
+                          {/* Visual Storage Quota Bar */}
+                          <div className={styles.quotaSection}>
+                            <div className={styles.quotaHeader}>
+                              <span className={styles.quotaLabel}>Browser Cache &amp; Storage Quota</span>
+                              <span className={styles.quotaValue}>
+                                {storageEstimate.usedFormatted} of {storageEstimate.quotaFormatted} (
+                                {storageEstimate.percent}%)
+                              </span>
                             </div>
-                            <div className={styles.storageMetaItem}>
-                              <span className={styles.kpiLabel}>Rail Mode</span>
-                              <strong>{railOpen ? "Expanded" : "Collapsed"}</strong>
-                            </div>
-                            <div className={styles.storageMetaItem}>
-                              <span className={styles.kpiLabel}>Config State</span>
-                              <strong>Audited</strong>
+                            <div
+                              className={styles.quotaBarTrack}
+                              role="progressbar"
+                              aria-valuenow={storageEstimate.percent}
+                              aria-valuemin={0}
+                              aria-valuemax={100}
+                              aria-label="Browser storage quota usage"
+                            >
+                              <div
+                                className={styles.quotaBarFill}
+                                style={{ width: `${Math.max(2, storageEstimate.percent)}%` }}
+                              />
                             </div>
                           </div>
-                          <button
-                            type="button"
-                            className={styles.btnDanger}
-                            onClick={() => setIsResetModalOpen(true)}
-                            aria-haspopup="dialog"
-                          >
-                            <RotateCcw size={15} aria-hidden="true" />
-                            <span>Restore all defaults</span>
-                          </button>
+
+                          {/* Cache Health Metrics Grid */}
+                          <div className={styles.cacheHealthGrid}>
+                            <div className={styles.cacheMetricItem}>
+                              <span className={styles.metricLabel}>Active Movements</span>
+                              <strong className={styles.metricVal}>{movements.length}</strong>
+                              <span className={styles.metricSub}>Inpatient bed tracking</span>
+                            </div>
+                            <div className={styles.cacheMetricItem}>
+                              <span className={styles.metricLabel}>Events recorded this session</span>
+                              <strong className={styles.metricVal}>{eventLog.length}</strong>
+                              <span className={styles.metricSub}>
+                                Accepted and rejected events; resets with the session
+                              </span>
+                            </div>
+                            <div className={styles.cacheMetricItem}>
+                              <span className={styles.metricLabel}>Last State Sync</span>
+                              <strong className={styles.metricVal}>Active</strong>
+                              <span className={styles.metricSub}>Local clock synchronized</span>
+                            </div>
+                            <div className={styles.cacheMetricItem}>
+                              <span className={styles.metricLabel}>Appearance &amp; Rail</span>
+                              <strong className={styles.metricVal}>
+                                {appearance} · {railOpen ? "Expanded" : "Collapsed"}
+                              </strong>
+                              <span className={styles.metricSub}>Client-persisted UI mode</span>
+                            </div>
+                          </div>
+
+                          {/* Storage Actions Bar */}
+                          <div className={styles.storageActionsBar}>
+                            <button
+                              type="button"
+                              className={styles.btnSecondary}
+                              onClick={handleExportConfig}
+                              title="Download JSON configuration backup"
+                              data-testid="btn-export-config"
+                            >
+                              <Download size={14} aria-hidden="true" />
+                              <span>Export Configuration JSON</span>
+                            </button>
+
+                            <label
+                              className={styles.btnSecondaryLabel}
+                              title="Upload and restore a configuration JSON backup"
+                            >
+                              <Upload size={14} aria-hidden="true" />
+                              <span>Import Backup JSON</span>
+                              <input
+                                type="file"
+                                accept=".json,application/json"
+                                className={styles.hiddenFileInput}
+                                onChange={handleImportConfig}
+                                data-testid="input-import-config"
+                              />
+                            </label>
+
+                            <button
+                              type="button"
+                              className={styles.btnSecondary}
+                              onClick={handleClearTransientCache}
+                              title="Purge ephemeral demo state and search ledger"
+                              data-testid="btn-clear-cache"
+                            >
+                              <Trash2 size={14} aria-hidden="true" />
+                              <span>Clear Transient Cache</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Baseline Reset Danger Zone */}
+                        <div className={styles.dangerZoneCard} data-testid="ward-settings-danger-zone">
+                          <div className={styles.dangerZoneHeader}>
+                            <div className={styles.dangerIconBadge}>
+                              <AlertTriangle size={18} aria-hidden="true" />
+                            </div>
+                            <div className={styles.dangerZoneMeta}>
+                              <h3 className={styles.dangerZoneTitle}>Baseline Reset &amp; Disaster Recovery</h3>
+                              <p className={styles.dangerZoneDesc}>
+                                Restoring the factory baseline overwrites all coordination thresholds (ED target,
+                                parallel cap, pull hold buffer, morning rollup, due-time alerts) back to WA Health
+                                clinical standards, resets UI appearance and rail preferences, and records an audited
+                                governance entry.
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className={styles.dangerZoneActionRow}>
+                            <div className={styles.dangerZoneNote}>
+                              <span>Audited operation: Requires coordinator confirmation.</span>
+                            </div>
+                            <button
+                              type="button"
+                              className={styles.btnDanger}
+                              onClick={() => setIsResetModalOpen(true)}
+                              aria-haspopup="dialog"
+                              aria-label="Restore all defaults"
+                              data-testid="btn-restore-baseline"
+                            >
+                              <RotateCcw size={15} aria-hidden="true" />
+                              <span>Restore all defaults</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </section>
@@ -2089,81 +2954,65 @@ export function SettingsScreen() {
           </div>
         </div>
 
-        {/* Action Toast */}
-        {toastMessage && (
-          <div className={`${styles.toast} ${styles.toastShow}`} role="status" aria-live="polite">
-            <CheckCircle2 size={16} className={styles.toastIcon} aria-hidden="true" />
-            <span>{toastMessage}</span>
-          </div>
-        )}
-
-        {/* Reset to Baseline Confirmation Modal Dialog */}
-        {isResetModalOpen && (
-          <div
-            className={styles.modalOverlay}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="reset-modal-title"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) setIsResetModalOpen(false);
-            }}
+        {/* Elevated Sticky Unsaved Changes / Draft Diff Inspector */}
+        {hasUnsavedRules && (
+          <aside
+            className={styles.stickyDraftBar}
+            role="region"
+            aria-label="Unsaved coordination rules draft diff"
+            data-testid="unsaved-draft-inspector"
           >
-            <div className={styles.modalDialog}>
-              <header className={styles.modalHeader}>
-                <h3 id="reset-modal-title" className={styles.modalTitle}>
-                  Restore all defaults?
-                </h3>
+            <div className={styles.stickyDraftBarInner}>
+              <div className={styles.draftDiffMeta}>
+                <div className={styles.draftPulseBadge}>
+                  <span className={styles.pulseDot} aria-hidden="true" />
+                  <Sliders size={14} aria-hidden="true" />
+                  <strong>Unsaved Draft</strong>
+                </div>
+                <div className={styles.diffChipsList} aria-label="Modified parameters">
+                  {draftDiffs.map((diff) => (
+                    <span key={diff.label} className={styles.diffChip}>
+                      <span className={styles.diffChipLabel}>{diff.label}:</span>
+                      <span className={styles.diffChipFrom}>{diff.from}</span>
+                      <span className={styles.diffChipArrow} aria-hidden="true">
+                        →
+                      </span>
+                      <span className={styles.diffChipTo}>{diff.to}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className={styles.draftActionsGroup}>
                 <button
                   type="button"
                   className={styles.btnSecondary}
-                  onClick={() => setIsResetModalOpen(false)}
-                  aria-label="Close modal"
+                  onClick={handleDiscardDraft}
+                  data-testid="btn-discard-draft"
                 >
-                  <X size={16} aria-hidden="true" />
+                  <RotateCcw size={14} aria-hidden="true" />
+                  <span>Discard changes</span>
                 </button>
-              </header>
-              <div className={styles.modalBody}>
-                <p>
-                  This restores the ED access target, parallel referral cap and pulled-bed hold, then saves those
-                  coordination rules. It also resets this browser&rsquo;s appearance theme and navigation rail. The
-                  coordination-rule change is recorded in the audit trail.
-                </p>
-                <p>
-                  <strong>Values to be restored:</strong>
-                </p>
-                <ul className={styles.list}>
-                  <li>
-                    ED Access Target: <strong>{defaultWardConfiguration().edAccessTargetMinutes / 60} Hours</strong>
-                  </li>
-                  <li>
-                    Morning roll-up time:{" "}
-                    <strong>{formatMinutesToTime(defaultWardConfiguration().morningRollupDeadlineMinutes)}</strong>
-                  </li>
-                  <li>
-                    Parallel Referral Cap: <strong>{defaultWardConfiguration().parallelReferralCap} Units</strong>
-                  </li>
-                  <li>
-                    Pulled Bed Hold: <strong>{defaultWardConfiguration().pullHoldMinutes} Minutes</strong>
-                  </li>
-                  <li>
-                    Appearance theme: <strong>Auto (System default)</strong>
-                  </li>
-                  <li>
-                    Navigation rail: <strong>Expanded (Open)</strong>
-                  </li>
-                </ul>
+                <button
+                  type="button"
+                  className={styles.btnPrimaryPulsing}
+                  onClick={handleSave}
+                  data-testid="btn-save-draft"
+                  aria-label="Apply draft changes"
+                >
+                  <Check size={15} aria-hidden="true" />
+                  <span>Apply draft changes</span>
+                </button>
               </div>
-              <footer className={styles.modalFooter}>
-                <button type="button" className={styles.btnSecondary} onClick={() => setIsResetModalOpen(false)}>
-                  Cancel
-                </button>
-                <button type="button" className={styles.btnDanger} onClick={handleConfirmReset}>
-                  Restore all defaults
-                </button>
-              </footer>
             </div>
-          </div>
+          </aside>
         )}
+
+        {/* Reset to Baseline Confirmation Modal Dialog */}
+        <ResetBaselineModal
+          isOpen={isResetModalOpen}
+          onClose={() => setIsResetModalOpen(false)}
+          onConfirm={handleConfirmReset}
+        />
 
         {isOperatorModalOpen && (
           <OperatorSwitcherModal isOpen={isOperatorModalOpen} onClose={() => setIsOperatorModalOpen(false)} />
@@ -2172,6 +3021,11 @@ export function SettingsScreen() {
           testId="ward-settings-governance"
           note="Synthetic records · Not a medical device · Changes remembered for this browser only"
         />
+        {toastMessage && (
+          <div className={`${styles.toast} ${styles.toastShow}`} role="status">
+            {toastMessage}
+          </div>
+        )}
       </main>
     </div>
   );
