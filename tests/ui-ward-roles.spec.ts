@@ -1239,6 +1239,14 @@ async function openDesignShowcase(page: Page) {
   await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
   await expect(page.getByRole("heading", { level: 1, name: "Design system showcase" })).toBeVisible();
   await page.waitForLoadState("networkidle");
+  // The server-rendered shell is discarded and rebuilt by the client roughly a second after load, on a
+  // slow runner later than networkidle. Until that finishes, any table handle is a detached node with
+  // empty computed styles, and a click lands on a button whose handlers are not attached. React stamps
+  // its props onto a host node only once it owns it, so wait for that on the control the tests use.
+  await page.waitForFunction(() => {
+    const apply = [...document.querySelectorAll("button")].find((b) => b.textContent?.trim() === "Apply example");
+    return apply?.isConnected === true && Object.keys(apply).some((key) => key.startsWith("__reactProps$"));
+  });
 }
 
 async function showcaseTableState(page: Page) {
@@ -1372,4 +1380,31 @@ test.describe("@mockup Ward Flow design system showcase", () => {
       .evaluate((element) => getComputedStyle(element).getPropertyValue("--surface").trim());
     expect(darkSurface, "dark mode must resolve a different surface token").not.toBe(lightSurface);
   });
+});
+
+test("@mockup on-call printing includes all coverage details and preserves screen expansion", async ({ page }) => {
+  await page.goto("/mockups/ward-flow/on-call");
+  const rows = page.locator('tr[id^="ward-coverage-"]');
+  const toggles = page.getByRole("button", { name: /^Coverage and handover for /, includeHidden: true });
+  const count = await rows.count();
+  expect(count).toBeGreaterThan(1);
+  for (let i = 0; i < count; i++) await expect(rows.nth(i)).toBeHidden();
+
+  await toggles.first().click();
+  await expect(rows.first()).toBeVisible();
+  await expect(rows.nth(1)).toBeHidden();
+
+  await page.emulateMedia({ media: "print" });
+  for (let i = 0; i < count; i++) {
+    const row = rows.nth(i);
+    await expect(row).toBeVisible();
+    await expect(row.getByText("Current cover", { exact: true })).toBeVisible();
+    await expect(row.getByText("Not verified", { exact: true })).toBeVisible();
+    await expect(row.getByText("Next confirmed contact", { exact: true })).toBeVisible();
+    await expect(toggles.nth(i)).toBeHidden();
+  }
+  await page.emulateMedia({ media: "screen" });
+  await expect(rows.first()).toBeVisible();
+  for (let i = 1; i < count; i++) await expect(rows.nth(i)).toBeHidden();
+  await expect(toggles.first()).toHaveAttribute("aria-expanded", "true");
 });
