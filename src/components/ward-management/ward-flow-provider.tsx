@@ -637,194 +637,18 @@ function WardFlowWorld({
    * An absolute count makes elapsed time a plain subtraction that is correct over any span, and the
    * whole class of bug disappears rather than being handled.
    */
-  /**
-   * Evaluates the current instant on demand.
-   * By computing dynamically via this getter / accessor, actions dispatched at any point in time
-   * record the accurate current instant without requiring WardFlowProvider to re-render every 30s.
-   */
-  const getCurrentNow = useCallback((): Instant => {
-    const liveElapsed =
-      initialNow !== undefined || mountedAtAbsolute === null ? 0 : absoluteWallClockMinutes() - mountedAtAbsolute;
-    return (NOW_ANCHOR +
-      anchorOffsetMinutes +
-      container.restoredElapsed +
-      Math.max(0, liveElapsed) +
-      state.clockOffsetMinutes) as Instant;
-  }, [initialNow, mountedAtAbsolute, anchorOffsetMinutes, container.restoredElapsed, state.clockOffsetMinutes]);
+  // Board and event callers share one 30s tick. A separate board-only clock left
+  // event callers recording the time of the last unrelated state change.
+  // A pinned `initialNow` (tests, deterministic renders) never touches the wall clock, and neither
+  // does the render before the mount effect has adopted it — `mountedAtAbsolute` is null until then,
+  // and reading the clock against a null baseline is exactly the non-determinism this split removes.
+  const elapsed =
+    initialNow !== undefined || mountedAtAbsolute === null ? 0 : absoluteWallClockMinutes() - mountedAtAbsolute;
 
-  const [storageUnavailable, setStorageUnavailable] = useState(container.recoveryNotice === STORAGE_UNAVAILABLE);
+  const now =
+    NOW_ANCHOR + anchorOffsetMinutes + container.restoredElapsed + Math.max(0, elapsed) + state.clockOffsetMinutes;
 
-  const [focusMovementId, setFocusMovementId] = useState<string | undefined>(undefined);
-
-  useEffect(() => {
-    if (initialNow !== undefined || mountedAtAbsolute === null) return;
-    // Default deny, locked on dispatch (see `WARD_FLOW_TYPED_TEXT_EVENT_TYPES`'s own comment): once
-    // this session has DISPATCHED one typed-text-carrying event — accepted or refused — storage is
-    // cleared immediately and never written to again until a genuine reseed re-enables it — checked
-    // every render this effect runs, not only the render the flag first flips, so a later dispatch
-    // cannot slip a write in underneath it. `container.typedTextSeen` is read here exactly as
-    // `state` is: both come from the same COMMITTED `useReducer` value, never a ref
-    // (`trackWardFlowTypedTextDispatch`'s own comment has the race this closes).
-    if (container.typedTextSeen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- display the outcome of the external storage operation
-      if (!clearWardFlowDemoState()) setStorageUnavailable(true);
-      return;
-    }
-    if (storageUnavailable) return;
-    const currentNow = getCurrentNow();
-    const liveElapsed =
-      initialNow !== undefined || mountedAtAbsolute === null ? 0 : absoluteWallClockMinutes() - mountedAtAbsolute;
-    if (!tryWriteDemoState(state, dayZero, currentNow, mountedAtAbsolute + Math.max(0, liveElapsed)))
-      setStorageUnavailable(true);
-  }, [state, container.typedTextSeen, initialNow, mountedAtAbsolute, dayZero, getCurrentNow, storageUnavailable]);
-
-  // Audit finding ISSUE-P1-83, defect 3e: `useCallback`, not a fresh function every render — this
-  // sits in the `value` useMemo's own dependency array below, so an unstable reference defeated that
-  // memo on every render regardless of whether anything the memo actually reads had changed.
-  const resetDemoState = useCallback(() => {
-    clearWardFlowDemoState();
-    dispatch({ type: "RESET_SCENARIO", role: "demo", now: getCurrentNow() });
-  }, [dispatch, getCurrentNow]);
-
-  const value = useMemo<WardFlowContextValue>(
-    () => ({
-      worldGeneration: state.worldGeneration,
-      recordWardDeparture: (admissionId, actingUnitId, leavingDestination) => {
-        const departureNow = getCurrentNow();
-        const read = selectDischargeRecord(state, { role: "ward", actingUnitId }, admissionId);
-        if (read.status === "allowed" && read.value.identity.kind === "legacy-anonymous") {
-          dispatch({
-            type: "RECORD_LEAVING",
-            role: "ward",
-            now: departureNow,
-            admissionId,
-            actingUnitId,
-            leavingDestination,
-          });
-          return;
-        }
-        dispatch({
-          type: "RECORD_PATIENT_DISCHARGE",
-          role: "ward",
-          now: departureNow,
-          admissionId,
-          actingUnitId,
-          leavingDestination,
-          patientId:
-            read.status === "allowed" && read.value.identity.kind === "linked"
-              ? read.value.identity.patient.id
-              : "PT-unresolved",
-          expectedGeneration: state.worldGeneration,
-          expectedRevision: state.dischargeRevisions[admissionId] ?? 0,
-        });
-      },
-      readDischargeRecords: (actor, unitId) => selectDischargeRecords(state, actor, unitId),
-      readDischargeRecord: (actor, admissionId, handle) => readOpenedDischargeRecord(state, actor, admissionId, handle),
-      readAuditEvents: (actor) => readAuditEvents(state, actor),
-      readAuditReviews: (actor) => readAuditReviews(state, actor),
-      openDischargeRecord: (actor, admissionId) => {
-        if (!safeCounter(openRequestSequence.current) || openRequestSequence.current >= Number.MAX_SAFE_INTEGER)
-          throw new Error("Record request allocation unavailable");
-        const handle = { generation: state.worldGeneration, requestId: openRequestSequence.current++ };
-        const declaredActor = validRecordActor(actor) ? actor : { role: "demo" as const };
-        dispatch({
-          ...declaredActor,
-          type: "OPEN_DISCHARGE_RECORD",
-          now: getCurrentNow(),
-          admissionId,
-          expectedGeneration: handle.generation,
-          requestId: handle.requestId,
-        });
-        return handle;
-      },
-      movements: state.movements,
-      units: state.units,
-      referrals: state.referrals,
-      rejections: state.rejections,
-      bedReleases: state.bedReleases,
-      leaveBeds: state.leaveBeds,
-      refreshRequests: state.refreshRequests,
-      inboxAcknowledgements: state.inboxAcknowledgements,
-      inboxCompletions: state.inboxCompletions,
-      notices: state.notices,
-      morningRollupConfirmations: state.morningRollupConfirmations,
-      resolvePatientIdentity: (subject) =>
-        resolveSubjectPatient(subject, {
-          patients: state.patients,
-          referrals: state.referrals,
-          movements: state.movements,
-        }),
-      patients: state.patients,
-      admissions: state.admissions,
-      get now(): Instant {
-        return getCurrentNow();
-      },
-      dayZero,
-      scenario: state.scenario,
-      configuration: state.configuration,
-      broadcastAlerts: state.broadcastAlerts ?? [],
-      eventLog: container.eventLog ?? [],
-      dispatch,
-      focusMovementId,
-      setFocusMovementId,
-      resetDemoState,
-    }),
-    [
-      // Individual `state.movements`/`state.patients`/`state.inboxAcknowledgements`/
-      // `state.configuration`/etc. entries used to sit here too, added one at a time (2026-08-30,
-      // 2026-09-08, 2026-09-16) after each was found MISSING and caught a real stale-memo defect —
-      // a patient or an acknowledgement or a configuration change landing mid-session was memoised
-      // away. `state` alone is enough: `wardFlowReducer` (`ward-flow-reducer.ts`) always returns
-      // either the SAME `state` reference (a refused/no-op event) or a freshly spread one, never a
-      // mutated one, so every field below is already covered by `state` itself changing reference —
-      // `react-hooks/exhaustive-deps` flagged the individual fields as redundant once `state` was
-      // added, not as a reason to remove `state` and go back to naming fields one at a time.
-      state,
-      // The log grows even when an event leaves `state` untouched (a no-op), so it is its own dep.
-      container.eventLog,
-      getCurrentNow,
-      dayZero,
-      dispatch,
-      focusMovementId,
-      resetDemoState,
-    ],
-  );
-
-  return (
-    <WardFlowContext.Provider value={value}>
-      {(storageUnavailable || container.recoveryNotice) && (
-        <p role="status">{storageUnavailable ? STORAGE_UNAVAILABLE : container.recoveryNotice}</p>
-      )}
-      <WardFlowClockProvider
-        initialNow={initialNow}
-        anchorOffsetMinutes={anchorOffsetMinutes}
-        mountedAtAbsolute={mountedAtAbsolute}
-        clockOffsetMinutes={state.clockOffsetMinutes}
-        restoredElapsed={container.restoredElapsed}
-      >
-        {children}
-      </WardFlowClockProvider>
-    </WardFlowContext.Provider>
-  );
-}
-
-export function WardFlowClockProvider({
-  children,
-  initialNow,
-  anchorOffsetMinutes,
-  mountedAtAbsolute,
-  clockOffsetMinutes,
-  restoredElapsed = 0,
-}: {
-  children: ReactNode;
-  initialNow?: Instant;
-  anchorOffsetMinutes: number;
-  mountedAtAbsolute: number | null;
-  clockOffsetMinutes: number;
-  restoredElapsed?: number;
-}) {
   const [, setTick] = useState(0);
-
   useEffect(() => {
     if (initialNow !== undefined || mountedAtAbsolute === null) return;
     let timeoutTimer: ReturnType<typeof setTimeout> | null = null;
@@ -856,15 +680,165 @@ export function WardFlowClockProvider({
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [initialNow, mountedAtAbsolute]);
+  const [storageUnavailable, setStorageUnavailable] = useState(container.recoveryNotice === STORAGE_UNAVAILABLE);
+
+  const [focusMovementId, setFocusMovementId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (initialNow !== undefined || mountedAtAbsolute === null) return;
+    // Default deny, locked on dispatch (see `WARD_FLOW_TYPED_TEXT_EVENT_TYPES`'s own comment): once
+    // this session has DISPATCHED one typed-text-carrying event — accepted or refused — storage is
+    // cleared immediately and never written to again until a genuine reseed re-enables it — checked
+    // every render this effect runs, not only the render the flag first flips, so a later dispatch
+    // cannot slip a write in underneath it. `container.typedTextSeen` is read here exactly as
+    // `state` is: both come from the same COMMITTED `useReducer` value, never a ref
+    // (`trackWardFlowTypedTextDispatch`'s own comment has the race this closes).
+    if (container.typedTextSeen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- display the outcome of the external storage operation
+      if (!clearWardFlowDemoState()) setStorageUnavailable(true);
+      return;
+    }
+    if (storageUnavailable) return;
+    if (!tryWriteDemoState(state, dayZero, now, mountedAtAbsolute + Math.max(0, elapsed))) setStorageUnavailable(true);
+  }, [state, container.typedTextSeen, initialNow, mountedAtAbsolute, dayZero, now, elapsed, storageUnavailable]);
+
+  // Audit finding ISSUE-P1-83, defect 3e: `useCallback`, not a fresh function every render — this
+  // sits in the `value` useMemo's own dependency array below, so an unstable reference defeated that
+  // memo on every render regardless of whether anything the memo actually reads had changed.
+  const resetDemoState = useCallback(() => {
+    clearWardFlowDemoState();
+    dispatch({ type: "RESET_SCENARIO", role: "demo", now });
+  }, [dispatch, now]);
+
+  const value = useMemo<WardFlowContextValue>(
+    () => ({
+      worldGeneration: state.worldGeneration,
+      recordWardDeparture: (admissionId, actingUnitId, leavingDestination) => {
+        const read = selectDischargeRecord(state, { role: "ward", actingUnitId }, admissionId);
+        if (read.status === "allowed" && read.value.identity.kind === "legacy-anonymous") {
+          dispatch({ type: "RECORD_LEAVING", role: "ward", now, admissionId, actingUnitId, leavingDestination });
+          return;
+        }
+        dispatch({
+          type: "RECORD_PATIENT_DISCHARGE",
+          role: "ward",
+          now,
+          admissionId,
+          actingUnitId,
+          leavingDestination,
+          patientId:
+            read.status === "allowed" && read.value.identity.kind === "linked"
+              ? read.value.identity.patient.id
+              : "PT-unresolved",
+          expectedGeneration: state.worldGeneration,
+          expectedRevision: state.dischargeRevisions[admissionId] ?? 0,
+        });
+      },
+      readDischargeRecords: (actor, unitId) => selectDischargeRecords(state, actor, unitId),
+      readDischargeRecord: (actor, admissionId, handle) => readOpenedDischargeRecord(state, actor, admissionId, handle),
+      readAuditEvents: (actor) => readAuditEvents(state, actor),
+      readAuditReviews: (actor) => readAuditReviews(state, actor),
+      openDischargeRecord: (actor, admissionId) => {
+        if (!safeCounter(openRequestSequence.current) || openRequestSequence.current >= Number.MAX_SAFE_INTEGER)
+          throw new Error("Record request allocation unavailable");
+        const handle = { generation: state.worldGeneration, requestId: openRequestSequence.current++ };
+        const declaredActor = validRecordActor(actor) ? actor : { role: "demo" as const };
+        dispatch({
+          ...declaredActor,
+          type: "OPEN_DISCHARGE_RECORD",
+          now,
+          admissionId,
+          expectedGeneration: handle.generation,
+          requestId: handle.requestId,
+        });
+        return handle;
+      },
+      movements: state.movements,
+      units: state.units,
+      referrals: state.referrals,
+      rejections: state.rejections,
+      bedReleases: state.bedReleases,
+      leaveBeds: state.leaveBeds,
+      refreshRequests: state.refreshRequests,
+      inboxAcknowledgements: state.inboxAcknowledgements,
+      inboxCompletions: state.inboxCompletions,
+      notices: state.notices,
+      morningRollupConfirmations: state.morningRollupConfirmations,
+      resolvePatientIdentity: (subject) =>
+        resolveSubjectPatient(subject, {
+          patients: state.patients,
+          referrals: state.referrals,
+          movements: state.movements,
+        }),
+      patients: state.patients,
+      admissions: state.admissions,
+      now,
+      dayZero,
+      scenario: state.scenario,
+      configuration: state.configuration,
+      broadcastAlerts: state.broadcastAlerts ?? [],
+      eventLog: container.eventLog ?? [],
+      dispatch,
+      focusMovementId,
+      setFocusMovementId,
+      resetDemoState,
+    }),
+    [
+      // Individual `state.movements`/`state.patients`/`state.inboxAcknowledgements`/
+      // `state.configuration`/etc. entries used to sit here too, added one at a time (2026-08-30,
+      // 2026-09-08, 2026-09-16) after each was found MISSING and caught a real stale-memo defect —
+      // a patient or an acknowledgement or a configuration change landing mid-session was memoised
+      // away. `state` alone is enough: `wardFlowReducer` (`ward-flow-reducer.ts`) always returns
+      // either the SAME `state` reference (a refused/no-op event) or a freshly spread one, never a
+      // mutated one, so every field below is already covered by `state` itself changing reference —
+      // `react-hooks/exhaustive-deps` flagged the individual fields as redundant once `state` was
+      // added, not as a reason to remove `state` and go back to naming fields one at a time.
+      state,
+      // The log grows even when an event leaves `state` untouched (a no-op), so it is its own dep.
+      container.eventLog,
+      now,
+      dayZero,
+      dispatch,
+      focusMovementId,
+      resetDemoState,
+    ],
+  );
+
+  return (
+    <WardFlowContext.Provider value={value}>
+      {(storageUnavailable || container.recoveryNotice) && (
+        <p role="status">{storageUnavailable ? STORAGE_UNAVAILABLE : container.recoveryNotice}</p>
+      )}
+      <WardFlowClockContext.Provider value={now}>{children}</WardFlowClockContext.Provider>
+    </WardFlowContext.Provider>
+  );
+}
+
+export function WardFlowClockProvider({
+  children,
+  initialNow,
+  anchorOffsetMinutes,
+  mountedAtAbsolute,
+  clockOffsetMinutes,
+}: {
+  children: ReactNode;
+  initialNow?: Instant;
+  anchorOffsetMinutes: number;
+  mountedAtAbsolute: number | null;
+  clockOffsetMinutes: number;
+}) {
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    if (initialNow !== undefined) return; // pinned: never tick in a test
+    const id = setInterval(() => setTick((previous) => previous + 1), 30_000);
+    return () => clearInterval(id);
+  }, [initialNow]);
 
   const elapsed =
     initialNow !== undefined || mountedAtAbsolute === null ? 0 : absoluteWallClockMinutes() - mountedAtAbsolute;
 
-  const now = (NOW_ANCHOR +
-    anchorOffsetMinutes +
-    restoredElapsed +
-    Math.max(0, elapsed) +
-    clockOffsetMinutes) as Instant;
+  const now = NOW_ANCHOR + anchorOffsetMinutes + elapsed + clockOffsetMinutes;
 
   return <WardFlowClockContext.Provider value={now}>{children}</WardFlowClockContext.Provider>;
 }
