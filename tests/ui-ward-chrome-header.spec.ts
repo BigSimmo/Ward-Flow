@@ -269,20 +269,55 @@ test.describe("@mockup Ward shell bar", () => {
           ).toHaveCount(0);
         }
 
-        // Josh requested removal of the unpublished status on 3 October 2026.
-        // Movements publishes actual checks: require its verdict once, and require
-        // silence on the other route shapes, rather than accepting a missing publisher.
+        // Keep the approved compact neutral status distinct from a published verdict.
+        // Movements publishes actual checks, so its result must still appear once.
         const reconciliation = page.getByTestId("ward-reconciliation-line");
         if (route === PUBLISHED_CHECKS_ROUTE) {
           await expect(reconciliation, "the published reconciliation verdict must appear once").toHaveCount(1);
           await expect(reconciliation).toHaveText("Invented figures, reconciled with each other.");
           await expect(reconciliation).toHaveAttribute("data-tone", "good");
         } else {
-          await expect(reconciliation, "unpublished pages must omit the sidebar reconciliation status").toHaveCount(0);
+          await expect(reconciliation, "the unpublished status must appear once").toHaveCount(1);
+          await expect(reconciliation).toHaveText("Reconciliation not published");
+          await expect(reconciliation).toHaveAttribute("data-tone", "neutral");
         }
         await expect(page.getByText("No reconciliation is available for this page yet.", { exact: true })).toHaveCount(
           0,
         );
+      }
+
+      // The phone keeps shift context in Menu; measure the status where users read it.
+      await gotoWardChrome(page, DELAYS_ROUTE);
+      const menu = page.getByRole("button", { name: "Menu", exact: true });
+      if (width === 375) await menu.click();
+      const visibleStatus = page.getByTestId("ward-reconciliation-line").filter({ visible: true });
+      await expect(visibleStatus).toHaveCount(1);
+      await expect(visibleStatus).toHaveText("Reconciliation not published");
+      const fits = await visibleStatus.evaluate((line) => {
+        const text = line.querySelector("span:last-child");
+        if (!text) return false;
+        const range = document.createRange();
+        range.selectNodeContents(text);
+        const bounds = line.getBoundingClientRect();
+        const rects = Array.from(range.getClientRects());
+        return (
+          rects.length > 0 &&
+          rects.every(
+            (rect) =>
+              rect.width > 1 &&
+              rect.left >= bounds.left - 1 &&
+              rect.right <= bounds.right + 1 &&
+              rect.left >= 0 &&
+              rect.right <= window.innerWidth &&
+              line.contains(document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)),
+          )
+        );
+      });
+      expect(fits, "the reconciliation sentence must wrap within its line and remain unobscured").toBe(true);
+      if (width === 375) {
+        await page.keyboard.press("Escape");
+        await expect(page.getByTestId("ward-rail-more-pages")).toHaveCount(0);
+        await expect(menu).toBeFocused();
       }
     });
   }
