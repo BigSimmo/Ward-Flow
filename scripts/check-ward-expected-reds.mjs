@@ -20,6 +20,9 @@
  * message. The floors are the load-bearing half of this script; the comparison is the easy half.
  */
 import { execFileSync } from "node:child_process";
+import { acquireHeavyRunLock } from "./test-run-lock.mjs";
+import { runOwnedChild } from "./owned-child.mjs";
+import { childProcessExitCode } from "./child-process-result.mjs";
 import { createHash } from "node:crypto";
 import {
   appendFileSync,
@@ -34,8 +37,11 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
+import { isOfflineUnitTestFile } from "./unit-test-population.mjs";
+import { fullGateInputIdentity } from "./test-evidence-identity.mjs";
 import { fileURLToPath } from "node:url";
 import {
+  executedAssertionCount,
   mergeGateReports,
   planFullGateRecheck,
   runFullGateBatches,
@@ -85,11 +91,7 @@ function wardPopulation() {
  * old ward-only union skipped about 130 non-ward files, so a red there (test-runner-safety) reached
  * the line with no gate ever running it. PsychSift is gone, so every remaining test is this repo's.
  */
-function isUnitTestFile(relative) {
-  if (!relative.startsWith("tests/")) return false;
-  if (relative.endsWith(".live.test.ts")) return false;
-  return relative.endsWith(".test.ts") || relative.endsWith(".dom.test.tsx");
-}
+export const isUnitTestFile = isOfflineUnitTestFile;
 
 /**
  * The comparison, as a pure function, so BOTH directions can be proved without a nine-minute run.
@@ -417,9 +419,31 @@ export function isDirectInvocation(
  * test does — must never kick off the ward suite as a side effect.
  */
 const invokedDirectly = isDirectInvocation(process.argv[1], import.meta.url);
-if (!invokedDirectly) {
+if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
+  const admission = acquireHeavyRunLock({ projectRoot, mode: "exclusive", command: "check:ward-expected-reds" });
+  try {
+    const result = await runOwnedChild(process.execPath, [fileURLToPath(import.meta.url), ...process.argv.slice(2)], {
+      cwd: projectRoot,
+      env: { ...admission.environment, WARD_OWNED_FULL_GATE: "1" },
+    });
+    process.exitCode = childProcessExitCode(result);
+  } finally {
+    admission.release();
+  }
+} else if (!invokedDirectly) {
   // Imported for its pure helpers above.
 } else {
+  // The synchronous checkpoint batch collector is itself an owned child. Only
+  // a validated inherited exclusive lease may enter this branch.
+  const inherited = acquireHeavyRunLock({
+    projectRoot,
+    mode: "exclusive",
+    command: "FULL collector inherited admission",
+  });
+  if (!inherited.reentrant) {
+    inherited.release();
+    throw new Error("Owned FULL collector requires a validated inherited admission");
+  }
   const manifest = JSON.parse(readFileSync(MANIFEST, "utf8"));
   const expected = new Map(manifest.expected.map((entry) => [entry.file, entry]));
 
@@ -495,16 +519,12 @@ if (!invokedDirectly) {
       ALLOW_PROVIDER_TESTS: "false",
       WARD_GATE_EXCLUDE_FILES: skippedTooling.join("\n"),
     };
-    const environmentFingerprint = createHash("sha256")
-      .update(
-        JSON.stringify(
-          ["NODE_ENV", "TZ", "VITEST_MAX_WORKERS", "WARD_GATE_SKIP_TOOLING"].map((key) => [
-            key,
-            gateEnvironment[key] ?? "",
-          ]),
-        ),
-      )
-      .digest("hex");
+    const environmentFingerprint = fullGateInputIdentity({
+      root: projectRoot,
+      env: gateEnvironment,
+      population,
+      args: ["run", "--pool=forks", "--reporter=json"],
+    });
     const recheck = process.env.WARD_FULL_GATE_RECHECK;
     let report;
     if (recheck) {
@@ -527,9 +547,9 @@ if (!invokedDirectly) {
           return { status, path: files.at(-1) };
         });
       const referencedByOtherTests = changes
-        .filter((change) => change.status === "M" && /^tests\/.*\.(?:test\.ts|dom\.test\.tsx)$/.test(change.path))
+        .filter((change) => change.status === "M" && isOfflineUnitTestFile(change.path))
         .filter((change) => {
-          const stem = path.posix.basename(change.path).replace(/\.(?:dom\.)?test\.tsx?$/, "");
+          const stem = path.posix.basename(change.path).replace(/\.(?:dom\.|contract\.)?test\.tsx?$/, "");
           return (
             /\bexport\s/.test(readFileSync(path.join(projectRoot, change.path), "utf8")) ||
             population.some(
@@ -613,7 +633,10 @@ if (!invokedDirectly) {
         },
       });
     }
-    const totalTests = report.numTotalTests ?? 0;
+    const totalTests = executedAssertionCount(report);
+    console.log(
+      `FULL assertion population: ${report.numTotalTests ?? 0} collected; ${totalTests} executed (passed or failed).`,
+    );
     const suites = report.testResults ?? [];
 
     // WARD_SUITE_TIMINGS_OUT=<file>: keep each file's duration (the JSON report is deleted below), so
@@ -694,7 +717,7 @@ if (!invokedDirectly) {
     if (!recheck) {
       const receiptPath = path.join(stateDir, `receipt-${Date.now()}-${process.pid}.json`);
       const receipt = {
-        version: 1,
+        version: 2,
         commit,
         population,
         skippedTooling: skippedTooling.length > 0,

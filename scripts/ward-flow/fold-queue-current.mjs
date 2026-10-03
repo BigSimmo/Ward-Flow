@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const LINE = "codex/task-ward-flow-live-state-20260831";
+const LINE = "origin/main";
 const QUEUE = "D:/Repos/ward-flow-logs/fold-queue.md";
 const READY = /^READY(?:-FAST(?:-ENGINE)?)?$/;
 const WITHDRAWN = /^(?:NOT READY|PARKED|HOLD|DEFERRED)(?:\b|\s)/;

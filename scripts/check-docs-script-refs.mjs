@@ -3,8 +3,8 @@
  * check-docs-script-refs.mjs — verify that every `npm run <script>` mentioned in
  * the maintained docs corresponds to a real script in package.json.
  *
- * check-docs-links.mjs validates file PATHS referenced in docs, but nothing checks
- * the hundreds of `npm run <script>` references — so a renamed/removed script leaves
+ * ward-flow/check-doc-links.mjs validates selected local file paths; this checker
+ * covers maintained `npm run <script>` references — a renamed/removed script leaves
  * stale instructions that the agents (Codex/Claude/Cursor) then follow. This closes
  * that gap.
  *
@@ -38,6 +38,10 @@ const DATED_DOC = /\b20\d{2}-\d{2}(-\d{2})?\b/;
 // ⚠️ The cost: a lesson RECOMMENDING a command that no longer exists is no longer caught here.
 // `--all` still scans these, so it is skipped by default rather than made unreachable.
 const HISTORICAL_DIRS = new Set(["archive", "audit", "lessons"]);
+
+// Root prose is selected explicitly; the original source README has a maintained
+// boundary surrounding a marked historical record, not live foreign setup advice.
+export const MAINTAINED_ROOT_DOCS = Object.freeze(["README.md", "README.local-source.md", "SECURITY.md"]);
 
 // Script tokens that appear in docs as illustrative placeholders, or real scripts
 // that were renamed but are legitimately referenced in historical records (e.g. the
@@ -124,7 +128,7 @@ function collectDocs(dirRelative, targets) {
 
 function main() {
   const validScripts = parsePackageScripts(readFileSync(path.join(repoRoot, "package.json"), "utf8"));
-  const targets = ["README.md", "SECURITY.md", ...collectInstructionDocs(repoRoot)];
+  const targets = [...MAINTAINED_ROOT_DOCS, ...collectInstructionDocs(repoRoot)];
   collectDocs("docs", targets);
 
   let stale = 0;

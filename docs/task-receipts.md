@@ -12,6 +12,18 @@ Status is In progress, Blocked, Needs you, Paused, Completed or Cancelled. Recor
 
 When code/config/instructions change, refresh the relevant maintained document and same task receipt as part of the owned diff. Respect file claims; hand conflicting document updates to their owner. Do not regenerate unrelated docs. Changes to these rules need the same reviewed documentation process. Shared master/adapters are maintained separately; do not edit them from this project task.
 
+Complete the requested stage: a delivered audit, evidenced Fast Preview or verified local
+engineering task can complete without publication/deployment. Integration, publication,
+deployment and user acceptance require their own applicable authority and evidence.
+
+For one uninterrupted scoped reversible task with no unresolved ownership, new provider/
+publication boundary or substantial recovery need, one final compact contribution may carry
+start/completion metadata. A genuine pause, blocker, transfer or scope change needs an immediate
+update; substantial work retains meaningful checkpoints. Reuse the original task identity.
+
+Last verified requires newly checked evidence, including a new immutable run-evidence location
+within the same stable task when source/evidence otherwise match. Timestamp-only refresh is invalid.
+
 ## Local-only receipt bridge
 
 `python scripts/export-task-receipt.py --input <sanitised-metadata.json> --output-directory <private-task-workspace>` writes a deterministic per-project/per-task JSON file. Python 3 is required; no packages, service, network or API key is used. Output stays local; an authorised parent session must verify its destination and reconcile it. Use one exporter writer per task. Do not place private receipt inputs in tracked Git.
