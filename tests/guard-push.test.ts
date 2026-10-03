@@ -539,6 +539,16 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
     expect(verdict.runs).toHaveLength(1);
   });
 
+  it("is documented as blocking (not advisory) in AGENTS.md, matching the guard's behaviour", () => {
+    const agents = readFileSync(join(process.cwd(), "AGENTS.md"), "utf8");
+    const line = agents.split("\n").find((entry) => entry.includes("in-flight CI push check"));
+    expect(line).toBeDefined();
+    expect(line).toContain("still blocks a push while a required run is active");
+    expect(line).toContain("SKIP_IN_FLIGHT_CI_GUARD=1");
+    expect(line).not.toMatch(/is advisory during interactive work/);
+    expect(readFileSync(join(process.cwd(), "scripts", "guard-push.mjs"), "utf8")).toContain("SKIP_IN_FLIGHT_CI_GUARD");
+  });
+
   it("allows push when CI has completed or no runs are in-flight", () => {
     const completedRuns = [{ databaseId: 102, name: "Ward Flow CI", status: "completed", conclusion: "success" }];
     const verdict = inFlightCiVerdict("claude/my-fix", { state: "OPEN", number: 123 }, completedRuns);

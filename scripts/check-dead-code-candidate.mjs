@@ -610,6 +610,7 @@ export function main(
     fileSystem = NODE_FILE_SYSTEM,
     stdout = console.log,
     stderr = console.error,
+    env = process.env,
   } = {},
 ) {
   let parsed;
@@ -657,9 +658,11 @@ export function main(
 
   stdout(`\n[dead-code] ${candidates.length} candidate(s), ${refused} refused.`);
   if (refused) {
-    if (process.env.DEAD_CODE_ADVISORY === "1") {
+    // Refusals fail by default. The owner-approved exception is an explicit per-run override that
+    // must be set for the single invocation; it is never a default and never set by repository tooling.
+    if (env.DEAD_CODE_OWNER_APPROVED === "1") {
       stdout(
-        "[dead-code] ADVISORY — dead code candidate(s) detected. Permitted under prototype mode with DEAD_CODE_ADVISORY=1.",
+        `[dead-code] OWNER-APPROVED OVERRIDE — ${refused} refused candidate(s) permitted for this run only (DEAD_CODE_OWNER_APPROVED=1). Record Josh's approval in the PR.`,
       );
       return 0;
     }

@@ -343,6 +343,44 @@ describe("dead-code candidate CLI", () => {
   });
 });
 
+describe("dead-code candidate refusal exit status", () => {
+  function runRefusedCandidate(env: Record<string, string | undefined>) {
+    const root = createFixture();
+    writeFileSync(join(root, "src", "consumer.ts"), 'const name = "candidate";\n', "utf8");
+    const out: string[] = [];
+    const status = main(["--symbol", "candidate", "--file", "src/candidate.ts"], {
+      root,
+      runGit: completeHistory(),
+      stdout: (line: string) => out.push(line),
+      stderr: (line: string) => out.push(line),
+      env: env as NodeJS.ProcessEnv,
+    });
+    return { status, output: out.join("\n") };
+  }
+
+  it("fails a refused candidate by default", () => {
+    const { status, output } = runRefusedCandidate({});
+    expect(status).toBe(1);
+    expect(output).toContain("REFUSE");
+    expect(output).toContain("FAIL");
+  });
+
+  it.each([
+    ["DEAD_CODE_ADVISORY", "1"],
+    ["DEAD_CODE_OWNER_APPROVED", "true"],
+    ["DEAD_CODE_OWNER_APPROVED", "0"],
+  ])("does not treat %s=%s as the owner-approved override", (name, value) => {
+    expect(runRefusedCandidate({ [name]: value }).status).toBe(1);
+  });
+
+  it("permits a refused candidate only with the explicit per-run override, and says so", () => {
+    const { status, output } = runRefusedCandidate({ DEAD_CODE_OWNER_APPROVED: "1" });
+    expect(status).toBe(0);
+    expect(output).toContain("REFUSE");
+    expect(output).toContain("OWNER-APPROVED OVERRIDE");
+  });
+});
+
 describe("dead-code candidate diff parsing", () => {
   it("fails closed when Git quotes a non-ASCII café filename", () => {
     const root = createFixture();
