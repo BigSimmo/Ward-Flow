@@ -8,6 +8,31 @@ import { runOwnedChild, registeredWorkIsActive } from "../scripts/owned-child.mj
 import { acquireHeavyRunLock, testRunLockInternals } from "../scripts/test-run-lock.mjs";
 import { removePathSync } from "../scripts/retryable-fs.mjs";
 const roots: string[] = [];
+const pendingRoots = new Set<string>();
+async function finishFixture(
+  invoking: ReturnType<typeof spawn>,
+  closed: Promise<void>,
+  root: string,
+  lease: { release: () => void },
+) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    if (invoking.exitCode === null && invoking.signalCode === null) invoking.kill();
+    await Promise.race([
+      closed,
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`Fixture process closure unproven; retained root and lease: ${root}`)),
+          2000,
+        );
+      }),
+    ]);
+    pendingRoots.delete(root);
+    lease.release();
+  } finally {
+    clearTimeout(timer);
+  }
+}
 function requireLeasePath(lease: { path?: string }) {
   if (!lease.path) throw new Error("Fixture lease path is required");
   return lease.path;
@@ -26,7 +51,15 @@ async function until(predicate: () => boolean, timeout = 12000) {
   while (!predicate() && Date.now() < deadline) await wait(20);
   expect(predicate()).toBe(true);
 }
-afterEach(() => roots.splice(0).forEach((root) => removePathSync(root, { recursive: true })));
+afterEach(() =>
+  roots.splice(0).forEach((root) => {
+    if (pendingRoots.has(root)) {
+      console.warn(`Retaining fixture with unproven process closure: ${root}`);
+      return;
+    }
+    removePathSync(root, { recursive: true });
+  }),
+);
 describe("owned child lifecycle", () => {
   it("keeps timers responsive and returns the actual nonzero status", async () => {
     let beats = 0;
@@ -154,6 +187,7 @@ describe("owned child lifecycle", () => {
     });
     const moduleUrl = pathToFileURL(path.resolve("scripts/owned-child.mjs")).href;
     const childCode = `require('node:fs').writeFileSync(${JSON.stringify(pidFile)},String(process.pid));setInterval(()=>{},1000)`;
+    pendingRoots.add(root);
     const invoking = spawn(
       process.execPath,
       [
@@ -163,6 +197,7 @@ describe("owned child lifecycle", () => {
       ],
       { cwd: root, env: { ...process.env, ...lease.environment }, stdio: "ignore" },
     );
+    const closed = new Promise<void>((resolve) => invoking.once("close", () => resolve()));
     try {
       await until(() => existsSync(pidFile));
       const pid = Number(readFileSync(pidFile, "utf8"));
@@ -176,8 +211,7 @@ describe("owned child lifecycle", () => {
         expect(registeredWorkIsActive(requireLeasePath(lease), lease.owner.token)).toBe(true);
       } else await until(() => !registeredWorkIsActive(requireLeasePath(lease), lease.owner.token));
     } finally {
-      if (invoking.exitCode === null) invoking.kill();
-      lease.release();
+      await finishFixture(invoking, closed, root, lease);
     }
   }, 20000);
   it("gracefully cancels the owned job and records proven completion", async () => {
@@ -194,19 +228,20 @@ describe("owned child lifecycle", () => {
     const moduleUrl = pathToFileURL(path.resolve("scripts/owned-child.mjs")).href;
     const childCode = `require('node:fs').writeFileSync(${JSON.stringify(pidFile)},String(process.pid));setInterval(()=>{},1000)`;
     const code = `import fs from 'node:fs';import {runOwnedChild} from ${JSON.stringify(moduleUrl)};const timer=setInterval(()=>{if(fs.existsSync(${JSON.stringify(pidFile)})){clearInterval(timer);process.emit('SIGINT');}},20);const result=await runOwnedChild(process.execPath,['-e',${JSON.stringify(childCode)}]);fs.writeFileSync(${JSON.stringify(resultFile)},JSON.stringify(result));`;
+    pendingRoots.add(root);
     const invoking = spawn(process.execPath, ["--input-type=module", "-e", code], {
       cwd: root,
       env: { ...process.env, ...lease.environment },
       stdio: "ignore",
     });
+    const closed = new Promise<void>((resolve) => invoking.once("close", () => resolve()));
     try {
       await until(() => existsSync(resultFile));
       expect(JSON.parse(readFileSync(resultFile, "utf8")).signal).toBe("SIGINT");
       expect(alive(Number(readFileSync(pidFile, "utf8")))).toBe(false);
       expect(registeredWorkIsActive(requireLeasePath(lease), lease.owner.token)).toBe(false);
     } finally {
-      if (invoking.exitCode === null) invoking.kill();
-      lease.release();
+      await finishFixture(invoking, closed, root, lease);
     }
   }, 20000);
 });
