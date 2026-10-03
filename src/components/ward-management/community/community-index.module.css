@@ -499,6 +499,48 @@
   line-height: 1.2;
 }
 
+.nameFilter {
+  position: relative;
+  display: flex;
+  flex: 0 1 15rem;
+  min-width: 0;
+}
+
+.filterSelect {
+  appearance: none;
+  width: 100%;
+  min-height: var(--ward-tap);
+  border: 1px solid var(--line);
+  border-radius: var(--ward-space-12);
+  background: var(--surface-2);
+  color: var(--ink);
+  padding: 0 var(--ward-space-32) 0 var(--ward-space-12);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filterSelect:hover {
+  border-color: var(--line-strong);
+}
+
+.filterSelect:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.filterChevron {
+  position: absolute;
+  inset-inline-end: var(--ward-space-12);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted);
+  pointer-events: none;
+}
+
 .chips {
   min-height: var(--ward-tap);
   border-radius: var(--ward-space-12);

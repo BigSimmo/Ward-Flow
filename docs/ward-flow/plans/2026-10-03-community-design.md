@@ -18,3 +18,6 @@ Browser proof for the refinement: computed 56px search height, 16px corner radiu
 
 Compact refinement: reduced search/filter height from 56px to the 48px tap target, softened depth to a small outer shadow and light inset, removed the filter container border and shadow, and increased the result-count gap to 12px.
 Browser verified both controls at 48px and count gap at 12px; visually reviewed desktop, Albany filtering and Clear. CSS-only refinement; no repeat unit run. git diff --check passed.
+
+Name-filter dropdown: replaced the segmented buttons with one labelled native select. Default All names and optional Names that read alike retain their derived counts and filtering. Compact styling uses a clear chevron and keyboard focus ring; updated the existing filter interaction test without removing assertions.
+Dropdown evidence: 18 tests passed across gateway and alphabet accessibility suites. Browser selection alike showed 22 of 64; all restored 64. Desktop screenshot reviewed, git diff --check passed. No publication or deployment.

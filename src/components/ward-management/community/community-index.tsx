@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowUpRight, BookOpen, ChevronRight, FileText, Search, X } from "lucide-react";
+import { ArrowUpRight, BookOpen, ChevronDown, ChevronRight, FileText, Search, X } from "lucide-react";
 
 import {
   COMMUNITY_TEAM_PAGES,
@@ -378,19 +378,18 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               </kbd>
             </div>
 
-            <div className={styles.chips} role="group" aria-label="Filter the list">
-              <button
-                type="button"
-                className={styles.chip}
-                aria-pressed={!alikeOnly}
-                onClick={() => setAlikeOnly(false)}
+            <label className={styles.nameFilter}>
+              <span className="sr-only">Filter team names</span>
+              <select
+                className={styles.filterSelect}
+                value={alikeOnly ? "alike" : "all"}
+                onChange={(event) => setAlikeOnly(event.target.value === "alike")}
               >
-                All names <span className={styles.chipCount}>{allTeams.length}</span>
-              </button>
-              <button type="button" className={styles.chip} aria-pressed={alikeOnly} onClick={() => setAlikeOnly(true)}>
-                Names that read alike <span className={styles.chipCount}>{namesInCollisionsAmongAll}</span>
-              </button>
-            </div>
+                <option value="all">All names ({allTeams.length})</option>
+                <option value="alike">Names that read alike ({namesInCollisionsAmongAll})</option>
+              </select>
+              <ChevronDown aria-hidden="true" className={styles.filterChevron} />
+            </label>
           </div>
 
           <p className={styles.resultLine} aria-live="polite" data-testid="community-gateway-result-line">

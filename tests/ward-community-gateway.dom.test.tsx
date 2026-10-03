@@ -207,7 +207,7 @@ describe("Community gateway — live search narrows to exactly the matching set"
 
   it("narrows further to only colliding names when the reads-alike filter is also on", () => {
     renderGateway();
-    fireEvent.click(screen.getByRole("button", { name: /Names that read alike/ }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Filter team names" }), { target: { value: "alike" } });
 
     const collisions = collisionByName();
     const anchors = screen.getAllByTestId("community-index-link");
