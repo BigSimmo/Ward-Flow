@@ -3304,7 +3304,7 @@ function WardOverviewScreen({ unitId, presentation = "overview" }: WardScreenPro
                 <div className={styles.capacityRow}>
                   <div>
                     <label className={styles.declineLegend} htmlFor="ward-leave-bed-patient">
-                      Patient
+                      Patient on leave
                     </label>
                     <select
                       id="ward-leave-bed-patient"

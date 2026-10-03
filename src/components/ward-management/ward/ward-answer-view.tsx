@@ -255,9 +255,6 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
       unitId: currentUnit.id,
     });
     setAcceptModalOpen(false);
-    queueMicrotask(() => {
-      triggerRef.current?.focus();
-    });
     // Owner, 26 Sept 2026: no WF journey number in a person-facing toast.
     triggerToast("Acceptance requested.");
   }
