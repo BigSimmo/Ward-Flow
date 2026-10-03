@@ -4,7 +4,7 @@
 // for the selected normal local readiness stage. This helper never approves a queued READY.
 // Defaults: --branch HEAD --onto origin/main. Exit0 selected compatibility checks;1 failure;75 retired broad route.
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, lstatSync, mkdtempSync, readFileSync, realpathSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import { acquireHeavyRunLock } from "../test-run-lock.mjs";
 import { runOwnedChild } from "../owned-child.mjs";
@@ -108,6 +108,14 @@ try {
   const archive = execFileSync("git", ["archive", "--format=tar", tree], { maxBuffer: 2 * 1024 ** 3 });
   const systemTar = path.join(process.env.SystemRoot ?? "C:/Windows", "System32/tar.exe");
   execFileSync(systemTar, ["-x", "-C", folder], { input: archive, stdio: ["pipe", "ignore", "inherit"] });
+  // Contracts create private repositories from the reviewed history. Supply an
+  // isolated index/object store for this exact merged tree; never share writable
+  // metadata, branches or the original checkout's index with the snapshot.
+  const objects = path.join(git(["rev-parse", "--path-format=absolute", "--git-common-dir"]), "objects");
+  execFileSync("git", ["init", "--quiet", "-b", "merged-snapshot"], { cwd: folder });
+  mkdirSync(path.join(folder, ".git", "objects", "info"), { recursive: true });
+  writeFileSync(path.join(folder, ".git", "objects", "info", "alternates"), `${objects.replaceAll("\\", "/")}\n`);
+  execFileSync("git", ["read-tree", tree], { cwd: folder });
   if (plan.installation)
     execFileSync("cmd.exe", ["/c", "mklink", "/J", path.join(folder, "node_modules"), NODE_MODULES], {
       stdio: "ignore",
