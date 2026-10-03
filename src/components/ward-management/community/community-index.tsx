@@ -184,7 +184,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
   // `renderToStaticMarkup` in several test files, which never runs effects OR subscribes, so the
   // server snapshot (an empty list) is what those tests see — exactly the honest "nothing opened
   // yet" state a server-rendered first paint should have anyway.
-  const recentNames = useRecentTeamNames();
+  const storedRecentNames = useRecentTeamNames();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const familyPanelRef = useRef<HTMLDetailsElement>(null);
@@ -253,6 +253,13 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
     heading.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
     heading.focus();
   }, []);
+
+  // One source-validated recent list feeds the strip, the filter and its count, so a stored name that
+  // was renamed or removed can never show a chip the filter then reports as empty.
+  const recentNames = useMemo(() => {
+    const known = new Set(allTeams.map((team) => team.name));
+    return storedRecentNames.filter((name) => known.has(name));
+  }, [allTeams, storedRecentNames]);
 
   const normalizedQuery = query.trim().toLowerCase();
 
@@ -444,21 +451,19 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                     </kbd>
                   </div>
 
-                  <label className={styles.nameFilter}>
-                    <span className="sr-only">Filter team names</span>
+                  <div className={styles.nameFilter}>
                     <select
                       className={styles.filterSelect}
+                      aria-label="Filter team names"
                       value={nameFilter}
                       onChange={(event) => setNameFilter(event.target.value)}
                     >
                       <option value="all">All names ({allTeams.length})</option>
-                      <option value="recent">
-                        Recently opened ({allTeams.filter((team) => recentNames.includes(team.name)).length})
-                      </option>
+                      <option value="recent">Recently opened ({recentNames.length})</option>
                       <option value="alike">Names that read alike ({namesInCollisionsAmongAll})</option>
                     </select>
                     <ChevronDown aria-hidden="true" className={styles.filterChevron} />
-                  </label>
+                  </div>
                 </div>
 
                 <p className={styles.resultLine} aria-live="polite" data-testid="community-gateway-result-line">
