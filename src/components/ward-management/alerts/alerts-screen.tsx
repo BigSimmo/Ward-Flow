@@ -297,7 +297,7 @@ function AlertRows({
                   : "Action";
 
         return (
-          <li key={item.id} className={styles.alertCard} data-tone={item.tone}>
+          <li key={item.id} className={styles.alertCard} data-tone={item.tone} data-movement-id={item.movementId}>
             <div className={styles.alertIcon} data-tone={severity.tone}>
               {categoryBadge.label === "Reservation Window" ? (
                 <BedDouble className={styles.tabIcon} aria-hidden="true" />
