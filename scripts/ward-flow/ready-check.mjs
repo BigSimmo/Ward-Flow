@@ -126,6 +126,16 @@ if (plan.installation) {
   if (relativeDependencies.startsWith("..") || path.isAbsolute(relativeDependencies))
     throw new Error("Ready dependencies must belong to this Ward Flow checkout");
 }
+// The backend has its own lockfile and install; its tests import packages that the root manifest
+// does not list, so the snapshot needs that tree too. Fail closed rather than report a false red.
+const BACKEND_MODULES = path.join(projectRoot, "backend/ward-flow/node_modules");
+if (plan.backend) {
+  if (!existsSync(BACKEND_MODULES))
+    throw new Error("Backend dependencies are missing: run npm ci in backend/ward-flow before the ready check");
+  const relativeBackend = path.relative(projectRoot, realpathSync(BACKEND_MODULES));
+  if (relativeBackend.startsWith("..") || path.isAbsolute(relativeBackend))
+    throw new Error("Backend dependencies must belong to this Ward Flow checkout");
+}
 const admission = acquireHeavyRunLock({
   projectRoot,
   mode: "exclusive",
@@ -133,9 +143,10 @@ const admission = acquireHeavyRunLock({
 });
 const folder = mkdtempSync(path.join(os.tmpdir(), "ward-ready-check-"));
 const unlinkModules = () => {
-  const link = path.join(folder, "node_modules");
-  if (existsSync(link) && lstatSync(link).isSymbolicLink()) execFileSync("cmd.exe", ["/c", "rmdir", link]);
-  if (existsSync(link)) throw new Error("Dependency junction remains; refusing recursive cleanup");
+  for (const link of [path.join(folder, "node_modules"), path.join(folder, "backend/ward-flow/node_modules")]) {
+    if (existsSync(link) && lstatSync(link).isSymbolicLink()) execFileSync("cmd.exe", ["/c", "rmdir", link]);
+    if (existsSync(link)) throw new Error("Dependency junction remains; refusing recursive cleanup");
+  }
 };
 let code = 0;
 const snapshotEnvironment = offlineTestEnvironment(admission.environment);
@@ -165,6 +176,14 @@ try {
     execFileSync("cmd.exe", ["/c", "mklink", "/J", path.join(folder, "node_modules"), NODE_MODULES], {
       stdio: "ignore",
     });
+  if (plan.backend)
+    execFileSync(
+      "cmd.exe",
+      ["/c", "mklink", "/J", path.join(folder, "backend/ward-flow/node_modules"), BACKEND_MODULES],
+      {
+        stdio: "ignore",
+      },
+    );
   const run = async (script, arguments_ = []) => {
     const result = await runOwnedChild(process.execPath, [path.join(folder, script), ...arguments_], {
       cwd: folder,

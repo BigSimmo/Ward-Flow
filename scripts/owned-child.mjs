@@ -1,4 +1,4 @@
-import { fork, spawn } from "node:child_process";
+import { execFileSync, fork, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -8,6 +8,7 @@ import { removePathSync } from "./retryable-fs.mjs";
 
 const TOKEN = "CLINICAL_KB_HEAVY_LOCK_TOKEN";
 const LEASE = "CLINICAL_KB_HEAVY_LOCK_PATH";
+const OWNER_MARKER = "WARD_OWNED_CHILD_MARKER";
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const json = (file) => {
   try {
@@ -16,6 +17,40 @@ const json = (file) => {
     return null;
   }
 };
+
+/**
+ * POSIX pids whose environment carries this run's marker, i.e. the root and every descendant that
+ * inherited it, including ones that left the root's process group. Returns null when the platform
+ * offers no way to answer, so the caller keeps admission rather than guessing.
+ */
+function markedProcesses(marker) {
+  try {
+    if (existsSync("/proc/self/environ")) {
+      const needle = `${OWNER_MARKER}=${marker}`;
+      return readdirSync("/proc")
+        .filter((name) => /^\d+$/.test(name) && Number(name) !== process.pid)
+        .filter((name) => {
+          try {
+            return readFileSync(`/proc/${name}/environ`, "latin1").split("\0").includes(needle);
+          } catch {
+            return false; // exited, or not ours to inspect
+          }
+        })
+        .map(Number);
+    }
+    if (process.platform === "darwin") {
+      const needle = `${OWNER_MARKER}=${marker}`;
+      return execFileSync("ps", ["-Eww", "-ax", "-o", "pid=,command="], { encoding: "utf8", timeout: 10_000 })
+        .split("\n")
+        .filter((line) => line.includes(needle))
+        .map((line) => Number(line.trim().split(/\s+/)[0]))
+        .filter((pid) => pid && pid !== process.pid);
+    }
+  } catch {
+    /* unknown */
+  }
+  return null;
+}
 
 // Unfinished guardian records are deliberately retained even if their PID died.
 // Descendant ownership is then unknown; automatic reclamation would be unsafe.
@@ -108,6 +143,7 @@ async function supervise(message) {
   const { command, args, cwd, env, options } = message;
   const leasePath = env[LEASE];
   const token = env[TOKEN];
+  const ownerMarker = randomUUID();
   let recordFile;
   const record = {
     token,
@@ -201,7 +237,13 @@ async function supervise(message) {
         }) + "\n",
       );
     } else {
-      child = spawn(command, args, { ...options, cwd, env, stdio: "inherit", detached: true });
+      child = spawn(command, args, {
+        ...options,
+        cwd,
+        env: { ...env, [OWNER_MARKER]: ownerMarker },
+        stdio: "inherit",
+        detached: true,
+      });
     }
     record.childPid = child.pid ?? null;
     if (recordFile) writeRecord(recordFile, record);
@@ -231,26 +273,45 @@ async function supervise(message) {
         };
       }
     } else if (child.pid) {
-      const deadline = Date.now() + 5000;
-      for (;;) {
+      // The root's process group alone proves nothing about descendants that started their own
+      // group (spawn detached). Every descendant inherits the marker below, so find them by it.
+      // `null` means the platform cannot answer; completion is then unproven and admission stays.
+      const alive = () => {
         try {
           process.kill(-child.pid, 0);
         } catch (error) {
-          completed = error.code === "ESRCH";
+          if (error.code !== "ESRCH") return true;
+        }
+        const marked = markedProcesses(ownerMarker);
+        return marked === null ? null : marked.length > 0;
+      };
+      const deadline = Date.now() + 5000;
+      for (;;) {
+        const state = alive();
+        if (state === false) {
+          completed = true;
           break;
         }
+        if (state === null) break;
         if (Date.now() > deadline) {
           try {
             process.kill(-child.pid, "SIGKILL");
           } catch {
             /* probe below establishes completion */
           }
+          for (const pid of markedProcesses(ownerMarker) ?? []) {
+            try {
+              process.kill(pid, "SIGKILL");
+            } catch {
+              /* already gone */
+            }
+          }
           const killDeadline = Date.now() + 5000;
           while (Date.now() < killDeadline) {
-            try {
-              process.kill(-child.pid, 0);
-            } catch (error) {
-              completed = error.code === "ESRCH";
+            const after = alive();
+            if (after === null) break;
+            if (after === false) {
+              completed = true;
               break;
             }
             await pause(50);
@@ -259,13 +320,21 @@ async function supervise(message) {
             status: completed ? 125 : null,
             error: {
               message: completed
-                ? "Owned child left descendants running after exit; its process group was terminated"
-                : "Owned process group completion unknown; retain admission for explicit recovery",
+                ? "Owned child left descendants running after exit; they were terminated"
+                : "Owned process completion unknown; retain admission for explicit recovery",
             },
           };
           break;
         }
         await pause(50);
+      }
+      if (!completed && !result.error) {
+        result = {
+          status: null,
+          error: {
+            message: "Owned descendant completion could not be established; retain admission for explicit recovery",
+          },
+        };
       }
     } else if (result.error) {
       completed = true; // spawn failed before any process existed

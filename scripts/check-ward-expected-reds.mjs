@@ -547,9 +547,9 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
           return { status, path: files.at(-1) };
         });
       const referencedByOtherTests = changes
-        .filter((change) => change.status === "M" && /^tests\/.*\.(?:test\.ts|dom\.test\.tsx)$/.test(change.path))
+        .filter((change) => change.status === "M" && isOfflineUnitTestFile(change.path))
         .filter((change) => {
-          const stem = path.posix.basename(change.path).replace(/\.(?:dom\.)?test\.tsx?$/, "");
+          const stem = path.posix.basename(change.path).replace(/\.(?:dom\.|contract\.)?test\.tsx?$/, "");
           return (
             /\bexport\s/.test(readFileSync(path.join(projectRoot, change.path), "utf8")) ||
             population.some(

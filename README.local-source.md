@@ -176,7 +176,7 @@ npm run test:e2e:accessibility
 npm run test:e2e:chromium
 npm run test:e2e:visual
 npm run check:deployment-readiness
-npm run format
+npm run format -- --files <exact-owned-paths>
 npm run format:check
 npm run build
 ```

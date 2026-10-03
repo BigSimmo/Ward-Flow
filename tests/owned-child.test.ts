@@ -41,9 +41,14 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const alive = (pid: number) => {
   try {
     process.kill(pid, 0);
-    return true;
   } catch {
     return false;
+  }
+  try {
+    // An unreaped zombie (some containers' pid 1 never reaps) has finished running.
+    return !/^\d+ \(.*\) Z/s.test(readFileSync(`/proc/${pid}/stat`, "utf8"));
+  } catch {
+    return true;
   }
 };
 async function until(predicate: () => boolean, timeout = 12000) {

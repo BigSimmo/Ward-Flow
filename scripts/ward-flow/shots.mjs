@@ -70,14 +70,22 @@ if (set === "before" && routes.every((route) => fs.existsSync(path.join(setDir, 
   process.exit(0);
 }
 
+// The identity route only accepts Ward Flow's managed project port range, so an OS-assigned
+// ephemeral port would make the self-launched server fail verification. Probe that range instead.
 async function freePort() {
-  return new Promise((resolve) => {
-    const server = net.createServer();
-    server.listen(0, "127.0.0.1", () => {
-      const { port } = server.address();
-      server.close(() => resolve(port));
+  const utils = await import(pathToFileURL(path.join(root, "src/lib/local-server-utils.mjs")).href);
+  const span = utils.projectPortEnd - utils.projectPortStart + 1;
+  const start = utils.projectPortStart + Math.floor(Math.random() * span);
+  const available = (port) =>
+    new Promise((resolve) => {
+      const probe = net.createServer();
+      probe.once("error", () => resolve(false));
+      probe.listen(port, "127.0.0.1", () => probe.close(() => resolve(true)));
     });
-  });
+  for (const port of utils.circularProjectPortRange(start)) {
+    if (!utils.isReservedDevPort(port) && (await available(port))) return port;
+  }
+  throw new Error("shots: no free port in the managed project range.");
 }
 
 const { offlineTestEnvironment } = await import(pathToFileURL(path.join(root, "scripts/test-environment.mjs")).href);

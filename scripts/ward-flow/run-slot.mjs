@@ -205,6 +205,8 @@ async function run(kind, who, gate, waitMinutes, command) {
   let slot = null;
   try {
     while (!slot) {
+      // A holder can die while this caller waits; reclaim its slot on every poll, not only once.
+      recoverDeadSlots();
       // Do not spend ten seconds sampling CPU when scheduling already forbids admission.
       // A fresh resource probe is still required whenever a non-gate caller could be admitted.
       const room = admissionRoom(kind, gate, holders());

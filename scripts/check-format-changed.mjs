@@ -57,6 +57,8 @@ export function validateFormatPaths(files, root = projectRoot) {
       file.startsWith("-") ||
       file.includes("\0") ||
       path.isAbsolute(file) ||
+      path.win32.isAbsolute(file) ||
+      path.posix.isAbsolute(file) ||
       file.split(/[\\/]/u).includes("..")
     )
       throw new Error(`Invalid format path: ${file}`);
