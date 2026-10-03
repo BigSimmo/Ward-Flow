@@ -8,7 +8,7 @@ import {
   wardFlowReducer,
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
-import { SELECTABLE_LEGAL_FORMS } from "../src/components/ward-management/ward-legal-forms";
+import { CONTINUATION_LEGAL_FORMS, SELECTABLE_LEGAL_FORMS } from "../src/components/ward-management/ward-legal-forms";
 import {
   DECLINE_REASONS,
   MOVEMENT_STAGES,
@@ -882,14 +882,27 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
     expect(authoredCodesIn(source), "the reducer authors a legal form again").toEqual([]);
 
     // 2. The declared list, in source order. Adding a code fails here until Part 1 drives it.
-    expect(authoredCodesIn(formsSource)).toEqual(["1A", "3A", "3B", "3D", "4A", "4C", "5A", "6A"]);
+    expect(authoredCodesIn(formsSource)).toEqual(["1A", "3A", "3B", "3D", "4A", "4C", "5A", "6A", "5B"]);
+    // 5B is continuation-only. Its paper expiry behaviour is independently pinned in
+    // ward-legal-form-5b-continues-5a.test.ts; the vocabulary itself may carry no expiry.
+    expect(CONTINUATION_LEGAL_FORMS.map((form) => form.code)).toEqual([
+      "1A",
+      "3A",
+      "3B",
+      "3D",
+      "4A",
+      "4C",
+      "5A",
+      "6A",
+      "5B",
+    ]);
     expect(SELECTABLE_LEGAL_FORMS.map((form) => form.code)).toEqual(["1A", "3A", "3B", "3D", "4A", "4C", "5A", "6A"]);
 
     // 3. NO entry carries a title. Since 2026-08-24 titles come from the Chief Psychiatrist's
     //    register at render time, and a stored one is exactly how "Inpatient treatment order" —
     //    the title of a Form 6A — came to be printed on every Form 3B. `label` is gone from the
     //    type, so this reads the runtime object: any key beyond `code`/`kind`/`dueAt` fails.
-    for (const form of SELECTABLE_LEGAL_FORMS) {
+    for (const form of CONTINUATION_LEGAL_FORMS) {
       expect(
         Object.keys(form).filter((key) => !["code", "kind", "dueAt"].includes(key)),
         `Form ${form.code} carries a field this model may not hold`,

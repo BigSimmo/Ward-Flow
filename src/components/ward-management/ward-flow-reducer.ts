@@ -8637,17 +8637,17 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "RECORD_COUNTRY_EXTENSION": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (!countryExtensionEligible(movement))
-        return reject(
-          state,
-          event,
-          "A country extension requires a current Form 1A with its paper setting recorded as country.",
-        );
       if (movement.closure || event.paperExpiresAt === undefined || !Number.isFinite(event.paperExpiresAt))
         return reject(
           state,
           event,
           "Country extensions are recorded as a typed expiry. Enter the new expiry written on the country extension form.",
+        );
+      if (!countryExtensionEligible(movement))
+        return reject(
+          state,
+          event,
+          "A country extension requires a current Form 1A with its paper setting recorded as country.",
         );
       const next = reduceClinicalEvent(
         state,
@@ -8681,8 +8681,6 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (!isLegalClockFormCode(event.formCode)) {
         return reject(state, event, `Form ${event.formCode} is not a recognised legal form in this prototype`);
       }
-      if (event.formCode === "5B" && movement.legalForm?.code !== "5A")
-        return reject(state, event, "Form 5B must continue a current Form 5A.");
       const expiryHistory =
         event.paperExpiresAt === undefined
           ? movement.legalFormExpiryHistory

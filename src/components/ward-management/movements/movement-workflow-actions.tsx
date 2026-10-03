@@ -178,7 +178,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
             <select value={form} onChange={(e) => setForm(e.target.value)}>
               <option value="">Choose form</option>
               {CONTINUATION_LEGAL_FORMS.map((f) => (
-                <option key={f.code} value={f.code} disabled={f.code === "5B" && movement.legalForm?.code !== "5A"}>
+                <option key={f.code} value={f.code}>
                   {f.code}
                 </option>
               ))}
@@ -194,7 +194,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           </label>
           <button
             type="button"
-            disabled={!form || !written || (form === "5B" && movement.legalForm?.code !== "5A")}
+            disabled={!form || !written}
             onClick={() => {
               if (!Number.isFinite(started) || (expiry && !Number.isFinite(due))) {
                 setLocalError("Enter the date and time written on the form.");
