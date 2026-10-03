@@ -102,3 +102,17 @@ f69f2f129ac3fd65c7115a9f84b254f1a1d41929:docs/caring-contacts/phase-2b-sdd-archi
 # Rewriting it out of history would need a force-push, which is worse.
 c3bb25828022355cbc27ac3262c285725d5bda0c:tests/env-answer-feedback-warning.test.ts:generic-api-key:49
 c3bb25828022355cbc27ac3262c285725d5bda0c:tests/instrumentation.test.ts:generic-api-key:151
+# Reviewed false positives found by the first full-history scan in the dedicated
+# Ward-Flow repository (gitleaks 8.28.0, 3 October 2026). DESCRIBED, NEVER QUOTED,
+# per the line 49 entry above.
+#   - The synthetic Azure backend's API audience is an application (client) ID: a
+#     public identifier carried in every issued token, not a credential. It appears in
+#     the backend test environment and in the documented example environment file.
+#   - The acceptance-fingerprints file records SHA-256 content hashes of source files.
+#   - tests/pre-commit-checks.test.ts holds a deliberately password-shaped synthetic
+#     string that proves the pre-commit scanner flags such values.
+8a650d43eee440fb75670544fc26600a9e60bc41:backend/ward-flow/backend.test.mjs:generic-api-key:13
+8a650d43eee440fb75670544fc26600a9e60bc41:backend/ward-flow/.env.example:generic-api-key:7
+7f93e4fbbc05fa63441e7545b8a5dd021b5a6392:docs/ward-flow/plans/visual-rebuild-full-estate/tasks/acceptance-fingerprints-r37.json:generic-api-key:10
+7f93e4fbbc05fa63441e7545b8a5dd021b5a6392:docs/ward-flow/plans/visual-rebuild-full-estate/tasks/acceptance-fingerprints-r37.json:generic-api-key:101
+7f93e4fbbc05fa63441e7545b8a5dd021b5a6392:tests/pre-commit-checks.test.ts:generic-api-key:221
