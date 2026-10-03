@@ -43,6 +43,13 @@ import {
   type BroadcastCategory,
 } from "./ward-broadcast-model";
 
+import {
+  isBroadcastDraftDirty,
+  parseBroadcastDraft,
+  serialiseBroadcastDraft,
+  type BroadcastDraft,
+} from "./broadcast-draft";
+
 import styles from "./alerts.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
@@ -489,15 +496,6 @@ function AlertsWorkspace() {
   );
   const [broadcastMessage, setBroadcastMessage] = useState(defaultTmpl?.defaultMessage ?? "");
 
-  const isBroadcastDirty = broadcastModalOpen && broadcastMessage.trim().length > 0;
-  const { clearDraft: clearBroadcastDraft } = useDirtyStateGuard({
-    key: "alerts-broadcast-directive",
-    isDirty: isBroadcastDirty,
-    value: broadcastMessage,
-    onRestore: setBroadcastMessage,
-    confirmMessage: "You have an unsaved statewide broadcast directive. Are you sure you want to leave?",
-  });
-
   const [broadcastSeverity, setBroadcastSeverity] = useState<BroadcastSeverity>(defaultTmpl?.severity ?? "critical");
   const [broadcastCategory, setBroadcastCategory] = useState<BroadcastCategory>(
     defaultTmpl?.category ?? "capacity_gridlock",
@@ -517,14 +515,58 @@ function AlertsWorkspace() {
     : undefined;
   const broadcastAccepted = broadcastResult?.accepted === true;
   const broadcastRefused = broadcastResult?.accepted === false;
+  const isBroadcastModalOpen =
+    broadcastModalOpen && !(broadcastAccepted && broadcastRequest?.type === "DISPATCH_BROADCAST_ALERT");
+
+  // ONE draft of the WHOLE broadcast form (template, title, severity, category, target scope, duration
+  // and message), cached and restored together; dirtiness is derived from the complete form, so a
+  // title-only or scope-only edit is protected too. A restored draft reopens the composer it came
+  // from, because a draft is only cached while the composer is open.
+  const broadcastDraft = useMemo<BroadcastDraft>(
+    () => ({
+      templateId: selectedTemplateId,
+      title: broadcastTitle,
+      message: broadcastMessage,
+      severity: broadcastSeverity,
+      category: broadcastCategory,
+      scope: broadcastScope,
+      durationMinutes: broadcastDurationMinutes,
+    }),
+    [
+      selectedTemplateId,
+      broadcastTitle,
+      broadcastMessage,
+      broadcastSeverity,
+      broadcastCategory,
+      broadcastScope,
+      broadcastDurationMinutes,
+    ],
+  );
+  const restoreBroadcastDraft = useCallback((raw: string) => {
+    const draft = parseBroadcastDraft(raw);
+    if (!draft) return;
+    setSelectedTemplateId(draft.templateId);
+    setBroadcastTitle(draft.title);
+    setBroadcastMessage(draft.message);
+    setBroadcastSeverity(draft.severity);
+    setBroadcastCategory(draft.category);
+    setBroadcastScope(draft.scope);
+    setBroadcastDurationMinutes(draft.durationMinutes);
+    setBroadcastModalOpen(true);
+  }, []);
+  const { clearDraft: clearBroadcastDraft } = useDirtyStateGuard({
+    key: "alerts-broadcast-directive",
+    isDirty: isBroadcastModalOpen && isBroadcastDraftDirty(broadcastDraft),
+    value: serialiseBroadcastDraft(broadcastDraft),
+    onRestore: restoreBroadcastDraft,
+    confirmMessage: "You have an unsaved statewide broadcast directive. Are you sure you want to leave?",
+  });
 
   useEffect(() => {
     if (broadcastAccepted && broadcastRequest?.type === "DISPATCH_BROADCAST_ALERT") {
       clearBroadcastDraft();
     }
   }, [broadcastAccepted, broadcastRequest, clearBroadcastDraft]);
-  const isBroadcastModalOpen =
-    broadcastModalOpen && !(broadcastAccepted && broadcastRequest?.type === "DISPATCH_BROADCAST_ALERT");
   const broadcastFeedback =
     broadcastRequest && broadcastResult
       ? broadcastRefused
