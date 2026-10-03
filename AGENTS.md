@@ -111,8 +111,11 @@ the separately required clinical, privacy and legal reviews.
 ### Checks and shared run slots
 
 Use the smallest focused checks while editing and the selected public-repository gate before
-publication. One wide run at a time across the PC; narrow checks use the shared run slots. Do not
-run old Ward Flow scripts that hard-code the former Database worktree or local ward line. Confirm
+publication. One wide run at a time across the PC; narrow checks use the shared run slots. For fast
+local unit testing during development, run `npx vitest run <path/to/test.ts>` directly (~250ms). It
+executes in isolation without waiting on machine-wide heavy locks or `test:focused` selector
+restrictions. Reserve `npm run test` (full suite) and `npm run verify:pr-local` for pre-push readiness.
+Do not run old Ward Flow scripts that hard-code the former Database worktree or local ward line. Confirm
 that a script's checkout, base and provider effects fit this repository before running it. A test
 pass in the old checkout does not prove this public repository or a deployed service.
 Stop servers, browsers and other processes you started when the task no longer needs them. Check
@@ -240,9 +243,7 @@ For the three `bundle-budget.json` safeguards, how chunks are attributed, and ho
 
 # Search chrome behaviour
 
-This heading remains for tools that locate repository policy sections. PsychSift search chrome and
-clinical UI instructions do not apply to Ward Flow. Follow Ward Flow's approved design and screen
-verification documents for interface work.
+PsychSift search chrome and clinical UI instructions do not apply to Ward Flow. Follow Ward Flow's approved design and screen verification documents for interface work.
 
 <!-- END:search-chrome-behaviour -->
 
@@ -294,21 +295,15 @@ For the `upload` safe Git handoff workflow — protected branches, required insp
 
 ## Open PR branch sync (anti-churn)
 
-The inherited branch-sync procedure targets PsychSift and is disabled for Ward Flow. Verify this
-repository and the named PR before any separate authorised sync.
+Inherited PsychSift PR branch sync and sweep automation are retired for Ward Flow.
 <!-- END:pr-branch-sync -->
 
-## Run PR shortcut
+## Run PR and Babysit shortcuts
 
-Disabled for Ward Flow. Do not use the inherited PsychSift PR sweep or treat it as GitHub authority.
+The inherited PsychSift PR sweeps are disabled. Use only specifically authorised Ward Flow PR tasks; do not babysit CI without user request.
 <!-- END:run-pr-shortcut -->
 
-## Babysit the pull request, then stop
-
-The inherited PsychSift PR observation procedure is disabled for Ward Flow. Use only a specifically
-authorised Ward Flow PR task, with its exact repository and head verified.
-
-## Automated review coverage (owner decision, 2026-08-22)
+## Automated review coverage
 
 The inherited PsychSift review workflow does not establish Ward Flow review or publication authority.
 
