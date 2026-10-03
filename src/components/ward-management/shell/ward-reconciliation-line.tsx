@@ -111,10 +111,7 @@ export type WardReconciliationLineProps = {
 };
 
 export function WardReconciliationLine({ publication, asAt, className, compact }: WardReconciliationLineProps) {
-  // Keep an unpublished screen quiet in the rail; published results still carry their verdict.
-  if (!publication.published) return null;
-
-  const checks = publication.checks;
+  const checks = publication.published ? publication.checks : [];
   const hasChecks = checks.length > 0;
   const problems = reconciliationProblems(checks);
   const ok = hasChecks && problems.length === 0;
@@ -122,7 +119,7 @@ export function WardReconciliationLine({ publication, asAt, className, compact }
    *  `ward-record-row.tsx`), and is the tone `ward-bar.tsx` already uses for this same state —
    *  reused rather than inventing a second name for one fact across two shell surfaces. */
   const tone: "good" | "danger" | "neutral" = !hasChecks ? "neutral" : ok ? "good" : "danger";
-  const sentence = reconciliationSentence(publication, asAt);
+  const sentence = publication.published ? reconciliationSentence(publication, asAt) : "Reconciliation not published";
 
   return (
     <p

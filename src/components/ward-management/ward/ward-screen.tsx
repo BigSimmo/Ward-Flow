@@ -294,6 +294,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // default as `bedReleaseDay` above — kept as a separate state so the two forms' choices never
   // leak into each other.
   const [leaveDay, setLeaveDay] = useState<ReleaseDay>("today");
+  const [leaveAdmissionId, setLeaveAdmissionId] = useState<string>("");
   const [answerIndex, setAnswerIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<"attn" | "coming" | "out" | "beds" | "return">(
     departurePlanning ? "return" : "attn",
@@ -1516,9 +1517,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const expectedReturn = parseReleaseDayInstant(now, leaveDay, leaveExpectedReturn);
     if (expectedReturn === undefined) return;
     // Owner ruling 2026-09-25: a leave bed names the stay it belongs to, and it is never guessed.
-    // This form has no patient picker yet, so, exactly as for a bed release (Josh chose "Refuse"),
-    // the submit is refused with a plain message and records nothing.
-    const chosenAdmissionId: string | undefined = undefined;
+    // Patient must be explicitly chosen from the form dropdown.
+    const isLeaveAdmissionValid = otherOccupants.some((a) => a.id === leaveAdmissionId);
+    const chosenAdmissionId: string | undefined = isLeaveAdmissionValid ? leaveAdmissionId : undefined;
     if (chosenAdmissionId === undefined) {
       setToastMessage("Choose the patient who is on leave. Nothing was recorded.");
       return;
@@ -1534,6 +1535,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     });
     setLeaveExpectedReturn("");
     setLeaveDay("today");
+    setLeaveAdmissionId("");
   }
 
   // Task 5 addendum (binding spec's Data flow section: "Leave beds follow the same path with a
@@ -3194,6 +3196,34 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               >
                 <span className={styles.capacityLabel}>Record a bed on leave at {unit.name}</span>
                 <div className={styles.capacityRow}>
+                  <div>
+                    <label className={styles.declineLegend} htmlFor="ward-leave-bed-patient">
+                      Patient on leave
+                    </label>
+                    <select
+                      id="ward-leave-bed-patient"
+                      data-testid="ward-leave-bed-patient"
+                      className={styles.capacityInput}
+                      value={leaveAdmissionId}
+                      onChange={(event) => setLeaveAdmissionId(event.target.value)}
+                      disabled={otherOccupants.length === 0}
+                    >
+                      <option value="">
+                        {otherOccupants.length === 0 ? "No admitted patients available" : "Choose a patient..."}
+                      </option>
+                      {otherOccupants.map((adm) => {
+                        const linkedMovement = adm.referralId
+                          ? movements.find((m) => m.id === adm.referralId)
+                          : undefined;
+                        const identity = resolvePatientIdentity(linkedMovement ?? adm);
+                        return (
+                          <option key={adm.id} value={adm.id}>
+                            {identity.displayName} ({adm.id})
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
                   <div>
                     <label className={styles.declineLegend} htmlFor="ward-leave-bed-expected-return">
                       Expected return
