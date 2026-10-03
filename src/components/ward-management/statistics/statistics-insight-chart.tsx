@@ -85,7 +85,13 @@ export function StatisticsInsightChart({
     group !== defaultGroup ||
     metric.id !== (defaultMetric ?? metrics[0]?.id);
   const selected = visible.find((row) => row.id === selectedId);
-  const format = (value: number) => new Intl.NumberFormat("en-AU", { maximumFractionDigits: 1 }).format(value);
+  const format = (value: number) =>
+    new Intl.NumberFormat(
+      "en-AU",
+      maximum < 1 || (value !== 0 && Math.abs(value) < 0.1)
+        ? { maximumFractionDigits: 2, maximumSignificantDigits: 2 }
+        : { maximumFractionDigits: 1 },
+    ).format(value);
   const unitFor = (value: number) =>
     value === 1
       ? ({ people: "person", admissions: "admission", referrals: "referral", days: "day" }[metric.unit] ?? metric.unit)
@@ -125,7 +131,12 @@ export function StatisticsInsightChart({
     setSelectedId(null);
   }
   function exportCsv() {
-    const quote = (value: string | number) => `"${String(value).replaceAll('"', '""')}"`;
+    const quote = (value: string | number) => {
+      const text = String(value);
+      // Neutralise spreadsheet formula injection: prefix cells a spreadsheet would evaluate.
+      const safe = typeof value === "string" && /^[=+\-@	]/.test(text) ? `'${text}` : text;
+      return `"${safe.replaceAll('"', '""')}"`;
+    };
     const data = [
       ["Synthetic current-state data", "Context", metric.label, "Unit", "Availability"],
       ...visible.map((row) => [

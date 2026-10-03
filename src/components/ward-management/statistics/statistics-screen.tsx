@@ -316,7 +316,7 @@ export function StatisticsScreen({
   const refDeclined = todayBedReferrals.filter((referral) =>
     referral.destinations
       .filter((addressing) => addressing.destination.kind === "psychiatric_ward")
-      .every((addressing) => addressing.state === "declined"),
+      .every((addressing) => addressing.state === "declined" && Boolean(addressing.declineReason)),
   ).length;
   const refOpen = todayBedReferrals.filter((referral) =>
     referral.destinations.some(

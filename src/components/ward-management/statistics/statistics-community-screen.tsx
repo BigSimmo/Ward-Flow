@@ -354,9 +354,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
           </div>
         </StatisticsDetailPanel>
 
-        <details className={`${pageStyles.measureDetails} source-print`}>
-          <summary>Post-Discharge Follow-up status</summary>
-          <StatisticsDetailPanel
+        <StatisticsDetailPanel
             title="Post-Discharge Follow-up"
             count="7-day follow-up"
             testId="ward-statistics-community-followup"
@@ -373,8 +371,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                 writes it, so there is no follow-up percentage to show.
               </p>
             </div>
-          </StatisticsDetailPanel>
-        </details>
+        </StatisticsDetailPanel>
 
         <StatisticsDetailPanel
           title="Discharges from hospital into this team's care"

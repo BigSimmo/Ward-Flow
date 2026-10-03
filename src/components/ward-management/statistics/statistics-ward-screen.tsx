@@ -337,6 +337,7 @@ export function StatisticsWardScreen({
               : [
                   {
                     id: "unavailable",
+                    group: "recorded",
                     name: "Breakdown unavailable",
                     values: { count: null },
                     unavailable: blockedByReasonError ?? "Not recorded",

@@ -192,3 +192,48 @@ describe("interactive statistics insights", () => {
     expect(screen.queryByRole("complementary")).toBeNull();
   });
 });
+
+describe("StatisticsInsightChart review fixes", () => {
+  it("shows short durations without rounding them to zero", () => {
+    render(
+      <StatisticsInsightChart
+        title="Short"
+        testId="short"
+        metrics={[{ id: "wait", label: "Wait", unit: "h", note: "n" }]}
+        rows={[{ id: "a", name: "Fresh", values: { wait: 0.03 } }]}
+      />,
+    );
+    expect(document.body.textContent).toContain("0.03 h");
+  });
+  it("neutralises formula-leading names in the CSV export", async () => {
+    let exported: Blob | undefined;
+    vi.stubGlobal("URL", {
+      createObjectURL: (blob: Blob) => {
+        exported = blob;
+        return "blob:x";
+      },
+      revokeObjectURL: vi.fn(),
+    });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    try {
+      render(
+        <StatisticsInsightChart
+          title="Inj"
+          testId="inj"
+          metrics={[{ id: "wait", label: "Wait", unit: "h", note: "n" }]}
+          rows={[{ id: "a", name: "=HYPERLINK(1)", values: { wait: 1 } }]}
+        />,
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Export CSV" }));
+      const csv = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.readAsText(exported!);
+      });
+      expect(csv).toContain("\"'=HYPERLINK(1)\"");
+    } finally {
+      click.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+});
