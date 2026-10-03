@@ -23,12 +23,23 @@ interface RosterItem {
   route: "bed" | "switchboard";
 }
 
-const SERVICE_FACILITIES: Record<string, [string, string]> = {
-  "North Metro": ["Sir Charles Gairdner / Graylands", "Sir Charles Gairdner Hospital"],
-  "South Metro": ["Fiona Stanley Hospital", "Fiona Stanley / Fremantle"],
-  "East Metro": ["Royal Perth Hospital", "Royal Perth / Bentley"],
-  Private: ["Private Facilities Liaison", "Private Facilities Liaison"],
-};
+/** Site names are owned by ward-sites.ts; read at call time because the network can be swapped. */
+const siteName = (code: string): string => siteByCode(code)?.name ?? code;
+
+function serviceFacilities(service: string): [string, string] | undefined {
+  switch (service) {
+    case "North Metro":
+      return ["Sir Charles Gairdner / Graylands", siteName("SCGH")];
+    case "South Metro":
+      return [siteName("FSH"), "Fiona Stanley / Fremantle"];
+    case "East Metro":
+      return [siteName("RPH"), "Royal Perth / Bentley"];
+    case "Private":
+      return ["Private Facilities Liaison", "Private Facilities Liaison"];
+    default:
+      return undefined;
+  }
+}
 
 const FAVOURITES_KEY = "ward-flow:on-call:favourites";
 const ROLE_IDS = new Set(
@@ -146,7 +157,7 @@ export function OnCallScreen() {
         SERVICE_ON_CALL_ROLES[service].map((role) => ({
           ...role,
           service,
-          facility: SERVICE_FACILITIES[service]?.[role.role === "Duty consultant" ? 1 : 0] ?? service,
+          facility: serviceFacilities(service)?.[role.role === "Duty consultant" ? 1 : 0] ?? service,
           route: "switchboard" as const,
         })),
       ),
@@ -300,7 +311,7 @@ export function OnCallScreen() {
                 </select>
                 <span className={styles.rosterCountBadge} data-testid="ward-on-call-count" aria-live="polite">
                   {filteredRoster.length} {filteredRoster.length === 1 ? "role" : "roles"}
-                  {hasFilters ? ` of ${counts.recorded}` : " recorded"}
+                  {hasFilters ? ` of ${counts.recorded}` : " recorded"} · synthetic records
                 </span>
                 <span className={styles.sectionMeta}>
                   <Clock size={14} aria-hidden="true" />
@@ -445,7 +456,7 @@ export function OnCallScreen() {
               </h2>
               <span className={styles.sectionMeta} aria-live="polite">
                 {filteredDepartments.length} {filteredDepartments.length === 1 ? "department" : "departments"}
-                {hasDirectoryFilters ? ` of ${departments.length}` : ""}
+                {hasDirectoryFilters ? ` of ${departments.length}` : ""} · synthetic records
               </span>
             </div>
             <div className={styles.sectionBody}>
