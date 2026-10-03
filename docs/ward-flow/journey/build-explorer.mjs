@@ -124,8 +124,6 @@ const WRITES = {
   DISPATCH_BROADCAST_ALERT: "A network-wide alert, active, with nobody yet acknowledging it. Belongs to no patient.",
   ACKNOWLEDGE_BROADCAST_ALERT: "One more unit on the alert's acknowledged list.",
   STAND_DOWN_BROADCAST_ALERT: "The alert marked stood down, with the time and the role.",
-  RECORD_ADMISSION_CARE:
-    "A care journey fact (transfer, transport, clinical plan or document) recorded against an admission.",
   RECORD_ADMISSION_FOLLOW_UP: "Follow-up contact arrangements recorded against an admission on the discharge board.",
 };
 

@@ -458,6 +458,13 @@
         },
         {
           "from": "occupied",
+          "to": "departed",
+          "action": "RECORD_ADMISSION_CARE",
+          "route": "straight",
+          "guard": "transfer arrival departs the source admission and creates an occupied admission on the receiving ward"
+        },
+        {
+          "from": "occupied",
           "to": "occupied",
           "action": "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
           "route": "self",

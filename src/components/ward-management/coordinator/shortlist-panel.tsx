@@ -549,7 +549,6 @@ export function ShortlistPanel({
     setOverrideRecord(undefined);
     setOverrideOpen(false);
     setOverrideReason("");
-    clearOverrideDraft();
     setReferTargets([]);
     setEscalationOpen(false);
     setEscalationContact(ESCALATION_CONTACTS[0]);

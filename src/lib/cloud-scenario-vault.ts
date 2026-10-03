@@ -155,10 +155,15 @@ export async function loadCloudScenario(
   }
 }
 
-export async function checkCloudReadiness(endpoint: string): Promise<ReadinessResult> {
+export async function checkCloudReadiness(endpoint: string, authToken?: string): Promise<ReadinessResult> {
   const cleanEndpoint = endpoint.replace(/\/+$/, "");
   try {
-    const response = await fetch(`${cleanEndpoint}/healthz`, { method: "GET" });
+    const url = authToken ? `${cleanEndpoint}/readyz` : `${cleanEndpoint}/healthz`;
+    const headers: Record<string, string> = {};
+    if (authToken) {
+      headers["Authorization"] = `Bearer ${authToken}`;
+    }
+    const response = await fetch(url, { method: "GET", headers });
     if (response.ok) {
       return { status: "ready" };
     }

@@ -317,6 +317,18 @@ test("storage account name can be configured via environment variable", () => {
   assert.equal(custom.storage.account, "customstorageacct");
 });
 
+test("unapproved storage account is refused even if both env variables agree", () => {
+  assert.throws(
+    () =>
+      readConfig({
+        ...environment,
+        AZURE_STORAGE_ACCOUNT: "unapprovedstorageacct",
+        AzureWebJobsStorage__accountName: "unapprovedstorageacct",
+      }),
+    /Unapproved storage account/,
+  );
+});
+
 test("tenant users are accepted when WARD_ALLOW_TENANT_USERS is enabled", async () => {
   const tenantConfig = readConfig({
     ...environment,

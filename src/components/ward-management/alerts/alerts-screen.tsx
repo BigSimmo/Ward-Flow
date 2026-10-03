@@ -488,22 +488,67 @@ function AlertsWorkspace() {
     defaultTmpl?.title ?? "Critical HDU Capacity: Immediate Discharge & Step-Down Review",
   );
   const [broadcastMessage, setBroadcastMessage] = useState(defaultTmpl?.defaultMessage ?? "");
-
-  const isBroadcastDirty = broadcastModalOpen && broadcastMessage.trim().length > 0;
-  const { clearDraft: clearBroadcastDraft } = useDirtyStateGuard({
-    key: "alerts-broadcast-directive",
-    isDirty: isBroadcastDirty,
-    value: broadcastMessage,
-    onRestore: setBroadcastMessage,
-    confirmMessage: "You have an unsaved statewide broadcast directive. Are you sure you want to leave?",
-  });
-
   const [broadcastSeverity, setBroadcastSeverity] = useState<BroadcastSeverity>(defaultTmpl?.severity ?? "critical");
   const [broadcastCategory, setBroadcastCategory] = useState<BroadcastCategory>(
     defaultTmpl?.category ?? "capacity_gridlock",
   );
   const [broadcastScope, setBroadcastScope] = useState<BroadcastTargetScope>(defaultTmpl?.targetScope ?? "all");
   const [broadcastDurationMinutes, setBroadcastDurationMinutes] = useState(defaultTmpl?.defaultDurationMinutes ?? 240);
+
+  const isBroadcastDirty =
+    broadcastModalOpen &&
+    (selectedTemplateId !== (defaultTmpl?.id ?? "custom") ||
+      broadcastTitle !== (defaultTmpl?.title ?? "") ||
+      broadcastMessage.trim().length > 0 ||
+      broadcastSeverity !== (defaultTmpl?.severity ?? "critical") ||
+      broadcastScope !== (defaultTmpl?.targetScope ?? "all"));
+
+  const broadcastDraftValue = useMemo(
+    () =>
+      JSON.stringify({
+        selectedTemplateId,
+        broadcastTitle,
+        broadcastMessage,
+        broadcastSeverity,
+        broadcastCategory,
+        broadcastScope,
+        broadcastDurationMinutes,
+      }),
+    [
+      selectedTemplateId,
+      broadcastTitle,
+      broadcastMessage,
+      broadcastSeverity,
+      broadcastCategory,
+      broadcastScope,
+      broadcastDurationMinutes,
+    ],
+  );
+
+  const handleRestoreBroadcast = useCallback((cached: string) => {
+    try {
+      const data = JSON.parse(cached);
+      if (data && typeof data === "object") {
+        if (data.selectedTemplateId) setSelectedTemplateId(data.selectedTemplateId);
+        if (data.broadcastTitle) setBroadcastTitle(data.broadcastTitle);
+        if (data.broadcastMessage) setBroadcastMessage(data.broadcastMessage);
+        if (data.broadcastSeverity) setBroadcastSeverity(data.broadcastSeverity);
+        if (data.broadcastCategory) setBroadcastCategory(data.broadcastCategory);
+        if (data.broadcastScope) setBroadcastScope(data.broadcastScope);
+        if (data.broadcastDurationMinutes) setBroadcastDurationMinutes(data.broadcastDurationMinutes);
+      }
+    } catch {
+      setBroadcastMessage(cached);
+    }
+  }, []);
+
+  const { clearDraft: clearBroadcastDraft } = useDirtyStateGuard({
+    key: "alerts-broadcast-directive",
+    isDirty: isBroadcastDirty,
+    value: broadcastDraftValue,
+    onRestore: handleRestoreBroadcast,
+    confirmMessage: "You have an unsaved statewide broadcast directive. Are you sure you want to leave?",
+  });
   const [broadcastSuccessNotice, setBroadcastSuccessNotice] = useState<string | null>(null);
   const [broadcastRequest, setBroadcastRequest] = useState<{
     type: "DISPATCH_BROADCAST_ALERT" | "STAND_DOWN_BROADCAST_ALERT";

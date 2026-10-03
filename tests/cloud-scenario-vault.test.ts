@@ -115,7 +115,7 @@ describe("cloud-scenario-vault", () => {
     expect(result.status).toBe("offline");
   });
 
-  it("checks readiness against healthz endpoint", async () => {
+  it("checks readiness against healthz endpoint when unauthenticated", async () => {
     const mockFetch = vi.mocked(fetch);
     mockFetch.mockResolvedValueOnce(
       new Response(JSON.stringify({ service: "ward-flow-backend" }), {
@@ -125,5 +125,25 @@ describe("cloud-scenario-vault", () => {
 
     const result = await checkCloudReadiness("https://example.com/api");
     expect(result.status).toBe("ready");
+    expect(mockFetch).toHaveBeenCalledWith("https://example.com/api/healthz", {
+      method: "GET",
+      headers: {},
+    });
+  });
+
+  it("probes authenticated readyz endpoint when auth token is provided", async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ storage: "ready" }), {
+        status: 200,
+      }),
+    );
+
+    const result = await checkCloudReadiness("https://example.com/api", "secret-token");
+    expect(result.status).toBe("ready");
+    expect(mockFetch).toHaveBeenCalledWith("https://example.com/api/readyz", {
+      method: "GET",
+      headers: { Authorization: "Bearer secret-token" },
+    });
   });
 });

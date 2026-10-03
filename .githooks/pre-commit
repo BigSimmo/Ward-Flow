@@ -8,11 +8,11 @@ set -eu
 # scoped to the staged TypeScript files. All read the staged content. Details,
 # timings and escapes are in the script's header. Fails open only when the script
 # or node is absent (an older branch in another worktree), never on a finding.
-# By default, do not block interactive developer commits on external sign-out notes unless explicitly requested.
-if [ "${PRECOMMIT_SIGNOUT_STRICT:-0}" != "1" ]; then
-  export SKIP_SIGNOUT_GUARD="${SKIP_SIGNOUT_GUARD:-1}"
-else
+# By default, do not block interactive single-user developer commits on external sign-out notes unless explicitly requested or running in multi-agent mode.
+if [ "${PRECOMMIT_SIGNOUT_STRICT:-0}" = "1" ] || [ "${MULTI_AGENT:-0}" = "1" ]; then
   unset SKIP_SIGNOUT_GUARD
+else
+  export SKIP_SIGNOUT_GUARD="${SKIP_SIGNOUT_GUARD:-1}"
 fi
 
 if [ -f scripts/pre-commit-checks.mjs ] && command -v node >/dev/null 2>&1; then

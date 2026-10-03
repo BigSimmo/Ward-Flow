@@ -1,4 +1,5 @@
 const STORAGE_ACCOUNT = "wflowdev7273a083aue";
+const APPROVED_STORAGE_ACCOUNTS = new Set([STORAGE_ACCOUNT, "customstorageacct"]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PLACEHOLDER_IDS = new Set([
   "00000000-0000-0000-0000-000000000000",
@@ -26,6 +27,7 @@ export function readConfig(env = process.env) {
   if (env.WARD_API_AUDIENCE !== "9b7b160d-9bc7-4712-b748-17ff3e70b706")
     throw new Error("Unapproved backend identity configuration");
   const storageAccount = env.AZURE_STORAGE_ACCOUNT?.trim() || STORAGE_ACCOUNT;
+  if (!APPROVED_STORAGE_ACCOUNTS.has(storageAccount)) throw new Error("Unapproved storage account");
   if (env.AzureWebJobsStorage__accountName !== storageAccount) throw new Error("Unapproved storage account");
   const origin = env.WARD_ALLOWED_ORIGIN || null;
   if (origin) {
