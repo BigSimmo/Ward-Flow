@@ -54,6 +54,7 @@ const DESTINATIONS = [
     name: "Across all services",
     linkText: "Across all services",
     marker: "ward-statistics-overview-screen",
+    navValue: "overview",
     /** A figure this screen derives, so an empty shell cannot pass as a rendered page. */
     figure: "ward-statistics-overview-declines-population",
   },
@@ -61,6 +62,7 @@ const DESTINATIONS = [
     name: "One health service in detail",
     linkText: "One health service in detail",
     marker: "ward-statistics-service-chooser",
+    navValue: "service",
     figure: undefined,
   },
 ] as const;
@@ -113,9 +115,10 @@ test.describe("@mockup the statistics screens are reachable and readable on a ph
 
     for (const destination of DESTINATIONS) {
       await page.goto(HUB, { waitUntil: "load" });
+      await page.waitForLoadState("networkidle");
       await waitForStreamToSettle(page);
 
-      await page.getByRole("link", { name: destination.linkText, exact: false }).first().click();
+      await page.getByLabel("Statistics section", { exact: true }).selectOption(destination.navValue);
       await page.waitForLoadState("networkidle");
       await waitForStreamToSettle(page);
 
@@ -188,4 +191,93 @@ test.describe("@mockup the statistics screens are reachable and readable on a ph
       ).toContain(geometry.wrapperOverflowX);
     }
   });
+});
+
+// These dynamic page families had no browser coverage. Exercise their actual scoped controls.
+test.describe("@mockup page-specific statistics insights", () => {
+  test("service capacity stays in scope and its graph opens ward statistics", async ({ page }) => {
+    await page.goto("/mockups/ward-flow/statistics/service/North%20Metro", { waitUntil: "networkidle" });
+    const capacity = page.getByTestId("ward-statistics-capacity-chart");
+    await expect(capacity).toContainText("in North Metro");
+    await expect(capacity.getByLabel("Health service filter")).toHaveCount(0);
+    await capacity.getByRole("button", { name: /Mental Health Unit:.*ready/ }).click();
+    await expect(
+      page.getByTestId("capacity-details").getByRole("link", { name: /Mental Health Unit/ }),
+    ).toHaveAttribute("href", /statistics\/ward\//);
+    const placements = page.getByTestId("statistics-service-placement-chart");
+    await placements.getByRole("button", { name: /^Within service:/ }).click();
+    await expect(placements.getByRole("complementary", { name: "Within service details" })).toBeVisible();
+    await placements.getByRole("button", { name: "Close chart details" }).click();
+    await expect(placements.getByRole("complementary")).toHaveCount(0);
+    const travel = page.getByTestId("statistics-service-travel-chart");
+    await expect(travel).toContainText("synthetic travel times");
+    await travel.getByRole("button", { name: "Travel bands data view" }).click();
+    await expect(travel.getByRole("table")).toBeVisible();
+    await travel.getByRole("button", { name: /^Three hours or more from home:/ }).click();
+    await expect(travel.getByRole("complementary")).toContainText("Travel bands are synthetic");
+    await travel.getByRole("button", { name: "Close chart details" }).click();
+  });
+  test("community handover and searchable comparison preserve team context on a phone", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/mockups/ward-flow/statistics/community/bentley", { waitUntil: "networkidle" });
+    await expect(page.getByTestId("statistics-community-handover-chart")).toContainText("Discharge dates are a subset");
+    const detail = page.getByTestId("ward-statistics-community-comparison-disclosure");
+    await detail.locator("summary").first().click();
+    const chart = page.getByTestId("statistics-community-comparison-chart");
+    await chart.getByLabel("Search Team comparison").fill("Bentley");
+    await expect(chart.locator("button[data-chart-record]")).toHaveCount(1);
+    await chart.getByLabel("Team comparison measure").selectOption("expected");
+    await chart.locator("button[data-chart-record]").click();
+    await expect(chart.getByRole("complementary", { name: "Bentley details" }).getByRole("link")).toHaveAttribute(
+      "href",
+      /statistics\/community\/bentley$/,
+    );
+    await chart.getByRole("button", { name: "Close chart details" }).click();
+    await expectNoPageOverflow(page, "community chart and comparison");
+    await expect(page.getByRole("navigation", { name: "Ward Flow statistics sections" })).toHaveCount(1);
+  });
+});
+
+test("@mockup ward disclosure rows stay inset and the chart data view preserves records", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/mockups/ward-flow/statistics/ward/scgh-adult-open", { waitUntil: "networkidle" });
+  const beds = page.getByTestId("ward-statistics-ward-beds-now");
+  const summaries = beds.locator("details > summary");
+  await expect(summaries).toHaveCount(3);
+  const geometry = await summaries.evaluateAll((nodes) =>
+    nodes.map((node) => {
+      const row = node as HTMLElement;
+      const style = getComputedStyle(row);
+      const icon = getComputedStyle(row, "::after");
+      return {
+        left: row.getBoundingClientRect().left,
+        padding: parseFloat(style.paddingLeft),
+        height: row.getBoundingClientRect().height,
+        marker: style.listStyleType,
+        iconWidth: parseFloat(icon.width),
+      };
+    }),
+  );
+  for (const row of geometry) {
+    expect(row.left).toBe(geometry[0].left);
+    expect(row.padding).toBeGreaterThanOrEqual(16);
+    expect(row.height).toBeGreaterThanOrEqual(48);
+    expect(row.marker).toBe("none");
+    expect(row.iconWidth).toBeGreaterThan(0);
+  }
+  await summaries.first().focus();
+  await page.keyboard.press("Enter");
+  await expect(beds.getByRole("table")).toBeVisible();
+  await page.keyboard.press("Enter");
+  await expect(beds.getByRole("table")).toBeHidden();
+  const chart = page.getByTestId("statistics-ward-stays-chart");
+  await chart.getByRole("button", { name: "Current length of stay data view" }).click();
+  await expect(chart.getByRole("table")).toBeVisible();
+  await chart.getByRole("button", { name: /^Under 2 weeks:/ }).click();
+  await expect(chart.getByRole("complementary", { name: "Under 2 weeks details" })).toBeVisible();
+  await chart.getByRole("button", { name: "Close chart details" }).click();
+  await expect(chart.getByRole("button", { name: /^Under 2 weeks:/ })).toBeFocused();
+  await chart.getByRole("button", { name: "Current length of stay data view" }).click();
+  await expect(chart.getByRole("table")).toHaveCount(0);
+  await expectNoPageOverflow(page, "ward disclosure and chart data view");
 });

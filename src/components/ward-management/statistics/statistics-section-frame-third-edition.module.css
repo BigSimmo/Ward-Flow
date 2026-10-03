@@ -268,3 +268,36 @@
     background-color: Canvas !important;
   }
 }
+
+/* The secondary context disclosure uses the same direction and inset as panel rows. */
+.contextDetails {
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+.contextDetails > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0.375rem 0.625rem;
+  list-style: none;
+}
+.contextDetails > summary::marker {
+  content: "";
+}
+.contextDetails > summary::-webkit-details-marker {
+  display: none;
+}
+.contextDetails > summary::after {
+  content: "";
+  width: 0.4375rem;
+  height: 0.4375rem;
+  flex: none;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+}
+.contextDetails[open] > summary::after {
+  transform: rotate(45deg);
+}

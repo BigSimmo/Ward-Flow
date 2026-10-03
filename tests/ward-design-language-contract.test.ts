@@ -567,6 +567,11 @@ describe("the ground is not merely painted — it has to be visible", () => {
     // ADDED 2026-09-25 (test fixer): its first rule is `.navBar`, a bordered, rounded section bar
     // mounted inside the statistics screens' own root — a component, not a page root.
     "statistics-nav.module.css",
+    // ADDED 2026-10-03 (PR #33): first rules are `.disclosure` (a bordered, rounded disclosure card)
+    // and `.chart` (a bordered chart card). Both are components mounted inside a statistics screen's
+    // own root, which paints the ground beneath them; neither file has a `.screen` root.
+    "statistics/statistics-family.module.css",
+    "statistics/statistics-insight-chart.module.css",
     // ⚠️ ADDED 2026-09-07 — the standing strip and the tasks drawer/opener, the chrome that now
     // mounts on every one of the 29 renderable routes. Same shape as `ward-panel.module.css` at
     // the top of this set, and the distinction is worth stating because these three are the first

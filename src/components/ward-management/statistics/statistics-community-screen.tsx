@@ -1,5 +1,9 @@
 "use client";
 
+import { StatisticsInsightChart } from "./statistics-insight-chart";
+import { StatisticsDetailPanel } from "./statistics-detail-panel";
+import family from "./statistics-family.module.css";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -170,40 +174,6 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
     };
   });
 
-  const serviceInfo =
-    team.name.includes("EMHS") || team.name.includes("Armadale") || team.name.includes("Midland")
-      ? {
-          name: "East Metropolitan Health Service",
-          tone: "east" as const,
-          suburbs: "Armadale, Kelmscott, Seville Grove, Mount Nasura, Wungong, Harrisdale, Piara Waters",
-        }
-      : team.name.includes("SMHS") ||
-          team.name.includes("Fremantle") ||
-          team.name.includes("Rockingham") ||
-          team.name.includes("Alma")
-        ? {
-            name: "South Metropolitan Health Service",
-            tone: "south" as const,
-            suburbs: "Fremantle, Cockburn, Melville, Rockingham, Kwinana, Mandurah",
-          }
-        : team.name.includes("NMHS") || team.name.includes("Osborne Park") || team.name.includes("Joondalup")
-          ? {
-              name: "North Metropolitan Health Service",
-              tone: "north" as const,
-              suburbs: "Osborne Park, Stirling, Joondalup, Wanneroo, Scarborough, Subiaco",
-            }
-          : team.name.includes("WACHS") || team.name.includes("Albany") || team.name.includes("Bunbury")
-            ? {
-                name: "WA Country Health Service",
-                tone: "wachs" as const,
-                suburbs: "Regional Western Australia catchment centers and primary care districts",
-              }
-            : {
-                name: "Metropolitan Health Service",
-                tone: "east" as const,
-                suburbs: "Local catchment suburbs and primary network centers",
-              };
-
   return (
     <StatisticsSectionFrame
       section={section}
@@ -233,40 +203,29 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
               </option>
             ))}
           </select>
-          <span className={pageStyles.serviceChip} data-tone={serviceInfo.tone}>
-            {serviceInfo.tone === "east"
-              ? "East Metro"
-              : serviceInfo.tone === "south"
-                ? "South Metro"
-                : serviceInfo.tone === "north"
-                  ? "North Metro"
-                  : "Country (WACHS)"}
-          </span>
         </div>
-        <div className={pageStyles.pillGroup} role="group" aria-label="Reporting time window">
-          <span className={`${pageStyles.pillBtn} ${pageStyles.pillBtnActive}`}>Current snapshot</span>
-          <button
-            type="button"
-            className={pageStyles.pillBtn}
-            disabled
-            title="Not recorded: this prototype keeps no seven-day history"
-          >
-            7 Days
-          </button>
-          <button
-            type="button"
-            className={pageStyles.pillBtn}
-            disabled
-            title="Not recorded: this prototype keeps no thirty-day history"
-          >
-            30 Days
-          </button>
-        </div>
-        <p className={styles.unmeasured}>
-          Seven-day and thirty-day views are unavailable because this prototype keeps no reporting history.
-        </p>
+        <span className={family.note}>Current snapshot</span>
       </div>
-
+      <StatisticsInsightChart
+        title="Community handover"
+        variant="distribution"
+        testId="statistics-community-handover-chart"
+        metrics={[
+          {
+            id: "count",
+            label: "Recorded people",
+            unit: "people",
+            note: "Discharge dates are a subset of people holding a bed. Departures describe recorded admission states, without a reporting window.",
+          },
+        ]}
+        rows={figureRows.map((row) => ({
+          id: row.key,
+          name: row.label,
+          values: { count: row.figure.kind === "measured" ? row.figure.value : null },
+          unavailable: figureText(row.figure),
+          detail: row.counts,
+        }))}
+      />
       <nav className={pageStyles.viewTabbar} aria-label="Community statistics sections">
         <a
           className={pageStyles.tabBtn}
@@ -278,30 +237,6 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
         </a>
         <a
           className={pageStyles.tabBtn}
-          href="#community-stat-referrals"
-          onClick={() => openAndFocusCommunitySection("community-stat-referrals")}
-          style={{ textDecoration: "none" }}
-        >
-          Referrals
-        </a>
-        <a
-          className={pageStyles.tabBtn}
-          href="#community-stat-followup"
-          onClick={() => openAndFocusCommunitySection("community-stat-followup")}
-          style={{ textDecoration: "none" }}
-        >
-          Follow-up
-        </a>
-        <a
-          className={pageStyles.tabBtn}
-          href="#community-stat-first-contact"
-          onClick={() => openAndFocusCommunitySection("community-stat-first-contact")}
-          style={{ textDecoration: "none" }}
-        >
-          First contact
-        </a>
-        <a
-          className={pageStyles.tabBtn}
           href="#community-stat-inpatient"
           onClick={() => openAndFocusCommunitySection("community-stat-inpatient")}
           style={{ textDecoration: "none" }}
@@ -310,88 +245,10 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
         </a>
       </nav>
 
-      {/* Current figures stay visible while section links navigate this page. */}
-      <div className={pageStyles.grid2}>
-        <div className={pageStyles.col}>
-          <section
-            id="community-stat-caseload"
-            tabIndex={-1}
-            className={pageStyles.panel}
-            aria-label="Active Caseload Profile"
-          >
-            <div className={pageStyles.ph}>
-              <h2>{team.name}</h2>
-              <span className={pageStyles.countBadge}>{figureText(figures.admitted)} in a bed</span>
-            </div>
-            <div className={pageStyles.pbStack}>
-              <p className={pageStyles.teamLine}>
-                <strong className={pageStyles.svcName}>{serviceInfo.name}</strong> &middot; covers suburbs:{" "}
-                {serviceInfo.suburbs}.
-              </p>
-              <dl className={pageStyles.slFacts}>
-                <dt>Reporting window</dt>
-                <dd>Current snapshot</dd>
-                <dt>Snapshot</dt>
-                <dd>Synthetic prototype state</dd>
-                <dt>Service scope</dt>
-                <dd>Public community mental health</dd>
-              </dl>
-              <div className={pageStyles.ctlRow}>
-                <Link
-                  href={communityTeamHref(team)}
-                  className={`${pageStyles.ctl} ${pageStyles.ctlPrimary}`}
-                  data-testid="ward-statistics-community-operational-link"
-                >
-                  Open the caseload list
-                </Link>
-                <Link href="/mockups/ward-flow" className={pageStyles.ctl}>
-                  Back to the team home
-                </Link>
-              </div>
-            </div>
-            <dl className={pageStyles.band} aria-label="Community caseload headline figures">
-              <div className={pageStyles.bandItem} data-testid="ward-statistics-community-kpi-admitted">
-                <dt className={pageStyles.bandLabel}>In a bed, or holding one</dt>
-                <dd className={pageStyles.bandValue}>{figureText(figures.admitted)}</dd>
-                <p className={pageStyles.bandNote}>
-                  Referred to this team and occupying or holding a hospital bed now.
-                </p>
-              </div>
-              <div className={pageStyles.bandItem} data-testid="ward-statistics-community-kpi-expected">
-                <dt className={pageStyles.bandLabel}>Of those, with a discharge date</dt>
-                <dd className={pageStyles.bandValue}>{figureText(figures.expected)}</dd>
-                <p className={pageStyles.bandNote}>A subset of people occupying or holding a bed now.</p>
-              </div>
-              <div className={pageStyles.bandItem} data-testid="ward-statistics-community-kpi-discharged">
-                <dt className={pageStyles.bandLabel}>Discharged into the area</dt>
-                <dd className={pageStyles.bandValue}>{figureText(figures.discharged)}</dd>
-                <p className={pageStyles.bandNote}>Left a ward for the community this team serves.</p>
-              </div>
-              <div className={pageStyles.bandItem} data-testid="ward-statistics-community-kpi-other">
-                <dt className={pageStyles.bandLabel}>Left the ward another way</dt>
-                <dd className={pageStyles.bandValue}>{figureText(figures.other)}</dd>
-                <p className={pageStyles.bandNote}>
-                  Transferred or left by a route other than discharge into the area.
-                </p>
-              </div>
-            </dl>
-          </section>
-        </div>
-
-        <div className={pageStyles.col}>
-          <section className={pageStyles.panel} aria-label="Caseload duration">
-            <div className={pageStyles.ph}>
-              <h2>Caseload duration</h2>
-              <span className={pageStyles.countBadge}>Not recorded</span>
-            </div>
-            <div className={pageStyles.pbStack}>
-              <p className={styles.unmeasured}>
-                This prototype keeps no history of how long a case has stayed open, so there is no duration curve or
-                distribution to show.
-              </p>
-            </div>
-          </section>
-        </div>
+      <div id="community-stat-caseload" tabIndex={-1} className={family.actions}>
+        <Link href={communityTeamHref(team)} data-testid="ward-statistics-community-operational-link">
+          Open the caseload list →
+        </Link>
       </div>
 
       {/* Preservation of required accessible details and testids */}
@@ -409,7 +266,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
           </WardPanel>
         </details>
 
-        <WardPanel title="Caseload" testId="ward-statistics-community-figures">
+        <StatisticsDetailPanel title="Caseload" testId="ward-statistics-community-figures">
           <div className={styles.panelBody} role="group" aria-label="Community caseload content" tabIndex={0}>
             <div className={pageStyles.kpiBand} aria-label="Community caseload headline figures">
               {figureRows.map((row) => (
@@ -495,31 +352,28 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
               </section>
             </details>
           </div>
-        </WardPanel>
+        </StatisticsDetailPanel>
 
-        <details className={`${pageStyles.measureDetails} source-print`}>
-          <summary>Post-Discharge Follow-up status</summary>
-          <WardPanel
-            title="Post-Discharge Follow-up"
-            count="7-day follow-up"
-            testId="ward-statistics-community-followup"
+        <StatisticsDetailPanel
+          title="Post-Discharge Follow-up"
+          count="7-day follow-up"
+          testId="ward-statistics-community-followup"
+        >
+          <div
+            id="community-stat-followup"
+            className={styles.panelBody}
+            role="group"
+            aria-label="Post-discharge follow-up content"
+            tabIndex={-1}
           >
-            <div
-              id="community-stat-followup"
-              className={styles.panelBody}
-              role="group"
-              aria-label="Post-discharge follow-up content"
-              tabIndex={-1}
-            >
-              <p className={styles.unmeasured}>
-                Not recorded. Whether follow-up was arranged is a field on each admission, but nothing in this prototype
-                writes it, so there is no follow-up percentage to show.
-              </p>
-            </div>
-          </WardPanel>
-        </details>
+            <p className={styles.unmeasured}>
+              Not recorded. Whether follow-up was arranged is a field on each admission, but nothing in this prototype
+              writes it, so there is no follow-up percentage to show.
+            </p>
+          </div>
+        </StatisticsDetailPanel>
 
-        <WardPanel
+        <StatisticsDetailPanel
           title="Discharges from hospital into this team's care"
           testId="ward-statistics-community-hospital-discharges"
         >
@@ -539,7 +393,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
               <strong>{figureText(figures.other)}</strong> left a ward another way.
             </p>
           </div>
-        </WardPanel>
+        </StatisticsDetailPanel>
 
         <details className={`${pageStyles.unsupportedGroup} source-print`}>
           <summary>Measures this record does not support</summary>
@@ -607,12 +461,35 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
           </div>
         </WardPanel>
 
-        <WardPanel title="Where this team sits" testId="ward-statistics-community-comparison">
+        <StatisticsDetailPanel title="Where this team sits" testId="ward-statistics-community-comparison">
           <div className={styles.panelBody} role="group" aria-label="Community comparison content" tabIndex={0}>
             <p className={styles.note} data-testid="ward-statistics-community-comparison-note">
               Every team the referral form can name, in the order that form offers them — never a ranking, and never a
               subset. Open a team name for its operational detail.
             </p>
+            <StatisticsInsightChart
+              title="Team comparison"
+              testId="statistics-community-comparison-chart"
+              defaultSort="value"
+              metrics={figureRows.map((row) => ({
+                id: row.key,
+                label: row.label,
+                unit: "people",
+                note: "Whole-network recorded team membership. Missing links remain unavailable; discharge dates are a subset of people holding beds.",
+              }))}
+              rows={allTeams.map((row) => ({
+                id: row.team.id,
+                name: row.team.name,
+                values: Object.fromEntries(
+                  figureRows.map((measure) => {
+                    const figure = row.figures[measure.key];
+                    return [measure.key, figure.kind === "measured" ? figure.value : null];
+                  }),
+                ),
+                unavailable: "Not linked",
+                href: communityStatisticsHref(row.team.id),
+              }))}
+            />
             <WardTable testId="ward-statistics-community-comparison-table">
               <thead>
                 <tr>
@@ -650,7 +527,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
               </tbody>
             </WardTable>
           </div>
-        </WardPanel>
+        </StatisticsDetailPanel>
 
         {/*
         🔴 **THE PROVENANCE SECTION — and its figure list is DERIVED, never typed.**
@@ -667,7 +544,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
         on the page is a second source about somebody else's screen**, so this says only what it can
         see: everything here is invented, and it names each one.
       */}
-        <WardPanel title="Data provenance" testId="ward-statistics-community-provenance">
+        <StatisticsDetailPanel title="Data provenance" testId="ward-statistics-community-provenance">
           <div className={styles.panelBody} role="group" aria-label="Community data provenance content" tabIndex={0}>
             {/*
             ⚠️ **THESE THREE SENTENCES WERE REWRITTEN 2026-09-11 TO SATISFY A GUARD THAT IS STRICTER
@@ -733,7 +610,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
               </div>
             </details>
           </div>
-        </WardPanel>
+        </StatisticsDetailPanel>
 
         <WardPanel title="Coverage limits" testId="ward-statistics-community-limits">
           <div className={styles.panelBody} role="group" aria-label="Community coverage limits content" tabIndex={0}>
