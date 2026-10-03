@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { OnCallScreen } from "@/components/ward-management/on-call/on-call-screen";
 import { roleRecordCounts, servicesWithNoRoleRecorded } from "@/components/ward-management/on-call/on-call-roster";
@@ -26,6 +26,10 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
 function renderOnCall() {
   return render(<OnCallScreen />);
 }
+
+beforeEach(() => {
+  window.localStorage.removeItem("ward-flow:on-call:service");
+});
 
 describe("the on-call screen", () => {
   it("🔴 ANTI-VACUITY — the fixture has departments and at least one service with nobody recorded", () => {
@@ -194,6 +198,36 @@ describe("the on-call screen", () => {
     expect(
       screen.getByText(/Have the movement reference, referring site, reason for contact and urgency ready/),
     ).toBeVisible();
+  });
+
+  it("remembers the service on remount and persists a clear-filters reset", async () => {
+    const first = renderOnCall();
+    fireEvent.click(screen.getByRole("button", { name: "East Metro" }));
+    expect(window.localStorage.getItem("ward-flow:on-call:service")).toBe("East Metro");
+    first.unmount();
+    renderOnCall();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "East Metro" })).toHaveAttribute("aria-pressed", "true"),
+    );
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("2 roles of 9");
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(window.localStorage.getItem("ward-flow:on-call:service")).toBe("all");
+  });
+
+  it("keeps filters usable when preference storage is unavailable", () => {
+    renderOnCall();
+    const writer = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("Unavailable");
+    });
+    try {
+      fireEvent.click(screen.getByRole("button", { name: "South Metro" }));
+      expect(screen.getByRole("button", { name: "South Metro" })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("2 roles of 9");
+      fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+      expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("9 roles recorded");
+    } finally {
+      writer.mockRestore();
+    }
   });
 
   /**

@@ -30,6 +30,8 @@ const SERVICE_FACILITIES: Record<string, [string, string]> = {
   Private: ["Private Facilities Liaison", "Private Facilities Liaison"],
 };
 
+const SERVICE_PREFERENCE_KEY = "ward-flow:on-call:service";
+
 type RoleFilter = "all" | "coordinator" | "consultant" | "governance";
 
 const ROLE_PURPOSES: Record<string, string> = {
@@ -66,6 +68,29 @@ export function OnCallScreen() {
   const [selectedService, setSelectedService] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState<RoleFilter>("all");
+  const serviceChangedRef = useRef(false);
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      if (serviceChangedRef.current) return;
+      try {
+        const saved = window.localStorage.getItem(SERVICE_PREFERENCE_KEY);
+        if (saved && ["all", "Statewide Network", ...HEALTH_SERVICES].includes(saved)) setSelectedService(saved);
+      } catch {
+        // Preferences are optional; the directory remains usable without browser storage.
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  function selectService(service: string) {
+    serviceChangedRef.current = true;
+    setSelectedService(service);
+    try {
+      window.localStorage.setItem(SERVICE_PREFERENCE_KEY, service);
+    } catch {
+      // Keep the current selection in memory if storage is unavailable.
+    }
+  }
   const searchInputId = useId();
   const departments = allEmergencyDepartments();
   const counts = roleRecordCounts();
@@ -127,7 +152,7 @@ export function OnCallScreen() {
     SERVICE_ON_CALL_ROLES[selectedService as keyof typeof SERVICE_ON_CALL_ROLES]?.length === 0;
 
   function clearFilters() {
-    setSelectedService("all");
+    selectService("all");
     setSearchQuery("");
     setSelectedRole("all");
   }
@@ -163,7 +188,7 @@ export function OnCallScreen() {
               type="button"
               className={`${styles.filterBtn} ${selectedService === "all" ? styles.activeFilter : ""}`}
               aria-pressed={selectedService === "all"}
-              onClick={() => setSelectedService("all")}
+              onClick={() => selectService("all")}
             >
               All services
             </button>
@@ -171,7 +196,7 @@ export function OnCallScreen() {
               type="button"
               className={`${styles.filterBtn} ${selectedService === "Statewide Network" ? styles.activeFilter : ""}`}
               aria-pressed={selectedService === "Statewide Network"}
-              onClick={() => setSelectedService("Statewide Network")}
+              onClick={() => selectService("Statewide Network")}
             >
               Statewide
             </button>
@@ -181,7 +206,7 @@ export function OnCallScreen() {
                 type="button"
                 className={`${styles.filterBtn} ${selectedService === service ? styles.activeFilter : ""}`}
                 aria-pressed={selectedService === service}
-                onClick={() => setSelectedService(service)}
+                onClick={() => selectService(service)}
               >
                 {service}
               </button>

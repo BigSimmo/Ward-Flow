@@ -15,6 +15,8 @@ The uploaded standing design brief was applied in the next visual pass: the isla
 
 The revised standing brief prompted a further curvature pass: a 24px desktop island capsule with inset dividers, a 20px mobile island surface, and 14px filter-bar corners. Title/island alignment and header rhythm were balanced; the search field now shares the established 10px control radius. Island and filters remain in document flow so they cannot cover table rows or controls. No sticky or floating behaviour was added without a workflow need.
 
+The final workflow pass remembers only the selected service in browser-local preferences, validates restored values, and keeps selection usable when storage is unavailable. Search text and patient data are not persisted. Clear filters resets the saved preference. The desktop filter bar stays below the 56px app header with an 8px gap; small screens retain normal document flow. Guidance targets have additional desktop clearance so navigation does not land behind the anchored controls.
+
 The original research below is historical evidence, not a requirement to restore the removed panels or controls.
 
 ## 0. Design or reproduction?
