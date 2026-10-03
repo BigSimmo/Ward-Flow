@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import styles from "./ward-decisions-cockpit.module.css";
@@ -67,23 +67,43 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
   const [declineNotes, setDeclineNotes] = useState("");
   const [barrierNotes, setBarrierNotes] = useState("");
 
-  const isDeclineDirty = declineModalOpen && declineNotes.trim().length > 0;
+  const isDeclineDirty = declineNotes.trim().length > 0;
   const { clearDraft: clearDeclineDraft } = useDirtyStateGuard({
     key: `cockpit-decline-${unit.id}`,
     isDirty: isDeclineDirty,
     value: declineNotes,
-    onRestore: setDeclineNotes,
+    onRestore: (cached) => {
+      setDeclineNotes(cached);
+      setDeclineModalOpen(true);
+    },
     confirmMessage: "You have an unsaved clinical decline rationale. Are you sure you want to leave?",
   });
 
-  const isBarrierDirty = barrierModalOpen && barrierNotes.trim().length > 0;
+  const isBarrierDirty = barrierNotes.trim().length > 0;
   const { clearDraft: clearBarrierDraft } = useDirtyStateGuard({
     key: `cockpit-barrier-${unit.id}`,
     isDirty: isBarrierDirty,
     value: barrierNotes,
-    onRestore: setBarrierNotes,
+    onRestore: (cached) => {
+      setBarrierNotes(cached);
+      setBarrierModalOpen(true);
+    },
     confirmMessage: "You have an unsaved discharge barrier note. Are you sure you want to leave?",
   });
+
+  // Modal keyboard accessibility (Escape key dismissal)
+  useEffect(() => {
+    if (!declineModalOpen && !barrierModalOpen && !handoverModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setDeclineModalOpen(false);
+        setBarrierModalOpen(false);
+        setHandoverModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [declineModalOpen, barrierModalOpen, handoverModalOpen]);
 
   // ─── Fictional Demonstration Log ───
   const [auditLog, setAuditLog] = useState<AuditRecord[]>([
@@ -459,6 +479,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
             type="button"
             className={styles.filterPill}
             data-active={activeFilter === "all"}
+            aria-pressed={activeFilter === "all"}
             onClick={() => setActiveFilter("all")}
           >
             All Gates (4)
@@ -467,6 +488,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
             type="button"
             className={styles.filterPill}
             data-active={activeFilter === "urgent"}
+            aria-pressed={activeFilter === "urgent"}
             onClick={() => setActiveFilter("urgent")}
           >
             🚨 Immediate Actions ({pendingIntakes + pendingDepartures})
@@ -475,6 +497,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
             type="button"
             className={styles.filterPill}
             data-active={activeFilter === "barriers"}
+            aria-pressed={activeFilter === "barriers"}
             onClick={() => setActiveFilter("barriers")}
           >
             ⚠️ Barriers &amp; Escalation ({pendingBarriers})
@@ -483,6 +506,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
             type="button"
             className={styles.filterPill}
             data-active={activeFilter === "governance"}
+            aria-pressed={activeFilter === "governance"}
             onClick={() => setActiveFilter("governance")}
           >
             ⚖️ Governance ({pendingLeave})
@@ -530,6 +554,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
                     type="button"
                     className={styles.constraintPill}
                     data-active={limiters.specialling}
+                    aria-pressed={limiters.specialling}
                     onClick={() => toggleLimiter("specialling")}
                     title="1:1 Specialling nurse assigned"
                   >
@@ -539,6 +564,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
                     type="button"
                     className={styles.constraintPill}
                     data-active={limiters.deficit}
+                    aria-pressed={limiters.deficit}
                     onClick={() => toggleLimiter("deficit")}
                     title="Nursing deficit"
                   >
@@ -548,6 +574,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
                     type="button"
                     className={styles.constraintPill}
                     data-active={limiters.maintenance}
+                    aria-pressed={limiters.maintenance}
                     onClick={() => toggleLimiter("maintenance")}
                     title="Physical maintenance"
                   >
@@ -557,6 +584,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
                     type="button"
                     className={styles.constraintPill}
                     data-active={limiters.genderLock}
+                    aria-pressed={limiters.genderLock}
                     onClick={() => toggleLimiter("genderLock")}
                     title="Bay cohort constraint"
                   >

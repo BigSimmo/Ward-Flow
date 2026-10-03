@@ -91,8 +91,8 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
 
     // Active directive card rendered in Alerts view
     expect(screen.getByLabelText("Active Statewide Directive")).toBeInTheDocument();
-    // 23 -> 22 on 26 Sept 2026: Kununurra has no ward (owner-approved ward facts).
-    expect(screen.getByText(/22 Clinical Units Acknowledged/i)).toBeInTheDocument();
+    // 0 of 22 units have acknowledged immediately after initial broadcast dispatch
+    expect(screen.getByText("0 of 22 Clinical Units Acknowledged")).toBeInTheDocument();
 
     // Global broadcast banner rendered
     const banner = screen.getByTestId("ward-broadcast-banner");
