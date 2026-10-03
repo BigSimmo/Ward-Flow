@@ -32,7 +32,7 @@ import { blankCssComments } from "./helpers/strip-source-comments";
  * ranks are still declared apart — not that a coordinator can see them.
  */
 
-const DELAYS_CSS = "src/components/ward-management/delays/delays.module.css";
+const DELAYS_CSS = "src/components/ward-management/delays/delays-data-views.module.css";
 
 /** The declarations of one class, comments blanked so a commented-out rule cannot satisfy this. */
 function ruleBody(css: string, className: string): string {
@@ -45,7 +45,7 @@ function declaration(body: string, property: string): string | undefined {
   return new RegExp(String.raw`${property}:\s*([^;]+);`, "u").exec(body)?.[1]?.trim();
 }
 
-describe("the Delays waiting row keeps its type ranks after the 12px raise (O-16.2)", () => {
+describe("the Delays waiting table keeps its type ranks after the table redesign", () => {
   const css = blankCssComments(readFileSync(DELAYS_CSS, "utf8"));
 
   /**
@@ -53,7 +53,7 @@ describe("the Delays waiting row keeps its type ranks after the 12px raise (O-16
    * an unresolvable token would also not be the old one, and would paint the inherited size.
    */
   it("puts all four waiting columns on one declared size, and it is not the retired 10px step", () => {
-    const sizes = ["personCause", "personMeta", "personWait", "personSince"].map((name) => ({
+    const sizes = ["cause", "profile", "wait", "update"].map((name) => ({
       name,
       size: declaration(ruleBody(css, name), "font-size"),
     }));
@@ -75,8 +75,8 @@ describe("the Delays waiting row keeps its type ranks after the 12px raise (O-16
    * rank and nothing else on this row separates them.
    */
   it("keeps the blocker distinguishable from the demographics beside it", () => {
-    const cause = ruleBody(css, "personCause");
-    const meta = ruleBody(css, "personMeta");
+    const cause = ruleBody(css, "cause");
+    const meta = ruleBody(css, "profile");
 
     const channels = ["color", "font-weight", "font-family", "text-transform"] as const;
     const differing = channels.filter((channel) => declaration(cause, channel) !== declaration(meta, channel));
@@ -96,8 +96,8 @@ describe("the Delays waiting row keeps its type ranks after the 12px raise (O-16
    * size advantage at all. Its rank is now entirely mono + weight + ink.
    */
   it("keeps the scan rail distinguishable now that the raise removed its size advantage", () => {
-    const id = ruleBody(css, "personId");
-    const meta = ruleBody(css, "personMeta");
+    const id = ruleBody(css, "patientButton");
+    const meta = ruleBody(css, "profile");
 
     const channels = ["color", "font-weight", "font-family"] as const;
     const differing = channels.filter((channel) => declaration(id, channel) !== declaration(meta, channel));
@@ -116,6 +116,6 @@ describe("the Delays waiting row keeps its type ranks after the 12px raise (O-16
    */
   it("actually read the stylesheet, rather than passing over an empty parse", () => {
     expect(css.length, "the stylesheet read as empty").toBeGreaterThan(1000);
-    expect(declaration(ruleBody(css, "personId"), "font-family"), ".personId lost its mono family").toContain("mono");
+    expect(declaration(ruleBody(css, "wait"), "font-family"), "the wait column lost its mono family").toContain("mono");
   });
 });

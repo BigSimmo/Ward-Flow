@@ -372,7 +372,7 @@ describe("the Delays screen", () => {
      * and its absence sentence only renders once that tab is the active pane.
      */
     fireEvent.click(screen.getByRole("tab", { name: /Resolved today/u }));
-    const resolved = screen.getByRole("tabpanel");
+    const resolved = within(screen.getByRole("region", { name: "Escalations and resolved" })).getByRole("tabpanel");
     expect(resolved).toHaveTextContent(/Kept until midnight for handover/u);
   });
 
@@ -723,7 +723,7 @@ describe("the Delays chips MARK who is shown, and never hide anybody", () => {
     const escalatedIds = new Set<string>(escalated.map((movement) => movement.id));
     let markedRows = 0;
     for (const row of rows) {
-      const id = (row.getAttribute("data-record-key") ?? "");
+      const id = row.getAttribute("data-record-key") ?? "";
       const saysMarked = (row.textContent ?? "").includes("Marked: Escalated");
       if (escalatedIds.has(id)) {
         expect(saysMarked, `${id} is escalated and the pressed chip must name it as marked`).toBe(true);

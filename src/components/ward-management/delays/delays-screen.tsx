@@ -1,14 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, useId, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 
-import { WardFilters } from "@/components/ward-management/ward-controls";
-import {
-  delaysAliasBannerCopy,
-  parseDelaysAliasFrom,
-  type DelaysAliasFrom,
-} from "@/components/ward-management/delays/delays-alias";
+import { delaysAliasBannerCopy, parseDelaysAliasFrom } from "@/components/ward-management/delays/delays-alias";
 import {
   clockState,
   dayOf,
@@ -16,21 +11,13 @@ import {
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import {
-  isOpen,
-  stageCopy,
-  referralForMovement,
-  shortlistCandidates,
-  movementHealthService,
-} from "@/components/ward-management/ward-derivations";
+import { isOpen, stageCopy, shortlistCandidates } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import {
   BLOCKERS_MEANING_NOTHING_IS_BLOCKING,
   type Movement,
   type Unit,
-  type Referral,
-  type HealthService,
 } from "@/components/ward-management/ward-model";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { WardPanel } from "@/components/ward-management/ward-panel";
@@ -45,10 +32,9 @@ import {
 import { WardRecordList, WardRecordRow } from "@/components/ward-management/ward-record-row";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
-import { allEmergencyDepartments, edById, wardSites } from "@/components/ward-management/ward-sites";
+import { edById } from "@/components/ward-management/ward-sites";
 import {
   DELAY_CAUSE_COPY,
-  DELAY_CAUSE_ORDER,
   DELAY_OWNERS,
   type DelayCause,
   type DelayOwnerId,
@@ -62,12 +48,9 @@ import {
   waitingSplit,
 } from "./delays-derivations";
 import styles from "./delays.module.css";
-import {
-  ED_SEVERE_PRESSURE_WAIT_MINUTES,
-  OPERATIONAL_DEFAULT_LABEL,
-} from "@/components/ward-management/ward-operational-defaults";
+import { DelaysTableWorkspace, DelaysWaitTimeline } from "./delays-data-views";
+import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
-import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "@/components/ward-management/ward-legal-clock";
 
 export type SystemicHoldCategory = "all" | "ward" | "transport" | "staffing";
 
@@ -145,7 +128,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
 
   const showAliasBanner = aliasFrom !== null && !aliasBannerDismissed;
 
-  const { movements: liveMovements, units, configuration, setFocusMovementId, referrals } = useWardFlow();
+  const { movements: liveMovements, units, configuration } = useWardFlow();
   const resolvePatientIdentity = usePatientOf();
   const service = useServiceScope();
   const now = useWardFlowClock();
@@ -172,12 +155,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
 
   // Prototype Actions & Notices (Owner Rule D4)
   const [protoActionNotice, setProtoActionNotice] = useState<string | null>(null);
-
-  // Search & Sort State
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortOrder, setSortOrder] = useState<"worstBlocker" | "longestWait" | "legalDeadline" | "triageRank">(
-    "worstBlocker",
-  );
 
   // Refs for accessibility & drawer focus
   const detailColumnRef = useRef<HTMLDivElement>(null);
@@ -263,7 +240,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
   const attentionRows = [...severeRows, ...extraAttentionRows];
 
   const escalatedRows = openNetworkWide.filter((movement) => movement.escalation !== undefined);
-  const causeMax = groups.reduce((most, group) => Math.max(most, group.movements.length), 0);
 
   const closedToday = movements.filter(
     (movement) => movement.closure !== undefined && dayOf(movement.closure.at) === dayOf(now),
@@ -320,7 +296,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
     };
   }, [selectedId, effectiveMarkedCause, markedOwner, delayFilterId]);
 
-  const handlePersonListKeyDown = (e: React.KeyboardEvent<HTMLUListElement>) => {
+  const handlePersonListKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
     if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Home" && e.key !== "End") return;
     const target = e.target as HTMLElement | null;
     const currentBtn = target?.closest<HTMLButtonElement>(`button[data-testid^="delays-select-"]`);
@@ -622,6 +598,8 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
         ) : null}
 
         {/* ─── PANEL 1: EXECUTIVE COORDINATION OVERVIEW (Who is holding people up) ─── */}
+        <DelaysWaitTimeline rows={rows} now={now} onSelect={selectMovement} />
+
         <WardPanel title="Who is holding people up" count={open.length === 0 ? undefined : `${open.length} waiting`}>
           <div className={styles.topExecutiveControlRow}>
             <div className={styles.execStatusBadge}>
@@ -1191,227 +1169,30 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
           )}
         </WardPanel>
 
-        {/* ─── SPLIT LAYOUT: WORKLIST & COORDINATION CONSOLE ────────────── */}
-        <div className={styles.splitLayout}>
-          {/* ─── LEFT: TRIAGE WORKLIST ─── */}
-          <div className={styles.worklistPanel}>
-            <WardPanel
-              title="Waiting"
-              count={markLabel === null ? `${open.length}` : `${markedCount} of ${open.length} marked · ${markLabel}`}
-            >
-              <div className={styles.worklistHeader}>
-                <div className={styles.worklistTitleRow}>
-                  <WardFilters
-                    legend="Mark"
-                    activeId={delayFilterId}
-                    onChange={(id) => {
-                      setMarkedOwner(null);
-                      setMarkedCause(null);
-                      setDelayFilterId(id);
-                    }}
-                    options={delayFilters.map((option) => ({
-                      id: option.id,
-                      label: option.label,
-                      count: groups.reduce((sum, group) => sum + group.movements.filter(option.predicate).length, 0),
-                    }))}
-                  />
-                </div>
-
-                <div className={styles.worklistSearchSortBar}>
-                  <div className={styles.searchBox}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="11" cy="11" r="8" />
-                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
-                    <input
-                      type="search"
-                      placeholder="Filter by ID, ED, or keyword..."
-                      className={styles.searchInput}
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      aria-label="Filter patient worklist"
-                    />
-                    {searchQuery.trim() !== "" ? (
-                      <button
-                        type="button"
-                        className={styles.searchClearBtn}
-                        onClick={() => setSearchQuery("")}
-                        aria-label="Clear search input"
-                      >
-                        &times;
-                      </button>
-                    ) : null}
-                  </div>
-
-                  <div className={styles.worklistSort}>
-                    <label htmlFor="sortOrderSelect">Sort:</label>
-                    <div className={styles.sortSelectWrapper}>
-                      <select
-                        id="sortOrderSelect"
-                        className={styles.sortSelect}
-                        value={sortOrder}
-                        onChange={(e) =>
-                          setSortOrder(
-                            e.target.value as "worstBlocker" | "longestWait" | "legalDeadline" | "triageRank",
-                          )
-                        }
-                      >
-                        <option value="worstBlocker">Worst Blocker First</option>
-                        <option value="longestWait">Longest ED Wait</option>
-                        <option value="legalDeadline">Legal Expiry Due</option>
-                        <option value="triageRank">Triage Rank (T1-T3)</option>
-                      </select>
-                      <svg
-                        className={styles.sortSelectChevron}
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        aria-hidden="true"
-                      >
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Active Filter Banner */}
-              {(delayFilterId !== "waiting" || markedOwner !== null || markedCause !== null || searchQuery !== "") && (
-                <div className={styles.activeFilterBanner} role="status" aria-atomic="true">
-                  {/* The matching count below is announced; this sentence travels with it
-                      (tests/ward-announced-figures-carry-their-marker, tier b). Screen readers only. */}
-                  <span className="sr-only">These counts are invented figures.</span>
-                  <span>
-                    Showing:{" "}
-                    <strong>
-                      {delayFilterId === "locked"
-                        ? "Needs locked bed"
-                        : delayFilterId === "escalated"
-                          ? "Escalated"
-                          : markedOwner !== null
-                            ? `Owner: ${markedOwner.toUpperCase()}`
-                            : markedCause !== null
-                              ? (DELAY_CAUSE_COPY.find((c) => c.cause === markedCause)?.title ?? markedCause)
-                              : "Filtered results"}
-                    </strong>{" "}
-                    ({markedCount} matching)
-                  </span>
-                  <button
-                    type="button"
-                    className={styles.clearFilterBtn}
-                    onClick={() => {
-                      setDelayFilterId("waiting");
-                      setMarkedOwner(null);
-                      setMarkedCause(null);
-                      setSearchQuery("");
-                    }}
-                  >
-                    Clear filter
-                  </button>
-                </div>
-              )}
-
-              {(() => {
-                const filteredItems = groups.flatMap((group) =>
-                  group.movements
-                    .filter((movement) => {
-                      if (searchQuery.trim() !== "") {
-                        const q = searchQuery.toLowerCase();
-                        const ed = edById(movement.originEdId);
-                        const matchId = movement.id.toLowerCase().includes(q);
-                        const matchEd = ed ? ed.name.toLowerCase().includes(q) : false;
-                        const matchBlocker = movement.blocker.toLowerCase().includes(q);
-                        if (!matchId && !matchEd && !matchBlocker) return false;
-                      }
-                      return true;
-                    })
-                    .map((movement) => ({ movement, cause: group.cause })),
-                );
-
-                const sortedItems = [...filteredItems];
-                if (sortOrder === "longestWait") {
-                  sortedItems.sort(
-                    (a, b) => a.movement.openedAt - b.movement.openedAt || a.movement.id.localeCompare(b.movement.id),
-                  );
-                } else if (sortOrder === "legalDeadline") {
-                  sortedItems.sort((a, b) => {
-                    const legalA = legalDeadlineMinutes(a.movement, now);
-                    const legalB = legalDeadlineMinutes(b.movement, now);
-                    if (legalA !== undefined && legalB !== undefined) {
-                      return (
-                        legalA - legalB ||
-                        a.movement.openedAt - b.movement.openedAt ||
-                        a.movement.id.localeCompare(b.movement.id)
-                      );
-                    }
-                    if (legalA !== undefined) return -1;
-                    if (legalB !== undefined) return 1;
-                    return a.movement.openedAt - b.movement.openedAt || a.movement.id.localeCompare(b.movement.id);
-                  });
-                } else if (sortOrder === "triageRank") {
-                  sortedItems.sort(
-                    (a, b) =>
-                      a.movement.urgency - b.movement.urgency ||
-                      a.movement.openedAt - b.movement.openedAt ||
-                      a.movement.id.localeCompare(b.movement.id),
-                  );
-                }
-
-                if (sortedItems.length === 0) {
-                  return (
-                    <div className={styles.emptyContainer} data-testid="delays-empty-state">
-                      <p className={styles.emptyText}>No active delays match your current filters.</p>
-                      <button
-                        type="button"
-                        className={styles.resetFilterBtn}
-                        onClick={() => {
-                          setDelayFilterId("waiting");
-                          setMarkedOwner(null);
-                          setMarkedCause(null);
-                          setSearchQuery("");
-                        }}
-                      >
-                        Clear active filters
-                      </button>
-                    </div>
-                  );
-                }
-
-                return (
-                  <ul
-                    className={styles.patientCardsList}
-                    data-testid="delays-waiting-list"
-                    data-ward-primitive="list"
-                    onKeyDown={handlePersonListKeyDown}
-                  >
-                    {sortedItems.map(({ movement, cause }) => (
-                      <PersonRow
-                        key={movement.id}
-                        movement={movement}
-                        cause={cause}
-                        now={now}
-                        marked={marked(movement, cause)}
-                        markLabel={markLabel}
-                        selected={movement.id === selectedId}
-                        onSelect={() => selectMovement(movement.id)}
-                      />
-                    ))}
-                  </ul>
-                );
-              })()}
-
-              <p className={styles.foot}>
-                <strong>Worst blocker first, then longest wait.</strong>
-              </p>
-            </WardPanel>
-          </div>
-
-          {/* ─── RIGHT: COORDINATION & ACTION WORKSPACE ─── */}
-          <div className={styles.workspacePanel}>
-            {selected !== null ? (
+        <DelaysTableWorkspace
+          rows={rows}
+          groups={groups}
+          now={now}
+          selectedId={selectedId}
+          onSelect={selectMovement}
+          markLabel={markLabel}
+          markedCount={markedCount}
+          isMarked={marked}
+          delayFilterId={delayFilterId}
+          onMarkFilter={(id) => {
+            setMarkedOwner(null);
+            setMarkedCause(null);
+            setDelayFilterId(id);
+          }}
+          markedCause={effectiveMarkedCause}
+          onMarkCause={(cause) => {
+            setMarkedOwner(null);
+            setMarkedCause(markedCause === cause ? null : cause);
+            setDelayFilterId("waiting");
+          }}
+          onListKeyDown={handlePersonListKeyDown}
+          detail={
+            selected === null ? null : (
               <>
                 <div
                   className={styles.detailBackdrop}
@@ -1419,14 +1200,6 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                   aria-hidden="true"
                   data-testid="delays-detail-backdrop"
                 />
-                <div style={{ display: "none" }}>
-                  <WardPanel title="What the blocker is">
-                    <div />
-                  </WardPanel>
-                  <WardPanel title="Escalations and resolved">
-                    <div />
-                  </WardPanel>
-                </div>
                 <div ref={detailColumnRef} className={styles.colDetail}>
                   <WardPanel title="Why this person is waiting">
                     <div
@@ -1456,208 +1229,141 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                   </WardPanel>
                 </div>
               </>
-            ) : (
-              <div className={styles.bottleneckContainer}>
-                {/* Panel 3: What the blocker is */}
-                <WardPanel title="What the blocker is" count={`${groups.length}`}>
-                  <div className={styles.causeList} tabIndex={0} role="region" aria-label="Blocker groups">
-                    {DELAY_OWNERS.filter((owner) => groups.some((group) => ownerOf(group.cause) === owner.id)).map(
-                      (owner) => {
-                        const ownerGroups = groups.filter((group) => ownerOf(group.cause) === owner.id);
-                        const people = ownerGroups.reduce((sum, group) => sum + group.movements.length, 0);
-                        return (
-                          <div key={owner.id} className={styles.grp}>
-                            <div className={styles.grpHead}>
-                              <span className={styles.grpDot} data-owner={owner.id} aria-hidden="true" />
-                              <span className={styles.grpName}>{owner.name}</span>
-                              <span className={styles.grpN}>{people}</span>
-                            </div>
-                            {ownerGroups.map((group) => (
-                              <button
-                                key={group.cause}
-                                type="button"
-                                className={`${styles.causeRow} ${markedCause === group.cause ? styles.causeRowActive : ""}`}
-                                data-severe={isSevere(group.cause)}
-                                data-sev={isSevere(group.cause) ? "danger" : undefined}
-                                aria-pressed={markedCause === group.cause}
-                                onClick={() => {
-                                  setMarkedOwner(null);
-                                  setMarkedCause(markedCause === group.cause ? null : group.cause);
-                                  setDelayFilterId("waiting");
-                                }}
-                                data-testid={`delays-cause-${group.cause}`}
-                              >
-                                <span className={styles.causeN}>{group.movements.length}</span>
-                                <span className={styles.causeMain}>
-                                  <span className={styles.causeName}>{group.title}</span>
-                                  <span className={styles.causeTrack} aria-hidden="true">
-                                    <span
-                                      className={styles.causeTrackFill}
-                                      data-severe={isSevere(group.cause)}
-                                      style={{
-                                        width:
-                                          causeMax === 0
-                                            ? "0%"
-                                            : `${Math.round((group.movements.length / causeMax) * 100)}%`,
-                                      }}
-                                    />
-                                  </span>
-                                  {group.note === "" ? null : <span className={styles.causeMeta}>{group.note}</span>}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        );
-                      },
-                    )}
-                  </div>
-                  <p className={styles.foot}>One worst blocker per waiting person.</p>
-                </WardPanel>
-
-                {/* Panel 4: Escalations and resolved */}
-                <WardPanel title="Escalations and resolved">
-                  <div className={styles.tabbar} role="tablist" aria-label="Registers" onKeyDown={handleTablistKeyDown}>
-                    {(
-                      [
-                        { id: "escalations", label: "Escalations", count: escalatedRows.length },
-                        { id: "attention", label: "Attention", count: attentionRows.length },
-                        { id: "resolved", label: "Resolved today", count: closedToday.length },
-                      ] as const
-                    ).map((tab) => (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        role="tab"
-                        id={`delays-tab-${tab.id}`}
-                        aria-controls={`delays-pane-${tab.id}`}
-                        aria-selected={registerTab === tab.id}
-                        tabIndex={registerTab === tab.id ? 0 : -1}
-                        className={`${styles.tabBtn} ${registerTab === tab.id ? styles.tabBtnActive : ""}`}
-                        onClick={() => setRegisterTab(tab.id)}
-                      >
-                        {tab.label}{" "}
-                        <span className={`${styles.tabNum} ${tab.count === 0 ? styles.tabNumZero : ""}`}>
-                          {tab.count === 0 ? "none" : tab.count}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                  <div className={styles.tabBody} tabIndex={0} role="region" aria-label="Delay register contents">
-                    <div
-                      className={styles.tabPane}
-                      role="tabpanel"
-                      id="delays-pane-escalations"
-                      aria-labelledby="delays-tab-escalations"
-                      hidden={registerTab !== "escalations"}
-                    >
-                      {escalatedRows.length === 0 ? (
-                        <p className={styles.absent}>Nobody has been escalated today.</p>
-                      ) : (
-                        <ul className={styles.rows}>
-                          {escalatedRows.map((movement) => (
-                            <li key={movement.id} className={styles.row}>
-                              <span className={styles.rowTop}>
-                                {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                                <span className={styles.rowId}>{resolvePatientIdentity(movement).formalName}</span>
-                                <span className={styles.rowWhen}>{formatAgo(now - escalationOf(movement).at)}</span>
-                              </span>
-                              <span className={styles.rowWho}>to {escalationOf(movement).contact}</span>
-                              {/* D-b: this register is whole-network, so a row outside the chosen
-                                  service is never dropped — only marked. */}
-                              {isOutsideChosenService(movement) ? (
-                                <span
-                                  className={styles.rowSub}
-                                  data-testid={`delays-escalation-outside-${movement.id}`}
-                                >
-                                  {`Outside ${service}`}
-                                </span>
-                              ) : null}
-                              <span className={styles.rowSub}>
-                                {formatInstantWithDay(escalationOf(movement).at, now)}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-
-                    <div
-                      className={styles.tabPane}
-                      role="tabpanel"
-                      id="delays-pane-attention"
-                      aria-labelledby="delays-tab-attention"
-                      hidden={registerTab !== "attention"}
-                    >
-                      {attentionRows.length === 0 ? (
-                        <p className={styles.absent}>No movements requiring urgent attention right now.</p>
-                      ) : (
-                        <ul className={styles.attentionTabList}>
-                          {attentionRows.map(({ group, movement }) => (
-                            <li key={movement.id}>
-                              <button
-                                type="button"
-                                className={`${styles.attentionCard} ${selectedId === movement.id ? styles.attentionCardActive : ""}`}
-                                onClick={() => selectMovement(movement.id)}
-                                data-testid={`delays-attention-item-${movement.id}`}
-                              >
-                                <div className={styles.attentionCardTop}>
-                                  {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                                  <span className={styles.attentionWho}>
-                                    {resolvePatientIdentity(movement).formalName}
-                                  </span>
-                                  <span className={styles.attentionWhen}>
-                                    {splitDuration(Math.max(now - movement.openedAt, 0))} waiting
-                                  </span>
-                                </div>
-                                <div className={styles.attentionCardBottom}>
-                                  {group ? <span className={styles.attentionTitle}>{group.title}</span> : null}
-                                  {isOutsideChosenService(movement) ? (
-                                    <span
-                                      className={styles.attentionOutside}
-                                      data-testid={`delays-attention-outside-${movement.id}`}
-                                    >
-                                      {` · Outside ${service}`}
-                                    </span>
-                                  ) : null}
-                                </div>
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-
-                    <div
-                      className={styles.tabPane}
-                      role="tabpanel"
-                      id="delays-pane-resolved"
-                      aria-labelledby="delays-tab-resolved"
-                      hidden={registerTab !== "resolved"}
-                    >
-                      <p className={styles.absent}>
-                        {closedToday.length === 0
-                          ? service === null
-                            ? "Nobody who was on this screen this morning has left it yet."
-                            : `Nobody who was on this screen this morning has left it yet, in ${service}.`
-                          : [
-                              placedToday.length > 0
-                                ? `${placedToday.length === 1 ? "One person" : `${placedToday.length} people`} who ${placedToday.length === 1 ? "was" : "were"} on this screen earlier ${placedToday.length === 1 ? "is" : "are"} now placed.`
-                                : null,
-                              didNotProceedToday.length > 0
-                                ? `${didNotProceedToday.length === 1 ? "One person" : `${didNotProceedToday.length} people`} did not proceed.`
-                                : null,
-                            ]
-                              .filter((sentence) => sentence !== null)
-                              .join(" ")}{" "}
-                        Kept until midnight for handover.
-                      </p>
-                    </div>
-                  </div>
-                </WardPanel>
-              </div>
-            )}
+            )
+          }
+        />
+        <WardPanel title="Escalations and resolved">
+          <div className={styles.tabbar} role="tablist" aria-label="Registers" onKeyDown={handleTablistKeyDown}>
+            {(
+              [
+                { id: "escalations", label: "Escalations", count: escalatedRows.length },
+                { id: "attention", label: "Attention", count: attentionRows.length },
+                { id: "resolved", label: "Resolved today", count: closedToday.length },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                id={`delays-tab-${tab.id}`}
+                aria-controls={`delays-pane-${tab.id}`}
+                aria-selected={registerTab === tab.id}
+                tabIndex={registerTab === tab.id ? 0 : -1}
+                className={`${styles.tabBtn} ${registerTab === tab.id ? styles.tabBtnActive : ""}`}
+                onClick={() => setRegisterTab(tab.id)}
+              >
+                {tab.label}{" "}
+                <span className={`${styles.tabNum} ${tab.count === 0 ? styles.tabNumZero : ""}`}>
+                  {tab.count === 0 ? "none" : tab.count}
+                </span>
+              </button>
+            ))}
           </div>
-        </div>
+          <div className={styles.tabBody} tabIndex={0} role="region" aria-label="Delay register contents">
+            <div
+              className={styles.tabPane}
+              role="tabpanel"
+              id="delays-pane-escalations"
+              aria-labelledby="delays-tab-escalations"
+              hidden={registerTab !== "escalations"}
+            >
+              {escalatedRows.length === 0 ? (
+                <p className={styles.absent}>Nobody has been escalated today.</p>
+              ) : (
+                <ul className={styles.rows}>
+                  {escalatedRows.map((movement) => (
+                    <li key={movement.id} className={styles.row}>
+                      <span className={styles.rowTop}>
+                        {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
+                        <span className={styles.rowId}>{resolvePatientIdentity(movement).formalName}</span>
+                        <span className={styles.rowWhen}>{formatAgo(now - escalationOf(movement).at)}</span>
+                      </span>
+                      <span className={styles.rowWho}>to {escalationOf(movement).contact}</span>
+                      {/* D-b: this register is whole-network, so a row outside the chosen
+                                  service is never dropped — only marked. */}
+                      {isOutsideChosenService(movement) ? (
+                        <span className={styles.rowSub} data-testid={`delays-escalation-outside-${movement.id}`}>
+                          {`Outside ${service}`}
+                        </span>
+                      ) : null}
+                      <span className={styles.rowSub}>{formatInstantWithDay(escalationOf(movement).at, now)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div
+              className={styles.tabPane}
+              role="tabpanel"
+              id="delays-pane-attention"
+              aria-labelledby="delays-tab-attention"
+              hidden={registerTab !== "attention"}
+            >
+              {attentionRows.length === 0 ? (
+                <p className={styles.absent}>No movements requiring urgent attention right now.</p>
+              ) : (
+                <ul className={styles.attentionTabList}>
+                  {attentionRows.map(({ group, movement }) => (
+                    <li key={movement.id}>
+                      <button
+                        type="button"
+                        className={`${styles.attentionCard} ${selectedId === movement.id ? styles.attentionCardActive : ""}`}
+                        onClick={() => selectMovement(movement.id)}
+                        data-testid={`delays-attention-item-${movement.id}`}
+                      >
+                        <div className={styles.attentionCardTop}>
+                          {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
+                          <span className={styles.attentionWho}>{resolvePatientIdentity(movement).formalName}</span>
+                          <span className={styles.attentionWhen}>
+                            {splitDuration(Math.max(now - movement.openedAt, 0))} waiting
+                          </span>
+                        </div>
+                        <div className={styles.attentionCardBottom}>
+                          {group ? <span className={styles.attentionTitle}>{group.title}</span> : null}
+                          {isOutsideChosenService(movement) ? (
+                            <span
+                              className={styles.attentionOutside}
+                              data-testid={`delays-attention-outside-${movement.id}`}
+                            >
+                              {` · Outside ${service}`}
+                            </span>
+                          ) : null}
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div
+              className={styles.tabPane}
+              role="tabpanel"
+              id="delays-pane-resolved"
+              aria-labelledby="delays-tab-resolved"
+              hidden={registerTab !== "resolved"}
+            >
+              <p className={styles.absent}>
+                {closedToday.length === 0
+                  ? service === null
+                    ? "Nobody who was on this screen this morning has left it yet."
+                    : `Nobody who was on this screen this morning has left it yet, in ${service}.`
+                  : [
+                      placedToday.length > 0
+                        ? `${placedToday.length === 1 ? "One person" : `${placedToday.length} people`} who ${placedToday.length === 1 ? "was" : "were"} on this screen earlier ${placedToday.length === 1 ? "is" : "are"} now placed.`
+                        : null,
+                      didNotProceedToday.length > 0
+                        ? `${didNotProceedToday.length === 1 ? "One person" : `${didNotProceedToday.length} people`} did not proceed.`
+                        : null,
+                    ]
+                      .filter((sentence) => sentence !== null)
+                      .join(" ")}{" "}
+                Kept until midnight for handover.
+              </p>
+            </div>
+          </div>
+        </WardPanel>
         {/* ─── PANEL 6 (or 5 when nobody selected): DELAYS WITH NO NAMED PERSON ─── */}
         <WardPanel title="Delays with no named person">
           <div className={styles.systemicPanel}>
@@ -2175,164 +1881,5 @@ function SelectedPerson({
         );
       })()}
     </div>
-  );
-}
-
-/**
- * PersonRow: Compact list row in the Triage Worklist.
- * Satisfies all test assertions: data-ward-primitive="record-row", data-ward-primitive="record-id",
- * Marked: ${markLabel}, and 48px tap target.
- */
-function PersonRow({
-  movement,
-  cause,
-  now,
-  marked,
-  markLabel,
-  selected,
-  onSelect,
-}: {
-  movement: Movement;
-  cause: DelayCause;
-  now: Instant;
-  marked: boolean;
-  markLabel: string | null;
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  const { referrals } = useWardFlow();
-  const resolvePatientIdentity = usePatientOf();
-  // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-  const patientWho = resolvePatientIdentity(movement);
-  const waited = Math.max(now - movement.openedAt, 0);
-  const activity = lastRecordedActivity(movement, now);
-  const quietFor = activity === undefined ? waited : Math.max(now - activity.at, 0);
-  const causeTitle = DELAY_CAUSE_COPY.find((entry) => entry.cause === cause)?.title ?? cause;
-  const silenceReminder = answerSilenceReminder(movement, referrals, now);
-  const originEd = edById(movement.originEdId);
-  const originName = originEd ? originEd.name : "ED";
-  const cleared = isCleared(movement, referrals);
-  const severe = isSevere(cause);
-  const legalForm = movement.legalForm;
-  const legalMinutes = legalDeadlineMinutes(movement, now);
-  const isBreached = legalMinutes !== undefined && legalMinutes < 0;
-  const isImminent = legalMinutes !== undefined && legalMinutes >= 0 && legalMinutes <= 60;
-  const owner = ownerOf(cause);
-  const activeBlocker =
-    movement.blocker.trim() !== "" &&
-    !BLOCKERS_MEANING_NOTHING_IS_BLOCKING.some((inactive) => inactive === movement.blocker.trim());
-
-  return (
-    <li
-      className={`${styles.patientCard} ${selected ? styles.patientCardSelected : ""} ${isBreached ? styles.patientCardBreached : isImminent ? styles.patientCardImminent : ""}`}
-    >
-      <button
-        type="button"
-        className={`${styles.cardSelectButton} ${selected ? styles.cardSelectButtonActive : ""} ${
-          markLabel !== null && !marked ? styles.personRowDim : ""
-        }`}
-        data-ward-primitive="record-row"
-        data-record-key={movement.id}
-        data-owner={owner}
-        data-severe={severe}
-        data-testid={`delays-select-${movement.id}`}
-        onClick={onSelect}
-        aria-pressed={selected}
-        aria-label={`Select patient ${patientWho.displayName}`}
-      >
-        {/* Card Top Row */}
-        <div className={styles.cardTopRow}>
-          <div className={styles.cardIdCluster}>
-            {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-            <span className={styles.cardPatientId} data-ward-primitive="record-id">
-              {patientWho.formalName}
-            </span>
-            <span
-              className={`${styles.triageTag} ${styles[`triageTagT${movement.urgency}`]}`}
-              data-tier={movement.urgency}
-            >
-              T{movement.urgency}
-            </span>
-            {movement.flaggedUrgent && <span className={styles.escalatedTag}>Escalated</span>}
-            {movement.security === "Secure" && <span className={styles.lockedBedFlag}>Needs Locked Bed</span>}
-            {cleared === false ? (
-              <span className={styles.uncleared}>NOT CLEARED</span>
-            ) : cleared === true ? (
-              <span className={styles.clearedBadge}>CLEARED</span>
-            ) : null}
-            {marked && markLabel !== null && <span className={styles.markedBadge}>Marked: {markLabel}</span>}
-          </div>
-
-          <div className={styles.cardWaitClock}>
-            <span
-              data-ward-type-floor="delays-wait"
-              className={`${styles.personWait} ${waited >= ED_SEVERE_PRESSURE_WAIT_MINUTES ? styles.personWaitLong : ""}`}
-              data-long={waited >= ED_SEVERE_PRESSURE_WAIT_MINUTES}
-            >
-              {splitDuration(waited)} in ED
-            </span>
-            {waited >= ED_SEVERE_PRESSURE_WAIT_MINUTES ? (
-              <span className={styles.accessBlockBadge} title={OPERATIONAL_DEFAULT_LABEL}>
-                Long wait
-              </span>
-            ) : null}
-          </div>
-        </div>
-
-        {/* Location & Demographics Row */}
-        <div className={styles.cardLocRow}>
-          <span className={styles.cardFacility}>{originName}</span>
-          <span data-ward-type-floor="delays-profile" className={styles.cardDemographics}>
-            {movement.cohort} · {movement.security === "Secure" ? "Needs a locked bed" : "An open bed suits"} ·{" "}
-            {movement.legalStatus}
-          </span>
-        </div>
-
-        {/* Statutory Legal Alert Strip */}
-        {legalForm !== undefined && legalMinutes !== undefined && (isBreached || isImminent) && (
-          <div
-            className={`${styles.cardLegalAlert} ${isImminent ? styles.cardLegalAlertImminent : ""}`}
-            data-breached={isBreached}
-          >
-            <span>
-              <strong>{legalFormName(legalForm)}</strong>:{" "}
-              {legalMinutes < 0
-                ? `${legalFormName(legalForm)} lapsed ${splitDuration(Math.abs(legalMinutes))} ago`
-                : `${legalFormName(legalForm)} due in ${splitDuration(legalMinutes)}`}
-            </span>
-            <span>{isBreached ? "PAST RECORDED TIME" : "DUE SOON"}</span>
-          </div>
-        )}
-
-        {/* Blocker Strip */}
-        <div className={styles.cardBlockerStrip}>
-          <div className={styles.cardBlockerTop}>
-            <span
-              className={`${styles.cardOwnerTag} ${owner === "yours" ? styles.cardOwnerTagYours : owner === "wards" ? styles.cardOwnerTagWards : owner === "transport" ? styles.cardOwnerTagTransport : styles.cardOwnerTagEd}`}
-            >
-              {owner.toUpperCase()}
-            </span>
-            <span data-ward-type-floor="delays-since" className={styles.cardStagnation}>
-              nothing recorded for {splitDuration(quietFor)}
-            </span>
-          </div>
-          <span data-ward-type-floor="delays-cause" className={styles.cardBlockerTitle}>
-            {causeTitle}
-          </span>
-          {activeBlocker && <span className={styles.cardBlockerDetail}>{movement.blocker}</span>}
-        </div>
-
-        {cause === "bed_pull_expired" && (
-          <span className={styles.personReminder} data-testid={`delays-row-reserved-${movement.id}`}>
-            Reserved time has passed, bed still held
-          </span>
-        )}
-        {silenceReminder !== undefined && (
-          <span className={styles.personReminder} data-testid={`delays-row-silence-${movement.id}`}>
-            {silenceReminder}
-          </span>
-        )}
-      </button>
-    </li>
   );
 }

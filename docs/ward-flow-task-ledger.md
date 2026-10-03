@@ -7966,3 +7966,27 @@ This supersedes the earlier WF-RULES pending-integration/reconciliation next act
 The follow-up against public main `2220bde5f606c79681d9167e1e5b0b10ec2d8ed2` repairs six remaining documentation ambiguities: current design/status navigation; owner-ruling source edits rather than hand edits to the generated index; manual Ward review handling; dated task-state supersession; checkout-based client loading; and the compact receipt route for simple tasks. The [same checkpoint](ward-flow/plans/2026-10-02-rules-repair.md) records the isolated task branch and focused evidence. Josh approved the seven-file scoped takeover; command, relative-link, formatting and ownership checks passed against the actual edits. No application, clinical, storage or visual change was made.
 
 Shared mirror delivery, native GUI/cloud loading, missing historical clinical evidence/sign-offs and deployed runtime/provider checks remain separate gaps. The previously malformed historical patient mockup passed its focused formatting check on the reviewed main. The new follow-up is implemented and checked locally; its publication, merge and canonical delivery must each be reported from actual evidence.
+
+## WF-DELAYS-VIEWS — selectable tables and named wait timeline (3 October 2026)
+
+Requested local implementation of the three reviewed Delays concepts. The page now shows a
+linear, named wait timeline above the existing radar, and uses Focus table / Action workspace
+tabs for the waiting and blocker tables. Both presentations read the current scoped synthetic
+records. Table search, team/cause filters, sorting and patient inspection work in both layouts;
+filters and selection survive switching tabs. Existing mark controls retain their highlighting
+semantics. Blocker totals retain the selected service scope. The timeline includes long waits,
+recorded-update markers, text/team filters and pagination; its review marker is an operational
+default, not a legal deadline.
+
+Local result: 86 existing/new focused delay tests passed; after the final search activation and
+live-table typography changes, the 12 directly affected data-view/geometry/typography checks
+passed again. Type checking and scoped lint passed. Chromium checked the actual page at 1600,
+1280, 768 and 390 px: search, timeline pagination, table tab state, team filtering, patient
+inspection, Escape and page overflow passed with no console/page errors. Local evidence is in
+`.local/delays-views/` in `/workspace/Ward-Flow-delays-views` (not tracked).
+
+Task branch: `codex/delays-table-timeline`, based on the supplied Ward Flow repository snapshot
+`b57da6fb4ce2f102d74343a366b174496bc52a05`. Both origin destinations were verified as
+`BigSimmo/Ward-Flow`; no local remote-main reference was available and no provider call was made.
+Completed stage: verified local implementation. Publication, merge and deployment are separate.
+Source orientation: [Delays code map](ward-flow/code-map/screens-b.md#delays).
