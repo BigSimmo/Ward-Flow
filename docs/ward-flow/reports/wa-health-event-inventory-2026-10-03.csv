@@ -1,6 +1,6 @@
 event,allowed_roles,component_literal_references,test_reference_count,reference_status
-RECORD_ADMISSION_CARE,ward; coordinator; community,src/components/ward-management/ward-flow-storage-validation.ts; src/components/ward-management/ward-audit.ts; src/components/ward-management/discharges/discharge-care-journey.tsx,2,literal references located
-RECORD_ADMISSION_FOLLOW_UP,ward; coordinator,src/components/ward-management/ward-audit.ts; src/components/ward-management/discharges/discharge-follow-up.tsx,3,literal references located
+RECORD_ADMISSION_CARE,ward; coordinator; community,src/components/ward-management/ward-flow-storage-validation.ts; src/components/ward-management/ward-audit.ts; src/components/ward-management/discharges/discharge-care-journey.tsx,4,literal references located
+RECORD_ADMISSION_FOLLOW_UP,ward; coordinator,src/components/ward-management/ward-audit.ts; src/components/ward-management/discharges/discharge-follow-up.tsx,4,literal references located
 RECORD_PATIENT_DISCHARGE,ward,src/components/ward-management/ward-flow-provider.tsx; src/components/ward-management/ward-audit.ts,5,literal references located
 UPDATE_EXPECTED_DISCHARGE,ward; coordinator,src/components/ward-management/discharges/discharge-board.tsx,3,literal references located
 OPEN_DISCHARGE_RECORD,coordinator; ward; community,src/components/ward-management/ward-flow-provider.tsx; src/components/ward-management/ward-audit.ts,3,literal references located

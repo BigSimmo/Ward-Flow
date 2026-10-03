@@ -1,5 +1,7 @@
 # Data, seeds and domain rules
 
+Final boundary repairs: protected departures use the approved scoped projection; transfer movements record their own arrival history/closure rather than copying earlier stages. The stage guard uses syntax-tree ancestry and drives the protected transfer. Care clock fields are covered by the re-anchor contract; coding supports a not-applicable receiver and rejects incompatible leave endings. Final offline evidence is in the dated WA audit report.
+
 ## WA remediation update — 3 October 2026
 
 `ward-care-journey.ts` owns the closed care vocabulary, strict restore validation, planning/document status, synthetic contacts, appointment-version attribution, separation-code crosswalk, transport checks and recorded community-transition rules. Code 50 is an episode change without a physical discharge. Code 70 requires an explicit ending-from-leave fact. `ward-discharge-records.ts` grants community reads only through an explicitly linked team; no catchment guess grants access. Transfer completion checks receiver eligibility, beds and staffing before a single occupancy transaction.

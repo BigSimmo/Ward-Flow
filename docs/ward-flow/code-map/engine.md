@@ -1,5 +1,7 @@
 # Engine: reducer, events, state and persistence
 
+Final boundary repairs: protected departures use the approved scoped projection; transfer movements record their own arrival history/closure rather than copying earlier stages. The stage guard uses syntax-tree ancestry and drives the protected transfer. Care clock fields are covered by the re-anchor contract; coding supports a not-applicable receiver and rejects incompatible leave endings. Final offline evidence is in the dated WA audit report.
+
 ## WA remediation update — 3 October 2026
 
 The current event union has **98** types. `RECORD_ADMISSION_CARE` uses identity, generation, revision and explicit ward/community scope checks; its closed changes cover planning, documents, appointments, current-appointment contacts, coding, episode type, transport, transfers and recorded legal paperwork. Transfer arrival changes sending and receiving occupancy atomically. The provider now dispatches protected patient-linked departures. Movement workflow controls expose the nine formerly unexposed operational/legal commands. Ward requests use closed synthetic messages. Audit, history, restore validation and persistence classification include the care command.
