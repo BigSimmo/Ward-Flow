@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
   CheckCircle2,
+  ClipboardList,
   Clock,
   FileText,
   Filter,
@@ -499,43 +500,43 @@ function DischargeWorkspace() {
             : ""}
           {" · "}As of {formatSheetMoment(now, dayZero)}
         </p>
-        <div className={pageStyles.boardHeaderBanner}>
+        <header className={pageStyles.boardHeaderBanner}>
           <div className={pageStyles.boardHeaderLeft}>
             <h2 className={pageStyles.boardMainTitle}>Discharges &amp; Departure Trajectory</h2>
             <span className={pageStyles.contextBadge}>Chronological Discharge Waves</span>
           </div>
-        </div>
-        <header className={pageStyles.workspaceHeader}>
-          <div className={pageStyles.populationSwitch} aria-label="Discharge population">
-            <button
-              type="button"
-              aria-pressed={population === "releases"}
-              onClick={() => {
-                setPopulation("releases");
-                setStatus("all");
-                setDestination("all");
-                setBlockerCategory("all");
-                clearSelection();
-              }}
-            >
-              Anonymous releases <span className={styles.countBadge}>{bedReleases.length}</span>
-            </button>
-            <button
-              type="button"
-              aria-pressed={population === "records"}
-              onClick={() => {
-                setPopulation("records");
-                setStatus("all");
-                setDestination("all");
-                setBlockerCategory("all");
-                clearSelection();
-              }}
-            >
-              Admission records{" "}
-              <span className={styles.countBadge}>{guarded.status === "allowed" ? records.length : "Unavailable"}</span>
-            </button>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+            <div className={pageStyles.populationSwitch} aria-label="Discharge population">
+              <button
+                type="button"
+                aria-pressed={population === "releases"}
+                onClick={() => {
+                  setPopulation("releases");
+                  setStatus("all");
+                  setDestination("all");
+                  setBlockerCategory("all");
+                  clearSelection();
+                }}
+              >
+                Anonymous releases <span className={styles.countBadge}>{bedReleases.length}</span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={population === "records"}
+                onClick={() => {
+                  setPopulation("records");
+                  setStatus("all");
+                  setDestination("all");
+                  setBlockerCategory("all");
+                  clearSelection();
+                }}
+              >
+                Admission records{" "}
+                <span className={styles.countBadge}>
+                  {guarded.status === "allowed" ? records.length : "Unavailable"}
+                </span>
+              </button>
+            </div>
             <time className={`${pageStyles.asOf} ${styles.asOf}`}>
               <span className={pageStyles.liveDot} aria-hidden="true" />
               <span className="sr-only">Live: </span>
@@ -580,73 +581,93 @@ function DischargeWorkspace() {
             </div>
           </div>
         </header>
-        <WardDynamicIsland
-          title="Discharge Pipeline"
-          testId="ward-discharge-kpi-strip"
-          status={counts.blocked > 0 ? "alarm" : counts.expected > 0 ? "warning" : "nominal"}
-          statusText={
-            counts.blocked > 0
-              ? `${counts.blocked} blocked releases requiring immediate attention`
-              : "Discharge pipeline on schedule"
-          }
-          ariaLabel="Discharge pipeline summary filters"
-          metrics={[
-            {
-              testId: "ward-discharge-kpi-blocked",
-              id: "kpiBlocked",
-              label: kpiCardLabel("blocked", population),
-              subtext: "Wave 1 · Immediate/Stuck",
-              value: counts.blocked,
-              tone: "danger",
-              active: status === "blocked",
-              onClick: () => {
-                setStatus(status === "blocked" ? "all" : "blocked");
-                clearSelection();
-              },
-              ariaLabel: `${kpiCardLabel("blocked", population)}: ${counts.blocked}`,
-            },
-            {
-              testId: "ward-discharge-kpi-confirmed",
-              id: "kpiConfirmed",
-              label: kpiCardLabel("confirmed", population),
-              subtext: "Wave 2 · Morning Discharges",
-              value: counts.confirmed,
-              tone: "good",
-              active: status === "confirmed",
-              onClick: () => {
-                setStatus(status === "confirmed" ? "all" : "confirmed");
-                clearSelection();
-              },
-              ariaLabel: `${kpiCardLabel("confirmed", population)}: ${counts.confirmed}`,
-            },
-            {
-              testId: "ward-discharge-kpi-expected",
-              label: kpiCardLabel("expected", population),
-              subtext: "Wave 3 · Afternoon Discharges",
-              value: counts.expected,
-              tone: "warn",
-              active: status === "expected",
-              onClick: () => {
-                setStatus(status === "expected" ? "all" : "expected");
-                clearSelection();
-              },
-              ariaLabel: `${kpiCardLabel("expected", population)}: ${counts.expected}`,
-            },
-            {
-              testId: "ward-discharge-kpi-departed",
-              label: kpiCardLabel("departed", population),
-              subtext: "Wave 4 · Cleared Today",
-              value: counts.departed,
-              tone: "accent",
-              active: status === "departed",
-              onClick: () => {
-                setStatus(status === "departed" ? "all" : "departed");
-                clearSelection();
-              },
-              ariaLabel: `${kpiCardLabel("departed", population)}: ${counts.departed}`,
-            },
-          ]}
-        />
+        <div
+          className={pageStyles.telemetryGrid}
+          data-testid="ward-discharge-kpi-strip"
+          role="region"
+          aria-label="Discharge pipeline summary filters"
+        >
+          <button
+            type="button"
+            data-testid="ward-discharge-kpi-blocked"
+            className={pageStyles.telemetryCard}
+            aria-pressed={status === "blocked"}
+            aria-label={`${kpiCardLabel("blocked", population)}: ${counts.blocked}`}
+            onClick={() => {
+              setStatus(status === "blocked" ? "all" : "blocked");
+              clearSelection();
+            }}
+          >
+            <div className={pageStyles.telemetryCardTop}>
+              <span className={pageStyles.telemetryWave}>Wave 1 · Immediate/Stuck</span>
+              <span className={`${pageStyles.telemetryStatusPip} ${pageStyles.pipDanger}`} aria-hidden="true" />
+            </div>
+            <div className={pageStyles.telemetryValRow}>
+              <strong className={pageStyles.telemetryValue}>{counts.blocked}</strong>
+              <span className={pageStyles.telemetryLabel}>{kpiCardLabel("blocked", population)}</span>
+            </div>
+          </button>
+          <button
+            type="button"
+            data-testid="ward-discharge-kpi-confirmed"
+            className={pageStyles.telemetryCard}
+            aria-pressed={status === "confirmed"}
+            aria-label={`${kpiCardLabel("confirmed", population)}: ${counts.confirmed}`}
+            onClick={() => {
+              setStatus(status === "confirmed" ? "all" : "confirmed");
+              clearSelection();
+            }}
+          >
+            <div className={pageStyles.telemetryCardTop}>
+              <span className={pageStyles.telemetryWave}>Wave 2 · Morning Discharges</span>
+              <span className={`${pageStyles.telemetryStatusPip} ${pageStyles.pipGood}`} aria-hidden="true" />
+            </div>
+            <div className={pageStyles.telemetryValRow}>
+              <strong className={pageStyles.telemetryValue}>{counts.confirmed}</strong>
+              <span className={pageStyles.telemetryLabel}>{kpiCardLabel("confirmed", population)}</span>
+            </div>
+          </button>
+          <button
+            type="button"
+            data-testid="ward-discharge-kpi-expected"
+            className={pageStyles.telemetryCard}
+            aria-pressed={status === "expected"}
+            aria-label={`${kpiCardLabel("expected", population)}: ${counts.expected}`}
+            onClick={() => {
+              setStatus(status === "expected" ? "all" : "expected");
+              clearSelection();
+            }}
+          >
+            <div className={pageStyles.telemetryCardTop}>
+              <span className={pageStyles.telemetryWave}>Wave 3 · Afternoon Discharges</span>
+              <span className={`${pageStyles.telemetryStatusPip} ${pageStyles.pipWarn}`} aria-hidden="true" />
+            </div>
+            <div className={pageStyles.telemetryValRow}>
+              <strong className={pageStyles.telemetryValue}>{counts.expected}</strong>
+              <span className={pageStyles.telemetryLabel}>{kpiCardLabel("expected", population)}</span>
+            </div>
+          </button>
+          <button
+            type="button"
+            data-testid="ward-discharge-kpi-departed"
+            className={pageStyles.telemetryCard}
+            aria-pressed={status === "departed"}
+            aria-label={`${kpiCardLabel("departed", population)}: ${counts.departed}`}
+            onClick={() => {
+              setStatus(status === "departed" ? "all" : "departed");
+              clearSelection();
+            }}
+          >
+            <div className={pageStyles.telemetryCardTop}>
+              <span className={pageStyles.telemetryWave}>Wave 4 · Cleared Today</span>
+              <span className={`${pageStyles.telemetryStatusPip} ${pageStyles.pipAccent}`} aria-hidden="true" />
+            </div>
+            <div className={pageStyles.telemetryValRow}>
+              <strong className={pageStyles.telemetryValue}>{counts.departed}</strong>
+              <span className={pageStyles.telemetryLabel}>{kpiCardLabel("departed", population)}</span>
+            </div>
+          </button>
+        </div>
         <div className={pageStyles.filterControlBar}>
           <div className={pageStyles.filters}>
             <label htmlFor="discharges-filter-service" className={pageStyles.filterField}>
@@ -682,25 +703,6 @@ function DischargeWorkspace() {
                 {scopedUnits.map((unit) => (
                   <option key={unit.id} value={unit.id}>
                     {unit.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label htmlFor="discharges-filter-blocker" className={pageStyles.filterField}>
-              <span className={pageStyles.filterLabelText}>Blocker focus</span>
-              <select
-                id="discharges-filter-blocker"
-                name="dischargesFilterBlocker"
-                value={blockerCategory}
-                onChange={(event) => {
-                  setBlockerCategory(event.target.value);
-                  clearSelection();
-                }}
-              >
-                <option value="all">All blocker categories</option>
-                {BLOCKER_CATEGORIES.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.label}
                   </option>
                 ))}
               </select>
@@ -1174,40 +1176,44 @@ function DischargeWorkspace() {
             <div className={pageStyles.detailBody} role="region" aria-label="Selected discharge details" tabIndex={0}>
               {activeRecord ? (
                 <>
-                  <div className={pageStyles.patientHeaderBox}>
-                    <div className={pageStyles.patientHeaderLeft}>
-                      <div className={pageStyles.avatarSquare} aria-hidden="true">
-                        {getInitials(recordName(activeRecord))}
+                  <div className={pageStyles.unifiedPatientCard}>
+                    <div className={pageStyles.unifiedCardTop}>
+                      <div className={pageStyles.unifiedIdentityRow}>
+                        <div className={pageStyles.avatarSquare} aria-hidden="true">
+                          {getInitials(recordName(activeRecord))}
+                        </div>
+                        <div className={pageStyles.unifiedNameGroup}>
+                          <h3
+                            className={pageStyles.patientFullName}
+                            style={{ margin: 0, fontSize: "var(--t-3)", fontWeight: 700 }}
+                          >
+                            {recordName(activeRecord)}
+                          </h3>
+                          <div className={pageStyles.unifiedMetaRow}>
+                            {activeRecord.identity.kind === "linked" && (
+                              <span className={pageStyles.unifiedMetaBadge}>
+                                UMRN {activeRecord.identity.patient.umrn}
+                              </span>
+                            )}
+                            <span className={pageStyles.unifiedMetaBadge}>{activeRecord.admissionId}</span>
+                            <span>{unitLabel(selectedUnit, activeRecord.unitId)}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <h3
-                          className={pageStyles.patientFullName}
-                          style={{ margin: 0, fontSize: "var(--t-3)", fontWeight: 700 }}
-                        >
-                          {recordName(activeRecord)}
-                        </h3>
-                        <span className={pageStyles.patientMeta}>
-                          {activeRecord.admissionId} ·{" "}
-                          {activeRecord.identity.kind === "linked"
-                            ? `UMRN ${activeRecord.identity.patient.umrn} · `
-                            : ""}
-                          {unitLabel(selectedUnit, activeRecord.unitId)}
-                        </span>
-                      </div>
+                      <span
+                        className={
+                          recordStatus(activeRecord) === "blocked"
+                            ? pageStyles.badgeBlocked
+                            : recordStage(activeRecord) === "confirmed"
+                              ? pageStyles.badgeConfirmed
+                              : recordStage(activeRecord) === "departed"
+                                ? pageStyles.badgeCleared
+                                : pageStyles.badgeExpected
+                        }
+                      >
+                        {recordStatus(activeRecord) === "blocked" ? "▲ Blocked" : recordStage(activeRecord)}
+                      </span>
                     </div>
-                    <span
-                      className={
-                        recordStatus(activeRecord) === "blocked"
-                          ? pageStyles.badgeBlocked
-                          : recordStage(activeRecord) === "confirmed"
-                            ? pageStyles.badgeConfirmed
-                            : recordStage(activeRecord) === "departed"
-                              ? pageStyles.badgeCleared
-                              : pageStyles.badgeExpected
-                      }
-                    >
-                      {recordStatus(activeRecord) === "blocked" ? "▲ Blocked" : recordStage(activeRecord)}
-                    </span>
                   </div>
 
                   <div className={pageStyles.drawerTabs} role="tablist" aria-label="Discharge inspection sections">
@@ -1556,65 +1562,74 @@ function DischargeWorkspace() {
                 </>
               ) : detailRelease ? (
                 <>
-                  <div className={pageStyles.patientHeaderBox}>
-                    <div className={pageStyles.patientHeaderLeft}>
-                      <div className={pageStyles.avatarSquare} aria-hidden="true">
-                        {unitLabel(selectedUnit, detailRelease.unitId).slice(0, 2).toUpperCase()}
+                  <div className={pageStyles.unifiedPatientCard}>
+                    <div className={pageStyles.unifiedCardTop}>
+                      <div className={pageStyles.unifiedIdentityRow}>
+                        <div className={pageStyles.avatarSquare} aria-hidden="true">
+                          {linkedReleaseRecord
+                            ? getInitials(recordName(linkedReleaseRecord))
+                            : unitLabel(selectedUnit, detailRelease.unitId).slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className={pageStyles.unifiedNameGroup}>
+                          <h3
+                            className={pageStyles.patientFullName}
+                            style={{ margin: 0, fontSize: "var(--t-3)", fontWeight: 700 }}
+                          >
+                            {linkedReleaseRecord
+                              ? recordName(linkedReleaseRecord)
+                              : unitLabel(selectedUnit, detailRelease.unitId)}
+                          </h3>
+                          <div className={pageStyles.unifiedMetaRow}>
+                            {linkedReleaseRecord?.identity.kind === "linked" && (
+                              <span className={pageStyles.unifiedMetaBadge}>
+                                UMRN {linkedReleaseRecord.identity.patient.umrn}
+                              </span>
+                            )}
+                            <span className={pageStyles.unifiedMetaBadge}>
+                              {unitLabel(selectedUnit, detailRelease.unitId)}
+                            </span>
+                            <span>{healthServiceLabel(selectedUnit)}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <h3
-                          className={pageStyles.patientFullName}
-                          style={{ margin: 0, fontSize: "var(--t-3)", fontWeight: 700 }}
-                        >
-                          {unitLabel(selectedUnit, detailRelease.unitId)}
-                        </h3>
-                        <span className={pageStyles.patientMeta}>
-                          {detailRelease.id} · {healthServiceLabel(selectedUnit)}
-                        </span>
-                      </div>
-                    </div>
-                    <span
-                      className={
-                        detailRelease.blocker
-                          ? pageStyles.badgeBlocked
-                          : detailRelease.state === "confirmed"
-                            ? pageStyles.badgeConfirmed
-                            : detailRelease.state === "discharged"
-                              ? pageStyles.badgeCleared
-                              : pageStyles.badgeExpected
-                      }
-                    >
-                      {detailRelease.blocker
-                        ? "▲ Blocked"
-                        : detailRelease.state === "discharged"
-                          ? "Departed"
-                          : detailRelease.state}
-                    </span>
-                  </div>
-
-                  {linkedReleaseRecord ? (
-                    <div className={pageStyles.linkedPatientBridge}>
-                      <div className={pageStyles.linkedPatientHeader}>
-                        <span className={pageStyles.linkedPatientLabel}>Linked Patient</span>
-                        <strong className={pageStyles.linkedPatientName}>{recordName(linkedReleaseRecord)}</strong>
-                        {linkedReleaseRecord.identity.kind === "linked" && (
-                          <span className={pageStyles.mono}>UMRN {linkedReleaseRecord.identity.patient.umrn}</span>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        className={pageStyles.viewPatientRecordBtn}
-                        onClick={(e) => {
-                          setPopulation("records");
-                          openRecord(linkedReleaseRecord, e.currentTarget);
-                        }}
+                      <span
+                        className={
+                          detailRelease.blocker
+                            ? pageStyles.badgeBlocked
+                            : detailRelease.state === "confirmed"
+                              ? pageStyles.badgeConfirmed
+                              : detailRelease.state === "discharged"
+                                ? pageStyles.badgeCleared
+                                : pageStyles.badgeExpected
+                        }
                       >
-                        View patient discharge record →
-                      </button>
+                        {detailRelease.blocker
+                          ? "▲ Blocked"
+                          : detailRelease.state === "discharged"
+                            ? "Departed"
+                            : detailRelease.state}
+                      </span>
                     </div>
-                  ) : (
-                    <p className={pageStyles.secondary}>No patient link</p>
-                  )}
+
+                    {linkedReleaseRecord ? (
+                      <div className={pageStyles.unifiedActionRow}>
+                        <button
+                          type="button"
+                          className={pageStyles.viewPatientRecordBtn}
+                          onClick={(e) => {
+                            setPopulation("records");
+                            openRecord(linkedReleaseRecord, e.currentTarget);
+                          }}
+                        >
+                          View patient discharge record →
+                        </button>
+                      </div>
+                    ) : (
+                      <p className={pageStyles.secondary} style={{ margin: 0 }}>
+                        Bed release ID: {detailRelease.id}
+                      </p>
+                    )}
+                  </div>
 
                   <div className={pageStyles.drawerTabs} role="tablist" aria-label="Discharge inspection sections">
                     <button
@@ -1851,12 +1866,83 @@ function DischargeWorkspace() {
                     </dl>
                   </div>
                 </>
+              ) : selected || openError ? (
+                <p className={pageStyles.emptyState}>This record could not be opened. Select it again to retry.</p>
               ) : (
-                <p className={pageStyles.emptyState}>
-                  {selected || openError
-                    ? "This record could not be opened. Select it again to retry."
-                    : "Select a record to view dates, blockers and ward follow-up."}
-                </p>
+                <div className={pageStyles.restingDashboard}>
+                  <div className={pageStyles.restingCallout}>
+                    <ClipboardList size={18} className={pageStyles.restingCalloutIcon} aria-hidden="true" />
+                    <p className={pageStyles.restingCalloutText}>
+                      Select a record to view dates, blockers and ward follow-up. Choose any bed release or admission
+                      stay from the worklist to inspect milestones, barrier escalations, and transport logistics.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className={pageStyles.restingSectionTitle}>Active Discharge Trajectory</h4>
+                    <div className={pageStyles.restingStatGrid}>
+                      <div className={pageStyles.restingStatCard}>
+                        <span className={pageStyles.restingStatVal} style={{ color: "var(--warn)" }}>
+                          {counts.blocked}
+                        </span>
+                        <span className={pageStyles.restingStatLabel}>Blocked releases</span>
+                      </div>
+                      <div className={pageStyles.restingStatCard}>
+                        <span className={pageStyles.restingStatVal} style={{ color: "var(--good)" }}>
+                          {counts.confirmed}
+                        </span>
+                        <span className={pageStyles.restingStatLabel}>Confirmed midday</span>
+                      </div>
+                      <div className={pageStyles.restingStatCard}>
+                        <span className={pageStyles.restingStatVal} style={{ color: "var(--accent)" }}>
+                          {counts.expected}
+                        </span>
+                        <span className={pageStyles.restingStatLabel}>Expected afternoon</span>
+                      </div>
+                      <div className={pageStyles.restingStatCard}>
+                        <span className={pageStyles.restingStatVal} style={{ color: "var(--muted)" }}>
+                          {counts.departed}
+                        </span>
+                        <span className={pageStyles.restingStatLabel}>Discharged (24h)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {releaseGroups.blocked.length > 0 && (
+                    <div>
+                      <h4 className={pageStyles.restingSectionTitle} style={{ color: "var(--warn)" }}>
+                        Immediate Attention ({releaseGroups.blocked.length})
+                      </h4>
+                      <div className={pageStyles.restingPriorityQueue}>
+                        {releaseGroups.blocked.slice(0, 4).map((rel) => {
+                          const u = units.find((candidate) => candidate.id === rel.unitId);
+                          const l = records.find((candidate) => candidate.admissionId === rel.admissionId);
+                          return (
+                            <button
+                              key={rel.id}
+                              type="button"
+                              className={pageStyles.restingPriorityItem}
+                              onClick={(e) => {
+                                triggerRef.current = e.currentTarget;
+                                setSelected(null);
+                                setReleaseId(rel.id);
+                                focusDetail();
+                              }}
+                            >
+                              <div className={pageStyles.restingPriorityInfo}>
+                                <span className={pageStyles.restingPriorityTitle}>
+                                  {unitLabel(u, rel.unitId)} {l ? `· ${recordName(l)}` : ""}
+                                </span>
+                                <span className={pageStyles.restingPriorityBlocker}>{rel.blocker}</span>
+                              </div>
+                              <ArrowUpRight size={14} className={pageStyles.restingPriorityArrow} aria-hidden="true" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
             {selectedUnitId && (
