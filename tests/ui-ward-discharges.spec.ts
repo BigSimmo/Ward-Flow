@@ -429,6 +429,7 @@ test.describe("@mockup WA disposition pathways", () => {
       await page.getByRole("button", { name, exact: true }).click();
       const detail = page.getByRole("region", { name: "Selected discharge details" });
       await expect(detail).toContainText(destination.label);
+      await detail.getByRole("tab", { name: "Dossier", exact: true }).click();
       if (destination.id === "died-on-the-ward") {
         await expect(detail.getByRole("button", { name: "Record follow-up status" })).toHaveCount(0);
       } else {
