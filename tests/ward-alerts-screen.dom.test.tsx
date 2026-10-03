@@ -5,7 +5,7 @@ import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen"
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-flow-reducer";
-import { referrals, wardMovements } from "@/components/ward-management/ward-movements";
+import { wardMovements } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
