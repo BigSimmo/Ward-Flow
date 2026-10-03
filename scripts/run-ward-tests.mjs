@@ -34,7 +34,11 @@
  * discrepancy (files vanished, nothing collected) — deliberately distinct, because "your tests are
  * broken" and "your test RUN is not telling you the truth" need different responses.
  *
- * ⚠️ KNOWN LIMITATION, 2026-08-30: THIS DOES NOT TAKE A REPOSITORY COORDINATOR LEASE.
+ * CURRENT CONTRACT: one outer exclusive repository lease owns this collector and every pinned
+ * local Vitest child. The guardian keeps admission alive and verifies descendant completion.
+ * Busy admission is a blocked run; no npx download or installation fallback is used.
+ *
+ * HISTORICAL LIMITATION, 2026-08-30 (resolved by the current contract):
  *
  * It spawns `npx vitest` directly. `npm run test` goes through `scripts/run-vitest.mjs`, which calls
  * `acquireHeavyRunLock` first; the coordinator permits at most two focused Vitest leases across all
@@ -116,6 +120,10 @@
  */
 
 import { spawnSync } from "node:child_process";
+import { acquireHeavyRunLock } from "./test-run-lock.mjs";
+import { runOwnedChild } from "./owned-child.mjs";
+import { isOfflineUnitTestFile } from "./unit-test-population.mjs";
+import { offlineTestEnvironment } from "./test-environment.mjs";
 import { existsSync, mkdtempSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -133,7 +141,7 @@ function discoverWardTests() {
   const dir = "tests";
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
-    .filter((f) => /^ward-.*\.test\.tsx?$/.test(f))
+    .filter((f) => f.startsWith("ward-") && isOfflineUnitTestFile(`tests/${f}`))
     .sort()
     .map((f) => `tests/${f}`);
 }
@@ -354,10 +362,20 @@ function main() {
       console.log(`\nBatch ${index + 1}/${batches.length}: ${batchFileList.length} file(s)…`);
     }
 
-    const run = spawnSync(buildVitestCommand(batchFileList, reportPath), {
-      stdio: ["ignore", "inherit", "inherit"],
-      shell: true,
-    });
+    const run = spawnSync(
+      process.execPath,
+      [
+        path.resolve("node_modules/vitest/vitest.mjs"),
+        "run",
+        ...batchFileList,
+        "--reporter=json",
+        `--outputFile=${reportPath}`,
+      ],
+      {
+        stdio: ["ignore", "inherit", "inherit"],
+        env: offlineTestEnvironment(process.env),
+      },
+    );
 
     if (!existsSync(reportPath)) {
       console.error(
@@ -533,5 +551,21 @@ export function isDirectInvocation(
  * which tests/ward-run-ward-tests-skips.test.ts does, to reach summariseSkips — must never do that.
  */
 if (isDirectInvocation(process.argv[1], import.meta.url)) {
-  process.exit(main());
+  const admission = acquireHeavyRunLock({ projectRoot: process.cwd(), mode: "exclusive", command: "run-ward-tests" });
+  if (process.env.WARD_OWNED_WARD_GATE === "1") {
+    if (!admission.reentrant) {
+      admission.release();
+      throw new Error("Owned Ward collector requires validated inherited admission");
+    }
+    process.exit(main());
+  } else {
+    try {
+      const result = await runOwnedChild(process.execPath, [fileURLToPath(import.meta.url), ...process.argv.slice(2)], {
+        env: { ...admission.environment, WARD_OWNED_WARD_GATE: "1" },
+      });
+      process.exitCode = result.status ?? 1;
+    } finally {
+      admission.release();
+    }
+  }
 }

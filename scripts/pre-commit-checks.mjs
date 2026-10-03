@@ -18,7 +18,8 @@
  *      five minutes here, so this builds a program rooted at the staged files
  *      (plus every .d.ts) and asks only for their diagnostics. It does NOT see
  *      a break in a file that imports the one you changed; the full
- *      `npm run typecheck` before folding still catches that.
+ *      the selected full typecheck still catches that. Dependencies and config
+ *      come from a disposable Git index snapshot, with installed packages retained.
  *
  * Worktrees: `core.hooksPath` is the relative `.githooks`, so each worktree
  * runs the hook and this script from its own branch. A branch older than this
@@ -536,7 +537,18 @@ async function runLint(root, files, changed) {
   return { problems, warnings };
 }
 
-function runTypecheck(root, files) {
+export async function runTypecheck(root, files) {
+  if (!resolveFrom(root, "typescript")) return { skipped: "typescript is not installed in this worktree" };
+  const { stagedSourceTree } = await import("./staged-source-tree.mjs");
+  const tree = stagedSourceTree(root);
+  try {
+    return runIndexTypecheck(tree.root, files);
+  } finally {
+    tree.cleanup();
+  }
+}
+
+function runIndexTypecheck(root, files) {
   const tsEntry = resolveFrom(root, "typescript");
   if (!tsEntry) return { skipped: "typescript is not installed in this worktree" };
   const require = createRequire(path.join(root, "package.json"));
@@ -548,24 +560,31 @@ function runTypecheck(root, files) {
     const normal = path.resolve(file);
     return process.platform === "win32" ? normal.toLowerCase() : normal;
   };
-  const staged = new Map(files.map((file) => [key(path.join(root, file)), file]));
-  const stagedText = new Map();
-  const readStaged = (absolute) => {
-    const file = staged.get(key(absolute));
-    if (!file) return undefined;
-    if (!stagedText.has(file)) stagedText.set(file, stagedContent(file));
-    return stagedText.get(file);
+  const allowed = (name) => key(name) === key(root) || key(name).startsWith(`${key(root)}${path.sep}`);
+  // Config/source outside this snapshot cannot supply an unstaged rescue. Package
+  // imports enter through the snapshot's node_modules junction and use the lock install.
+  const sourceSystem = {
+    ...ts.sys,
+    readFile: (name) => (allowed(name) ? ts.sys.readFile(name) : undefined),
+    fileExists: (name) => allowed(name) && ts.sys.fileExists(name),
+    readDirectory: (...args) => (allowed(args[0]) || key(args[0]) === key(root) ? ts.sys.readDirectory(...args) : []),
   };
 
   const parsed = ts.getParsedCommandLineOfConfigFile(
-    configPath,
+    configPath.replaceAll("\\", "/"),
     {},
     {
-      ...ts.sys,
+      ...sourceSystem,
       onUnRecoverableConfigFileDiagnostic: () => {},
     },
   );
-  if (!parsed) return { skipped: "tsconfig could not be parsed" };
+  if (!parsed) return { problems: ["Staged tsconfig could not be parsed; compiler proof unavailable."] };
+  if (parsed.errors.length)
+    return {
+      problems: parsed.errors.map(
+        (error) => `TS${error.code}: ${ts.flattenDiagnosticMessageText(error.messageText, "\n")}`,
+      ),
+    };
   const inProject = new Set(parsed.fileNames.map(key));
   const roots = files.map((file) => path.join(root, file)).filter((absolute) => inProject.has(key(absolute)));
   if (roots.length === 0) return { problems: [] };
@@ -579,19 +598,25 @@ function runTypecheck(root, files) {
 
   const options = { ...parsed.options, noEmit: true, incremental: false, composite: false, tsBuildInfoFile: undefined };
   const host = ts.createCompilerHost(options, true);
-  const baseGetSourceFile = host.getSourceFile.bind(host);
   const baseReadFile = host.readFile.bind(host);
   const baseFileExists = host.fileExists.bind(host);
-  host.readFile = (name) => readStaged(name) ?? baseReadFile(name);
-  host.fileExists = (name) => staged.has(key(name)) || baseFileExists(name);
+  const packageRoot = key(path.dirname(tsEntry));
+  const compilerAllowed = (name) =>
+    allowed(name) || key(name) === packageRoot || key(name).startsWith(`${packageRoot}${path.sep}`);
+  host.readFile = (name) => (compilerAllowed(name) ? baseReadFile(name) : undefined);
+  host.fileExists = (name) => compilerAllowed(name) && baseFileExists(name);
+  host.directoryExists = (name) => compilerAllowed(name) && ts.sys.directoryExists(name);
+  host.realpath = (name) => name;
   host.getSourceFile = (name, languageVersion, onError, shouldCreate) => {
-    const text = readStaged(name);
-    if (text === undefined) return baseGetSourceFile(name, languageVersion, onError, shouldCreate);
+    void onError;
+    void shouldCreate;
+    const text = host.readFile(name);
+    if (text === undefined) return undefined;
     return ts.createSourceFile(name, text, languageVersion, true);
   };
 
   const program = ts.createProgram({ rootNames: [...roots, ...declarations], options, host });
-  const diagnostics = [...program.getOptionsDiagnostics(), ...program.getGlobalDiagnostics()];
+  const diagnostics = [...parsed.errors, ...program.getOptionsDiagnostics(), ...program.getGlobalDiagnostics()];
   for (const absolute of roots) {
     const sourceFile = program.getSourceFile(absolute);
     if (!sourceFile) continue;
@@ -635,7 +660,18 @@ async function typecheckChildMain() {
   let input = "";
   for await (const chunk of process.stdin) input += chunk;
   const root = git(["rev-parse", "--show-toplevel"]).trim();
-  process.stdout.write(JSON.stringify(runTypecheck(root, JSON.parse(input))));
+  const { acquireHeavyRunLock } = await import("./test-run-lock.mjs");
+  const lease = acquireHeavyRunLock({
+    projectRoot: root,
+    mode: "shared",
+    command: "staged index typecheck",
+    waitTimeoutMs: 30_000,
+  });
+  try {
+    process.stdout.write(JSON.stringify(await runTypecheck(root, JSON.parse(input))));
+  } finally {
+    lease.release();
+  }
   return 0;
 }
 
