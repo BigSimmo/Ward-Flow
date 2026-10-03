@@ -3,6 +3,14 @@
 Drawing: `docs/ward-flow/mockups/on-call-third-edition.html` (8,627 lines)
 Route measured: does not exist under `src/app` — this is a genuine new build, not a reskin.
 
+## Current interface — owner-requested simplification, 3 October 2026
+
+The current Movements design remains the visual baseline. On-call uses the Capacity-style header placement: a compact top-right directory island with derived role, consultant and ED counts. The page has three sections: on-call roles, a full-width ED directory, and three routing cards in one desktop row. Tables retain all source records, service filters and search; filtered counts and a clear-filters action show the current scope.
+
+The owner requested removal of the two yellow coverage banners and the data/governance section. Services without roles now receive a neutral, explicit empty state when selected. A brief visible synthetic-data statement remains beside the roster; no real contacts or live coverage are asserted. The Tier 3 button and modal were removed from this directory: they only recorded an escalation against a movement and sent nothing. Redundant level/status columns, non-functional Connect buttons and hard-coded ED handover/liaison assignments were removed. Reach-via links scroll to the corresponding current-directory guidance.
+
+The original research below is historical evidence, not a requirement to restore the removed panels or controls.
+
 ## 0. Design or reproduction?
 
 **Design, not reproduction — with one explicit exception the drawing itself names.**

@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { OnCallScreen } from "@/components/ward-management/on-call/on-call-screen";
@@ -50,14 +50,9 @@ describe("the on-call screen", () => {
     );
   });
 
-  it("renders all four operational and provenance sections", () => {
+  it("renders the three useful directory sections without the removed controls", () => {
     renderOnCall();
-    for (const heading of [
-      "On-call now",
-      "ED liaison, by department",
-      "Reaching a role",
-      "Data provenance and coverage",
-    ]) {
+    for (const heading of ["On-call roles", "ED liaison, by department", "Reaching a role"]) {
       expect(
         screen.getByRole("heading", { name: heading }),
         `"${heading}" is not a heading on this screen — it may have been renamed, or demoted to a ` +
@@ -66,22 +61,17 @@ describe("the on-call screen", () => {
     }
   });
 
-  it("🔴 names every service that has nobody recorded, rather than leaving a blank", () => {
+  it("explains unrecorded services when selected without showing default warning banners", () => {
     renderOnCall();
+    expect(screen.queryByText(/Coverage boundary note/iu)).not.toBeInTheDocument();
     for (const service of servicesWithNoRoleRecorded()) {
-      const said = screen.getByTestId(`ward-on-call-none-${service}`);
-      expect(said, `${service} has no role recorded and the screen says nothing about it`).toBeVisible();
-      /*
-       * 🔴 **BOTH HALVES.** "Nobody is recorded" and "nobody is on call" are opposite claims: the
-       * first is about this software, the second about the world, and only the first is knowable
-       * here. A screen that quietly makes the second would tell a coordinator there is nobody to ring.
-       */
-      expect(said.textContent ?? "", `the ${service} note does not say this is about the prototype`).toMatch(
-        /in this prototype/iu,
-      );
-      expect(said.textContent ?? "", `the ${service} note claims to know about the world`).toMatch(
-        /Nothing here knows whether/iu,
-      );
+      fireEvent.click(screen.getByRole("button", { name: service }));
+      expect(
+        screen.getByText(
+          `No on-call roles recorded for ${service} in this prototype. Use the current site directory to confirm cover.`,
+        ),
+      ).toBeVisible();
+      expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("0 roles");
     }
   });
 
@@ -92,7 +82,7 @@ describe("the on-call screen", () => {
       screen.getByTestId("ward-on-call-count").textContent ?? "",
       "the count on screen is not the count the roster derives — a hand-typed figure goes stale the " +
         "moment a role is added, and this screen's figures are the thing a reader trusts",
-    ).toContain(`${counts.recorded} of ${counts.possible}`);
+    ).toContain(`${counts.recorded} roles recorded`);
   });
 
   it("lists every emergency department against its REAL site and service", () => {
@@ -101,12 +91,62 @@ describe("the on-call screen", () => {
     for (const department of departments) {
       const row = within(screen.getByTestId(`ward-on-call-ed-row-${department.id}`));
       const site = siteByCode(department.siteCode);
-      expect(row.getByText(department.name), `${department.id} is not listed`).toBeVisible();
+      expect(row.getByRole("link", { name: `How to reach ${department.name}` })).toHaveAttribute(
+        "href",
+        "#ward-reach-ed",
+      );
       if (site !== undefined) {
         // ✅ Real data, from the same source every other ward screen reads — asserted so that a
         // later "tidy" replacing it with invented site names goes red.
         expect(row.getByText(site.name), `${department.id} is not shown against its real site`).toBeVisible();
       }
+    }
+  });
+
+  it("removes misleading Connect, escalation, handover and provenance controls", () => {
+    renderOnCall();
+    expect(screen.queryByRole("button", { name: /Connect|Trigger Tier 3/iu })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Data provenance and coverage" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Handover" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Active Duty Roster")).not.toBeInTheDocument();
+  });
+
+  it("filters both tables by service and clears the selection", () => {
+    renderOnCall();
+    fireEvent.click(screen.getByRole("button", { name: "East Metro" }));
+    expect(screen.getByRole("button", { name: "East Metro" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(screen.getByTestId("ward-on-call-service-table")).getAllByRole("row")).toHaveLength(3);
+    for (const row of within(screen.getByTestId("ward-on-call-ed-table")).getAllByRole("row").slice(1)) {
+      expect(row).toHaveTextContent("East Metro");
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent(`${roleRecordCounts().recorded} roles recorded`);
+    expect(within(screen.getByTestId("ward-on-call-ed-table")).getAllByRole("row")).toHaveLength(
+      allEmergencyDepartments().length + 1,
+    );
+  });
+
+  it("searches sites and roles, shows no matches, and resets the search", () => {
+    renderOnCall();
+    const search = screen.getByRole("searchbox", { name: "Search roster and emergency departments" });
+    fireEvent.change(search, { target: { value: "  Royal Perth  " } });
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("2 roles of 9");
+    expect(within(screen.getByTestId("ward-on-call-ed-table")).getAllByRole("row")).toHaveLength(2);
+    fireEvent.change(search, { target: { value: "no-such-site" } });
+    expect(screen.getByText("No on-call roles match your search.")).toBeVisible();
+    expect(screen.getByText("No emergency departments match the current filter or search.")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(search).toHaveValue("");
+  });
+
+  it("every reach-via link has a focusable guidance destination", () => {
+    const { container } = renderOnCall();
+    const links = screen.getAllByRole("link", { name: /^How to reach/iu });
+    expect(links.length).toBe(roleRecordCounts().recorded + allEmergencyDepartments().length);
+    for (const link of links) {
+      const destination = container.querySelector(link.getAttribute("href")!);
+      expect(destination).toHaveAttribute("tabindex", "-1");
+      expect(destination).toBeVisible();
     }
   });
 
