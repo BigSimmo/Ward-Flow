@@ -9,7 +9,9 @@ import {
   realpathSync,
   statSync,
   unlinkSync,
+  writeFileSync,
 } from "node:fs";
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
@@ -21,8 +23,9 @@ export function validateClaimPaths(root, files) {
   for (const file of files) {
     if (
       path.isAbsolute(file) ||
-      /[\\,;|\s*?\[\]]/u.test(file) ||
+      /[\\,;:|\s*?\[\]]/u.test(file) ||
       file.startsWith("-") ||
+      /^\.git(?:\/|$)/u.test(file) ||
       file.split("/").some((part) => !part || part === "." || part === "..")
     )
       throw new Error("Unsafe claim path");
@@ -37,13 +40,26 @@ export function validateClaimPaths(root, files) {
 
 export function claimFiles({ root, branch, owner, files, log }) {
   validateClaimPaths(root, files);
-  if (!/^[\w./-]+$/u.test(branch) || !owner || /[|\r\n]/u.test(owner)) throw new Error("Invalid claim identity");
+  if (
+    !/^[\w./-]+$/u.test(branch) ||
+    !owner ||
+    /[|\r\n]/u.test(owner) ||
+    /Josh approved scoped (?:overlap|takeover) in this chat/iu.test(owner)
+  )
+    throw new Error("Invalid claim identity; this helper cannot encode takeover approval");
   if (!isPublicWardFlowCheckout(root)) throw new Error("Verified dedicated Ward Flow checkout required");
   const git = (args) => execFileSync("git", args, { cwd: root, encoding: "utf8", timeout: 30_000 }).trim();
   if (git(["branch", "--show-current"]) !== branch) throw new Error("Claim branch is not current");
   const lock = `${log}.claim-lock`;
   const descriptor = openSync(lock, "wx"); // Busy locks are never reclaimed by age.
+  const identity = JSON.stringify({
+    pid: process.pid,
+    token: randomUUID(),
+    branch,
+    createdAt: new Date().toISOString(),
+  });
   try {
+    writeFileSync(descriptor, identity);
     const text = readFileSync(log, "utf8");
     if (!text.includes("## Active sign-outs") && !/^Open sign-outs only\b/mu.test(text))
       throw new Error("Unknown sign-out format; do not append invisible claims");
@@ -70,7 +86,8 @@ export function claimFiles({ root, branch, owner, files, log }) {
     return { claimed: missing, alreadyOwned: files.filter((file) => !missing.includes(file)) };
   } finally {
     closeSync(descriptor);
-    unlinkSync(lock);
+    // Never remove a replacement lock installed by another writer/operator.
+    if (existsSync(lock) && readFileSync(lock, "utf8") === identity) unlinkSync(lock);
   }
 }
 
