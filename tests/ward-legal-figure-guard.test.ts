@@ -2,19 +2,13 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
-import { EVENT_ROLE, type WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import {
   seedWardFlowState,
   wardFlowReducer,
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
 import { CONTINUATION_LEGAL_FORMS, SELECTABLE_LEGAL_FORMS } from "../src/components/ward-management/ward-legal-forms";
-import {
-  DECLINE_REASONS,
-  MOVEMENT_STAGES,
-  type LegalForm,
-  type LegalStatus,
-} from "../src/components/ward-management/ward-model";
+import { type LegalForm, type LegalStatus } from "../src/components/ward-management/ward-model";
 import { wardMovements } from "../src/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { legalFormReadinessLine } from "../src/components/ward-management/movements/movement-workspace-derivations";
@@ -25,7 +19,6 @@ import {
   suppliedDueAt,
   SWEEP_CODES,
   ALL_EVENT_TYPES,
-  STRUCTURALLY_IMPOSSIBLE_FOR_CODE,
   offendingFormsIn,
 } from "./helpers/ward-legal-figure-sweep";
 /**
@@ -1118,7 +1111,7 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
     // writes a number down; its value is a string discriminant, and as an `EVENT_ROLE` key its
     // value is an array of role strings. Excluded by checking membership in `ALL_EVENT_TYPES` —
     // the REAL declared union of `WardFlowEvent["type"]` values, derived from the same
-    // `EVENT_ROLE` this test already imports, never a second hand-maintained list.
+    // `EVENT_ROLE` used by the shared sweep, never a second hand-maintained list.
     //
     // 🔴 **T2r fix round, finding 9 (2026-09-17) — WHY THE EXEMPTION CANNOT HIDE A FABRICATION,
     // PROVEN RATHER THAN ARGUED.** The exemption admits an identifier by NAME alone, so the
