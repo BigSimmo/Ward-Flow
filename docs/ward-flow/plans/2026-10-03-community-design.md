@@ -27,3 +27,7 @@ Verification: 19 focused tests passed, including visited-source filtering and it
 
 Final cohesion pass under the revised Rapid Design Iteration Prompt: show recently opened chips only when visits exist, distinguish the list heading as A–Z directory, simplify guide labels and similar-name guidance, and remove the unwired matrix download and its unused local toast. Existing source derivation, synthetic disclosure and separate-name warning remain. No shared chrome edits.
 Cohesion verification: initial selected run found one obsolete heading-copy expectation (23 passed, 1 failed). Replaced it with the same directory-section presence check using its stable test ID; targeted rerun 5/5 passed. Combined valid suite evidence: 24 focused tests passing, no tests removed. Diff-integrity passed 5 -> 5 against 1617ef7. Browser inspected desktop page and guide copy, Close and Escape with focus return. git diff --check passed.
+
+Search placement refinement: stop the field growing across the page; cap it at 22rem (352px), left-aligned beside the filter. It shrinks on narrow screens and the existing flexible row wraps the filter when needed. No shared chrome edits.
+
+Local browser check: desktop search width 352px; at 390px viewport search shrinks to 335px and filter wraps below with no horizontal overflow. Temporary viewport reset. Formatting and git diff --check passed.
