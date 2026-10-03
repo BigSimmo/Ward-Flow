@@ -854,3 +854,10 @@
     border-right: 0;
   }
 }
+.kpiBand .kpiCaption {
+  font-family: var(--body);
+  font-size: var(--t-0);
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--muted);
+}
