@@ -2,7 +2,7 @@
 
 Task: `WA-PATHWAYS-2026-10-03`. Repository: `BigSimmo/Ward-Flow`. Base: `24588a293ab177589476e1b962a534b70f9422a3`. Worktree branch: `codex/wa-pathway-audit-20261003`. Patient records used for every check were synthetic.
 
-## Findings and changes
+## Initial fixes (retained after remediation)
 
 1. **Missing destination distinctions:** added new residential aged-care residence, usual residential aged-care residence, and other health-care transfer. The older residential-care value remains readable without assuming that every historical care placement was aged care.
 2. **Unvalidated departures:** both departure commands now reject unknown destinations, nonfinite times and times before arrival. Stored admissions reject unknown destinations. A statistical type change cannot be submitted as a departure.
@@ -26,7 +26,7 @@ Older review documents found in searches were treated as historical evidence. No
 
 ## Complete separation-code crosswalk
 
-These are the ten Appendix C categories. This table is a review aid, not an implemented PAS/HMDC coding feed.
+These are the ten Appendix C categories. The local care form now validates this crosswalk and exports a review handoff. It is not a connected PAS/HMDC coding feed.
 
 | WA code | WA category                                | Ward Flow handling                                                                                                                             |
 | ------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -35,9 +35,9 @@ These are the ten Appendix C categories. This table is a review aid, not an impl
 | 22      | Residential aged care, usual residence     | Return to usual aged-care residence option.                                                                                                    |
 | 30      | Transfer to psychiatric hospital           | Psychiatric transfer option requires receiving-establishment classification before coding.                                                     |
 | 40      | Transfer to other health care              | Other health-care option. Do not automatically reclassify legacy residential care.                                                             |
-| 50      | Statistical type change                    | No physical departure action. A separate episode/type-change workflow would be needed; never free a bed on this code alone.                    |
+| 50      | Statistical type change                    | Separate statistical episode/type-change action now records the change without freeing a bed.                    |
 | 60      | Left against medical advice                | Existing against-advice option, subject to existing legal-status safeguards.                                                                   |
-| 70      | Discharge from leave                       | Existing did-not-return option is the closest operational concept; requires an explicit episode-ending decision, not simply an overdue return. |
+| 70      | Discharge from leave                       | Requires an explicitly confirmed ending from leave with a compatible recorded community/did-not-return departure; overdue return alone never ends an episode. |
 | 80      | Deceased                                   | Existing death-on-ward option; does not offer follow-up arrangement editing.                                                                   |
 | 90      | Other/home                                 | Community departure; custody can be an operational destination within this category, not a separate invented WA separation code.               |
 
@@ -48,7 +48,7 @@ All eleven choices share the same ward form, terminal admission record, derived 
 | Stored value                              | Journey ending                                                                      |
 | ----------------------------------------- | ----------------------------------------------------------------------------------- |
 | `discharged-to-the-community`             | Community departure; arrangement can subsequently be recorded.                      |
-| `transferred-to-another-psychiatric-ward` | Sending admission ends; receiving acceptance/admission remains a distinct workflow. |
+| `transferred-to-another-psychiatric-ward` | Manual departure ends the sending admission; the new local transfer handshake additionally supports atomic receiving-ward arrival. |
 | `transferred-to-a-general-hospital`       | Sending admission ends; receiving hospital handover remains external.               |
 | `moved-to-residential-care`               | Legacy residential-care departure remains interpretable as originally recorded.     |
 | `moved-to-residential-aged-care`          | Departure to a new aged-care residence.                                             |
@@ -63,7 +63,7 @@ All eleven choices share the same ward form, terminal admission record, derived 
 
 The [event inventory](wa-health-event-inventory-2026-10-03.csv) lists every current event, its role gate, component literal references and number of test references. References identify where to inspect wiring; their presence is not proof that a journey passes. Dynamic dispatch and intentionally internal commands are identified rather than labelled as missing UI automatically.
 
-A second search across both `.ts` and `.tsx` app files confirmed ten commands without a literal caller outside the engine/contract files: `RECORD_PATIENT_DISCHARGE`, `RECORD_COUNTRY_EXTENSION`, `RECORD_LEGAL_FORM_CONTINUATION`, `EVALUATE_ARRIVAL_LATENESS`, `RELEASE_AND_REOPEN_SEARCH`, `CLEAR_EXPECT_FLAG`, `RAISE_EXPECT_FLAG`, `FLAG_LEGAL_MISMATCH`, `EVALUATE_LEAVE_BED_WARNINGS`, and `SEND_WARD_BUZZ`. They are reducer interfaces with tests, rather than selectable app actions. The live ward departure journey uses `RECORD_LEAVING`; both command implementations are tested. No complete UI journey is claimed for these ten interfaces, and a literal-reference scan cannot rule out every possible indirect caller. In particular, legal continuation/country-extension entry and ward buzz require further product work if those capabilities are intended to be offered.
+The current inventory contains **98 events**. All have non-comment literal references outside engine/contract definitions; the reachability guard has no remaining exception entries. The ten interfaces previously identified without app callers are now exposed: protected patient departure through the provider; country extension and continuation with a supplied paper expiry; arrival-lateness review; release and reopen; raise/clear expectation; legal mismatch; leave-bed review; and fixed ward-capacity requests. This is source reachability, not proof of every history/role combination. Existing owner restrictions on acknowledging factual inbox items remain enforced; these are not reclassified as completable tasks to make a control appear.
 
 | Family and choices                              | Intended complete journey and boundaries                                                                                                                                                                                             | Existing evidence to run with the changes                                                                                                                |
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -79,18 +79,51 @@ A second search across both `.ts` and `.tsx` app files confirmed ten commands wi
 | Follow-up unknown / arranged / not arranged     | Unknown remains null. An authorized actor records a chosen status with time/role; stale/cross-ward/invalid requests change no facts. Neither chosen status proves clinical contact happened.                                         | `ward-follow-up-pathway`, `ward-discharge-follow-up`, community claim tests; eleven destination browser journeys                                         |
 | Record access and governance                    | Deliberate scoped record opening, current identity/generation/revision and audit receipt; reseeding invalidates old handles.                                                                                                         | Discharge access, record projection and audit suites                                                                                                     |
 
-## Material remaining gaps
+## Issue-by-issue remediation
 
-These are product/integration limitations identified by comparison with WA guidance, not established violations of law:
+The following additional findings have been resolved in the local synthetic prototype. Each write records attribution and audit facts; unknown information is retained as unknown. No legal authority, completed contact, service acceptance or provider booking is invented.
 
-- **No PAS/HMDC integration:** destination establishment, mode of separation and episode/type-change validation need an authoritative receiving-establishment crosswalk. The ten codes must not be inferred from eleven operational labels alone.
-- **No atomic transfer completion:** ending the sending admission is not proof that the receiving service accepted, received handover or admitted the person. The current app retains separate movement/referral/admission records rather than a verified cross-service transaction.
-- **Discharge planning remains clinically incomplete:** a binary arrangement field does not store a named responsible clinician, appointment/contact details, crisis plan, medication reconciliation, patient/carer involvement or culturally appropriate planning evidence. SSCD/transfer documents remain outside this prototype.
-- **Community orders need explicit legal modelling:** existing conservative community/against-advice discharge guards do not establish a full inpatient-order-to-CTO continuation workflow. This audit did not weaken them or invent a revocation merely to make a button succeed.
-- **Transport coverage is operational:** the fixed providers remain ambulance, patient transport and ward escort. Private/taxi, police, RFDS and region-specific services/documentation are not fully modelled. Orders, risk assessment and clinical escort suitability must not be inferred from a booking.
-- **Finite coverage has limits:** regression tests exercise the implemented vocabulary and many boundary conditions, not every conceivable clinical scenario or every combination of histories, roles and times. The app remains a synthetic prototype.
+| Finding | Current behaviour and evidence |
+| --- | --- |
+| No complete destination-to-code review | Closed receiving classes and ten separation categories are validated. Psychiatric transfer distinguishes acute/psychiatric hospitals; old residential care requires explicit classification. Invalid combinations cannot export a handoff. `ward-care-journey`, disposition suites. |
+| Code 50 could be confused with discharge | A separate episode-type change keeps occupancy and bed counts. Physical departure rejects a statistical change. Care/disposition suites. |
+| Discharge from leave was ambiguous | Coding requires a compatible departure and explicit clinical ending-from-leave confirmation. Overdue leave remains an active admission. Care/leave suites. |
+| Missing planning evidence | Eight attributed milestones cover crisis, medication reconciliation, patient/carer involvement, housing, cultural support, interpreter and handover. Status is explicit; milestones do not store the clinical plan itself. Care model/real-provider DOM tests. |
+| Missing clinical-document tracking | Seven document types have attributed status; adult/CAMHS cohorts remain distinct and adult-only physical/appearance forms are refused for CAMHS. Real clinical documents remain external. Care model/DOM tests. |
+| Missing named responsibility and appointment details | Fixed demonstration clinicians, responsible service, appointment time and mode are recorded through the guarded Dossier form. This is a synthetic directory, not a verified real clinician directory. Care model/DOM and phone-width browser journey. |
+| Arrangement mistaken for completed contact | Attempts, completed, unable-to-contact and declined are separate outcomes. Completion requires an arrangement and cannot precede its appointment or be in the future. Care model tests. |
+| Previous contact falsely completed a rescheduled appointment | Appointment versions associate each contact with its arrangement. Rescheduling at the same clock tick invalidates the old completion for the new appointment while retaining contact history. Care regression test. |
+| Community could not record its follow-up work | Explicitly referred teams get audited, scoped record handles and restricted care writers. No geography inference or coordinator impersonation grants access. Cross-team writes are refused. Care/access/privacy tests. |
+| Community follow-up list lacked meaningful progress filters | The live admission list shows arrangement/current-contact state and filters missing arrangements or current completed contact. Empty lists do not claim universal follow-up. Community DOM/provenance tests. |
+| No transport assessment across all modes | Six modes cover private vehicle, taxi, service vehicle, ambulance, police and RFDS with region, escort, least-restrictive review and regional confirmation. Applicable risk documentation and recorded authority are required. These facts are distinct from existing bookings. Care model tests. |
+| Involuntary transport lacked a checked-authority guard | Applicable service/ambulance/police/RFDS arrangements require recorded authority; police also requires the selected authority. Invalid/stale commands retain prior facts and beds. Care tests. |
+| Transfer departure lacked receiving completion | Local accepted → handover → arrived steps identify the receiving ward. Coordinator arrival checks eligibility, beds, staffing and duplicate occupancy, then ends the sending admission and creates receiving occupancy atomically. Manual/external departures remain distinct. Care transfer tests. |
+| Community discharge had no recorded paper transition | Revocation/5A/5B facts require checked paper and clinician-supplied written time; CTO departure also requires named follow-up. 5B needs a recorded predecessor; stale transitions cannot authorise later status changes. No statutory deadline is calculated. Care/legal suites. |
+| Transfer could inherit old legal-paper authority | New receiving admissions do not copy the sending stay's care legal-paper fact; appointment responsibility can continue. Transfer tests. |
+| Live ward departure used the legacy writer | The provider snapshots patient, generation and revision for protected patient-linked departures. Only explicit anonymous legacy admissions use the legacy command. Disposition/provider payload tests. |
+| Nine operational/legal commands had no controls | Movement workspace now offers expectation raise/clear, lateness/leave reviews, actual legal mismatch, fixed ward request, release/reopen and typed paper continuation/country expiry. Closed movements and unsuitable state are refused. Reachability/workflow DOM/legal suites. |
+| Cancelled transport still prevented release/reopen | A cancelled job no longer traps a held bed; active/collected transport boundaries still block inappropriate release. Real-provider workflow regression. |
+| Unknown or caller-invented legal mismatch could be flagged | The action requires a derived actual ward/patient mismatch rather than accepting a fabricated fallback. Workflow regression. |
+| Ward messages could introduce free text into synthetic persistence | Closed request messages are validated at runtime and in types; role and unit guards remain. Existing rollup fixtures use supported messages. Workflow/rollup tests. |
+| Care data could bypass restore/privacy/audit contracts | Strict closed-payload and stored-fact validation, projection cloning, actor scope, generation/revision guards and audit/persistence classifications include care. Rejected commands retain no unvalidated care payload. Care/provider/privacy/exhaustive contracts. |
+| Officer print footer did not match its hide rule | Existing print CSS is now attached to the actual footer; the formerly skipped officer print check is enabled. Browser roles suite. |
+| Referral threshold measurement ran on hidden print tables | A dedicated threshold probe measures both tables in their supported print layout and requires positive dimensions. Browser table-threshold suite. |
+| Care form could overflow phone width | Care forms now wrap and constrain field/select widths; the real planning/appointment browser journey checks the care panel at 375 px. |
+| Older test assumptions no longer described the working feature | Updated no-writer claims, field/event counts, closed-message fixtures and applicable legal/capacity fixtures. Tests were repaired without newly skipping failures. Historical failed runs remain recorded below. |
 
-## Verification
+Table-size advisories are not all defects: comparison tables deliberately use horizontal scrolling and intrinsic sizing; a nominal width pin that does not change rendered width is not proof of broken access. The print-only referral measurements were inconclusive on screen and are now measured in print. No unrequested redesign was made to remove advisory messages.
+
+## Remaining external dependencies and limits
+
+- **PAS/HMDC:** the local validated handoff is explicitly `not_connected`. An authoritative receiving-establishment identifier, approved adapter and authenticated shared-save/conflict tests are needed before reporting an external submission.
+- **Real clinical records and directories:** document/plan milestones and fixed demonstration clinicians are operational prototype facts. They do not create SSCD documents, medication prescriptions, verified clinical handover or real appointments. The historical community-team reference directory is not a verified live service directory.
+- **Legal and transport services:** paper facts are entered by the authorised actor; the app does not issue orders, determine statutory validity or book new private/taxi/police/RFDS services. Real service availability, regional policies and authority must be clinically verified.
+- **Cross-service transfers:** the new transaction is atomic within this local state. It does not prove acceptance, physical receipt or a transaction in an external hospital system.
+- **Finite verification:** tests cover implemented options and boundary conditions. They cannot establish every conceivable clinical scenario. The existing owner-retired forced-colours browser probe and other pre-existing skipped tests remain unverified.
+
+These are explicit integration/clinical acceptance dependencies, not established violations of law. No live target or authority was supplied for connecting them. Local completion, user acceptance, integration, release and deployment remain separate.
+
+## Initial verification — historical commit `26b284c`
 
 - Broad Ward regression: `Test Files 3 failed | 730 passed | 9 skipped (742)`; `Tests 3 failed | 8156 passed | 90 skipped (8249)` in `.local/wa-audit/ward-tests-final.log`. The three failures were an obsolete “no writer exists” assertion, a stale explanatory-comment assertion and a duplicate third-level heading introduced by the follow-up section. All three were repaired and included in the subsequent passing focused run. The broad suite was not repeated after those focused repairs; the 90 skipped tests are not claimed as verified.
 - Focused final repairs: `Test Files 6 passed (6)`; `Tests 84 passed (84)` in `.local/wa-audit/repairs-verified.log`. This includes the real provider form, follow-up state/permission/persistence checks, community claim tests, patient record-detail bridge and planning link.
