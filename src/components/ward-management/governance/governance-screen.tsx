@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { CircleSlash, Clock3, History, Users } from "lucide-react";
+import Link from "next/link";
 
 import {
   changeAudit,
@@ -149,12 +150,14 @@ export function GovernanceScreen(props: GovernanceScreenProps = {}) {
                             </span>
                             <span className={governance.auditDot}>·</span>
                             {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                            <a href="/mockups/ward-flow/movements" className={governance.auditMovementLink}>
-                              {resolveSubjectPatient(
-                                movements.find((candidate) => candidate.id === entry.movementId),
-                                { patients: flow.patients, referrals: flow.referrals, movements },
-                              ).displayName}
-                            </a>
+                            <Link href="/mockups/ward-flow/movements" className={governance.auditMovementLink}>
+                              {
+                                resolveSubjectPatient(
+                                  movements.find((candidate) => candidate.id === entry.movementId),
+                                  { patients: flow.patients, referrals: flow.referrals, movements },
+                                ).displayName
+                              }
+                            </Link>
                             <span className={governance.auditDot}>·</span>
                             <span className={governance.badge} data-tone={tone}>
                               {auditKindLabels[entry.kind]}

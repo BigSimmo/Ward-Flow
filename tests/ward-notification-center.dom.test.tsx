@@ -90,11 +90,7 @@ describe("WardNotificationCenter DOM Component", () => {
     ];
 
     render(
-      <WardNotificationCenter
-        {...defaultProps}
-        refreshRequests={refreshRequests}
-        onDismissBuzz={onDismissBuzz}
-      />,
+      <WardNotificationCenter {...defaultProps} refreshRequests={refreshRequests} onDismissBuzz={onDismissBuzz} />,
     );
 
     // Shows buzzes for Ward Alpha
@@ -138,9 +134,7 @@ describe("WardNotificationCenter DOM Component", () => {
 
     // Banner is rendered with exact text
     expect(
-      screen.getByText(
-        "09:30 Morning Census Overdue — Confirm discharges and allocatable beds",
-      ),
+      screen.getByText("09:30 Morning Census Overdue — Confirm discharges and allocatable beds"),
     ).toBeInTheDocument();
 
     const confirmButton = screen.getByRole("button", { name: "Confirm Now" });
@@ -159,9 +153,7 @@ describe("WardNotificationCenter DOM Component", () => {
       />,
     );
     expect(
-      screen.queryByText(
-        "09:30 Morning Census Overdue — Confirm discharges and allocatable beds",
-      ),
+      screen.queryByText("09:30 Morning Census Overdue — Confirm discharges and allocatable beds"),
     ).not.toBeInTheDocument();
   });
 
@@ -170,7 +162,7 @@ describe("WardNotificationCenter DOM Component", () => {
     const movements = [
       // Overdue: eta 600 (10:00). 700 > 600 + 60 (660).
       makeMovement({
-        id: "WF-001" as any,
+        id: "WF-001" as Movement["id"],
         acceptedUnitId: "ward-alpha",
         patientName: "Jane Doe",
         arrivalDetails: {
@@ -182,7 +174,7 @@ describe("WardNotificationCenter DOM Component", () => {
       }),
       // Not overdue: eta 650. 700 is NOT > 650 + 60 (710).
       makeMovement({
-        id: "WF-002" as any,
+        id: "WF-002" as Movement["id"],
         acceptedUnitId: "ward-alpha",
         patientName: "John Connor",
         arrivalDetails: {
@@ -194,7 +186,7 @@ describe("WardNotificationCenter DOM Component", () => {
       }),
       // Overdue but for different unit
       makeMovement({
-        id: "WF-003" as any,
+        id: "WF-003" as Movement["id"],
         acceptedUnitId: "ward-beta",
         patientName: "Sarah Connor",
         arrivalDetails: {
@@ -206,18 +198,10 @@ describe("WardNotificationCenter DOM Component", () => {
       }),
     ];
 
-    render(
-      <WardNotificationCenter
-        {...defaultProps}
-        now={now}
-        movements={movements}
-      />,
-    );
+    render(<WardNotificationCenter {...defaultProps} now={now} movements={movements} />);
 
     // Displays exact format: "Overdue Inbound Arrival: {patientName} (ETA was {ETA}, >60m overdue)"
-    expect(
-      screen.getByText("Overdue Inbound Arrival: Jane Doe (ETA was 10:00, >60m overdue)"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Overdue Inbound Arrival: Jane Doe (ETA was 10:00, >60m overdue)")).toBeInTheDocument();
 
     // Does not display alert for non-overdue or other ward
     expect(screen.queryByText(/John Connor/)).not.toBeInTheDocument();
@@ -227,31 +211,22 @@ describe("WardNotificationCenter DOM Component", () => {
   it("renders missing pre-admission medical clearance alerts", () => {
     const movements = [
       makeMovement({
-        id: "WF-010" as any,
+        id: "WF-010" as Movement["id"],
         acceptedUnitId: "ward-alpha",
         patientName: "Thomas Anderson",
         medicalClearance: { cleared: false, at: 500 },
       }),
       makeMovement({
-        id: "WF-011" as any,
+        id: "WF-011" as Movement["id"],
         acceptedUnitId: "ward-alpha",
         patientName: "Agent Smith",
         medicalClearance: { cleared: true, at: 500 },
       }),
     ];
 
-    render(
-      <WardNotificationCenter
-        {...defaultProps}
-        movements={movements}
-      />,
-    );
+    render(<WardNotificationCenter {...defaultProps} movements={movements} />);
 
-    expect(
-      screen.getByText(
-        "Pending Medical Clearance: Transfer cannot proceed until signed off",
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Pending Medical Clearance: Transfer cannot proceed until signed off")).toBeInTheDocument();
     expect(screen.getByText(/Thomas Anderson/)).toBeInTheDocument();
 
     // Agent Smith was cleared, so no clearance alert
@@ -282,13 +257,7 @@ describe("WardNotificationCenter DOM Component", () => {
       }),
     ];
 
-    render(
-      <WardNotificationCenter
-        {...defaultProps}
-        notices={notices}
-        onAcknowledgeNotice={onAcknowledgeNotice}
-      />,
-    );
+    render(<WardNotificationCenter {...defaultProps} notices={notices} onAcknowledgeNotice={onAcknowledgeNotice} />);
 
     // Displays notices for ward-alpha
     expect(screen.getByText("Bed request cancelled by coordinator")).toBeInTheDocument();
@@ -316,7 +285,7 @@ describe("WardNotificationCenter DOM Component", () => {
 
     const movements = [
       makeMovement({
-        id: "WF-001" as any,
+        id: "WF-001" as Movement["id"],
         acceptedUnitId: "ward-alpha",
         patientName: "Jane Doe",
         arrivalDetails: {
@@ -349,9 +318,7 @@ describe("WardNotificationCenter DOM Component", () => {
 
     // "All" tab is active by default: all 3 sections are rendered
     expect(screen.getByText("Coordinator buzz message")).toBeInTheDocument();
-    expect(
-      screen.getByText("Overdue Inbound Arrival: Jane Doe (ETA was 10:00, >60m overdue)"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Overdue Inbound Arrival: Jane Doe (ETA was 10:00, >60m overdue)")).toBeInTheDocument();
     expect(screen.getByText("Direct ward notice message")).toBeInTheDocument();
 
     // Switch to Coordinator Buzzes tab
@@ -367,9 +334,7 @@ describe("WardNotificationCenter DOM Component", () => {
     fireEvent.click(urgentTab);
     expect(urgentTab).toHaveAttribute("aria-selected", "true");
     expect(screen.queryByText("Coordinator buzz message")).not.toBeInTheDocument();
-    expect(
-      screen.getByText("Overdue Inbound Arrival: Jane Doe (ETA was 10:00, >60m overdue)"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Overdue Inbound Arrival: Jane Doe (ETA was 10:00, >60m overdue)")).toBeInTheDocument();
     expect(screen.queryByText("Direct ward notice message")).not.toBeInTheDocument();
 
     // Switch to Notices tab
@@ -385,19 +350,13 @@ describe("WardNotificationCenter DOM Component", () => {
     fireEvent.click(allTab);
     expect(allTab).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText("Coordinator buzz message")).toBeInTheDocument();
-    expect(
-      screen.getByText("Overdue Inbound Arrival: Jane Doe (ETA was 10:00, >60m overdue)"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Overdue Inbound Arrival: Jane Doe (ETA was 10:00, >60m overdue)")).toBeInTheDocument();
     expect(screen.getByText("Direct ward notice message")).toBeInTheDocument();
   });
 
   it("meets accessibility requirements: role=region, aria-live=polite, and tabpanel semantics", () => {
     render(
-      <WardNotificationCenter
-        {...defaultProps}
-        morningRollupDeadlinePassed={true}
-        morningRollupConfirmed={false}
-      />,
+      <WardNotificationCenter {...defaultProps} morningRollupDeadlinePassed={true} morningRollupConfirmed={false} />,
     );
 
     const region = screen.getByRole("region", {
@@ -477,11 +436,7 @@ describe("WardNotificationCenter DOM Component", () => {
   it("toggles sound preference when clicking the audio toggle button", () => {
     setAudioBuzzPreference(true);
 
-    render(
-      <WardNotificationCenter
-        {...defaultProps}
-      />,
-    );
+    render(<WardNotificationCenter {...defaultProps} />);
 
     const toggleBtn = screen.getByTestId("ward-buzz-audio-toggle");
     expect(toggleBtn).toBeInTheDocument();
