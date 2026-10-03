@@ -12,7 +12,7 @@
 - When the user says `safely`, preserve unrelated staged, unstaged, and untracked work; stop only clearly repo-owned transient processes; and verify the result instead of doing broad cleanup.
 - For Ward Flow clinical, privacy, security or environment changes, select the applicable checks under [How we work](../ward-flow/HOW-WE-WORK.md) and [public CI policy](../ward-flow/PUBLIC-CI.md). The copied PsychSift production-readiness and Supabase commands do not apply here. Provider access needs the authority required by [AGENTS.md](../../AGENTS.md).
 - For handoff, archive-safety, or upload-style requests, inspect branch/upstream/status and select the appropriate verification. Commit coherent task-owned changes under AGENTS.md's local-commit rules; publication still requires separate authority.
-- Before editing, use Ward Flow's exact-file sign-out check and shared ownership log as required by AGENTS.md. Preserve other sessions' work and inspect scripts before using any inherited reconciliation procedure.
+- Before editing, use Ward Flow's exact-file sign-out check and shared ownership log as required by AGENTS.md (optional for interactive single-user sessions under its Prototype Operating Mode). Preserve other sessions' work and inspect scripts before using any inherited reconciliation procedure.
 - For codebase appraisal exports, stage outside the repo, include `EXPORT_MANIFEST.md`, exclude secrets/dependencies/build outputs/local state, and verify the archive can be opened before handoff.
 - When a repeated repo-specific workflow is discovered, update this file or ask the user whether it should be remembered.
 

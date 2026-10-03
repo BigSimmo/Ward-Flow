@@ -113,7 +113,7 @@
 - [heading] Read down the middle  ↓ — Read straight down.
 - [heading] Diversions  → — It carries on, somewhere other than expected.
 
-## 96 ACTIONS, and which boxes each is attached to
+## 98 ACTIONS, and which boxes each is attached to
 - RECEIVE_REFERRAL :: Raise a referral at the front door :: boxes = raised, addressed, armCommunity, armWard, armEd, srcCommunity, srcCrisis, srcPolice, srcAmbulance, srcHospital, srcEd, srcGp
 - ADD_PATIENT :: Add a person who is not on file :: boxes = raised, rkDuplicate, rkIntakeLost
 - RECORD_MEDICAL_CLEARANCE :: Record whether they are medically cleared :: boxes = addressed, rkClearance, edArrived
@@ -192,6 +192,8 @@
 - SET_STEP_DOWN_CANDIDATE :: Mark somebody as a step-down candidate :: boxes = rkDischargePlan
 - SET_DISCHARGE_BARRIER :: Record what is holding a discharge up :: boxes = rkDischargePlan
 - UPDATE_EXPECTED_DISCHARGE :: Set or move the expected discharge date :: boxes = rkDischargePlan
+- RECORD_ADMISSION_CARE :: Record care journey fact :: boxes = rkDischargePlan
+- RECORD_ADMISSION_FOLLOW_UP :: Record follow-up arrangement :: boxes = rkDischargePlan
 - RECORD_MOVEMENT_MEDICAL_CLEARANCE :: Record medical clearance against the movement :: boxes = rkClearance
 - UPLOAD_PATIENT_FORM :: Attach a file to the movement :: boxes = rkLegalWritten
 - RECORD_LEGAL_FORM_WRITTEN :: Record that a legal form was written :: boxes = rkLegalWritten

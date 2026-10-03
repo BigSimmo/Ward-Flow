@@ -1943,8 +1943,8 @@
     "reasons": [],
     "refuses": [],
     "screen": {
-      "screen": "NONE",
-      "control": "Nothing can trigger this"
+      "screen": "ward-screen.tsx (+1 other)",
+      "control": "Record departure"
     }
   },
   {
@@ -2089,8 +2089,8 @@
       }
     ],
     "screen": {
-      "screen": "NONE",
-      "control": "Nothing can trigger this"
+      "screen": "movement-workflow-actions.tsx",
+      "control": "Review late arrival"
     }
   },
   {
@@ -2159,6 +2159,40 @@
     "screen": {
       "screen": "discharge-board.tsx",
       "control": "Update expected departure"
+    }
+  },
+  {
+    "event": "RECORD_ADMISSION_CARE",
+    "name": "Record care journey fact",
+    "group": "On the ward",
+    "lane": "record",
+    "nodes": ["rkDischargePlan"],
+    "roles": ["ward", "coordinator", "community"],
+    "does": "Records a care journey fact (such as a transfer, transport, clinical plan or document) against an admission on the discharge board.",
+    "needs": "An occupied or departed admission with linked identity matching the expected revision.",
+    "changes": "Appends or updates the care journey record. Moves no bed figure — except a transfer recorded as arrived, which also ends this admission as transferred, opens a new occupied admission and an arrived movement at the receiving ward, completes any live bed release for the leaver, and moves both wards' bed figures.",
+    "reasons": [],
+    "refuses": [],
+    "screen": {
+      "screen": "discharge-care-journey.tsx",
+      "control": "Record care fact"
+    }
+  },
+  {
+    "event": "RECORD_ADMISSION_FOLLOW_UP",
+    "name": "Record follow-up arrangement",
+    "group": "On the ward",
+    "lane": "record",
+    "nodes": ["rkDischargePlan"],
+    "roles": ["ward", "coordinator"],
+    "does": "Records follow-up contact arrangements against an admission on the discharge board.",
+    "needs": "An occupied or departed admission with linked identity matching the expected revision.",
+    "changes": "Updates the follow-up arrangement on the admission. Moves no bed figure.",
+    "reasons": [],
+    "refuses": [],
+    "screen": {
+      "screen": "discharge-follow-up.tsx",
+      "control": "Record follow-up"
     }
   },
   {
@@ -2253,8 +2287,8 @@
       }
     ],
     "screen": {
-      "screen": "NONE",
-      "control": "Nothing can trigger this"
+      "screen": "movement-workflow-actions.tsx",
+      "control": "Record legal form continuation"
     }
   },
   {
@@ -2275,8 +2309,8 @@
       }
     ],
     "screen": {
-      "screen": "NONE",
-      "control": "Nothing can trigger this"
+      "screen": "movement-workflow-actions.tsx",
+      "control": "Record country paper extension"
     }
   },
   {
@@ -2301,8 +2335,8 @@
       }
     ],
     "screen": {
-      "screen": "NONE",
-      "control": "Nothing can trigger this"
+      "screen": "movement-workflow-actions.tsx",
+      "control": "Flag current legal placement mismatch"
     }
   },
   {
@@ -2323,8 +2357,8 @@
       }
     ],
     "screen": {
-      "screen": "NONE",
-      "control": "Nothing can trigger this"
+      "screen": "movement-workflow-actions.tsx",
+      "control": "Raise expectation review flag"
     }
   },
   {
@@ -2345,8 +2379,8 @@
       }
     ],
     "screen": {
-      "screen": "NONE",
-      "control": "Nothing can trigger this"
+      "screen": "movement-workflow-actions.tsx",
+      "control": "Clear expectation review flag"
     }
   },
   {
@@ -2379,8 +2413,8 @@
       }
     ],
     "screen": {
-      "screen": "NONE",
-      "control": "Nothing can trigger this"
+      "screen": "movement-workflow-actions.tsx",
+      "control": "Release held bed and reopen search"
     }
   },
   {
@@ -2413,8 +2447,8 @@
     "reasons": [],
     "refuses": [],
     "screen": {
-      "screen": "NONE",
-      "control": "Nothing can trigger this"
+      "screen": "movement-workflow-actions.tsx",
+      "control": "Request ward capacity review"
     }
   },
   {
@@ -2430,8 +2464,8 @@
     "reasons": [],
     "refuses": [],
     "screen": {
-      "screen": "NONE",
-      "control": "Nothing can trigger this"
+      "screen": "movement-workflow-actions.tsx",
+      "control": "Review leave bed warnings"
     }
   },
   {

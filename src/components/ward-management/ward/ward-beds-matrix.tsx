@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import styles from "./ward-beds-matrix.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
 
@@ -37,24 +37,32 @@ export function WardBedsMatrix({
   setSelectedPod,
   isMixed,
 }: WardBedsMatrixProps) {
-  const filteredBeds = selectedPod === "all" ? bedsList : bedsList.filter((bed) => bed.podId === selectedPod);
+  const filteredBeds = useMemo(
+    () => (selectedPod === "all" ? bedsList : bedsList.filter((bed) => bed.podId === selectedPod)),
+    [bedsList, selectedPod],
+  );
 
   const handleBedClick = (bed: BedItem) => {
     setSelectedBed(typeof bed.bedNumber === "number" ? bed.bedNumber : Number(bed.bedNumber) || null);
   };
 
   // Group beds into Bays (4 beds per bay)
-  const bays: Array<{ title: string; beds: BedItem[] }> = [];
-  for (let i = 0; i < filteredBeds.length; i += 4) {
-    const bayNum = Math.floor(i / 4) + 1;
-    const slice = filteredBeds.slice(i, i + 4);
-    const title = `Bed group ${bayNum} (Beds ${slice[0]?.bedLabel ?? ""} – ${slice[slice.length - 1]?.bedLabel ?? ""})`;
-    bays.push({ title, beds: slice });
-  }
+  const bays = useMemo(() => {
+    const grouped: Array<{ title: string; beds: BedItem[] }> = [];
+    for (let i = 0; i < filteredBeds.length; i += 4) {
+      const bayNum = Math.floor(i / 4) + 1;
+      const slice = filteredBeds.slice(i, i + 4);
+      const title = `Bed group ${bayNum} (Beds ${slice[0]?.bedLabel ?? ""} – ${slice[slice.length - 1]?.bedLabel ?? ""})`;
+      grouped.push({ title, beds: slice });
+    }
+    return grouped;
+  }, [filteredBeds]);
 
-  const readyCount = bedsList.filter((b) => b.status === "ready").length;
-  const occupiedCount = bedsList.filter((b) => b.patientAlias).length;
-  const leaveCount = bedsList.filter((b) => b.status === "leave").length;
+  const readyCount = useMemo(() => bedsList.filter((b) => b.status === "ready").length, [bedsList]);
+  const occupiedCount = useMemo(() => bedsList.filter((b) => b.patientAlias).length, [bedsList]);
+  const leaveCount = useMemo(() => bedsList.filter((b) => b.status === "leave").length, [bedsList]);
+  const lockedCount = useMemo(() => bedsList.filter((b) => b.podId === "locked").length, [bedsList]);
+  const openCount = useMemo(() => bedsList.filter((b) => b.podId === "open").length, [bedsList]);
 
   return (
     <div className={styles.matrixWrap}>
@@ -97,7 +105,7 @@ export function WardBedsMatrix({
                 aria-pressed={selectedPod === "locked"}
                 onClick={() => setSelectedPod("locked")}
               >
-                Locked ({bedsList.filter((b) => b.podId === "locked").length})
+                Locked ({lockedCount})
               </button>
               <button
                 type="button"
@@ -105,7 +113,7 @@ export function WardBedsMatrix({
                 aria-pressed={selectedPod === "open"}
                 onClick={() => setSelectedPod("open")}
               >
-                Open ({bedsList.filter((b) => b.podId === "open").length})
+                Open ({openCount})
               </button>
             </>
           ) : null}

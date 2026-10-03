@@ -10,7 +10,9 @@ auto-merge was armed; only an unrelated merge conflict stopped it, and the branc
 merge of `main` silently restored the file, so the squash landed clean. Nothing was lost, by
 luck rather than by any gate (`#Y30AXB`).
 
-`npm run check:diff-integrity` is that gate. It runs unconditionally in `verify:cheap` and
+`npm run check:diff-integrity` is that gate. Since 3 October 2026 (owner-approved prototype mode) a
+measured test-count reduction is advisory unless `DIFF_INTEGRITY_STRICT=1`; truncation artefacts and
+an unreadable before-state still fail. It runs unconditionally in `verify:cheap` and
 `verify:pr-local`, and in CI's `static-pr` job, comparing against the merge base with
 `origin/main` — never the previous commit, so removing tests across several small commits is
 still measured as the whole drop. Two rules:

@@ -2,7 +2,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { stagedSourceTree } from "./staged-source-tree.mjs";
 
 export function selectedDocChecks(files, wardIndexes = false) {
@@ -68,7 +68,7 @@ export function checkStagedDocs({
         continue;
       }
       const args = script.endsWith(".ts")
-        ? ["--import", path.join(tree.root, "node_modules/tsx/dist/loader.mjs"), script, "--check"]
+        ? ["--import", pathToFileURL(path.join(tree.root, "node_modules/tsx/dist/loader.mjs")).href, script, "--check"]
         : [script, "--check"];
       const result = run(process.execPath, args, {
         cwd: tree.root,

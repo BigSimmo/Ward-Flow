@@ -8,6 +8,10 @@ set -eu
 # scoped to the staged TypeScript files. All read the staged content. Details,
 # timings and escapes are in the script's header. Fails open only when the script
 # or node is absent (an older branch in another worktree), never on a finding.
+# The sign-out clash check is ON by default. A single-user session may bypass it only by an
+# explicit choice for that commit: SKIP_SIGNOUT_GUARD=1 git commit ... (honoured by
+# scripts/pre-commit-checks.mjs). This hook never sets or defaults that variable.
+
 if [ -f scripts/pre-commit-checks.mjs ] && command -v node >/dev/null 2>&1; then
   node scripts/pre-commit-checks.mjs || exit 1
 fi

@@ -356,6 +356,16 @@
           "label": "closes as arrived, not as did-not-proceed"
         },
         {
+          "from": "start",
+          "to": "arrived",
+          "action": "RECORD_ADMISSION_CARE",
+          "route": "below",
+          "offset": 0,
+          "kind": "skip",
+          "label": "ward transfer arrival: created already arrived",
+          "guard": "only a coordinator recording a transfer as arrived, for an occupied admission, into a ward with a suitable free bed and staffing; the new movement is opened and closed as arrived in one write, never raised in a department"
+        },
+        {
           "from": "moving",
           "to": "placement_requested",
           "action": "STEP_BACK_STAGE",
@@ -455,6 +465,26 @@
           "action": "RECORD_LEAVING",
           "route": "straight",
           "guard": "only from occupied, and only by the ward they are on"
+        },
+        {
+          "from": "occupied",
+          "to": "departed",
+          "action": "RECORD_ADMISSION_CARE",
+          "route": "below",
+          "offset": 0,
+          "kind": "side",
+          "label": "transferred to another ward",
+          "guard": "only when a coordinator records the transfer as arrived; the stay ends with the destination transferred-to-another-psychiatric-ward and any live bed release is completed"
+        },
+        {
+          "from": "none",
+          "to": "occupied",
+          "action": "RECORD_ADMISSION_CARE",
+          "route": "below",
+          "offset": 60,
+          "kind": "skip",
+          "label": "transfer arrival: new admission, already occupied",
+          "guard": "the receiving ward gets a NEW admission with a new linked movement; no bed is pulled first, so it never passes through Held"
         },
         {
           "from": "occupied",
@@ -777,6 +807,24 @@
           "offset": 30,
           "kind": "skip",
           "label": "straight from expected"
+        },
+        {
+          "from": "confirmed",
+          "to": "discharged",
+          "action": "RECORD_ADMISSION_CARE",
+          "route": "below",
+          "offset": 0,
+          "kind": "side",
+          "label": "the patient's ward transfer completes it"
+        },
+        {
+          "from": "expected",
+          "to": "discharged",
+          "action": "RECORD_ADMISSION_CARE",
+          "route": "below",
+          "offset": 60,
+          "kind": "skip",
+          "label": "straight from expected, by ward transfer"
         },
         {
           "from": "expected",
@@ -1294,6 +1342,11 @@
             "note": "the named patient leaving, which also completes their bed release"
           },
           {
+            "action": "RECORD_ADMISSION_CARE",
+            "effect": "+ 1 on the ward they leave, \u2212 1 on the ward they arrive at",
+            "note": "only a transfer recorded as arrived; the source ward's live bed release is completed in the same write"
+          },
+          {
             "action": "CONFIRM_CAPACITY",
             "effect": "set outright",
             "note": "a ward's own self-report, which can put it above the empty count"
@@ -1312,6 +1365,11 @@
             "action": "RECORD_LEAVING",
             "effect": "+ 1",
             "note": "once, for the leaving; the bed release it completes moves nothing more"
+          },
+          {
+            "action": "RECORD_ADMISSION_CARE",
+            "effect": "+ 1 on the ward they leave, \u2212 1 on the ward they arrive at",
+            "note": "only a transfer recorded as arrived"
           }
         ]
       }

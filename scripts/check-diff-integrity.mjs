@@ -788,20 +788,51 @@ export function main(argv = process.argv.slice(2)) {
     }
   }
 
-  const total = failures.length + (result.aggregate.ok ? 0 : 1) + result.artefacts.length;
-  if (total > 0) {
-    console.error(
-      `[diff-integrity] FAIL — ${failures.length} test file(s) below the per-file floor, ` +
-        `${result.aggregate.ok ? "aggregate ok" : "aggregate below floor"}, ` +
-        `${result.artefacts.length} truncation artefact(s), against base ${base.slice(0, 9)}.`,
-    );
-    return 1;
+  const decision = exitDecision(result, process.env);
+  const summary =
+    `${failures.length} test file(s) below the per-file floor, ` +
+    `${result.aggregate.ok ? "aggregate ok" : "aggregate below floor"}, against base ${base.slice(0, 9)}`;
+  const totals =
+    `${result.verdicts.length} changed test file(s), ` +
+    `${result.aggregate.before} -> ${result.aggregate.after} test case(s), against base ${base.slice(0, 9)}.`;
+  switch (decision) {
+    case "fail-artefact":
+      console.error(
+        `[diff-integrity] FAIL — committed tool truncation banner as file content (${result.artefacts.length} artefact(s)), ` +
+          `against base ${base.slice(0, 9)}.`,
+      );
+      return 1;
+    case "fail-unreadable":
+      console.error(
+        `[diff-integrity] FAIL — test file(s) without a readable before-state against base ${base.slice(0, 9)}; refusing to pass.`,
+      );
+      return 1;
+    case "fail-strict":
+      console.error(`[diff-integrity] FAIL — ${summary}.`);
+      return 1;
+    case "advisory":
+      console.warn(
+        `[diff-integrity] ADVISORY — ${summary}. Permitted under prototype mode; set DIFF_INTEGRITY_STRICT=1 to enforce the floor.`,
+      );
+      console.log(`[diff-integrity] PASS (advisory) — ${totals}`);
+      return 0;
+    default:
+      console.log(`[diff-integrity] PASS — ${totals}`);
+      return 0;
   }
-  console.log(
-    `[diff-integrity] PASS — ${result.verdicts.length} changed test file(s), ` +
-      `${result.aggregate.before} -> ${result.aggregate.after} test case(s), against base ${base.slice(0, 9)}.`,
-  );
-  return 0;
+}
+
+/**
+ * Exit decision. Prototype mode (owner-approved 3 Oct 2026) softens ONLY measured test-count
+ * reductions; truncation artefacts and an unreadable before-state stay fail-closed.
+ * @returns {"fail-artefact" | "fail-unreadable" | "fail-strict" | "advisory" | "pass"}
+ */
+export function exitDecision(result, env = {}) {
+  if (result.artefacts.length > 0) return "fail-artefact";
+  const failures = result.verdicts.filter((verdict) => !verdict.ok);
+  if (failures.some((verdict) => Number.isNaN(verdict.before))) return "fail-unreadable";
+  if (failures.length === 0 && result.aggregate.ok) return "pass";
+  return env.DIFF_INTEGRITY_STRICT === "1" ? "fail-strict" : "advisory";
 }
 
 const invokedAsScript = process.argv[1] !== undefined && resolve(process.argv[1]) === resolve(SCRIPT_PATH);

@@ -4,6 +4,8 @@ Owning repository: `BigSimmo/Ward-Flow`. These rules cover only this project. Th
 
 Reuse [the product task ledger](ward-flow-task-ledger.md) and existing task checkpoint IDs. Do not add Ward tasks to the inherited PsychSift outstanding-issues system.
 
+> **Prototype Mode Note (3 October 2026):** For ordinary interactive pair-programming and development tasks, formal receipt export (`export-task-receipt.py`) and Notion reconciliation are optional and advisory. Standard Git commits and PR summaries provide sufficient task tracking.
+
 ## Update at lifecycle events
 
 At start, reuse the original objective/task ID. At checkpoint, blocker, resume and completion, update that same record; retries and terminal assistant turns are not new tasks or proof of completion. One project owns each task. Link dependencies as project plus task ID instead of copying them into other project lists. Keep Completed/Cancelled history; open views hide those states.

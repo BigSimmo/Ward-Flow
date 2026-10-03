@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useRef } from "react";
 import type { Unit } from "@/components/ward-management/ward-model";
+import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import styles from "./ward-decisions-cockpit.module.css";
 
 interface AuditRecord {
@@ -63,6 +64,26 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
   // Form selections
   const [declineReason, setDeclineReason] = useState("acuity");
   const [barrierPathway, setBarrierPathway] = useState("social-work");
+  const [declineNotes, setDeclineNotes] = useState("");
+  const [barrierNotes, setBarrierNotes] = useState("");
+
+  const isDeclineDirty = declineModalOpen && declineNotes.trim().length > 0;
+  const { clearDraft: clearDeclineDraft } = useDirtyStateGuard({
+    key: `cockpit-decline-${unit.id}`,
+    isDirty: isDeclineDirty,
+    value: declineNotes,
+    onRestore: setDeclineNotes,
+    confirmMessage: "You have an unsaved clinical decline rationale. Are you sure you want to leave?",
+  });
+
+  const isBarrierDirty = barrierModalOpen && barrierNotes.trim().length > 0;
+  const { clearDraft: clearBarrierDraft } = useDirtyStateGuard({
+    key: `cockpit-barrier-${unit.id}`,
+    isDirty: isBarrierDirty,
+    value: barrierNotes,
+    onRestore: setBarrierNotes,
+    confirmMessage: "You have an unsaved discharge barrier note. Are you sure you want to leave?",
+  });
 
   // ─── Fictional Demonstration Log ───
   const [auditLog, setAuditLog] = useState<AuditRecord[]>([
@@ -147,6 +168,8 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
   const handleDeclineIntakeSubmit = () => {
     setIntakeState("declined");
     setDeclineModalOpen(false);
+    clearDeclineDraft();
+    setDeclineNotes("");
     addAuditItem(
       "✕",
       "Referral Declined",
@@ -188,6 +211,8 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
   const handleEscalateBarrierSubmit = () => {
     setRowanState("escalated");
     setBarrierModalOpen(false);
+    clearBarrierDraft();
+    setBarrierNotes("");
     addAuditItem(
       "📞",
       "Discharge Barrier Escalated",
@@ -1082,6 +1107,8 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
                   className={styles.formTextarea}
                   rows={3}
                   placeholder="Provide clinical rationale for senior bed manager review..."
+                  value={declineNotes}
+                  onChange={(e) => setDeclineNotes(e.target.value)}
                 />
               </div>
             </div>
@@ -1159,6 +1186,8 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
                   className={styles.formTextarea}
                   rows={3}
                   placeholder="Detail specific housing or legal roadblock..."
+                  value={barrierNotes}
+                  onChange={(e) => setBarrierNotes(e.target.value)}
                 />
               </div>
             </div>

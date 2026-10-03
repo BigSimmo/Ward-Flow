@@ -23,6 +23,7 @@ import { INBOX_CATEGORIES } from "@/components/ward-management/ward-flow-reducer
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPanel } from "@/components/ward-management/ward-panel";
+import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
@@ -41,6 +42,13 @@ import {
   type BroadcastTargetScope,
   type BroadcastCategory,
 } from "./ward-broadcast-model";
+
+import {
+  isBroadcastDraftDirty,
+  parseBroadcastDraft,
+  serialiseBroadcastDraft,
+  type BroadcastDraft,
+} from "./broadcast-draft";
 
 import styles from "./alerts.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
@@ -487,6 +495,7 @@ function AlertsWorkspace() {
     defaultTmpl?.title ?? "Critical HDU Capacity: Immediate Discharge & Step-Down Review",
   );
   const [broadcastMessage, setBroadcastMessage] = useState(defaultTmpl?.defaultMessage ?? "");
+
   const [broadcastSeverity, setBroadcastSeverity] = useState<BroadcastSeverity>(defaultTmpl?.severity ?? "critical");
   const [broadcastCategory, setBroadcastCategory] = useState<BroadcastCategory>(
     defaultTmpl?.category ?? "capacity_gridlock",
@@ -508,6 +517,56 @@ function AlertsWorkspace() {
   const broadcastRefused = broadcastResult?.accepted === false;
   const isBroadcastModalOpen =
     broadcastModalOpen && !(broadcastAccepted && broadcastRequest?.type === "DISPATCH_BROADCAST_ALERT");
+
+  // ONE draft of the WHOLE broadcast form (template, title, severity, category, target scope, duration
+  // and message), cached and restored together; dirtiness is derived from the complete form, so a
+  // title-only or scope-only edit is protected too. A restored draft reopens the composer it came
+  // from, because a draft is only cached while the composer is open.
+  const broadcastDraft = useMemo<BroadcastDraft>(
+    () => ({
+      templateId: selectedTemplateId,
+      title: broadcastTitle,
+      message: broadcastMessage,
+      severity: broadcastSeverity,
+      category: broadcastCategory,
+      scope: broadcastScope,
+      durationMinutes: broadcastDurationMinutes,
+    }),
+    [
+      selectedTemplateId,
+      broadcastTitle,
+      broadcastMessage,
+      broadcastSeverity,
+      broadcastCategory,
+      broadcastScope,
+      broadcastDurationMinutes,
+    ],
+  );
+  const restoreBroadcastDraft = useCallback((raw: string) => {
+    const draft = parseBroadcastDraft(raw);
+    if (!draft) return;
+    setSelectedTemplateId(draft.templateId);
+    setBroadcastTitle(draft.title);
+    setBroadcastMessage(draft.message);
+    setBroadcastSeverity(draft.severity);
+    setBroadcastCategory(draft.category);
+    setBroadcastScope(draft.scope);
+    setBroadcastDurationMinutes(draft.durationMinutes);
+    setBroadcastModalOpen(true);
+  }, []);
+  const { clearDraft: clearBroadcastDraft } = useDirtyStateGuard({
+    key: "alerts-broadcast-directive",
+    isDirty: isBroadcastModalOpen && isBroadcastDraftDirty(broadcastDraft),
+    value: serialiseBroadcastDraft(broadcastDraft),
+    onRestore: restoreBroadcastDraft,
+    confirmMessage: "You have an unsaved statewide broadcast directive. Are you sure you want to leave?",
+  });
+
+  useEffect(() => {
+    if (broadcastAccepted && broadcastRequest?.type === "DISPATCH_BROADCAST_ALERT") {
+      clearBroadcastDraft();
+    }
+  }, [broadcastAccepted, broadcastRequest, clearBroadcastDraft]);
   const broadcastFeedback =
     broadcastRequest && broadcastResult
       ? broadcastRefused
