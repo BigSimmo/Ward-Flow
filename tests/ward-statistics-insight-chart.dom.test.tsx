@@ -237,3 +237,34 @@ describe("StatisticsInsightChart review fixes", () => {
     }
   });
 });
+
+it("exports a formula-like record name neutralised", async () => {
+  let exported: Blob | undefined;
+  vi.stubGlobal("URL", {
+    createObjectURL: vi.fn((blob: Blob) => ((exported = blob), "blob:x")),
+    revokeObjectURL: vi.fn(),
+  });
+  const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+  try {
+    render(
+      <StatisticsInsightChart
+        title="Formula"
+        testId="formula"
+        metrics={[{ id: "count", label: "Count", unit: "people", note: "n" }]}
+        rows={[{ id: "f", name: "=cmd|x", values: { count: 1 } }]}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Export CSV" }));
+    const csv = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.readAsText(exported!);
+    });
+    expect(csv).toContain(`"'=cmd|x"`);
+    expect(csv).not.toContain(`,"=cmd|x"`);
+    expect(csv).not.toMatch(/^"=cmd/mu);
+  } finally {
+    click.mockRestore();
+    vi.unstubAllGlobals();
+  }
+});
