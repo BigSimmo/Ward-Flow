@@ -435,7 +435,7 @@
 }
 
 @media (max-width: 640px) {
-  .axis > div > span:nth-child(even) {
+  .axis > div > span:nth-child(even):not(:last-child) {
     display: none;
   }
   .detailsMetrics {
