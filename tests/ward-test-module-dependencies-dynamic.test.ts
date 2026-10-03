@@ -23,7 +23,7 @@ describe("test module dependency uncertainty", () => {
         }),
       ).toEqual([]);
     } finally {
-      rmSync(root, { recursive: true, force: true });
+      rmSync(root, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
     }
   });
   it("keeps the full gate for an unresolvable dynamic require", () => {
@@ -41,7 +41,7 @@ describe("test module dependency uncertainty", () => {
         }),
       ).toEqual(["tests/a.test.ts"]);
     } finally {
-      rmSync(root, { recursive: true, force: true });
+      rmSync(root, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
     }
   });
 });
