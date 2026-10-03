@@ -48,6 +48,8 @@ import {
   validateBatchReport,
 } from "./ward-flow/full-gate-recheck.mjs";
 
+import { referencedTestChanges } from "./ward-flow/test-module-dependencies.mjs";
+
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const MANIFEST = path.join(projectRoot, "tests", "ward-expected-reds.json");
 
@@ -546,18 +548,13 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
           const [status, ...files] = line.split("\t");
           return { status, path: files.at(-1) };
         });
-      const referencedByOtherTests = changes
-        .filter((change) => change.status === "M" && isOfflineUnitTestFile(change.path))
-        .filter((change) => {
-          const stem = path.posix.basename(change.path).replace(/\.(?:dom\.|contract\.)?test\.tsx?$/, "");
-          return (
-            /\bexport\s/.test(readFileSync(path.join(projectRoot, change.path), "utf8")) ||
-            population.some(
-              (file) => file !== change.path && readFileSync(path.join(projectRoot, file), "utf8").includes(stem),
-            )
-          );
-        })
-        .map((change) => change.path);
+      const referencedByOtherTests = referencedTestChanges({
+        root: projectRoot,
+        population,
+        changed: changes
+          .filter((change) => change.status === "M" && isOfflineUnitTestFile(change.path))
+          .map((change) => change.path),
+      });
       const plan = planFullGateRecheck({
         receipt,
         currentCommit: commit,
