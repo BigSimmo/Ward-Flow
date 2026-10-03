@@ -36,16 +36,30 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
   overflow-x: clip;
   overflow-y: visible;
-  padding: 1rem 1.5rem 3rem;
+  padding: 0.75rem 1.25rem 1.5rem;
 }
 
 .panelGrid {
   display: grid;
   min-width: 0;
-  gap: 1.25rem;
+  gap: 0.85rem;
+  align-items: start;
+}
+
+.priorityColumn {
+  display: grid;
+  min-width: 0;
+  gap: 0.85rem;
+  align-content: start;
+}
+
+@media (min-width: 70rem) {
+  .panelGrid {
+    grid-template-columns: minmax(19rem, 0.8fr) minmax(0, 1.5fr);
+  }
 }
 
 .panelBody {
@@ -58,7 +72,7 @@
 }
 
 /* Content-led groups share one natural page scroll. */
-.panelGrid > :global([data-ward-primitive="panel"]) {
+.panelGrid :global([data-ward-primitive="panel"]) {
   min-width: 0;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -73,7 +87,7 @@
   justify-content: space-between;
   gap: 1.25rem;
   flex-wrap: wrap;
-  padding: 1.15rem 1.4rem;
+  padding: 0.75rem 1rem;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r1);
@@ -313,7 +327,7 @@
 }
 
 .panelBody > .rows {
-  margin: 0.75rem 1rem;
+  margin: 0;
 }
 
 .alertsEmpty {
@@ -809,8 +823,8 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.85rem 1rem;
+  gap: 0.65rem;
+  padding: 0.7rem 0.85rem;
   border-bottom: 1px solid var(--line);
   background: var(--surface);
 }
@@ -869,7 +883,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 0.5rem;
-  row-gap: 0.25rem;
+  row-gap: 0.2rem;
 }
 
 .badge {
@@ -914,7 +928,6 @@
 }
 
 .alertTitleText {
-  flex-basis: 100%;
   font-weight: 650;
   font-size: var(--t-2);
   color: var(--ink);
@@ -2041,4 +2054,74 @@
     letter-spacing: 0;
     line-height: 1.4;
   }
+}
+
+/* Compact column composition: attention and notices beside the operational queue. */
+.priorityColumn .alertCard {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.priorityColumn .alertActions {
+  grid-column: 2;
+  justify-content: flex-start;
+}
+
+.priorityColumn .feedHead {
+  padding: 0.65rem 0.85rem;
+}
+
+.priorityColumn .feedHead h2 {
+  font-size: var(--t-1);
+  letter-spacing: 0;
+}
+
+.priorityColumn .feedEmptyCard {
+  padding: 0.85rem;
+  align-items: flex-start;
+}
+
+.alertsHud > div {
+  padding: 0.5rem 0.85rem;
+  row-gap: 0.35rem;
+}
+
+.alertsHud ul {
+  row-gap: 0.25rem;
+}
+
+@media (min-width: 70rem) {
+  .panelGrid > :global([data-ward-primitive="panel"]) .alertCard {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .panelGrid > :global([data-ward-primitive="panel"]) .alertIcon {
+    display: none;
+  }
+  .panelGrid > :global([data-ward-primitive="panel"]) .alertTitleText {
+    color: var(--accent-ink);
+  }
+  .panelGrid > :global([data-ward-primitive="panel"]) .alertCard[data-tone="danger"] .alertTitleText {
+    color: var(--danger-ink);
+  }
+  .panelGrid > :global([data-ward-primitive="panel"]) .alertActions {
+    flex-wrap: nowrap;
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 35rem) {
+  .priorityColumn .alertActions {
+    grid-column: 1 / -1;
+  }
+}
+
+.alertTiming {
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.4;
+}
+
+.alertActions .quickActionTrigger {
+  width: var(--ward-tap);
+  padding: 0;
+  justify-content: center;
 }

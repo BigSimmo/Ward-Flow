@@ -4,7 +4,9 @@ Task identity: `alerts-refinement-20261003`, repository `BigSimmo/Ward-Flow`.
 Base: `d8c1a05c24a55282c90547725ae9f397cf2ef284` (verified main tip).
 Worktree: `/workspace/ward-flow-alerts`, branch `codex/alerts-refinement-20261003`.
 
-The alerts page now uses full-width, content-sized groups and one page scroll.
+The alerts page uses compact, unequal columns on desktop and one page scroll.
+The narrower column groups alerts needing attention with role notices. The wider
+column holds a dense operational queue. Columns stack on smaller screens.
 Alert rows preserve patient identity, UMRN, location, ownership, timing, links and
 existing actions. Legacy movement references are removed from row and drawer copy;
 underlying identifiers, event routing and persistence remain intact. Arbitrary urgency
@@ -41,3 +43,6 @@ page JavaScript errors were observed in the completed interaction run.
 Recommended follow-up: complete the unavailable intervention confirmation workflow;
 add recipient-scoped notice read actions using the existing `MARK_NOTICE_READ` event.
 These require separate behavioural implementation and are not claimed complete here.
+
+User refinement: avoid a long full-width stack. Group related content into columns,
+reduce repeated row labels and timing, and keep touch targets and identification.

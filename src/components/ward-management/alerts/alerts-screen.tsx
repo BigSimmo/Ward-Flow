@@ -306,16 +306,14 @@ function AlertRows({
             </div>
             <div className={styles.alertContent}>
               <div className={styles.alertHead}>
-                <span className={styles.badge} data-tone={categoryBadge.tone}>
-                  {categoryBadge.label}
-                </span>
+                <span className={styles.alertTitleText}>{item.title}</span>
                 {overdueText && (
                   <span className={styles.overdueChip} data-tone={severity.tone}>
                     <Clock className={styles.chipIcon} aria-hidden="true" />
                     {overdueText}
                   </span>
                 )}
-                <span className={styles.alertTitleText}>{item.title}</span>
+                {!overdueText && <span className={styles.alertTiming}>{alertDetail(item)}</span>}
                 <span className={styles.alertMetaText}>
                   <strong className={styles.patientName}>{patientInfo.displayName}</strong> · UMRN:{" "}
                   <strong>{patientInfo.umrn}</strong> •{" "}
@@ -328,7 +326,6 @@ function AlertRows({
                   </span>
                 )}
               </div>
-              <div className={styles.alertDescText}>{alertDetail(item)}</div>
             </div>
             <div className={styles.alertActions}>
               <button
@@ -375,7 +372,6 @@ function AlertRows({
                     setOpenQuickMenuId((prev) => (prev === item.id ? null : item.id));
                   }}
                 >
-                  <span>Actions</span>
                   <ChevronDown className={styles.btnIcon} aria-hidden="true" />
                 </button>
                 {openQuickMenuId === item.id && (
@@ -1118,27 +1114,81 @@ function AlertsWorkspace() {
           role="tabpanel"
           aria-labelledby={`alerts-tier-${tierFilter}`}
         >
-          <WardPanel title="Needs you" count={`${filteredNeedsYou.length} to act on`}>
-            <div className={styles.panelBody} role="region" aria-label="Needs you alerts" tabIndex={0}>
-              <AlertRows
-                items={filteredNeedsYou}
-                empty="No high-priority clinical or legal conditions are currently active."
-                onAction={handleOpenAction}
-                onQuickAction={handleQuickAction}
-                acknowledgements={inboxAcknowledgements}
-                patients={patients}
-                referrals={referrals}
-                movements={movements}
-                units={units}
-                state={state}
-                isFiltered={tierFilter !== "all" || roleFilter !== "all"}
-                onResetFilters={() => {
-                  setTierFilter("all");
-                  setRoleFilter("all");
-                }}
-              />
-            </div>
-          </WardPanel>
+          <div className={styles.priorityColumn}>
+            <WardPanel title="Needs you" count={`${filteredNeedsYou.length} to act on`}>
+              <div className={styles.panelBody} role="region" aria-label="Needs you alerts" tabIndex={0}>
+                <AlertRows
+                  items={filteredNeedsYou}
+                  empty="No high-priority clinical or legal conditions are currently active."
+                  onAction={handleOpenAction}
+                  onQuickAction={handleQuickAction}
+                  acknowledgements={inboxAcknowledgements}
+                  patients={patients}
+                  referrals={referrals}
+                  movements={movements}
+                  units={units}
+                  state={state}
+                  isFiltered={tierFilter !== "all" || roleFilter !== "all"}
+                  onResetFilters={() => {
+                    setTierFilter("all");
+                    setRoleFilter("all");
+                  }}
+                />
+              </div>
+            </WardPanel>
+
+            {/* Operational Notices & Shift Communication Feed */}
+            <section className={styles.feedSection} aria-label="Operational Notices and Shift Communication Feed">
+              <div className={styles.feedHead}>
+                <div className={styles.feedHeadTitleGroup}>
+                  <BellRing className={styles.feedIconAccent} aria-hidden="true" />
+                  <h2>Role Notices &amp; Shift Communication Feed</h2>
+                </div>
+                <span className={styles.feedCount}>{feedNotices.length} recorded</span>
+              </div>
+              {feedNotices.length === 0 ? (
+                <div className={styles.feedEmptyCard}>
+                  <Info className={styles.feedIconAccent} aria-hidden="true" />
+                  <div>
+                    <p className={styles.none}>No notices have been raised this session.</p>
+                    <p className={styles.feedEmptySub}>
+                      Recorded referral, bed-hold and transport notices appear here.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <ul className={styles.feedList}>
+                  {feedNotices.map((notice) => {
+                    const isRead = notice.readAt !== undefined;
+                    return (
+                      <li key={notice.id} className={styles.feedItem}>
+                        <div className={styles.feedIcon}>
+                          <Info className={styles.tabIcon} aria-hidden="true" />
+                        </div>
+                        <div className={styles.feedContent}>
+                          <div className={styles.feedItemHead}>
+                            <span className={styles.badge} data-tone="accent">
+                              Notice
+                            </span>
+                            <span className={styles.feedTitle}>{notice.sentence}</span>
+                            <span className={styles.feedMeta}>
+                              • To: {WARD_FLOW_ROLE_LABELS[notice.to.role]} • Raised{" "}
+                              {formatInstantWithDay(notice.raisedAt, now)}
+                            </span>
+                          </div>
+                        </div>
+                        <div>
+                          <span className={styles.badge} data-tone={isRead ? "good" : "accent"}>
+                            {isRead ? "Read" : "Unread"}
+                          </span>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </section>
+          </div>
 
           <WardPanel title="For other roles" count={`${filteredOtherRoles.length} elsewhere`}>
             <div className={styles.panelBody} role="region" aria-label="Alerts for other roles" tabIndex={0}>
@@ -1235,56 +1285,6 @@ function AlertsWorkspace() {
             </div>
           </WardPanel>
         </div>
-
-        {/* Operational Notices & Shift Communication Feed */}
-        <section className={styles.feedSection} aria-label="Operational Notices and Shift Communication Feed">
-          <div className={styles.feedHead}>
-            <div className={styles.feedHeadTitleGroup}>
-              <BellRing className={styles.feedIconAccent} aria-hidden="true" />
-              <h2>Role Notices &amp; Shift Communication Feed</h2>
-            </div>
-            <span className={styles.feedCount}>{feedNotices.length} recorded</span>
-          </div>
-          {feedNotices.length === 0 ? (
-            <div className={styles.feedEmptyCard}>
-              <Info className={styles.feedIconAccent} aria-hidden="true" />
-              <div>
-                <p className={styles.none}>No notices have been raised this session.</p>
-                <p className={styles.feedEmptySub}>Recorded referral, bed-hold and transport notices appear here.</p>
-              </div>
-            </div>
-          ) : (
-            <ul className={styles.feedList}>
-              {feedNotices.map((notice) => {
-                const isRead = notice.readAt !== undefined;
-                return (
-                  <li key={notice.id} className={styles.feedItem}>
-                    <div className={styles.feedIcon}>
-                      <Info className={styles.tabIcon} aria-hidden="true" />
-                    </div>
-                    <div className={styles.feedContent}>
-                      <div className={styles.feedItemHead}>
-                        <span className={styles.badge} data-tone="accent">
-                          Notice
-                        </span>
-                        <span className={styles.feedTitle}>{notice.sentence}</span>
-                        <span className={styles.feedMeta}>
-                          • To: {WARD_FLOW_ROLE_LABELS[notice.to.role]} • Raised{" "}
-                          {formatInstantWithDay(notice.raisedAt, now)}
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <span className={styles.badge} data-tone={isRead ? "good" : "accent"}>
-                        {isRead ? "Read" : "Unread"}
-                      </span>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
 
         {/* Right Inspector Drawer for Alert Escalation & Triage */}
         {selectedAlert && (
