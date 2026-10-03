@@ -209,8 +209,12 @@ describe("gate receipts — outcome-affecting environment (Codex review, PR #221
     for (const name of ["FAST_CHECK_SEED", "TZ", "LANG", "NODE_OPTIONS", "ALLOW_PROVIDER_TESTS"]) {
       expect(OUTCOME_AFFECTING_ENV_VARS).toContain(name);
     }
-    // Performance-only knobs must stay out: they would churn receipts for no verdict change.
-    expect(OUTCOME_AFFECTING_ENV_VARS).not.toContain("VITEST_MAX_WORKERS");
+    // Concurrency can change race-sensitive outcomes; evidence must not cross that boundary.
+    expect(OUTCOME_AFFECTING_ENV_VARS).toContain("VITEST_MAX_WORKERS");
+    const { root } = gitFixture({ "a.ts": "1\n" });
+    expect(environmentSignature(root, { VITEST_MAX_WORKERS: "1" })).not.toBe(
+      environmentSignature(root, { VITEST_MAX_WORKERS: "4" }),
+    );
   });
 
   it("does not reuse a receipt recorded under a different seed", () => {
