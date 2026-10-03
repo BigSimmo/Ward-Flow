@@ -60,6 +60,37 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
   const [handoverModalOpen, setHandoverModalOpen] = useState(false);
   const [toastText, setToastText] = useState<string | null>(null);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastActiveElementRef = useRef<HTMLElement | null>(null);
+
+  const openDeclineModal = () => {
+    lastActiveElementRef.current = document.activeElement as HTMLElement | null;
+    setDeclineModalOpen(true);
+  };
+
+  const closeDeclineModal = () => {
+    setDeclineModalOpen(false);
+    lastActiveElementRef.current?.focus?.();
+  };
+
+  const openBarrierModal = () => {
+    lastActiveElementRef.current = document.activeElement as HTMLElement | null;
+    setBarrierModalOpen(true);
+  };
+
+  const closeBarrierModal = () => {
+    setBarrierModalOpen(false);
+    lastActiveElementRef.current?.focus?.();
+  };
+
+  const openHandoverModal = () => {
+    lastActiveElementRef.current = document.activeElement as HTMLElement | null;
+    setHandoverModalOpen(true);
+  };
+
+  const closeHandoverModal = () => {
+    setHandoverModalOpen(false);
+    lastActiveElementRef.current?.focus?.();
+  };
 
   // Form selections
   const [declineReason, setDeclineReason] = useState("acuity");
@@ -91,7 +122,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
     confirmMessage: "You have an unsaved discharge barrier note. Are you sure you want to leave?",
   });
 
-  // Modal keyboard accessibility (Escape key dismissal)
+  // Modal keyboard accessibility (Escape key dismissal & focus restoration)
   useEffect(() => {
     if (!declineModalOpen && !barrierModalOpen && !handoverModalOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -99,6 +130,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
         setDeclineModalOpen(false);
         setBarrierModalOpen(false);
         setHandoverModalOpen(false);
+        lastActiveElementRef.current?.focus?.();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -177,6 +209,8 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
   // Intake Handlers
   const handleAcceptIntake = () => {
     setIntakeState("accepted");
+    clearDeclineDraft();
+    setDeclineNotes("");
     addAuditItem(
       "✓",
       "Inbound Referral Accepted",
@@ -187,7 +221,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
 
   const handleDeclineIntakeSubmit = () => {
     setIntakeState("declined");
-    setDeclineModalOpen(false);
+    closeDeclineModal();
     clearDeclineDraft();
     setDeclineNotes("");
     addAuditItem(
@@ -200,6 +234,8 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
 
   const handleDeferIntake = () => {
     setIntakeState("deferred");
+    clearDeclineDraft();
+    setDeclineNotes("");
     addAuditItem("⏳", "ED MO Review Requested", "Aaron K. deferred pending emergency medical officer reassessment.");
     showToast("ED MO Review requested. SLA timer paused.");
   };
@@ -230,7 +266,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
   // Barrier Handlers
   const handleEscalateBarrierSubmit = () => {
     setRowanState("escalated");
-    setBarrierModalOpen(false);
+    closeBarrierModal();
     clearBarrierDraft();
     setBarrierNotes("");
     addAuditItem(
@@ -243,6 +279,8 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
 
   const handlePostponeDischarge = () => {
     setRowanState("postponed");
+    clearBarrierDraft();
+    setBarrierNotes("");
     addAuditItem("⏳", "Discharge Postponed", "Rowan Ross (Bed 11) discharge deferred to tomorrow.");
     showToast("Discharge postponed to tomorrow");
   };
@@ -340,7 +378,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
           <button
             type="button"
             className={`${styles.btn} ${styles.btnOutline} ${styles.btnSm}`}
-            onClick={() => setHandoverModalOpen(true)}
+            onClick={openHandoverModal}
           >
             📋 Handover Summary
           </button>
@@ -688,7 +726,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
                     <button
                       type="button"
                       className={`${styles.btn} ${styles.btnDanger} ${styles.btnSm}`}
-                      onClick={() => setDeclineModalOpen(true)}
+                      onClick={openDeclineModal}
                     >
                       <span>✕ Decline</span>
                     </button>
@@ -844,7 +882,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
                       <button
                         type="button"
                         className={`${styles.btn} ${styles.btnOutline} ${styles.btnSm}`}
-                        onClick={() => setBarrierModalOpen(true)}
+                        onClick={openBarrierModal}
                       >
                         <span>📞 Escalate to Social Work &amp; Flow</span>
                       </button>
@@ -1080,12 +1118,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
               <h3 className={styles.drawerTitle} id="declineTitle">
                 Decline Inbound Referral
               </h3>
-              <button
-                type="button"
-                className={styles.drawerClose}
-                onClick={() => setDeclineModalOpen(false)}
-                aria-label="Close"
-              >
+              <button type="button" className={styles.drawerClose} onClick={closeDeclineModal} aria-label="Close">
                 &times;
               </button>
             </div>
@@ -1141,11 +1174,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
               </div>
             </div>
             <div className={styles.drawerFoot}>
-              <button
-                type="button"
-                className={`${styles.btn} ${styles.btnSubtle}`}
-                onClick={() => setDeclineModalOpen(false)}
-              >
+              <button type="button" className={`${styles.btn} ${styles.btnSubtle}`} onClick={closeDeclineModal}>
                 Cancel
               </button>
               <button type="button" className={`${styles.btn} ${styles.btnDanger}`} onClick={handleDeclineIntakeSubmit}>
@@ -1164,12 +1193,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
               <h3 className={styles.drawerTitle} id="barrierTitle">
                 Escalate Discharge Flow Barrier
               </h3>
-              <button
-                type="button"
-                className={styles.drawerClose}
-                onClick={() => setBarrierModalOpen(false)}
-                aria-label="Close"
-              >
+              <button type="button" className={styles.drawerClose} onClick={closeBarrierModal} aria-label="Close">
                 &times;
               </button>
             </div>
@@ -1220,11 +1244,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
               </div>
             </div>
             <div className={styles.drawerFoot}>
-              <button
-                type="button"
-                className={`${styles.btn} ${styles.btnSubtle}`}
-                onClick={() => setBarrierModalOpen(false)}
-              >
+              <button type="button" className={`${styles.btn} ${styles.btnSubtle}`} onClick={closeBarrierModal}>
                 Cancel
               </button>
               <button type="button" className={`${styles.btn} ${styles.btnGood}`} onClick={handleEscalateBarrierSubmit}>
@@ -1243,12 +1263,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
               <h3 className={styles.drawerTitle} id="handoverTitle">
                 📋 Shift Handover Summary — {unit.name}
               </h3>
-              <button
-                type="button"
-                className={styles.drawerClose}
-                onClick={() => setHandoverModalOpen(false)}
-                aria-label="Close"
-              >
+              <button type="button" className={styles.drawerClose} onClick={closeHandoverModal} aria-label="Close">
                 &times;
               </button>
             </div>
@@ -1341,11 +1356,7 @@ function WardDecisionsDemonstration({ unit }: { unit: Unit }) {
               >
                 🖨️ Print Handover Sign-Off
               </button>
-              <button
-                type="button"
-                className={`${styles.btn} ${styles.btnGood}`}
-                onClick={() => setHandoverModalOpen(false)}
-              >
+              <button type="button" className={`${styles.btn} ${styles.btnGood}`} onClick={closeHandoverModal}>
                 Done
               </button>
             </div>
