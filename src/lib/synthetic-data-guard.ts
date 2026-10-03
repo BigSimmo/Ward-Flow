@@ -62,7 +62,10 @@ export function checkSyntheticPayload(payload: unknown, maxDepth = 16): Syntheti
 
   function walk(node: unknown, depth: number): SyntheticCheckResult {
     if (depth > maxDepth) {
-      return { safe: true };
+      return {
+        safe: false,
+        reason: "Payload nesting too deep to scan for real identifiers",
+      };
     }
 
     if (typeof node === "string") {

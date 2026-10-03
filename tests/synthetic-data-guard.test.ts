@@ -71,4 +71,15 @@ describe("synthetic-data-guard", () => {
     const result = checkSyntheticPayload(circularObj);
     expect(result.safe).toBe(true);
   });
+
+  it("fails closed when nesting exceeds the scan depth", () => {
+    const deep: Record<string, unknown> = { note: "MRN 12345678" };
+    let node = deep;
+    for (let i = 0; i < 20; i++) {
+      const next: Record<string, unknown> = {};
+      node.child = next;
+      node = next;
+    }
+    expect(checkSyntheticPayload(deep, 5).safe).toBe(false);
+  });
 });

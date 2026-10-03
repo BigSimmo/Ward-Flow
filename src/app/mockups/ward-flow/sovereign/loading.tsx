@@ -23,6 +23,7 @@ export default function SovereignShowcaseLoading() {
             style={{
               height: "2.25rem",
               width: "22rem",
+              maxWidth: "100%",
               background: "var(--surface-2)",
               borderRadius: "var(--r2)",
               marginBottom: "0.75rem",
