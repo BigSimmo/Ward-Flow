@@ -25,7 +25,6 @@ import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import { movementHref, unitHref } from "./shell/ward-facade";
 import { WardDynamicIsland } from "./shell/ward-dynamic-island";
 
-import se from "./ward-modes-second-edition.module.css";
 import thirdEdition from "./governance-third-edition.module.css";
 
 /**
@@ -180,6 +179,8 @@ const actionLabels: Record<AuditEvent["action"], string> = {
   RAISE_REFERRAL: "Record legal form",
   // T2 (2026-09-17 build plan). Covers both the first typed expiry and a later extension — see
   // `legalFormOperationLabels` below for which of the two this row was.
+  RECORD_COUNTRY_EXTENSION: "Country paper extension",
+  RECORD_LEGAL_FORM_CONTINUATION: "Paper continuation",
   RECORD_LEGAL_FORM_EXPIRY: "Record legal form expiry",
   // T4 (2026-09-17 build plan).
   CORRECT_LEGAL_FORM_RECEIPT: "Correct legal form receipt",
@@ -191,6 +192,8 @@ const actionLabels: Record<AuditEvent["action"], string> = {
   SET_BED_PREPARATION: "Update bed preparation",
   RELEASE_BED: "Release bed",
   RECORD_LEAVING: "Record departure",
+  RECORD_ADMISSION_CARE: "Care journey fact",
+  RECORD_ADMISSION_FOLLOW_UP: "Record follow-up arrangement",
   RECORD_PATIENT_DISCHARGE: "Record patient discharge",
   OPEN_DISCHARGE_RECORD: "Open discharge record",
   REVIEW_AUDIT_EVENT: "Review event",
@@ -360,7 +363,14 @@ function EventFacts({ event, units, now }: { event: AuditEvent; units: Unit[]; n
       return (
         <FactList
           facts={[
-            ["Operation", event.details.operation === "extension-recorded" ? "Extension recorded" : "Expiry recorded"],
+            [
+              "Operation",
+              event.details.operation === "extension-recorded"
+                ? "Extension recorded"
+                : event.details.operation === "continuation-recorded"
+                  ? "Continuation recorded"
+                  : "Expiry recorded",
+            ],
             [
               "Expiry typed",
               event.details.dueAt === null ? "Not recorded" : formatInstantWithDay(event.details.dueAt, now),
@@ -382,7 +392,31 @@ function EventFacts({ event, units, now }: { event: AuditEvent; units: Unit[]; n
         />
       );
     case "discharge":
-      return event.details.kind === "departure" ? (
+      return event.details.kind === "care" ? (
+        <>
+          <FactList facts={[["Care operation", display(event.details.operation)]]} />
+          {event.details.recorded && (
+            <dl>
+              {Object.entries(event.details.recorded)
+                .filter(([key]) => key !== "kind")
+                .map(([key, value]) => (
+                  <div key={key}>
+                    <dt>{key}</dt>
+                    <dd>{String(value)}</dd>
+                  </div>
+                ))}
+            </dl>
+          )}
+        </>
+      ) : event.details.kind === "follow-up" ? (
+        <FactList
+          facts={[
+            ["Before", display(event.details.before)],
+            ["Requested follow-up", display(event.details.requested)],
+            ["After", display(event.details.after)],
+          ]}
+        />
+      ) : event.details.kind === "departure" ? (
         <FactList
           facts={[
             ["Before", display(event.details.before)],
@@ -2016,6 +2050,10 @@ function GovernanceSession({ movements, units, now, api, legacyChanges, effectiv
                 id="endorseNotes"
                 value={endorseNotes}
                 onChange={(e) => setEndorseNotes(e.target.value)}
+                data-gramm="false"
+                data-enable-grammarly="false"
+                spellCheck={false}
+                autoComplete="off"
               />
             </div>
           </div>

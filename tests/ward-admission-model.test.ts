@@ -73,6 +73,7 @@ function anAdmission(overrides: Partial<Admission> = {}): Admission {
     leavingDestination: null,
     leftAt: null,
     followUp: null,
+    careJourney: { contacts: [], plan: {}, documents: {}, episodes: [] },
     dischargeBarrier: null,
     stepDownCandidate: false,
     ...overrides,
@@ -145,6 +146,9 @@ describe("admission vocabulary", () => {
       ["transferred-to-another-psychiatric-ward", false],
       ["transferred-to-a-general-hospital", true],
       ["moved-to-residential-care", true],
+      ["moved-to-residential-aged-care", true],
+      ["returned-to-residential-aged-care", true],
+      ["transferred-to-other-health-care", true],
       ["left-against-advice", true],
       // Added 2026-09-01 by owner ruling. All three `true`: the semantic is "does the STATE gain a
       // psychiatric bed", not "did the person leave the system", and none of these leaves the person
@@ -584,6 +588,7 @@ describe("Admission privacy — structural", () => {
     "leavingDestination",
     "leftAt",
     "followUp",
+    "careJourney",
   ].sort();
 
   it("declares exactly the permitted field set at runtime", () => {
@@ -632,6 +637,7 @@ describe("Admission privacy — structural", () => {
       // field indistinguishable from an absent one, which is exactly what this fixture exists to tell
       // apart.
       followUp: { state: "arranged", recordedAt: 10 * 60, recordedBy: "Ward manager" },
+      careJourney: { contacts: [], plan: {}, documents: {}, episodes: [] },
       dischargeBarrier: "Accommodation / Housing",
       stepDownCandidate: true,
     };

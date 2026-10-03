@@ -224,26 +224,10 @@ export type CommunityHubLists = {
    * ⚠️ **THIS IS NOT THE SPEC'S LIST 1 AND THE SCREEN MUST SAY SO.** The spec asks for "discharged,
    * NO FOLLOW-UP ARRANGED".
    *
-   * ⚠️ **UNTIL 2026-09-01 THIS PARAGRAPH DENIED, IN BOLD, THAT THE MODEL HELD ANY FOLLOW-UP FIELD,
-   * EVENT OR VOCABULARY AT ALL — AND EVERY CLAUSE OF THAT WAS FALSE.** The concept is on the
-   * record: `Admission.followUp` is a `FollowUpRecord | null` (`ward-admissions.ts`, the field
-   * around `:452` and the field-presence map around `:484`), `FollowUpRecord` (around `:168`)
-   * carries a `state`, a `recordedAt` and a `recordedBy` role, the vocabulary is `FOLLOW_UP_STATES`
-   * (around `:159`) = `["arranged", "not_arranged"]`, and `ward-admissions-seed.ts` writes a real
-   * record on two departed admissions (around `:733` and `:770`).
-   *
-   * **This is the identical sentence that was corrected in `community-screen.tsx` on 2026-09-01 and
-   * left standing here** — one file swept, its twin missed, and the false version went on being the
-   * authoritative comment on the very array the screen renders.
-   *
-   * What IS true is narrower and sharper, and the conclusion below is unchanged by it: the field has
-   * **no producer and no consumer**. Nothing in the app reads it, and the only mention in
-   * `ward-flow-reducer.ts` writes `followUp: null` (around `:941`, inside `case "PULL_PATIENT"`
-   * around `:811`) when it creates an admission, so no action available in this prototype can put a
-   * record there. So the second half of the spec's sentence cannot be computed from anything this
-   * prototype produces. Inventing one would be bad; quietly dropping it is worse, because an empty
-   * list under the spec's heading asserts that everybody discharged into this team's care has
-   * follow-up arranged. Nobody checked that. Nothing in this system could.
+   * Admission.followUp uses FOLLOW_UP_STATES and carries state, recordedAt and recordedBy.
+   * RECORD_ADMISSION_FOLLOW_UP now records arrangements on the discharge board (2026-10-03).
+   * This community list does not filter on that status, and an arrangement is not evidence that
+   * contact happened. An empty list must never be presented as follow-up completion.
    */
   dischargedIntoTheArea: Admission[];
   /**

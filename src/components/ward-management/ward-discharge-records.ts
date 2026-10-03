@@ -1,9 +1,13 @@
+import { admissionBelongsToTeam, communityTeamById } from "./community/community-derivations";
 import type { Admission } from "./ward-admissions";
 import type { Patient } from "./ward-patients";
 import type { WardFlowState } from "./ward-flow-reducer";
 
 export type WardRecordActor =
-  { role: "coordinator" } | { role: "ward"; actingUnitId: string } | { role: "ed" | "officer" | "community" | "demo" };
+  | { role: "coordinator" }
+  | { role: "ward"; actingUnitId: string }
+  | { role: "community"; actingTeamId?: string }
+  | { role: "ed" | "officer" | "demo" };
 export type RecordRead<T> = { status: "allowed"; value: T } | { status: "denied" };
 export type DischargeOpenHandle = Readonly<{ generation: number; requestId: number }>;
 export type DischargeIdentity =
@@ -29,6 +33,8 @@ export type DischargeRecord = Readonly<
     | "blockReason"
     | "leftAt"
     | "leavingDestination"
+    | "followUp"
+    | "careJourney"
   >
 >;
 
@@ -45,6 +51,12 @@ export function uniqueRecord<T extends { id: string }>(records: readonly T[], id
 export function validRecordActor(actor: unknown): actor is WardRecordActor {
   if (!actor || typeof actor !== "object" || !("role" in actor)) return false;
   const keys = Object.keys(actor).sort();
+  if (actor.role === "community" && "actingTeamId" in actor)
+    return (
+      keys.join() === "actingTeamId,role" &&
+      typeof actor.actingTeamId === "string" &&
+      !!communityTeamById(actor.actingTeamId)
+    );
   if (actor.role === "ward")
     return (
       keys.join() === "actingUnitId,role" &&
@@ -67,6 +79,7 @@ function readableScope(state: WardFlowState, actor: WardRecordActor, unitId?: st
   if (!validRecordActor(actor) || !safeCounter(state.worldGeneration)) return false;
   if (unitId !== undefined && !uniqueRecord(state.units, unitId)) return false;
   if (actor.role === "coordinator") return true;
+  if (actor.role === "community") return !!actor.actingTeamId && !!communityTeamById(actor.actingTeamId);
   return (
     actor.role === "ward" &&
     !!uniqueRecord(state.units, actor.actingUnitId) &&
@@ -91,6 +104,8 @@ function project(state: WardFlowState, admission: Admission): DischargeRecord {
     blockReason: admission.blockReason,
     leftAt: admission.leftAt,
     leavingDestination: admission.leavingDestination,
+    followUp: admission.followUp,
+    careJourney: admission.careJourney,
   });
 }
 
@@ -108,6 +123,10 @@ export function selectDischargeRecord(
     !safeCounter(state.dischargeRevisions[admission.id] ?? 0)
   )
     return { status: "denied" };
+  if (actor.role === "community") {
+    const team = actor.actingTeamId ? communityTeamById(actor.actingTeamId) : undefined;
+    if (!team || !admissionBelongsToTeam(admission, team, state.referrals)) return { status: "denied" };
+  }
   return { status: "allowed", value: project(state, admission) };
 }
 
@@ -155,6 +174,7 @@ export function readOpenedDischargeRecord(
     receipt.subject.kind !== "admission" ||
     receipt.subject.admissionId !== admissionId ||
     receipt.actor.role !== actor.role ||
+    (actor.role === "community" && receipt.actor.actingTeamId !== actor.actingTeamId) ||
     receipt.actor.actingUnitId !== (actor.role === "ward" ? actor.actingUnitId : null)
   )
     return { status: "denied" };

@@ -1,4 +1,6 @@
+import { validCareJourney, validCareChange } from "./ward-care-journey";
 import type { WardFlowState } from "./ward-flow-reducer";
+import { isLeavingDestination } from "./ward-admissions";
 import {
   MOVEMENT_STAGES,
   COHORTS,
@@ -90,6 +92,12 @@ function nested(value: unknown, depth = 0): boolean {
   )
     return false;
   if ("legalForm" in value && (!object(value.legalForm) || !text(value.legalForm.code))) return false;
+  if (
+    object(value.legalForm) &&
+    value.legalForm.region !== undefined &&
+    !["metro", "country"].includes(String(value.legalForm.region))
+  )
+    return false;
   if (
     "transport" in value &&
     (!object(value.transport) ||
@@ -313,6 +321,7 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     if (!movement.referredUnitIds.every((id) => unitIds.has(id))) return false;
   }
   for (const admission of value.admissions as RecordValue[]) {
+    if (admission.leavingDestination !== null && !isLeavingDestination(admission.leavingDestination)) return false;
     if (
       !unitIds.has(admission.unitId) ||
       !["waitlisted", "pulled", "occupied", "departed"].includes(admission.state as string)
@@ -359,6 +368,7 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       )
     )
       return false;
+    if (admission.careJourney !== undefined && !validCareJourney(admission.careJourney)) return false;
     if (!("followUp" in admission) || !nullable(object)(admission.followUp)) return false;
     if (
       object(admission.followUp) &&
@@ -486,6 +496,15 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
   }
   for (const row of value.refreshRequests as RecordValue[]) if (!finite(row.at) || !text(row.byRole)) return false;
   for (const row of value.auditEvents as RecordValue[]) {
+    if (row.action === "RECORD_ADMISSION_CARE") {
+      if (
+        !object(row.details) ||
+        row.details.kind !== "care" ||
+        (row.details.recorded !== undefined && row.details.recorded !== null && !validCareChange(row.details.recorded))
+      )
+        return false;
+    }
+
     // `appendAudit` (ward-audit.ts) numbers rows from 1 and stores the newest number as
     // `auditSequence`, so issued numbers run 1..auditSequence INCLUSIVE. This used to refuse
     // `>= auditSequence`, i.e. always the newest row, so no audited day could be restored on

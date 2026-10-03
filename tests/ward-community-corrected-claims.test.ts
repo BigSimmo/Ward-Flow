@@ -222,7 +222,7 @@ describe("claims 1 and 2 — the demo clock shifts the admission instants, and t
  * standing in `community-derivations.ts`, where it was the authoritative comment on the very array
  * the screen renders.
  */
-describe("claim 3 — the follow-up concept exists on the record and has no producer and no consumer", () => {
+describe("claim 3 — arrangements have a producer, and community departures do not establish contact completion", () => {
   it("the false denial is gone from the derivations, in every form it took", () => {
     for (const phrase of [
       "There is no follow-up concept anywhere in this model",
@@ -235,14 +235,15 @@ describe("claim 3 — the follow-up concept exists on the record and has no prod
   });
 
   it("the corrected claim is stated, with the evidence a reader can check", () => {
-    expect(derivationsProse).toContain("no producer and no consumer");
+    expect(derivationsProse).toContain("RECORD_ADMISSION_FOLLOW_UP");
     expect(derivationsProse).toContain("FOLLOW_UP_STATES");
     expect(derivationsProse).toContain("Admission.followUp");
   });
 
   it("both files now say the same thing, which is the defect that let the twin survive", () => {
     for (const prose of [screenProse, derivationsProse]) {
-      expect(prose).toContain("no producer and no consumer");
+      expect(prose).toContain("RECORD_ADMISSION_FOLLOW_UP");
+      expect(prose).not.toContain("no producer and no consumer");
     }
   });
 });

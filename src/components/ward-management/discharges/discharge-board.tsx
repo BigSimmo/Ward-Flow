@@ -1,4 +1,5 @@
 "use client";
+import { DischargeCareJourney } from "./discharge-care-journey";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -41,6 +42,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
 
+import { DischargeFollowUp } from "./discharge-follow-up";
 import styles from "./discharges.module.css";
 import pageStyles from "./discharges-third-edition.module.css";
 
@@ -319,6 +321,8 @@ function DischargeWorkspace() {
   const { bedReleases, units, dayZero, readDischargeRecords, openDischargeRecord, readDischargeRecord, dispatch } =
     useWardFlow();
   const now = useWardFlowClock();
+  const [planningOpen, setPlanningOpen] = useState(false);
+  const [planningUnitId, setPlanningUnitId] = useState("");
   const [population, setPopulation] = useState<Population>("releases");
   const [status, setStatus] = useState<WorkStatus | "all">("all");
   const [service, setService] = useState("all");
@@ -334,6 +338,7 @@ function DischargeWorkspace() {
   const [drawerTab, setDrawerTab] = useState<"milestones" | "barriers" | "transport" | "dossier">("milestones");
   const detailRef = useRef<HTMLElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
   const guarded = readDischargeRecords(RECORD_ACTOR);
   const records = guarded.status === "allowed" ? guarded.value : [];
   const services = [...new Set(units.map(healthServiceLabel))].sort();
@@ -398,6 +403,13 @@ function DischargeWorkspace() {
   const selectedUnit = units.find((unit) => unit.id === selectedUnitId);
   const shown = population === "records" ? visibleRecords.length : visibleReleaseIds.length;
   const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+  const closeDrawer = () => {
+    setSelected(null);
+    setReleaseId(null);
+    setOpenError(false);
+    setShowUpdateDate(false);
+    (triggerRef.current ?? listRef.current)?.focus();
+  };
   const clearSelection = () => {
     setSelected(null);
     setReleaseId(null);
@@ -416,15 +428,22 @@ function DischargeWorkspace() {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && (selected !== null || releaseId !== null)) {
-        clearSelection();
-        listRef.current?.focus();
+        closeDrawer();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selected, releaseId]);
-  const focusDetail = () => detailRef.current?.focus();
-  const openRecord = (record: DischargeRecord) => {
+  const focusDetail = () => {
+    queueMicrotask(() => {
+      const first = detailRef.current?.querySelector<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      (first ?? detailRef.current)?.focus();
+    });
+  };
+  const openRecord = (record: DischargeRecord, opener?: HTMLElement | null) => {
+    if (opener) triggerRef.current = opener;
     setReleaseId(null);
     setOpenError(false);
     setShowUpdateDate(false);
@@ -522,31 +541,42 @@ function DischargeWorkspace() {
               <span className="sr-only">Live: </span>
               As of {formatSheetMoment(now, dayZero)}
             </time>
-            {/*
-             * D4: this button dispatched nothing — Save and Cancel both only closed a dialog that
-             * claimed to record a departure forecast into the census and preserve invariant I-05,
-             * defaulted to a barrier ("NDIS Accommodation") and offered a second ("State
-             * Administrative Tribunal (SAT) Guardianship") that BED_RELEASE_BLOCKERS
-             * (ward-change-reasons.ts) does not accept. Rather than fix a dialog that could still
-             * offer an excluded reason, the control stays visible (so a coordinator can see the
-             * feature exists) and states plainly that it is not wired, the same convention
-             * `ward-flow-sign-in-screen.tsx` and `ward-bar.tsx` already use elsewhere in this app.
-             */}
             <div className={pageStyles.planActionWrapper}>
               <button
                 type="button"
                 data-testid="ward-discharge-plan-departure"
                 className={pageStyles.planActionBtn}
-                aria-disabled="true"
-                aria-describedby="ward-discharge-plan-departure-note"
-                title="Not wired in this prototype."
-                onClick={ignoreUnavailableActivation}
+                aria-expanded={planningOpen}
+                onClick={() => setPlanningOpen(!planningOpen)}
               >
                 + Plan departure
               </button>
-              <span id="ward-discharge-plan-departure-note" className={pageStyles.planActionNote}>
-                Not wired in this prototype.
-              </span>
+              {planningOpen && (
+                <div className={pageStyles.filters}>
+                  <label className={pageStyles.filterField}>
+                    <span className={pageStyles.filterLabelText}>Ward for departure planning</span>
+                    <select value={planningUnitId} onChange={(event) => setPlanningUnitId(event.target.value)}>
+                      <option value="">Choose ward</option>
+                      {units.map((unit) => (
+                        <option key={unit.id} value={unit.id}>
+                          {unitLabel(unit, unit.id)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {planningUnitId && units.some((unit) => unit.id === planningUnitId) && (
+                    <Link
+                      className={pageStyles.quietButton}
+                      href={`/mockups/ward-flow/ward/${encodeURIComponent(planningUnitId)}?tab=departure-planning`}
+                    >
+                      Open ward departure planning
+                    </Link>
+                  )}
+                  <p className={pageStyles.planActionNote}>
+                    Choose the patient and departure time in the ward’s Decisions tab.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -866,11 +896,11 @@ function DischargeWorkspace() {
                           <tr
                             key={record.id}
                             data-selected={selected?.admissionId === record.admissionId}
-                            onClick={() => openRecord(record)}
+                            onClick={(e) => openRecord(record, e.currentTarget)}
                             onKeyDown={(e) => {
                               if (e.key === "Enter" || e.key === " ") {
                                 e.preventDefault();
-                                openRecord(record);
+                                openRecord(record, e.currentTarget);
                               }
                             }}
                             className={pageStyles.interactiveRow}
@@ -883,7 +913,7 @@ function DischargeWorkspace() {
                                 aria-pressed={selected?.admissionId === record.admissionId}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  openRecord(record);
+                                  openRecord(record, e.currentTarget);
                                 }}
                               >
                                 {recordName(record)}
@@ -983,7 +1013,8 @@ function DischargeWorkspace() {
                               <tr
                                 key={release.id}
                                 data-selected={releaseId === release.id}
-                                onClick={() => {
+                                onClick={(e) => {
+                                  triggerRef.current = e.currentTarget;
                                   setSelected(null);
                                   setReleaseId(release.id);
                                   focusDetail();
@@ -991,6 +1022,7 @@ function DischargeWorkspace() {
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter" || e.key === " ") {
                                     e.preventDefault();
+                                    triggerRef.current = e.currentTarget;
                                     setSelected(null);
                                     setReleaseId(release.id);
                                     focusDetail();
@@ -1006,6 +1038,7 @@ function DischargeWorkspace() {
                                     aria-pressed={releaseId === release.id}
                                     onClick={(e) => {
                                       e.stopPropagation();
+                                      triggerRef.current = e.currentTarget;
                                       setSelected(null);
                                       setReleaseId(release.id);
                                       focusDetail();
@@ -1087,10 +1120,7 @@ function DischargeWorkspace() {
           {Boolean(selected || releaseId) && (
             <div
               className={`${styles.scrim} ${pageStyles.scrim}`}
-              onClick={() => {
-                clearSelection();
-                listRef.current?.focus();
-              }}
+              onClick={closeDrawer}
               aria-hidden="true"
               data-testid="ward-discharge-scrim"
             />
@@ -1102,8 +1132,30 @@ function DischargeWorkspace() {
             aria-labelledby="discharge-detail-heading"
             onKeyDown={(event) => {
               if (event.key === "Escape") {
-                clearSelection();
-                listRef.current?.focus();
+                event.preventDefault();
+                closeDrawer();
+                return;
+              }
+              if (event.key === "Tab") {
+                if (typeof window !== "undefined" && window.matchMedia("(min-width: 40rem)").matches) {
+                  return;
+                }
+                const focusable = Array.from(
+                  detailRef.current?.querySelectorAll<HTMLElement>(
+                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+                  ) ?? [],
+                ).filter((el) => !el.hasAttribute("disabled"));
+                if (focusable.length === 0) return;
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (!first || !last) return;
+                if (event.shiftKey && document.activeElement === first) {
+                  last.focus();
+                  event.preventDefault();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                  first.focus();
+                  event.preventDefault();
+                }
               }
             }}
           >
@@ -1113,15 +1165,7 @@ function DischargeWorkspace() {
                   {activeRecord || detailRelease ? "Discharge Trajectory & Logistics" : "Record detail"}
                 </h2>
                 {(selected || releaseId) && (
-                  <button
-                    type="button"
-                    className={pageStyles.closeBtn}
-                    aria-label="Close"
-                    onClick={() => {
-                      clearSelection();
-                      listRef.current?.focus();
-                    }}
-                  >
+                  <button type="button" className={pageStyles.closeBtn} aria-label="Close" onClick={closeDrawer}>
                     <X size={16} aria-hidden="true" />
                   </button>
                 )}
@@ -1506,6 +1550,8 @@ function DischargeWorkspace() {
                           "Not recorded"}
                       </dd>
                     </dl>
+                    <DischargeFollowUp key={activeRecord.id} record={activeRecord} actor={RECORD_ACTOR} />
+                    <DischargeCareJourney key={`care-${activeRecord.id}`} record={activeRecord} actor={RECORD_ACTOR} />
                   </div>
                 </>
               ) : detailRelease ? (
@@ -1558,9 +1604,9 @@ function DischargeWorkspace() {
                       <button
                         type="button"
                         className={pageStyles.viewPatientRecordBtn}
-                        onClick={() => {
+                        onClick={(e) => {
                           setPopulation("records");
-                          openRecord(linkedReleaseRecord);
+                          openRecord(linkedReleaseRecord, e.currentTarget);
                         }}
                       >
                         View patient discharge record →

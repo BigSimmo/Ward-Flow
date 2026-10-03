@@ -8,6 +8,8 @@ import {
   seedWardFlowStateAt,
   wardFlowReducer,
 } from "@/components/ward-management/ward-flow-reducer";
+import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
+import type { CareChange } from "@/components/ward-management/ward-care-journey";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -23,6 +25,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 const MODEL_FILES = [
   "src/components/ward-management/ward-model.ts",
   "src/components/ward-management/ward-admissions.ts",
+  "src/components/ward-management/ward-care-journey.ts",
   "src/components/ward-management/ward-audit.ts",
   "src/components/ward-management/alerts/ward-broadcast-model.ts",
 ];
@@ -129,6 +132,47 @@ describe("re-anchoring moves every instant and nothing else", () => {
     ).toEqual(opened.map(() => 137));
   });
 
+  it("keeps appointment, contact, paper and audit times aligned while preserving appointment versions", () => {
+    let state = seedWardFlowState();
+    const admission = state.admissions.find((a) => a.state === "occupied" && a.patientId)!;
+    const changes: CareChange[] = [
+      {
+        kind: "follow_up",
+        contactId: "demo-adult-clinician",
+        serviceId: COMMUNITY_TEAM_PAGES[0].id,
+        appointmentAt: NOW_ANCHOR,
+        mode: "telephone",
+      },
+      { kind: "contact", outcome: "completed", contactedAt: NOW_ANCHOR },
+      { kind: "legal", authority: "revocation", writtenAt: NOW_ANCHOR, paperChecked: true },
+    ];
+    for (const change of changes) {
+      state = wardFlowReducer(state, {
+        type: "RECORD_ADMISSION_CARE",
+        role: "coordinator",
+        now: NOW_ANCHOR,
+        admissionId: admission.id,
+        patientId: admission.patientId!,
+        expectedGeneration: state.worldGeneration,
+        expectedRevision: state.dischargeRevisions[admission.id] ?? 0,
+        change,
+      });
+    }
+    expect(state.rejections).toEqual([]);
+    const shifted = shiftInstants(state, 137);
+    const care = shifted.admissions.find((a) => a.id === admission.id)!.careJourney!;
+    expect(care.followUp?.appointmentAt).toBe(NOW_ANCHOR + 137);
+    expect(care.contacts[0]?.contactedAt).toBe(NOW_ANCHOR + 137);
+    expect(care.legal?.writtenAt).toBe(NOW_ANCHOR + 137);
+    expect(care.legal?.recordedAt).toBe(NOW_ANCHOR + 137);
+    expect(care.followUp?.appointmentVersion).toBe(1);
+    expect(care.contacts[0]?.appointmentVersion).toBe(1);
+    expect(shifted.auditEvents.at(-1)).toMatchObject({
+      at: NOW_ANCHOR + 137,
+      details: { kind: "care", recorded: { writtenAt: NOW_ANCHOR + 137 } },
+    });
+    expect(state.admissions.find((a) => a.id === admission.id)!.careJourney?.followUp?.appointmentAt).toBe(NOW_ANCHOR);
+  });
   it("leaves durations and counts where they are", () => {
     const shifted = shiftInstants(seedWardFlowState(), 137);
     expect(

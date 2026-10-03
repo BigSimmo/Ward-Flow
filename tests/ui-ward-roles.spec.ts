@@ -284,7 +284,7 @@ test.describe("@mockup Transport officer screen", () => {
    * under a narrower-width override) explains why print specifically, and only this one element
    * of two nearby, loses visibility. Left failing rather than guessed at.
    */
-  test.fixme("retains its operating structure in dark, forced-colours, and print modes", async ({ page }) => {
+  test("retains its operating structure in dark, forced-colours, and print modes", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ colorScheme: "dark" });
     await page.goto("/mockups/ward-flow/transport/officer", { waitUntil: "domcontentloaded" });
@@ -559,6 +559,10 @@ test.describe("@mockup Emergency department screen", () => {
   test("a form with no recorded expiry reads identically for every patient who carries one, and the department clock is unmoved", async ({
     page,
   }) => {
+    // Keep the fixture's exact department duration stable across hydration and network waits.
+    // Install before the paused instant so pauseAt cannot race the running fake clock.
+    await page.clock.install({ time: new Date("2026-08-26T09:59:00Z") });
+    await page.clock.pauseAt(new Date("2026-08-26T10:00:00Z"));
     await page.goto("/mockups/ward-flow/ed/peel-ed", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("ward-ed-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");

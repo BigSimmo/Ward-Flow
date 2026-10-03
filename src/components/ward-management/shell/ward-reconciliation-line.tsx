@@ -112,14 +112,14 @@ export type WardReconciliationLineProps = {
 
 export function WardReconciliationLine({ publication, asAt, className, compact }: WardReconciliationLineProps) {
   const checks = publication.published ? publication.checks : [];
-  const hasChecks = publication.published && checks.length > 0;
+  const hasChecks = checks.length > 0;
   const problems = reconciliationProblems(checks);
   const ok = hasChecks && problems.length === 0;
   /** `"neutral"` is this app's existing word for "nothing asserted either way" (`WardRecordTone`,
    *  `ward-record-row.tsx`), and is the tone `ward-bar.tsx` already uses for this same state —
    *  reused rather than inventing a second name for one fact across two shell surfaces. */
   const tone: "good" | "danger" | "neutral" = !hasChecks ? "neutral" : ok ? "good" : "danger";
-  const sentence = reconciliationSentence(publication, asAt);
+  const sentence = publication.published ? reconciliationSentence(publication, asAt) : "Reconciliation not published";
 
   return (
     <p
