@@ -113,9 +113,10 @@ function ModeHeader({
   return (
     <header className={styles.modeHeader} hidden style={{ display: "none" }}>
       <div className={styles.modeIdentity}>
-        {/* Ward Flow's own identity, not the host application's. This read "PsychSift /
-            Source-backed clinical search" on every board of a sandboxed synthetic prototype that
-            does no searching and is not source-backed. Found by looking at a screenshot — every
+        {/* Ward Flow's own identity, not the host application's. This once showed the former
+            clinical app's name and its "Source-backed clinical search" tagline on every board of a
+            sandboxed synthetic prototype that does no searching and is not source-backed. Found by
+            looking at a screenshot — every
             measurement run against this codebase missed it, because nothing was structurally
             wrong with it. */}
         {/* Hidden by CSS whenever the labelled sidebar panel is open, because that panel already
