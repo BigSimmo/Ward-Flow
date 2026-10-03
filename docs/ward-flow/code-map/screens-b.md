@@ -13,6 +13,8 @@ which independently computes the same import graph. Back to
 
 ## `alerts/`
 
+Review repair, 3 October 2026 (PR #27): overdue chips preserve day/hour/minute components from the recorded duration. Each tier tab includes its visible label in its accessible name, retaining the extended tier wording and count. Provider-backed duration and accessible-name regressions live in `ward-alerts-sovereign-features.dom.test.tsx`.
+
 **Route:** `/alerts`. **Mockup:** `alerts-third-edition.html` (`docs/ward-flow/SCREEN-MAP.md`, "34
 with a build contract"). **Dispatches:** `ACKNOWLEDGE_INBOX_ITEM`, `DISPATCH_BROADCAST_ALERT`,
 `STAND_DOWN_BROADCAST_ALERT`. **Reads:** `buildActionInbox`, `isOpen` (`ward-derivations.ts`).

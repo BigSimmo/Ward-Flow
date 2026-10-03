@@ -15,7 +15,7 @@ describe("Ward Flow Dialog & Modal Accessibility Semantics", () => {
         </WardFlowProvider>,
       );
 
-      const trigger = screen.getByRole("button", { name: /\+ Broadcast Network Alert/i });
+      const trigger = screen.getByRole("button", { name: /Broadcast Network Alert/i });
       trigger.focus();
       expect(document.activeElement).toBe(trigger);
 

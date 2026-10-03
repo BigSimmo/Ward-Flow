@@ -38,7 +38,7 @@ function prepareBroadcast() {
       <ResetControl />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByText("+ Broadcast Network Alert"));
+  fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
   fireEvent.change(screen.getByLabelText(/Broadcast Target Scope/i), { target: { value: "forensic" } });
   fireEvent.click(screen.getByLabelText(/I confirm this directive is clinically authorised/i));
 }
@@ -51,10 +51,10 @@ it("announces accepted dispatch for the selected scope and restores keyboard foc
     "dispatched to Frankland Centre Forensic Mental Health.",
   );
   expect(screen.getByRole("status", { name: "Broadcast feedback" })).not.toHaveTextContent("dispatched statewide");
-  expect(screen.getByText("+ Broadcast Network Alert").closest("button")).toHaveFocus();
+  expect(screen.getByRole("button", { name: "Broadcast Network Alert" })).toHaveFocus();
   fireEvent.click(screen.getByRole("button", { name: "Dismiss notice" }));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  fireEvent.click(screen.getByText("+ Broadcast Network Alert"));
+  fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
   expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toBeDisabled();
 });
 
@@ -65,7 +65,7 @@ it("does not reopen an accepted directive or retain its confirmation after a sce
   fireEvent.click(screen.getByRole("button", { name: "Reset synthetic scenario" }));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(screen.queryByRole("status", { name: "Broadcast feedback" })).not.toBeInTheDocument();
-  fireEvent.click(screen.getByText("+ Broadcast Network Alert"));
+  fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
   expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toBeDisabled();
   expect(screen.getByLabelText(/I confirm this directive is clinically authorised/i)).not.toBeChecked();
 });
