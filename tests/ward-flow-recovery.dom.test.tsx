@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -229,24 +229,44 @@ describe("conservative demo recovery", () => {
   });
   // Open item 5 (3 Oct 2026): adopting the saved session used to re-key the provider's world and
   // remount every screen about a second after load, so a click or half-typed entry in that window
-  // landed on a discarded node. The same DOM node must survive adoption, with or without a restore.
-  it("restores a saved session into the same screen without remounting it", () => {
-    let mounts = 0;
-    function MountCounter() {
-      useEffect(() => {
-        mounts += 1;
-      }, []);
-      return <input data-testid="mount-probe" />;
-    }
-    const tree = () => (
-      <WardFlowProvider>
-        <Probe />
-        <MountCounter />
-      </WardFlowProvider>
-    );
-    const first = render(tree());
+  // landed on a discarded node. A first visit, or a reload with nothing changed, must keep its nodes.
+  // A reload of a changed day must start each screen from the restored day, including state a
+  // screen initialises only once (a settings draft, a first selection).
+  let mounts = 0;
+  let firstSeenAllocatable: Record<string, number> = {};
+  function OneTimeConsumer() {
+    const { units } = useWardFlow();
+    const [initial] = useState(() => Object.fromEntries(units.map((unit) => [unit.id, unit.allocatable.value ?? -1])));
+    useEffect(() => {
+      mounts += 1;
+      firstSeenAllocatable = initial;
+    }, [initial]);
+    return <input data-testid="mount-probe" />;
+  }
+  const consumerTree = () => (
+    <WardFlowProvider>
+      <Probe />
+      <OneTimeConsumer />
+    </WardFlowProvider>
+  );
+  it("keeps the same screen nodes on a first visit and on a reload with nothing changed", () => {
+    mounts = 0;
+    const first = render(consumerTree());
+    const probe = screen.getByTestId("mount-probe");
     expect(mounts).toBe(1);
+    expect(screen.getByTestId("mount-probe")).toBe(probe);
+    expect(saved()).toBeTruthy();
+    first.unmount();
+
+    mounts = 0;
+    render(consumerTree());
+    expect(mounts).toBe(1);
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+  it("starts one-time screen state from the restored day when a changed day is reloaded", () => {
+    const first = render(consumerTree());
     const unit = current.units.find((candidate) => candidate.empty.value < candidate.beds)!;
+    const value = unit.empty.value + 1;
     act(() =>
       current.dispatch({
         type: "CONFIRM_CAPACITY",
@@ -255,18 +275,14 @@ describe("conservative demo recovery", () => {
         unitId: unit.id,
         actingUnitId: unit.id,
         expectedRevision: unit.allocatable.revision ?? 0,
-        value: unit.empty.value + 1,
+        value,
       }),
     );
-    const accepted = current.units.find((candidate) => candidate.id === unit.id)!;
-    expect(accepted.allocatable.value).toBe(unit.empty.value + 1);
     first.unmount();
 
-    mounts = 0;
-    render(tree());
-    expect(mounts).toBe(1);
-    expect(screen.queryByRole("status")).toBeNull();
-    expect(current.units.find((candidate) => candidate.id === unit.id)).toEqual(accepted);
+    render(consumerTree());
+    expect(current.units.find((candidate) => candidate.id === unit.id)!.allocatable.value).toBe(value);
+    expect(firstSeenAllocatable[unit.id]).toBe(value);
   });
   it("rejects a backward system clock", () => {
     const view = mount();

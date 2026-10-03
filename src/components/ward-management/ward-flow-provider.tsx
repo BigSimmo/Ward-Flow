@@ -4,6 +4,7 @@ import type { LeavingDestination } from "./ward-admissions";
 import {
   createContext,
   type Dispatch,
+  Fragment,
   type ReactNode,
   type SetStateAction,
   useCallback,
@@ -246,6 +247,9 @@ type WardFlowContainer = {
   /** True once the mount effect has read (or declined to read) the saved session. Storage is never
    *  written before this, so the deterministic first-render seed cannot overwrite a saved day. */
   sessionAdopted?: boolean;
+  /** True when adoption replaced the world with a saved one that differs from the first-render
+   *  seed. The screens below are then remounted once (see `WardFlowWorld`'s return). */
+  sessionRestored?: boolean;
 };
 
 /**
@@ -543,8 +547,10 @@ export function WardFlowProvider({ children, initialNow }: WardFlowProviderProps
    * so a click or a half-typed entry landing in that window went to a node about to be discarded.
    * The only reason for the remount was to re-run `useReducer`'s initialiser so a saved session
    * could be restored after hydration. `WardFlowWorld` now does that restore in its own mount
-   * effect, through a private reducer action, so the same tree simply receives the restored state.
-   * The live offset is still always 0, so nothing on screen changes unless a saved session exists.
+   * effect, through a private reducer action. A first visit, or a reload with nothing changed, keeps
+   * every node. Only a reload of a day that was actually changed remounts the screens (not the
+   * provider), because screens seed one-time drafts from provider data and must reseed from the
+   * restored day; that is the same remount as before, now confined to the case that needs it.
    */
   return (
     <WardFlowWorld
@@ -699,26 +705,27 @@ function WardFlowWorld({
       type: "ADOPT_SAVED_SESSION",
       [ADOPT_SESSION]: (current) => {
         if (current.sessionAdopted) return current;
-        if (saved)
+        if (saved) {
+          const restoredElapsed =
+            saved.now - NOW_ANCHOR - saved.state.clockOffsetMinutes + mountedAtAbsolute - saved.savedAtAbsolute;
+          // A saved day identical to the seed already on screen (nothing was changed before the
+          // reload) only moves the clock; the screens keep their nodes and their state.
+          if (JSON.stringify(saved.state) === JSON.stringify({ ...current.world, rejections: [] }))
+            return { ...current, restoredElapsed, sessionAdopted: true };
           return {
             world: saved.state,
             typedTextSeen: false,
-            restoredElapsed:
-              saved.now - NOW_ANCHOR - saved.state.clockOffsetMinutes + mountedAtAbsolute - saved.savedAtAbsolute,
+            restoredElapsed,
             sessionAdopted: true,
+            sessionRestored: true,
           };
-        if (recoveryNotice)
-          return {
-            world: seedWardFlowStateAt(anchorOffsetMinutes),
-            typedTextSeen: false,
-            restoredElapsed: 0,
-            recoveryNotice,
-            sessionAdopted: true,
-          };
+        }
+        // The rejected or unreadable save leaves the first-render seed in place, with its notice.
+        if (recoveryNotice) return { ...current, recoveryNotice, sessionAdopted: true };
         return { ...current, sessionAdopted: true };
       },
     });
-  }, [initialNow, mountedAtAbsolute, dayZero, anchorOffsetMinutes]);
+  }, [initialNow, mountedAtAbsolute, dayZero]);
 
   const [focusMovementId, setFocusMovementId] = useState<string | undefined>(undefined);
 
@@ -857,7 +864,16 @@ function WardFlowWorld({
       {(storageUnavailable || container.recoveryNotice) && (
         <p role="status">{storageUnavailable ? STORAGE_UNAVAILABLE : container.recoveryNotice}</p>
       )}
-      <WardFlowClockContext.Provider value={now}>{children}</WardFlowClockContext.Provider>
+      <WardFlowClockContext.Provider value={now}>
+        {/*
+         * Remounts the screens once, and only when a saved day that differs from the seed was
+         * restored: screens initialise drafts and selections from provider data once
+         * (`settings-screen.tsx`'s rules draft, the placement workspace's first patient), so they
+         * must start again from the restored world rather than keep the seed's. A first visit, or a
+         * reload with nothing changed, never takes this path, so its tree is never rebuilt.
+         */}
+        <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
+      </WardFlowClockContext.Provider>
     </WardFlowContext.Provider>
   );
 }
