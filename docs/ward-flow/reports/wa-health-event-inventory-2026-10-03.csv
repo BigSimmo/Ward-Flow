@@ -1,0 +1,98 @@
+event,allowed_roles,component_literal_references,test_reference_count,reference_status
+RECORD_ADMISSION_FOLLOW_UP,ward; coordinator,src/components/ward-management/discharges/discharge-follow-up.tsx,3,literal references located
+RECORD_PATIENT_DISCHARGE,ward,,4,review dynamic dispatch or intentionally internal event
+UPDATE_EXPECTED_DISCHARGE,ward; coordinator,src/components/ward-management/discharges/discharge-board.tsx,3,literal references located
+OPEN_DISCHARGE_RECORD,coordinator; ward,src/components/ward-management/ward-flow-provider.tsx,3,literal references located
+REVIEW_AUDIT_EVENT,coordinator,src/components/ward-management/governance-registers.tsx,2,literal references located
+RAISE_REFERRAL,ed; community; ward,src/components/ward-management/governance-registers.tsx; src/components/ward-management/ed/ed-screen.tsx,25,literal references located
+RECORD_EXAMINATION,ed,src/components/ward-management/ed/ed-screen.tsx,15,literal references located
+RECORD_MEDICAL_CLEARANCE,ed,src/components/ward-management/ed/ed-screen.tsx,4,literal references located
+RECORD_ARRIVED_IN_DEPARTMENT,ed,src/components/ward-management/ed/ed-screen.tsx,4,literal references located
+RECORD_TRANSPORT_NEED,ed; ward; community,src/components/ward-management/ed/ed-screen.tsx,11,literal references located
+RECORD_LEGAL_FORM_RECEIVED,ed,src/components/ward-management/legal-forms/legal-forms-screen.tsx; src/components/ward-management/ed/ed-screen.tsx,8,literal references located
+CORRECT_LEGAL_FORM_RECEIPT,ed,src/components/ward-management/governance-registers.tsx; src/components/ward-management/ed/ed-screen.tsx,3,literal references located
+RECORD_LEGAL_FORM_EXPIRY,ed; coordinator,src/components/ward-management/ed/ed-screen.tsx,5,literal references located
+RECORD_MOVEMENT_GENDER,ed; coordinator,src/components/ward-management/movements/movement-workspace-cockpit.tsx; src/components/ward-management/ed/ed-screen.tsx,5,literal references located
+RECORD_NO_REFERRAL,ed,src/components/ward-management/ed/ed-screen.tsx,3,literal references located
+RECORD_ED_OUTCOME,ed,src/components/ward-management/ed/ed-screen.tsx,2,literal references located
+REFER_TO_UNITS,coordinator,src/components/ward-management/coordinator/shortlist-panel.tsx,55,literal references located
+ACCEPT_IN_PRINCIPLE,ward,src/components/ward-management/ward/ward-screen.tsx; src/components/ward-management/ward/ward-answer-view.tsx; src/components/ward-management/ward-role-switcher.tsx,46,literal references located
+PULL_PATIENT,ward; coordinator,src/components/ward-management/ward/ward-screen.tsx; src/components/ward-management/ward/ward-answer-view.tsx,61,literal references located
+DECLINE,ward,src/components/ward-management/ward/ward-screen.tsx; src/components/ward-management/ward/ward-answer-view.tsx,13,literal references located
+HANDOVER_READY,ed,src/components/ward-management/ed/ed-screen.tsx,27,literal references located
+TRANSPORT_ACCEPTED,officer,src/components/ward-management/officer/officer-screen.tsx,24,literal references located
+TRANSPORT_EN_ROUTE,officer,src/components/ward-management/officer/officer-screen.tsx,24,literal references located
+PATIENT_COLLECTED,officer,src/components/ward-management/officer/officer-screen.tsx,23,literal references located
+PATIENT_ARRIVED,officer; ward,src/components/ward-management/board/ward-board.tsx; src/components/ward-management/ward/ward-arrivals-corridor.tsx; src/components/ward-management/officer/officer-screen.tsx,38,literal references located
+CONFIRM_CAPACITY,ward,src/components/ward-management/ward/ward-screen.tsx; src/components/ward-management/ward/ward-answer-view.tsx,13,literal references located
+RECORD_WARD_INTAKE_CONSTRAINTS,ward,src/components/ward-management/ward/ward-screen.tsx,2,literal references located
+RECORD_ESCALATION,coordinator,src/components/ward-management/coordinator/shortlist-panel.tsx; src/components/ward-management/delays/delays-screen.tsx; src/components/ward-management/on-call/on-call-screen.tsx,5,literal references located
+ADVANCE_CLOCK,demo,src/components/ward-management/ward-demo-controls.tsx,26,literal references located
+RESET_SCENARIO,demo,src/components/ward-management/ward-demo-controls.tsx; src/components/ward-management/ward-flow-provider.tsx,14,literal references located
+SET_SCENARIO,demo,src/components/ward-management/ward-demo-controls.tsx; src/components/ward-management/ward-flow-provider.tsx,6,literal references located
+SET_CONFIGURATION,coordinator,src/components/ward-management/settings/settings-screen.tsx,8,literal references located
+CHANGE_URGENCY,coordinator; ed,src/components/ward-management/coordinator/shortlist-panel.tsx; src/components/ward-management/ed/ed-screen.tsx,8,literal references located
+CHANGE_LEGAL_STATUS,coordinator; ed,src/components/ward-management/coordinator/shortlist-panel.tsx; src/components/ward-management/ed/ed-screen.tsx,7,literal references located
+RELEASE_PULL,coordinator; ward,src/components/ward-management/coordinator/shortlist-panel.tsx; src/components/ward-management/ward/ward-screen.tsx,21,literal references located
+BOOK_TRANSPORT,ed; ward; community,src/components/ward-management/patients/patient-now-screen.tsx; src/components/ward-management/community/community-screen.tsx; src/components/ward-management/ed/ed-screen.tsx,37,literal references located
+CANCEL_TRANSPORT,coordinator; ed; ward; community,src/components/ward-management/coordinator/shortlist-panel.tsx; src/components/ward-management/movements/movement-workspace-cockpit.tsx; src/components/ward-management/community/community-screen.tsx,19,literal references located
+STOP_TRANSPORT,coordinator; ed,src/components/ward-management/movements/movement-workspace-cockpit.tsx,10,literal references located
+RELEASE_HELD_BED,coordinator; ward; ed,src/components/ward-management/movements/movement-workspace-cockpit.tsx,3,literal references located
+RECORD_DIVERSION,officer; coordinator,src/components/ward-management/movements/movement-workspace-cockpit.tsx; src/components/ward-management/officer/officer-screen.tsx,4,literal references located
+RELEASE_DIVERTED_BED,coordinator; ward; ed,src/components/ward-management/movements/movement-workspace-cockpit.tsx; src/components/ward-management/ward/ward-arrivals-corridor.tsx; src/components/ward-management/ed/ed-screen.tsx,3,literal references located
+REFER_TO_COMMUNITY_TEAM,ed,src/components/ward-management/ed/ed-screen.tsx,9,literal references located
+RECORD_LEFT_DEPARTMENT,ed,src/components/ward-management/ed/ed-screen.tsx,2,literal references located
+FLAG_BED_RELEASE,ward,src/components/ward-management/governance-registers.tsx; src/components/ward-management/ward/ward-screen.tsx,10,literal references located
+CONFIRM_BED_RELEASE,ward,src/components/ward-management/governance-registers.tsx; src/components/ward-management/ward/ward-screen.tsx,5,literal references located
+REVERT_BED_RELEASE,ward,src/components/ward-management/governance-registers.tsx; src/components/ward-management/ward/ward-screen.tsx,5,literal references located
+BLOCK_BED_RELEASE,ward,src/components/ward-management/governance-registers.tsx; src/components/ward-management/board/ward-board.tsx; src/components/ward-management/ward/ward-screen.tsx,5,literal references located
+CLEAR_BED_RELEASE_BLOCK,ward,src/components/ward-management/governance-registers.tsx; src/components/ward-management/ward/ward-screen.tsx,4,literal references located
+SET_BED_PREPARATION,ward,src/components/ward-management/governance-registers.tsx; src/components/ward-management/ward/ward-screen.tsx,8,literal references located
+RELEASE_BED,ward,src/components/ward-management/governance-registers.tsx,6,literal references located
+RECORD_LEAVE_BED,ward,src/components/ward-management/ward/ward-screen.tsx,4,literal references located
+END_LEAVE_BED,ward,src/components/ward-management/board/ward-board.tsx; src/components/ward-management/ward/ward-screen.tsx,3,literal references located
+RECORD_LEAVING,ward,src/components/ward-management/board/ward-board.tsx; src/components/ward-management/ward/ward-screen.tsx,16,literal references located
+RECORD_AWAY_AT_EMERGENCY_DEPARTMENT,ward,src/components/ward-management/board/ward-board.tsx,2,literal references located
+RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT,ward,src/components/ward-management/board/ward-board.tsx,3,literal references located
+RECORD_MOVEMENT_BLOCKER,ed; community; ward; coordinator; officer,src/components/ward-management/movements/movement-workspace-cockpit.tsx,6,literal references located
+CLEAR_MOVEMENT_BLOCKER,ed; community; ward; coordinator; officer,src/components/ward-management/movements/movement-workspace-cockpit.tsx,2,literal references located
+FLAG_MOVEMENT_URGENT,coordinator; ed,src/components/ward-management/movements/movement-drawer.tsx; src/components/ward-management/movements/movement-workspace-cockpit.tsx,5,literal references located
+CLEAR_MOVEMENT_URGENT_FLAG,coordinator; ed,src/components/ward-management/movements/movement-drawer.tsx; src/components/ward-management/movements/movement-workspace-cockpit.tsx,4,literal references located
+WITHDRAW_REFERRAL,ed; community; ward; coordinator,src/components/ward-management/ed/ed-screen.tsx,10,literal references located
+REQUEST_CAPACITY_REFRESH,coordinator,src/components/ward-management/capacity/capacity-screen.tsx,4,literal references located
+RECEIVE_REFERRAL,community; ed,src/components/ward-management/ward/ward-screen.tsx; src/components/ward-management/community/community-screen.tsx; src/components/ward-management/referrals/referral-intake.tsx,49,literal references located
+ADD_PATIENT,ed; community; coordinator,src/components/ward-management/patients/add-patient.tsx; src/components/ward-management/referrals/referral-intake.tsx,5,literal references located
+ACCEPT_REFERRAL,ward; coordinator; ed; community,src/components/ward-management/community/community-screen.tsx; src/components/ward-management/referrals/referral-match.tsx,19,literal references located
+DECLINE_REFERRAL,ward; coordinator; ed; community,src/components/ward-management/community/community-screen.tsx; src/components/ward-management/ed/ed-screen.tsx; src/components/ward-management/referrals/referral-match.tsx,14,literal references located
+RECORD_LOCAL_BED_SOUGHT,coordinator,src/components/ward-management/referrals/referral-match.tsx,4,literal references located
+RECORD_REFERRER_WITHDRAWAL,coordinator,src/components/ward-management/referrals/referral-match.tsx,11,literal references located
+ADD_REFERRAL_CORRECTION,community; ed; coordinator,src/components/ward-management/referrals/referral-match.tsx,3,literal references located
+STEP_BACK_STAGE,coordinator,src/components/ward-management/movements/movement-workspace-cockpit.tsx,15,literal references located
+WITHDRAW_ACCEPTANCE,coordinator,src/components/ward-management/movements/movement-workspace-cockpit.tsx,8,literal references located
+WITHDRAW_WARD_REQUEST,coordinator,src/components/ward-management/coordinator/shortlist-panel.tsx,3,literal references located
+MARK_NOTICE_READ,coordinator; ed; ward; officer; community,src/components/ward-management/ward/ward-screen.tsx; src/components/ward-management/community/community-screen.tsx; src/components/ward-management/shell/ward-bar.tsx,4,literal references located
+ACKNOWLEDGE_INBOX_ITEM,coordinator,src/components/ward-management/ward-tasks-drawer.tsx; src/components/ward-management/alerts/alerts-screen.tsx,5,literal references located
+COMPLETE_INBOX_ITEM,coordinator,src/components/ward-management/ward-tasks-drawer.tsx,3,literal references located
+REOPEN_INBOX_ITEM,coordinator,src/components/ward-management/ward-tasks-drawer.tsx,2,literal references located
+SET_ARRIVAL_DETAILS,coordinator; ed; ward; community,src/components/ward-management/referrals/arrival-time-modal.tsx,2,literal references located
+SET_STEP_DOWN_CANDIDATE,ward; coordinator,src/components/ward-management/board/ward-board.tsx,4,literal references located
+SET_DISCHARGE_BARRIER,ward; coordinator,src/components/ward-management/board/ward-board.tsx,3,literal references located
+RECORD_MOVEMENT_MEDICAL_CLEARANCE,ed; coordinator; ward; community,src/components/ward-management/referrals/ward-referral-drawer.tsx,3,literal references located
+UPLOAD_PATIENT_FORM,coordinator; ed; ward; community; officer,src/components/ward-management/referrals/upload-forms-modal.tsx,3,literal references located
+RECORD_LEGAL_FORM_WRITTEN,ed; coordinator; ward; community,src/components/ward-management/legal-forms/legal-forms-screen.tsx,4,literal references located
+RECORD_COUNTRY_EXTENSION,ed; coordinator,,1,review dynamic dispatch or intentionally internal event
+RECORD_LEGAL_FORM_CONTINUATION,ed; coordinator; ward; community,,4,review dynamic dispatch or intentionally internal event
+EVALUATE_ARRIVAL_LATENESS,coordinator; ed; ward,,2,review dynamic dispatch or intentionally internal event
+RELEASE_AND_REOPEN_SEARCH,coordinator; ward,,5,review dynamic dispatch or intentionally internal event
+CLEAR_EXPECT_FLAG,ward; coordinator; ed; community,,1,review dynamic dispatch or intentionally internal event
+RAISE_EXPECT_FLAG,ward; coordinator; ed; community,,2,review dynamic dispatch or intentionally internal event
+FLAG_LEGAL_MISMATCH,ward; coordinator,,1,review dynamic dispatch or intentionally internal event
+EVALUATE_LEAVE_BED_WARNINGS,ward; coordinator,,1,review dynamic dispatch or intentionally internal event
+CONFIRM_MORNING_ROLLUP,ward; coordinator,src/components/ward-management/ward/ward-screen.tsx,4,literal references located
+SEND_WARD_BUZZ,coordinator; bed_manager; executive,,4,review dynamic dispatch or intentionally internal event
+RECORD_REPATRIATION,coordinator,src/components/ward-management/out-of-area/out-of-area-board.tsx,6,literal references located
+RECORD_HANDOVER_SIGN_OFF,coordinator; ward,src/components/ward-management/handover/handover-page.tsx,4,literal references located
+RECORD_CLINICAL_CONTACT,community; coordinator; ed,src/components/ward-management/community/community-screen.tsx,3,literal references located
+DISPATCH_BROADCAST_ALERT,coordinator; bed_manager; executive,src/components/ward-management/alerts/alerts-screen.tsx,4,literal references located
+ACKNOWLEDGE_BROADCAST_ALERT,coordinator; ward; ed; officer; community; bed_manager; executive,src/components/ward-management/shell/ward-broadcast-banner.tsx,3,literal references located
+STAND_DOWN_BROADCAST_ALERT,coordinator; bed_manager; executive,src/components/ward-management/alerts/alerts-screen.tsx,3,literal references located
