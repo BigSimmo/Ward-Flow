@@ -21,3 +21,6 @@ Browser verified both controls at 48px and count gap at 12px; visually reviewed 
 
 Name-filter dropdown: replaced the segmented buttons with one labelled native select. Default All names and optional Names that read alike retain their derived counts and filtering. Compact styling uses a clear chevron and keyboard focus ring; updated the existing filter interaction test without removing assertions.
 Dropdown evidence: 18 tests passed across gateway and alphabet accessibility suites. Browser selection alike showed 22 of 64; all restored 64. Desktop screenshot reviewed, git diff --check passed. No publication or deployment.
+
+Useful filter and button polish: added Recently opened using the existing local recent-team store, intersected with source teams and search. Empty history is explicit. Unified page action and guide buttons with restrained elevation, rounded corners, consistent tap targets and focus rings; refined recent links and warning markers. Shared sidebar/header controls remain outside this page scope.
+Verification: 19 focused tests passed, including visited-source filtering and its combination with search. Browser checked empty recent history, restoring All names, and opening/closing Catchment Guide; desktop appearance reviewed. git diff --check passed. Publication and hosting remain unverified.

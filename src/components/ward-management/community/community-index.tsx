@@ -173,7 +173,9 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
   const familyGroups = useMemo(() => communityNameCollisions(), []);
 
   const [query, setQuery] = useState("");
-  const [alikeOnly, setAlikeOnly] = useState(false);
+  const [nameFilter, setNameFilter] = useState("all");
+  const alikeOnly = nameFilter === "alike";
+  const recentOnly = nameFilter === "recent";
 
   // `useSyncExternalStore` (via `createBrowserStore`, module scope below), not a `useState` fed
   // from an effect: an effect that calls `setState` in its own body — which is exactly what a
@@ -270,10 +272,11 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
     () =>
       allTeams.filter((team) => {
         if (alikeOnly && !collisionByName.has(team.name)) return false;
+        if (recentOnly && !recentNames.includes(team.name)) return false;
         if (normalizedQuery && !team.name.toLowerCase().includes(normalizedQuery)) return false;
         return true;
       }),
-    [allTeams, alikeOnly, normalizedQuery, collisionByName],
+    [allTeams, alikeOnly, recentOnly, recentNames, normalizedQuery, collisionByName],
   );
 
   const grouped = useMemo(() => {
@@ -382,10 +385,13 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               <span className="sr-only">Filter team names</span>
               <select
                 className={styles.filterSelect}
-                value={alikeOnly ? "alike" : "all"}
-                onChange={(event) => setAlikeOnly(event.target.value === "alike")}
+                value={nameFilter}
+                onChange={(event) => setNameFilter(event.target.value)}
               >
                 <option value="all">All names ({allTeams.length})</option>
+                <option value="recent">
+                  Recently opened ({allTeams.filter((team) => recentNames.includes(team.name)).length})
+                </option>
                 <option value="alike">Names that read alike ({namesInCollisionsAmongAll})</option>
               </select>
               <ChevronDown aria-hidden="true" className={styles.filterChevron} />
@@ -394,7 +400,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
 
           <p className={styles.resultLine} aria-live="polite" data-testid="community-gateway-result-line">
             <strong>{filteredTeams.length}</strong> of {allTeams.length} invented names shown
-            {alikeOnly ? " — only entries whose name reads like another" : ""}
+            {alikeOnly ? " — only entries whose name reads like another" : recentOnly ? " — recently opened" : ""}
             {normalizedQuery ? ` — matching "${query.trim()}"` : ""}
           </p>
         </div>
@@ -491,7 +497,17 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                   </p>
                 </div>
               ) : filteredTeams.length === 0 ? (
-                <SearchEmptyNotice alikeOnly={alikeOnly} query={query.trim()} />
+                recentOnly ? (
+                  <div className={styles.emptyNotice}>
+                    <p>
+                      {normalizedQuery
+                        ? "No recently opened teams match this search."
+                        : "No teams opened yet. Open a team from All names to add it here."}
+                    </p>
+                  </div>
+                ) : (
+                  <SearchEmptyNotice alikeOnly={alikeOnly} query={query.trim()} />
+                )
               ) : (
                 <div className={styles.letterGroups} role="region" aria-label="Community team directory" tabIndex={0}>
                   {[...grouped.keys()].sort().map((letter) => (

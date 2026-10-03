@@ -1731,3 +1731,82 @@
   color: var(--ink);
   box-shadow: var(--lift);
 }
+
+/* Consistent page controls: restrained elevation, clear hierarchy and keyboard focus. */
+.btnActionPrimary,
+.btnActionSecondary,
+.drawerBtnPrimary,
+.drawerBtnSecondary {
+  min-height: var(--ward-tap);
+  border-radius: var(--ward-space-12);
+  gap: var(--ward-space-8);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.08);
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.btnActionPrimary,
+.drawerBtnPrimary {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent), var(--surface) 8%), var(--accent));
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--on-accent) 18%, transparent),
+    0 2px 4px rgb(var(--ward-shadow-rgb) / 0.12);
+}
+
+.btnActionPrimary:hover,
+.drawerBtnPrimary:hover {
+  background: var(--accent);
+  box-shadow: 0 3px 7px rgb(var(--ward-shadow-rgb) / 0.16);
+}
+
+.btnActionSecondary:hover,
+.drawerBtnSecondary:hover {
+  background: var(--surface-2);
+  box-shadow: 0 2px 5px rgb(var(--ward-shadow-rgb) / 0.1);
+}
+
+.btnActionPrimary:focus-visible,
+.btnActionSecondary:focus-visible,
+.drawerBtnPrimary:focus-visible,
+.drawerBtnSecondary:focus-visible,
+.familySummary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.recentLink {
+  border-radius: var(--ward-space-12);
+  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.06);
+}
+
+.readsAlike {
+  border-color: color-mix(in srgb, var(--warn) 24%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface) 65%, transparent);
+}
+
+.azRailButton:hover:not([aria-disabled="true"]) {
+  background: var(--accent-soft);
+}
+.clearButton,
+.drawerClose {
+  border-radius: var(--ward-space-8);
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.drawerClose {
+  min-width: var(--ward-tap);
+  min-height: var(--ward-tap);
+  background: var(--surface-2);
+}
+
+.clearButton:hover,
+.drawerClose:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
