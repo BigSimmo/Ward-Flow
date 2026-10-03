@@ -8,7 +8,7 @@ import {
   OUTCOME_AFFECTING_ENV_VARS,
   parseRawDiff,
   computeInputSignature,
-  consultGateReceipt,
+  consultGateReceipt as consultGateReceiptImpl,
   environmentSignature,
   fileInScope,
   loadStore,
@@ -17,7 +17,7 @@ import {
   receiptsEnabled,
   recordGateReceipt,
   typecheckScopeAlias,
-  withGateReceipt,
+  withGateReceipt as withGateReceiptImpl,
 } from "../scripts/gate-receipts.mjs";
 
 const temporaryRoots: string[] = [];
@@ -32,6 +32,13 @@ const temporaryRoots: string[] = [];
  * the CI-refusal itself is asserted separately in "reuse boundaries".
  */
 const RECEIPTS_ENABLED: Record<string, string | undefined> = {};
+// Explicit offline fixture identity. Production callers fail closed when the
+// installed dependency bytes cannot be reliably identified.
+const fixtureDependencies = () => "controlled-fixture-dependency-bytes";
+const consultGateReceipt = (options: Parameters<typeof consultGateReceiptImpl>[0]) =>
+  consultGateReceiptImpl({ dependencyIdentity: fixtureDependencies, ...options });
+const withGateReceipt = (options: Parameters<typeof withGateReceiptImpl>[0]) =>
+  withGateReceiptImpl({ dependencyIdentity: fixtureDependencies, ...options });
 
 /** A throwaway git worktree, so signature behaviour is proven against real git plumbing. */
 function gitFixture(files: Record<string, string>) {
@@ -202,8 +209,12 @@ describe("gate receipts — outcome-affecting environment (Codex review, PR #221
     for (const name of ["FAST_CHECK_SEED", "TZ", "LANG", "NODE_OPTIONS", "ALLOW_PROVIDER_TESTS"]) {
       expect(OUTCOME_AFFECTING_ENV_VARS).toContain(name);
     }
-    // Performance-only knobs must stay out: they would churn receipts for no verdict change.
-    expect(OUTCOME_AFFECTING_ENV_VARS).not.toContain("VITEST_MAX_WORKERS");
+    // Concurrency can change race-sensitive outcomes; evidence must not cross that boundary.
+    expect(OUTCOME_AFFECTING_ENV_VARS).toContain("VITEST_MAX_WORKERS");
+    const { root } = gitFixture({ "a.ts": "1\n" });
+    expect(environmentSignature(root, { VITEST_MAX_WORKERS: "1" })).not.toBe(
+      environmentSignature(root, { VITEST_MAX_WORKERS: "4" }),
+    );
   });
 
   it("does not reuse a receipt recorded under a different seed", () => {

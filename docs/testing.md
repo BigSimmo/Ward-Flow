@@ -64,14 +64,14 @@ Start with the cheapest check that can fail for the changed behavior. Add anothe
 
 Production Chromium is ~85% of UI-scoped PR wall clock; cancelled mid-UI runs waste more than missing parallelism. Prefer selection, duration-balanced groups, and within-session cache reuse over raising Playwright workers (`workers: 1`, `fullyParallel: false`, `retries: 0` stay required — see `#093` and [process-hardening.md](process-hardening.md)).
 
-| Change type                           | Run this                                                         | Avoid                                                     |
-| ------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------- |
-| Lib/helper, no UI                     | `npm run test:focused -- --files <paths>` or one Vitest file     | `verify:ui`                                               |
-| Component interaction                 | `.dom.test.tsx` + focused Vitest                                 | full Chromium                                             |
-| Phone chrome / scroll / composer      | `npm run verify:phone-chrome -- --dry-run`, then without dry-run | immediate `verify:ui`                                     |
-| Shared shell / header / `globals.css` | phone-chrome, then `verify:ui` once at handoff                   | stacking `verify:cheap` + `verify:pr-local` + `verify:ui` |
-| Docs / ledger only                    | `npm run verify:pr-local -- --dry-run` (confirm docs route)      | full unit + UI                                            |
-| PR ready                              | `npm run format` (commit it) + `verify:pr-local` once            | mid-CI pushes that cancel Production UI                   |
+| Change type                           | Run this                                                                       | Avoid                                                     |
+| ------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| Lib/helper, no UI                     | `npm run test:focused -- --files <paths>` or one Vitest file                   | `verify:ui`                                               |
+| Component interaction                 | `.dom.test.tsx` + focused Vitest                                               | full Chromium                                             |
+| Phone chrome / scroll / composer      | `npm run verify:phone-chrome -- --dry-run`, then without dry-run               | immediate `verify:ui`                                     |
+| Shared shell / header / `globals.css` | phone-chrome, then `verify:ui` once at handoff                                 | stacking `verify:cheap` + `verify:pr-local` + `verify:ui` |
+| Docs / ledger only                    | `npm run verify:pr-local -- --dry-run` (confirm docs route)                    | full unit + UI                                            |
+| PR ready                              | `npm run format -- --files <owned-paths>` (commit it) + `verify:pr-local` once | mid-CI pushes that cancel Production UI                   |
 
 **Local Playwright keep-root (iterative UI work).** Each `run-playwright.mjs` invocation otherwise builds under a unique `.next-playwright/<id>/` and deletes it. KEEP does **not** skip the Next production build — every invocation still rebuilds. It reuses the webpack/dist cache inside one shared root across stages in the same local session:
 

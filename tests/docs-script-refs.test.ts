@@ -1,5 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { extractScriptRefs, findStaleRefs, parsePackageScripts } from "../scripts/check-docs-script-refs.mjs";
+import {
+  extractScriptRefs,
+  findStaleRefs,
+  parsePackageScripts,
+  MAINTAINED_ROOT_DOCS,
+  stripHistoricalSections,
+} from "../scripts/check-docs-script-refs.mjs";
+
+describe("maintained root guidance", () => {
+  it("includes the original-source boundary while excluding its preserved incident commands", () => {
+    expect(MAINTAINED_ROOT_DOCS).toContain("README.local-source.md");
+    const document = [
+      "Current `npm run ensure`.",
+      "<!-- docs-script-refs:historical-start -->",
+      "Old `npm run removed-worker`.",
+      "<!-- docs-script-refs:historical-end -->",
+      "Current `npm run absent-current`.",
+    ].join("\n");
+    const refs = extractScriptRefs(stripHistoricalSections(document));
+    expect(findStaleRefs(refs, new Set(["ensure"]))).toEqual(["absent-current"]);
+  });
+});
 
 describe("parsePackageScripts", () => {
   it("returns the set of script names", () => {

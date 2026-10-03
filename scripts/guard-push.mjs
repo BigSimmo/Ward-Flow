@@ -98,9 +98,8 @@ export function wardFlowRemoteVerdict(remoteUrl) {
  * @param {Record<string, string | undefined>} [env]
  */
 export function wardFlowCheckoutVerdict(cwd = PROJECT_ROOT, env = process.env) {
-  if (env.SKIP_CHECKOUT_GUARD === "1") {
-    return { name: "ward-flow-checkout", ok: true, skipped: "SKIP_CHECKOUT_GUARD=1" };
-  }
+  // Ambient authentication/skip variables never waive destination or ancestry.
+  void env;
   const fetchUrl = tryGit(["remote", "get-url", "origin"], cwd);
   const pushUrl = tryGit(["remote", "get-url", "--push", "origin"], cwd);
   const root = tryGit(["rev-parse", "--show-toplevel"], cwd);
@@ -328,7 +327,7 @@ function collectChangedBlobs(ranges) {
 // ---------------------------------------------------------------------------
 function ghIsAvailable() {
   try {
-    execFileSync("gh", ["--version"], { stdio: "ignore" });
+    execFileSync("gh", ["--version"], { stdio: "ignore", timeout: 10000 });
     return true;
   } catch {
     return false;
@@ -596,6 +595,7 @@ function autoMergeGuard(branches, forcePushBranches = new Set()) {
       const raw = execFileSync("gh", ["pr", "view", branch, "--json", "autoMergeRequest,state,number"], {
         encoding: "utf8",
         stdio: ["ignore", "pipe", "ignore"],
+        timeout: 30000,
       });
       payload = JSON.parse(raw);
     } catch {
@@ -634,10 +634,9 @@ export const ACTIVE_CI_RUN_STATES = new Set(["pending", "queued", "in_progress",
 
 export function isRequiredCiWorkflow(run) {
   if (!run) return false;
-  const name = String(run.name || run.workflowName || "").trim();
-  if (name === "CI") return true;
+  if ([run.name, run.workflowName].some((name) => String(name ?? "").trim() === "Ward Flow CI")) return true;
   const workflowPath = String(run.path || run.workflow_path || "").replaceAll("\\", "/");
-  return /(?:^|\/)ci\.yml$/.test(workflowPath);
+  return /(?:^|\/)ward-flow\.yml$/.test(workflowPath);
 }
 
 export function findInFlightCiRuns(runsPayload) {
@@ -664,6 +663,8 @@ export function inFlightCiVerdict(branch, prPayload, runsPayload) {
   }
   if (!prPayload) return { block: false, reason: "no-open-pr" };
   if (prPayload.state && prPayload.state !== "OPEN") return { block: false, reason: "pr-not-open" };
+  if (!Array.isArray(runsPayload) && !Array.isArray(runsPayload?.workflow_runs))
+    return { block: true, reason: "required-ci-state-unavailable", number: prPayload.number, runs: [] };
 
   const inFlight = findInFlightCiRuns(runsPayload);
   if (inFlight.length === 0) {
@@ -683,6 +684,7 @@ function defaultPrView(branch) {
     const raw = execFileSync("gh", ["pr", "view", branch, "--json", "number,state,headRefOid,headRefName,url"], {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
+      timeout: 30000,
     });
     return JSON.parse(raw);
   } catch {
@@ -690,6 +692,10 @@ function defaultPrView(branch) {
   }
 }
 
+/**
+ * @param {string} branch
+ * @param {(file:string,args:string[],options:import('node:child_process').ExecFileSyncOptionsWithStringEncoding)=>string} [exec]
+ */
 export function defaultRunsFetch(branch, exec = execFileSync) {
   try {
     // Scope to the required CI workflow and page across the full run history. A
@@ -704,7 +710,7 @@ export function defaultRunsFetch(branch, exec = execFileSync) {
         "--branch",
         branch,
         "--workflow",
-        "ci.yml",
+        "ward-flow.yml",
         "--limit",
         "100",
         "--json",
@@ -713,11 +719,12 @@ export function defaultRunsFetch(branch, exec = execFileSync) {
       {
         encoding: "utf8",
         stdio: ["ignore", "pipe", "ignore"],
+        timeout: 30000,
       },
     );
     return JSON.parse(raw);
   } catch {
-    return [];
+    return null; // Unavailable provider evidence is not an empty run list.
   }
 }
 
@@ -745,6 +752,12 @@ export function inFlightCiGuard(
     if (!prPayload || prPayload.state !== "OPEN") continue;
 
     const runsPayload = runFetcher(branch);
+    if (!Array.isArray(runsPayload) && !Array.isArray(runsPayload?.workflow_runs))
+      return {
+        name: "in-flight-ci",
+        ok: false,
+        message: "Required Ward Flow CI state unavailable; no in-flight verdict can be established.",
+      };
     const verdict = inFlightCiVerdict(branch, prPayload, runsPayload);
     if (verdict.block) {
       const runLines = verdict.runs
@@ -1158,7 +1171,7 @@ export function formatGuard(changedBlobs, prettierResolver = resolvePrettierBin)
       `Prettier found unformatted files in this push (CI format:check would fail):\n` +
       unformatted.map((detail) => `${detail}\n`).join("") +
       `  This is a checkout of the pushed commit, not your working copy — run\n` +
-      `  \`npm run format\` and commit the result.\n` +
+      `  \`npm run format -- --files <exact-owned-paths>\` and commit the result.\n` +
       `  To push anyway: SKIP_FORMAT_GUARD=1 git push`,
   };
 }
@@ -1612,9 +1625,9 @@ function selfTest() {
   );
 
   // in-flight CI verdicts (#HSSHRG)
-  const activeCiRun = { databaseId: 101, name: "CI", status: "in_progress", conclusion: null };
-  const queuedCiRun = { databaseId: 102, workflowName: "CI", status: "queued", conclusion: "" };
-  const completedCiRun = { databaseId: 103, name: "CI", status: "completed", conclusion: "success" };
+  const activeCiRun = { databaseId: 101, name: "Ward Flow CI", status: "in_progress", conclusion: null };
+  const queuedCiRun = { databaseId: 102, workflowName: "Ward Flow CI", status: "queued", conclusion: "" };
+  const completedCiRun = { databaseId: 103, name: "Ward Flow CI", status: "completed", conclusion: "success" };
   const nonCiRun = { databaseId: 104, name: "Deploy", status: "in_progress", conclusion: null };
 
   assert(

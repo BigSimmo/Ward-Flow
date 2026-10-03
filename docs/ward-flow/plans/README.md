@@ -1,7 +1,8 @@
 # Ward Flow plans
 
-Start at the [Ward Flow entry point](../README.md). Where things stand is in [`STATUS.md`](../STATUS.md);
-task state is in the ledger, [`docs/ward-flow-task-ledger.md`](../../ward-flow-task-ledger.md). Rewritten
+Start at the [Ward Flow entry point](../README.md). Current work follows the agreed task scope,
+source and [task-receipt contract](../../task-receipts.md); reuse IDs from the
+[task ledger](../../ward-flow-task-ledger.md). [`STATUS.md`](../STATUS.md) preserves historical evidence. Rewritten
 17 September 2026. Nothing here has been moved or deleted.
 
 **Test scope.** The owner's 17 September speed rule in [`HOW-WE-WORK.md`](../HOW-WE-WORK.md) §5 supersedes
@@ -18,7 +19,7 @@ Under the **21 September 2026 visual speed rules** ([`HOW-WE-WORK.md`](../HOW-WE
 
 ## Current
 
-Current open work is recorded in [`STATUS.md`](../STATUS.md) and the task ledger ([`docs/ward-flow-task-ledger.md`](../../ward-flow-task-ledger.md)), not in standalone plan documents here.
+Current commissioned work is established by the owner's task scope, current source and existing task record under the [receipt contract](../../task-receipts.md). The [task ledger](../../ward-flow-task-ledger.md) indexes existing IDs; [STATUS](../STATUS.md) is dated history. Old plan checkboxes do not establish a current backlog.
 
 - [Owner answers, second round](../archive/dated-notes/owner-answers-2026-09-17.md) ("Second round" section): R2-1 to R2-24 context; build briefs come from Ward Lead.
 - [Retiring PsychSift from the Ward Flow folder](2026-09-25-psychsift-retirement.md): what Ward Flow uses, what is safe to remove now, what must be untangled first, and the Railway leftovers.
@@ -26,7 +27,7 @@ Current open work is recorded in [`STATUS.md`](../STATUS.md) and the task ledger
 
 ## Folded & Completed (Round 2)
 
-Round 2 folded into the canonical ward line (`codex/task-ward-flow-live-state-20260831`) at commits `a7c7288668` and `6c33169b03`. Kept for historical reference. Active open work and deferred items are tracked in [`STATUS.md`](../STATUS.md) and the task ledger.
+Round 2 folded into the canonical ward line (`codex/task-ward-flow-live-state-20260831`) at commits `a7c7288668` and `6c33169b03`. Kept for historical reference. At that time, active open work and deferred items were tracked in [`STATUS.md`](../STATUS.md) and the task ledger.
 
 | Plan                                                                              | Covers                                               |
 | --------------------------------------------------------------------------------- | ---------------------------------------------------- |

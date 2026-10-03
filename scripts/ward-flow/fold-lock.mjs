@@ -12,7 +12,6 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { commitLogs } from "./logs-commit.mjs";
 
 try {
   const remote = execFileSync("git", ["remote"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
@@ -117,12 +116,6 @@ if (cmd === "release" && who) {
   }
   rmSync(lockDir, { recursive: true, force: true });
   console.log("Fold lock released.");
-  // A fold has just finished: save the fold queue and sign-outs into the notes history.
-  try {
-    commitLogs(`fold lock released by ${who}`);
-  } catch {
-    // Never fail the release over the notes history.
-  }
   process.exit(0);
 }
 

@@ -14,7 +14,7 @@ import { readFileSync } from "node:fs";
 const args = process.argv.slice(2);
 const opt = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
 const queue = opt("--queue", "D:/Repos/ward-flow-logs/fold-queue.md");
-const line = opt("--line", "codex/task-ward-flow-live-state-20260831");
+const line = opt("--line", "origin/main");
 const selected = new Set();
 for (let i = 0; i < args.length; i++) {
   if (args[i] !== "--branch") continue;
