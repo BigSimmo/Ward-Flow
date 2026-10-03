@@ -543,10 +543,13 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
     const agents = readFileSync(join(process.cwd(), "AGENTS.md"), "utf8");
     const line = agents.split("\n").find((entry) => entry.includes("in-flight CI push check"));
     expect(line).toBeDefined();
-    expect(line).toContain("still blocks a push while a required run is active");
+    expect(line).toContain("is a blocking check, not an advisory one");
     expect(line).toContain("SKIP_IN_FLIGHT_CI_GUARD=1");
+    expect(line).toContain("PREPUSH_CI_STRICT=1");
     expect(line).not.toMatch(/is advisory during interactive work/);
+    // The guard itself still blocks, and the hook's default skip is a visible, separate choice.
     expect(readFileSync(join(process.cwd(), "scripts", "guard-push.mjs"), "utf8")).toContain("SKIP_IN_FLIGHT_CI_GUARD");
+    expect(readFileSync(join(process.cwd(), ".githooks", "pre-push"), "utf8")).toContain("PREPUSH_CI_STRICT");
   });
 
   it("allows push when CI has completed or no runs are in-flight", () => {
