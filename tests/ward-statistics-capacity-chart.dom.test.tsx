@@ -191,3 +191,27 @@ it("counts today's bed referrals once across parallel bed criteria, with recorde
   const counts = [...container.querySelectorAll("#refBand dd")].map((node) => node.firstChild?.textContent);
   expect(counts).toEqual(["4", "1", "1", "1"]);
 });
+
+it("exports a formula-like ward name neutralised", async () => {
+  let exported: Blob | undefined;
+  vi.stubGlobal("URL", {
+    createObjectURL: vi.fn((blob: Blob) => ((exported = blob), "blob:x")),
+    revokeObjectURL: vi.fn(),
+  });
+  const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+  try {
+    const risky = { ...unit("Alpha", "RPH", 10, 4, 3), name: "=cmd|x" };
+    const { container } = render(<StatisticsCapacityChart units={[risky]} bedReleases={[]} initialGroup="ward" />);
+    fireEvent.click(within(container).getByRole("button", { name: /export chart csv/i }));
+    const csv = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.readAsText(exported!);
+    });
+    expect(csv).toContain(`"'=cmd|x"`);
+    expect(csv).not.toMatch(/^"=cmd/mu);
+  } finally {
+    click.mockRestore();
+    vi.unstubAllGlobals();
+  }
+});

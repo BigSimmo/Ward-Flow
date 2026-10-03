@@ -3,6 +3,7 @@
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { statisticsChartScale } from "./statistics-chart-scale";
+import { csvCell } from "./statistics-csv";
 import styles from "./statistics-insight-chart.module.css";
 
 export type InsightMetric = {
@@ -131,12 +132,6 @@ export function StatisticsInsightChart({
     setSelectedId(null);
   }
   function exportCsv() {
-    const quote = (value: string | number) => {
-      const text = String(value);
-      // Neutralise spreadsheet formula injection: prefix cells a spreadsheet would evaluate.
-      const safe = typeof value === "string" && /^[=+\-@	]/.test(text) ? `'${text}` : text;
-      return `"${safe.replaceAll('"', '""')}"`;
-    };
     const data = [
       ["Synthetic current-state data", "Context", metric.label, "Unit", "Availability"],
       ...visible.map((row) => [
@@ -148,7 +143,7 @@ export function StatisticsInsightChart({
       ]),
     ];
     const url = URL.createObjectURL(
-      new Blob([data.map((line) => line.map(quote).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
+      new Blob([data.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
     );
     const link = document.createElement("a");
     link.href = url;

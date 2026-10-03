@@ -7,6 +7,7 @@ import { bedsPendingPreparation } from "../ward-bed-availability";
 import { siteByCode } from "../ward-sites";
 import type { BedRelease, Unit } from "../ward-model";
 import { statisticsChartScale } from "./statistics-chart-scale";
+import { csvCell } from "./statistics-csv";
 import styles from "./statistics-capacity-chart.module.css";
 
 type CapacityRow = {
@@ -116,13 +117,12 @@ export function StatisticsCapacityChart({
   }
 
   function exportCsv() {
-    const quote = (value: string | number) => `"${String(value).replaceAll('"', '""')}"`;
     const lines = [
       ["Synthetic current-state data", "Scope", "Total beds", "Occupied", "Ready", "Held"],
       ...rows.map((row) => [row.name, row.context, row.beds, row.occupied, row.ready, row.held]),
     ];
     const url = URL.createObjectURL(
-      new Blob([lines.map((line) => line.map(quote).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
+      new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
     );
     const link = document.createElement("a");
     link.href = url;
