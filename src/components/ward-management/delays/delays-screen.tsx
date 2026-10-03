@@ -250,7 +250,11 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
   // All rows ordered worst blocker first, then longest wait
   const rows = groups.flatMap((group) => group.movements.map((movement) => ({ movement, cause: group.cause })));
 
+  const [tableLayout, setTableLayout] = useState<"focus" | "workspace">("focus");
+
+  const inspectionSourceRef = useRef<"waiting" | "timeline">("waiting");
   const selectMovement = (movementId: string) => {
+    inspectionSourceRef.current = "waiting";
     const isOpening = movementId !== selectedId;
     setSelectedId(isOpening ? movementId : null);
   };
@@ -261,8 +265,9 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
       return;
     }
     window.requestAnimationFrame(() => {
-      detailColumnRef.current?.scrollIntoView({ block: "start" });
-      detailBodyRef.current?.focus({ preventScroll: true });
+      const compact = document.querySelector<HTMLElement>(`[data-delay-inspection="${inspectionSourceRef.current}"]`);
+      compact?.scrollIntoView({ block: "start" });
+      compact?.focus({ preventScroll: true });
     });
   }, [selectedId]);
 
@@ -525,23 +530,33 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
       className={styles.screen}
       data-ward-design="third-edition"
       data-ward-page="delays"
+      data-delay-layout={tableLayout}
       data-testid="ward-delays-page"
     >
       <main id="main-content" className={styles.main}>
         {/* MASTHEAD HEADER */}
         <header className={styles.pageHeader}>
           <div className={styles.pageTitleGroup}>
-            <h1 className={styles.pageTitle}>
-              <span className={styles.liveDot} aria-hidden="true" />
-              Delays &amp; Bottleneck Control
-            </h1>
-            <span className={styles.pageSubtitle}>Statewide Psychiatric Bed Coordination Desk · Western Australia</span>
+            <h1 className={styles.pageTitle}>Delays</h1>
+            <span className={styles.pageSubtitle}>See the wait. Find the last change.</span>
           </div>
 
           <div className={styles.mastheadMeta}>
             <div className={styles.statPill}>
-              <span className={styles.statPillLabel}>Active Open:</span>
               <span className={styles.statPillValue}>{open.length}</span>
+              <span className={styles.statPillLabel}>waiting</span>
+            </div>
+            <div className={styles.statPill} data-tone="wait">
+              <span className={styles.statPillValue}>
+                {open.filter((movement) => now - movement.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length}
+              </span>
+              <span className={styles.statPillLabel}>over 8h</span>
+            </div>
+            <div className={styles.statPill} data-tone="escalated">
+              <span className={styles.statPillValue}>
+                {open.filter((movement) => movement.escalation !== undefined).length}
+              </span>
+              <span className={styles.statPillLabel}>escalated</span>
             </div>
             {breachedCount > 0 && (
               <div className={styles.breachedSentinelPill}>
@@ -598,7 +613,15 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
         ) : null}
 
         {/* ─── PANEL 1: EXECUTIVE COORDINATION OVERVIEW (Who is holding people up) ─── */}
-        <DelaysWaitTimeline rows={rows} now={now} onSelect={selectMovement} />
+        <DelaysWaitTimeline
+          rows={rows}
+          now={now}
+          onSelect={(id) => {
+            selectMovement(id);
+            inspectionSourceRef.current = "timeline";
+          }}
+          selectedId={selectedId}
+        />
 
         <WardPanel title="Who is holding people up" count={open.length === 0 ? undefined : `${open.length} waiting`}>
           <div className={styles.topExecutiveControlRow}>
@@ -1170,10 +1193,12 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
         </WardPanel>
 
         <DelaysTableWorkspace
+          onLayoutChange={setTableLayout}
           rows={rows}
           groups={groups}
           now={now}
           selectedId={selectedId}
+          onClose={() => setSelectedId(null)}
           onSelect={selectMovement}
           markLabel={markLabel}
           markedCount={markedCount}
@@ -1207,7 +1232,7 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
                       className={styles.detailBody}
                       tabIndex={0}
                       role="region"
-                      aria-label="Selected patient delay details"
+                      aria-label="Extended patient delay details"
                     >
                       <SelectedPerson
                         movement={selected}

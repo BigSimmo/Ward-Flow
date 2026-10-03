@@ -2434,3 +2434,149 @@
     outline: 0.0625rem solid CanvasText;
   }
 }
+
+@media (min-width: 1001px) {
+  :global(body:has([data-ward-page="delays"])) .bar {
+    height: 58px;
+    min-height: 58px;
+    padding-inline: 20px;
+    box-shadow: none;
+    gap: 12px;
+  }
+  :global(body:has([data-ward-page="delays"])) .bar::before {
+    display: none;
+  }
+  :global(body:has([data-ward-page="delays"])) .cockpitCapsule {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    box-shadow: none;
+    gap: 22px;
+  }
+  :global(body:has([data-ward-page="delays"])) .place::before {
+    content: "Operations / ";
+    font-weight: 400;
+    color: #6a7e96;
+  }
+  :global(body:has([data-ward-page="delays"])) .scopeBadgeInner {
+    border: 1px solid #d6e0eb;
+    border-radius: 5px;
+    background: #fff;
+    padding: 8px 12px;
+    color: #263e57;
+    font-size: var(--t-0);
+  }
+  :global(body:has([data-ward-page="delays"])) .scopeDot,
+  :global(body:has([data-ward-page="delays"])) .barClockPill,
+  :global(body:has([data-ward-page="delays"])) .mark {
+    display: none;
+  }
+  :global(body:has([data-ward-page="delays"])) .drawerTrigger {
+    min-height: 36px;
+    height: 36px;
+    border: 1px solid #d6e0eb;
+    border-radius: 5px;
+    font-size: var(--t-0);
+  }
+  :global(body:has([data-ward-page="delays"])) .primary {
+    min-height: 36px;
+    height: 36px;
+    border-radius: 5px;
+    font-size: var(--t-0);
+    background: linear-gradient(#234c6a, #173c59);
+  }
+  :global(body:has([data-ward-page="delays"])) .primaryPrefix {
+    display: inline;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .bar {
+    order: 0;
+    width: 100%;
+    padding-left: 265px;
+    padding-right: 75px;
+    background: linear-gradient(100deg, #143750, #1c415b);
+    color: #fff;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .titleGroup {
+    display: none;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .scopeBadgeContainer {
+    position: absolute;
+    top: 51px;
+    right: 23px;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .servicePanel {
+    left: auto;
+    right: 0;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .centerGroup {
+    flex: 1;
+    max-width: 650px;
+    margin-inline: auto;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .drawerTrigger {
+    background: transparent;
+    border: 0;
+    color: #fff;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .primary {
+    border: 1px solid #6b879b;
+    background: #244e6c;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .bar .triggerLabel {
+    color: inherit;
+  }
+}
+@media (min-width: 1001px) {
+  :global(body:has([data-ward-page="delays"])) .bar .scopeBadgeBtn .scopeBadgeInner {
+    background: #fff;
+    color: #233e58;
+    border: 1px solid #d6e0eb;
+    border-radius: 5px;
+    min-height: 36px;
+    padding: 7px 12px;
+  }
+  :global(body:has([data-ward-page="delays"])) .bar .scopeBadgeLabel {
+    text-transform: none;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .bar .drawerTriggers .drawerTrigger {
+    color: #fff;
+    background: transparent;
+    border-color: transparent;
+  }
+}
+@media (min-width: 1001px) {
+  :global(body:has([data-delay-layout="workspace"])) .bar .drawerTrigger::before {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .bar .drawerTrigger,
+  :global(body:has([data-delay-layout="workspace"])) .bar .triggerLabel,
+  :global(body:has([data-delay-layout="workspace"])) .bar .triggerIcon {
+    color: #fff;
+    transition: none;
+  }
+}
+@media (min-width: 1001px) {
+  :global(body:has([data-delay-layout="workspace"])) .bar {
+    z-index: 40;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .bar .demoTime {
+    color: #c9d7e3;
+  }
+  :global(body:has([data-delay-layout="workspace"]))
+    .searchWrap
+    :global([data-testid="ward-global-search"])
+    > div:first-of-type::before {
+    background: #36546c;
+    border-color: #8297aa;
+    box-shadow: none;
+  }
+  :global(body:has([data-delay-layout="workspace"])) .searchWrap :global([data-testid="ward-global-search-input"]),
+  :global(body:has([data-delay-layout="workspace"]))
+    .searchWrap
+    :global([data-testid="ward-global-search-input"])::placeholder,
+  :global(body:has([data-delay-layout="workspace"])) .searchWrap :global([data-testid="ward-global-search"]) svg {
+    color: #fff;
+  }
+}

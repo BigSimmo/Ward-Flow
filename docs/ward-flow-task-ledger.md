@@ -7990,3 +7990,23 @@ Task branch: `codex/delays-table-timeline`, based on the supplied Ward Flow repo
 `BigSimmo/Ward-Flow`; no local remote-main reference was available and no provider call was made.
 Completed stage: verified local implementation. Publication, merge and deployment are separate.
 Source orientation: [Delays code map](ward-flow/code-map/screens-b.md#delays).
+
+Visual correction on the same task: the owner rejected the first implementation's appearance.
+That dated verification above remains evidence of behaviour, and is not visual acceptance. The
+three original generated mockups now directly guide the compact toolbar, column order, row
+spacing, team badges, selection strips and three-column dossier. The full patient tools move
+behind an explicit disclosure. Waiting tables now paginate, with every scoped record reachable;
+the existing population/clinical guards use the actual Rows per page control and tools disclosure.
+The Focus and Action tabs also select the matching live shell presentation on the Delays route.
+No patient, timing, legal or eligibility data was changed.
+
+Correction checks: 163 tests across the delay views, clinical/mark/service-scope guards and
+shared shell passed, along with project type checking and scoped lint. Chromium verified the
+corrected page at 1600, 1280, 768 and 390 px: search, tab state, team filters, pagination,
+selection, responsive focus, Escape, the timeline/table switch, service selector, Tools,
+More pages and persona controls passed with no console/page errors or page overflow.
+The table scroll wrappers anchor their absolute captions so narrow tables scroll inside their
+panels. Local screenshots and browser evidence are recorded separately in
+`.local/delays-views/fidelity-*` and `/workspace/generated_images/ward-flow-fidelity-*.png`.
+The corrected local preview remains at `http://localhost:3641/mockups/ward-flow/delays`;
+visual acceptance, publication, merge and deployment remain separate.

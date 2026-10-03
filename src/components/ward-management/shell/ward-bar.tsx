@@ -49,7 +49,6 @@ import {
   SERVICE_SCOPED_SCREENS,
   unitHealthService,
 } from "@/components/ward-management/ward-service-scope";
-import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { WardRoleSwitcher } from "@/components/ward-management/ward-role-switcher";
 import {
   STATISTICS_COMPARE_HREF,
@@ -73,7 +72,6 @@ import {
   onCallHref,
   settingsHref,
   unitHref,
-  wardBoardHref,
 } from "./ward-facade";
 import type { WardActivityCategory, WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
 import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
@@ -532,7 +530,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
       return "Real-Time Patient Record";
     }
     return undefined;
-  }, [pathname, place, routeTitle, units]);
+  }, [pathname, place, routeTitle]);
 
   // ⚠️ Audit finding STILL-06 (ward-flow-task-ledger.md §6.3 item 5, 2026-09-16): `buildActionInbox` returns the WHOLE network's
   // outstanding work, and `ACKNOWLEDGE_INBOX_ITEM`/`COMPLETE_INBOX_ITEM`/`REOPEN_INBOX_ITEM` are all
@@ -874,14 +872,14 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   const activeService = isFixedJurisdiction ? fixedService : service;
   const activeSwatchKey = activeService ? (SERVICE_SWATCH_KEY[activeService] ?? "statewide") : "statewide";
   const activeServiceBadgeLabel = useMemo(() => {
-    if (!activeService) return "STATEWIDE";
+    if (!activeService) return pathname === "/mockups/ward-flow/delays" ? "All services" : "STATEWIDE";
     if (activeService === "East Metro") return "EAST METRO";
     if (activeService === "North Metro") return "NORTH METRO";
     if (activeService === "South Metro") return "SOUTH METRO";
     if (activeService === "WACHS") return "WACHS";
     if (activeService === "Private") return "PRIVATE";
     return String(activeService).toUpperCase();
-  }, [activeService]);
+  }, [activeService, pathname]);
 
   return (
     <header

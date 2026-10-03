@@ -6111,3 +6111,109 @@
     max-height: 22rem;
   }
 }
+
+/* Owner-selected October mockups: a visible title, compact counters and cool white ground. */
+.screen {
+  --ground: #f0f5f9;
+}
+.main {
+  padding: 20px 22px 28px;
+  gap: 16px;
+}
+.pageHeader {
+  justify-content: flex-start;
+  gap: 60px;
+  padding: 0 0 4px;
+  border: 0;
+  box-shadow: none;
+  margin: 0;
+}
+.pageTitle {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
+  white-space: normal;
+  margin: 0;
+  font-size: 30px;
+  color: #102d4b;
+  letter-spacing: -0.035em;
+}
+.pageSubtitle {
+  color: #60748e;
+  font-size: 14px;
+}
+.mastheadMeta {
+  gap: 9px;
+}
+.statPill {
+  min-width: 114px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  background: #fff;
+  border: 1px solid #dfe7ef;
+  border-radius: 6px;
+  padding: 7px 16px;
+}
+.statPillValue {
+  font-size: 20px;
+  color: #153e62;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.statPillLabel {
+  font-size: 12px;
+  color: #516d89;
+  font-weight: 400;
+}
+.statPill[data-tone="wait"] .statPillValue {
+  color: #a86b00;
+}
+.statPill[data-tone="escalated"] .statPillValue {
+  color: #a82727;
+}
+.liveClockPill {
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  color: #60748e;
+}
+@media (max-width: 700px) {
+  .main {
+    padding: 16px 12px 24px;
+  }
+  .pageHeader {
+    gap: 14px;
+  }
+  .statPill {
+    min-width: 85px;
+    padding: 7px 10px;
+  }
+}
+.pageHeader {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 65px;
+}
+@media (min-width: 1101px) {
+  .statPill {
+    border: 0;
+    border-left: 1px solid #d5e0ec;
+    border-radius: 0;
+    background: transparent;
+    min-width: 150px;
+    padding: 8px 24px;
+  }
+  .statPillValue {
+    font-size: 26px;
+  }
+}
+@media (max-width: 700px) {
+  .pageHeader {
+    align-items: flex-start;
+  }
+}

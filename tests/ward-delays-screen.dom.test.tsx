@@ -1,6 +1,7 @@
+import { renderAllDelays, inspectDelayPerson } from "./helpers/delays-interactions";
 import { readFileSync } from "node:fs";
 
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { delayGroups } from "@/components/ward-management/delays/delays-derivations";
@@ -28,7 +29,7 @@ const seededMovements = seedWardFlowState().movements;
 const OPEN_COUNT = seededMovements.filter(isOpen).length;
 
 function renderScreen(aliasFrom?: "queue" | "exceptions" | "escalation" | null) {
-  return render(
+  return renderAllDelays(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <DelaysScreen aliasFrom={aliasFrom} />
     </WardFlowProvider>,
@@ -46,7 +47,7 @@ function FocusProbe() {
 }
 
 function renderScreenWithProbe() {
-  return render(
+  return renderAllDelays(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <DelaysScreen />
       <FocusProbe />
@@ -75,8 +76,7 @@ function renderScreenWithProbe() {
  * lookup scoped to the panel this helper returns (`within(panel)...`) finds only the detail row's.
  */
 function selectPerson(id: string): HTMLElement {
-  fireEvent.click(screen.getByTestId(`delays-select-${id}`));
-  return screen.getByRole("region", { name: /Why this person is waiting/u });
+  return inspectDelayPerson(id);
 }
 
 describe("the Delays screen", () => {
@@ -98,7 +98,7 @@ describe("the Delays screen", () => {
     expect(frame).not.toHaveBeenCalled();
     expect(scrollIntoView).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByTestId(`delays-select-${wardMovements.find(isOpen)!.id}`));
+    inspectDelayPerson(wardMovements.find(isOpen)!.id);
     expect(frame).toHaveBeenCalledTimes(1);
     expect(scrollIntoView).toHaveBeenCalledWith({ block: "start" });
     expect(screen.getByRole("region", { name: "Selected patient delay details" })).toHaveFocus();
@@ -109,7 +109,7 @@ describe("the Delays screen", () => {
     expect(screen.queryByTestId("delays-detail-backdrop")).toBeNull();
 
     const openPatient = wardMovements.find(isOpen)!;
-    fireEvent.click(screen.getByTestId(`delays-select-${openPatient.id}`));
+    inspectDelayPerson(openPatient.id);
 
     const backdrop = screen.getByTestId("delays-detail-backdrop");
     expect(backdrop).toBeInTheDocument();
@@ -193,7 +193,7 @@ describe("the Delays screen", () => {
     // weaken the assertion until it passes; the real one is the second backslash. This exact
     // substitution has bitten this repository before and it leaves every gate green.
     expect(
-      within(screen.getByRole("region", { name: "Waiting" })).getByText(new RegExp(`of ${OPEN_COUNT}\\b`, "u")),
+      within(screen.getByRole("region", { name: "Waiting" })).getByText(new RegExp(`of ${OPEN_COUNT}\\b.*marked`, "u")),
     ).toBeInTheDocument();
   });
 

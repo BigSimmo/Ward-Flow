@@ -56,11 +56,42 @@ describe("the selected delay data views", () => {
     fireEvent.click(screen.getByRole("tab", { name: /Action workspace/u }));
     const queues = screen.getByRole("complementary", { name: "Responsible team queues" });
     fireEvent.click(within(queues).getByRole("button", { name: /^Transport/u }));
-    expect(within(screen.getByTestId("delays-waiting-list")).getAllByRole("row")).toHaveLength(expectedTransport);
+    expect(within(screen.getByTestId("delays-waiting-list")).getAllByRole("row")).toHaveLength(
+      Math.min(6, expectedTransport),
+    );
+    expect(screen.getByRole("heading", { name: `Transport · ${expectedTransport} people` })).toBeInTheDocument();
     const blockers = screen.getByRole("region", { name: "What the blocker is" });
     expect(within(blockers).getByRole("row", { name: /Total waiting/u })).toHaveTextContent(
       String(state.movements.filter(isOpen).length),
     );
+  });
+
+  it("makes the entire scoped waiting population reachable through table pagination", () => {
+    renderDelays();
+    const waiting = screen.getByRole("region", { name: "Waiting" });
+    const readIds = () =>
+      Array.from(screen.getByTestId("delays-waiting-list").querySelectorAll("[data-record-key]")).map((row) =>
+        row.getAttribute("data-record-key"),
+      );
+    expect(readIds()).toHaveLength(10);
+    const seen = new Set(readIds());
+    const next = within(waiting).getByRole("button", { name: "Next waiting page" });
+    while (!(next as HTMLButtonElement).disabled) {
+      fireEvent.click(next);
+      for (const id of readIds()) {
+        expect(seen.has(id)).toBe(false);
+        seen.add(id);
+      }
+    }
+    expect([...seen].sort()).toEqual(
+      seedWardFlowState()
+        .movements.filter(isOpen)
+        .map((movement) => movement.id)
+        .sort(),
+    );
+    fireEvent.change(within(waiting).getByRole("combobox", { name: "Rows per page" }), { target: { value: "20" } });
+    expect(readIds()).toHaveLength(20);
+    expect(within(waiting).getByRole("button", { name: "Previous waiting page" })).toBeDisabled();
   });
 
   it("paginates the timeline and supports keyboard switching between table layouts", () => {

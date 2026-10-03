@@ -130,12 +130,19 @@ figures/links), and by `ward-nav-counts.ts` and `ward-service-scope.ts`.
   priority queue, exceptions inbox and escalation board folded into one screen answering "why is
   this person still waiting?". `DelaysScreen` now places a named wait timeline above the existing
   radar, and replaces the waiting/blocker card panels with two table layouts. `DelayRow` and
-  `SelectedPerson` retain recorded-person inspection and the existing coordination actions.
+  `SelectedPerson` retain recorded-person inspection and the existing coordination actions behind
+  the compact views' patient-tools disclosure.
 - **`src/components/ward-management/delays/delays-data-views.tsx`** — `DelaysWaitTimeline`
   and `DelaysTableWorkspace`: a paged, linear timeline plus the Focus table / Action workspace
   tabs. The waiting and blocker tables share the screen's scoped records; text/team/cause filters
   are local to the tables. Existing mark controls continue highlighting without hiding records.
-  Selection and table filters survive switching layouts. Blocker totals retain the service scope.
+  Selection and table filters survive switching layouts. Both worklists paginate; the Focus view
+  expands a short bed/next-step strip, while the Action view uses a compact patient dossier.
+  Blocker totals retain the service scope in an expandable table. The timeline has a working
+  Table/Timeline switch and a compact selected-record strip.
+  The Delays-only header variants reuse `WardRail` and `WardBar`: a narrow rail in Focus mode,
+  horizontal navigation and a navy utility bar in Action mode. `data-delay-layout` drives the
+  scoped shell CSS; other routes retain their existing presentation.
 - **`src/components/ward-management/delays/delays-view-model.ts`** — common linear time
   scale and recorded-update geometry. Arrival-only records draw a fully hatched wait without a
   subsequent-update marker; waits beyond 24 hours remain on the scale.
