@@ -914,3 +914,25 @@ export function edById(id: string): EmergencyDepartment | undefined {
 export function siteByCode(code: string): Site | undefined {
   return wardSites.find((site) => site.code === code);
 }
+
+/**
+ * Shortened emergency department name for high-density UI cards and tabs
+ * (e.g. "RPH ED", "Joondalup ED", "SCGH ED", "Midland ED").
+ */
+export function edShortName(ed: { id?: string; siteCode?: string; name?: string } | undefined | null): string {
+  if (!ed) return "";
+  const id = ed.id?.toLowerCase() ?? "";
+  const code = ed.siteCode?.toUpperCase() ?? "";
+  if (id === "rph-ed" || code === "RPH") return "RPH ED";
+  if (id === "scgh-ed" || code === "SCGH") return "SCGH ED";
+  if (id === "fsh-ed" || code === "FSH") return "FSH ED";
+  if (id === "jhc-ed" || code === "JHC") return "Joondalup ED";
+  if (id === "arm-ed" || code === "ARM") return "Armadale ED";
+  if (id === "sjgm-ed" || code === "SJGM") return "Midland ED";
+  if (id === "rgh-ed" || code === "RGH") return "Rockingham ED";
+  if (id === "peel-ed" || code === "PEEL") return "Peel ED";
+  if (id === "kemh-ed" || code === "KEMH") return "KEMH ED";
+  if (id === "pch-ed" || code === "PCH") return "PCH ED";
+  if (code) return code.endsWith("ED") ? code : `${code} ED`;
+  return ed.name ?? "";
+}
