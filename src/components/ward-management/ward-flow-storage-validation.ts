@@ -1,4 +1,5 @@
 import type { WardFlowState } from "./ward-flow-reducer";
+import { isLeavingDestination } from "./ward-admissions";
 import {
   MOVEMENT_STAGES,
   COHORTS,
@@ -313,6 +314,7 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     if (!movement.referredUnitIds.every((id) => unitIds.has(id))) return false;
   }
   for (const admission of value.admissions as RecordValue[]) {
+    if (admission.leavingDestination !== null && !isLeavingDestination(admission.leavingDestination)) return false;
     if (
       !unitIds.has(admission.unitId) ||
       !["waitlisted", "pulled", "occupied", "departed"].includes(admission.state as string)

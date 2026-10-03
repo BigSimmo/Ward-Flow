@@ -1,7 +1,13 @@
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
-import type { HomeRegion, MovementId, RecordedSex, ReferralGender, Unit } from "@/components/ward-management/ward-model";
+import type {
+  HomeRegion,
+  MovementId,
+  RecordedSex,
+  ReferralGender,
+  Unit,
+} from "@/components/ward-management/ward-model";
 import type { PatientId } from "@/components/ward-management/ward-patients";
 
 /**
@@ -128,6 +134,9 @@ export type LeavingDestination =
   | "transferred-to-another-psychiatric-ward"
   | "transferred-to-a-general-hospital"
   | "moved-to-residential-care"
+  | "moved-to-residential-aged-care"
+  | "returned-to-residential-aged-care"
+  | "transferred-to-other-health-care"
   | "left-against-advice"
   // Added 2026-09-01 by owner ruling. See `LEAVING_DESTINATIONS` for why absconding is NOT here.
   | "died-on-the-ward"
@@ -195,6 +204,21 @@ export const LEAVING_DESTINATIONS: readonly {
     countsAsStatewideRelease: true,
   },
   { id: "moved-to-residential-care", label: "Moved to residential care", countsAsStatewideRelease: true },
+  {
+    id: "moved-to-residential-aged-care",
+    label: "Moved to residential aged care (new residence)",
+    countsAsStatewideRelease: true,
+  },
+  {
+    id: "returned-to-residential-aged-care",
+    label: "Returned to residential aged care (usual residence)",
+    countsAsStatewideRelease: true,
+  },
+  {
+    id: "transferred-to-other-health-care",
+    label: "Transferred to other health care accommodation",
+    countsAsStatewideRelease: true,
+  },
   { id: "left-against-advice", label: "Left against advice", countsAsStatewideRelease: true },
   /*
    * Added 2026-09-01 by owner ruling. All three are `true`, and that is not a default — the semantic
@@ -216,6 +240,11 @@ export const LEAVING_DESTINATIONS: readonly {
    */
   { id: "did-not-return", label: "Did not return", countsAsStatewideRelease: true },
 ];
+
+/** Fixed operational vocabulary, shared by commands, pickers and storage recovery. */
+export function isLeavingDestination(value: unknown): value is LeavingDestination {
+  return typeof value === "string" && LEAVING_DESTINATIONS.some((destination) => destination.id === value);
+}
 
 /**
  * Long-stay primary discharge barriers (applicable when stay >= 7 days).

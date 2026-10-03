@@ -16,7 +16,7 @@ import {
   validRecordActor,
   type WardRecordActor,
 } from "./ward-discharge-records";
-import { LEAVING_DESTINATIONS, daysInBed, type LeavingDestination } from "./ward-admissions";
+import { isLeavingDestination, daysInBed, type LeavingDestination } from "./ward-admissions";
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import {
@@ -1601,7 +1601,6 @@ function protectedRefusal(
   return appendAudit(state, rejected, event, decision);
 }
 
-
 /**
  * Whether a PATIENT RECORD's free-text legal status is involuntary, for the two discharge guards
  * below. `Patient.legalStatus` is free text: the seed writes "Involuntary patient (recorded)" (and
@@ -1614,6 +1613,20 @@ function protectedRefusal(
 function patientRecordIsInvoluntary(legalStatus: string | undefined): boolean {
   if (legalStatus === undefined) return false;
   return /^involuntary\b/i.test(legalStatus.trim()) || legalStatus === "Detained awaiting examination";
+}
+
+/** A previous stay must never decide this admission's discharge or transport state. */
+function dischargeMovement(state: WardFlowState, admission: Admission): Movement | undefined {
+  return (
+    state.movements.find((movement) => movement.admissionId === admission.id) ??
+    state.movements.find(
+      (movement) =>
+        admission.patientId !== null &&
+        movement.patientId === admission.patientId &&
+        movement.admissionId === undefined &&
+        movement.closure === undefined,
+    )
+  );
 }
 
 function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): WardFlowState {
@@ -1695,15 +1708,13 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
   const revision = state.dischargeRevisions[admission.id] ?? 0;
   if (!safeCounter(revision) || revision >= Number.MAX_SAFE_INTEGER) return deny("invalid-payload");
   if (revision !== event.expectedRevision) return deny("revision", "stale");
-  if (!LEAVING_DESTINATIONS.some((destination) => destination.id === event.leavingDestination))
-    return deny("invalid-payload");
+  if (!isLeavingDestination(event.leavingDestination)) return deny("invalid-payload");
   if (admission.state !== "occupied") return deny("transition");
+  if (admission.arrivedAt !== null && event.now < admission.arrivedAt) return deny("invalid-payload");
 
   // Involuntary patient discharge boundary (WA Mental Health Act 2014)
   const fullPatient = uniqueRecord(state.patients, identity.patient.id);
-  const linkedMovement = state.movements.find(
-    (m) => m.admissionId === admission.id || (admission.patientId && m.patientId === admission.patientId),
-  );
+  const linkedMovement = dischargeMovement(state, admission);
   if (
     patientRecordIsInvoluntary(fullPatient?.legalStatus) ||
     (linkedMovement?.legalStatus !== undefined && linkedMovement.legalStatus !== "Voluntary")
@@ -4715,6 +4726,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
      * the discharge dates and the community hub still see that they went, and where.
      */
     case "RECORD_LEAVING": {
+      if (finiteInstant(event.now) === null || !isLeavingDestination(event.leavingDestination)) {
+        decision.reasonCode = "invalid-payload";
+        return reject(state, event, "Departure needs a finite time and a listed destination");
+      }
       const admission = findAdmission(state, event.admissionId);
       if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
       if (event.actingUnitId !== admission.unitId) {
@@ -4739,12 +4754,14 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `admission ${admission.id} is ${admission.state}, and only somebody occupying a bed can leave one`,
         );
       }
+      if (admission.arrivedAt !== null && event.now < admission.arrivedAt) {
+        decision.reasonCode = "invalid-payload";
+        return reject(state, event, "Departure cannot precede this admission's arrival");
+      }
 
       // Discharge blocked while in transit: a patient cannot be discharged while their transfer
       // ambulance is actively on the road.
-      const linkedMovement = state.movements.find(
-        (m) => m.admissionId === admission.id || (admission.patientId && m.patientId === admission.patientId),
-      );
+      const linkedMovement = dischargeMovement(state, admission);
       if (
         linkedMovement &&
         (linkedMovement.stage === "moving" ||
@@ -4761,16 +4778,15 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
 
       // Involuntary patient discharge boundary (WA Mental Health Act 2014)
       const linkedPatient = admission.patientId ? state.patients.find((p) => p.id === admission.patientId) : undefined;
-      if (linkedPatient && patientRecordIsInvoluntary(linkedPatient.legalStatus)) {
+      if (
+        patientRecordIsInvoluntary(linkedPatient?.legalStatus) ||
+        (linkedMovement?.legalStatus !== undefined && linkedMovement.legalStatus !== "Voluntary")
+      ) {
         if (
           event.leavingDestination === "discharged-to-the-community" ||
           event.leavingDestination === "left-against-advice"
         ) {
-          return reject(
-            state,
-            event,
-            `cannot record leaving for involuntary patient ${linkedPatient.id}: involuntary legal status prohibits unrevoked discharge to the community or left-against-advice`,
-          );
+          return reject(state, event, "Cannot discharge an involuntary patient without an explicit revocation order.");
         }
       }
 
@@ -5497,7 +5513,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // the unit's figures. See `departAdmission`'s own comment.
       const releasedAdmission = findAdmission(state, release.admissionId);
       if (!releasedAdmission) {
-        return reject(state, event, `release ${release.id} names admission ${release.admissionId}, which does not exist`);
+        return reject(
+          state,
+          event,
+          `release ${release.id} names admission ${release.admissionId}, which does not exist`,
+        );
       }
       if (releasedAdmission.state !== "departed") {
         return reject(
