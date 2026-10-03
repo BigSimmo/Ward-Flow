@@ -23,9 +23,9 @@ repository belong to the earlier shared-history arrangement; do not use them as 
 - **Code:** the engine and screens are in `src/components/ward-management/`; routes are in
   `src/app/mockups/ward-flow/`; tests are `tests/ward-*` and `tests/ui-ward-*`.
 - **Current work:** use the agreed task scope, current source and existing task/checkpoint under
-  the [task-receipt contract](../task-receipts.md). [`STATUS.md`](STATUS.md) preserves dated
-  decisions, deferred work and former core-line observations; it does not establish today's
-  implementation state or authorise reviving old tasks.
+  the [task-receipt contract](../task-receipts.md). [`STATUS.md`](STATUS.md) opens with a
+  current summary of what is built and what is left (dated; check it against `main`), followed by
+  the historical 25 September record. Old entries do not authorise reviving old tasks.
 - **Old Ward folders under `D:/Worktrees/Database/` are history.** Start new work in the dedicated
   Ward Flow repository and follow [`HOW-WE-WORK.md`](HOW-WE-WORK.md).
 
@@ -148,7 +148,7 @@ Existing generated-document checks and relevant behaviour tests remain separate 
 
 ## The four documents
 
-1. [`../task-receipts.md`](../task-receipts.md) — current task identity, acceptance evidence and handoff; [`STATUS.md`](STATUS.md) preserves historical context.
+1. [`../task-receipts.md`](../task-receipts.md) — current task identity, acceptance evidence and handoff; [`STATUS.md`](STATUS.md) gives the current summary, then historical context.
 2. [`HOW-WE-WORK.md`](HOW-WE-WORK.md) — how any AI builder picks up, builds, tests, commits and hands back work.
 3. [`../ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) — **the ledger**: every Ward Flow task and its state.
 4. [`OWNER-RULINGS.md`](OWNER-RULINGS.md) — generated index of the owner's rulings. Open the source file before relying on one.

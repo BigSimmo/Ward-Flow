@@ -22,13 +22,13 @@ their own applicable authority and checks.
 
 ## Useful maps
 
-| Need                                            | Read                                                                                                                                                                              |
-| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Product entry, design and behavioural authority | [`docs/ward-flow/README.md`](docs/ward-flow/README.md)                                                                                                                            |
-| Current process and exact-file ownership        | [`docs/ward-flow/HOW-WE-WORK.md`](docs/ward-flow/HOW-WE-WORK.md) and `D:/Repos/ward-flow-logs/sign-out.md`                                                                        |
-| Code and test ownership                         | [`docs/ward-flow/code-map/README.md`](docs/ward-flow/code-map/README.md)                                                                                                          |
-| Task scope, evidence and decisions              | [`docs/task-receipts.md`](docs/task-receipts.md) and [`docs/ward-flow/decisions.md`](docs/ward-flow/decisions.md); [`STATUS.md`](docs/ward-flow/STATUS.md) is historical evidence |
-| Ward Flow tasks                                 | [`docs/ward-flow-task-ledger.md`](docs/ward-flow-task-ledger.md)                                                                                                                  |
+| Need                                            | Read                                                                                                                                                                                                                             |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Product entry, design and behavioural authority | [`docs/ward-flow/README.md`](docs/ward-flow/README.md)                                                                                                                                                                           |
+| Current process and exact-file ownership        | [`docs/ward-flow/HOW-WE-WORK.md`](docs/ward-flow/HOW-WE-WORK.md) and `D:/Repos/ward-flow-logs/sign-out.md`                                                                                                                       |
+| Code and test ownership                         | [`docs/ward-flow/code-map/README.md`](docs/ward-flow/code-map/README.md)                                                                                                                                                         |
+| Task scope, evidence and decisions              | [`docs/task-receipts.md`](docs/task-receipts.md) and [`docs/ward-flow/decisions.md`](docs/ward-flow/decisions.md); [`STATUS.md`](docs/ward-flow/STATUS.md) opens with the current summary; its lower part is historical evidence |
+| Ward Flow tasks                                 | [`docs/ward-flow-task-ledger.md`](docs/ward-flow-task-ledger.md)                                                                                                                                                                 |
 
 The app and tests remain the evidence for behaviour. Use focused checks while editing, then the
 checks selected for the exact integration candidate. A passing local check does not prove a
