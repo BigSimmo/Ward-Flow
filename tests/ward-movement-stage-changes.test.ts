@@ -57,18 +57,10 @@ function assertStepAccepted(before: WardFlowState, after: WardFlowState, label: 
 // ---------------------------------------------------------------------------------------------
 
 /**
- * Reads `ward-flow-reducer.ts` as text and returns every `case "EVENT_TYPE":` inside the main
- * `wardFlowReducer` switch whose body assigns a literal `stage: "..."` value. This is how the
- * plan requires the case list be produced — derived from source, never hand-listed — so a new
- * stage-assigning case added later is FOUND here even though nothing in this file named it.
- *
- * `stage: "` is a plain regex literal, not built from a template string or `new RegExp(...)`, so
- * it carries no risk of the escape-loss failure mode that produced silent zero-counts elsewhere on
- * this branch.
- *
- * Comments are blanked first (same length, newlines kept, so every index still lines up). A comment
- * quoting an old `stage: "handover_ready"` made CANCEL_TRANSPORT read as stage-assigning after the
- * 2026-09-16 fix removed its only real stage write; a guard derived from source must read the code.
+ * Derives literal stage assignments from syntax-tree ancestry: the nearest switch case or
+ * protected `event.type` branch owns the write. A preceding function's final switch case cannot
+ * acquire a later protected handler's assignment, and comments cannot become assignments.
+ * New stage-writing events require a driven fixture below, including transfer creation.
  */
 function deriveStageAssigningCases(rawSource: string): string[] {
   const source = ts.createSourceFile("reducer.ts", rawSource, ts.ScriptTarget.Latest, true);
