@@ -87,6 +87,29 @@ export function OnCallScreen() {
   const [favourites, setFavourites] = useState<string[]>([]);
   const [favouritesOnly, setFavouritesOnly] = useState(false);
   const [expandedRole, setExpandedRole] = useState<string | null>(null);
+
+  // Reveal collapsed coverage and handover rows for native printing and restore each row afterwards.
+  useEffect(() => {
+    let revealed: HTMLElement[] = [];
+    const expand = () => {
+      if (revealed.length) return;
+      revealed = [...window.document.querySelectorAll<HTMLElement>("tr[data-print-expand][hidden]")];
+      revealed.forEach((row) => row.removeAttribute("hidden"));
+    };
+    const restore = () => {
+      revealed.forEach((row) => {
+        if (row.isConnected) row.setAttribute("hidden", "");
+      });
+      revealed = [];
+    };
+    window.addEventListener("beforeprint", expand);
+    window.addEventListener("afterprint", restore);
+    return () => {
+      restore();
+      window.removeEventListener("beforeprint", expand);
+      window.removeEventListener("afterprint", restore);
+    };
+  }, []);
   const [preferenceNotice, setPreferenceNotice] = useState("");
   const favouritesChangedRef = useRef(false);
   useEffect(() => {
@@ -404,6 +427,7 @@ export function OnCallScreen() {
                         <tr
                           className={styles.coverageRow}
                           hidden={expandedRole !== item.id}
+                          data-print-expand=""
                           id={`ward-coverage-${item.id}`}
                         >
                           <td colSpan={5} className={styles.coverageCell}>
