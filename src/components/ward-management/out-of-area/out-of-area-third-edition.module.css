@@ -386,6 +386,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .countBadge {
@@ -540,7 +541,6 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--sunk);
-  order: -1;
 }
 
 .filterChip {
@@ -859,6 +859,10 @@
   cursor: pointer;
   transition: background 0.12s ease;
   box-sizing: border-box;
+}
+
+[data-row-density="comfortable"] .recordCard {
+  padding-block: 20px;
 }
 
 .recordCard:first-child {

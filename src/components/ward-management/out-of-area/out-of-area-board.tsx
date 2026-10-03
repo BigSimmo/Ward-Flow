@@ -516,18 +516,48 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                     className={`${pageStyles.btn} ${pageStyles.btnPrimary} ${pageStyles.btnSm}`}
                     type="button"
                     disabled={!selected}
+                    aria-label="Initiate Repatriation"
                     title={
                       selected ? "Arrange return for the selected patient" : "Select a patient to arrange their return"
                     }
                     onClick={(e) => openRepatriation(e.currentTarget)}
                   >
-                    + Initiate Repatriation
+                    + Arrange return
                   </button>
                 </div>
               </div>
 
               {/* In-page search and cohort filter toolbar */}
               <div className={pageStyles.tableToolbar}>
+                <div className={pageStyles.filterChips}>
+                  <button
+                    type="button"
+                    className={`${pageStyles.filterChip} ${transportFilter === "all" ? pageStyles.filterChipActive : ""}`}
+                    aria-pressed={transportFilter === "all"}
+                    onClick={() => setTransportFilter("all")}
+                  >
+                    All ({entries.length})
+                  </button>
+                  <button
+                    type="button"
+                    className={`${pageStyles.filterChip} ${transportFilter === "air_transport_only" ? pageStyles.filterChipActive : ""}`}
+                    aria-pressed={transportFilter === "air_transport_only"}
+                    onClick={() => setTransportFilter("air_transport_only")}
+                  >
+                    <PlacementStatusGlyph tone="danger" />
+                    <span>Air ({airCount})</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`${pageStyles.filterChip} ${transportFilter === "three_hours_or_more" ? pageStyles.filterChipActive : ""}`}
+                    aria-pressed={transportFilter === "three_hours_or_more"}
+                    onClick={() => setTransportFilter("three_hours_or_more")}
+                  >
+                    <PlacementStatusGlyph tone="warn" />
+                    <span>Road ({roadCount})</span>
+                  </button>
+                </div>
+
                 <div className={pageStyles.searchBox}>
                   <svg
                     className={pageStyles.searchIcon}
@@ -580,35 +610,6 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                       </option>
                     ))}
                   </select>
-                </div>
-
-                <div className={pageStyles.filterChips}>
-                  <button
-                    type="button"
-                    className={`${pageStyles.filterChip} ${transportFilter === "all" ? pageStyles.filterChipActive : ""}`}
-                    aria-pressed={transportFilter === "all"}
-                    onClick={() => setTransportFilter("all")}
-                  >
-                    All ({entries.length})
-                  </button>
-                  <button
-                    type="button"
-                    className={`${pageStyles.filterChip} ${transportFilter === "air_transport_only" ? pageStyles.filterChipActive : ""}`}
-                    aria-pressed={transportFilter === "air_transport_only"}
-                    onClick={() => setTransportFilter("air_transport_only")}
-                  >
-                    <PlacementStatusGlyph tone="danger" />
-                    <span>Air ({airCount})</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${pageStyles.filterChip} ${transportFilter === "three_hours_or_more" ? pageStyles.filterChipActive : ""}`}
-                    aria-pressed={transportFilter === "three_hours_or_more"}
-                    onClick={() => setTransportFilter("three_hours_or_more")}
-                  >
-                    <PlacementStatusGlyph tone="warn" />
-                    <span>Road ({roadCount})</span>
-                  </button>
                 </div>
               </div>
 
