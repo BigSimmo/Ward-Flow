@@ -330,4 +330,14 @@ describe("on-call favourites and coverage details", () => {
     expect(privateDetails).not.toBeVisible();
     expect(screen.getByText(/No service-specific fallback procedure is recorded here/)).toBeVisible();
   });
+  it("reveals every collapsed coverage row for printing and restores them afterwards", () => {
+    renderOnCall();
+    const rows = () => [...document.querySelectorAll<HTMLElement>("tr[data-print-expand]")];
+    expect(rows().length, "no coverage rows, so the print reveal is vacuous").toBeGreaterThan(0);
+    expect(rows().every((row) => row.hidden)).toBe(true);
+    window.dispatchEvent(new Event("beforeprint"));
+    expect(rows().every((row) => !row.hidden)).toBe(true);
+    window.dispatchEvent(new Event("afterprint"));
+    expect(rows().every((row) => row.hidden)).toBe(true);
+  });
 });
