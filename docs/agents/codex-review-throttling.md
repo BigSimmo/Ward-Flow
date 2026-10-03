@@ -6,7 +6,9 @@
 
 Do not review branches opportunistically. Review the current changed diff, PR, or branch only when the user explicitly asks for review/audit/hunter/cleanup/upload work, when CI/check failures are the task, or when the current change touches high-risk areas that require a targeted review before handoff.
 
-Use `docs/codex-review-protocol.md` as the shared review protocol for every repo-local review skill, branch/PR review, audit, bug hunt, release-readiness check, and PR/CI review.
+Use [current Ward Flow review handling](codex-github-review.md#current-contract-2-october-2026) and the repository boundary for repo-local reviews, audits, bug hunts, readiness checks and PR/CI reviews. The [inherited protocol](../codex-review-protocol.md) is historical background, not an active workflow.
+
+Report concrete findings by severity with file/line evidence and the affected behaviour. Separate reproduced defects from unverified concerns, design preferences and historical findings. Keep clinical/privacy consequences explicit and select proportionate checks. State the exact reviewed scope/revision and unrun evidence; a review or local pass does not establish hosted readiness.
 
 Before reviewing a branch or PR, review the changed scope directly. The ledger lookup that used
 to skip unchanged, already-reviewed heads was retired on the Ward Flow line on 26 September 2026
@@ -26,7 +28,7 @@ Review routing:
 - `repo-auditor`: Use for explicit repo-wide audit/refactor/dead-code/import/dependency-structure requests. Treat outputs as triage, not automatic delete lists.
 - `release-readiness`: Use for explicit release, merge, PR readiness, or handoff confidence requests. Do not run provider-backed gates without confirmation.
 - `branch-cleanup`: Use only when the prompt explicitly asks for branch cleanup/hygiene or branch deletion candidates. Apply `docs/branch-cleanup-guide.md` before inspecting branch diffs.
-- `pr-ci-fix`: Confirmation-required for this repo. GitHub/GitLab API calls, PR comments, CI reruns, commits, and pushes require explicit user approval and must respect the upload/handoff rules. Exception: an explicit `Run PR` sweep carries this approval (see "## Run PR shortcut").
+- `pr-ci-fix`: Use only for an explicitly authorised Ward PR/CI repair. Verify the exact repository and head; provider reads/writes, comments, reruns and publication need their applicable authority. Routine local scoped repairs follow the task authorisation. The inherited `Run PR` sweep is disabled in Ward and grants no authority.
 
 Recording completed reviews in a shared ledger (with a throttle on repeat Run PR sweeps) was
 retired on the Ward Flow line on 26 September 2026 at Josh's request; the PsychSift version
@@ -55,13 +57,13 @@ unaddressed.
   input), reply explaining why instead of resolving, and leave the thread open.
 - This does not grant new GitHub write access or user authorisation for separate provider
   writes. Reply and resolve only when the user explicitly authorised those actions for that PR
-  (for example, an explicit PR-fixing/babysitting sweep that names replies or thread resolution,
-  or the `Run PR` shortcut where that authority is stated) and the available tooling permits
+  (for example, a named Ward PR repair that explicitly includes replies or thread resolution)
+  and the available tooling permits
   them. If the user's ask was scoped to only committing and pushing the fix, stop there and tell
   them the reply/resolve step is still open rather than performing it unasked.
-- This applies to every PR you push review-responsive fixes to in this repo, not only the
-  automated Codex resolve workflow — see "Review comment lifecycle" in `docs/agents/codex-github-review.md` for that workflow's
-  specific marker convention, and your runtime PR-babysitting instructions for the fuller
-  human-reviewer posture this section summarizes.
+- This applies to every separately authorised Ward review-thread reply/resolution. Handle threads
+  manually through supported tools and verify the resulting thread state. No marker automatically
+  resolves a thread; the inherited automated resolve workflow is absent. Do not start another review
+  or broaden the repair scope without the applicable task authority.
 
 <!-- END:resolve-review-threads-after-fixing -->
