@@ -111,8 +111,11 @@ export type WardReconciliationLineProps = {
 };
 
 export function WardReconciliationLine({ publication, asAt, className, compact }: WardReconciliationLineProps) {
-  const checks = publication.published ? publication.checks : [];
-  const hasChecks = publication.published && checks.length > 0;
+  // Keep an unpublished screen quiet in the rail; published results still carry their verdict.
+  if (!publication.published) return null;
+
+  const checks = publication.checks;
+  const hasChecks = checks.length > 0;
   const problems = reconciliationProblems(checks);
   const ok = hasChecks && problems.length === 0;
   /** `"neutral"` is this app's existing word for "nothing asserted either way" (`WardRecordTone`,
