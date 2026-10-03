@@ -177,6 +177,9 @@ describe("the on-call screen", () => {
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "specialist psychiatry advice" } });
     expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("3 roles of 9");
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "enquiries" } });
+    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("1 role of 9");
+    expect(screen.getByText("Private placement enquiries")).toBeVisible();
   });
 
   it("links every department to its own ED workspace and keeps contact preparation visible", () => {

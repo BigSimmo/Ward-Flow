@@ -101,9 +101,13 @@ export function OnCallScreen() {
         (selectedRole === "consultant" && item.role === "Duty consultant") ||
         (selectedRole === "governance" && item.role === "Governance lead")) &&
       (!normalizedQuery ||
-        [item.service, item.role, item.facility, item.shift, ROLE_PURPOSES[item.role] ?? ""].some((value) =>
-          value.toLowerCase().includes(normalizedQuery),
-        )),
+        [
+          item.service,
+          item.role,
+          item.facility,
+          item.shift,
+          item.service === "Private" ? "Private placement enquiries" : (ROLE_PURPOSES[item.role] ?? ""),
+        ].some((value) => value.toLowerCase().includes(normalizedQuery))),
   );
   const filteredDepartments = departments.filter((department) => {
     const site = siteByCode(department.siteCode);
