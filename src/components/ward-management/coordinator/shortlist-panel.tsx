@@ -4,6 +4,7 @@ import { CheckCircle2, CircleAlert, ChevronDown, ChevronUp } from "lucide-react"
 import Link from "next/link";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { Fragment, useMemo, useState, type Dispatch, type FormEvent } from "react";
+import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 
 import {
   CANCEL_TRANSPORT_REASONS,
@@ -467,6 +468,15 @@ export function ShortlistPanel({
   const [overrideRecord, setOverrideRecord] = useState<OverrideRecord | undefined>(undefined);
   const [overrideOpen, setOverrideOpen] = useState(false);
   const [overrideReason, setOverrideReason] = useState("");
+
+  const isOverrideDirty = overrideReason.trim().length > 0;
+  const { clearDraft: clearOverrideDraft } = useDirtyStateGuard({
+    key: movement?.id ? `shortlist-override-${movement.id}` : undefined,
+    isDirty: isOverrideDirty,
+    value: overrideReason,
+    onRestore: setOverrideReason,
+    confirmMessage: "You have an unsaved clinical override reason. Are you sure you want to leave?",
+  });
   /**
    * T12 (item 9, owner answer 9, 17 September 2026): the coordinator's own "checked with the
    * ward" pair for a `Non-binary` placement — two separate facts, neither standing in for the
@@ -539,6 +549,7 @@ export function ShortlistPanel({
     setOverrideRecord(undefined);
     setOverrideOpen(false);
     setOverrideReason("");
+    clearOverrideDraft();
     setReferTargets([]);
     setEscalationOpen(false);
     setEscalationContact(ESCALATION_CONTACTS[0]);
@@ -804,6 +815,7 @@ export function ShortlistPanel({
     setOverrideRecord({ unitIds: [...referTargets], at: now, reason });
     setOverrideOpen(false);
     setOverrideReason("");
+    clearOverrideDraft();
   }
 
   /**
@@ -1107,7 +1119,9 @@ export function ShortlistPanel({
                 movement.arrivalDetails?.modeOfArrival ??
                 (movement.arrivalDetails?.mode
                   ? (ARRIVAL_MODE_LABELS[movement.arrivalDetails.mode] ?? movement.arrivalDetails.mode)
-                  : (movement.arrivalMode ? (ARRIVAL_MODE_LABELS[movement.arrivalMode as ArrivalMode] ?? movement.arrivalMode) : "St John Ambulance"))
+                  : movement.arrivalMode
+                    ? (ARRIVAL_MODE_LABELS[movement.arrivalMode as ArrivalMode] ?? movement.arrivalMode)
+                    : "St John Ambulance")
               }
               testId="ward-shortlist-transit-mode"
             />
@@ -1141,8 +1155,8 @@ export function ShortlistPanel({
               data-testid="ward-shortlist-transit-overdue"
               style={{ marginTop: "var(--ward-space-8, 0.5rem)" }}
             >
-              ⚠ Overdue alert: arrival is +{Math.floor((now - movement.arrivalDetails.estimatedArrivalAt) / 60)}h past estimated
-              arrival time.
+              ⚠ Overdue alert: arrival is +{Math.floor((now - movement.arrivalDetails.estimatedArrivalAt) / 60)}h past
+              estimated arrival time.
             </div>
           ) : null}
         </section>
@@ -2067,8 +2081,8 @@ export function ShortlistPanel({
             {!movement.escalation ? (
               <p className={styles.shortlistSectionNote}>
                 {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                No eligible destination is currently available for {patientWho}. Record what was tried and who is
-                being contacted next.
+                No eligible destination is currently available for {patientWho}. Record what was tried and who is being
+                contacted next.
               </p>
             ) : null}
             <button

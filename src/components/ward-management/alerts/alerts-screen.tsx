@@ -23,6 +23,7 @@ import { INBOX_CATEGORIES } from "@/components/ward-management/ward-flow-reducer
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPanel } from "@/components/ward-management/ward-panel";
+import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
@@ -487,6 +488,16 @@ function AlertsWorkspace() {
     defaultTmpl?.title ?? "Critical HDU Capacity: Immediate Discharge & Step-Down Review",
   );
   const [broadcastMessage, setBroadcastMessage] = useState(defaultTmpl?.defaultMessage ?? "");
+
+  const isBroadcastDirty = broadcastModalOpen && broadcastMessage.trim().length > 0;
+  const { clearDraft: clearBroadcastDraft } = useDirtyStateGuard({
+    key: "alerts-broadcast-directive",
+    isDirty: isBroadcastDirty,
+    value: broadcastMessage,
+    onRestore: setBroadcastMessage,
+    confirmMessage: "You have an unsaved statewide broadcast directive. Are you sure you want to leave?",
+  });
+
   const [broadcastSeverity, setBroadcastSeverity] = useState<BroadcastSeverity>(defaultTmpl?.severity ?? "critical");
   const [broadcastCategory, setBroadcastCategory] = useState<BroadcastCategory>(
     defaultTmpl?.category ?? "capacity_gridlock",
@@ -506,6 +517,12 @@ function AlertsWorkspace() {
     : undefined;
   const broadcastAccepted = broadcastResult?.accepted === true;
   const broadcastRefused = broadcastResult?.accepted === false;
+
+  useEffect(() => {
+    if (broadcastAccepted && broadcastRequest?.type === "DISPATCH_BROADCAST_ALERT") {
+      clearBroadcastDraft();
+    }
+  }, [broadcastAccepted, broadcastRequest, clearBroadcastDraft]);
   const isBroadcastModalOpen =
     broadcastModalOpen && !(broadcastAccepted && broadcastRequest?.type === "DISPATCH_BROADCAST_ALERT");
   const broadcastFeedback =
