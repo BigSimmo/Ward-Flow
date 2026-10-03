@@ -30,7 +30,7 @@ function renderScreen() {
 describe("Alerts — confirm controls (F3.1)", () => {
   it("Dispatch Broadcast requires clinical confirmation safeguard and dispatches directive", () => {
     renderScreen();
-    fireEvent.click(screen.getByText("+ Broadcast Network Alert"));
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
     const confirm = screen.getByTestId("ward-alerts-broadcast-confirm");
     expect(confirm).toBeDisabled();
 

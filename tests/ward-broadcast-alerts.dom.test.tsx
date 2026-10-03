@@ -32,7 +32,7 @@ function renderAlertsScreen() {
 describe("Ward Flow Statewide Broadcast Alerts", () => {
   it("renders the broadcast trigger button and opens the modal", () => {
     renderAlertsScreen();
-    const trigger = screen.getByText("+ Broadcast Network Alert");
+    const trigger = screen.getByRole("button", { name: "Broadcast Network Alert" });
     expect(trigger).toBeInTheDocument();
 
     fireEvent.click(trigger);
@@ -42,7 +42,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
 
   it("populates form fields when changing the WA Mental Health template", () => {
     renderAlertsScreen();
-    fireEvent.click(screen.getByText("+ Broadcast Network Alert"));
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
 
     const templateSelect = screen.getByLabelText(/WA Clinical Protocol & Flow Template/i);
     // Switch to Graylands Forensic Surge template
@@ -57,7 +57,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
 
   it("requires clinical confirmation safeguard before enabling dispatch", () => {
     renderAlertsScreen();
-    fireEvent.click(screen.getByText("+ Broadcast Network Alert"));
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
 
     const confirmBtn = screen.getByTestId("ward-alerts-broadcast-confirm");
     expect(confirmBtn).toBeDisabled();
@@ -72,7 +72,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
 
   it("dispatches statewide alert, mounts global banner, and renders active directive card", () => {
     renderAlertsScreen();
-    fireEvent.click(screen.getByText("+ Broadcast Network Alert"));
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
 
     const safeguard = screen.getByLabelText(/I confirm this directive is clinically authorised/i);
     fireEvent.click(safeguard);
@@ -101,7 +101,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     renderAlertsScreen();
 
     // Dispatch alert first
-    fireEvent.click(screen.getByText("+ Broadcast Network Alert"));
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast Network Alert" }));
     fireEvent.click(screen.getByLabelText(/I confirm this directive is clinically authorised/i));
     fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
 
