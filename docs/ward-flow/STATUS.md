@@ -1,11 +1,106 @@
+# Ward Flow — status
+
+**Current as of 4 October 2026, `main` at `7e7af74` (pull request #36).** This top section is the
+current "what is built and what is left" page. Everything under
+[Historical record](#historical-record-25-september-2026) is the older 25 September snapshot from the
+former Database repository, kept as evidence only. When this page and the code disagree, the code
+and its tests win; check `git log -1` and update this section rather than trusting its date.
+
+Synthetic data only. Ward Flow is a prototype, not validated clinical decision support. Do not
+enter real patient information.
+
+## In one paragraph
+
+Ward Flow is a working browser prototype for coordinating psychiatric beds across Western Australian
+mental health services. All of its screens run on invented data, held only in each user's browser.
+Since moving to this repository on 27 September, 36 pull requests have been opened and 35 merged
+(one, #4, was closed as replaced). There are no open GitHub issues. Every merged pull request
+passed the Ward Flow checks on GitHub; the most recent (#36) passed static checks, five unit-test
+shards, three browser-journey groups and the GitGuardian secret scan. Nothing is broken or urgent.
+The main gaps are a shared backend with proper log-in, and the outside reviews that must happen
+before any real patient.
+
+## What is built
+
+**Screens** (routes under `src/app/mockups/ward-flow/`; engine and components under
+`src/components/ward-management/`):
+
+| Area                   | Screens                                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------------------ |
+| Coordinator day        | Home and hub, coordinator queue, referrals, movements, transport, delays, discharges                   |
+| Beds and wards         | Bed board, ward view, wards list, capacity, network view and placement shortlist, out-of-area register |
+| Pressure and safety    | ED pressure strip, alerts centre, escalation, exceptions, governance                                   |
+| People and directories | Patient search, people, community directory, on-call directory                                         |
+| Records and reports    | Handover (with print), legal forms, statistics dashboards and charts (with CSV export)                 |
+| Other                  | Settings, design-system showcase                                                                       |
+
+**Recent work since the move (27 September to 4 October), by theme:**
+
+- **Screen polish:** design refinements across all main screens and hubs (#12, #15, #16, #17, #19),
+  then focused passes on Community directory (#24), out-of-area (#25), on-call (#26, #29), alerts
+  (#27) and Statistics (#33).
+- **Safety and correctness:** patient-safety and statutory-capacity fixes from the audit (#2);
+  legal-language wording, dialog focus traps and simulation fixes (#20); WA ward disposition and
+  care-journey wiring (#22); a guard so unsaved clinical text is not silently lost (#32, #34);
+  spreadsheet formula neutralising in CSV exports (#35).
+- **Accessibility:** keyboard, tablet and phone ergonomics (#8), keyboard navigation in alerts (#27),
+  dialog accessibility (#34).
+- **Backend (not connected to the screens):** a synthetic Azure session service (#5) and a cloud
+  scenario vault with a synthetic-data guard (#32). See [the backend guide](../../backend/ward-flow/README.md).
+- **Checks and tooling:** GitHub checks for every pull request, run as parallel jobs (#1, #3, #9,
+  #10, #11); Railway health route and removal of a developer key (#7); repository-only safeguards
+  (#13, #14); repaired hooks and workflow documents (#23, #30, #31); removal of PsychSift leftovers
+  and committed chat transcripts (#36).
+- **Rules:** owner-approved prototype operating mode recorded in `AGENTS.md` on 3 October (#32).
+
+## What is not done
+
+1. **Shared backend and log-in.** Data lives only in each browser (refresh-safe through
+   `sessionStorage`). The Azure backend is code-complete but deliberately not connected to the UI;
+   that waits on WF-29 (privacy and service-scoped access) and a later owner decision. It is not
+   "ready" until an authenticated shared save, reload and conflict case are proven.
+2. **Live site not rechecked.** The Railway site (https://ward-flow-production.up.railway.app/) has
+   not been looked at since the recent merges. Several pull requests (#25, #27) say the hosted page
+   was not verified. Railway actions need Josh's go-ahead; see [hosting](../hosting.md).
+3. **Checks on `main` itself.** GitHub checks run on pull requests only, and each run picks the tests
+   relevant to the change. Pull request #37 (open) proposes running checks on `main`, adding a secret
+   scan and a production-build check. A full local run of every test on current `main` has not been
+   recorded.
+4. **Known screen follow-ups:** global search started from the Delays page and the network placement
+   shortlist were flagged unresolved in #33; a brief page re-draw on load in the ward layout was worked
+   around in a test (#31) but not fixed at its cause.
+5. **Housekeeping:** most of the roughly 80 files at the top of `docs/` and many in `docs/ward-flow/`
+   are historical. Leftover branches of merged pull requests remain on GitHub.
+
+## Before any real patient
+
+These are hard gates, not tasks for now. The owner has parked them; do not re-ask about the cultural
+safety review (R2-6).
+
+- Outside reviews: Aboriginal cultural safety, medical device (TGA), clinical safety officer, privacy,
+  WA legal advice on forms, catchment data, and post-incident review (owner item 63).
+- Internal patient codes (item 58) to be decided again.
+- On-call roster data is illustrative only.
+- Reverse the prototype-mode relaxations in `AGENTS.md` (#32): clinical-safety and legal sign-off
+  files currently do not block merges.
+
+## Where to look next
+
+- Product, design authority and running the app: [README.md](README.md).
+- How work is done now: [HOW-WE-WORK.md](HOW-WE-WORK.md).
+- Tasks and decisions: [task ledger](../ward-flow-task-ledger.md), [decisions](decisions.md),
+  [owner rulings](OWNER-RULINGS.md).
+
+---
+
+## Historical record (25 September 2026)
+
 > **Historical source boundary — 2 October 2026.** The preserved material below
 > describes the former Database/PsychSift workflow or a completed task. Its commands,
 > hosting and appearance claims are not current Ward instructions. Use the
 > [repository boundary](../../AGENTS.md) and [Ward entry point](README.md) for current work.
 
 <!-- docs-script-refs:historical-start -->
-
-# Ward Flow — status
 
 **Historical status of the former Database ward line.** Last substantively measured
 **25 September 2026**. Ward Flow now lives in its own public repository,
