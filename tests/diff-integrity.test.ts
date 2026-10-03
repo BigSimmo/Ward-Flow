@@ -11,6 +11,7 @@ import {
   changedPaths,
   countTestCases,
   evaluate,
+  exitDecision,
   isTestFile,
   parseArguments,
   parseConfig,
@@ -538,5 +539,34 @@ describe("the gate as shipped", () => {
     expect(aggregate.ok).toBe(false);
     // And independently, on the truncation banner the tool wrote into the file.
     expect(artefacts.length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("exitDecision - prototype mode softens only measured reductions", () => {
+  const ok = { ok: true, before: 3, after: 3 };
+  const reduced = { ok: false, before: 10, after: 2 };
+  const unreadable = { ok: false, before: Number.NaN, after: Number.NaN };
+  const clean = { verdicts: [ok], aggregate: { ok: true }, artefacts: [] };
+
+  it("passes a clean diff", () => {
+    expect(exitDecision(clean, {})).toBe("pass");
+  });
+
+  it("is advisory for a measured reduction by default, and fails it when strict", () => {
+    const result = { verdicts: [reduced], aggregate: { ok: false }, artefacts: [] };
+    expect(exitDecision(result, {})).toBe("advisory");
+    expect(exitDecision(result, { DIFF_INTEGRITY_STRICT: "1" })).toBe("fail-strict");
+  });
+
+  it("is advisory for an aggregate-only breach by default", () => {
+    expect(exitDecision({ ...clean, aggregate: { ok: false } }, {})).toBe("advisory");
+  });
+
+  it("stays fail-closed for an unreadable before-state even without strict mode", () => {
+    expect(exitDecision({ ...clean, verdicts: [unreadable] }, {})).toBe("fail-unreadable");
+  });
+
+  it("stays fail-closed for a truncation artefact even without strict mode", () => {
+    expect(exitDecision({ ...clean, artefacts: [{ path: "x", line: "y" }] }, {})).toBe("fail-artefact");
   });
 });

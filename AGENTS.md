@@ -39,8 +39,8 @@ To prevent procedural friction and development gridlock, the following exemption
    - Simulated CSO, Cultural, or Legal JSON approval files (`clinical-safety-officer-signed.json`, etc.) are **not required** for local development, builds, or PR merges. The Clinical Safety Case (`docs/ward-flow/governance/CLINICAL-SAFETY-CASE.md`) and Cultural Safety Charter serve as presentation reference materials for WA Health stakeholders, not blocking technical gates.
 3. **Streamlined Git & Push Workflows:**
    - The in-flight CI push blocker in `scripts/guard-push.mjs` is advisory during interactive work; pushes do not need to wait for previous background CI runs unless explicitly requested.
-   - The file sign-out clash check (`sign-out.md`) is optional and bypassed for interactive single-user development sessions.
-   - Diff-integrity test floors (`check:diff-integrity`) and dead code deletion refusals (`check:dead-code-candidate`) must not prevent legitimate test refactoring, test consolidation, or dead export cleanup.
+   - The file sign-out clash check (`sign-out.md`) is optional and bypassed for interactive single-user development sessions: the pre-commit guard is skipped by default (`PRECOMMIT_SIGNOUT_STRICT=1` restores it). Concurrent multi-agent work still signs out files as described under "Where work happens".
+   - Diff-integrity test floors (`check:diff-integrity`) are advisory by default (`DIFF_INTEGRITY_STRICT=1` restores the hard floor); truncation artefacts and an unreadable before-state still fail. Dead code deletion refusals (`check:dead-code-candidate`) still run, but with Josh's approval a legitimate dead-export cleanup may proceed despite a refusal, recorded in the PR.
 4. **Historical Checklist & Lesson Retirement:**
    - `docs/ward-flow-safety-checklist.md` and `docs/ward-flow/RULES.md` are **historical post-mortem archives**, not mandatory per-task checklists. Agents must not spend context or turns running through 2,100 lines of checklist rules for everyday coding tasks.
 5. **Multi-Agent Swarm Usage:**
@@ -97,7 +97,8 @@ the separately required clinical, privacy and legal reviews.
   Verify `git remote get-url origin` and the push URL identify `BigSimmo/Ward-Flow` before writing.
   A checkout inside the former Database/PsychSift repository is the wrong project, even if its
   folder name mentions Ward Flow. Do not change that repository's shared Git configuration.
-- Before editing an exact file, check the shared sign-out at `D:/Repos/ward-flow-logs/sign-out.md`.
+- Before editing an exact file, check the shared sign-out at `D:/Repos/ward-flow-logs/sign-out.md`
+  (optional for interactive single-user sessions; see Prototype Operating Mode above).
   An active overlap needs the other owner's release or Josh's scoped takeover approval for that
   exact file. Sign out every file on every task branch, including `codex/*` and files outside the
   old Ward directories. Include `repo=BigSimmo/Ward-Flow` in each new sign-out and `RELEASED` line

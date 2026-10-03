@@ -11,6 +11,8 @@ set -eu
 # By default, do not block interactive developer commits on external sign-out notes unless explicitly requested.
 if [ "${PRECOMMIT_SIGNOUT_STRICT:-0}" != "1" ]; then
   export SKIP_SIGNOUT_GUARD="${SKIP_SIGNOUT_GUARD:-1}"
+else
+  unset SKIP_SIGNOUT_GUARD
 fi
 
 if [ -f scripts/pre-commit-checks.mjs ] && command -v node >/dev/null 2>&1; then
