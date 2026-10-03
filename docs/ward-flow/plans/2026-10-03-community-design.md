@@ -15,3 +15,6 @@ Follow-up: matched the header search with a recessed surface, rounded corners, i
 
 Further search refinement: removed legacy ancestor-dark overrides that flattened the shadow even with the explicit light palette. Search and filters share a 56px height, with 16px search curvature, layered inset and outer shadows, and aligned internal spacing. Palette remains token based.
 Browser proof for the refinement: computed 56px search height, 16px corner radius and four active shadow layers; left edge matches the alphabet rail at 20px. Albany search returned 1 of 64 and Clear restored 64. CSS-only follow-up; no repeat unit suite required. git diff --check passed.
+
+Compact refinement: reduced search/filter height from 56px to the 48px tap target, softened depth to a small outer shadow and light inset, removed the filter container border and shadow, and increased the result-count gap to 12px.
+Browser verified both controls at 48px and count gap at 12px; visually reviewed desktop, Albany filtering and Clear. CSS-only refinement; no repeat unit run. git diff --check passed.
