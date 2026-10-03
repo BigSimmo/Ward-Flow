@@ -69,7 +69,7 @@ Every remaining tracked document in this category (architecture and design, plus
 - [ward-flow-phase-6-7-kickoff-prompt.md](ward-flow-phase-6-7-kickoff-prompt.md) — paste-in prompt to open the Phase 6 and 7 design conversation
 - [phone-chrome-physical-acceptance.md](phone-chrome-physical-acceptance.md) — labelled Safari and cold-launch PWA acceptance matrix
 - [productivity-workflows.md](productivity-workflows.md) — repo workflow planners (flightplan, triage, rag-lab, …)
-- [codex-review-protocol.md](codex-review-protocol.md) — shared review protocol for all review skills
+- [codex-review-protocol.md](codex-review-protocol.md) — historical inherited review protocol; current handling is in [agents/codex-github-review.md](agents/codex-github-review.md)
 - [branch-cleanup-guide.md](branch-cleanup-guide.md) — branch hygiene workflow
 
 ### Also catalogued (2026-09-02)
